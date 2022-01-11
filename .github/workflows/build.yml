@@ -84,6 +84,7 @@ jobs:
       - name: Javadoc Check (JDK8 / -Prelease)
         if: matrix.java == '8'
         run: |
+          mvn -s .github/maven-settings.xml -DskipTests -Prelease install
           mvn -s .github/maven-settings.xml javadoc:javadoc -Prelease
 
       - name: Javadoc Check (JDK 11+)
