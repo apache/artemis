@@ -19,7 +19,6 @@ package org.apache.activemq.artemis.core.io.util;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 
-import io.netty.util.internal.PlatformDependent;
 import org.apache.activemq.artemis.utils.PowerOf2Util;
 import org.apache.activemq.artemis.utils.ByteUtil;
 import org.apache.activemq.artemis.utils.Env;
@@ -56,23 +55,18 @@ final class ThreadLocalByteBufferPool implements ByteBufferPool {
    @Override
    public void release(ByteBuffer buffer) {
       Objects.requireNonNull(buffer);
-      boolean directBuffer = buffer.isDirect();
-      if (directBuffer == direct && !buffer.isReadOnly()) {
+      if (buffer.isDirect() == direct && !buffer.isReadOnly()) {
          final ByteBuffer byteBuffer = bytesPool.get();
          if (byteBuffer != buffer) {
             //replace with the current pooled only if greater or null
             if (byteBuffer == null || buffer.capacity() > byteBuffer.capacity()) {
                if (byteBuffer != null) {
                   //free the smaller one
-                  if (directBuffer) {
-                     PlatformDependent.freeDirectBuffer(byteBuffer);
-                  }
+                  DirectByteBufferReleaser.freeDirectBuffer(byteBuffer);
                }
                bytesPool.set(buffer);
             } else {
-               if (directBuffer) {
-                  PlatformDependent.freeDirectBuffer(buffer);
-               }
+               DirectByteBufferReleaser.freeDirectBuffer(buffer);
             }
          }
       }

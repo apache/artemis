@@ -15,6 +15,33 @@ NOTE: Follow the general upgrade procedure outlined in the xref:upgrading.adoc#u
 
 :sectnums!:
 
+== Version 2.57.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12357464[Full release notes]
+
+=== Highlights
+
+* Netty was upgraded to 4.2.
+The most notable change is a new default "adaptive" buffer allocator (which was experimental in 4.1).
+It automatically tunes itself to the observed workload.
+If you happen to observe a performance regression for your particular workload you can restore the previous allocator by passing `-Dio.netty.allocator.type=pooled` to the JVM on startup.
+
+=== Upgrading from 2.56.0
+
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-5734[ARTEMIS-5734] Artemis ships Netty 4.2 which no longer uses `sun.misc.Unsafe` by default on JDK 24+.
+Previous versions of the broker shipped Netty 4.1, which used `sun.misc.Unsafe` unconditionally and therefore triggered the one-time "terminally deprecated method in sun.misc.Unsafe has been called" warning printed by JDK 24+.
+Netty 4.2 only uses `sun.misc.Unsafe` when the JVM is started with `--sun-misc-unsafe-memory-access=allow`.
+See Netty's https://netty.io/wiki/java-24-and-sun.misc.unsafe.html[Java 24 and sun.misc.Unsafe] documentation for further details.
++
+That said, the broker currently relies on direct-memory operations from Netty which in turn rely on `sun.misc.Unsafe`.
+Freshly created brokers and brokers upgraded via xref:upgrading.adoc#upgrading-tool[`artemis upgrade`] get this enabled automatically via the `--sun-misc-unsafe-memory-access=allow` setting on JDK 24+.
+If you instead upgrade by swapping the broker home directory in place then, when running on JDK 24+, you must add `--sun-misc-unsafe-memory-access=allow` to `JAVA_ARGS` in `etc/artemis.profile` (or `etc/artemis.profile.cmd` on Windows) yourself.
+This is a stopgap: `sun.misc.Unsafe` (and the `--sun-misc-unsafe-memory-access` flag) is being removed from future JDKs, and a subsequent Artemis release will remove the dependency.
++
+Optimal, safe performance for Netty 4.2 on JDK 24+ relies on the JVM's native access being enabled.
+Freshly created brokers and brokers updated via xref:upgrading.adoc#upgrading-tool[`artemis upgrade`] get this enabled automatically via the `--enable-native-access=ALL-UNNAMED` setting.
+If you instead upgrade by swapping the broker home directory in place then, when running on JDK 24+, you must add it to `JAVA_ARGS` in `etc/artemis.profile` (or `etc/artemis.profile.cmd` on Windows) yourself.
+
 == Version 2.56.0
 
 https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12357208[Full release notes]

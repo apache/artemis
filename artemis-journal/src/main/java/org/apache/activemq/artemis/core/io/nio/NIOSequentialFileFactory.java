@@ -27,6 +27,7 @@ import org.apache.activemq.artemis.core.io.AbstractSequentialFileFactory;
 import org.apache.activemq.artemis.core.io.IOCriticalErrorListener;
 import org.apache.activemq.artemis.core.io.SequentialFile;
 import org.apache.activemq.artemis.core.io.util.ByteBufferPool;
+import org.apache.activemq.artemis.core.io.util.DirectByteBufferReleaser;
 import org.apache.activemq.artemis.utils.PowerOf2Util;
 import org.apache.activemq.artemis.utils.Env;
 import org.apache.activemq.artemis.utils.critical.CriticalAnalyzer;
@@ -134,9 +135,7 @@ public class NIOSequentialFileFactory extends AbstractSequentialFileFactory {
 
    @Override
    public void releaseDirectBuffer(ByteBuffer buffer) {
-      if (buffer.isDirect()) {
-         PlatformDependent.freeDirectBuffer(buffer);
-      }
+      DirectByteBufferReleaser.freeDirectBuffer(buffer);
    }
 
    @Override
@@ -165,7 +164,17 @@ public class NIOSequentialFileFactory extends AbstractSequentialFileFactory {
    @Override
    public void clearBuffer(final ByteBuffer buffer) {
       if (buffer.isDirect()) {
-         PlatformDependent.setMemory(PlatformDependent.directBufferAddress(buffer), buffer.limit(), (byte) 0);
+         if (PlatformDependent.hasUnsafe()) {
+            PlatformDependent.setMemory(PlatformDependent.directBufferAddress(buffer), buffer.limit(), (byte) 0);
+         } else {
+            final int position = buffer.position();
+            final byte[] zeros = new byte[Math.min(buffer.limit(), 8192)];
+            buffer.position(0);
+            while (buffer.hasRemaining()) {
+               buffer.put(zeros, 0, Math.min(zeros.length, buffer.remaining()));
+            }
+            buffer.position(position);
+         }
       } else {
          Arrays.fill(buffer.array(), buffer.arrayOffset(), buffer.limit(), (byte) 0);
       }

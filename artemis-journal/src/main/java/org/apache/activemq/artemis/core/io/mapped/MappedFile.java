@@ -27,6 +27,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.internal.PlatformDependent;
 import org.apache.activemq.artemis.core.buffers.impl.ChannelBufferWrapper;
+import org.apache.activemq.artemis.core.io.util.DirectByteBufferReleaser;
 import org.apache.activemq.artemis.core.journal.EncodingSupport;
 import org.apache.activemq.artemis.utils.PowerOf2Util;
 import org.apache.activemq.artemis.utils.Env;
@@ -241,8 +242,8 @@ final class MappedFile implements AutoCloseable {
       } catch (IOException e) {
          throw new IllegalStateException(e);
       } finally {
-         //unmap in a deterministic way: do not rely on GC to do it
-         PlatformDependent.freeDirectBuffer(this.buffer);
+         //unmap in a deterministic way when possible: falls back to GC-triggered cleanup if native freeing is unavailable
+         DirectByteBufferReleaser.freeDirectBuffer(this.buffer);
       }
    }
 }
