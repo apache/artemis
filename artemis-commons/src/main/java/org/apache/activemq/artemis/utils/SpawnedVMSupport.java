@@ -204,6 +204,12 @@ public class SpawnedVMSupport {
          commandList.add(jacocoAgent);
       }
 
+      String javaVersion = System.getProperty("java.version");
+      if (javaVersion.startsWith("24") || javaVersion.startsWith("25")) {
+         commandList.add("--enable-native-access=ALL-UNNAMED");
+         commandList.add("--sun-misc-unsafe-memory-access=allow");
+      }
+
       commandList.add(className);
       for (String arg : args) {
          commandList.add(arg);

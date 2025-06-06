@@ -16,13 +16,12 @@
  */
 package org.apache.activemq.artemis.core.remoting.impl.netty;
 
-import static org.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants.NETTY_HTTP_HEADER_PREFIX;
-
 import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -63,15 +62,16 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.WriteBufferWaterMark;
-import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.epoll.EpollIoHandler;
 import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
-import io.netty.channel.kqueue.KQueueEventLoopGroup;
+import io.netty.channel.kqueue.KQueueIoHandler;
 import io.netty.channel.kqueue.KQueueSocketChannel;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.base64.Base64;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
@@ -92,11 +92,11 @@ import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.Cookie;
-import io.netty.handler.ssl.SslContext;
 import io.netty.handler.codec.socksx.SocksVersion;
 import io.netty.handler.proxy.ProxyHandler;
 import io.netty.handler.proxy.Socks4ProxyHandler;
 import io.netty.handler.proxy.Socks5ProxyHandler;
+import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.resolver.NoopAddressResolverGroup;
 import io.netty.util.AttributeKey;
@@ -128,8 +128,8 @@ import org.apache.activemq.artemis.utils.IPV6Util;
 import org.apache.activemq.artemis.utils.PasswordMaskingUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.lang.invoke.MethodHandles;
 
+import static org.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants.NETTY_HTTP_HEADER_PREFIX;
 import static org.apache.activemq.artemis.utils.Base64.encodeBytes;
 
 public class NettyConnector extends AbstractConnector {
@@ -552,18 +552,18 @@ public class NettyConnector extends AbstractConnector {
 
       if (useEpoll && CheckDependencies.isEpollAvailable()) {
          if (useGlobalWorkerPool) {
-            group = SharedEventLoopGroup.getInstance((threadFactory -> new EpollEventLoopGroup(remotingThreads, threadFactory)));
+            group = SharedEventLoopGroup.getInstance((threadFactory -> new MultiThreadIoEventLoopGroup(remotingThreads, threadFactory, EpollIoHandler.newFactory())));
          } else {
-            group = new EpollEventLoopGroup(remotingThreads);
+            group = new MultiThreadIoEventLoopGroup(remotingThreads, EpollIoHandler.newFactory());
          }
          connectorType = EPOLL_CONNECTOR_TYPE;
          channelClazz = EpollSocketChannel.class;
          logger.debug("Connector {} using native epoll", this);
       } else if (useKQueue && CheckDependencies.isKQueueAvailable()) {
          if (useGlobalWorkerPool) {
-            group = SharedEventLoopGroup.getInstance((threadFactory -> new KQueueEventLoopGroup(remotingThreads, threadFactory)));
+            group = SharedEventLoopGroup.getInstance((threadFactory -> new MultiThreadIoEventLoopGroup(remotingThreads, threadFactory, KQueueIoHandler.newFactory())));
          } else {
-            group = new KQueueEventLoopGroup(remotingThreads);
+            group = new MultiThreadIoEventLoopGroup(remotingThreads, KQueueIoHandler.newFactory());
          }
          connectorType = KQUEUE_CONNECTOR_TYPE;
          channelClazz = KQueueSocketChannel.class;
@@ -571,10 +571,10 @@ public class NettyConnector extends AbstractConnector {
       } else {
          if (useGlobalWorkerPool) {
             channelClazz = NioSocketChannel.class;
-            group = SharedEventLoopGroup.getInstance((threadFactory -> new NioEventLoopGroup(remotingThreads, threadFactory)));
+            group = SharedEventLoopGroup.getInstance((threadFactory -> new MultiThreadIoEventLoopGroup(remotingThreads, threadFactory, NioIoHandler.newFactory())));
          } else {
             channelClazz = NioSocketChannel.class;
-            group = new NioEventLoopGroup(remotingThreads);
+            group = new MultiThreadIoEventLoopGroup(remotingThreads, NioIoHandler.newFactory());
          }
          connectorType = NIO_CONNECTOR_TYPE;
          channelClazz = NioSocketChannel.class;

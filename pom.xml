@@ -122,7 +122,7 @@
       <checkstyle.version>12.3.1</checkstyle.version>
       <mockito.version>5.23.0</mockito.version>
       <jctools.version>4.0.6</jctools.version>
-      <netty.version>4.1.132.Final</netty.version>
+      <netty.version>4.2.12.Final</netty.version>
       <hdrhistogram.version>2.2.2</hdrhistogram.version>
       <curator.version>5.9.0</curator.version>
       <zookeeper.version>3.9.5</zookeeper.version>
@@ -242,6 +242,7 @@
 
       <maven.test.failure.ignore>false</maven.test.failure.ignore>
       <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
+      <activemq-surefire-extra-args />
 
       <!--
 
@@ -272,7 +273,9 @@
          -Djdk.attach.allowAttachSelf=true
          -Dartemis.distribution.output="${artemis.distribution.output}"
          -Dlog4j2.configurationFile="file:${activemq.basedir}/tests/config/${logging.config}"
+         ${activemq-surefire-extra-args}
       </activemq-surefire-argline>
+
       <activemq.basedir>${project.basedir}</activemq.basedir>
       <proton.trace.frames>false</proton.trace.frames>
 
@@ -749,6 +752,24 @@
                </plugin>
             </plugins>
          </build>
+      </profile>
+      <profile>
+         <id>jdk17-23</id>
+         <activation>
+            <jdk>[17, 23]</jdk>
+         </activation>
+      </profile>
+      <profile>
+         <id>jdk24-25</id>
+         <activation>
+            <jdk>[24, 25]</jdk>
+         </activation>
+         <properties>
+            <activemq-surefire-extra-args>
+               --enable-native-access=ALL-UNNAMED
+               --sun-misc-unsafe-memory-access=allow
+            </activemq-surefire-extra-args>
+         </properties>
       </profile>
    </profiles>
 

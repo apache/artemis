@@ -16,13 +16,6 @@
  */
 package org.apache.activemq.artemis.tests.unit.core.remoting.impl.netty;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
-
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
@@ -38,7 +31,9 @@ import java.util.concurrent.TimeUnit;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.proxy.Socks5ProxyHandler;
@@ -58,6 +53,13 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
 public class SocksProxyTest extends ActiveMQTestBase {
 
    private static final int SOCKS_PORT = 1080;
@@ -66,8 +68,8 @@ public class SocksProxyTest extends ActiveMQTestBase {
    private ExecutorService threadPool;
    private ScheduledExecutorService scheduledThreadPool;
 
-   private NioEventLoopGroup bossGroup;
-   private NioEventLoopGroup workerGroup;
+   private EventLoopGroup bossGroup;
+   private EventLoopGroup workerGroup;
 
    @Override
    @BeforeEach
@@ -264,8 +266,8 @@ public class SocksProxyTest extends ActiveMQTestBase {
    }
 
    private void startSocksProxy() throws Exception {
-      bossGroup   = new NioEventLoopGroup();
-      workerGroup = new NioEventLoopGroup();
+      bossGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
+      workerGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
 
       ServerBootstrap b = new ServerBootstrap();
       b.group(bossGroup, workerGroup);
