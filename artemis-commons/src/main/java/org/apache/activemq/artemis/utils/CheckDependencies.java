@@ -49,4 +49,15 @@ public class CheckDependencies {
       }
    }
 
+   public static final boolean isIoUringAvailable() {
+      try {
+         return Env.isLinuxOs() && NettyIoUringSupport.isAvailable();
+      } catch (NoClassDefFoundError noClassDefFoundError) {
+         ActiveMQUtilLogger.LOGGER.unableToCheckIoUringAvailabilityNoClass();
+         return false;
+      } catch (Throwable e) {
+         ActiveMQUtilLogger.LOGGER.unableToCheckIoUringAvailability(e);
+         return false;
+      }
+   }
 }

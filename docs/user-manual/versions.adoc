@@ -25,6 +25,8 @@ https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&versio
 The most notable change is a new default "adaptive" buffer allocator (which was experimental in 4.1).
 It automatically tunes itself to the observed workload.
 If you happen to observe a performance regression for your particular workload you can restore the previous allocator by passing `-Dio.netty.allocator.type=pooled` to the JVM on startup.
+* Experimental support for the native https://en.wikipedia.org/wiki/Io_uring[io_uring] transport on Linux was added.
+See the xref:configuring-transports.adoc#linux-native-transport[Linux native transport] documentation for details.
 
 === Upgrading from 2.56.0
 

@@ -89,4 +89,10 @@ public interface ActiveMQUtilLogger {
 
    @LogMessage(id = 202021, value = "Epoll is not available, please add to the classpath or configure useEpoll=false to remove this warning", level = LogMessage.Level.WARN)
    void unableToCheckEpollAvailabilityNoClass();
+
+   @LogMessage(id = 202022, value = "Unable to check IoUring availability ", level = LogMessage.Level.WARN)
+   void unableToCheckIoUringAvailability(Throwable e);
+
+   @LogMessage(id = 202023, value = "IoUring is not available, please add to the classpath or configure useIoUring=false to remove this warning", level = LogMessage.Level.WARN)
+   void unableToCheckIoUringAvailabilityNoClass();
 }
