@@ -285,6 +285,7 @@
 
       <netty-transport-native-epoll-classifier>linux-x86_64</netty-transport-native-epoll-classifier>
       <netty-transport-native-kqueue-classifier>osx-x86_64</netty-transport-native-kqueue-classifier>
+      <netty-transport-native-io_uring-classifier>linux-x86_64</netty-transport-native-io_uring-classifier>
 
       <fast-tests>false</fast-tests>
 

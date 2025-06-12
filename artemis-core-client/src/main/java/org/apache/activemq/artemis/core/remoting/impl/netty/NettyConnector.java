@@ -73,6 +73,8 @@ import io.netty.channel.kqueue.KQueueIoHandler;
 import io.netty.channel.kqueue.KQueueSocketChannel;
 import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.channel.uring.IoUringIoHandler;
+import io.netty.channel.uring.IoUringSocketChannel;
 import io.netty.handler.codec.base64.Base64;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.DefaultHttpRequest;
@@ -122,6 +124,7 @@ import org.apache.activemq.artemis.spi.core.remoting.ssl.OpenSSLContextFactory;
 import org.apache.activemq.artemis.spi.core.remoting.ssl.OpenSSLContextFactoryProvider;
 import org.apache.activemq.artemis.spi.core.remoting.ssl.SSLContextConfig;
 import org.apache.activemq.artemis.spi.core.remoting.ssl.SSLContextFactoryProvider;
+import org.apache.activemq.artemis.utils.CheckDependencies;
 import org.apache.activemq.artemis.utils.ConfigurationHelper;
 import org.apache.activemq.artemis.utils.FutureLatch;
 import org.apache.activemq.artemis.utils.IPV6Util;
@@ -137,6 +140,7 @@ public class NettyConnector extends AbstractConnector {
    public static String NIO_CONNECTOR_TYPE = "NIO";
    public static String EPOLL_CONNECTOR_TYPE = "EPOLL";
    public static String KQUEUE_CONNECTOR_TYPE = "KQUEUE";
+   public static String IOURING_CONNECTOR_TYPE = "IO_URING";
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -297,6 +301,8 @@ public class NettyConnector extends AbstractConnector {
 
    private boolean useKQueue;
 
+   private boolean useIoUring;
+
    private int remotingThreads;
 
    private boolean useGlobalWorkerPool;
@@ -402,6 +408,7 @@ public class NettyConnector extends AbstractConnector {
 
       useEpoll = ConfigurationHelper.getBooleanProperty(TransportConstants.USE_EPOLL_PROP_NAME, TransportConstants.DEFAULT_USE_EPOLL, configuration);
       useKQueue = ConfigurationHelper.getBooleanProperty(TransportConstants.USE_KQUEUE_PROP_NAME, TransportConstants.DEFAULT_USE_KQUEUE, configuration);
+      useIoUring = ConfigurationHelper.getBooleanProperty(TransportConstants.USE_IOURING_PROP_NAME, TransportConstants.DEFAULT_USE_IOURING, configuration);
 
       useServlet = ConfigurationHelper.getBooleanProperty(TransportConstants.USE_SERVLET_PROP_NAME, TransportConstants.DEFAULT_USE_SERVLET, configuration);
       host = ConfigurationHelper.getStringProperty(TransportConstants.HOST_PROP_NAME, TransportConstants.DEFAULT_HOST, configuration);
@@ -543,14 +550,30 @@ public class NettyConnector extends AbstractConnector {
          return;
       }
 
-      if (remotingThreads == -1) {
+      boolean defaultRemotingThreads = remotingThreads == -1;
+
+      if (defaultRemotingThreads) {
          // Default to number of cores * 3
          remotingThreads = Runtime.getRuntime().availableProcessors() * 3;
       }
 
       String connectorType;
 
-      if (useEpoll && CheckDependencies.isEpollAvailable()) {
+      if (useIoUring && CheckDependencies.isIoUringAvailable()) {
+         //IO_URING should default to 1 remotingThread unless specified in config
+         remotingThreads = defaultRemotingThreads ? 1 : remotingThreads;
+
+         if (useGlobalWorkerPool) {
+            group = SharedEventLoopGroup.getInstance((threadFactory -> new MultiThreadIoEventLoopGroup(remotingThreads, threadFactory, IoUringIoHandler.newFactory())));
+         } else {
+            group = new MultiThreadIoEventLoopGroup(remotingThreads, IoUringIoHandler.newFactory());
+         }
+
+         connectorType = IOURING_CONNECTOR_TYPE;
+         channelClazz = IoUringSocketChannel.class;
+
+         logger.debug("Connector {} using native io_uring", this);
+      } else if (useEpoll && CheckDependencies.isEpollAvailable()) {
          if (useGlobalWorkerPool) {
             group = SharedEventLoopGroup.getInstance((threadFactory -> new MultiThreadIoEventLoopGroup(remotingThreads, threadFactory, EpollIoHandler.newFactory())));
          } else {
