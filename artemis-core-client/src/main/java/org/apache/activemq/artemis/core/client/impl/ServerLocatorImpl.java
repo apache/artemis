@@ -219,7 +219,7 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
             flowControlThreadPool = new ActiveMQThreadPoolExecutor(0, config.flowControlThreadPoolMaxSize, 60L, TimeUnit.SECONDS, factory);
          }
 
-         factory = getThreadFactory("client-factory-pinger-");
+         factory = getThreadFactory("client-factory-scheduled-");
          scheduledThreadPool = Executors.newScheduledThreadPool(config.scheduledThreadPoolMaxSize, factory);
       }
       this.updateArrayActor = new Actor<>(threadPool, this::internalUpdateArray);
