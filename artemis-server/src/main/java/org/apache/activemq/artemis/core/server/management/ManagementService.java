@@ -16,8 +16,10 @@
  */
 package org.apache.activemq.artemis.core.server.management;
 
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Predicate;
 
 import javax.management.ObjectName;
 
@@ -29,6 +31,7 @@ import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.api.core.management.AddressControl;
 import org.apache.activemq.artemis.api.core.management.ObjectNameBuilder;
+import org.apache.activemq.artemis.api.core.management.QueueControl;
 import org.apache.activemq.artemis.core.config.ClusterConnectionConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.management.impl.ActiveMQServerControlImpl;
@@ -159,4 +162,7 @@ public interface ManagementService extends NotificationService, ActiveMQComponen
 
    Object invokeOperation(String resourceName, String operation, Object[] params, SecurityAuth auth) throws Exception;
 
+   List<QueueControl> getQueueControls(Predicate<QueueControl> predicate);
+
+   List<AddressControl> getAddressControls(Predicate<AddressControl> predicate);
 }

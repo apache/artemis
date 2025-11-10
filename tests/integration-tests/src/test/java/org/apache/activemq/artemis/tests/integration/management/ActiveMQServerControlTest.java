@@ -3697,7 +3697,16 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
    }
 
    @TestTemplate
+   public void testListQueuesLegacyFilter() throws Exception {
+      testListQueues(true);
+   }
+
+   @TestTemplate
    public void testListQueues() throws Exception {
+      testListQueues(false);
+   }
+
+   public void testListQueues(boolean legacyFilter) throws Exception {
       SimpleString queueName1 = SimpleString.of("my_queue_one");
       SimpleString queueName2 = SimpleString.of("my_queue_two");
       SimpleString queueName3 = SimpleString.of("other_queue_three");
@@ -3726,7 +3735,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       }
 
       //test with filter that matches 2 queues
-      String filterString = createJsonFilter("name", "CONTAINS", "my_queue");
+      String filterString = createJsonFilter("name", "CONTAINS", "my_queue", legacyFilter);
 
       String queuesAsJsonString = serverControl.listQueues(filterString, 1, 50);
 
@@ -3738,7 +3747,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       assertTrue(array.getJsonObject(1).getString("name").contains("my_queue"));
 
       //test with an empty filter
-      filterString = createJsonFilter("internalQueue", "NOT_CONTAINS", "true");
+      filterString = createJsonFilter("internalQueue", "NOT_CONTAINS", "true", legacyFilter);
 
       queuesAsJsonString = serverControl.listQueues(filterString, 1, 50);
 
@@ -3784,7 +3793,15 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
    }
 
    @TestTemplate
+   public void testListQueuesOrderLegacyFilter() throws Exception {
+      testListQueuesOrder(true);
+   }
+
+   @TestTemplate
    public void testListQueuesOrder() throws Exception {
+      testListQueuesOrder(true);
+   }
+   public void testListQueuesOrder(boolean legacyFilter) throws Exception {
       SimpleString queueName1 = SimpleString.of("my_queue_1");
       SimpleString queueName2 = SimpleString.of("my_queue_2");
       SimpleString queueName3 = SimpleString.of("my_queue_3");
@@ -3816,7 +3833,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       }
 
       //test default order
-      String filterString = createJsonFilter("name", "CONTAINS", "my_queue");
+      String filterString = createJsonFilter("name", "CONTAINS", "my_queue", legacyFilter);
       String queuesAsJsonString = serverControl.listQueues(filterString, 1, 50);
       JsonObject queuesAsJsonObject = JsonUtil.readJsonObject(queuesAsJsonString);
       JsonArray array = (JsonArray) queuesAsJsonObject.get("data");
@@ -3827,7 +3844,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       assertEquals(queueName3.toString(), array.getJsonObject(2).getString("name"), "queue3 default Order");
 
       //test ordered by id desc
-      filterString = createJsonFilter("name", "CONTAINS", "my_queue", "id", "desc");
+      filterString = createJsonFilter("name", "CONTAINS", "my_queue", "id", "desc", legacyFilter);
       queuesAsJsonString = serverControl.listQueues(filterString, 1, 50);
       queuesAsJsonObject = JsonUtil.readJsonObject(queuesAsJsonString);
       array = (JsonArray) queuesAsJsonObject.get("data");
@@ -3838,7 +3855,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       assertEquals(queueName1.toString(), array.getJsonObject(2).getString("name"), "queue1 ordered by id");
 
       //ordered by address desc
-      filterString = createJsonFilter("name", "CONTAINS", "my_queue", "address", "desc");
+      filterString = createJsonFilter("name", "CONTAINS", "my_queue", "address", "desc", legacyFilter);
       queuesAsJsonString = serverControl.listQueues(filterString, 1, 50);
       queuesAsJsonObject = JsonUtil.readJsonObject(queuesAsJsonString);
       array = (JsonArray) queuesAsJsonObject.get("data");
@@ -3849,7 +3866,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       assertEquals(queueName1.toString(), array.getJsonObject(2).getString("name"), "queue1 ordered by address");
 
       //ordered by auto create desc
-      filterString = createJsonFilter("name", "CONTAINS", "my_queue", "autoCreated", "asc");
+      filterString = createJsonFilter("name", "CONTAINS", "my_queue", "autoCreated", "asc", legacyFilter);
       queuesAsJsonString = serverControl.listQueues(filterString, 1, 50);
       queuesAsJsonObject = JsonUtil.readJsonObject(queuesAsJsonString);
       array = (JsonArray) queuesAsJsonObject.get("data");
@@ -3860,7 +3877,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       assertEquals("true", array.getJsonObject(2).getString("autoCreated"), "pos3 ordered by autocreate");
 
       //ordered by filter desc
-      filterString = createJsonFilter("name", "CONTAINS", "my_queue", "filter", "desc");
+      filterString = createJsonFilter("name", "CONTAINS", "my_queue", "filter", "desc", legacyFilter);
       queuesAsJsonString = serverControl.listQueues(filterString, 1, 50);
       queuesAsJsonObject = JsonUtil.readJsonObject(queuesAsJsonString);
       array = (JsonArray) queuesAsJsonObject.get("data");
@@ -3871,7 +3888,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       assertEquals(queueName3.toString(), array.getJsonObject(2).getString("name"), "queue3 ordered by filter");
 
       //ordered by max consumers asc
-      filterString = createJsonFilter("name", "CONTAINS", "my_queue", "maxConsumers", "asc");
+      filterString = createJsonFilter("name", "CONTAINS", "my_queue", "maxConsumers", "asc", legacyFilter);
       queuesAsJsonString = serverControl.listQueues(filterString, 1, 50);
       queuesAsJsonObject = JsonUtil.readJsonObject(queuesAsJsonString);
       array = (JsonArray) queuesAsJsonObject.get("data");
@@ -3883,7 +3900,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
 
       //ordering between the pages
       //page 1
-      filterString = createJsonFilter("name", "CONTAINS", "my_queue", "address", "desc");
+      filterString = createJsonFilter("name", "CONTAINS", "my_queue", "address", "desc", legacyFilter);
       queuesAsJsonString = serverControl.listQueues(filterString, 1, 1);
       queuesAsJsonObject = JsonUtil.readJsonObject(queuesAsJsonString);
       array = (JsonArray) queuesAsJsonObject.get("data");
@@ -3891,7 +3908,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       assertEquals(queueName3.toString(), array.getJsonObject(0).getString("name"), "queue3 ordered by page");
 
       //page 2
-      filterString = createJsonFilter("name", "CONTAINS", "my_queue", "address", "desc");
+      filterString = createJsonFilter("name", "CONTAINS", "my_queue", "address", "desc", legacyFilter);
       queuesAsJsonString = serverControl.listQueues(filterString, 2, 1);
       queuesAsJsonObject = JsonUtil.readJsonObject(queuesAsJsonString);
       array = (JsonArray) queuesAsJsonObject.get("data");
@@ -3899,7 +3916,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       assertEquals(queueName2.toString(), array.getJsonObject(0).getString("name"), "queue2 ordered by page");
 
       //page 3
-      filterString = createJsonFilter("name", "CONTAINS", "my_queue", "address", "desc");
+      filterString = createJsonFilter("name", "CONTAINS", "my_queue", "address", "desc", legacyFilter);
       queuesAsJsonString = serverControl.listQueues(filterString, 3, 1);
       queuesAsJsonObject = JsonUtil.readJsonObject(queuesAsJsonString);
       array = (JsonArray) queuesAsJsonObject.get("data");
@@ -3909,7 +3926,16 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
    }
 
    @TestTemplate
+   public void testListQueuesNumericFilterLegacyFilter() throws Exception {
+      testListQueuesNumericFilter(true);
+   }
+
+   @TestTemplate
    public void testListQueuesNumericFilter() throws Exception {
+      testListQueuesNumericFilter(false);
+   }
+
+   public void testListQueuesNumericFilter(boolean legacyFilter) throws Exception {
       SimpleString queueName1 = SimpleString.of("my_queue_one");
       SimpleString queueName2 = SimpleString.of("my_queue_two");
       SimpleString queueName3 = SimpleString.of("one_consumer_queue_three");
@@ -3973,7 +3999,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
          session.commit();
 
          //test with CONTAINS returns nothing for numeric field
-         String filterString = createJsonFilter("CONSUMER_COUNT", "CONTAINS", "0");
+         String filterString = createJsonFilter("CONSUMER_COUNT", "CONTAINS", "0", legacyFilter);
          String queuesAsJsonString = serverControl.listQueues(filterString, 1, 50);
 
          JsonObject queuesAsJsonObject = JsonUtil.readJsonObject(queuesAsJsonString);
@@ -3981,7 +4007,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
          assertEquals(0, array.size(), "number of queues returned from query");
 
          //test with LESS_THAN returns 1 queue
-         filterString = createJsonFilter("CONSUMER_COUNT", "LESS_THAN", "1");
+         filterString = createJsonFilter("CONSUMER_COUNT", "LESS_THAN", "1", legacyFilter);
          queuesAsJsonString = serverControl.listQueues(filterString, 1, 50);
 
          queuesAsJsonObject = JsonUtil.readJsonObject(queuesAsJsonString);
@@ -3990,7 +4016,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
          assertEquals(queueName4.toString(), array.getJsonObject(1).getString("name"), "correct queue returned from query");
 
          //test with GREATER_THAN returns 2 queue
-         filterString = createJsonFilter("CONSUMER_COUNT", "GREATER_THAN", "2");
+         filterString = createJsonFilter("CONSUMER_COUNT", "GREATER_THAN", "2", legacyFilter);
          queuesAsJsonString = serverControl.listQueues(filterString, 1, 50);
 
          queuesAsJsonObject = JsonUtil.readJsonObject(queuesAsJsonString);
@@ -3999,7 +4025,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
          assertEquals(queueName2.toString(), array.getJsonObject(0).getString("name"), "correct queue returned from query");
 
          //test with GREATER_THAN returns 2 queue
-         filterString = createJsonFilter("CONSUMER_COUNT", "EQUALS", "3");
+         filterString = createJsonFilter("CONSUMER_COUNT", "EQUALS", "3", legacyFilter);
          queuesAsJsonString = serverControl.listQueues(filterString, 1, 50);
 
          queuesAsJsonObject = JsonUtil.readJsonObject(queuesAsJsonString);
@@ -4008,7 +4034,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
          assertEquals(queueName2.toString(), array.getJsonObject(0).getString("name"), "correct queue returned from query");
 
          //test with MESSAGE_COUNT returns 2 queue
-         filterString = createJsonFilter("MESSAGE_COUNT", "GREATER_THAN", "5");
+         filterString = createJsonFilter("MESSAGE_COUNT", "GREATER_THAN", "5", legacyFilter);
          queuesAsJsonString = serverControl.listQueues(filterString, 1, 50);
 
          queuesAsJsonObject = JsonUtil.readJsonObject(queuesAsJsonString);
@@ -4017,7 +4043,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
          assertEquals(queueName1.toString(), array.getJsonObject(0).getString("name"), "correct queue returned from query");
 
          //test with MESSAGE_ADDED returns 1 queue
-         filterString = createJsonFilter("MESSAGES_ADDED", "GREATER_THAN", "5");
+         filterString = createJsonFilter("MESSAGES_ADDED", "GREATER_THAN", "5", legacyFilter);
          queuesAsJsonString = serverControl.listQueues(filterString, 1, 50);
 
          queuesAsJsonObject = JsonUtil.readJsonObject(queuesAsJsonString);
@@ -4026,7 +4052,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
          assertEquals(queueName1.toString(), array.getJsonObject(0).getString("name"), "correct queue returned from query");
 
          //test with DELIVERING_COUNT returns 1 queue
-         filterString = createJsonFilter("DELIVERING_COUNT", "GREATER_THAN", "5");
+         filterString = createJsonFilter("DELIVERING_COUNT", "GREATER_THAN", "5", legacyFilter);
          queuesAsJsonString = serverControl.listQueues(filterString, 1, 50);
 
          queuesAsJsonObject = JsonUtil.readJsonObject(queuesAsJsonString);
@@ -4035,7 +4061,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
          assertEquals(queueName1.toString(), array.getJsonObject(0).getString("name"), "correct queue returned from query");
 
          //test with MESSAGE_ACKED returns 1 queue
-         filterString = createJsonFilter("MESSAGES_ACKED", "GREATER_THAN", "0");
+         filterString = createJsonFilter("MESSAGES_ACKED", "GREATER_THAN", "0", legacyFilter);
          queuesAsJsonString = serverControl.listQueues(filterString, 1, 50);
 
          queuesAsJsonObject = JsonUtil.readJsonObject(queuesAsJsonString);
@@ -4044,7 +4070,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
          assertEquals(queueName1.toString(), array.getJsonObject(0).getString("name"), "correct queue returned from query");
 
          //test with MAX_CONSUMERS returns 1 queue
-         filterString = createJsonFilter("MAX_CONSUMERS", "GREATER_THAN", "9");
+         filterString = createJsonFilter("MAX_CONSUMERS", "GREATER_THAN", "9", legacyFilter);
          queuesAsJsonString = serverControl.listQueues(filterString, 1, 50);
 
          queuesAsJsonObject = JsonUtil.readJsonObject(queuesAsJsonString);
@@ -4053,7 +4079,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
          assertEquals(queueName3.toString(), array.getJsonObject(0).getString("name"), "correct queue returned from query");
 
          //test with MESSAGES_KILLED returns 0 queue
-         filterString = createJsonFilter("MESSAGES_KILLED", "GREATER_THAN", "0");
+         filterString = createJsonFilter("MESSAGES_KILLED", "GREATER_THAN", "0", legacyFilter);
          queuesAsJsonString = serverControl.listQueues(filterString, 1, 50);
 
          queuesAsJsonObject = JsonUtil.readJsonObject(queuesAsJsonString);
@@ -4065,7 +4091,16 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
    }
 
    @TestTemplate
+   public void testListQueuesNumericFilterInvalidLegacyFilter() throws Exception {
+      testListQueuesNumericFilterInvalid(true);
+   }
+
+   @TestTemplate
    public void testListQueuesNumericFilterInvalid() throws Exception {
+      testListQueuesNumericFilterInvalid(false);
+   }
+
+   public void testListQueuesNumericFilterInvalid(boolean legacyFilter) throws Exception {
       SimpleString queueName1 = SimpleString.of("my_queue_one");
       SimpleString queueName2 = SimpleString.of("one_consumer_queue_two");
       SimpleString queueName3 = SimpleString.of("one_consumer_queue_three");
@@ -4111,7 +4146,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
          ClientConsumer consumer2_q1 = session.createConsumer(queueName1);
 
          //test with CONTAINS returns nothing for numeric field
-         String filterString = createJsonFilter("CONSUMER_COUNT", "CONTAINS", "NOT_NUMBER");
+         String filterString = createJsonFilter("CONSUMER_COUNT", "CONTAINS", "NOT_NUMBER", legacyFilter);
          String queuesAsJsonString = serverControl.listQueues(filterString, 1, 50);
 
          JsonObject queuesAsJsonObject = JsonUtil.readJsonObject(queuesAsJsonString);
@@ -4119,7 +4154,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
          assertEquals(0, array.size(), "number of queues returned from query");
 
          //test with LESS_THAN and not a number
-         filterString = createJsonFilter("CONSUMER_COUNT", "LESS_THAN", "NOT_NUMBER");
+         filterString = createJsonFilter("CONSUMER_COUNT", "LESS_THAN", "NOT_NUMBER", legacyFilter);
          queuesAsJsonString = serverControl.listQueues(filterString, 1, 50);
 
          queuesAsJsonObject = JsonUtil.readJsonObject(queuesAsJsonString);
@@ -4127,7 +4162,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
          assertEquals(0, array.size(), "number of queues returned from LESS_THAN query");
 
          //test with GREATER_THAN and not a number
-         filterString = createJsonFilter("CONSUMER_COUNT", "GREATER_THAN", "NOT_NUMBER");
+         filterString = createJsonFilter("CONSUMER_COUNT", "GREATER_THAN", "NOT_NUMBER", legacyFilter);
          queuesAsJsonString = serverControl.listQueues(filterString, 1, 50);
 
          queuesAsJsonObject = JsonUtil.readJsonObject(queuesAsJsonString);
@@ -4135,7 +4170,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
          assertEquals(0, array.size(), "number of queues returned from GREATER_THAN query");
 
          //test with EQUALS and not number
-         filterString = createJsonFilter("CONSUMER_COUNT", "EQUALS", "NOT_NUMBER");
+         filterString = createJsonFilter("CONSUMER_COUNT", "EQUALS", "NOT_NUMBER", legacyFilter);
          queuesAsJsonString = serverControl.listQueues(filterString, 1, 50);
 
          queuesAsJsonObject = JsonUtil.readJsonObject(queuesAsJsonString);
@@ -4143,7 +4178,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
          assertEquals(0, array.size(), "number of queues returned from EQUALS query");
 
          //test with LESS_THAN on string value returns no queue
-         filterString = createJsonFilter("name", "LESS_THAN", "my_queue");
+         filterString = createJsonFilter("name", "LESS_THAN", "my_queue", legacyFilter);
          queuesAsJsonString = serverControl.listQueues(filterString, 1, 50);
 
          queuesAsJsonObject = JsonUtil.readJsonObject(queuesAsJsonString);
@@ -4151,7 +4186,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
          assertEquals(0, array.size(), "number of queues returned from LESS_THAN on non numeric field");
 
          //test with GREATER_THAN on string value returns no queue
-         filterString = createJsonFilter("name", "GREATER_THAN", "my_queue");
+         filterString = createJsonFilter("name", "GREATER_THAN", "my_queue", legacyFilter);
          queuesAsJsonString = serverControl.listQueues(filterString, 1, 50);
 
          queuesAsJsonObject = JsonUtil.readJsonObject(queuesAsJsonString);
@@ -4159,7 +4194,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
          assertEquals(0, array.size(), "number of queues returned from GREATER_THAN on non numeric field");
 
          //test with GREATER_THAN and empty string
-         filterString = createJsonFilter("CONSUMER_COUNT", "GREATER_THAN", " ");
+         filterString = createJsonFilter("CONSUMER_COUNT", "GREATER_THAN", " ", legacyFilter);
          queuesAsJsonString = serverControl.listQueues(filterString, 1, 50);
 
          queuesAsJsonObject = JsonUtil.readJsonObject(queuesAsJsonString);
@@ -4167,7 +4202,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
          assertEquals(0, array.size(), "number of queues returned from GREATER_THAN query");
 
          //test with CONSUMER_COUNT against a float value
-         filterString = createJsonFilter("CONSUMER_COUNT", "GREATER_THAN", "0.12");
+         filterString = createJsonFilter("CONSUMER_COUNT", "GREATER_THAN", "0.12", legacyFilter);
          queuesAsJsonString = serverControl.listQueues(filterString, 1, 50);
 
          queuesAsJsonObject = JsonUtil.readJsonObject(queuesAsJsonString);
@@ -4176,6 +4211,97 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
 
       }
 
+   }
+
+   @TestTemplate
+   public void testListQueuesMultipleFilters() throws Exception {
+      SimpleString queueName1 = SimpleString.of("my_queue_one");
+      SimpleString queueName2 = SimpleString.of("my_queue_two");
+      SimpleString queueName3 = SimpleString.of("my_queue_one_two");
+
+      ActiveMQServerControl serverControl = createManagementControl();
+
+      server.addAddressInfo(new AddressInfo(queueName1, RoutingType.ANYCAST));
+      if (legacyCreateQueue) {
+         server.createQueue(queueName1, RoutingType.ANYCAST, queueName1, null, false, false);
+      } else {
+         server.createQueue(QueueConfiguration.of(queueName1).setRoutingType(RoutingType.ANYCAST).setDurable(false));
+      }
+
+      server.addAddressInfo(new AddressInfo(queueName2, RoutingType.ANYCAST));
+      if (legacyCreateQueue) {
+         server.createQueue(queueName2, RoutingType.ANYCAST, queueName2, null, false, false);
+      } else {
+         server.createQueue(QueueConfiguration.of(queueName2).setRoutingType(RoutingType.ANYCAST).setDurable(false));
+      }
+
+      server.addAddressInfo(new AddressInfo(queueName3, RoutingType.ANYCAST));
+      if (legacyCreateQueue) {
+         server.createQueue(queueName3, RoutingType.ANYCAST, queueName3, null, true, false);
+      } else {
+         server.createQueue(QueueConfiguration.of(queueName3).setRoutingType(RoutingType.ANYCAST).setDurable(true));
+      }
+
+      //test with filter that matches 2 queues
+      String filterString = createJsonFilter("name", "CONTAINS", "my_queue");
+
+      String queuesAsJsonString = serverControl.listQueues(filterString, 1, 50);
+
+      JsonObject queuesAsJsonObject = JsonUtil.readJsonObject(queuesAsJsonString);
+      JsonArray array = (JsonArray) queuesAsJsonObject.get("data");
+
+      assertEquals(3, array.size(), "number of queues returned from query");
+      assertTrue(array.getJsonObject(0).getString("name").contains("my_queue"));
+      assertTrue(array.getJsonObject(1).getString("name").contains("my_queue"));
+      assertTrue(array.getJsonObject(2).getString("name").contains("my_queue"));
+
+      //test with an 2 filters
+      filterString = createJsonArrayFilter("name", "CONTAINS", "my_queue", "name", "CONTAINS", "one");
+
+      queuesAsJsonString = serverControl.listQueues(filterString, 1, 50);
+
+      queuesAsJsonObject = JsonUtil.readJsonObject(queuesAsJsonString);
+      array = (JsonArray) queuesAsJsonObject.get("data");
+
+      // at least 3 queues or more
+      assertEquals(2, array.size(), "number of queues returned from query");
+      assertTrue(array.getJsonObject(0).getString("name").contains("my_queue"));
+      assertTrue(array.getJsonObject(1).getString("name").contains("my_queue"));
+      assertTrue(array.getJsonObject(0).getString("name").contains("one"));
+      assertTrue(array.getJsonObject(1).getString("name").contains("one"));
+      filterString = createJsonArrayFilter("name", "CONTAINS", "my_queue", "name", "CONTAINS", "one", "durable", "EQUALS", "true");
+
+      queuesAsJsonString = serverControl.listQueues(filterString, 1, 50);
+
+      queuesAsJsonObject = JsonUtil.readJsonObject(queuesAsJsonString);
+      array = (JsonArray) queuesAsJsonObject.get("data");
+
+      assertEquals(1, array.size(), "number of queues returned from query");
+      //check all field names are available
+      assertNotEquals("", array.getJsonObject(0).getString("name"), "name");
+      assertNotEquals("", array.getJsonObject(0).getString("id"), "id");
+      assertNotEquals("", array.getJsonObject(0).getString("address"), "address");
+      assertEquals("", array.getJsonObject(0).getString("filter"), "filter");
+      assertEquals("true", array.getJsonObject(0).getString("durable"), "durable");
+      assertEquals("false", array.getJsonObject(0).getString("paused"), "paused");
+      assertNotEquals("", array.getJsonObject(0).getString("temporary"), "temporary");
+      assertEquals("false", array.getJsonObject(0).getString("purgeOnNoConsumers"), "purgeOnNoConsumers");
+      assertNotEquals("", array.getJsonObject(0).getString("consumerCount"), "consumerCount");
+      assertEquals("-1", array.getJsonObject(0).getString("maxConsumers"), "maxConsumers");
+      assertEquals("false", array.getJsonObject(0).getString("autoCreated"), "autoCreated");
+      assertNotEquals("", array.getJsonObject(0).getString("routingType"), "routingType");
+      assertEquals("0", array.getJsonObject(0).getString("messagesAdded"), "messagesAdded");
+      assertEquals("0", array.getJsonObject(0).getString("messageCount"), "messageCount");
+      assertEquals("0", array.getJsonObject(0).getString("messagesAcked"), "messagesAcked");
+      assertEquals("0", array.getJsonObject(0).getString("deliveringCount"), "deliveringCount");
+      assertEquals("0", array.getJsonObject(0).getString("messagesKilled"), "messagesKilled");
+      assertEquals("false", array.getJsonObject(0).getString("exclusive"), "exclusive");
+      assertEquals("false", array.getJsonObject(0).getString("lastValue"), "lastValue");
+      assertEquals("0", array.getJsonObject(0).getString("scheduledCount"), "scheduledCount");
+      assertEquals("false", array.getJsonObject(0).getString("groupRebalance"), "groupRebalance");
+      assertEquals("-1", array.getJsonObject(0).getString("groupBuckets"), "groupBuckets");
+      assertEquals("", array.getJsonObject(0).getString("groupFirstKey"), "groupFirstKey");
+      assertEquals("false", array.getJsonObject(0).getString("autoDelete"), "autoDelete");
    }
 
    @TestTemplate
@@ -6583,6 +6709,30 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       JsonObject jsonFilterObject = JsonUtil.toJsonObject(filterMap);
       return jsonFilterObject.toString();
    }
+
+
+
+
+   public String createJsonFilter(String fieldName, String operationName, String value, String sortField, String sortOrder, boolean legacyFilter) throws Exception {
+      Map<String, Object> filterMap = new HashMap<>();
+      filterMap.put("field", fieldName);
+      filterMap.put("operation", operationName);
+      filterMap.put("value", value);
+      filterMap.put("sortField", sortField);
+      filterMap.put("sortOrder", sortOrder);
+      if (legacyFilter) {
+         JsonObject jsonFilterObject = JsonUtil.toJsonObject(filterMap);
+         return jsonFilterObject.toString();
+      } else {
+         Map<String, Object>[] filtersArray = new HashMap[1];
+         filtersArray[0] = filterMap;
+         Map<String, Object> filtersMap = new HashMap<>();
+         filtersMap.put("searchFilters", filtersArray);
+         JsonObject jsonFiltersObject = JsonUtil.toJsonObject(filtersMap);
+         return jsonFiltersObject.toString();
+      }
+   }
+
 
    private void sendMessagesWithPredefinedSize(int numberOfMessages,
                                                ClientSession session,

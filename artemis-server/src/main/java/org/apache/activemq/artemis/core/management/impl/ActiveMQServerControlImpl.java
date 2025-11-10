@@ -1457,8 +1457,8 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
 
       clearIO();
       try {
-         Object[] queueControls = server.getManagementService().getResources(QueueControl.class);
-         return queueControls.length;
+         List<QueueControl> queueControls = server.getManagementService().getQueueControls(null);
+         return queueControls.size();
       } finally {
          blockOnIO();
       }
@@ -1478,10 +1478,10 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
 
       clearIO();
       try {
-         Object[] queueControls = server.getManagementService().getResources(QueueControl.class);
+         List<QueueControl> queueControls = server.getManagementService().getQueueControls(null);
          List<String> names = new ArrayList<>();
-         for (int i = 0; i < queueControls.length; i++) {
-            QueueControl queueControl = (QueueControl) queueControls[i];
+         for (int i = 0; i < queueControls.size(); i++) {
+            QueueControl queueControl = (QueueControl) queueControls.get(i);
             if (routingType != null && routingType.length() > 1 && queueControl.getRoutingType().equals(routingType.toUpperCase())) {
                names.add(queueControl.getName());
             } else if (routingType == null || routingType.isEmpty()) {
@@ -1571,8 +1571,8 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
 
       clearIO();
       try {
-         Object[] addresses = server.getManagementService().getResources(AddressControl.class);
-         return addresses.length;
+         List<AddressControl> addresses = server.getManagementService().getAddressControls(null);
+         return addresses.size();
       } finally {
          blockOnIO();
       }
@@ -1587,10 +1587,10 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
 
       clearIO();
       try {
-         Object[] addresses = server.getManagementService().getResources(AddressControl.class);
-         String[] names = new String[addresses.length];
-         for (int i = 0; i < addresses.length; i++) {
-            AddressControl address = (AddressControl) addresses[i];
+         List<AddressControl> addresses = server.getManagementService().getAddressControls(null);
+         String[] names = new String[addresses.size()];
+         for (int i = 0; i < addresses.size(); i++) {
+            AddressControl address = (AddressControl) addresses.get(i);
             names[i] = address.getAddress();
          }
          return names;
@@ -2608,14 +2608,9 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
       checkStarted();
       clearIO();
       try {
-         List<AddressControl> addresses = new ArrayList<>();
-         Object[] qs = server.getManagementService().getResources(AddressControl.class);
-         for (int i = 0; i < qs.length; i++) {
-            addresses.add((AddressControl) qs[i]);
-         }
          AddressView view = new AddressView(server);
-         view.setCollection(addresses);
          view.setOptions(options);
+         view.setCollection(server.getManagementService().getAddressControls(view.getPredicate()));
          return view.getResultsAsJson(page, pageSize);
       } finally {
          blockOnIO();
@@ -2631,15 +2626,10 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
 
       clearIO();
       try {
-         List<QueueControl> queues = new ArrayList<>();
-         Object[] qs = server.getManagementService().getResources(QueueControl.class);
-         for (int i = 0; i < qs.length; i++) {
-            queues.add((QueueControl) qs[i]);
-         }
          QueueView view = new QueueView(server);
-         view.setCollection(queues);
          view.setOptions(options);
-         return view.getResultsAsJson(page, pageSize);
+         view.setCollection(server.getManagementService().getQueueControls(view.getPredicate()));
+         return view.AsJson(page, pageSize);
       } finally {
          blockOnIO();
       }

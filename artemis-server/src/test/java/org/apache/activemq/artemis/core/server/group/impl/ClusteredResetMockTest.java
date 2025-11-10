@@ -19,9 +19,11 @@ package org.apache.activemq.artemis.core.server.group.impl;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
 import javax.management.ObjectName;
 
@@ -34,6 +36,7 @@ import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.api.core.management.AddressControl;
 import org.apache.activemq.artemis.api.core.management.ManagementHelper;
 import org.apache.activemq.artemis.api.core.management.ObjectNameBuilder;
+import org.apache.activemq.artemis.api.core.management.QueueControl;
 import org.apache.activemq.artemis.core.config.ClusterConnectionConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.management.impl.ActiveMQServerControlImpl;
@@ -377,6 +380,16 @@ public class ClusteredResetMockTest extends ServerTestBase {
       @Override
       public Object invokeOperation(String resourceName, String operation, Object[] params, SecurityAuth auth) throws Exception {
          return null;
+      }
+
+      @Override
+      public List<QueueControl> getQueueControls(Predicate<QueueControl> predicate) {
+         return List.of();
+      }
+
+      @Override
+      public List<AddressControl> getAddressControls(Predicate<AddressControl> predicate) {
+         return List.of();
       }
 
       @Override

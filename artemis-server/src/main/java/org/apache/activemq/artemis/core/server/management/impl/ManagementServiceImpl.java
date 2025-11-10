@@ -34,7 +34,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import io.micrometer.core.instrument.Tag;
 import org.apache.activemq.artemis.api.core.BroadcastEndpointFactory;
@@ -134,6 +136,12 @@ public class ManagementServiceImpl implements ManagementService {
 
    private final Map<String, Object> registry;
 
+   // we keep a second map just for queues for quick searching when many exist
+   private final Map<String, QueueControl> queueControls;
+
+   // we keep a second map just for queues for quick searching when many exist
+   private final Map<String, AddressControl> addressControls;
+
    private final NotificationBroadcasterSupport broadcaster;
 
    private PostOffice postOffice;
@@ -182,6 +190,8 @@ public class ManagementServiceImpl implements ManagementService {
       managementNotificationAddress = configuration.getManagementNotificationAddress();
 
       registry = new ConcurrentHashMap<>();
+      queueControls = new ConcurrentHashMap<>();
+      addressControls = new ConcurrentHashMap<>();
       broadcaster = new NotificationBroadcasterSupport();
       notificationsEnabled = true;
       objectNameBuilder = ObjectNameBuilder.create(configuration.getJMXDomain(), configuration.getName(), configuration.isJMXUseBrokerName());
@@ -277,6 +287,7 @@ public class ManagementServiceImpl implements ManagementService {
       AddressControlImpl addressControl = new AddressControlImpl(addressInfo, messagingServer, pagingManager, storageManager, securityRepository, securityStore, this);
       registerInJMX(objectNameBuilder.getAddressObjectName(addressInfo.getName()), addressControl);
       registerInRegistry(ResourceNames.ADDRESS + addressInfo.getName(), addressControl);
+      registerAddressControls(ResourceNames.ADDRESS + addressInfo.getName(), addressControl);
       registerAddressMeters(addressInfo, addressControl);
    }
 
@@ -300,6 +311,7 @@ public class ManagementServiceImpl implements ManagementService {
    public void unregisterAddress(final SimpleString address) throws Exception {
       unregisterFromJMX(objectNameBuilder.getAddressObjectName(address));
       unregisterFromRegistry(ResourceNames.ADDRESS + address);
+      unregisterAddressControls(ResourceNames.ADDRESS + address);
       unregisterMeters(ResourceNames.ADDRESS + address);
    }
 
@@ -312,18 +324,34 @@ public class ManagementServiceImpl implements ManagementService {
          messageCounterManager.registerMessageCounter(queue.getName().toString(), counter);
       }
       registerInJMX(objectNameBuilder.getQueueObjectName(address, queue.getName(), queue.getRoutingType()), queueControl);
-      registerInRegistry(ResourceNames.QUEUE + queue.getName(), queueControl);
+      registerQueueControls(ResourceNames.QUEUE + queue.getName(), queueControl);
       registerQueueMeters(queue);
    }
 
    @Override
    public void unregisterQueue(final SimpleString name, final SimpleString address, RoutingType routingType) throws Exception {
       unregisterFromJMX(objectNameBuilder.getQueueObjectName(address, name, routingType));
-      unregisterFromRegistry(ResourceNames.QUEUE + name);
+      unregisterQueueControls(ResourceNames.QUEUE + name);
       unregisterMeters(ResourceNames.QUEUE + name);
       if (messageCounterManager != null) {
          messageCounterManager.unregisterMessageCounter(name.toString());
       }
+   }
+
+   @Override
+   public List<QueueControl> getQueueControls(Predicate<QueueControl> predicate) {
+      if (predicate == null) {
+         return queueControls.values().stream().toList();
+      }
+      return queueControls.values().stream().filter(predicate).collect(Collectors.toList());
+   }
+
+   @Override
+   public List<AddressControl> getAddressControls(Predicate<AddressControl> predicate) {
+      if (predicate == null) {
+         return addressControls.values().stream().toList();
+      }
+      return addressControls.values().stream().filter(predicate).collect(Collectors.toList());
    }
 
    private void registerQueueMeters(final Queue queue) {
@@ -675,6 +703,26 @@ public class ManagementServiceImpl implements ManagementService {
       }
    }
 
+   private void unregisterQueueControls(final String resourceName) {
+      unregisterFromRegistry(resourceName);
+      queueControls.remove(resourceName);
+   }
+
+   private void registerQueueControls(final String resourceName, final QueueControl queueControl) {
+      registerInRegistry(resourceName, queueControl);
+      queueControls.put(resourceName, queueControl);
+   }
+
+   private void unregisterAddressControls(final String resourceName) {
+      unregisterFromRegistry(resourceName);
+      addressControls.remove(resourceName);
+   }
+
+   private void registerAddressControls(final String resourceName, final AddressControl addressControl) {
+      registerInRegistry(resourceName, addressControl);
+      addressControls.put(resourceName, addressControl);
+   }
+
    @Override
    public void addNotificationListener(final NotificationListener listener) {
       listeners.add(listener);
@@ -776,6 +824,8 @@ public class ManagementServiceImpl implements ManagementService {
       listeners.clear();
 
       registry.clear();
+
+      queueControls.clear();
 
       messagingServer = null;
 

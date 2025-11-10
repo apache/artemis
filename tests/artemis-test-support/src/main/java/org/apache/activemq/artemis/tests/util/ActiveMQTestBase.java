@@ -2483,6 +2483,65 @@ public abstract class ActiveMQTestBase extends ArtemisTestCase {
       return jsonFilterObject.toString();
    }
 
+   public String createJsonFilter(String fieldName, String operationName, String value, boolean legacy) throws Exception {
+      Map<String, Object> filterMap = new HashMap<>();
+      filterMap.put("field", fieldName);
+      filterMap.put("operation", operationName);
+      filterMap.put("value", value);
+      if (legacy) {
+         JsonObject jsonFilterObject = JsonUtil.toJsonObject(filterMap);
+         return jsonFilterObject.toString();
+      } else {
+         Map<String, Object>[] filtersArray = new HashMap[1];
+         filtersArray[0] = filterMap;
+         Map<String, Object> filtersMap = new HashMap<>();
+         filtersMap.put("searchFilters", filtersArray);
+         JsonObject jsonFiltersObject = JsonUtil.toJsonObject(filtersMap);
+         return jsonFiltersObject.toString();
+      }
+   }
+
+   public String createJsonArrayFilter(String fieldName, String operationName, String value, String fieldName2, String operationName2, String value2) throws Exception {
+      Map<String, Object> filterMap = new HashMap<>();
+      filterMap.put("field", fieldName);
+      filterMap.put("operation", operationName);
+      filterMap.put("value", value);
+      Map<String, Object> filterMap2 = new HashMap<>();
+      filterMap2.put("field", fieldName2);
+      filterMap2.put("operation", operationName2);
+      filterMap2.put("value", value2);
+      Map<String, Object>[] filtersArray = new HashMap[2];
+      filtersArray[0] = filterMap;
+      filtersArray[1] = filterMap2;
+      Map<String, Object> filtersMap = new HashMap<>();
+      filtersMap.put("searchFilters", filtersArray);
+      JsonObject jsonFiltersObject = JsonUtil.toJsonObject(filtersMap);
+      return jsonFiltersObject.toString();
+   }
+
+   public String createJsonArrayFilter(String fieldName, String operationName, String value, String fieldName2, String operationName2, String value2, String fieldName3, String operationName3, String value3) throws Exception {
+      Map<String, Object> filterMap = new HashMap<>();
+      filterMap.put("field", fieldName);
+      filterMap.put("operation", operationName);
+      filterMap.put("value", value);
+      Map<String, Object> filterMap2 = new HashMap<>();
+      filterMap2.put("field", fieldName2);
+      filterMap2.put("operation", operationName2);
+      filterMap2.put("value", value2);
+      Map<String, Object> filterMap3 = new HashMap<>();
+      filterMap3.put("field", fieldName3);
+      filterMap3.put("operation", operationName3);
+      filterMap3.put("value", value3);
+      Map<String, Object>[] filtersArray = new HashMap[3];
+      filtersArray[0] = filterMap;
+      filtersArray[1] = filterMap2;
+      filtersArray[2] = filterMap3;
+      Map<String, Object> filtersMap = new HashMap<>();
+      filtersMap.put("searchFilters", filtersArray);
+      JsonObject jsonFiltersObject = JsonUtil.toJsonObject(filtersMap);
+      return jsonFiltersObject.toString();
+   }
+
    protected static ReplicationEndpoint getReplicationEndpoint(ActiveMQServer server) {
       final Activation activation = server.getActivation();
       if (activation instanceof SharedNothingBackupActivation backupActivation) {

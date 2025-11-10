@@ -22,6 +22,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.apache.activemq.artemis.core.management.impl.view.predicate.ConnectionPredicateFilterPart;
 import org.apache.activemq.artemis.core.management.impl.view.predicate.ConnectionFilterPredicate;
 import org.apache.activemq.artemis.core.remoting.impl.netty.NettyServerConnection;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
@@ -31,7 +32,7 @@ import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
 import org.apache.activemq.artemis.utils.JsonLoader;
 import org.apache.activemq.artemis.utils.StringUtil;
 
-public class ConnectionView extends ActiveMQAbstractView<RemotingConnection> {
+public class ConnectionView extends ActiveMQAbstractView<RemotingConnection, ConnectionPredicateFilterPart> {
 
    private static final String defaultSortField = ConnectionField.CONNECTION_ID.getName();
 
