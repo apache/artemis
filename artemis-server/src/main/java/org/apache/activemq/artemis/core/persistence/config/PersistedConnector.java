@@ -17,12 +17,10 @@
 package org.apache.activemq.artemis.core.persistence.config;
 
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
-import org.apache.activemq.artemis.core.journal.EncodingSupport;
+import org.apache.activemq.artemis.core.persistence.impl.journal.JournalRecordIds;
 import org.apache.activemq.artemis.utils.BufferHelper;
 
-public class PersistedConnector implements EncodingSupport {
-
-   private long storeId;
+public class PersistedConnector extends PersistedConfiguration {
 
    private String url;
 
@@ -34,14 +32,6 @@ public class PersistedConnector implements EncodingSupport {
    public PersistedConnector(String name, String url) {
       this.name = name;
       this.url = url;
-   }
-
-   public void setStoreId(long id) {
-      this.storeId = id;
-   }
-
-   public long getStoreId() {
-      return storeId;
    }
 
    public void setUrl(String url) {
@@ -56,8 +46,14 @@ public class PersistedConnector implements EncodingSupport {
       this.name = name;
    }
 
+   @Override
    public String getName() {
       return name;
+   }
+
+   @Override
+   public byte getRecordType() {
+      return JournalRecordIds.CONNECTOR_RECORD;
    }
 
    @Override

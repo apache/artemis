@@ -18,11 +18,10 @@ package org.apache.activemq.artemis.core.persistence.config;
 
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.core.config.BridgeConfiguration;
-import org.apache.activemq.artemis.core.journal.EncodingSupport;
+import org.apache.activemq.artemis.core.persistence.impl.journal.JournalRecordIds;
 
-public class PersistedBridgeConfiguration implements EncodingSupport {
+public class PersistedBridgeConfiguration extends PersistedConfiguration {
 
-   private long storeId;
    private BridgeConfiguration bridgeConfiguration;
 
    @Override
@@ -36,14 +35,6 @@ public class PersistedBridgeConfiguration implements EncodingSupport {
 
    public PersistedBridgeConfiguration() {
       bridgeConfiguration = new BridgeConfiguration();
-   }
-
-   public void setStoreId(long id) {
-      this.storeId = id;
-   }
-
-   public long getStoreId() {
-      return storeId;
    }
 
    @Override
@@ -61,8 +52,14 @@ public class PersistedBridgeConfiguration implements EncodingSupport {
       bridgeConfiguration.decode(buffer);
    }
 
+   @Override
    public String getName() {
       return bridgeConfiguration.getParentName();
+   }
+
+   @Override
+   public byte getRecordType() {
+      return JournalRecordIds.BRIDGE_RECORD;
    }
 
    public BridgeConfiguration getBridgeConfiguration() {

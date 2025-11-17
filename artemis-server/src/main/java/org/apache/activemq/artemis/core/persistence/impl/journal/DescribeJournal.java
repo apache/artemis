@@ -44,8 +44,13 @@ import org.apache.activemq.artemis.core.journal.impl.JournalImpl;
 import org.apache.activemq.artemis.core.journal.impl.JournalReaderCallback;
 import org.apache.activemq.artemis.core.paging.cursor.impl.PageSubscriptionCounterImpl;
 import org.apache.activemq.artemis.core.paging.impl.PageTransactionInfoImpl;
+import org.apache.activemq.artemis.core.persistence.config.PersistedAddressSetting;
+import org.apache.activemq.artemis.core.persistence.config.PersistedAddressSettingJSON;
 import org.apache.activemq.artemis.core.persistence.config.PersistedBridgeConfiguration;
 import org.apache.activemq.artemis.core.persistence.config.PersistedDivertConfiguration;
+import org.apache.activemq.artemis.core.persistence.config.PersistedRole;
+import org.apache.activemq.artemis.core.persistence.config.PersistedSecuritySetting;
+import org.apache.activemq.artemis.core.persistence.config.PersistedUser;
 import org.apache.activemq.artemis.core.persistence.impl.journal.BatchingIDGenerator.IDCounterEncoding;
 import org.apache.activemq.artemis.core.persistence.impl.journal.codec.AckRetry;
 import org.apache.activemq.artemis.core.persistence.impl.journal.codec.CursorAckRecordEncoding;
@@ -596,15 +601,10 @@ public final class DescribeJournal {
 
       switch (rec) {
          case DIVERT_RECORD:
-            PersistedDivertConfiguration persistedDivertConfiguration = new PersistedDivertConfiguration();
-            persistedDivertConfiguration.decode(buffer);
-            return persistedDivertConfiguration;
+            return AbstractJournalStorageManager.newPersistedConfigurationEncoding(PersistedDivertConfiguration.class, id, buffer);
 
-         case BRIDGE_RECORD: {
-            PersistedBridgeConfiguration persistedBridgeConfiguration = new PersistedBridgeConfiguration();
-            persistedBridgeConfiguration.decode(buffer);
-            return persistedBridgeConfiguration;
-         }
+         case BRIDGE_RECORD:
+            return AbstractJournalStorageManager.newPersistedConfigurationEncoding(PersistedBridgeConfiguration.class, id, buffer);
 
          case ADD_LARGE_MESSAGE_PENDING: {
             PendingLargeMessageEncoding lmEncoding = new PendingLargeMessageEncoding();
@@ -738,13 +738,13 @@ public final class DescribeJournal {
             return AbstractJournalStorageManager.newGroupEncoding(id, buffer);
 
          case ADDRESS_SETTING_RECORD:
-            return AbstractJournalStorageManager.newAddressEncoding(id, buffer);
+            return AbstractJournalStorageManager.newPersistedConfigurationEncoding(PersistedAddressSetting.class, id, buffer);
 
          case ADDRESS_SETTING_RECORD_JSON:
-            return AbstractJournalStorageManager.newAddressJSONEncoding(id, buffer);
+            return AbstractJournalStorageManager.newPersistedConfigurationEncoding(PersistedAddressSettingJSON.class, id, buffer);
 
          case SECURITY_SETTING_RECORD:
-            return AbstractJournalStorageManager.newSecurityRecord(id, buffer);
+            return AbstractJournalStorageManager.newPersistedConfigurationEncoding(PersistedSecuritySetting.class, id, buffer);
 
          case ADDRESS_BINDING_RECORD:
             return AbstractJournalStorageManager.newAddressBindingEncoding(id, buffer);
@@ -753,10 +753,10 @@ public final class DescribeJournal {
             return AbstractJournalStorageManager.newAddressStatusEncoding(id, buffer);
 
          case USER_RECORD:
-            return AbstractJournalStorageManager.newUserEncoding(id, buffer);
+            return AbstractJournalStorageManager.newPersistedConfigurationEncoding(PersistedUser.class, id, buffer);
 
          case ROLE_RECORD:
-            return AbstractJournalStorageManager.newRoleEncoding(id, buffer);
+            return AbstractJournalStorageManager.newPersistedConfigurationEncoding(PersistedRole.class, id, buffer);
 
          case ACK_RETRY:
             return AckRetry.getPersister().decode(buffer, null, null);

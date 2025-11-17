@@ -18,10 +18,10 @@ package org.apache.activemq.artemis.core.persistence.config;
 
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.SimpleString;
-import org.apache.activemq.artemis.core.journal.EncodingSupport;
+import org.apache.activemq.artemis.core.persistence.impl.journal.JournalRecordIds;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 
-public class PersistedAddressSettingJSON extends AbstractPersistedAddressSetting implements EncodingSupport {
+public class PersistedAddressSettingJSON extends AbstractPersistedAddressSetting {
 
    SimpleString jsonSetting;
 
@@ -67,5 +67,10 @@ public class PersistedAddressSettingJSON extends AbstractPersistedAddressSetting
    @Override
    public String toString() {
       return "PersistedAddressSettingJSON{" + "jsonSetting=" + jsonSetting + ", storeId=" + storeId + ", addressMatch=" + addressMatch + ", setting=" + setting + '}';
+   }
+
+   @Override
+   public byte getRecordType() {
+      return JournalRecordIds.ADDRESS_SETTING_RECORD_JSON;
    }
 }

@@ -17,12 +17,10 @@
 package org.apache.activemq.artemis.core.persistence.config;
 
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
-import org.apache.activemq.artemis.core.journal.EncodingSupport;
+import org.apache.activemq.artemis.core.persistence.impl.journal.JournalRecordIds;
 import org.apache.activemq.artemis.utils.BufferHelper;
 
-public class PersistedUser implements EncodingSupport {
-
-   private long storeId;
+public class PersistedUser extends PersistedConfiguration {
 
    private String username;
 
@@ -36,12 +34,14 @@ public class PersistedUser implements EncodingSupport {
       this.password = password;
    }
 
-   public void setStoreId(long id) {
-      this.storeId = id;
+   @Override
+   public byte getRecordType() {
+      return JournalRecordIds.USER_RECORD;
    }
 
-   public long getStoreId() {
-      return storeId;
+   @Override
+   public String getName() {
+      return username;
    }
 
    public String getUsername() {

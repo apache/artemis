@@ -21,7 +21,7 @@ import java.util.Objects;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.JsonUtil;
 import org.apache.activemq.artemis.api.core.SimpleString;
-import org.apache.activemq.artemis.core.journal.EncodingSupport;
+import org.apache.activemq.artemis.core.persistence.impl.journal.JournalRecordIds;
 import org.apache.activemq.artemis.json.JsonObject;
 
 import static org.apache.activemq.artemis.core.security.Role.BROWSE_PERMISSION;
@@ -39,9 +39,7 @@ import static org.apache.activemq.artemis.core.security.Role.VIEW_PERMISSION;
 import static org.apache.activemq.artemis.utils.DataConstants.SIZE_INT;
 import static org.apache.activemq.artemis.utils.DataConstants.SIZE_NULL;
 
-public class PersistedSecuritySetting implements EncodingSupport {
-
-   private long storeId;
+public class PersistedSecuritySetting extends PersistedConfiguration {
 
    private SimpleString addressMatch;
 
@@ -81,9 +79,7 @@ public class PersistedSecuritySetting implements EncodingSupport {
                                    final String createNonDurableQueueRoles,
                                    final String deleteNonDurableQueueRoles,
                                    final String manageRoles,
-                                   final String browseRoles,
-                                   final String createAddressRoles,
-                                   final String deleteAddressRoles,
+                                   final String browseRoles, final String createAddressRoles, final String deleteAddressRoles,
                                    final String viewRoles,
                                    final String editRoles) {
       super();
@@ -118,13 +114,14 @@ public class PersistedSecuritySetting implements EncodingSupport {
            JsonUtil.arrayToString(o, EDIT_PERMISSION));
    }
 
-
-   public long getStoreId() {
-      return storeId;
+   @Override
+   public String getName() {
+      return addressMatch.toString();
    }
 
-   public void setStoreId(final long id) {
-      storeId = id;
+   @Override
+   public byte getRecordType() {
+      return JournalRecordIds.SECURITY_SETTING_RECORD;
    }
 
    public SimpleString getAddressMatch() {

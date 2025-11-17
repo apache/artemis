@@ -17,12 +17,10 @@
 package org.apache.activemq.artemis.core.persistence.config;
 
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
-import org.apache.activemq.artemis.core.journal.EncodingSupport;
+import org.apache.activemq.artemis.core.persistence.impl.journal.JournalRecordIds;
 import org.apache.activemq.artemis.utils.BufferHelper;
 
-public class PersistedKeyValuePair implements EncodingSupport {
-
-   private long storeId;
+public class PersistedKeyValuePair extends PersistedConfiguration {
 
    private String mapId;
 
@@ -39,14 +37,6 @@ public class PersistedKeyValuePair implements EncodingSupport {
       this.value = value;
    }
 
-   public void setStoreId(long id) {
-      this.storeId = id;
-   }
-
-   public long getStoreId() {
-      return storeId;
-   }
-
    public String getMapId() {
       return mapId;
    }
@@ -57,6 +47,16 @@ public class PersistedKeyValuePair implements EncodingSupport {
 
    public String getValue() {
       return value;
+   }
+
+   @Override
+   public String getName() {
+      return mapId;
+   }
+
+   @Override
+   public byte getRecordType() {
+      return JournalRecordIds.KEY_VALUE_PAIR_RECORD;
    }
 
    @Override
@@ -85,12 +85,9 @@ public class PersistedKeyValuePair implements EncodingSupport {
    @Override
    public String toString() {
       return "PersistedKeyValuePair [storeId=" + storeId +
-         ", mapId=" +
-         mapId +
-         ", key=" +
-         key +
-         ", value=" +
-         value +
+         ", mapId=" + mapId +
+         ", key=" + key +
+         ", value=" + value +
          "]";
    }
 }

@@ -18,11 +18,9 @@ package org.apache.activemq.artemis.core.persistence.config;
 
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.core.config.DivertConfiguration;
-import org.apache.activemq.artemis.core.journal.EncodingSupport;
+import org.apache.activemq.artemis.core.persistence.impl.journal.JournalRecordIds;
 
-public class PersistedDivertConfiguration implements EncodingSupport {
-
-   private long storeId;
+public class PersistedDivertConfiguration extends PersistedConfiguration {
 
    private DivertConfiguration divertConfiguration;
 
@@ -37,14 +35,6 @@ public class PersistedDivertConfiguration implements EncodingSupport {
 
    public PersistedDivertConfiguration() {
       divertConfiguration = new DivertConfiguration();
-   }
-
-   public void setStoreId(long id) {
-      this.storeId = id;
-   }
-
-   public long getStoreId() {
-      return storeId;
    }
 
    @Override
@@ -62,8 +52,14 @@ public class PersistedDivertConfiguration implements EncodingSupport {
       divertConfiguration.decode(buffer);
    }
 
+   @Override
    public String getName() {
       return divertConfiguration.getName();
+   }
+
+   @Override
+   public byte getRecordType() {
+      return JournalRecordIds.DIVERT_RECORD;
    }
 
    public DivertConfiguration getDivertConfiguration() {

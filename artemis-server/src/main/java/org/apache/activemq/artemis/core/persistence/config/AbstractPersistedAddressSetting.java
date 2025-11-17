@@ -18,10 +18,9 @@
 package org.apache.activemq.artemis.core.persistence.config;
 
 import org.apache.activemq.artemis.api.core.SimpleString;
-import org.apache.activemq.artemis.core.journal.EncodingSupport;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 
-public abstract class AbstractPersistedAddressSetting implements EncodingSupport {
+public abstract class AbstractPersistedAddressSetting extends PersistedConfiguration {
 
    protected long storeId;
 
@@ -36,15 +35,6 @@ public abstract class AbstractPersistedAddressSetting implements EncodingSupport
    public AbstractPersistedAddressSetting(SimpleString addressMatch, AddressSettings setting) {
       this.addressMatch = addressMatch;
       this.setting = setting;
-   }
-
-   public long getStoreId() {
-      return storeId;
-   }
-
-   public AbstractPersistedAddressSetting setStoreId(long storeId) {
-      this.storeId = storeId;
-      return this;
    }
 
    public SimpleString getAddressMatch() {
@@ -63,5 +53,10 @@ public abstract class AbstractPersistedAddressSetting implements EncodingSupport
    public AbstractPersistedAddressSetting setSetting(AddressSettings setting) {
       this.setting = setting;
       return this;
+   }
+
+   @Override
+   public String getName() {
+      return addressMatch.toString();
    }
 }

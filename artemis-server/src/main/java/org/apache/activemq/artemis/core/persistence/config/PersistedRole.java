@@ -21,13 +21,11 @@ import java.util.List;
 import java.util.Objects;
 
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
-import org.apache.activemq.artemis.core.journal.EncodingSupport;
+import org.apache.activemq.artemis.core.persistence.impl.journal.JournalRecordIds;
 import org.apache.activemq.artemis.utils.BufferHelper;
 import org.apache.activemq.artemis.utils.DataConstants;
 
-public class PersistedRole implements EncodingSupport {
-
-   private long storeId;
+public class PersistedRole extends PersistedConfiguration {
 
    private String username;
 
@@ -39,14 +37,6 @@ public class PersistedRole implements EncodingSupport {
    public PersistedRole(String username, List<String> roles) {
       this.username = Objects.requireNonNull(username);
       this.roles = Objects.requireNonNull(roles);
-   }
-
-   public void setStoreId(long id) {
-      this.storeId = id;
-   }
-
-   public long getStoreId() {
-      return storeId;
    }
 
    public String getUsername() {
@@ -104,5 +94,15 @@ public class PersistedRole implements EncodingSupport {
       result.append("]]");
 
       return result.toString();
+   }
+
+   @Override
+   public byte getRecordType() {
+      return JournalRecordIds.ROLE_RECORD;
+   }
+
+   @Override
+   public String getName() {
+      return username;
    }
 }
