@@ -55,10 +55,12 @@ public class ConsumerPredicateFilterPart extends PredicateFilterPart<ServerConsu
          case REMOTE_ADDRESS -> matches(server.getSessionByID(consumer.getSessionID()).getRemotingConnection().getTransportConnection().getRemoteAddress());
          case MESSAGES_IN_TRANSIT -> matchesLong(consumer.getMessagesInTransit());
          case MESSAGES_IN_TRANSIT_SIZE -> matchesLong(consumer.getMessagesInTransitSize());
-         case MESSAGES_DELIVERED -> matches(consumer.getDeliveringMessages());
+         case MESSAGES_DELIVERED -> matches(consumer.getMessagesDelivered());
          case MESSAGES_DELIVERED_SIZE -> matchesLong(consumer.getMessagesDeliveredSize());
          case MESSAGES_ACKNOWLEDGED -> matchesLong(consumer.getMessagesAcknowledged());
          case MESSAGES_ACKNOWLEDGED_AWAITING_COMMIT -> matchesLong(consumer.getMessagesAcknowledgedAwaitingCommit());
+         case LAST_ACKNOWLEDGED_TIME -> matches(consumer.getLastAcknowledgedTime());
+         case LAST_DELIVERED_TIME -> matches(consumer.getLastDeliveredTime());
          default -> true;
       };
    }

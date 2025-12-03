@@ -46,6 +46,8 @@ import org.apache.activemq.artemis.utils.UUID;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 public class ManagementServiceImplTest extends ActiveMQTestBase {
 
    @Test
@@ -148,16 +150,16 @@ public class ManagementServiceImplTest extends ActiveMQTestBase {
       Queue queue = new FakeQueue(RandomUtil.randomUUIDSimpleString());
       managementService.registerQueue(queue, RandomUtil.randomUUIDSimpleString(), new FakeStorageManager());
 
-      Object[] addresses = managementService.getResources(AddressControl.class);
-      assertEquals(1, addresses.length);
-      assertInstanceOf(AddressControl.class, addresses[0]);
-      AddressControl addressControl = (AddressControl) addresses[0];
+      List<AddressControl> addresses = managementService.getAddressControls();
+      assertEquals(1, addresses.size());
+      assertInstanceOf(AddressControl.class, addresses.get(0));
+      AddressControl addressControl = (AddressControl) addresses.get(0);
       assertEquals(address.toString(), addressControl.getAddress());
 
-      Object[] queues = managementService.getResources(QueueControl.class);
-      assertEquals(1, queues.length);
-      assertInstanceOf(QueueControl.class, queues[0]);
-      QueueControl queueControl = (QueueControl) queues[0];
+      List<QueueControl> queues = managementService.getQueueControls();
+      assertEquals(1, queues.size());
+      assertInstanceOf(QueueControl.class, queues.get(0));
+      QueueControl queueControl = (QueueControl) queues.get(0);
       assertEquals(queue.getName().toString(), queueControl.getName());
    }
 

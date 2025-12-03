@@ -33,7 +33,10 @@ import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
+import org.apache.activemq.artemis.api.core.management.AcceptorControl;
 import org.apache.activemq.artemis.api.core.management.AddressControl;
+import org.apache.activemq.artemis.api.core.management.BridgeControl;
+import org.apache.activemq.artemis.api.core.management.DivertControl;
 import org.apache.activemq.artemis.api.core.management.ManagementHelper;
 import org.apache.activemq.artemis.api.core.management.ObjectNameBuilder;
 import org.apache.activemq.artemis.api.core.management.QueueControl;
@@ -231,6 +234,36 @@ public class ClusteredResetMockTest extends ServerTestBase {
       }
 
       @Override
+      public AddressControl getAddressControl(String resourceName) {
+         return null;
+      }
+
+      @Override
+      public AcceptorControl getAcceptorControl(String resourceName) {
+         return null;
+      }
+
+      @Override
+      public void registerAMQPControl(String amqpResourceName, Object control) {
+
+      }
+
+      @Override
+      public void unRegisterAMQPControl(String amqpResourceName) {
+
+      }
+
+      @Override
+      public List<DivertControl> getDivertControls() {
+         return List.of();
+      }
+
+      @Override
+      public List<BridgeControl> getBridgeControls() {
+         return List.of();
+      }
+
+      @Override
       public void unregisterServer() throws Exception {
 
       }
@@ -242,16 +275,6 @@ public class ClusteredResetMockTest extends ServerTestBase {
 
       @Override
       public void unregisterFromJMX(ObjectName objectName) throws Exception {
-
-      }
-
-      @Override
-      public void registerInRegistry(String resourceName, Object managedResource) {
-
-      }
-
-      @Override
-      public void unregisterFromRegistry(String resourceName) {
 
       }
 
@@ -353,11 +376,6 @@ public class ClusteredResetMockTest extends ServerTestBase {
       }
 
       @Override
-      public Object[] getResources(Class<?> resourceType) {
-         return new Object[0];
-      }
-
-      @Override
       public ICoreMessage handleMessage(SecurityAuth auth, Message message) throws Exception {
          return null;
       }
@@ -383,7 +401,17 @@ public class ClusteredResetMockTest extends ServerTestBase {
       }
 
       @Override
+      public List<QueueControl> getQueueControls() {
+         return List.of();
+      }
+
+      @Override
       public List<QueueControl> getQueueControls(Predicate<QueueControl> predicate) {
+         return List.of();
+      }
+
+      @Override
+      public List<AddressControl> getAddressControls() {
          return List.of();
       }
 

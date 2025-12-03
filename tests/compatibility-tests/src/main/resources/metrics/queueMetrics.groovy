@@ -1,4 +1,7 @@
 package metrics
+
+import org.apache.activemq.artemis.core.version.Version
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with
@@ -27,9 +30,8 @@ import org.apache.activemq.artemis.api.core.management.ObjectNameBuilder;
 import org.apache.activemq.artemis.api.core.management.QueueControl;
 
 //validate metrics are recovered
-Object[] queueControls = server.getJMSServerManager().getActiveMQServer().getManagementService().getResources(QueueControl.class);
-for (Object o : queueControls) {
-    QueueControl c = (QueueControl) o;
+List<QueueControl> queueControls = server.getJMSServerManager().getActiveMQServer().getManagementService().getQueueControls();
+for (QueueControl c : queueControls) {
     if (c.isInternalQueue()) {
         continue;
     }
@@ -38,4 +40,5 @@ for (Object o : queueControls) {
     GroovyRun.assertTrue(c.getDurablePersistentSize() > 0);
     GroovyRun.assertEquals(33l, c.getMessageCount());
     GroovyRun.assertEquals(33l, c.getDurableMessageCount());
- }
+}
+

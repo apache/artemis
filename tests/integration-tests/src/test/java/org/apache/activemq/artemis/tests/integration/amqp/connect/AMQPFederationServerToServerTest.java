@@ -59,7 +59,6 @@ import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPFedera
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ComponentConfigurationRoutingType;
 import org.apache.activemq.artemis.core.server.impl.AddressInfo;
-import org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConsumerControlType;
 import org.apache.activemq.artemis.protocol.amqp.proton.AmqpSupport;
 import org.apache.activemq.artemis.tests.integration.amqp.AmqpClientTestSupport;
 import org.apache.activemq.artemis.tests.util.CFUtil;
@@ -1702,9 +1701,9 @@ public class AMQPFederationServerToServerTest extends AmqpClientTestSupport {
       producerR.send(message);
 
       server.start();
-
+      String resourceName = "brokerconnection." + getTestName() + ".federation." + getTestName();
       // check federation has reconnected
-      Wait.assertTrue(() -> server.getManagementService().getResources(AMQPFederationConsumerControlType.class).length == 1);
+      Wait.assertTrue(() -> server.getManagementService().getResource(resourceName) != null);
       Wait.assertTrue(() -> server.bindingQuery(SimpleString.of(getTestName()), false).getQueueNames().size() >= 1);
       Wait.assertTrue(() -> remoteServer.bindingQuery(SimpleString.of(getTestName()), false).getQueueNames().size() >= 1);
 
@@ -1795,9 +1794,9 @@ public class AMQPFederationServerToServerTest extends AmqpClientTestSupport {
       producerL.send(message);
 
       remoteServer.start();
-
+      String resourceName = "brokerconnection." + getTestName() + ".federation." + getTestName() + ".policy.test-policy.consumer." + getTestName();
       // check federation has reconnected
-      Wait.assertTrue(() -> remoteServer.getManagementService().getResources(AMQPFederationConsumerControlType.class).length == 1);
+      Wait.assertTrue(() -> remoteServer.getManagementService().getResource(resourceName) != null);
       Wait.assertTrue(() -> server.bindingQuery(SimpleString.of(getTestName()), false).getQueueNames().size() >= 1);
       Wait.assertTrue(() -> remoteServer.bindingQuery(SimpleString.of(getTestName()), false).getQueueNames().size() >= 1);
 

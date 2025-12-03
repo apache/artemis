@@ -58,7 +58,6 @@ import org.apache.activemq.artemis.api.core.client.ClientProducer;
 import org.apache.activemq.artemis.api.core.client.ClientSession;
 import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
 import org.apache.activemq.artemis.api.core.client.ServerLocator;
-import org.apache.activemq.artemis.api.core.management.BridgeControl;
 import org.apache.activemq.artemis.core.client.impl.ServerLocatorImpl;
 import org.apache.activemq.artemis.core.config.BridgeConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
@@ -2148,10 +2147,10 @@ public class BridgeTest extends ActiveMQTestBase {
          .setStaticConnectors(connectors)
          .setConcurrency(concurrency);
       server.deployBridge(config);
-      assertEquals(concurrency, server.getManagementService().getResources(BridgeControl.class).length);
+      assertEquals(concurrency, server.getManagementService().getBridgeControls().size());
       server.destroyBridge(config.getName());
 
-      assertEquals(0, server.getManagementService().getResources(BridgeControl.class).length);
+      assertEquals(0, server.getManagementService().getBridgeControls().size());
    }
 
    @TestTemplate

@@ -783,7 +783,7 @@ public class JMSServerManagerImpl extends CleaningActivateCallback implements JM
    @Override
    public synchronized boolean destroyTopic(final String name, final boolean removeConsumers) throws Exception {
       checkInitialised();
-      AddressControl addressControl = (AddressControl) server.getManagementService().getResource(ResourceNames.ADDRESS + name);
+      AddressControl addressControl = server.getManagementService().getAddressControl(ResourceNames.ADDRESS + name);
       if (addressControl != null) {
          for (String queueName : addressControl.getAllQueueNames()) {
             Binding binding = server.getPostOffice().getBinding(SimpleString.of(queueName));
