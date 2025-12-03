@@ -29,7 +29,10 @@ import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
+import org.apache.activemq.artemis.api.core.management.AcceptorControl;
 import org.apache.activemq.artemis.api.core.management.AddressControl;
+import org.apache.activemq.artemis.api.core.management.BridgeControl;
+import org.apache.activemq.artemis.api.core.management.DivertControl;
 import org.apache.activemq.artemis.api.core.management.ObjectNameBuilder;
 import org.apache.activemq.artemis.api.core.management.QueueControl;
 import org.apache.activemq.artemis.core.config.ClusterConnectionConfiguration;
@@ -95,10 +98,6 @@ public interface ManagementService extends NotificationService, ActiveMQComponen
 
    void unregisterFromJMX(ObjectName objectName) throws Exception;
 
-   void registerInRegistry(String resourceName, Object managedResource);
-
-   void unregisterFromRegistry(String resourceName);
-
    void registerAddress(AddressInfo addressInfo) throws Exception;
 
    void registerAddressMeters(AddressInfo addressInfo, AddressControl addressControl) throws Exception;
@@ -150,8 +149,6 @@ public interface ManagementService extends NotificationService, ActiveMQComponen
 
    Object getResource(String resourceName);
 
-   Object[] getResources(Class<?> resourceType);
-
    ICoreMessage handleMessage(SecurityAuth auth, Message message) throws Exception;
 
    void registerHawtioSecurity(GuardInvocationHandler guardInvocationHandler) throws Exception;
@@ -162,7 +159,23 @@ public interface ManagementService extends NotificationService, ActiveMQComponen
 
    Object invokeOperation(String resourceName, String operation, Object[] params, SecurityAuth auth) throws Exception;
 
+   List<QueueControl> getQueueControls();
+
    List<QueueControl> getQueueControls(Predicate<QueueControl> predicate);
 
+   List<AddressControl> getAddressControls();
+
    List<AddressControl> getAddressControls(Predicate<AddressControl> predicate);
+
+   AddressControl getAddressControl(String resourceName);
+
+   AcceptorControl getAcceptorControl(String resourceName);
+
+   void registerAMQPControl(String amqpResourceName, Object control);
+
+   void unRegisterAMQPControl(String amqpResourceName);
+
+   List<DivertControl> getDivertControls();
+
+   List<BridgeControl> getBridgeControls();
 }
