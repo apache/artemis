@@ -33,6 +33,7 @@ import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.server.ActiveMQMessageBundle;
+import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.BindingQueryResult;
 import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.ServerConsumer;
@@ -265,15 +266,7 @@ public class MQTTSubscriptionManager {
                   consumerQoSLevels.remove(removed.getID());
                }
 
-               SimpleString internalQueueName = SimpleString.of(MQTTUtil.getCoreQueueFromMqttTopic(topics.get(i), state.getClientId(), session.getServer().getConfiguration().getWildcardConfiguration()));
-               Queue queue = session.getServer().locateQueue(internalQueueName);
-               if (queue != null) {
-                  if (queue.isConfigurationManaged()) {
-                     queue.deleteAllReferences();
-                  } else if (!MQTTUtil.isSharedSubscription(topics.get(i)) || (MQTTUtil.isSharedSubscription(topics.get(i)) && queue.getConsumerCount() == 0)) {
-                     session.getServerSession().deleteQueue(internalQueueName, enforceSecurity);
-                  }
-               }
+               cleanSubscriptionQueue(topics.get(i), state.getClientId(), session.getServer(), (q) -> session.getServerSession().deleteQueue(q, enforceSecurity));
             } catch (Exception e) {
                MQTTLogger.LOGGER.errorRemovingSubscription(e);
                reasonCode = MQTTReasonCodes.UNSPECIFIED_ERROR;
@@ -285,14 +278,26 @@ public class MQTTSubscriptionManager {
          // deal with durable state after *all* requested subscriptions have been removed in memory
          if (state.getSubscriptions().size() > 0) {
             // if there are some subscriptions left then update the state
-            stateManager.storeDurableSubscriptionState(state);
+            stateManager.storeDurableSessionState(state);
          } else {
             // if there are no subscriptions left then remove the state entirely
-            stateManager.removeDurableSubscriptionState(state.getClientId());
+            stateManager.removeDurableSessionState(state.getClientId());
          }
       }
 
       return reasonCodes;
+   }
+
+   public static void cleanSubscriptionQueue(String topic, String clientId, ActiveMQServer server, SubscriptionQueueDeleter<SimpleString> deleter) throws Exception {
+      SimpleString internalQueueName = SimpleString.of(MQTTUtil.getCoreQueueFromMqttTopic(topic, clientId, server.getConfiguration().getWildcardConfiguration()));
+      Queue queue = server.locateQueue(internalQueueName);
+      if (queue != null) {
+         if (queue.isConfigurationManaged()) {
+            queue.deleteAllReferences();
+         } else if (!MQTTUtil.isSharedSubscription(topic) || (MQTTUtil.isSharedSubscription(topic) && queue.getConsumerCount() == 0)) {
+            deleter.delete(internalQueueName);
+         }
+      }
    }
 
    /**
@@ -338,7 +343,7 @@ public class MQTTSubscriptionManager {
          }
 
          // store state after *all* requested subscriptions have been created in memory
-         stateManager.storeDurableSubscriptionState(state);
+         stateManager.storeDurableSessionState(state);
 
          return qos;
       }
@@ -354,5 +359,10 @@ public class MQTTSubscriptionManager {
          topics.add(mqttTopicSubscription.topicFilter());
       }
       removeSubscriptions(topics, enforceSecurity);
+   }
+
+   @FunctionalInterface
+   public interface SubscriptionQueueDeleter<SimpleString> {
+      void delete(SimpleString q) throws Exception;
    }
 }

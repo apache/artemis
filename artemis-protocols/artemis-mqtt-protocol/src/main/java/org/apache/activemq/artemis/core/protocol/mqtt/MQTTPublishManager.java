@@ -102,6 +102,10 @@ public class MQTTPublishManager {
       this.closeMqttConnectionOnPublishAuthorizationFailure = closeMqttConnectionOnPublishAuthorizationFailure;
    }
 
+   public static SimpleString getQoS2ManagementAddressName(SimpleString clientId) {
+      return SimpleString.of(MQTTUtil.QOS2_MANAGEMENT_QUEUE_PREFIX + clientId);
+   }
+
    synchronized void start() {
       this.state = session.getState();
       this.outboundStore = state.getOutboundStore();
@@ -315,7 +319,7 @@ public class MQTTPublishManager {
     */
    private void initQos2Resources() throws Exception {
       if (qos2ManagementAddress == null) {
-         qos2ManagementAddress = SimpleString.of(MQTTUtil.QOS2_MANAGEMENT_QUEUE_PREFIX + session.getState().getClientId());
+         qos2ManagementAddress = MQTTPublishManager.getQoS2ManagementAddressName(SimpleString.of(session.getState().getClientId()));
       }
       if (qos2ManagementQueue == null) {
          qos2ManagementQueue = session.getServer().createQueue(QueueConfiguration.of(qos2ManagementAddress)

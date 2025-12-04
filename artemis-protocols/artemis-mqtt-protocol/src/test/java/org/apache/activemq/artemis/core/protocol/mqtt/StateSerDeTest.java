@@ -35,8 +35,7 @@ public class StateSerDeTest {
    @Timeout(30)
    public void testSerDe() throws Exception {
       for (int i = 0; i < 500; i++) {
-         String clientId = RandomUtil.randomUUIDString();
-         MQTTSessionState unserialized = new MQTTSessionState(clientId);
+         MQTTSessionState unserialized = new MQTTSessionState(RandomUtil.randomUUIDString());
          Integer subscriptionIdentifier = RandomUtil.randomPositiveIntOrNull();
          for (int j = 0; j < RandomUtil.randomInterval(1, 50); j++) {
             MqttTopicSubscription sub = new MqttTopicSubscription(RandomUtil.randomUUIDString(),
@@ -46,6 +45,8 @@ public class StateSerDeTest {
                                                                                              MqttSubscriptionOption.RetainedHandlingPolicy.valueOf(RandomUtil.randomInterval(0, 3))));
             unserialized.addSubscription(sub, MQTTUtil.MQTT_WILDCARD, subscriptionIdentifier);
          }
+
+         unserialized.setClientSessionExpiryInterval(RandomUtil.randomInt());
 
          CoreMessage serializedState = MQTTStateManager.serializeState(unserialized, 0);
          MQTTSessionState deserialized = new MQTTSessionState(serializedState);
@@ -61,6 +62,7 @@ public class StateSerDeTest {
             assertTrue(compareSubs(unserializedSub, deserializedSub));
             assertEquals(unserializedSubId, deserializedSubId);
          }
+         assertEquals(unserialized.getClientSessionExpiryInterval(), deserialized.getClientSessionExpiryInterval());
       }
    }
 

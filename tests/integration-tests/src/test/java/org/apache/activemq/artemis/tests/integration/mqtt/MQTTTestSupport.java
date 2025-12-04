@@ -73,6 +73,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 
 import static java.util.Collections.singletonList;
+import static org.apache.activemq.artemis.core.protocol.mqtt.MQTTProtocolManagerFactory.MQTT_PROTOCOL_NAME;
 
 public class MQTTTestSupport extends ActiveMQTestBase {
 
@@ -374,15 +375,27 @@ public class MQTTTestSupport extends ActiveMQTestBase {
    }
 
    public Map<String, MQTTSessionState> getSessions() {
-      Acceptor acceptor = server.getRemotingService().getAcceptor("MQTT");
-      if (acceptor instanceof AbstractAcceptor abstractAcceptor) {
-         ProtocolManager protocolManager = abstractAcceptor.getProtocolMap().get("MQTT");
-         if (protocolManager instanceof MQTTProtocolManager mqttProtocolManager) {
-            return mqttProtocolManager.getStateManager().getSessionStates();
-         }
-
+      MQTTProtocolManager protocolManager = getProtocolManager();
+      if (protocolManager == null) {
+         return Collections.emptyMap();
+      } else {
+         return protocolManager.getStateManager().getSessionStates();
       }
-      return Collections.emptyMap();
+   }
+
+   public void scanSessions() {
+      getProtocolManager().getStateManager().scanSessions();
+   }
+
+   public MQTTProtocolManager getProtocolManager() {
+      Acceptor acceptor = server.getRemotingService().getAcceptor(MQTT_PROTOCOL_NAME);
+      if (acceptor instanceof AbstractAcceptor abstractAcceptor) {
+         ProtocolManager protocolManager = abstractAcceptor.getProtocolMap().get(MQTT_PROTOCOL_NAME);
+         if (protocolManager instanceof MQTTProtocolManager mqttProtocolManager) {
+            return mqttProtocolManager;
+         }
+      }
+      return null;
    }
 
    private MQTT createMQTTSslConnection(String clientId, boolean clean) throws Exception {

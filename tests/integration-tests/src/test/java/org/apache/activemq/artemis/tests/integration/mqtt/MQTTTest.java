@@ -1788,6 +1788,25 @@ public class MQTTTest extends MQTTTestSupport {
    }
 
    @Test
+   @Timeout(60)
+   public void testCleanupAfterRestartWithCleanSession() throws Exception {
+      final String CLIENTID = "cleansession";
+      final String TOPIC = getName();
+      final MQTT mqttClean = createMQTTConnection(CLIENTID, true);
+      final BlockingConnection clean = mqttClean.blockingConnection();
+      clean.connect();
+      clean.subscribe(new Topic[]{new Topic(TOPIC, QoS.EXACTLY_ONCE)});
+      clean.publish(TOPIC, TOPIC.getBytes(), QoS.EXACTLY_ONCE, false);
+      Message msg = clean.receive(100, TimeUnit.MILLISECONDS);
+      assertNotNull(msg);
+      server.stop();
+      clean.disconnect();
+      server.start();
+      scanSessions();
+      assertEquals(0, getSessions().size());
+   }
+
+   @Test
    @Timeout(30)
    public void testDefaultKeepAliveWhenClientSpecifiesZero() throws Exception {
       stopBroker();

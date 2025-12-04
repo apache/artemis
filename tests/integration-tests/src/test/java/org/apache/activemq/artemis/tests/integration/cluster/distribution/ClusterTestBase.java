@@ -1503,7 +1503,7 @@ public abstract class ClusterTestBase extends ActiveMQTestBase {
       servers[node] = addServer(server);
    }
 
-   private HAPolicyConfiguration haPolicyPrimaryConfiguration(HAType haType) {
+   HAPolicyConfiguration haPolicyPrimaryConfiguration(HAType haType) {
       return switch (haType) {
          case SharedStore -> new SharedStorePrimaryPolicyConfiguration();
          case SharedNothingReplication -> new ReplicatedPolicyConfiguration();
