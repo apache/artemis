@@ -571,6 +571,12 @@ public final class ActiveMQDefaultConfiguration {
 
    public static final String DEFAULT_SYSTEM_WEB_PROPERTY_PREFIX = "webconfig.";
 
+   public static final String DEFAULT_SYSTEM_SECURITY_PROPERTY_PREFIX = "securityconfig.";
+
+   public static final String DEFAULT_SYSTEM_SECURITY_JAAS_PROPERTY_PREFIX = "jaas.";
+
+   public static final String DEFAULT_SYSTEM_SECURITY_MANAGER_PROPERTY_PREFIX = "manager.";
+
    public static final String BROKER_PROPERTIES_SYSTEM_PROPERTY_NAME = "broker.properties";
 
    public static final String BROKER_PROPERTIES_KEY_SURROUND = "\"";
@@ -1724,6 +1730,18 @@ public final class ActiveMQDefaultConfiguration {
 
    public static String getDefaultSystemWebPropertyPrefix() {
       return DEFAULT_SYSTEM_WEB_PROPERTY_PREFIX;
+   }
+
+   public static String getDefaultSystemSecurityPropertyPrefix() {
+      return DEFAULT_SYSTEM_SECURITY_PROPERTY_PREFIX;
+   }
+
+   public static String getDefaultSystemSecurityJaasPropertyPrefix() {
+      return getDefaultSystemSecurityPropertyPrefix() + DEFAULT_SYSTEM_SECURITY_JAAS_PROPERTY_PREFIX;
+   }
+
+   public static String getDefaultSystemSecurityManagerPropertyPrefix() {
+      return getDefaultSystemSecurityPropertyPrefix() + DEFAULT_SYSTEM_SECURITY_MANAGER_PROPERTY_PREFIX;
    }
 
    public static String getDefaultBrokerPropertiesKeySurround() {

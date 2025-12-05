@@ -20,6 +20,55 @@ Security is enabled by default. To disable security completely set the `security
 </configuration>
 ----
 
+== Boot-time Security Configuration via System Properties
+
+Security configuration can be provided at boot time via system properties, which will override any security settings defined in `bootstrap.xml`.
+This is useful for containerized deployments or scenarios where configuration needs to be injected without modifying configuration files.
+
+=== JAAS Security via System Properties
+
+To configure JAAS security at boot time, use the following system properties:
+
+securityconfig.jaas.domain::
+The name of the JAAS login configuration entry to use for authentication.
+This is equivalent to the `domain` attribute of the `<jaas-security>` element in `bootstrap.xml`.
+
+securityconfig.jaas.certificateDomain::
+The name of the JAAS login configuration entry to use for certificate-based authentication.
+This is equivalent to the `certificate-domain` attribute of the `<jaas-security>` element in `bootstrap.xml`.
+
+For example, to start the broker with JAAS security configured via system properties:
+
+[,sh]
+----
+./artemis run -Dsecurityconfig.jaas.domain=MyDomain -Dsecurityconfig.jaas.certificateDomain=MyCertDomain
+----
+
+=== Custom Security Manager via System Properties
+
+To configure a custom security manager at boot time, use the following system properties:
+
+securityconfig.manager.className::
+The fully qualified class name of the security manager implementation.
+This is equivalent to the `class-name` attribute of the `<security-manager>` element in `bootstrap.xml`.
+
+securityconfig.manager.properties.<key>::
+Properties to pass to the security manager.
+Each property key after the `properties.` prefix will be passed as a configuration property to the security manager.
+
+For example, to start the broker with the basic security manager configured via system properties:
+
+[,sh]
+----
+./artemis run \
+  -Dsecurityconfig.manager.className=org.apache.activemq.artemis.spi.core.security.ActiveMQBasicSecurityManager \
+  -Dsecurityconfig.manager.properties.bootstrapUser=admin \
+  -Dsecurityconfig.manager.properties.bootstrapPassword=admin \
+  -Dsecurityconfig.manager.properties.bootstrapRole=amq
+----
+
+NOTE: When security configuration is provided via system properties, it takes precedence over any security configuration in `bootstrap.xml`.
+
 == Caching Security Operations
 
 For performance reasons both *authentication and authorization is cached* independently.
@@ -404,6 +453,7 @@ All user & role data is stored in the broker's bindings journal which means any 
 When using the Java Authentication and Authorization Service (JAAS) much of the configuration depends on which login module is used.
 However, there are a few commonalities for every case.
 The first place to look is in `bootstrap.xml`.
+Alternatively, JAAS security can be configured at boot time via system properties as described in <<jaas-security-via-system-properties>>.
 Here is an example using the `PropertiesLogin` JAAS login module which reads user, password, and role information from properties files:
 
 [,xml]
@@ -1571,7 +1621,9 @@ For details about masking passwords in broker.xml please see the xref:masking-pa
 
 The underpinnings of the broker's security implementation can be changed if so desired.
 The broker uses a component called a "security manager" to implement the actual authentication and authorization checks.
-By default, the broker uses `org.apache.activemq.artemis.spi.core.security.ActiveMQJAASSecurityManager` to provide JAAS integration, but users can provide their own implementation of `org.apache.activemq.artemis.spi.core.security.ActiveMQSecurityManager5` and configure it in `bootstrap.xml` using the `security-manager` element, e.g.:
+By default, the broker uses `org.apache.activemq.artemis.spi.core.security.ActiveMQJAASSecurityManager` to provide JAAS integration, but users can provide their own implementation of `org.apache.activemq.artemis.spi.core.security.ActiveMQSecurityManager5` and configure it in `bootstrap.xml` using the `security-manager` element.
+Alternatively, a custom security manager can be configured at boot time via system properties as described in <<custom-security-manager-via-system-properties>>.
+Here is an example of configuring a custom security manager in `bootstrap.xml`:
 
 [,xml]
 ----

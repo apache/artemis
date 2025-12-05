@@ -30,4 +30,12 @@ public class PropertyDTO {
 
    @XmlAttribute
    public String value;
+
+   public PropertyDTO() {
+   }
+
+   public PropertyDTO(String key, String value) {
+      this.key = key;
+      this.value = value;
+   }
 }
