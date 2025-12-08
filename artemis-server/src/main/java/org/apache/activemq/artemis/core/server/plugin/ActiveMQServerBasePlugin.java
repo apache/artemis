@@ -46,4 +46,21 @@ public interface ActiveMQServerBasePlugin {
     */
    default void unregistered(ActiveMQServer server) {
    }
+
+   /**
+    * The server has been started
+    *
+    * @param server The ActiveMQServer that has been started
+    */
+   default void afterStarted(ActiveMQServer server) {
+   }
+
+   /**
+    * The server is about to stop
+    *
+    * @param server The ActiveMQServer that is about to stop
+    */
+   default void beforeStopped(ActiveMQServer server) {
+   }
+
 }

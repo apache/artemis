@@ -1260,6 +1260,11 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          if (state == SERVER_STATE.STOPPED || state == SERVER_STATE.STOPPING) {
             return;
          }
+
+         if (hasBrokerPlugins()) {
+            beforeStopBrokerPlugin(getBrokerPlugins());
+         }
+
          state = SERVER_STATE.STOPPING;
 
          ServerStatus.stopping(this);
@@ -2672,6 +2677,16 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    }
 
    @Override
+   public void afterStartBrokerPlugin(final List<ActiveMQServerBasePlugin> plugins) {
+      plugins.forEach(plugin -> plugin.afterStarted(this));
+   }
+
+   @Override
+   public void beforeStopBrokerPlugin(final List<ActiveMQServerBasePlugin> plugins) {
+      plugins.forEach(plugin ->plugin.beforeStopped(this));
+   }
+
+   @Override
    public List<ActiveMQServerBasePlugin> getBrokerPlugins() {
       return configuration.getBrokerPlugins();
    }
@@ -3644,6 +3659,11 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       getRemotingService().startAcceptors();
       activationLatch.countDown();
       callActivationCompleteCallbacks();
+
+      if (hasBrokerPlugins()) {
+         afterStartBrokerPlugin(getBrokerPlugins());
+      }
+
    }
 
    @Override

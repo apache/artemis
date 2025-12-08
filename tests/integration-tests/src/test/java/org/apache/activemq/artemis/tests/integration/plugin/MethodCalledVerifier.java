@@ -36,6 +36,7 @@ import org.apache.activemq.artemis.core.postoffice.Binding;
 import org.apache.activemq.artemis.core.postoffice.QueueBinding;
 import org.apache.activemq.artemis.core.postoffice.RoutingStatus;
 import org.apache.activemq.artemis.core.security.SecurityAuth;
+import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.HandleStatus;
 import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.server.Queue;
@@ -111,6 +112,8 @@ public class MethodCalledVerifier implements ActiveMQServerPlugin {
    public static final String FEDERATED_QUEUE_CONDITIONAL_CREATE_CONSUMER = "federatedQueueConditionalCreateConsumer";
    public static final String BEFORE_FEDERATED_QUEUE_CONSUMER_MESSAGE_HANDLED = "beforeFederatedQueueConsumerMessageHandled";
    public static final String AFTER_FEDERATED_QUEUE_CONSUMER_MESSAGE_HANDLED = "afterFederatedQueueConsumerMessageHandled";
+   public static final String AFTER_STARTED = "afterStarted";
+   public static final String BEFORE_STOPPED = "beforeStopped";
 
    public MethodCalledVerifier(Map<String, AtomicInteger> methodCalls) {
       super();
@@ -472,6 +475,18 @@ public class MethodCalledVerifier implements ActiveMQServerPlugin {
       Objects.requireNonNull(consumer);
       methodCalled(FEDERATED_QUEUE_CONDITIONAL_CREATE_CONSUMER);
       return true;
+   }
+
+   @Override
+   public void afterStarted(ActiveMQServer server) {
+      Objects.requireNonNull(server);
+      methodCalled(AFTER_STARTED);
+   }
+
+   @Override
+   public void beforeStopped(ActiveMQServer server) {
+      Objects.requireNonNull(server);
+      methodCalled(BEFORE_STOPPED);
    }
 
    public void validatePluginMethodsEquals(int count, String... names) {

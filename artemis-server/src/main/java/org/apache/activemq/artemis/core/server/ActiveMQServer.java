@@ -276,6 +276,10 @@ public interface ActiveMQServer extends ServiceComponent {
 
    void registerBrokerPlugins(List<ActiveMQServerBasePlugin> plugins);
 
+   void afterStartBrokerPlugin(List<ActiveMQServerBasePlugin> plugins);
+
+   void beforeStopBrokerPlugin(List<ActiveMQServerBasePlugin> plugins);
+
    List<ActiveMQServerBasePlugin> getBrokerPlugins();
 
    List<ActiveMQServerConnectionPlugin> getBrokerConnectionPlugins();
