@@ -144,6 +144,12 @@ public class ActiveMQProtonRemotingConnection extends AbstractRemotingConnection
 
    @Override
    public void disconnect(boolean criticalError) {
+      if (destroyed) {
+         return;
+      }
+
+      destroyed = true;
+
       ErrorCondition errorCondition = new ErrorCondition();
       errorCondition.setCondition(AmqpSupport.CONNECTION_FORCED);
       amqpConnection.close(errorCondition);

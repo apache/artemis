@@ -16,15 +16,10 @@
  */
 package org.apache.activemq.artemis.tests.integration.amqp;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
-import java.lang.invoke.MethodHandles;
-import java.util.concurrent.TimeUnit;
-
 import org.apache.activemq.artemis.core.server.ServerSession;
 import org.apache.activemq.artemis.core.server.impl.ServerSessionImpl;
+import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
+import org.apache.activemq.artemis.tests.util.Wait;
 import org.apache.activemq.transport.amqp.client.AmqpClient;
 import org.apache.activemq.transport.amqp.client.AmqpConnection;
 import org.apache.activemq.transport.amqp.client.AmqpReceiver;
@@ -38,6 +33,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.lang.invoke.MethodHandles;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class AmqpSessionTest extends AmqpClientTestSupport {
 
@@ -111,6 +113,23 @@ public class AmqpSessionTest extends AmqpClientTestSupport {
       }
 
       connection.close();
+   }
+
+   @Test
+   public void testServerSessionCloseOnRemotingConnectionDisconnect() throws Exception {
+      AmqpClient client = createAmqpClient();
+      AmqpConnection connection = addConnection(client.connect());
+      AmqpSession session = connection.createSession();
+
+      assertNotNull(session);
+
+      for (RemotingConnection remoteConnection : server.getRemotingService().getConnections()) {
+         remoteConnection.disconnect(true);
+      }
+
+      Wait.assertTrue(connection::isClosed);
+
+      assertEquals(0, server.getSessions().size());
    }
 
    @Test
