@@ -755,6 +755,51 @@ public class WildCardRoutingTest extends ActiveMQTestBase {
       assertEquals(0, server.getPostOffice().getBindingsForAddress(address).getBindings().size());
    }
 
+   /**
+    * Test that routing messages through wildcard subscriptions increments the
+    * routedMessageCount on the target address. This is critical for auto-delete
+    * functionality (ARTEMIS-5773) where addresses should be considered "used"
+    * if messages were routed through them, even if no direct queue binding exists.
+    */
+   @Test
+   public void testWildcardRoutingIncrementsMessageCount() throws Exception {
+      SimpleString wildcardAddress = SimpleString.of("test.#");
+      SimpleString specificAddress1 = SimpleString.of("test.foo.bar");
+      SimpleString specificAddress2 = SimpleString.of("test.baz.qux");
+      SimpleString queueName = SimpleString.of("wildcardQueue");
+
+      // Create a wildcard queue
+      clientSession.createQueue(QueueConfiguration.of(queueName).setAddress(wildcardAddress).setDurable(false));
+
+      ClientProducer producer = clientSession.createProducer();
+      ClientConsumer consumer = clientSession.createConsumer(queueName);
+      clientSession.start();
+
+      // Send messages to specific addresses that match the wildcard
+      producer.send(specificAddress1, createTextMessage(clientSession, "message1"));
+      producer.send(specificAddress2, createTextMessage(clientSession, "message2"));
+
+      // Consume messages to ensure routing happened
+      ClientMessage m = consumer.receive(500);
+      assertNotNull(m);
+      m.acknowledge();
+      m = consumer.receive(500);
+      assertNotNull(m);
+      m.acknowledge();
+
+      // Verify that the specific addresses were created and have their routed message count incremented
+      assertNotNull(server.getAddressInfo(specificAddress1), "Address should be auto-created");
+      assertNotNull(server.getAddressInfo(specificAddress2), "Address should be auto-created");
+
+      // The routed message count should be > 0 for addresses that had messages routed through them
+      assertEquals(1, server.getAddressInfo(specificAddress1).getRoutedMessageCount(),
+                   "Address should have routed message count incremented");
+      assertEquals(1, server.getAddressInfo(specificAddress2).getRoutedMessageCount(),
+                   "Address should have routed message count incremented");
+
+      consumer.close();
+   }
+
    @Override
    @BeforeEach
    public void setUp() throws Exception {

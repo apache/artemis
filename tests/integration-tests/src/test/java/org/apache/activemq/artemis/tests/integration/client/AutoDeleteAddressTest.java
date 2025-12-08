@@ -146,4 +146,74 @@ public class AutoDeleteAddressTest extends ActiveMQTestBase {
 
       consumerSession.close();
    }
+
+   /**
+    * Test that addresses with only wildcard subscriptions are auto-deleted when messages
+    * are routed through them. This tests the fix for ARTEMIS-5773 where addresses would
+    * accumulate when:
+    * 1. A wildcard queue exists (e.g., publish/#)
+    * 2. Messages are sent to specific addresses (e.g., publish/uuid1/uuid2)
+    * 3. No direct queue binding is created on those addresses
+    * 4. The address should still be considered "used" due to routed messages
+    *
+    * Without the fix, these addresses would never be deleted because getRoutedMessageCount()
+    * was not checked in addressWasUsed().
+    */
+   @Test
+   public void testAutoDeleteAddressWithWildcardSubscriptionAndUsageCheck() throws Exception {
+      String prefix = "publish";
+      // Enable auto-delete but WITHOUT skipUsageCheck - this is the key difference
+      server.getAddressSettingsRepository().addMatch(prefix + ".#", new AddressSettings().setAutoDeleteAddresses(true).setAutoDeleteAddressesSkipUsageCheck(false).setAutoDeleteAddressesDelay(0));
+      String wildcardAddress = prefix + ".#";
+      String queue = RandomUtil.randomUUIDString();
+      final int MESSAGE_COUNT = 10;
+      final CountDownLatch latch = new CountDownLatch(MESSAGE_COUNT);
+
+      // Create a wildcard queue
+      server.createQueue(QueueConfiguration.of(queue).setAddress(wildcardAddress).setRoutingType(RoutingType.MULTICAST).setAutoCreated(true));
+
+      ClientSession consumerSession = cf.createSession();
+      ClientConsumer consumer = consumerSession.createConsumer(queue);
+      consumer.setMessageHandler(message -> {
+         try {
+            message.acknowledge();
+         } catch (Exception e) {
+            e.printStackTrace();
+         }
+         latch.countDown();
+      });
+      consumerSession.start();
+
+      ClientSession producerSession = cf.createSession();
+      ClientProducer producer = producerSession.createProducer();
+
+      List<String> addresses = new ArrayList<>();
+      for (int i = 0; i < MESSAGE_COUNT; i++) {
+         String address = prefix + "." + RandomUtil.randomUUIDString() + "." + RandomUtil.randomUUIDString();
+         addresses.add(address);
+         // Auto-create the address when sending the message
+         producer.send(address, producerSession.createMessage(false));
+      }
+      producerSession.close();
+
+      assertTrue(latch.await(2, TimeUnit.SECONDS));
+
+      // Verify addresses were created and have paging stores
+      for (String address : addresses) {
+         assertNotNull(server.getAddressInfo(SimpleString.of(address)), "Address should exist: " + address);
+         Wait.assertTrue(() -> Arrays.asList(server.getPagingManager().getStoreNames()).contains(SimpleString.of(address)), 2000, 100);
+      }
+
+      // Run the reaper - this would fail without the fix because addressWasUsed() would return false
+      PostOfficeTestAccessor.sweepAndReapAddresses((PostOfficeImpl) server.getPostOffice());
+
+      // Verify addresses are deleted
+      for (String address : addresses) {
+         String finalAddress = address; // for lambda
+         Wait.assertTrue("Address should be deleted: " + address, () -> server.getAddressInfo(SimpleString.of(finalAddress)) == null, 2000, 100);
+         Wait.assertFalse(() -> Arrays.asList(server.getPagingManager().getStoreNames()).contains(SimpleString.of(finalAddress)), 2000, 100);
+      }
+
+      consumerSession.close();
+   }
 }

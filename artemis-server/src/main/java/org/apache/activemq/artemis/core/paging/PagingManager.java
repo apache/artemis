@@ -71,6 +71,16 @@ public interface PagingManager extends ActiveMQComponent, HierarchicalRepository
 
    void deletePageStore(SimpleString storeName) throws Exception;
 
+   /**
+    * Clean up orphaned paging stores for addresses that no longer exist.
+    * This is useful for removing stale stores that may accumulate over time.
+    *
+    * @return the number of stores that were removed
+    */
+   default int cleanupOrphanedPageStores() {
+      return 0;
+   }
+
    void processReload() throws Exception;
 
    void disableCleanup();

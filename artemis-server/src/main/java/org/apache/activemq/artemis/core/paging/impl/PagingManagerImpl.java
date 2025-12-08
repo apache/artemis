@@ -422,6 +422,50 @@ public final class PagingManagerImpl implements PagingManager {
       }
    }
 
+   @Override
+   public int cleanupOrphanedPageStores() {
+      if (server == null) {
+         logger.warn("Server reference not available, cannot cleanup orphaned page stores");
+         return 0;
+      }
+
+      logger.debug("Starting orphaned paging store cleanup check. Total stores: {}", stores.size());
+
+      int removed = 0;
+      syncLock.readLock().lock();
+      try {
+         // Get a snapshot of current store names
+         Set<SimpleString> storeNames = new HashSet<>(stores.keySet());
+
+         for (SimpleString storeName : storeNames) {
+            // Check if the address still exists
+            if (server.getAddressInfo(storeName) == null) {
+               try {
+                  logger.debug("Removing orphaned paging store for: {}", storeName);
+                  // Remove directly from stores map - we already hold the read lock
+                  PagingStore store = stores.remove(CompositeAddress.extractAddressName(storeName));
+                  if (store != null) {
+                     store.destroy();
+                     removed++;
+                  }
+               } catch (Exception e) {
+                  logger.warn("Error removing orphaned paging store for {}: {}", storeName, e.getMessage(), e);
+               }
+            }
+         }
+
+         if (removed > 0) {
+            logger.info("Cleaned up {} orphaned paging store(s)", removed);
+         } else {
+            logger.debug("Finished orphaned paging store cleanup check. No orphaned stores found.");
+         }
+      } finally {
+         syncLock.readLock().unlock();
+      }
+
+      return removed;
+   }
+
    /**
     * This method creates a new store if not exist.
     */

@@ -404,7 +404,30 @@ public class SimpleAddressManager implements AddressManager {
    public boolean checkAutoRemoveAddress(AddressInfo addressInfo,
                                          AddressSettings settings,
                                          boolean ignoreDelay) throws Exception {
-      return settings.isAutoDeleteAddresses() && addressInfo != null && addressInfo.isAutoCreated() && !bindingsFactory.isAddressBound(addressInfo.getName()) && (ignoreDelay || addressWasUsed(addressInfo, settings)) && (ignoreDelay || delayCheck(addressInfo, settings));
+      if (addressInfo == null) {
+         return false;
+      }
+
+      boolean autoDelete = settings.isAutoDeleteAddresses();
+      boolean isAutoCreated = addressInfo.isAutoCreated();
+      boolean isAddressBound = bindingsFactory.isAddressBound(addressInfo.getName());
+      boolean wasUsed = ignoreDelay || addressWasUsed(addressInfo, settings);
+      boolean delayPassed = ignoreDelay || delayCheck(addressInfo, settings);
+
+      boolean result = autoDelete && isAutoCreated && !isAddressBound && wasUsed && delayPassed;
+
+      if (logger.isDebugEnabled()) {
+         logger.debug("checkAutoRemoveAddress for {}: autoDelete={}, isAutoCreated={}, isAddressBound={}, wasUsed={}, delayPassed={}, result={}",
+                     addressInfo.getName(), autoDelete, isAutoCreated, isAddressBound, wasUsed, delayPassed, result);
+         if (addressInfo.getRoutedMessageCount() > 0) {
+            logger.debug("  Address {} has routed {} messages", addressInfo.getName(), addressInfo.getRoutedMessageCount());
+         }
+         if (addressInfo.getBindingRemovedTimestamp() != -1) {
+            logger.debug("  Address {} had binding removed at timestamp {}", addressInfo.getName(), addressInfo.getBindingRemovedTimestamp());
+         }
+      }
+
+      return result;
    }
 
    private boolean delayCheck(AddressInfo addressInfo, AddressSettings settings) {
@@ -412,7 +435,21 @@ public class SimpleAddressManager implements AddressManager {
    }
 
    private boolean addressWasUsed(AddressInfo addressInfo, AddressSettings settings) {
-      return addressInfo.getBindingRemovedTimestamp() != -1 || settings.isAutoDeleteAddressesSkipUsageCheck();
+      // An address is considered "used" if:
+      // 1. A binding was removed from it (traditional check), OR
+      // 2. Messages were routed through it (for wildcard subscription case), OR
+      // 3. Skip usage check is enabled
+      boolean hadBindingRemoved = addressInfo.getBindingRemovedTimestamp() != -1;
+      boolean hasRoutedMessages = addressInfo.getRoutedMessageCount() > 0;
+      boolean skipCheck = settings.isAutoDeleteAddressesSkipUsageCheck();
+
+      if (logger.isDebugEnabled()) {
+         logger.debug("addressWasUsed for {}: hadBindingRemoved={}, hasRoutedMessages={} (count={}), skipCheck={}",
+                     addressInfo.getName(), hadBindingRemoved, hasRoutedMessages,
+                     addressInfo.getRoutedMessageCount(), skipCheck);
+      }
+
+      return hadBindingRemoved || hasRoutedMessages || skipCheck;
    }
 
    @Override

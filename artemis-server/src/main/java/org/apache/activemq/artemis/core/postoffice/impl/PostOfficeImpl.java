@@ -83,6 +83,7 @@ import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.QueueFactory;
 import org.apache.activemq.artemis.core.server.RouteContextList;
 import org.apache.activemq.artemis.core.server.RoutingContext;
+import org.apache.activemq.artemis.core.server.cluster.Bridge;
 import org.apache.activemq.artemis.core.server.cluster.RemoteQueueBinding;
 import org.apache.activemq.artemis.core.server.group.GroupingHandler;
 import org.apache.activemq.artemis.core.server.impl.AckReason;
@@ -903,6 +904,9 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
             mirrorControllerSource.deleteAddress(addressInfo);
          }
 
+         // Clean up duplicate ID caches for this address (including BRIDGE. prefixed caches)
+         deleteDuplicateCache(address);
+
          removeRetroactiveResources(address);
          if (server.hasBrokerAddressPlugins()) {
             server.callBrokerAddressPlugins(plugin -> plugin.afterRemoveAddress(address, addressInfo));
@@ -1516,6 +1520,92 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       return duplicateIDCaches;
    }
 
+   /**
+    * Clean up orphaned duplicate ID caches for addresses that no longer exist.
+    * This is useful for removing stale BRIDGE.* and other caches that may accumulate over time.
+    *
+    * @return the number of caches that were removed
+    */
+   public int cleanupOrphanedDuplicateIDCaches() {
+      if (logger.isDebugEnabled()) {
+         logger.debug("Starting orphaned duplicate ID cache cleanup check. Total caches: {}, Total addresses: {}",
+                 duplicateIDCaches.size(), addressManager.getAddresses().size());
+      }
+
+      // Verify that duplicate detection is enabled on cluster connections before cleaning BRIDGE caches
+      boolean hasDuplicateDetectionEnabled = server.getClusterManager() != null &&
+         server.getClusterManager().getClusterConnections().stream()
+            .anyMatch(cc -> {
+               try {
+                  // Check if any bridge in this cluster connection has duplicate detection enabled
+                  Bridge[] bridges = cc.getBridges();
+                  if (bridges != null && bridges.length > 0) {
+                     for (Bridge bridge : bridges) {
+                        if (bridge.getConfiguration() != null &&
+                            bridge.getConfiguration().isUseDuplicateDetection()) {
+                           return true;
+                        }
+                     }
+                  }
+                  return false;
+               } catch (Exception e) {
+                  logger.debug("Unable to check duplicate detection status for cluster connection {}: {}",
+                              cc.getName(), e.getMessage());
+                  return false;
+               }
+            });
+
+      int removed = 0;
+      Set<SimpleString> validAddresses = addressManager.getAddresses();
+
+      // Create a list of cache keys to remove (to avoid ConcurrentModificationException)
+      List<SimpleString> toRemove = new ArrayList<>();
+
+      for (SimpleString address : duplicateIDCaches.keySet()) {
+         SimpleString actualAddress = address;
+
+         // Check if this is a BRIDGE. prefixed cache
+         boolean isBridgeCache = address.startsWith(BRIDGE_CACHE_STR);
+
+         if (isBridgeCache) {
+            // Safety check: only process BRIDGE caches if duplicate detection is enabled
+            if (!hasDuplicateDetectionEnabled) {
+               logger.warn("Skipping BRIDGE cache cleanup for {} - duplicate detection is not enabled on any cluster connection", address);
+               continue;
+            }
+            // Extract the actual address by removing the BRIDGE. prefix
+            actualAddress = SimpleString.of(address.toString().substring(BRIDGE_CACHE_STR.length()));
+         }
+
+         // If the address no longer exists, mark the cache for removal
+         if (!validAddresses.contains(actualAddress)) {
+            toRemove.add(address);
+         }
+      }
+
+      // Remove the orphaned caches
+      for (SimpleString address : toRemove) {
+         DuplicateIDCache cache = duplicateIDCaches.remove(address);
+         if (cache != null) {
+            try {
+               cache.clear();
+               removed++;
+               logger.debug("Removed orphaned duplicate ID cache for: {}", address);
+            } catch (Exception e) {
+               logger.warn("Error clearing orphaned duplicate ID cache for {}: {}", address, e.getMessage(), e);
+            }
+         }
+      }
+
+      if (removed > 0) {
+         logger.info("Cleaned up {} orphaned duplicate ID cache(s)", removed);
+      } else {
+         logger.debug("Finished orphaned duplicate ID cache cleanup check. No orphaned caches found.");
+      }
+
+      return removed;
+   }
+
    @Override
    public Object getNotificationLock() {
       return notificationLock;
@@ -2045,6 +2135,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
     * To be used by the AddressQueueReaper. It is also exposed for tests through PostOfficeTestAccessor
     */
    void reapAddresses(boolean initialCheck) {
+      logger.debug("starting reap addresses scanner");
       getLocalQueues().forEach(queue -> {
          AddressSettings settings = addressSettingsRepository.getMatch(queue.getAddress().toString());
          if (!queue.isInternalQueue() && queue.isAutoDelete() && QueueManagerImpl.consumerCountCheck(queue) && (initialCheck || QueueManagerImpl.delayCheck(queue, settings)) && QueueManagerImpl.messageCountCheck(queue) && (initialCheck || queueWasUsed(queue, settings))) {
@@ -2104,6 +2195,23 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
             }
          }
       }
+
+      // Clean up orphaned resources after address reaping
+      // This handles cases where BRIDGE.* and other caches/stores may not have been properly cleaned up
+      if (!initialCheck) {
+         try {
+            cleanupOrphanedDuplicateIDCaches();
+         } catch (Exception e) {
+            logger.warn("Error during orphaned duplicate ID cache cleanup: {}", e.getMessage(), e);
+         }
+
+         try {
+            pagingManager.cleanupOrphanedPageStores();
+         } catch (Exception e) {
+            logger.warn("Error during orphaned paging store cleanup: {}", e.getMessage(), e);
+         }
+      }
+      logger.debug("reap addresses scanner completed");
    }
 
    private Stream<Queue> getLocalQueues() {
