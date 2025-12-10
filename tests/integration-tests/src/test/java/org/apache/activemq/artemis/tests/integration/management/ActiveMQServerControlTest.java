@@ -135,6 +135,7 @@ import org.apache.activemq.artemis.tests.unit.core.config.impl.fakes.FakeConnect
 import org.apache.activemq.artemis.tests.util.CFUtil;
 import org.apache.activemq.artemis.tests.util.Wait;
 import org.apache.activemq.artemis.utils.RandomUtil;
+import org.apache.activemq.artemis.utils.TimestampUtil;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.junit.jupiter.api.BeforeEach;
@@ -4385,10 +4386,9 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
          assertNotEquals("", jsonConsumer.getString(ConsumerField.MESSAGES_DELIVERED.getName()), "messagesDelivered");
          assertNotEquals("", jsonConsumer.getString(ConsumerField.MESSAGES_DELIVERED_SIZE.getName()), "messagesDeliveredSize");
          assertNotEquals("", jsonConsumer.getString(ConsumerField.MESSAGES_ACKNOWLEDGED.getName()), "messagesAcknowledged");
-         assertEquals(0, jsonConsumer.getInt(ConsumerField.LAST_DELIVERED_TIME.getName()), "lastDeliveredTime");
-         assertEquals(0, jsonConsumer.getInt(ConsumerField.LAST_ACKNOWLEDGED_TIME.getName()), "lastAcknowledgedTime");
+         assertNotEquals("", jsonConsumer.getString(ConsumerField.LAST_DELIVERED_TIME.getName()), "lastDeliveredTime");
+         assertNotEquals("", jsonConsumer.getString(ConsumerField.LAST_ACKNOWLEDGED_TIME.getName()), "lastAcknowledgedTime");
       }
-
    }
 
    @TestTemplate
@@ -5003,7 +5003,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
          assertEquals(producer.getAddress(), jsonSession.getString(ProducerField.ADDRESS.getName()), ProducerField.ADDRESS.getName());
          assertEquals(producer.getMessagesSent(), jsonSession.getJsonNumber(ProducerField.MESSAGE_SENT.getName()).longValue(), ProducerField.MESSAGE_SENT.getName());
          assertEquals(producer.getMessagesSentSize(), jsonSession.getJsonNumber(ProducerField.MESSAGE_SENT_SIZE.getName()).longValue(), ProducerField.MESSAGE_SENT_SIZE.getName());
-         assertEquals(String.valueOf(producer.getCreationTime()), jsonSession.getString(ProducerField.CREATION_TIME.getName()), ProducerField.CREATION_TIME.getName());
+         assertEquals(TimestampUtil.formatEpochMillis(producer.getCreationTime()), jsonSession.getString(ProducerField.CREATION_TIME.getName()), ProducerField.CREATION_TIME.getName());
       }
    }
    @TestTemplate
