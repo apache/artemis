@@ -172,7 +172,7 @@
       <paho.client.mqtt.version>1.2.5</paho.client.mqtt.version>
       <postgresql.version>42.7.8</postgresql.version>
       <testcontainers.version>1.21.3</testcontainers.version>
-      <selenium.version>4.38.0</selenium.version>
+      <selenium.version>4.39.0</selenium.version>
       <exec-maven-plugin.version>3.6.2</exec-maven-plugin.version>
       <apache.httpcore.version>4.4.16</apache.httpcore.version>
       <apache.httpclient.version>4.5.14</apache.httpclient.version>
