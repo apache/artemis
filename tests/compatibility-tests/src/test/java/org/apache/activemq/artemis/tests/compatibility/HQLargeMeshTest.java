@@ -35,20 +35,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @ExtendWith(ParameterizedTestExtension.class)
 public class HQLargeMeshTest extends VersionedBase {
 
-   // this will ensure that all tests in this class are run twice,
-   // once with "true" passed to the class' constructor and once with "false"
    @Parameters(name = "server={0}, producer={1}, consumer={2}")
    public static Collection getParameters() {
-      // we don't need every single version ever released..
-      // if we keep testing current one against 2.4 and 1.4.. we are sure the wire and API won't change over time
       List<Object[]> combinations = new ArrayList<>();
-
-      /*
-      // during development sometimes is useful to comment out the combinations
-      // and add the ones you are interested.. example:
-       */
-      //      combinations.add(new Object[]{SNAPSHOT, ONE_FIVE, ONE_FIVE});
-      //      combinations.add(new Object[]{ONE_FIVE, ONE_FIVE, ONE_FIVE});
 
       combinations.add(new Object[]{SNAPSHOT, HORNETQ_247, HORNETQ_247});
       combinations.add(new Object[]{SNAPSHOT, HORNETQ_235, HORNETQ_247});
@@ -65,7 +54,7 @@ public class HQLargeMeshTest extends VersionedBase {
    public void testSendReceive() throws Throwable {
       FileUtil.deleteDirectory(serverFolder);
       setVariable(serverClassloader, "persistent", Boolean.TRUE);
-      startServer(serverFolder, serverClassloader, "live");
+      startServer(serverFolder, server, serverClassloader, "live");
 
       try {
          evaluate(senderClassloader, "meshTest/sendLargeMessages.groovy", server, sender, "sendMessages");

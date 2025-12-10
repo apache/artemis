@@ -43,26 +43,19 @@ public class SerializationTest extends VersionedBase {
 
    // this will ensure that all tests in this class are run twice,
    // once with "true" passed to the class' constructor and once with "false"
-   @Parameters(name = "server={0}, producer={1}, consumer={2}")
+   @Parameters(name = "producer={0}, consumer={1}")
    public static Collection getParameters() {
       // we don't need every single version ever released..
       // if we keep testing current one against 2.4 and 1.4.. we are sure the wire and API won't change over time
       List<Object[]> combinations = new ArrayList<>();
 
-      /*
-      // during development sometimes is useful to comment out the combinations
-      // and add the ones you are interested.. example:
-       */
-      //      combinations.add(new Object[]{SNAPSHOT, ONE_FIVE, ONE_FIVE});
-      //      combinations.add(new Object[]{ONE_FIVE, ONE_FIVE, ONE_FIVE});
-
-      combinations.add(new Object[] {null, TWO_TEN_ZERO, SNAPSHOT});
-      combinations.add(new Object[] {null, SNAPSHOT, TWO_TEN_ZERO});
+      combinations.add(new Object[] {TWO_TEN_ZERO, SNAPSHOT});
+      combinations.add(new Object[] {SNAPSHOT, TWO_TEN_ZERO});
       return combinations;
    }
 
-   public SerializationTest(String server, String sender, String receiver) throws Exception {
-      super(server, sender, receiver);
+   public SerializationTest(String sender, String receiver) throws Exception {
+      super(sender, receiver);
    }
 
    @BeforeEach
@@ -70,7 +63,7 @@ public class SerializationTest extends VersionedBase {
       FileUtil.deleteDirectory(serverFolder);
       serverFolder.mkdirs();
       setVariable(senderClassloader, "persistent", false);
-      startServer(serverFolder, senderClassloader, "1");
+      startServer(serverFolder, sender, senderClassloader, "1");
    }
 
    @AfterEach

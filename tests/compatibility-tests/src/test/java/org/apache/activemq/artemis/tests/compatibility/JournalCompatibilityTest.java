@@ -39,29 +39,22 @@ public class JournalCompatibilityTest extends VersionedBase {
 
    // this will ensure that all tests in this class are run twice,
    // once with "true" passed to the class' constructor and once with "false"
-   @Parameters(name = "server={0}, producer={1}, consumer={2}")
+   @Parameters(name = "sender={0}, receiver={1}")
    public static Collection getParameters() {
       // we don't need every single version ever released..
       // if we keep testing current one against 2.4 and 1.4.. we are sure the wire and API won't change over time
       List<Object[]> combinations = new ArrayList<>();
 
-      /*
-      // during development sometimes is useful to comment out the combinations
-      // and add the ones you are interested.. example:
-       */
-      //      combinations.add(new Object[]{SNAPSHOT, ONE_FIVE, ONE_FIVE});
-      //      combinations.add(new Object[]{ONE_FIVE, ONE_FIVE, ONE_FIVE});
-
-      combinations.add(new Object[]{null, TWO_ONE, SNAPSHOT});
-      combinations.add(new Object[]{null, TWO_FOUR, SNAPSHOT});
+      combinations.add(new Object[]{TWO_ONE, SNAPSHOT});
+      combinations.add(new Object[]{TWO_FOUR, SNAPSHOT});
       // the purpose on this one is just to validate the test itself.
       /// if it can't run against itself it won't work at all
-      combinations.add(new Object[]{null, SNAPSHOT, SNAPSHOT});
+      combinations.add(new Object[]{SNAPSHOT, SNAPSHOT});
       return combinations;
    }
 
-   public JournalCompatibilityTest(String server, String sender, String receiver) throws Exception {
-      super(server, sender, receiver);
+   public JournalCompatibilityTest(String sender, String receiver) throws Exception {
+      super(sender, receiver);
    }
 
    @BeforeEach
@@ -85,49 +78,49 @@ public class JournalCompatibilityTest extends VersionedBase {
    @TestTemplate
    public void testSendReceive() throws Throwable {
       setVariable(senderClassloader, "persistent", true);
-      startServer(serverFolder, senderClassloader, "journalTest", null, true);
-      evaluate(senderClassloader, "meshTest/sendMessages.groovy", server, sender, "sendAckMessages");
+      startServer(serverFolder, sender, senderClassloader, "journalTest", null, true);
+      evaluate(senderClassloader, "meshTest/sendMessages.groovy", sender, sender, "sendAckMessages");
       stopServer(senderClassloader);
 
       setVariable(receiverClassloader, "persistent", true);
-      startServer(serverFolder, receiverClassloader, "journalTest", null, false);
+      startServer(serverFolder, receiver, receiverClassloader, "journalTest", null, false);
 
       setVariable(receiverClassloader, "latch", null);
-      evaluate(receiverClassloader, "meshTest/sendMessages.groovy", server, receiver, "receiveMessages");
+      evaluate(receiverClassloader, "meshTest/sendMessages.groovy", receiver, receiver, "receiveMessages");
    }
 
    @TestTemplate
    public void testSendReceivePaging() throws Throwable {
       setVariable(senderClassloader, "persistent", true);
-      startServer(serverFolder, senderClassloader, "journalTest", null, true);
+      startServer(serverFolder, sender, senderClassloader, "journalTest", null, true);
       evaluate(senderClassloader, "journalcompatibility/forcepaging.groovy");
-      evaluate(senderClassloader, "meshTest/sendMessages.groovy", server, sender, "sendAckMessages");
+      evaluate(senderClassloader, "meshTest/sendMessages.groovy", sender, sender, "sendAckMessages");
       evaluate(senderClassloader, "journalcompatibility/ispaging.groovy");
       stopServer(senderClassloader);
 
       setVariable(receiverClassloader, "persistent", true);
-      startServer(serverFolder, receiverClassloader, "journalTest", null, false);
+      startServer(serverFolder, receiver, receiverClassloader, "journalTest", null, false);
       evaluate(receiverClassloader, "journalcompatibility/ispaging.groovy");
 
       setVariable(receiverClassloader, "latch", null);
-      evaluate(receiverClassloader, "meshTest/sendMessages.groovy", server, receiver, "receiveMessages");
+      evaluate(receiverClassloader, "meshTest/sendMessages.groovy", receiver, receiver, "receiveMessages");
    }
 
    @TestTemplate
    public void testSendReceiveAMQPPaging() throws Throwable {
       setVariable(senderClassloader, "persistent", true);
-      startServer(serverFolder, senderClassloader, "journalTest", null, true);
+      startServer(serverFolder, sender, senderClassloader, "journalTest", null, true);
       evaluate(senderClassloader, "journalcompatibility/forcepaging.groovy");
-      evaluate(senderClassloader, "meshTest/sendMessages.groovy", server, sender, "sendAckMessages", "AMQP");
+      evaluate(senderClassloader, "meshTest/sendMessages.groovy", sender, sender, "sendAckMessages", "AMQP");
       evaluate(senderClassloader, "journalcompatibility/ispaging.groovy");
       stopServer(senderClassloader);
 
       setVariable(receiverClassloader, "persistent", true);
-      startServer(serverFolder, receiverClassloader, "journalTest", null, false);
+      startServer(serverFolder, receiver, receiverClassloader, "journalTest", null, false);
       evaluate(receiverClassloader, "journalcompatibility/ispaging.groovy");
 
       setVariable(receiverClassloader, "latch", null);
-      evaluate(receiverClassloader, "meshTest/sendMessages.groovy", server, receiver, "receiveMessages", "AMQP");
+      evaluate(receiverClassloader, "meshTest/sendMessages.groovy", receiver, receiver, "receiveMessages", "AMQP");
    }
 
    /**
@@ -137,15 +130,15 @@ public class JournalCompatibilityTest extends VersionedBase {
    @TestTemplate
    public void testSendReceiveQueueMetrics() throws Throwable {
       setVariable(senderClassloader, "persistent", true);
-      startServer(serverFolder, senderClassloader, "journalTest", null, true);
-      evaluate(senderClassloader, "meshTest/sendMessages.groovy", server, sender, "sendAckMessages");
+      startServer(serverFolder, sender, senderClassloader, "journalTest", null, true);
+      evaluate(senderClassloader, "meshTest/sendMessages.groovy", sender, sender, "sendAckMessages");
       stopServer(senderClassloader);
 
       setVariable(receiverClassloader, "persistent", true);
-      startServer(serverFolder, receiverClassloader, "journalTest", null, false);
+      startServer(serverFolder, receiver, receiverClassloader, "journalTest", null, false);
 
       setVariable(receiverClassloader, "latch", null);
-      evaluate(receiverClassloader, "metrics/queueMetrics.groovy", server, receiver, "receiveMessages");
+      evaluate(receiverClassloader, "metrics/queueMetrics.groovy", receiver, receiver, "receiveMessages");
    }
 
    /**
@@ -156,18 +149,17 @@ public class JournalCompatibilityTest extends VersionedBase {
    public void testSendReceiveSizeQueueMetricsPaging() throws Throwable {
       setVariable(senderClassloader, "persistent", true);
       //Set max size to 1 to cause messages to immediately go to the paging store
-      startServer(serverFolder, senderClassloader, "journalTest", Long.toString(1), true);
+      startServer(serverFolder, sender, senderClassloader, "journalTest", Long.toString(1), true);
       evaluate(senderClassloader, "journalcompatibility/forcepaging.groovy");
-      evaluate(senderClassloader, "meshTest/sendMessages.groovy", server, sender, "sendAckMessages");
+      evaluate(senderClassloader, "meshTest/sendMessages.groovy", sender, sender, "sendAckMessages");
       evaluate(senderClassloader, "journalcompatibility/ispaging.groovy");
       stopServer(senderClassloader);
 
       setVariable(receiverClassloader, "persistent", true);
-      startServer(serverFolder, receiverClassloader, "journalTest", Long.toString(1), false);
+      startServer(serverFolder, receiver, receiverClassloader, "journalTest", Long.toString(1), false);
       evaluate(receiverClassloader, "journalcompatibility/ispaging.groovy");
 
 
-      evaluate(receiverClassloader, "metrics/queueMetrics.groovy", server, receiver, "receiveMessages");
+      evaluate(receiverClassloader, "metrics/queueMetrics.groovy", receiver, receiver, "receiveMessages");
    }
 }
-

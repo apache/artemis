@@ -31,7 +31,7 @@ public class ServerBase extends VersionedBase {
    public void setUp() throws Throwable {
       FileUtil.deleteDirectory(serverFolder);
       setVariable(serverClassloader, "persistent", Boolean.FALSE);
-      startServer(serverFolder, serverClassloader, "live");
+      startServer(serverFolder, server, serverClassloader, "live");
    }
 
    @AfterEach

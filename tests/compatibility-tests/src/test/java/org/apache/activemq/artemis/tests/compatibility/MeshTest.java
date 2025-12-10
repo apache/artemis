@@ -42,21 +42,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @ExtendWith(ParameterizedTestExtension.class)
 public class MeshTest extends ServerBase {
 
-   // this will ensure that all tests in this class are run twice,
-   // once with "true" passed to the class' constructor and once with "false"
    @Parameters(name = "server={0}, producer={1}, consumer={2}")
    public static Collection getParameters() {
-      // we don't need every single version ever released..
-      // if we keep testing current one against 2.4 and 1.4.. we are sure the wire and API won't change over time
       List<Object[]> combinations = new ArrayList<>();
-
-      /*
-      // during development sometimes is useful to comment out the combinations
-      // and add the ones you are interested.. example:
-       */
-      //      combinations.add(new Object[]{SNAPSHOT, ONE_FIVE, ONE_FIVE});
-      //      combinations.add(new Object[]{ONE_FIVE, ONE_FIVE, ONE_FIVE});
-
       combinations.addAll(combinatory(SNAPSHOT, new Object[]{SNAPSHOT}, new Object[]{ONE_FOUR, TWO_FOUR, SNAPSHOT, HORNETQ_235}, new Object[]{ONE_FOUR, TWO_FOUR, SNAPSHOT, HORNETQ_235}));
       combinations.addAll(combinatory(SNAPSHOT, new Object[]{ONE_FOUR}, new Object[]{ONE_FOUR, SNAPSHOT}, new Object[]{ONE_FOUR, SNAPSHOT}));
       combinations.addAll(combinatory(SNAPSHOT, new Object[]{HORNETQ_235}, new Object[]{ONE_FOUR, SNAPSHOT, HORNETQ_235}, new Object[]{ONE_FOUR, SNAPSHOT, HORNETQ_235}));

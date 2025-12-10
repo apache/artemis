@@ -41,26 +41,19 @@ public class ExportImportTest extends VersionedBase {
 
    // this will ensure that all tests in this class are run twice,
    // once with "true" passed to the class' constructor and once with "false"
-   @Parameters(name = "server={0}, sender={1}, consumer={2}")
+   @Parameters(name = "sender={0}, consumer={1}")
    public static Collection getParameters() {
       // we don't need every single version ever released..
       // if we keep testing current one against 2.4 and 1.4.. we are sure the wire and API won't change over time
       List<Object[]> combinations = new ArrayList<>();
 
-      /*
-      // during development sometimes is useful to comment out the combinations
-      // and add the ones you are interested.. example:
-       */
-      //      combinations.add(new Object[]{SNAPSHOT, ONE_FIVE, ONE_FIVE});
-      //      combinations.add(new Object[]{ONE_FIVE, ONE_FIVE, ONE_FIVE});
-
-      combinations.add(new Object[]{null, ONE_FOUR, SNAPSHOT});
-      combinations.add(new Object[]{null, SNAPSHOT, SNAPSHOT});
+      combinations.add(new Object[]{ONE_FOUR, SNAPSHOT});
+      combinations.add(new Object[]{SNAPSHOT, SNAPSHOT});
       return combinations;
    }
 
-   public ExportImportTest(String server, String sender, String receiver) throws Exception {
-      super(server, sender, receiver);
+   public ExportImportTest(String sender, String receiver) throws Exception {
+      super(sender, receiver);
    }
 
    @BeforeEach
@@ -109,8 +102,8 @@ public class ExportImportTest extends VersionedBase {
       if (legacyPrefixes) {
          serverScriptToUse = "exportimport/artemisServer.groovy";
       }
-      startServer(serverFolder, senderClassloader, "sender");
-      evaluate(senderClassloader, "meshTest/sendMessages.groovy", server, sender, "sendAckMessages");
+      startServer(serverFolder, sender, senderClassloader, "sender");
+      evaluate(senderClassloader, "meshTest/sendMessages.groovy", sender, sender, "sendAckMessages");
       stopServer(senderClassloader);
 
       if (sender.startsWith("ARTEMIS-1")) {
@@ -122,14 +115,14 @@ public class ExportImportTest extends VersionedBase {
       setVariable(receiverClassloader, "legacy", legacyPrefixes);
       try {
          setVariable(receiverClassloader, "persistent", true);
-         startServer(serverFolder, receiverClassloader, "receiver");
+         startServer(serverFolder, receiver, receiverClassloader, "receiver");
 
          setVariable(receiverClassloader, "sort", sender.startsWith("ARTEMIS-1"));
 
          evaluate(receiverClassloader, "exportimport/import.groovy", serverFolder.getAbsolutePath());
 
          setVariable(receiverClassloader, "latch", null);
-         evaluate(receiverClassloader, "meshTest/sendMessages.groovy", server, receiver, "receiveMessages");
+         evaluate(receiverClassloader, "meshTest/sendMessages.groovy", receiver, receiver, "receiveMessages");
       } finally {
          setVariable(receiverClassloader, "legacy", false);
       }

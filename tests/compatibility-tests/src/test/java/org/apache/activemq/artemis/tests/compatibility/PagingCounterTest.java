@@ -38,33 +38,26 @@ public class PagingCounterTest extends VersionedBase {
 
    // this will ensure that all tests in this class are run twice,
    // once with "true" passed to the class' constructor and once with "false"
-   @Parameters(name = "server={0}, producer={1}, consumer={2}")
+   @Parameters(name = "producer={0}, consumer={1}")
    public static Collection getParameters() {
       // we don't need every single version ever released..
       // if we keep testing current one against 2.4 and 1.4.. we are sure the wire and API won't change over time
       List<Object[]> combinations = new ArrayList<>();
 
-      /*
-      // during development sometimes is useful to comment out the combinations
-      // and add the ones you are interested.. example:
-       */
-      //      combinations.add(new Object[]{SNAPSHOT, ONE_FIVE, ONE_FIVE});
-      //      combinations.add(new Object[]{ONE_FIVE, ONE_FIVE, ONE_FIVE});
-
       if (getJavaVersion() <= 22) {
          // 2.22.0 servers fail on JDK23+ without workarounds.
-         combinations.add(new Object[]{null, TWO_TWENTYTWO_ZERO, SNAPSHOT});
-         combinations.add(new Object[]{null, SNAPSHOT, TWO_TWENTYTWO_ZERO});
+         combinations.add(new Object[]{TWO_TWENTYTWO_ZERO, SNAPSHOT});
+         combinations.add(new Object[]{SNAPSHOT, TWO_TWENTYTWO_ZERO});
       }
 
       // the purpose on this one is just to validate the test itself.
       /// if it can't run against itself it won't work at all
-      combinations.add(new Object[]{null, SNAPSHOT, SNAPSHOT});
+      combinations.add(new Object[]{SNAPSHOT, SNAPSHOT});
       return combinations;
    }
 
-   public PagingCounterTest(String server, String sender, String receiver) throws Exception {
-      super(server, sender, receiver);
+   public PagingCounterTest(String sender, String receiver) throws Exception {
+      super(sender, receiver);
    }
 
    @BeforeEach
@@ -88,15 +81,15 @@ public class PagingCounterTest extends VersionedBase {
    @TestTemplate
    public void testSendReceivePaging() throws Throwable {
       setVariable(senderClassloader, "persistent", true);
-      startServer(serverFolder, senderClassloader, "pageCounter", null, true);
+      startServer(serverFolder, sender, senderClassloader, "pageCounter", null, true);
       evaluate(senderClassloader, "journalcompatibility/forcepaging.groovy");
-      evaluate(senderClassloader, "pageCounter/sendMessages.groovy", server, "core", "1000");
+      evaluate(senderClassloader, "pageCounter/sendMessages.groovy", sender, "core", "1000");
       evaluate(senderClassloader, "journalcompatibility/ispaging.groovy");
       evaluate(senderClassloader, "pageCounter/checkMessages.groovy", "1000");
       stopServer(senderClassloader);
 
       setVariable(receiverClassloader, "persistent", true);
-      startServer(serverFolder, receiverClassloader, "pageCounter", null, false);
+      startServer(serverFolder, receiver, receiverClassloader, "pageCounter", null, false);
       evaluate(receiverClassloader, "journalcompatibility/ispaging.groovy");
       evaluate(receiverClassloader, "pageCounter/checkMessages.groovy", "1000");
 

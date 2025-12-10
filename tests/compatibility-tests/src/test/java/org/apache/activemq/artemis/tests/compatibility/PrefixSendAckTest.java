@@ -38,7 +38,7 @@ public class PrefixSendAckTest extends ServerBase {
    public static Collection getParameters() {
       List<Object[]> combinations = new ArrayList<>();
 
-      combinations.addAll(combinatory(new Object[]{SNAPSHOT}, new Object[]{ONE_FOUR, HORNETQ_247, TWO_FOUR, SNAPSHOT}, new Object[]{ONE_FOUR, HORNETQ_247, TWO_FOUR, SNAPSHOT}));
+      combinations.addAll(combinatory(SNAPSHOT, new Object[]{SNAPSHOT}, new Object[]{ONE_FOUR, HORNETQ_247, TWO_FOUR, SNAPSHOT}, new Object[]{ONE_FOUR, HORNETQ_247, TWO_FOUR, SNAPSHOT}));
       return combinations;
    }
 

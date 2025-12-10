@@ -38,27 +38,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @ExtendWith(ParameterizedTestExtension.class)
 public class ConnectionFactoryConfigurationSerializationTest extends VersionedBase {
 
-   // this will ensure that all tests in this class are run twice,
-   // once with "true" passed to the class' constructor and once with "false"
-   @Parameters(name = "server={0}, producer={1}, consumer={2}")
+   @Parameters(name = "producer={0}, consumer={1}")
    public static Collection getParameters() {
-      // we don't need every single version ever released..
-      // if we keep testing current one against 2.4 and 1.4.. we are sure the wire and API won't change over time
       List<Object[]> combinations = new ArrayList<>();
 
-      /*
-      // during development sometimes is useful to comment out the combinations
-      // and add the ones you are interested.. example:
-       */
-      //      combinations.add(new Object[]{SNAPSHOT, ONE_FIVE, ONE_FIVE});
-      //      combinations.add(new Object[]{ONE_FIVE, ONE_FIVE, ONE_FIVE});
-
-      combinations.addAll(combinatory(new Object[]{null}, new Object[]{ONE_FOUR, SNAPSHOT, TWO_FOUR}, new Object[]{ONE_FOUR, SNAPSHOT, TWO_FOUR}));
+      combinations.addAll(combinatory2(SNAPSHOT, new Object[]{ONE_FOUR, SNAPSHOT, TWO_FOUR}, new Object[]{ONE_FOUR, SNAPSHOT, TWO_FOUR}));
       return combinations;
    }
 
-   public ConnectionFactoryConfigurationSerializationTest(String server, String sender, String receiver) throws Exception {
-      super(server, sender, receiver);
+   public ConnectionFactoryConfigurationSerializationTest(String sender, String receiver) throws Exception {
+      super(sender, receiver);
    }
 
    @BeforeEach
