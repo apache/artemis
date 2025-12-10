@@ -195,7 +195,7 @@
 
       <!-- used on tests -->
       <elementary.version>3.0.0</elementary.version>
-      <groovy.version>5.0.2</groovy.version>
+      <groovy.version>5.0.3</groovy.version>
       <hadoop.minikdc.version>3.4.2</hadoop.minikdc.version>
       <mockserver.version>5.15.0</mockserver.version>
 
