@@ -372,8 +372,10 @@ public final class SimpleString implements CharSequence, Serializable, Comparabl
       }
       List<String> pathsList = new ArrayList<>();
       StringBuilder pathAccumulator = new StringBuilder();
-      for (char c : toString().toCharArray()) {
-         if (c == separator) {
+      char[] chars = toString().toCharArray();
+      for (int i = 0; i < chars.length; i++) {
+         char c = chars[i];
+         if (c == separator && (i == 0 || chars[i - 1] != '\\')) {
             pathsList.add(pathAccumulator.toString());
             pathAccumulator.delete(0, pathAccumulator.length());
          } else {

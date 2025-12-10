@@ -1001,4 +1001,20 @@ public class MQTT5Test extends MQTT5TestSupport {
       // ensure the subscription queue uses multicast even though the default is anycast
       assertEquals(RoutingType.MULTICAST, getSubscriptionQueue(topic, clientID).getRoutingType());
    }
+
+   @Test
+   @Timeout(DEFAULT_TIMEOUT_SEC)
+   public void testPublishWithDelimiterInTopicNameAndWildcardSubscription() throws Exception {
+      CountDownLatch latch = new CountDownLatch(1);
+      MqttClient subscriber = createPahoClient("subscriber");
+      subscriber.connect();
+      subscriber.setCallback(new LatchedMqttCallback(latch));
+      subscriber.subscribe("prefix/+", AT_LEAST_ONCE);
+
+      MqttClient producer = createPahoClient("producer");
+      producer.connect();
+      producer.publish("prefix/a.b", "myMessage".getBytes(StandardCharsets.UTF_8), 1, false);
+
+      assertTrue(latch.await(500, TimeUnit.MILLISECONDS));
+   }
 }

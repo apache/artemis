@@ -24,11 +24,29 @@ import io.netty.buffer.ByteBufAllocator;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SimpleStringTest {
+
+   @Test
+   public void testGetPaths() {
+      final char delimiter = '.';
+
+      assertArrayEquals(List.of("a").toArray(), SimpleString.of("a").getPaths(delimiter));
+      assertArrayEquals(List.of("a\\.b").toArray(), SimpleString.of("a\\.b").getPaths(delimiter));
+
+      assertArrayEquals(List.of("a", "b").toArray(), SimpleString.of("a.b").getPaths(delimiter));
+      assertArrayEquals(List.of("a", "b\\.c").toArray(), SimpleString.of("a.b\\.c").getPaths(delimiter));
+      assertArrayEquals(List.of("a\\.b", "c").toArray(), SimpleString.of("a\\.b.c").getPaths(delimiter));
+
+      assertArrayEquals(List.of("a", "b", "c").toArray(), SimpleString.of("a.b.c").getPaths(delimiter));
+      assertArrayEquals(List.of("a", "b", "c\\.d").toArray(), SimpleString.of("a.b.c\\.d").getPaths(delimiter));
+      assertArrayEquals(List.of("a", "b\\.c", "d").toArray(), SimpleString.of("a.b\\.c.d").getPaths(delimiter));
+      assertArrayEquals(List.of("a\\.b", "c", "d").toArray(), SimpleString.of("a\\.b.c.d").getPaths(delimiter));
+   }
 
    @Test
    public void testOutOfBoundsThrownOnMalformedString() {
