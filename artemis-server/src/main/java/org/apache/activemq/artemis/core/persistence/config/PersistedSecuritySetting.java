@@ -19,9 +19,23 @@ package org.apache.activemq.artemis.core.persistence.config;
 import java.util.Objects;
 
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
+import org.apache.activemq.artemis.api.core.JsonUtil;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.journal.EncodingSupport;
+import org.apache.activemq.artemis.json.JsonObject;
 
+import static org.apache.activemq.artemis.core.security.Role.BROWSE_PERMISSION;
+import static org.apache.activemq.artemis.core.security.Role.CONSUME_PERMISSION;
+import static org.apache.activemq.artemis.core.security.Role.CREATE_ADDRESS_PERMISSION;
+import static org.apache.activemq.artemis.core.security.Role.CREATE_DURABLE_QUEUE_PERMISSION;
+import static org.apache.activemq.artemis.core.security.Role.CREATE_NONDURABLE_QUEUE_PERMISSION;
+import static org.apache.activemq.artemis.core.security.Role.DELETE_ADDRESS_PERMISSION;
+import static org.apache.activemq.artemis.core.security.Role.DELETE_DURABLE_QUEUE_PERMISSION;
+import static org.apache.activemq.artemis.core.security.Role.DELETE_NONDURABLE_QUEUE_PERMISSION;
+import static org.apache.activemq.artemis.core.security.Role.EDIT_PERMISSION;
+import static org.apache.activemq.artemis.core.security.Role.MANAGE_PERMISSION;
+import static org.apache.activemq.artemis.core.security.Role.SEND_PERMISSION;
+import static org.apache.activemq.artemis.core.security.Role.VIEW_PERMISSION;
 import static org.apache.activemq.artemis.utils.DataConstants.SIZE_INT;
 import static org.apache.activemq.artemis.utils.DataConstants.SIZE_NULL;
 
@@ -86,6 +100,22 @@ public class PersistedSecuritySetting implements EncodingSupport {
       this.deleteAddressRoles = SimpleString.of(deleteAddressRoles);
       this.viewRoles = SimpleString.of(viewRoles);
       this.editRoles = SimpleString.of(editRoles);
+   }
+
+   public PersistedSecuritySetting(final String addressMatch, JsonObject o) {
+      this(addressMatch,
+           JsonUtil.arrayToString(o, SEND_PERMISSION),
+           JsonUtil.arrayToString(o, CONSUME_PERMISSION),
+           JsonUtil.arrayToString(o, CREATE_DURABLE_QUEUE_PERMISSION),
+           JsonUtil.arrayToString(o, DELETE_DURABLE_QUEUE_PERMISSION),
+           JsonUtil.arrayToString(o, CREATE_NONDURABLE_QUEUE_PERMISSION),
+           JsonUtil.arrayToString(o, DELETE_NONDURABLE_QUEUE_PERMISSION),
+           JsonUtil.arrayToString(o, MANAGE_PERMISSION),
+           JsonUtil.arrayToString(o, BROWSE_PERMISSION),
+           JsonUtil.arrayToString(o, CREATE_ADDRESS_PERMISSION),
+           JsonUtil.arrayToString(o, DELETE_ADDRESS_PERMISSION),
+           JsonUtil.arrayToString(o, VIEW_PERMISSION),
+           JsonUtil.arrayToString(o, EDIT_PERMISSION));
    }
 
 
@@ -243,30 +273,18 @@ public class PersistedSecuritySetting implements EncodingSupport {
    @Override
    public String toString() {
       return "PersistedSecuritySetting [storeId=" + storeId +
-         ", addressMatch=" +
-         addressMatch +
-         ", sendRoles=" +
-         sendRoles +
-         ", consumeRoles=" +
-         consumeRoles +
-         ", createDurableQueueRoles=" +
-         createDurableQueueRoles +
-         ", deleteDurableQueueRoles=" +
-         deleteDurableQueueRoles +
-         ", createNonDurableQueueRoles=" +
-         createNonDurableQueueRoles +
-         ", deleteNonDurableQueueRoles=" +
-         deleteNonDurableQueueRoles +
-         ", manageRoles=" +
-         manageRoles +
-         ", browseRoles=" +
-         browseRoles +
-         ", createAddressRoles=" +
-         createAddressRoles +
-         ", deleteAddressRoles=" +
-         deleteAddressRoles +
-         ", viewRoles=" +
-         viewRoles +
+         ", addressMatch=" + addressMatch +
+         ", sendRoles=" + sendRoles +
+         ", consumeRoles=" + consumeRoles +
+         ", createDurableQueueRoles=" + createDurableQueueRoles +
+         ", deleteDurableQueueRoles=" + deleteDurableQueueRoles +
+         ", createNonDurableQueueRoles=" + createNonDurableQueueRoles +
+         ", deleteNonDurableQueueRoles=" + deleteNonDurableQueueRoles +
+         ", manageRoles=" + manageRoles +
+         ", browseRoles=" + browseRoles +
+         ", createAddressRoles=" + createAddressRoles +
+         ", deleteAddressRoles=" + deleteAddressRoles +
+         ", viewRoles=" + viewRoles +
          ", editRoles=" + editRoles +
          "]";
    }

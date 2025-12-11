@@ -27,37 +27,63 @@ import org.apache.activemq.artemis.utils.JsonLoader;
  */
 public class Role implements Serializable {
 
+   public static final String SEND_PERMISSION = "send";
+   public static final String CONSUME_PERMISSION = "consume";
+   public static final String CREATE_DURABLE_QUEUE_PERMISSION = "createDurableQueue";
+   public static final String DELETE_DURABLE_QUEUE_PERMISSION = "deleteDurableQueue";
+   public static final String CREATE_NONDURABLE_QUEUE_PERMISSION = "createNonDurableQueue";
+   public static final String DELETE_NONDURABLE_QUEUE_PERMISSION = "deleteNonDurableQueue";
+   public static final String MANAGE_PERMISSION = "manage";
+   public static final String BROWSE_PERMISSION = "browse";
+   public static final String CREATE_ADDRESS_PERMISSION = "createAddress";
+   public static final String DELETE_ADDRESS_PERMISSION = "deleteAddress";
+   public static final String VIEW_PERMISSION = "view";
+   public static final String EDIT_PERMISSION = "edit";
+
    private static final long serialVersionUID = 3560097227776448872L;
 
-   private String name;
+   protected String name;
 
-   private boolean send;
+   protected boolean send;
 
-   private boolean consume;
+   protected boolean consume;
 
-   private boolean createAddress;
+   protected boolean createAddress;
 
-   private boolean deleteAddress;
+   protected boolean deleteAddress;
 
-   private boolean createDurableQueue;
+   protected boolean createDurableQueue;
 
-   private boolean deleteDurableQueue;
+   protected boolean deleteDurableQueue;
 
-   private boolean createNonDurableQueue;
+   protected boolean createNonDurableQueue;
 
-   private boolean deleteNonDurableQueue;
+   protected boolean deleteNonDurableQueue;
 
-   private boolean manage;
+   protected boolean manage;
 
-   private boolean browse;
+   protected boolean browse;
 
-   private boolean view;
+   protected boolean view;
 
-   private boolean edit;
+   protected boolean edit;
 
    public JsonObject toJson() {
-      return JsonLoader.createObjectBuilder().add("name", name).add("send", send).add("consume", consume).add("createDurableQueue", createDurableQueue).add("deleteDurableQueue", deleteDurableQueue).add("createNonDurableQueue", createNonDurableQueue).add("deleteNonDurableQueue", deleteNonDurableQueue).add("manage", manage)
-         .add("browse", browse).add("createAddress", createAddress).add("deleteAddress", deleteAddress).add("view", view).add("edit", edit).build();
+      return JsonLoader.createObjectBuilder()
+         .add("name", name)
+         .add(SEND_PERMISSION, send)
+         .add(CONSUME_PERMISSION, consume)
+         .add(CREATE_DURABLE_QUEUE_PERMISSION, createDurableQueue)
+         .add(DELETE_DURABLE_QUEUE_PERMISSION, deleteDurableQueue)
+         .add(CREATE_NONDURABLE_QUEUE_PERMISSION, createNonDurableQueue)
+         .add(DELETE_NONDURABLE_QUEUE_PERMISSION, deleteNonDurableQueue)
+         .add(MANAGE_PERMISSION, manage)
+         .add(BROWSE_PERMISSION, browse)
+         .add(CREATE_ADDRESS_PERMISSION, createAddress)
+         .add(DELETE_ADDRESS_PERMISSION, deleteAddress)
+         .add(VIEW_PERMISSION, view)
+         .add(EDIT_PERMISSION, edit)
+         .build();
    }
 
    public Role() {
@@ -65,9 +91,9 @@ public class Role implements Serializable {
    }
 
    /**
-    * @deprecated Use {@link #Role(String, boolean, boolean, boolean, boolean, boolean, boolean, boolean, boolean)}
+    * @deprecated Use {@link #Role(String, boolean, boolean, boolean, boolean, boolean, boolean, boolean, boolean, boolean, boolean, boolean, boolean)}
     */
-   @Deprecated
+   @Deprecated(forRemoval = true)
    public Role(final String name,
                final boolean send,
                final boolean consume,
@@ -81,7 +107,10 @@ public class Role implements Serializable {
       this(name, send, consume, createDurableQueue, deleteDurableQueue, createNonDurableQueue, deleteNonDurableQueue, manage, consume);
    }
 
-   @Deprecated
+   /**
+    * @deprecated Use {@link #Role(String, boolean, boolean, boolean, boolean, boolean, boolean, boolean, boolean, boolean, boolean, boolean, boolean)}
+    */
+   @Deprecated(forRemoval = true)
    public Role(final String name,
                final boolean send,
                final boolean consume,
@@ -96,7 +125,10 @@ public class Role implements Serializable {
       this(name, send, consume, createDurableQueue, deleteDurableQueue, createNonDurableQueue, deleteNonDurableQueue, manage, browse, createDurableQueue || createNonDurableQueue, deleteDurableQueue || deleteNonDurableQueue, false, false);
    }
 
-   @Deprecated
+   /**
+    * @deprecated Use {@link #Role(String, boolean, boolean, boolean, boolean, boolean, boolean, boolean, boolean, boolean, boolean, boolean, boolean)}
+    */
+   @Deprecated(forRemoval = true)
    public Role(final String name,
                final boolean send,
                final boolean consume,
@@ -183,6 +215,14 @@ public class Role implements Serializable {
       return browse;
    }
 
+   public boolean isEdit() {
+      return edit;
+   }
+
+   public boolean isView() {
+      return view;
+   }
+
    public void setName(String name) {
       this.name = name;
    }
@@ -227,45 +267,53 @@ public class Role implements Serializable {
       this.browse = browse;
    }
 
+   public void setEdit(boolean edit) {
+      this.edit = edit;
+   }
+
+   public void setView(boolean view) {
+      this.view = view;
+   }
+
    @Override
    public String toString() {
       StringBuilder stringReturn = new StringBuilder("Role {name=" + name + "; allows=[");
 
       if (send) {
-         stringReturn.append(" send ");
+         stringReturn.append(" " + SEND_PERMISSION + " ");
       }
       if (consume) {
-         stringReturn.append(" consume ");
-      }
-      if (createAddress) {
-         stringReturn.append(" createAddress ");
-      }
-      if (deleteAddress) {
-         stringReturn.append(" deleteAddress ");
+         stringReturn.append(" " + CONSUME_PERMISSION + " ");
       }
       if (createDurableQueue) {
-         stringReturn.append(" createDurableQueue ");
+         stringReturn.append(" " + CREATE_DURABLE_QUEUE_PERMISSION + " ");
       }
       if (deleteDurableQueue) {
-         stringReturn.append(" deleteDurableQueue ");
+         stringReturn.append(" " + DELETE_DURABLE_QUEUE_PERMISSION + " ");
       }
       if (createNonDurableQueue) {
-         stringReturn.append(" createNonDurableQueue ");
+         stringReturn.append(" " + CREATE_NONDURABLE_QUEUE_PERMISSION + " ");
       }
       if (deleteNonDurableQueue) {
-         stringReturn.append(" deleteNonDurableQueue ");
+         stringReturn.append(" " + DELETE_NONDURABLE_QUEUE_PERMISSION + " ");
       }
       if (manage) {
-         stringReturn.append(" manage ");
+         stringReturn.append(" " + MANAGE_PERMISSION + " ");
       }
       if (browse) {
-         stringReturn.append(" browse ");
+         stringReturn.append(" " + BROWSE_PERMISSION + " ");
+      }
+      if (createAddress) {
+         stringReturn.append(" " + CREATE_ADDRESS_PERMISSION + " ");
+      }
+      if (deleteAddress) {
+         stringReturn.append(" " + DELETE_ADDRESS_PERMISSION + " ");
       }
       if (view) {
-         stringReturn.append(" view ");
+         stringReturn.append(" " + VIEW_PERMISSION + " ");
       }
       if (edit) {
-         stringReturn.append(" edit ");
+         stringReturn.append(" " + EDIT_PERMISSION + " ");
       }
       stringReturn.append("]}");
 
@@ -284,52 +332,36 @@ public class Role implements Serializable {
       return Objects.equals(name, other.name) &&
              send == other.send &&
              consume == other.consume &&
-             createAddress == other.createAddress &&
-             deleteAddress == other.deleteAddress &&
              createDurableQueue == other.createDurableQueue &&
              createNonDurableQueue == other.createNonDurableQueue &&
              deleteDurableQueue == other.deleteDurableQueue &&
              deleteNonDurableQueue == other.deleteNonDurableQueue &&
              manage == other.manage &&
              browse == other.browse &&
+             createAddress == other.createAddress &&
+             deleteAddress == other.deleteAddress &&
              view == other.view &&
              edit == other.edit;
    }
 
    @Override
    public int hashCode() {
-      return Objects.hash(name, send, consume, createAddress, deleteAddress, createDurableQueue, deleteDurableQueue,
-                          createNonDurableQueue, deleteNonDurableQueue, manage, browse, view, edit);
+      return Objects.hash(name, send, consume, createDurableQueue, deleteDurableQueue, createNonDurableQueue,
+                          deleteNonDurableQueue, manage, browse, createAddress, deleteAddress, view, edit);
    }
 
    public void merge(Role other) {
       send = send || other.send;
       consume = consume || other.consume;
-      createAddress = createAddress || other.createAddress;
-      deleteAddress = deleteAddress || other.deleteAddress;
       createDurableQueue = createDurableQueue || other.createDurableQueue;
       deleteDurableQueue = deleteDurableQueue || other.deleteDurableQueue;
       createNonDurableQueue = createNonDurableQueue || other.createNonDurableQueue;
       deleteNonDurableQueue = deleteNonDurableQueue || other.deleteNonDurableQueue;
       manage = manage || other.manage;
       browse = browse || other.browse;
+      createAddress = createAddress || other.createAddress;
+      deleteAddress = deleteAddress || other.deleteAddress;
       view = view || other.view;
       edit = edit || other.edit;
-   }
-
-   public boolean isEdit() {
-      return edit;
-   }
-
-   public void setEdit(boolean edit) {
-      this.edit = edit;
-   }
-
-   public boolean isView() {
-      return view;
-   }
-
-   public void setView(boolean view) {
-      this.view = view;
    }
 }

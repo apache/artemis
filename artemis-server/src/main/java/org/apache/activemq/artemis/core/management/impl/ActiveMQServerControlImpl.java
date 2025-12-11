@@ -2970,22 +2970,22 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
                                    final String deleteAddressRoles,
                                    final String viewRoles,
                                    final String editRoles) throws Exception {
+      addSecuritySettings(addressMatch, SecurityFormatter.toJSON(sendRoles, consumeRoles, createDurableQueueRoles, deleteDurableQueueRoles, createNonDurableQueueRoles, deleteNonDurableQueueRoles, manageRoles, browseRoles, createAddressRoles, deleteAddressRoles, viewRoles, editRoles));
+   }
+
+   @Override
+   public void addSecuritySettings(final String addressMatch,
+                                   final String securitySettingsAsJson) throws Exception {
       if (AuditLogger.isBaseLoggingEnabled()) {
-         AuditLogger.addSecuritySettings(this.server, addressMatch, sendRoles, consumeRoles, createDurableQueueRoles,
-                  deleteDurableQueueRoles, createNonDurableQueueRoles, deleteNonDurableQueueRoles, manageRoles,
-                  browseRoles, createAddressRoles, deleteAddressRoles, viewRoles, editRoles);
+         AuditLogger.addSecuritySettings(this.server, addressMatch, securitySettingsAsJson);
       }
       checkStarted();
 
       clearIO();
       try {
-         Set<Role> roles = SecurityFormatter.createSecurity(sendRoles, consumeRoles, createDurableQueueRoles, deleteDurableQueueRoles, createNonDurableQueueRoles, deleteNonDurableQueueRoles, manageRoles, browseRoles, createAddressRoles, deleteAddressRoles);
-
-         server.getSecurityRepository().addMatch(addressMatch, roles);
-
-         PersistedSecuritySetting persistedRoles = new PersistedSecuritySetting(addressMatch, sendRoles, consumeRoles, createDurableQueueRoles, deleteDurableQueueRoles, createNonDurableQueueRoles, deleteNonDurableQueueRoles, manageRoles, browseRoles, createAddressRoles, deleteAddressRoles, viewRoles, editRoles);
-
-         storageManager.storeSecuritySetting(persistedRoles);
+         JsonObject o = JsonUtil.readJsonObject(securitySettingsAsJson);
+         server.getSecurityRepository().addMatch(addressMatch, SecurityFormatter.fromJSON(o));
+         storageManager.storeSecuritySetting(new PersistedSecuritySetting(addressMatch, o));
       } finally {
          blockOnIO();
       }

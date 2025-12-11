@@ -175,4 +175,18 @@ public class RandomUtil {
       return RandomUtil.random.nextFloat();
    }
 
+   /**
+    * Generates an array of random alpha-numeric words. The words will be of a random length between 1 and 10
+    * characters.
+    *
+    * @param wordCount the number of random words to generate
+    * @return an array of randomly generated alpha-numeric words between 1 and 10 characters long
+    */
+   public static String[] randomWords(int wordCount) {
+      String[] words = new String[wordCount];
+      for (int i = 0; i < wordCount; i++) {
+         words[i] = randomAlphaNumericString((randomPositiveInt() % 10) + 1);
+      }
+      return words;
+   }
 }

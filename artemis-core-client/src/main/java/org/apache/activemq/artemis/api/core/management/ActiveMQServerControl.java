@@ -1382,6 +1382,10 @@ public interface ActiveMQServerControl {
    @Operation(desc = "List the sessions for the given connectionID", impact = MBeanOperationInfo.INFO)
    String[] listSessions(@Parameter(desc = "a connection ID", name = "connectionID") String connectionID) throws Exception;
 
+   /**
+    * @deprecated use {@link ActiveMQServerControl#addSecuritySettings(String, String)}
+    */
+   @Deprecated(forRemoval = true)
    @Operation(desc = "Add security settings for addresses matching the addressMatch", impact = MBeanOperationInfo.ACTION)
    void addSecuritySettings(@Parameter(desc = "an address match", name = "addressMatch") String addressMatch,
                             @Parameter(desc = "a comma-separated list of roles allowed to send messages", name = "send") String sendRoles,
@@ -1392,6 +1396,10 @@ public interface ActiveMQServerControl {
                             @Parameter(desc = "a comma-separated list of roles allowed to delete non durable queues", name = "deleteNonDurableQueueRoles") String deleteNonDurableQueueRoles,
                             @Parameter(desc = "a comma-separated list of roles allowed to send management messages messages", name = "manage") String manageRoles) throws Exception;
 
+   /**
+    * @deprecated use {@link ActiveMQServerControl#addSecuritySettings(String, String)}
+    */
+   @Deprecated(forRemoval = true)
    @Operation(desc = "Add security settings for addresses matching the addressMatch", impact = MBeanOperationInfo.ACTION)
    void addSecuritySettings(@Parameter(desc = "an address match", name = "addressMatch") String addressMatch,
                             @Parameter(desc = "a comma-separated list of roles allowed to send messages", name = "send") String sendRoles,
@@ -1403,6 +1411,10 @@ public interface ActiveMQServerControl {
                             @Parameter(desc = "a comma-separated list of roles allowed to send management messages messages", name = "manage") String manageRoles,
                             @Parameter(desc = "a comma-separated list of roles allowed to browse queues", name = "browse") String browseRoles) throws Exception;
 
+   /**
+    * @deprecated use {@link ActiveMQServerControl#addSecuritySettings(String, String)}
+    */
+   @Deprecated(forRemoval = true)
    @Operation(desc = "Add security settings for addresses matching the addressMatch", impact = MBeanOperationInfo.ACTION)
    void addSecuritySettings(@Parameter(desc = "an address match", name = "addressMatch") String addressMatch,
                             @Parameter(desc = "a comma-separated list of roles allowed to send messages", name = "send") String sendRoles,
@@ -1416,6 +1428,10 @@ public interface ActiveMQServerControl {
                             @Parameter(desc = "a comma-separated list of roles allowed to create addresses", name = "createAddressRoles") String createAddressRoles,
                             @Parameter(desc = "a comma-separated list of roles allowed to delete addresses", name = "deleteAddressRoles") String deleteAddressRoles) throws Exception;
 
+   /**
+    * @deprecated use {@link ActiveMQServerControl#addSecuritySettings(String, String)}
+    */
+   @Deprecated(forRemoval = true)
    @Operation(desc = "Add security settings for addresses matching the addressMatch", impact = MBeanOperationInfo.ACTION)
    void addSecuritySettings(@Parameter(desc = "an address match", name = "addressMatch") String addressMatch,
                             @Parameter(desc = "a comma-separated list of roles allowed to send messages", name = "send") String sendRoles,
@@ -1430,6 +1446,43 @@ public interface ActiveMQServerControl {
                             @Parameter(desc = "a comma-separated list of roles allowed to delete addresses", name = "deleteAddressRoles") String deleteAddressRoles,
                             @Parameter(desc = "a comma-separated list of roles allowed to view management resources", name = "view") String viewRoles,
                             @Parameter(desc = "a comma-separated list of roles allowed to edit management resources", name = "edit") String editRoles) throws Exception;
+
+   /**
+    * Add security-settings for matching addresses.
+    *
+    * @param addressMatch           The address match pattern to which the security-settings will be applied.
+    * @param securitySettingsAsJson The security-settings in JSON format. The JSON consists of key/value pairs where the
+    *                               key is a string representing the permission type, and the value is an array of
+    *                               strings containing the names of the roles which will be granted the corresponding
+    *                               permission, e.g.:
+    *                               <pre>{@code
+    *                               {
+    *                                 "send": ["role1", "role2"],
+    *                                 "consume": ["role3", "role4"],
+    *                                 "createDurableQueue": ["role5", "role6"]
+    *                               }
+    *                               }</pre>
+    *                               These permission types are supported:
+    *                               <ul>
+    *                               <li>send</li>
+    *                               <li>consume</li>
+    *                               <li>createDurableQueue</li>
+    *                               <li>deleteDurableQueue</li>
+    *                               <li>createNonDurableQueue</li>
+    *                               <li>deleteNonDurableQueue</li>
+    *                               <li>manage</li>
+    *                               <li>browse</li>
+    *                               <li>createAddress</li>
+    *                               <li>deleteAddress</li>
+    *                               <li>view</li>
+    *                               <li>edit</li>
+    *                               </ul>
+    *                               This JSON can be constructed using methods from {@link org.apache.activemq.artemis.utils.SecurityFormatter}.
+    * @throws Exception If an error occurs while adding the security-settings.
+    */
+   @Operation(desc = "Add security-settings for matching addresses", impact = MBeanOperationInfo.ACTION)
+   void addSecuritySettings(@Parameter(desc = "an address match", name = "addressMatch") String addressMatch,
+                            @Parameter(desc = "The configuration of the security-settings as JSON", name = "securitySettingsAsJson")  String securitySettingsAsJson) throws Exception;
 
    @Operation(desc = "Remove security settings for an address", impact = MBeanOperationInfo.ACTION)
    void removeSecuritySettings(@Parameter(desc = "an address match", name = "addressMatch") String addressMatch) throws Exception;
@@ -1685,7 +1738,7 @@ public interface ActiveMQServerControl {
     * adds a new address setting for a specific address
     */
    @Operation(desc = "Add address settings for addresses matching the addressMatch", impact = MBeanOperationInfo.ACTION)
-   String addAddressSettings(@Parameter(desc = "an address match", name = "addressMatch") String address, @Parameter(desc = "The configuration of the address settings as JSON", name = "addressSettingsConfigurationAsJson")  String addressSettingsConfigurationAsJson) throws Exception;
+   String addAddressSettings(@Parameter(desc = "an address match", name = "addressMatch") String address, @Parameter(desc = "The configuration of the address settings as JSON", name = "addressSettingsConfigurationAsJson") String addressSettingsConfigurationAsJson) throws Exception;
 
    @Operation(desc = "Remove address settings", impact = MBeanOperationInfo.ACTION)
    void removeAddressSettings(@Parameter(desc = "an address match", name = "addressMatch") String addressMatch) throws Exception;

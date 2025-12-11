@@ -151,6 +151,18 @@ import static org.apache.activemq.artemis.core.config.impl.Validators.POSITIVE_P
 import static org.apache.activemq.artemis.core.config.impl.Validators.ROUTING_TYPE;
 import static org.apache.activemq.artemis.core.config.impl.Validators.SLOW_CONSUMER_POLICY_TYPE;
 import static org.apache.activemq.artemis.core.config.impl.Validators.SLOW_CONSUMER_THRESHOLD_MEASUREMENT_UNIT;
+import static org.apache.activemq.artemis.core.security.Role.BROWSE_PERMISSION;
+import static org.apache.activemq.artemis.core.security.Role.CONSUME_PERMISSION;
+import static org.apache.activemq.artemis.core.security.Role.CREATE_ADDRESS_PERMISSION;
+import static org.apache.activemq.artemis.core.security.Role.CREATE_DURABLE_QUEUE_PERMISSION;
+import static org.apache.activemq.artemis.core.security.Role.CREATE_NONDURABLE_QUEUE_PERMISSION;
+import static org.apache.activemq.artemis.core.security.Role.DELETE_ADDRESS_PERMISSION;
+import static org.apache.activemq.artemis.core.security.Role.DELETE_DURABLE_QUEUE_PERMISSION;
+import static org.apache.activemq.artemis.core.security.Role.DELETE_NONDURABLE_QUEUE_PERMISSION;
+import static org.apache.activemq.artemis.core.security.Role.EDIT_PERMISSION;
+import static org.apache.activemq.artemis.core.security.Role.MANAGE_PERMISSION;
+import static org.apache.activemq.artemis.core.security.Role.SEND_PERMISSION;
+import static org.apache.activemq.artemis.core.security.Role.VIEW_PERMISSION;
 
 /**
  * Parses an XML document according to the {@literal artemis-configuration.xsd} schema.
@@ -186,34 +198,12 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
    private static final String ROLE_TO_ATTR_NAME = "to";
 
-   static final String CREATEDURABLEQUEUE_NAME = "createDurableQueue";
-
-   private static final String DELETEDURABLEQUEUE_NAME = "deleteDurableQueue";
-
-   private static final String CREATE_NON_DURABLE_QUEUE_NAME = "createNonDurableQueue";
-
-   private static final String DELETE_NON_DURABLE_QUEUE_NAME = "deleteNonDurableQueue";
-
    // We keep supporting these attribute names for compatibility
+   @Deprecated(forRemoval = true)
    private static final String CREATETEMPQUEUE_NAME = "createTempQueue";
 
+   @Deprecated(forRemoval = true)
    private static final String DELETETEMPQUEUE_NAME = "deleteTempQueue";
-
-   private static final String SEND_NAME = "send";
-
-   private static final String CONSUME_NAME = "consume";
-
-   private static final String MANAGE_NAME = "manage";
-
-   private static final String BROWSE_NAME = "browse";
-
-   private static final String CREATEADDRESS_NAME = "createAddress";
-
-   private static final String DELETEADDRESS_NAME = "deleteAddress";
-
-   private static final String VIEW_NAME = "view";
-
-   private static final String EDIT_NAME = "edit";
 
    // Address parsing
 
@@ -1185,33 +1175,33 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
             String[] mappedRoles = getMappedRoleNames(roles, roleMappings);
 
             for (String role : mappedRoles) {
-               if (SEND_NAME.equals(type)) {
+               if (SEND_PERMISSION.equals(type)) {
                   send.add(role.trim());
-               } else if (CONSUME_NAME.equals(type)) {
+               } else if (CONSUME_PERMISSION.equals(type)) {
                   consume.add(role.trim());
-               } else if (CREATEDURABLEQUEUE_NAME.equals(type)) {
+               } else if (CREATE_DURABLE_QUEUE_PERMISSION.equals(type)) {
                   createDurableQueue.add(role.trim());
-               } else if (DELETEDURABLEQUEUE_NAME.equals(type)) {
+               } else if (DELETE_DURABLE_QUEUE_PERMISSION.equals(type)) {
                   deleteDurableQueue.add(role.trim());
-               } else if (CREATE_NON_DURABLE_QUEUE_NAME.equals(type)) {
+               } else if (CREATE_NONDURABLE_QUEUE_PERMISSION.equals(type)) {
                   createNonDurableQueue.add(role.trim());
-               } else if (DELETE_NON_DURABLE_QUEUE_NAME.equals(type)) {
+               } else if (DELETE_NONDURABLE_QUEUE_PERMISSION.equals(type)) {
                   deleteNonDurableQueue.add(role.trim());
                } else if (CREATETEMPQUEUE_NAME.equals(type)) {
                   createNonDurableQueue.add(role.trim());
                } else if (DELETETEMPQUEUE_NAME.equals(type)) {
                   deleteNonDurableQueue.add(role.trim());
-               } else if (MANAGE_NAME.equals(type)) {
+               } else if (MANAGE_PERMISSION.equals(type)) {
                   manageRoles.add(role.trim());
-               } else if (BROWSE_NAME.equals(type)) {
+               } else if (BROWSE_PERMISSION.equals(type)) {
                   browseRoles.add(role.trim());
-               } else if (CREATEADDRESS_NAME.equals(type)) {
+               } else if (CREATE_ADDRESS_PERMISSION.equals(type)) {
                   createAddressRoles.add(role.trim());
-               } else if (DELETEADDRESS_NAME.equals(type)) {
+               } else if (DELETE_ADDRESS_PERMISSION.equals(type)) {
                   deleteAddressRoles.add(role.trim());
-               } else if (VIEW_NAME.equals(type)) {
+               } else if (VIEW_PERMISSION.equals(type)) {
                   viewRoles.add(role.trim());
-               } else if (EDIT_NAME.equals(type)) {
+               } else if (EDIT_PERMISSION.equals(type)) {
                   editRoles.add(role.trim());
                } else {
                   ActiveMQServerLogger.LOGGER.rolePermissionConfigurationError(type);
