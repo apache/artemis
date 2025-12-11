@@ -16,14 +16,13 @@
  */
 package org.apache.activemq.artemis.core.management.impl.view;
 
+import org.apache.activemq.artemis.json.JsonObjectBuilder;
+import java.util.Date;
 import java.util.Objects;
 
 import org.apache.activemq.artemis.core.management.impl.view.predicate.SessionFilterPredicate;
 import org.apache.activemq.artemis.core.server.ServerSession;
-import org.apache.activemq.artemis.json.JsonObjectBuilder;
 import org.apache.activemq.artemis.utils.JsonLoader;
-
-import static org.apache.activemq.artemis.utils.TimestampUtil.formatEpochMillis;
 
 public class SessionView extends ActiveMQAbstractView<ServerSession> {
 
@@ -45,7 +44,7 @@ public class SessionView extends ActiveMQAbstractView<ServerSession> {
          .add(SessionField.ID.getName(), toString(session.getName()))
          .add(SessionField.USER.getName(), toString(session.getUsername()))
          .add(SessionField.VALIDATED_USER.getName(), toString(session.getValidatedUser()))
-         .add(SessionField.CREATION_TIME.getName(), formatEpochMillis((session.getCreationTime())))
+         .add(SessionField.CREATION_TIME.getName(), new Date(session.getCreationTime()).toString())
          .add(SessionField.CONSUMER_COUNT.getName(), session.getConsumerCount())
          .add(SessionField.PRODUCER_COUNT.getName(), session.getProducerCount())
          .add(SessionField.CONNECTION_ID.getName(), session.getConnectionID().toString())
@@ -61,7 +60,7 @@ public class SessionView extends ActiveMQAbstractView<ServerSession> {
          case ID -> session.getName();
          case USER -> session.getUsername();
          case VALIDATED_USER -> session.getValidatedUser();
-         case CREATION_TIME -> session.getCreationTime();
+         case CREATION_TIME -> new Date(session.getCreationTime());
          case CONSUMER_COUNT -> session.getConsumerCount();
          case PRODUCER_COUNT -> session.getProducerCount();
          case CONNECTION_ID -> session.getConnectionID();

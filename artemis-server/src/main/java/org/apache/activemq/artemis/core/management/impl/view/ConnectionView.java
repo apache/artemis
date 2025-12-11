@@ -16,6 +16,7 @@
  */
 package org.apache.activemq.artemis.core.management.impl.view;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -29,8 +30,6 @@ import org.apache.activemq.artemis.json.JsonObjectBuilder;
 import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
 import org.apache.activemq.artemis.utils.JsonLoader;
 import org.apache.activemq.artemis.utils.StringUtil;
-
-import static org.apache.activemq.artemis.utils.TimestampUtil.formatEpochMillis;
 
 public class ConnectionView extends ActiveMQAbstractView<RemotingConnection> {
 
@@ -62,7 +61,7 @@ public class ConnectionView extends ActiveMQAbstractView<RemotingConnection> {
          .add(ConnectionField.CONNECTION_ID.getName(), toString(connection.getID()))
          .add(ConnectionField.REMOTE_ADDRESS.getName(), toString(connection.getRemoteAddress()))
          .add(ConnectionField.USERS.getName(), StringUtil.joinStringList(users, ","))
-         .add(ConnectionField.CREATION_TIME.getName(), formatEpochMillis((connection.getCreationTime())))
+         .add(ConnectionField.CREATION_TIME.getName(), new Date(connection.getCreationTime()).toString())
          .add(ConnectionField.IMPLEMENTATION.getName(), toString(connection.getClass().getSimpleName()))
          .add(ConnectionField.PROTOCOL.getName(), toString(connection.getProtocolName()))
          .add(ConnectionField.CLIENT_ID.getName(), toString(connection.getClientID()))
@@ -89,7 +88,7 @@ public class ConnectionView extends ActiveMQAbstractView<RemotingConnection> {
             }
             return StringUtil.joinStringList(users, ",");
          case CREATION_TIME:
-            return connection.getCreationTime();
+            return new Date(connection.getCreationTime());
          case IMPLEMENTATION:
             return connection.getClass().getSimpleName();
          case PROTOCOL:

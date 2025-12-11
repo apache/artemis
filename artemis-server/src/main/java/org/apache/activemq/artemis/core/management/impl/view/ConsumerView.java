@@ -16,6 +16,8 @@
  */
 package org.apache.activemq.artemis.core.management.impl.view;
 
+import java.util.Date;
+
 import org.apache.activemq.artemis.core.management.impl.ActiveMQServerControlImpl;
 import org.apache.activemq.artemis.core.management.impl.view.predicate.ConsumerFilterPredicate;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
@@ -23,8 +25,6 @@ import org.apache.activemq.artemis.core.server.ServerConsumer;
 import org.apache.activemq.artemis.core.server.ServerSession;
 import org.apache.activemq.artemis.json.JsonObjectBuilder;
 import org.apache.activemq.artemis.utils.JsonLoader;
-
-import static org.apache.activemq.artemis.utils.TimestampUtil.formatEpochMillis;
 
 public class ConsumerView extends ActiveMQAbstractView<ServerConsumer> {
 
@@ -69,15 +69,15 @@ public class ConsumerView extends ActiveMQAbstractView<ServerConsumer> {
          .add(ConsumerField.ADDRESS.getName(), toString(consumer.getQueueAddress()))
          .add(ConsumerField.LOCAL_ADDRESS.getName(), toString(consumer.getConnectionLocalAddress()))
          .add(ConsumerField.REMOTE_ADDRESS.getName(), toString(consumer.getConnectionRemoteAddress()))
-         .add(ConsumerField.CREATION_TIME.getName(), formatEpochMillis(consumer.getCreationTime()))
+         .add(ConsumerField.CREATION_TIME.getName(), new Date(consumer.getCreationTime()).toString())
          .add(ConsumerField.MESSAGES_IN_TRANSIT.getName(), toString(consumer.getMessagesInTransit()))
          .add(ConsumerField.MESSAGES_IN_TRANSIT_SIZE.getName(), toString(consumer.getMessagesInTransitSize()))
          .add(ConsumerField.MESSAGES_DELIVERED.getName(), toString(consumer.getMessagesDelivered()))
          .add(ConsumerField.MESSAGES_DELIVERED_SIZE.getName(), toString(consumer.getMessagesDeliveredSize()))
          .add(ConsumerField.MESSAGES_ACKNOWLEDGED.getName(), toString(consumer.getMessagesAcknowledged()))
          .add(ConsumerField.MESSAGES_ACKNOWLEDGED_AWAITING_COMMIT.getName(), toString(consumer.getMessagesAcknowledgedAwaitingCommit()))
-         .add(ConsumerField.LAST_DELIVERED_TIME.getName(), formatEpochMillis(consumer.getLastDeliveredTime()))
-         .add(ConsumerField.LAST_ACKNOWLEDGED_TIME.getName(), formatEpochMillis(consumer.getLastAcknowledgedTime()))
+         .add(ConsumerField.LAST_DELIVERED_TIME.getName(), consumer.getLastDeliveredTime())
+         .add(ConsumerField.LAST_ACKNOWLEDGED_TIME.getName(), consumer.getLastAcknowledgedTime())
          .add(ConsumerField.STATUS.getName(), ConsumerView.checkConsumerStatus(consumer, server));
 
       return obj;
@@ -106,7 +106,7 @@ public class ConsumerView extends ActiveMQAbstractView<ServerConsumer> {
          case FILTER -> consumer.getFilterString();
          case LOCAL_ADDRESS -> consumer.getConnectionLocalAddress();
          case REMOTE_ADDRESS -> consumer.getConnectionRemoteAddress();
-         case CREATION_TIME -> consumer.getCreationTime();
+         case CREATION_TIME -> new Date(consumer.getCreationTime());
          case MESSAGES_IN_TRANSIT -> consumer.getMessagesInTransit();
          case MESSAGES_IN_TRANSIT_SIZE -> consumer.getMessagesInTransitSize();
          case MESSAGES_DELIVERED -> consumer.getMessagesDelivered();

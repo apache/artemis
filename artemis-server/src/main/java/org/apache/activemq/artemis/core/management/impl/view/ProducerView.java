@@ -25,8 +25,6 @@ import org.apache.activemq.artemis.core.server.ServerSession;
 import org.apache.activemq.artemis.json.JsonObjectBuilder;
 import org.apache.activemq.artemis.utils.JsonLoader;
 
-import static org.apache.activemq.artemis.utils.TimestampUtil.formatEpochMillis;
-
 public class ProducerView extends ActiveMQAbstractView<ServerProducer> {
 
    private static final String defaultSortField = ProducerField.CREATION_TIME.getName();
@@ -64,7 +62,7 @@ public class ProducerView extends ActiveMQAbstractView<ServerProducer> {
          .add(ProducerField.ADDRESS.getName(), toString(Objects.requireNonNullElse(producer.getAddress(), session.getDefaultAddress())))
          .add(ProducerField.LOCAL_ADDRESS.getName(), toString(session.getRemotingConnection().getTransportConnection().getLocalAddress()))
          .add(ProducerField.REMOTE_ADDRESS.getName(), toString(session.getRemotingConnection().getTransportConnection().getRemoteAddress()))
-         .add(ProducerField.CREATION_TIME.getName(), formatEpochMillis((producer.getCreationTime())))
+         .add(ProducerField.CREATION_TIME.getName(), toString(producer.getCreationTime()))
          .add(ProducerField.MESSAGE_SENT.getName(), producer.getMessagesSent())
          .add(ProducerField.MESSAGE_SENT_SIZE.getName(), producer.getMessagesSentSize())
          .add(ProducerField.LAST_PRODUCED_MESSAGE_ID.getName(), toString(producer.getLastProducedMessageID()));
