@@ -38,7 +38,7 @@ public class GroovyRun {
    public static final String TWO_SEVEN_ZERO = "ARTEMIS-270";
    public static final String TWO_TEN_ZERO = "ARTEMIS-2_10_0";
    public static final String TWO_SEVENTEEN_ZERO = "ARTEMIS-2_17_0";
-   public static final String TWO_EIGHTEEN_ZERO = "ARTEMIS-2_18_0";
+   public static final String TWO_FOURTY_FOUR_ZERO = "ARTEMIS-2_44_0";
    public static final String TWO_TWENTYTWO_ZERO = "ARTEMIS-2_22_0";
    public static final String TWO_TWENTYEIGHT_ZERO = "ARTEMIS-2_28_0";
    public static final String TWO_THIRTYTHREE_ZERO = "ARTEMIS-2_33_0";

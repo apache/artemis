@@ -18,7 +18,7 @@
 package org.apache.activemq.artemis.tests.compatibility;
 
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.SNAPSHOT;
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.TWO_EIGHTEEN_ZERO;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.TWO_FOURTY_FOUR_ZERO;
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.TWO_SEVENTEEN_ZERO;
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.TWO_TWENTYTWO_ZERO;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -66,9 +66,11 @@ public class MultiVersionReplicaTest extends ClasspathBase {
          combinations.add(new Object[]{SNAPSHOT, TWO_TWENTYTWO_ZERO});
          combinations.add(new Object[]{TWO_SEVENTEEN_ZERO, SNAPSHOT});
          combinations.add(new Object[]{SNAPSHOT, TWO_SEVENTEEN_ZERO});
-         combinations.add(new Object[]{TWO_EIGHTEEN_ZERO, SNAPSHOT});
-         combinations.add(new Object[]{SNAPSHOT, TWO_EIGHTEEN_ZERO});
       }
+
+      combinations.add(new Object[]{TWO_FOURTY_FOUR_ZERO, SNAPSHOT});
+      combinations.add(new Object[]{SNAPSHOT, TWO_FOURTY_FOUR_ZERO});
+
       // The SNAPSHOT/SNAPSHOT is here as a test validation only, like in other cases where SNAPSHOT/SNAPSHOT is used.
       combinations.add(new Object[]{SNAPSHOT, SNAPSHOT});
       return combinations;

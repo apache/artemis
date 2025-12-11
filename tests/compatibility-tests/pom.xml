@@ -486,23 +486,23 @@
                         <goals>
                            <goal>dependency-scan</goal>
                         </goals>
-                        <id>2_18_0-check</id>
+                        <id>2_44_0-check</id>
                         <configuration>
                            <optional>true</optional>
                            <libListWithDeps>
-                              <arg>org.apache.activemq:artemis-jms-server:2.18.0</arg>
-                              <arg>org.apache.activemq:artemis-jms-client:2.18.0</arg>
-                              <arg>org.apache.activemq:artemis-cli:2.18.0</arg>
-                              <arg>org.apache.activemq:artemis-hornetq-protocol:2.18.0</arg>
-                              <arg>org.apache.activemq:artemis-amqp-protocol:2.18.0</arg>
-                              <arg>org.apache.activemq:artemis-hornetq-protocol:2.18.0</arg>
+                              <arg>org.apache.activemq:artemis-jms-server:2.44.0</arg>
+                              <arg>org.apache.activemq:artemis-jms-client:2.44.0</arg>
+                              <arg>org.apache.activemq:artemis-cli:2.44.0</arg>
+                              <arg>org.apache.activemq:artemis-hornetq-protocol:2.44.0</arg>
+                              <arg>org.apache.activemq:artemis-amqp-protocol:2.44.0</arg>
+                              <arg>org.apache.activemq:artemis-hornetq-protocol:2.44.0</arg>
                               <arg>org.apache.groovy:groovy-all:pom:${groovy.version}</arg>
                               <arg>org.jboss.marshalling:jboss-marshalling-river:2.0.9.Final</arg>
                            </libListWithDeps>
                            <libList>
                               <arg>org.apache.activemq.tests:compatibility-tests:${project.version}</arg>
                            </libList>
-                           <file>${basedir}/target/ARTEMIS-2_18_0.cp</file>
+                           <file>${basedir}/target/ARTEMIS-2_44_0.cp</file>
                         </configuration>
                      </execution>
                      <execution>
