@@ -137,10 +137,6 @@
          <artifactId>netty-transport-classes-kqueue</artifactId>
       </dependency>
       <dependency>
-         <groupId>io.netty</groupId>
-         <artifactId>netty-codec</artifactId>
-      </dependency>
-      <dependency>
          <groupId>commons-beanutils</groupId>
          <artifactId>commons-beanutils</artifactId>
       </dependency>

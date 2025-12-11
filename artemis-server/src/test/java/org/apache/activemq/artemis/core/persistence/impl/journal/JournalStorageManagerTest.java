@@ -32,6 +32,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 
+import io.netty.util.internal.PlatformDependent;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffers;
 import org.apache.activemq.artemis.core.config.Configuration;
@@ -102,6 +103,7 @@ public class JournalStorageManagerTest extends ServerTestBase {
 
    @TestTemplate
    public void testAddBytesToLargeMessageNotLeakingByteBuffer() throws Exception {
+      assumeTrue(PlatformDependent.hasUnsafe());
       if (journalType == JournalType.ASYNCIO) {
          assumeTrue(AIOSequentialFileFactory.isSupported(), "AIO is not supported on this platform");
       }

@@ -352,4 +352,10 @@ public interface ActiveMQClientLogger {
 
    @LogMessage(id = 214036, value = "Connection closure to {} has been detected: {} [code={}]", level = LogMessage.Level.INFO)
    void connectionClosureDetected(String remoteAddress, String message, ActiveMQExceptionType type);
+
+   @LogMessage(id = 214037, value = "Unable to check IoUring availability ", level = LogMessage.Level.WARN)
+   void unableToCheckIoUringAvailability(Throwable e);
+
+   @LogMessage(id = 214038, value = "IoUring is not available, please add to the classpath or configure useIoUring=false to remove this warning", level = LogMessage.Level.WARN)
+   void unableToCheckIoUringAvailabilitynoClass();
 }

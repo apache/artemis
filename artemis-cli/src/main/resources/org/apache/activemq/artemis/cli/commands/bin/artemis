@@ -119,6 +119,9 @@ if [ -f "$ARTEMIS_OOME_DUMP" ] ; then
   mv $ARTEMIS_OOME_DUMP $ARTEMIS_OOME_DUMP.bkp
 fi
 
+# Netty needs access to unsafe, but this is turned off in Java 25 by default
+$JAVACMD --sun-misc-unsafe-memory-access=allow --version > /dev/null 2>&1 && ALLOW_UNSAFE="--sun-misc-unsafe-memory-access=allow"
+
 exec "$JAVACMD" \
     $LOGGING_ARGS \
     $JAVA_ARGS \
@@ -132,6 +135,7 @@ exec "$JAVACMD" \
     -Djava.io.tmpdir="$ARTEMIS_INSTANCE/tmp" \
     -Ddata.dir="$ARTEMIS_DATA_DIR" \
     -Dartemis.instance.etc="$ARTEMIS_INSTANCE_ETC" \
+    $ALLOW_UNSAFE \
     $DEBUG_ARGS \
     $JAVA_ARGS_APPEND \
     org.apache.activemq.artemis.boot.Artemis "$@"

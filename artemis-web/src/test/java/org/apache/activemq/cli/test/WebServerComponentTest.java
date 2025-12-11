@@ -58,8 +58,9 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.HttpClientCodec;
@@ -1083,7 +1084,7 @@ public class WebServerComponentTest extends ArtemisTestCase {
    }
 
    private Channel getChannel(int port, ClientHandler clientHandler) throws InterruptedException {
-      EventLoopGroup group = new NioEventLoopGroup();
+      EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
       Bootstrap bootstrap = new Bootstrap();
       bootstrap.group(group).channel(NioSocketChannel.class).handler(new ChannelInitializer() {
          @Override
@@ -1096,7 +1097,7 @@ public class WebServerComponentTest extends ArtemisTestCase {
    }
 
    private Channel getSslChannel(int port, SslHandler sslHandler, ClientHandler clientHandler) throws InterruptedException {
-      EventLoopGroup group = new NioEventLoopGroup();
+      EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
       Bootstrap bootstrap = new Bootstrap();
       bootstrap.group(group).channel(NioSocketChannel.class).handler(new ChannelInitializer() {
          @Override

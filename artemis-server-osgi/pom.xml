@@ -128,7 +128,7 @@
                      org.glassfish.json*;resolution:=optional,
                      org.postgresql*;resolution:=optional,
                      de.dentrassi.crypto.pem;resolution:=optional,
-                     io.netty.buffer;io.netty.*;version="[4.1,5)",
+                     io.netty.*;version="[4.2,5)",
                      java.net.http*;resolution:=optional,
                      com.sun.net.httpserver*;resolution:=optional,
                      *

@@ -120,7 +120,7 @@
       <checkstyle.version>12.2.0</checkstyle.version>
       <mockito.version>5.21.0</mockito.version>
       <jctools.version>4.0.5</jctools.version>
-      <netty.version>4.1.128.Final</netty.version>
+      <netty.version>4.2.7.Final</netty.version>
       <hdrhistogram.version>2.2.2</hdrhistogram.version>
       <curator.version>5.9.0</curator.version>
       <zookeeper.version>3.9.4</zookeeper.version>
@@ -256,13 +256,19 @@
       <!-- for tests that will need a new server created -->
       <artemis.distribution.output>${activemq.basedir}/artemis-distribution/target/apache-artemis-${project.version}-bin/apache-artemis-${project.version}</artemis.distribution.output>
 
-      <activemq-surefire-argline>-Dbrokerconfig.maxDiskUsage=100 -Dorg.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants.DEFAULT_QUIET_PERIOD=0 -Dorg.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants.DEFAULT_SHUTDOWN_TIMEOUT=0
-         -Djava.library.path="${activemq.basedir}/target/bin/lib/linux-x86_64:${activemq.basedir}/target/bin/lib/linux-i686" -Djgroups.bind_addr=localhost
-         -Djava.net.preferIPv4Stack=true -Dbasedir=${basedir}
+      <initial-activemq-surefire-argline>
+         -Dbrokerconfig.maxDiskUsage=100
+         -Dorg.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants.DEFAULT_QUIET_PERIOD=0
+         -Dorg.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants.DEFAULT_SHUTDOWN_TIMEOUT=0
+         -Djava.library.path="${activemq.basedir}/target/bin/lib/linux-x86_64:${activemq.basedir}/target/bin/lib/linux-i686"
+         -Djgroups.bind_addr=localhost
+         -Djava.net.preferIPv4Stack=true
+         -Dbasedir=${basedir}
          -Djdk.attach.allowAttachSelf=true
          -Dartemis.distribution.output="${artemis.distribution.output}"
          -Dlog4j2.configurationFile="file:${activemq.basedir}/tests/config/${logging.config}"
-      </activemq-surefire-argline>
+      </initial-activemq-surefire-argline>
+
       <activemq.basedir>${project.basedir}</activemq.basedir>
       <proton.trace.frames>false</proton.trace.frames>
 
@@ -272,6 +278,7 @@
 
       <netty-transport-native-epoll-classifier>linux-x86_64</netty-transport-native-epoll-classifier>
       <netty-transport-native-kqueue-classifier>osx-x86_64</netty-transport-native-kqueue-classifier>
+      <netty-transport-native-io_uring-classifier>linux-x86_64</netty-transport-native-io_uring-classifier>
 
       <fast-tests>false</fast-tests>
 
@@ -737,6 +744,30 @@
                </plugin>
             </plugins>
          </build>
+      </profile>
+      <profile>
+         <id>jdk-17-23</id>
+         <activation>
+            <jdk>[17, 23]</jdk>
+         </activation>
+         <properties>
+            <activemq-surefire-argline>
+               ${initial-activemq-surefire-argline}
+            </activemq-surefire-argline>
+         </properties>
+      </profile>
+      <profile>
+         <id>jdk-25</id>
+         <activation>
+            <jdk>[24, 25]</jdk>
+         </activation>
+         <properties>
+            <activemq-surefire-argline>
+               ${initial-activemq-surefire-argline}
+               --enable-native-access=ALL-UNNAMED
+               --sun-misc-unsafe-memory-access=allow
+            </activemq-surefire-argline>
+         </properties>
       </profile>
    </profiles>
 

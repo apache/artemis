@@ -244,7 +244,7 @@ These Native transports add features specific to a particular platform, generate
 
 Both Clients and Server can benefit from this.
 
-Current Supported Platforms.
+Currently supported platforms:
 
 * Linux running 64bit JVM
 * MacOS running 64bit JVM
@@ -255,7 +255,7 @@ If running on an unsupported platform or if there are any issues loading native 
 
 ==== Linux Native Transport
 
-On supported Linux platforms Epoll is used, @see https://en.wikipedia.org/wiki/Epoll.
+On supported Linux platforms Epoll can be used, @see https://en.wikipedia.org/wiki/Epoll.
 
 The following properties are specific to this native transport:
 
@@ -263,6 +263,24 @@ useEpoll::
 enables the use of epoll if a supported linux platform is running a 64bit JVM is detected.
 Setting this to `false` will force the use of Java NIO instead of epoll.
 Default is `true`
+
+Additionally, IO_URING can be used, @see https://en.wikipedia.org/wiki/Io_uring.
+
+The following properties are specific to this native transport:
+
+useIoUring::
+enables the use of IO_URING if a supported linux platform running a 64bit JVM is detected.
+Setting this to `false` will attempt the use of `epoll`, then finally falling back to using Java NIO.
+Default is `false`
+
+[WARNING]
+====
+[#io_uring-warning]
+IO_URING support is a recent addition to the broker and should be considered `experimental` at this stage.
+Using it _could_ introduce unwanted side effects. As such, thorough testing and verification are advised before use in any production or otherwise critical environment.
+
+Netty has provided a https://github.com/netty/netty/tree/4.2/transport-native-io_uring#faq[FAQ] that may be helpful.
+====
 
 ==== MacOS Native Transport
 

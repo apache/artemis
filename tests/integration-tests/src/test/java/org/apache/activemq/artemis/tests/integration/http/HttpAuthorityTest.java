@@ -26,8 +26,9 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
@@ -51,8 +52,8 @@ public class HttpAuthorityTest extends ActiveMQTestBase {
       int port = 61616;
       CountDownLatch requestTested = new CountDownLatch(1);
       AtomicBoolean failed = new AtomicBoolean(false);
-      EventLoopGroup bossGroup = new NioEventLoopGroup();
-      EventLoopGroup workerGroup = new NioEventLoopGroup();
+      EventLoopGroup bossGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
+      EventLoopGroup workerGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
       try {
          ServerBootstrap bootstrap = new ServerBootstrap();
          bootstrap.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class).childHandler(new ChannelInitializer<SocketChannel>() {
@@ -88,6 +89,7 @@ public class HttpAuthorityTest extends ActiveMQTestBase {
          }
          assertTrue(requestTested.await(500, TimeUnit.MILLISECONDS));
          assertFalse(failed.get());
+         future.channel().close();
       } finally {
          workerGroup.shutdownGracefully();
          bossGroup.shutdownGracefully();

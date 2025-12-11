@@ -24,7 +24,7 @@ if [ -z "$LOGGING_ARGS" ]; then
 fi
 
 if [ -z "$JAVA_ARGS" ]; then
-    JAVA_ARGS="-Dlog4j2.disableJmx=true --add-opens java.base/jdk.internal.misc=ALL-UNNAMED ${java-utility-opts}"
+    JAVA_ARGS="-Dlog4j2.disableJmx=true --add-opens java.base/jdk.internal.misc=ALL-UNNAMED --enable-native-access=ALL-UNNAMED ${java-utility-opts}"
 fi
 
 # Uncomment to enable remote debugging

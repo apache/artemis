@@ -90,10 +90,15 @@ if $cygwin ; then
   CLASSPATH=`cygpath --windows "$CLASSPATH"`
 fi
 
+# Netty needs access to unsafe, but this is turned off in Java 25 by default
+$JAVACMD --sun-misc-unsafe-memory-access=allow --version > /dev/null 2>&1 && ALLOW_UNSAFE="--sun-misc-unsafe-memory-access=allow"
+
 exec "$JAVACMD" $JAVA_ARGS $ARTEMIS_CLUSTER_PROPS \
     -classpath "$CLASSPATH" \
     -Dartemis.home="$ARTEMIS_HOME" \
     -Djava.library.path="$ARTEMIS_HOME/bin/lib/linux-$(uname -m)" \
+    --enable-native-access=ALL-UNNAMED \
+    $ALLOW_UNSAFE \
     $DEBUG_ARGS \
     $JAVA_ARGS_APPEND \
     org.apache.activemq.artemis.boot.Artemis "$@"

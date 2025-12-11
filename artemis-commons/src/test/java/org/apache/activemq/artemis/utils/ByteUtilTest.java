@@ -223,6 +223,7 @@ public class ByteUtilTest {
 
    @Test
    public void shouldZeroesLimitedDirectByteBuffer() {
+      assumeTrue(PlatformDependent.hasUnsafe());
       final byte one = (byte) 1;
       final int capacity = 64;
       final int bytes = 32;

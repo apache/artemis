@@ -19,6 +19,7 @@ package org.apache.activemq.artemis.core.remoting.impl.netty;
 
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.kqueue.KQueue;
+import io.netty.channel.uring.IoUring;
 import org.apache.activemq.artemis.core.client.ActiveMQClientLogger;
 import org.apache.activemq.artemis.utils.Env;
 
@@ -51,4 +52,17 @@ public class CheckDependencies {
          return false;
       }
    }
+
+   public static final boolean isIoUringAvailable() {
+      try {
+         return Env.isLinuxOs() && IoUring.isAvailable();
+      } catch (NoClassDefFoundError noClassDefFoundError) {
+         ActiveMQClientLogger.LOGGER.unableToCheckIoUringAvailabilitynoClass();
+         return false;
+      } catch (Throwable e)  {
+         ActiveMQClientLogger.LOGGER.unableToCheckIoUringAvailability(e);
+         return false;
+      }
+   }
+
 }
