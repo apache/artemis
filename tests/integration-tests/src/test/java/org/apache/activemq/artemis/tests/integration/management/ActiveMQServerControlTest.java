@@ -135,6 +135,7 @@ import org.apache.activemq.artemis.tests.unit.core.config.impl.fakes.FakeConnect
 import org.apache.activemq.artemis.tests.util.CFUtil;
 import org.apache.activemq.artemis.tests.util.Wait;
 import org.apache.activemq.artemis.utils.RandomUtil;
+import org.apache.activemq.artemis.utils.SecurityFormatter;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.junit.jupiter.api.BeforeEach;
@@ -1174,12 +1175,63 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
 
    @TestTemplate
    public void testSecuritySettings() throws Exception {
+      testSecuritySettings(false);
+   }
+
+
+   @TestTemplate
+   public void testSecuritySettingsJson() throws Exception {
+      testSecuritySettings(true);
+   }
+
+   private void testSecuritySettings(boolean json) throws Exception {
       ActiveMQServerControl serverControl = createManagementControl();
       String addressMatch = "test.#";
       String exactAddress = "test.whatever";
 
       assertEquals(2, serverControl.getRoles(addressMatch).length);
-      serverControl.addSecuritySettings(addressMatch, "foo", "foo, bar", null, "bar", "foo, bar", "", "", "bar", "foo", "foo", "", "");
+      final String sendRoles = "foo";
+      final String consumeRoles = "foo, bar";
+      final String createDurableQueueRoles = null;
+      final String deleteDurableQueueRoles = "bar";
+      final String createNonDurableQueueRoles = "foo, bar";
+      final String deleteNonDurableQueueRoles = "";
+      final String manageRoles = "";
+      final String browseRoles = "bar";
+      final String createAddressRoles = "foo";
+      final String deleteAddressRoles = "foo";
+      final String viewRoles = "";
+      final String editRoles = "";
+
+      if (json) {
+         serverControl.addSecuritySettings(addressMatch,
+                                           SecurityFormatter.toJSON(sendRoles,
+                                                                    consumeRoles,
+                                                                    createDurableQueueRoles,
+                                                                    deleteDurableQueueRoles,
+                                                                    createNonDurableQueueRoles,
+                                                                    deleteNonDurableQueueRoles,
+                                                                    manageRoles,
+                                                                    browseRoles,
+                                                                    createAddressRoles,
+                                                                    deleteAddressRoles,
+                                                                    viewRoles,
+                                                                    editRoles));
+      } else {
+         serverControl.addSecuritySettings(addressMatch,
+                                           sendRoles,
+                                           consumeRoles,
+                                           createDurableQueueRoles,
+                                           deleteDurableQueueRoles,
+                                           createNonDurableQueueRoles,
+                                           deleteNonDurableQueueRoles,
+                                           manageRoles,
+                                           browseRoles,
+                                           createAddressRoles,
+                                           deleteAddressRoles,
+                                           viewRoles,
+                                           editRoles);
+      }
 
       // Restart the server. Those settings should be persisted
 

@@ -231,4 +231,16 @@ public class JsonUtilTest {
       assertTrue(inserted.containsKey("c"));
       assertEquals(target, inserted.getJsonObject("c"));
    }
+
+   @Test
+   public void testArrayToString() {
+      JsonObjectBuilder jsonObjectBuilder = JsonLoader.createObjectBuilder();
+
+      // test empty array
+      assertTrue(JsonUtil.arrayToString(jsonObjectBuilder.build(), "test").isEmpty());
+
+      // test array with 2 elements
+      jsonObjectBuilder.add("test", JsonLoader.createArrayBuilder().add("a").add("b").build());
+      assertEquals("a, b", JsonUtil.arrayToString(jsonObjectBuilder.build(), "test"));
+   }
 }
