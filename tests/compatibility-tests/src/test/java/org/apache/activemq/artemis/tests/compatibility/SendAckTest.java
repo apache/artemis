@@ -17,10 +17,10 @@
 
 package org.apache.activemq.artemis.tests.compatibility;
 
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.HORNETQ_247;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.HORNETQ_2_4_7;
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.SNAPSHOT;
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.TWO_FOUR;
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ONE_FOUR;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_2_4_0;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_1_4_0;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -39,11 +39,11 @@ public class SendAckTest extends ServerBase {
    public static Collection getParameters() {
       List<Object[]> combinations = new ArrayList<>();
 
-      combinations.addAll(combinatory(SNAPSHOT, new Object[]{SNAPSHOT, ONE_FOUR}, new Object[]{ONE_FOUR, SNAPSHOT}, new Object[]{ONE_FOUR, SNAPSHOT}));
+      combinations.addAll(combinatory(SNAPSHOT, new Object[]{SNAPSHOT, ARTEMIS_1_4_0}, new Object[]{ARTEMIS_1_4_0, SNAPSHOT}, new Object[]{ARTEMIS_1_4_0, SNAPSHOT}));
 
-      combinations.add(new Object[]{TWO_FOUR, SNAPSHOT, SNAPSHOT});
-      combinations.add(new Object[]{SNAPSHOT, TWO_FOUR, TWO_FOUR});
-      combinations.add(new Object[]{HORNETQ_247, SNAPSHOT, SNAPSHOT});
+      combinations.add(new Object[]{ARTEMIS_2_4_0, SNAPSHOT, SNAPSHOT});
+      combinations.add(new Object[]{SNAPSHOT, ARTEMIS_2_4_0, ARTEMIS_2_4_0});
+      combinations.add(new Object[]{HORNETQ_2_4_7, SNAPSHOT, SNAPSHOT});
       return combinations;
    }
 

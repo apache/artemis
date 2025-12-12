@@ -17,8 +17,8 @@
 
 package org.apache.activemq.artemis.tests.compatibility;
 
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.HORNETQ_235;
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.HORNETQ_247;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.HORNETQ_2_3_5;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.HORNETQ_2_4_7;
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.SNAPSHOT;
 
 import java.util.ArrayList;
@@ -39,10 +39,10 @@ public class HQLargeMeshTest extends VersionedBase {
    public static Collection getParameters() {
       List<Object[]> combinations = new ArrayList<>();
 
-      combinations.add(new Object[]{SNAPSHOT, HORNETQ_247, HORNETQ_247});
-      combinations.add(new Object[]{SNAPSHOT, HORNETQ_235, HORNETQ_247});
-      combinations.add(new Object[]{SNAPSHOT, HORNETQ_247, HORNETQ_235});
-      combinations.add(new Object[]{SNAPSHOT, HORNETQ_235, HORNETQ_235});
+      combinations.add(new Object[]{SNAPSHOT, HORNETQ_2_4_7, HORNETQ_2_4_7});
+      combinations.add(new Object[]{SNAPSHOT, HORNETQ_2_3_5, HORNETQ_2_4_7});
+      combinations.add(new Object[]{SNAPSHOT, HORNETQ_2_4_7, HORNETQ_2_3_5});
+      combinations.add(new Object[]{SNAPSHOT, HORNETQ_2_3_5, HORNETQ_2_3_5});
       return combinations;
    }
 

@@ -17,7 +17,7 @@
 
 package org.apache.activemq.artemis.tests.compatibility;
 
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ONE_FOUR;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_1_4_0;
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.SNAPSHOT;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -43,7 +43,7 @@ public class AddressConfigTest extends VersionedBase {
    @Parameters(name = "server={0}, producer={1}, consumer={2}")
    public static Collection getParameters() {
       List<Object[]> combinations = new ArrayList<>();
-      combinations.addAll(combinatory(SNAPSHOT, new Object[]{SNAPSHOT}, new Object[]{ONE_FOUR, SNAPSHOT}, new Object[]{ONE_FOUR, SNAPSHOT}));
+      combinations.addAll(combinatory(SNAPSHOT, new Object[]{SNAPSHOT}, new Object[]{ARTEMIS_1_4_0, SNAPSHOT}, new Object[]{ARTEMIS_1_4_0, SNAPSHOT}));
       return combinations;
    }
 

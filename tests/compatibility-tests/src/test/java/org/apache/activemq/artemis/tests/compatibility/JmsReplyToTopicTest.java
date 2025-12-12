@@ -17,7 +17,7 @@
 package org.apache.activemq.artemis.tests.compatibility;
 
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.JAKARTAEE;
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ONE_FOUR;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_1_4_0;
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.SNAPSHOT;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -43,14 +43,14 @@ public class JmsReplyToTopicTest extends VersionedBase {
    @Parameters(name = "server={0}, producer={1}, consumer={2}")
    public static Collection getParameters() {
       List<Object[]> combinations = new ArrayList<>();
-      combinations.add(new Object[]{SNAPSHOT, ONE_FOUR, SNAPSHOT});
-      combinations.add(new Object[]{SNAPSHOT, SNAPSHOT, ONE_FOUR});
+      combinations.add(new Object[]{SNAPSHOT, ARTEMIS_1_4_0, SNAPSHOT});
+      combinations.add(new Object[]{SNAPSHOT, SNAPSHOT, ARTEMIS_1_4_0});
       combinations.add(new Object[]{SNAPSHOT, SNAPSHOT, SNAPSHOT});
       combinations.add(new Object[]{JAKARTAEE, JAKARTAEE, JAKARTAEE});
       combinations.add(new Object[]{JAKARTAEE, JAKARTAEE, SNAPSHOT});
       combinations.add(new Object[]{JAKARTAEE, SNAPSHOT, JAKARTAEE});
-      combinations.add(new Object[]{JAKARTAEE, JAKARTAEE, ONE_FOUR});
-      combinations.add(new Object[]{JAKARTAEE, ONE_FOUR, JAKARTAEE});
+      combinations.add(new Object[]{JAKARTAEE, JAKARTAEE, ARTEMIS_1_4_0});
+      combinations.add(new Object[]{JAKARTAEE, ARTEMIS_1_4_0, JAKARTAEE});
       return combinations;
    }
 

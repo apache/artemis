@@ -18,7 +18,7 @@
 package org.apache.activemq.artemis.tests.compatibility;
 
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.SNAPSHOT;
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.TWO_FOUR;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_2_4_0;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -46,8 +46,8 @@ public class Mesh2Test extends ServerBase {
       // if we keep testing current one against 2.4 and 1.4.. we are sure the wire and API won't change over time
       List<Object[]> combinations = new ArrayList<>();
       combinations.add(new Object[]{SNAPSHOT, SNAPSHOT, SNAPSHOT});
-      combinations.add(new Object[]{SNAPSHOT, TWO_FOUR, TWO_FOUR});
-      combinations.add(new Object[]{TWO_FOUR, SNAPSHOT, SNAPSHOT});
+      combinations.add(new Object[]{SNAPSHOT, ARTEMIS_2_4_0, ARTEMIS_2_4_0});
+      combinations.add(new Object[]{ARTEMIS_2_4_0, SNAPSHOT, SNAPSHOT});
       return combinations;
    }
 

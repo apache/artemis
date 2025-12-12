@@ -31,19 +31,19 @@ public class GroovyRun {
 
    public static final String SNAPSHOT = "ARTEMIS-SNAPSHOT";
    public static final String JAKARTAEE = "ARTEMIS-JAKARTAEE";
-   public static final String ONE_FOUR = "ARTEMIS-140";
-   public static final String TWO_ONE = "ARTEMIS-210";
-   public static final String TWO_FOUR = "ARTEMIS-240";
-   public static final String TWO_SIX_THREE = "ARTEMIS-263";
-   public static final String TWO_SEVEN_ZERO = "ARTEMIS-270";
-   public static final String TWO_TEN_ZERO = "ARTEMIS-2_10_0";
-   public static final String TWO_SEVENTEEN_ZERO = "ARTEMIS-2_17_0";
-   public static final String TWO_FOURTY_FOUR_ZERO = "ARTEMIS-2_44_0";
-   public static final String TWO_TWENTYTWO_ZERO = "ARTEMIS-2_22_0";
-   public static final String TWO_TWENTYEIGHT_ZERO = "ARTEMIS-2_28_0";
-   public static final String TWO_THIRTYTHREE_ZERO = "ARTEMIS-2_33_0";
-   public static final String HORNETQ_235 = "HORNETQ-235";
-   public static final String HORNETQ_247 = "HORNETQ-247";
+   public static final String ARTEMIS_1_4_0 = "ARTEMIS-1_4_0";
+   public static final String ARTEMIS_2_1_0 = "ARTEMIS-2_1_0";
+   public static final String ARTEMIS_2_4_0 = "ARTEMIS-2_4_0";
+   public static final String ARTEMIS_2_6_3 = "ARTEMIS-2_6_3";
+   public static final String ARTEMIS_2_7_0 = "ARTEMIS-2_7_0";
+   public static final String ARTEMIS_2_10_0 = "ARTEMIS-2_10_0";
+   public static final String ARTEMIS_2_17_0 = "ARTEMIS-2_17_0";
+   public static final String ARTEMIS_2_44_0 = "ARTEMIS-2_44_0";
+   public static final String ARTEMIS_2_22_0 = "ARTEMIS-2_22_0";
+   public static final String ARTEMIS_2_28_0 = "ARTEMIS-2_28_0";
+   public static final String ARTEMIS_2_33_0 = "ARTEMIS-2_33_0";
+   public static final String HORNETQ_2_3_5 = "HORNETQ-2_3_5";
+   public static final String HORNETQ_2_4_7 = "HORNETQ-2_4_7";
    public static final String AMQ_5_11 = "AMQ_5_11";
 
    private static Binding theBinding;

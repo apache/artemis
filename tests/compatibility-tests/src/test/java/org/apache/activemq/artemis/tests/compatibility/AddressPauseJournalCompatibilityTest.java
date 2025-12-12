@@ -18,7 +18,7 @@
 package org.apache.activemq.artemis.tests.compatibility;
 
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.SNAPSHOT;
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.TWO_TEN_ZERO;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_2_10_0;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,7 +46,7 @@ public class AddressPauseJournalCompatibilityTest extends VersionedBase {
 
       if (getJavaVersion() <= 22) {
          // 2.10.0 server fails on JDK23+ without workarounds.
-         combinations.add(new Object[]{TWO_TEN_ZERO, SNAPSHOT});
+         combinations.add(new Object[]{ARTEMIS_2_10_0, SNAPSHOT});
       }
       // the purpose on this one is just to validate the test itself.
       /// if it can't run against itself it won't work at all

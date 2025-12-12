@@ -17,10 +17,10 @@
 
 package org.apache.activemq.artemis.tests.compatibility;
 
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.HORNETQ_247;
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ONE_FOUR;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.HORNETQ_2_4_7;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_1_4_0;
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.SNAPSHOT;
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.TWO_FOUR;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_2_4_0;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -38,7 +38,7 @@ public class PrefixSendAckTest extends ServerBase {
    public static Collection getParameters() {
       List<Object[]> combinations = new ArrayList<>();
 
-      combinations.addAll(combinatory(SNAPSHOT, new Object[]{SNAPSHOT}, new Object[]{ONE_FOUR, HORNETQ_247, TWO_FOUR, SNAPSHOT}, new Object[]{ONE_FOUR, HORNETQ_247, TWO_FOUR, SNAPSHOT}));
+      combinations.addAll(combinatory(SNAPSHOT, new Object[]{SNAPSHOT}, new Object[]{ARTEMIS_1_4_0, HORNETQ_2_4_7, ARTEMIS_2_4_0, SNAPSHOT}, new Object[]{ARTEMIS_1_4_0, HORNETQ_2_4_7, ARTEMIS_2_4_0, SNAPSHOT}));
       return combinations;
    }
 

@@ -18,7 +18,7 @@
 package org.apache.activemq.artemis.tests.compatibility;
 
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.SNAPSHOT;
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.TWO_FOUR;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_2_4_0;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.File;
@@ -96,11 +96,11 @@ public class ReplyToTest extends ServerBase {
    public static Collection getParameters() {
       List<Object[]> combinations = new ArrayList<>();
 
-      combinations.add(new Object[]{SNAPSHOT, TWO_FOUR, TWO_FOUR});
-      combinations.add(new Object[]{TWO_FOUR, SNAPSHOT, SNAPSHOT});
+      combinations.add(new Object[]{SNAPSHOT, ARTEMIS_2_4_0, ARTEMIS_2_4_0});
+      combinations.add(new Object[]{ARTEMIS_2_4_0, SNAPSHOT, SNAPSHOT});
 
-      combinations.add(new Object[]{TWO_FOUR, SNAPSHOT, TWO_FOUR});
-      combinations.add(new Object[]{TWO_FOUR, TWO_FOUR, SNAPSHOT});
+      combinations.add(new Object[]{ARTEMIS_2_4_0, SNAPSHOT, ARTEMIS_2_4_0});
+      combinations.add(new Object[]{ARTEMIS_2_4_0, ARTEMIS_2_4_0, SNAPSHOT});
 
       return combinations;
    }

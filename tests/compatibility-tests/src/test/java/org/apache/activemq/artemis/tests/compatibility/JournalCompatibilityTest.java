@@ -18,8 +18,8 @@
 package org.apache.activemq.artemis.tests.compatibility;
 
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.SNAPSHOT;
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.TWO_FOUR;
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.TWO_ONE;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_2_4_0;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_2_1_0;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,8 +45,8 @@ public class JournalCompatibilityTest extends VersionedBase {
       // if we keep testing current one against 2.4 and 1.4.. we are sure the wire and API won't change over time
       List<Object[]> combinations = new ArrayList<>();
 
-      combinations.add(new Object[]{TWO_ONE, SNAPSHOT});
-      combinations.add(new Object[]{TWO_FOUR, SNAPSHOT});
+      combinations.add(new Object[]{ARTEMIS_2_1_0, SNAPSHOT});
+      combinations.add(new Object[]{ARTEMIS_2_4_0, SNAPSHOT});
       // the purpose on this one is just to validate the test itself.
       /// if it can't run against itself it won't work at all
       combinations.add(new Object[]{SNAPSHOT, SNAPSHOT});

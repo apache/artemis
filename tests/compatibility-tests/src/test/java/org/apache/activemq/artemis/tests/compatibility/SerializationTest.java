@@ -18,7 +18,7 @@
 package org.apache.activemq.artemis.tests.compatibility;
 
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.SNAPSHOT;
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.TWO_TEN_ZERO;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_2_10_0;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -49,8 +49,8 @@ public class SerializationTest extends VersionedBase {
       // if we keep testing current one against 2.4 and 1.4.. we are sure the wire and API won't change over time
       List<Object[]> combinations = new ArrayList<>();
 
-      combinations.add(new Object[] {TWO_TEN_ZERO, SNAPSHOT});
-      combinations.add(new Object[] {SNAPSHOT, TWO_TEN_ZERO});
+      combinations.add(new Object[] {ARTEMIS_2_10_0, SNAPSHOT});
+      combinations.add(new Object[] {SNAPSHOT, ARTEMIS_2_10_0});
       return combinations;
    }
 

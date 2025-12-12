@@ -394,7 +394,7 @@
                         <goals>
                            <goal>dependency-scan</goal>
                         </goals>
-                        <id>263-check</id>
+                        <id>2_6_3-check</id>
                         <configuration>
                            <libListWithDeps>
                               <arg>org.apache.activemq:artemis-jms-server:2.6.3</arg>
@@ -408,7 +408,7 @@
                            <libList>
                               <arg>org.apache.activemq.tests:compatibility-tests:${project.version}</arg>
                            </libList>
-                           <file>${basedir}/target/ARTEMIS-263.cp</file>
+                           <file>${basedir}/target/ARTEMIS-2_6_3.cp</file>
                         </configuration>
                      </execution>
                      <execution>
@@ -416,7 +416,7 @@
                         <goals>
                            <goal>dependency-scan</goal>
                         </goals>
-                        <id>270-check</id>
+                        <id>2_7_0-check</id>
                         <configuration>
                            <libListWithDeps>
                               <arg>org.apache.activemq:artemis-jms-server:2.7.0</arg>
@@ -430,7 +430,7 @@
                            <libList>
                               <arg>org.apache.activemq.tests:compatibility-tests:${project.version}</arg>
                            </libList>
-                           <file>${basedir}/target/ARTEMIS-270.cp</file>
+                           <file>${basedir}/target/ARTEMIS-2_7_0.cp</file>
                         </configuration>
                      </execution>
                      <execution>
@@ -579,7 +579,7 @@
                         <goals>
                            <goal>dependency-scan</goal>
                         </goals>
-                        <id>240-check</id>
+                        <id>2_4_0-check</id>
                         <configuration>
                            <libListWithDeps>
                               <arg>org.apache.activemq:artemis-jms-server:2.4.0</arg>
@@ -594,7 +594,7 @@
                            <libList>
                               <arg>org.apache.activemq.tests:compatibility-tests:${project.version}</arg>
                            </libList>
-                           <file>${basedir}/target/ARTEMIS-240.cp</file>
+                           <file>${basedir}/target/ARTEMIS-2_4_0.cp</file>
                         </configuration>
                      </execution>
                      <execution>
@@ -602,7 +602,7 @@
                         <goals>
                            <goal>dependency-scan</goal>
                         </goals>
-                        <id>210-check</id>
+                        <id>2_1_0-check</id>
                         <configuration>
                            <libListWithDeps>
                               <arg>org.apache.activemq:artemis-jms-server:2.1.0</arg>
@@ -617,11 +617,11 @@
                            <libList>
                               <arg>org.apache.activemq.tests:compatibility-tests:${project.version}</arg>
                            </libList>
-                           <file>${basedir}/target/ARTEMIS-210.cp</file>
+                           <file>${basedir}/target/ARTEMIS-2_1_0.cp</file>
                         </configuration>
                      </execution>
                      <execution>
-                        <id>140-check</id>
+                        <id>1_4_0-check</id>
                         <phase>compile</phase>
                         <goals>
                            <goal>dependency-scan</goal>
@@ -639,11 +639,11 @@
                            <libList>
                               <arg>org.apache.activemq.tests:compatibility-tests:${project.version}</arg>
                            </libList>
-                           <file>${basedir}/target/ARTEMIS-140.cp</file>
+                           <file>${basedir}/target/ARTEMIS-1_4_0.cp</file>
                         </configuration>
                      </execution>
                      <execution>
-                        <id>hornetq-235</id>
+                        <id>hornetq-2_3_5</id>
                         <phase>compile</phase>
                         <goals>
                            <goal>dependency-scan</goal>
@@ -662,11 +662,11 @@
                            <libList>
                               <arg>org.apache.activemq.tests:compatibility-tests:${project.version}</arg>
                            </libList>
-                           <file>${basedir}/target/HORNETQ-235.cp</file>
+                           <file>${basedir}/target/HORNETQ-2_3_5.cp</file>
                         </configuration>
                      </execution>
                      <execution>
-                        <id>hornetq-247</id>
+                        <id>hornetq-2_4_7</id>
                         <phase>compile</phase>
                         <goals>
                            <goal>dependency-scan</goal>
@@ -685,12 +685,12 @@
                            <libList>
                               <arg>org.apache.activemq.tests:compatibility-tests:${project.version}</arg>
                            </libList>
-                           <file>${basedir}/target/HORNETQ-247.cp</file>
+                           <file>${basedir}/target/HORNETQ-2_4_7.cp</file>
                         </configuration>
                      </execution>
 
                      <execution>
-                        <id>openwire-5.11</id>
+                        <id>AMQ-5.11</id>
                         <phase>compile</phase>
                         <goals>
                            <goal>dependency-scan</goal>

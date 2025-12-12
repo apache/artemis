@@ -17,12 +17,12 @@
 
 package org.apache.activemq.artemis.tests.compatibility;
 
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.HORNETQ_235;
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.HORNETQ_247;
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ONE_FOUR;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.HORNETQ_2_3_5;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.HORNETQ_2_4_7;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_1_4_0;
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.SNAPSHOT;
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.TWO_FOUR;
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.TWO_TWENTYEIGHT_ZERO;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_2_4_0;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_2_28_0;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -45,13 +45,13 @@ public class MeshTest extends ServerBase {
    @Parameters(name = "server={0}, producer={1}, consumer={2}")
    public static Collection getParameters() {
       List<Object[]> combinations = new ArrayList<>();
-      combinations.addAll(combinatory(SNAPSHOT, new Object[]{SNAPSHOT}, new Object[]{ONE_FOUR, TWO_FOUR, SNAPSHOT, HORNETQ_235}, new Object[]{ONE_FOUR, TWO_FOUR, SNAPSHOT, HORNETQ_235}));
-      combinations.addAll(combinatory(SNAPSHOT, new Object[]{ONE_FOUR}, new Object[]{ONE_FOUR, SNAPSHOT}, new Object[]{ONE_FOUR, SNAPSHOT}));
-      combinations.addAll(combinatory(SNAPSHOT, new Object[]{HORNETQ_235}, new Object[]{ONE_FOUR, SNAPSHOT, HORNETQ_235}, new Object[]{ONE_FOUR, SNAPSHOT, HORNETQ_235}));
-      combinations.addAll(combinatory(SNAPSHOT, new Object[]{HORNETQ_247}, new Object[]{SNAPSHOT, HORNETQ_247}, new Object[]{SNAPSHOT, HORNETQ_247}));
-      combinations.add(new Object[]{SNAPSHOT, ONE_FOUR, ONE_FOUR});
-      combinations.add(new Object[]{SNAPSHOT, TWO_TWENTYEIGHT_ZERO, TWO_TWENTYEIGHT_ZERO});
-      combinations.add(new Object[]{TWO_TWENTYEIGHT_ZERO, SNAPSHOT, SNAPSHOT});
+      combinations.addAll(combinatory(SNAPSHOT, new Object[]{SNAPSHOT}, new Object[]{ARTEMIS_1_4_0, ARTEMIS_2_4_0, SNAPSHOT, HORNETQ_2_3_5}, new Object[]{ARTEMIS_1_4_0, ARTEMIS_2_4_0, SNAPSHOT, HORNETQ_2_3_5}));
+      combinations.addAll(combinatory(SNAPSHOT, new Object[]{ARTEMIS_1_4_0}, new Object[]{ARTEMIS_1_4_0, SNAPSHOT}, new Object[]{ARTEMIS_1_4_0, SNAPSHOT}));
+      combinations.addAll(combinatory(SNAPSHOT, new Object[]{HORNETQ_2_3_5}, new Object[]{ARTEMIS_1_4_0, SNAPSHOT, HORNETQ_2_3_5}, new Object[]{ARTEMIS_1_4_0, SNAPSHOT, HORNETQ_2_3_5}));
+      combinations.addAll(combinatory(SNAPSHOT, new Object[]{HORNETQ_2_4_7}, new Object[]{SNAPSHOT, HORNETQ_2_4_7}, new Object[]{SNAPSHOT, HORNETQ_2_4_7}));
+      combinations.add(new Object[]{SNAPSHOT, ARTEMIS_1_4_0, ARTEMIS_1_4_0});
+      combinations.add(new Object[]{SNAPSHOT, ARTEMIS_2_28_0, ARTEMIS_2_28_0});
+      combinations.add(new Object[]{ARTEMIS_2_28_0, SNAPSHOT, SNAPSHOT});
       return combinations;
    }
 

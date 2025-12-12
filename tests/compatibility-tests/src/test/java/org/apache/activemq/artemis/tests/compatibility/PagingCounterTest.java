@@ -18,7 +18,7 @@
 package org.apache.activemq.artemis.tests.compatibility;
 
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.SNAPSHOT;
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.TWO_TWENTYTWO_ZERO;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_2_22_0;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,8 +46,8 @@ public class PagingCounterTest extends VersionedBase {
 
       if (getJavaVersion() <= 22) {
          // 2.22.0 servers fail on JDK23+ without workarounds.
-         combinations.add(new Object[]{TWO_TWENTYTWO_ZERO, SNAPSHOT});
-         combinations.add(new Object[]{SNAPSHOT, TWO_TWENTYTWO_ZERO});
+         combinations.add(new Object[]{ARTEMIS_2_22_0, SNAPSHOT});
+         combinations.add(new Object[]{SNAPSHOT, ARTEMIS_2_22_0});
       }
 
       // the purpose on this one is just to validate the test itself.

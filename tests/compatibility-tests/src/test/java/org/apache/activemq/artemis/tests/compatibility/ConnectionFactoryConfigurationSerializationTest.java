@@ -17,9 +17,9 @@
 
 package org.apache.activemq.artemis.tests.compatibility;
 
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ONE_FOUR;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_1_4_0;
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.SNAPSHOT;
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.TWO_FOUR;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_2_4_0;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -42,7 +42,7 @@ public class ConnectionFactoryConfigurationSerializationTest extends VersionedBa
    public static Collection getParameters() {
       List<Object[]> combinations = new ArrayList<>();
 
-      combinations.addAll(combinatory2(SNAPSHOT, new Object[]{ONE_FOUR, SNAPSHOT, TWO_FOUR}, new Object[]{ONE_FOUR, SNAPSHOT, TWO_FOUR}));
+      combinations.addAll(combinatory2(SNAPSHOT, new Object[]{ARTEMIS_1_4_0, SNAPSHOT, ARTEMIS_2_4_0}, new Object[]{ARTEMIS_1_4_0, SNAPSHOT, ARTEMIS_2_4_0}));
       return combinations;
    }
 

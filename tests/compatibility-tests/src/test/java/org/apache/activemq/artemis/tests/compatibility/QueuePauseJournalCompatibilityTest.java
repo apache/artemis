@@ -18,7 +18,7 @@
 package org.apache.activemq.artemis.tests.compatibility;
 
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.SNAPSHOT;
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.TWO_SIX_THREE;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_2_6_3;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,7 +44,7 @@ public class QueuePauseJournalCompatibilityTest extends VersionedBase {
       // if we keep testing current one against 2.4 and 1.4.. we are sure the wire and API won't change over time
       List<Object[]> combinations = new ArrayList<>();
 
-      combinations.add(new Object[]{TWO_SIX_THREE, SNAPSHOT});
+      combinations.add(new Object[]{ARTEMIS_2_6_3, SNAPSHOT});
       // the purpose on this one is just to validate the test itself.
       /// if it can't run against itself it won't work at all
       combinations.add(new Object[]{SNAPSHOT, SNAPSHOT});

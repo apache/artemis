@@ -17,9 +17,9 @@
 
 package org.apache.activemq.artemis.tests.compatibility;
 
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ONE_FOUR;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_1_4_0;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_2_44_0;
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.SNAPSHOT;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -47,7 +47,8 @@ public class ExportImportTest extends VersionedBase {
       // if we keep testing current one against 2.4 and 1.4.. we are sure the wire and API won't change over time
       List<Object[]> combinations = new ArrayList<>();
 
-      combinations.add(new Object[]{ONE_FOUR, SNAPSHOT});
+      combinations.add(new Object[]{ARTEMIS_1_4_0, SNAPSHOT});
+      combinations.add(new Object[]{ARTEMIS_2_44_0, SNAPSHOT});
       combinations.add(new Object[]{SNAPSHOT, SNAPSHOT});
       return combinations;
    }
@@ -91,13 +92,12 @@ public class ExportImportTest extends VersionedBase {
       // makes no sense on snapshot
       boolean isSenderSnapshot = SNAPSHOT.equals(sender);
       skipTearDownCleanup = isSenderSnapshot;
-      assumeFalse(isSenderSnapshot, "This test only applies to old version senders");
-
       internalSendReceive(true);
    }
 
    public void internalSendReceive(boolean legacyPrefixes) throws Throwable {
-      setVariable(senderClassloader, "legacy", false);
+      // if using 2.44.0 both producer and consumer needs to use legacyPrefixes in this case.
+      setVariable(senderClassloader, "legacy", !sender.equals(ARTEMIS_1_4_0) && legacyPrefixes);
       setVariable(senderClassloader, "persistent", true);
       if (legacyPrefixes) {
          serverScriptToUse = "exportimport/artemisServer.groovy";

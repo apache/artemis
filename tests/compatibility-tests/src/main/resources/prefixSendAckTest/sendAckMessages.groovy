@@ -30,7 +30,7 @@ String operation = arg[2];
 
 
 String queueName
-if (clientType.equals(GroovyRun.SNAPSHOT) || clientType.equals(GroovyRun.TWO_FOUR)) {
+if (clientType.equals(GroovyRun.SNAPSHOT) || clientType.equals(GroovyRun.ARTEMIS_2_4_0)) {
     queueName = "jms.queue.queue";
 } else {
     queueName = "queue";

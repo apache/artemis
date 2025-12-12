@@ -18,7 +18,7 @@
 package org.apache.activemq.artemis.tests.compatibility;
 
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.SNAPSHOT;
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.TWO_TWENTYEIGHT_ZERO;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_2_28_0;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,8 +40,8 @@ public class CLIFunctionTest extends ClasspathBase {
    @Parameters(name = "Server={0}, Client={1}")
    public static Collection getParameters() {
       List<Object[]> combinations = new ArrayList<>();
-      combinations.add(new Object[]{TWO_TWENTYEIGHT_ZERO, SNAPSHOT});
-      combinations.add(new Object[]{SNAPSHOT, TWO_TWENTYEIGHT_ZERO});
+      combinations.add(new Object[]{ARTEMIS_2_28_0, SNAPSHOT});
+      combinations.add(new Object[]{SNAPSHOT, ARTEMIS_2_28_0});
       // this is to validate the test
       combinations.add(new Object[]{SNAPSHOT, SNAPSHOT});
       return combinations;

@@ -17,7 +17,7 @@
 
 package org.apache.activemq.artemis.tests.compatibility;
 
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.HORNETQ_235;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.HORNETQ_2_3_5;
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.SNAPSHOT;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -54,7 +54,7 @@ public class HQFailoverTest extends VersionedBase {
    public static Collection getParameters() {
       List<Object[]> combinations = new ArrayList<>();
 
-      combinations.add(new Object[]{HORNETQ_235, SNAPSHOT, SNAPSHOT});
+      combinations.add(new Object[]{HORNETQ_2_3_5, SNAPSHOT, SNAPSHOT});
       return combinations;
    }
 

@@ -18,7 +18,7 @@
 package org.apache.activemq.artemis.tests.compatibility;
 
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.SNAPSHOT;
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.TWO_THIRTYTHREE_ZERO;
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_2_33_0;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -64,8 +64,8 @@ public class MirroredVersionTest extends ClasspathBase {
    @Parameters(name = "BrokerA={0}, BrokerB={1}, dualMirror={2}")
    public static Collection getParameters() {
       List<Object[]> combinations = new ArrayList<>();
-      combinations.add(new Object[]{TWO_THIRTYTHREE_ZERO, SNAPSHOT, true});
-      combinations.add(new Object[]{SNAPSHOT, TWO_THIRTYTHREE_ZERO, true});
+      combinations.add(new Object[]{ARTEMIS_2_33_0, SNAPSHOT, true});
+      combinations.add(new Object[]{SNAPSHOT, ARTEMIS_2_33_0, true});
       combinations.add(new Object[]{SNAPSHOT, SNAPSHOT, true});
       return combinations;
    }
