@@ -1072,9 +1072,9 @@ public class RemotingServiceImpl implements RemotingService, ServerConnectionLif
          server.getReloadManager().addCallback(storeURL, (uri) -> {
             // preference for Control to capture consistent audit logging
             if (managementService != null) {
-               Object targetControl = managementService.getResource(ResourceNames.ACCEPTOR + acceptorName);
-               if (targetControl instanceof AcceptorControl acceptorControl) {
-                  acceptorControl.reload();
+               AcceptorControl targetControl = managementService.getAcceptorControl(ResourceNames.ACCEPTOR + acceptorName);
+               if (targetControl != null) {
+                  targetControl.reload();
                }
             }
          });
