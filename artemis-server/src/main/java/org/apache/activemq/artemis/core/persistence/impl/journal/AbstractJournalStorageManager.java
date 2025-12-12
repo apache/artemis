@@ -516,6 +516,20 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
       }
    }
 
+   private void deleteRecordAsync(long journalId) throws Exception {
+      deleteRecord(journalId, false);
+   }
+
+   private void deleteRecordSync(long journalId) throws Exception {
+      deleteRecord(journalId, true);
+   }
+
+   private void deleteRecord(long journalId, boolean sync) throws Exception {
+      try (ArtemisCloseable lock = closeableReadLock()) {
+         bindingsJournal.tryAppendDeleteRecord(journalId, this::recordNotFoundCallback, sync);
+      }
+   }
+
    private void messageUpdateCallback(long id, boolean found) {
       if (!found) {
          ActiveMQServerLogger.LOGGER.cannotFindMessageOnJournal(id, new Exception("trace"));
@@ -785,12 +799,14 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
    }
    @Override
    public void storeAddressSetting(PersistedAddressSettingJSON addressSetting) throws Exception {
-      deleteAddressSetting(addressSetting.getAddressMatch());
       try (ArtemisCloseable lock = closeableReadLock()) {
          long id = idGenerator.generateID();
          addressSetting.setStoreId(id);
          bindingsJournal.appendAddRecord(id, JournalRecordIds.ADDRESS_SETTING_RECORD_JSON, addressSetting, true);
-         mapPersistedAddressSettings.put(addressSetting.getAddressMatch(), addressSetting);
+         AbstractPersistedAddressSetting old = mapPersistedAddressSettings.put(addressSetting.getAddressMatch(), addressSetting);
+         if (old != null) {
+            deleteRecordAsync(old.getStoreId());
+         }
       }
    }
 
@@ -811,34 +827,35 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
 
    @Override
    public void storeSecuritySetting(PersistedSecuritySetting persistedRoles) throws Exception {
-
-      deleteSecuritySetting(persistedRoles.getAddressMatch());
       try (ArtemisCloseable lock = closeableReadLock()) {
          final long id = idGenerator.generateID();
          persistedRoles.setStoreId(id);
          bindingsJournal.appendAddRecord(id, JournalRecordIds.SECURITY_SETTING_RECORD, persistedRoles, true);
-         mapPersistedSecuritySettings.put(persistedRoles.getAddressMatch(), persistedRoles);
+         PersistedSecuritySetting old = mapPersistedSecuritySettings.put(persistedRoles.getAddressMatch(), persistedRoles);
+         if (old != null) {
+            deleteRecordAsync(old.getStoreId());
+         }
       }
    }
 
    @Override
    public void storeDivertConfiguration(PersistedDivertConfiguration persistedDivertConfiguration) throws Exception {
-      deleteDivertConfiguration(persistedDivertConfiguration.getName());
       try (ArtemisCloseable lock = closeableReadLock()) {
          final long id = idGenerator.generateID();
          persistedDivertConfiguration.setStoreId(id);
          bindingsJournal.appendAddRecord(id, JournalRecordIds.DIVERT_RECORD, persistedDivertConfiguration, true);
-         mapPersistedDivertConfigurations.put(persistedDivertConfiguration.getName(), persistedDivertConfiguration);
+         PersistedDivertConfiguration old = mapPersistedDivertConfigurations.put(persistedDivertConfiguration.getName(), persistedDivertConfiguration);
+         if (old != null) {
+            deleteRecordAsync(old.getStoreId());
+         }
       }
    }
 
    @Override
    public void deleteDivertConfiguration(String divertName) throws Exception {
-      PersistedDivertConfiguration oldDivert = mapPersistedDivertConfigurations.remove(divertName);
-      if (oldDivert != null) {
-         try (ArtemisCloseable lock = closeableReadLock()) {
-            bindingsJournal.tryAppendDeleteRecord(oldDivert.getStoreId(), this::recordNotFoundCallback, false);
-         }
+      PersistedDivertConfiguration old = mapPersistedDivertConfigurations.remove(divertName);
+      if (old != null) {
+         deleteRecordAsync(old.getStoreId());
       }
    }
 
@@ -849,22 +866,22 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
 
    @Override
    public void storeBridgeConfiguration(PersistedBridgeConfiguration persistedBridgeConfiguration) throws Exception {
-      deleteBridgeConfiguration(persistedBridgeConfiguration.getName());
       try (ArtemisCloseable lock = closeableReadLock()) {
          final long id = idGenerator.generateID();
          persistedBridgeConfiguration.setStoreId(id);
          bindingsJournal.appendAddRecord(id, JournalRecordIds.BRIDGE_RECORD, persistedBridgeConfiguration, true);
-         mapPersistedBridgeConfigurations.put(persistedBridgeConfiguration.getName(), persistedBridgeConfiguration);
+         PersistedBridgeConfiguration old = mapPersistedBridgeConfigurations.put(persistedBridgeConfiguration.getName(), persistedBridgeConfiguration);
+         if (old != null) {
+            deleteRecordAsync(old.getStoreId());
+         }
       }
    }
 
    @Override
    public void deleteBridgeConfiguration(String bridgeName) throws Exception {
-      PersistedBridgeConfiguration oldBridge = mapPersistedBridgeConfigurations.remove(bridgeName);
-      if (oldBridge != null) {
-         try (ArtemisCloseable lock = closeableReadLock()) {
-            bindingsJournal.tryAppendDeleteRecord(oldBridge.getStoreId(), this::recordNotFoundCallback, false);
-         }
+      PersistedBridgeConfiguration old = mapPersistedBridgeConfigurations.remove(bridgeName);
+      if (old != null) {
+         deleteRecordAsync(old.getStoreId());
       }
    }
 
@@ -875,22 +892,22 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
 
    @Override
    public void storeConnector(PersistedConnector persistedConnector) throws Exception {
-      deleteConnector(persistedConnector.getName());
       try (ArtemisCloseable lock = closeableReadLock()) {
          final long id = idGenerator.generateID();
          persistedConnector.setStoreId(id);
          bindingsJournal.appendAddRecord(id, JournalRecordIds.CONNECTOR_RECORD, persistedConnector, true);
-         mapPersistedConnectors.put(persistedConnector.getName(), persistedConnector);
+         PersistedConnector old = mapPersistedConnectors.put(persistedConnector.getName(), persistedConnector);
+         if (old != null) {
+            deleteRecordAsync(old.getStoreId());
+         }
       }
    }
 
    @Override
    public void deleteConnector(String connectorName) throws Exception {
-      PersistedConnector oldConnector = mapPersistedConnectors.remove(connectorName);
-      if (oldConnector != null) {
-         try (ArtemisCloseable lock = closeableReadLock()) {
-            bindingsJournal.tryAppendDeleteRecord(oldConnector.getStoreId(), this::recordNotFoundCallback, false);
-         }
+      PersistedConnector old = mapPersistedConnectors.remove(connectorName);
+      if (old != null) {
+         deleteRecordAsync(old.getStoreId());
       }
    }
 
@@ -901,22 +918,22 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
 
    @Override
    public void storeUser(PersistedUser persistedUser) throws Exception {
-      deleteUser(persistedUser.getUsername());
       try (ArtemisCloseable lock = closeableReadLock()) {
          final long id = idGenerator.generateID();
          persistedUser.setStoreId(id);
          bindingsJournal.appendAddRecord(id, JournalRecordIds.USER_RECORD, persistedUser, true);
-         mapPersistedUsers.put(persistedUser.getUsername(), persistedUser);
+         PersistedUser old = mapPersistedUsers.put(persistedUser.getUsername(), persistedUser);
+         if (old != null) {
+            deleteRecordAsync(old.getStoreId());
+         }
       }
    }
 
    @Override
    public void deleteUser(String username) throws Exception {
-      PersistedUser oldUser = mapPersistedUsers.remove(username);
-      if (oldUser != null) {
-         try (ArtemisCloseable lock = closeableReadLock()) {
-            bindingsJournal.tryAppendDeleteRecord(oldUser.getStoreId(), this::recordNotFoundCallback, false);
-         }
+      PersistedUser old = mapPersistedUsers.remove(username);
+      if (old != null) {
+         deleteRecordAsync(old.getStoreId());
       }
    }
 
@@ -927,22 +944,22 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
 
    @Override
    public void storeRole(PersistedRole persistedRole) throws Exception {
-      deleteRole(persistedRole.getUsername());
       try (ArtemisCloseable lock = closeableReadLock()) {
          final long id = idGenerator.generateID();
          persistedRole.setStoreId(id);
          bindingsJournal.appendAddRecord(id, JournalRecordIds.ROLE_RECORD, persistedRole, true);
-         mapPersistedRoles.put(persistedRole.getUsername(), persistedRole);
+         PersistedRole old = mapPersistedRoles.put(persistedRole.getUsername(), persistedRole);
+         if (old != null) {
+            deleteRecordAsync(old.getStoreId());
+         }
       }
    }
 
    @Override
    public void deleteRole(String username) throws Exception {
-      PersistedRole oldRole = mapPersistedRoles.remove(username);
-      if (oldRole != null) {
-         try (ArtemisCloseable lock = closeableReadLock()) {
-            bindingsJournal.tryAppendDeleteRecord(oldRole.getStoreId(), this::recordNotFoundCallback, false);
-         }
+      PersistedRole old = mapPersistedRoles.remove(username);
+      if (old != null) {
+         deleteRecordAsync(old.getStoreId());
       }
    }
 
@@ -953,12 +970,14 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
 
    @Override
    public void storeKeyValuePair(PersistedKeyValuePair persistedKeyValuePair) throws Exception {
-      deleteKeyValuePair(persistedKeyValuePair.getMapId(), persistedKeyValuePair.getKey());
       try (ArtemisCloseable lock = closeableReadLock()) {
          final long id = idGenerator.generateID();
          persistedKeyValuePair.setStoreId(id);
          bindingsJournal.appendAddRecord(id, JournalRecordIds.KEY_VALUE_PAIR_RECORD, persistedKeyValuePair, true);
-         insertPersistedKeyValuePair(persistedKeyValuePair);
+         PersistedKeyValuePair old = insertPersistedKeyValuePair(persistedKeyValuePair);
+         if (old != null) {
+            deleteRecordAsync(old.getStoreId());
+         }
       }
    }
 
@@ -966,11 +985,9 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
    public void deleteKeyValuePair(String mapId, String key) throws Exception {
       Map<String, PersistedKeyValuePair> persistedKeyValuePairs = mapPersistedKeyValuePairs.get(mapId);
       if (persistedKeyValuePairs != null) {
-         PersistedKeyValuePair oldMapStringEntry = persistedKeyValuePairs.remove(key);
-         if (oldMapStringEntry != null) {
-            try (ArtemisCloseable lock = closeableReadLock()) {
-               bindingsJournal.tryAppendDeleteRecord(oldMapStringEntry.getStoreId(), this::recordNotFoundCallback, false);
-            }
+         PersistedKeyValuePair old = persistedKeyValuePairs.remove(key);
+         if (old != null) {
+            deleteRecordAsync(old.getStoreId());
          }
       }
    }
@@ -989,29 +1006,23 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
    }
 
    @Override
-   public void deleteID(long journalD) throws Exception {
-      try (ArtemisCloseable lock = closeableReadLock()) {
-         bindingsJournal.tryAppendDeleteRecord(journalD, this::recordNotFoundCallback, false);
-      }
+   public void deleteID(long journalID) throws Exception {
+      deleteRecordAsync(journalID);
    }
 
    @Override
    public void deleteAddressSetting(SimpleString addressMatch) throws Exception {
-      AbstractPersistedAddressSetting oldSetting = mapPersistedAddressSettings.remove(addressMatch);
-      if (oldSetting != null) {
-         try (ArtemisCloseable lock = closeableReadLock()) {
-            bindingsJournal.tryAppendDeleteRecord(oldSetting.getStoreId(), this::recordNotFoundCallback, false);
-         }
+      AbstractPersistedAddressSetting old = mapPersistedAddressSettings.remove(addressMatch);
+      if (old != null) {
+         deleteRecordAsync(old.getStoreId());
       }
    }
 
    @Override
    public void deleteSecuritySetting(SimpleString addressMatch) throws Exception {
-      PersistedSecuritySetting oldRoles = mapPersistedSecuritySettings.remove(addressMatch);
-      if (oldRoles != null) {
-         try (ArtemisCloseable lock = closeableReadLock()) {
-            bindingsJournal.tryAppendDeleteRecord(oldRoles.getStoreId(), this::recordNotFoundCallback, false);
-         }
+      PersistedSecuritySetting old = mapPersistedSecuritySettings.remove(addressMatch);
+      if (old != null) {
+         deleteRecordAsync(old.getStoreId());
       }
    }
 
@@ -1548,9 +1559,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
 
    @Override
    public void deleteQueueStatus(long recordID) throws Exception {
-      try (ArtemisCloseable lock = closeableReadLock()) {
-         bindingsJournal.tryAppendDeleteRecord(recordID, this::recordNotFoundCallback, true);
-      }
+      deleteRecordSync(recordID);
    }
 
    @Override
@@ -1566,9 +1575,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
 
    @Override
    public void deleteAddressStatus(long recordID) throws Exception {
-      try (ArtemisCloseable lock = closeableReadLock()) {
-         bindingsJournal.tryAppendDeleteRecord(recordID, this::recordNotFoundCallback, true);
-      }
+      deleteRecordSync(recordID);
    }
 
    @Override
@@ -1755,7 +1762,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
       return bindingsInfo;
    }
 
-   private void insertPersistedKeyValuePair(final PersistedKeyValuePair keyValuePair) {
+   private PersistedKeyValuePair insertPersistedKeyValuePair(final PersistedKeyValuePair keyValuePair) {
       Map<String, PersistedKeyValuePair> persistedKeyValuePairs = mapPersistedKeyValuePairs.get(keyValuePair.getMapId());
       if (persistedKeyValuePairs == null) {
          ConcurrentMap<String, PersistedKeyValuePair> newMap = new ConcurrentHashMap<>();
@@ -1764,7 +1771,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
          persistedKeyValuePairs = Objects.requireNonNullElse(existingMap, newMap);
       }
 
-      persistedKeyValuePairs.put(keyValuePair.getKey(), keyValuePair);
+      return persistedKeyValuePairs.put(keyValuePair.getKey(), keyValuePair);
    }
 
    protected abstract void beforeStart() throws Exception;
