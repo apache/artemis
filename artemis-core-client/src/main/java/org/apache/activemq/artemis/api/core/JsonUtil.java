@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.activemq.artemis.json.JsonArray;
 import org.apache.activemq.artemis.json.JsonArrayBuilder;
@@ -455,5 +456,18 @@ public final class JsonUtil {
          }
          return s;
       }
+   }
+
+   /**
+    * Converts a JSON array associated with the specified key in the given JsonObject into a comma-separated string. If
+    * the key does not exist or the value is null, it returns an empty string.
+    *
+    * @param jsonObject the JsonObject containing the key-value pair
+    * @param key        the key associated with the JSON array to be converted to a string
+    * @return a comma-separated string representation of the JSON array, or an empty string if the key is not present or
+    * the value is null
+    */
+   public static String arrayToString(JsonObject jsonObject, String key) {
+      return jsonObject.getJsonArray(key) == null ? "" : jsonObject.getJsonArray(key).stream().map((s) -> ((JsonString)s).getString()).collect(Collectors.joining(", "));
    }
 }

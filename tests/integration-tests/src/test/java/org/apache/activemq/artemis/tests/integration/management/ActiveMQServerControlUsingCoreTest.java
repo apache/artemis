@@ -1011,6 +1011,11 @@ public class ActiveMQServerControlUsingCoreTest extends ActiveMQServerControlTes
          }
 
          @Override
+         public void addSecuritySettings(String addressMatch, String securitySettingsAsJson) throws Exception {
+            proxy.invokeOperation("addSecuritySettings", addressMatch, securitySettingsAsJson);
+         }
+
+         @Override
          public void removeSecuritySettings(String addressMatch) throws Exception {
             proxy.invokeOperation("removeSecuritySettings", addressMatch);
          }
