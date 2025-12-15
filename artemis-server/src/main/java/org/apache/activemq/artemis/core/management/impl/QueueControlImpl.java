@@ -1091,11 +1091,9 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
             if (filter == null && groupByProperty == null) {
                result.put(null, getMessageCount());
             } else {
-               final int limit = addressSettingsRepository.getMatch(address).getManagementBrowsePageSize();
-               int count = 0;
                try (LinkedListIterator<MessageReference> iterator = queue.browserIterator()) {
                   try {
-                     while (iterator.hasNext() && count++ < limit) {
+                     while (iterator.hasNext()) {
                         Message message = iterator.next().getMessage();
                         internalComputeMessage(result, filter, groupByProperty, message);
                      }

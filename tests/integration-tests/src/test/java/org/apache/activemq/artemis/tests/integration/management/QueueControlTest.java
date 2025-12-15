@@ -4818,7 +4818,7 @@ public class QueueControlTest extends ManagementTestBase {
       assertEquals(5, array.size());
 
       // filer could match all
-      assertEquals(5, queueControl.countMessages("AMQSize > 0"));
+      assertEquals(10, queueControl.countMessages("AMQSize > 0"));
 
       session.deleteQueue(queue);
    }
