@@ -408,8 +408,7 @@ public interface ServerSession extends SecurityAuth {
    /**
     * Add all the producers detail to the JSONArray object. This is a method to be used by the management layer.
     */
-   void describeProducersInfo(JsonArrayBuilder objs) throws Exception;
-
+   void describeProducersInfo(JsonArrayBuilder objs);
 
    long getCreationTime();
 

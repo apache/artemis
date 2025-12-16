@@ -411,9 +411,13 @@ public interface ActiveMQServerControl {
 
    /**
     * {@return the priority of the thread used to scan message expiration.}
+    *
+    * @deprecated This config parameter is no longer valid. The code uses a ScheduledExecutorService and a thread pool
+    * rather than dedicating a thread 100% to the expiry scanner. The pool's size can be controlled via
+    * {@code scheduled-thread-pool-max-size}.
     */
    @Attribute(desc = "Priority of the thread used to scan message expiration")
-   @Deprecated
+   @Deprecated(forRemoval = true)
    long getMessageExpiryThreadPriority();
 
    /**
@@ -429,10 +433,35 @@ public interface ActiveMQServerControl {
    Object[] getConnectors() throws Exception;
 
    /**
-    * {@return the connectors configured for this server using JSON serialization.}
+    * Get the connectors configured for this server as JSON. The JSON consists of an array of objects containing the
+    * attributes of the connector, e.g.:
+    * <pre>
+    * [
+    *   {
+    *     "name": "invm",
+    *     "factoryClassName": "org.apache.activemq.artemis.core.remoting.impl.invm.InVMConnectorFactory",
+    *     "params": {
+    *       "serverId": 0
+    *     },
+    *     "extraProps": {}
+    *   },
+    *   {
+    *     "name": "artemis",
+    *     "factoryClassName": "org.apache.activemq.artemis.core.remoting.impl.netty.NettyConnectorFactory",
+    *     "params": {
+    *       "port": "61616",
+    *       "host": "localhost"
+    *     },
+    *     "extraProps": {}
+    *   }
+    * ]
+    * </pre>
+    *
+    * @return the connectors configured for this server as JSON
     */
-   @Attribute(desc = "Connectors configured for this server using JSON serialization")
+   @Attribute(desc = "Connectors configured for this server as JSON")
    String getConnectorsAsJSON() throws Exception;
+
 
    /**
     * {@return the acceptors configured for this server.}
@@ -440,10 +469,37 @@ public interface ActiveMQServerControl {
    @Attribute(desc = "Connectors configured for this server")
    Object[] getAcceptors() throws Exception;
 
+
    /**
-    * {@return the acceptors configured for this server using JSON serialization.}
+    * Get the acceptors configured for this server as JSON. The JSON consists of an array of objects containing the
+    * attributes of the acceptor, e.g.:
+    * <pre>
+    * [
+    *   {
+    *     "name": "artemis",
+    *     "factoryClassName": "org.apache.activemq.artemis.core.remoting.impl.netty.NettyAcceptorFactory",
+    *     "params": {
+    *       "scheme": "tcp",
+    *       "port": "61616",
+    *       "host": "0.0.0.0",
+    *       "protocols": "CORE,AMQP"
+    *     },
+    *     "extraProps": {}
+    *   }
+    *   {
+    *     "name": "invm",
+    *     "factoryClassName": "org.apache.activemq.artemis.core.remoting.impl.invm.InVMAcceptorFactory",
+    *     "params": {
+    *       "serverId": 0
+    *     },
+    *     "extraProps": {}
+    *   }
+    * ]
+    * </pre>
+    *
+    * @return the acceptors configured for this server as JSON
     */
-   @Attribute(desc = "Acceptors configured for this server using JSON serialization")
+   @Attribute(desc = "Acceptors configured for this server as JSON")
    String getAcceptorsAsJSON() throws Exception;
 
    /**
@@ -572,8 +628,10 @@ public interface ActiveMQServerControl {
     *
     * @param address address to bind the queue to
     * @param name    name of the queue
+    *
+    * @deprecated Use {@link #createQueue(String)} instead.
     */
-   @Deprecated
+   @Deprecated(forRemoval = true)
    @Operation(desc = "Create a queue with the specified address", impact = MBeanOperationInfo.ACTION)
    void createQueue(@Parameter(name = "address", desc = "Address of the queue") String address,
                     @Parameter(name = "name", desc = "Name of the queue") String name) throws Exception;
@@ -589,8 +647,10 @@ public interface ActiveMQServerControl {
     * @param address     address to bind the queue to
     * @param name        name of the queue
     * @param routingType The routing type used for this address, MULTICAST or ANYCAST
+    *
+    * @deprecated Use {@link #createQueue(String)} instead.
     */
-   @Deprecated
+   @Deprecated(forRemoval = true)
    @Operation(desc = "Create a queue with the specified address", impact = MBeanOperationInfo.ACTION)
    void createQueue(@Parameter(name = "address", desc = "Address of the queue") String address,
                     @Parameter(name = "name", desc = "Name of the queue") String name,
@@ -607,8 +667,10 @@ public interface ActiveMQServerControl {
     * @param address address to bind the queue to
     * @param name    name of the queue
     * @param durable whether the queue is durable
+    *
+    * @deprecated Use {@link #createQueue(String)} instead.
     */
-   @Deprecated
+   @Deprecated(forRemoval = true)
    @Operation(desc = "Create a queue with the specified address, name and durability", impact = MBeanOperationInfo.ACTION)
    void createQueue(@Parameter(name = "address", desc = "Address of the queue") String address,
                     @Parameter(name = "name", desc = "Name of the queue") String name,
@@ -626,8 +688,10 @@ public interface ActiveMQServerControl {
     * @param name        name of the queue
     * @param durable     whether the queue is durable
     * @param routingType The routing type used for this address, MULTICAST or ANYCAST
+    *
+    * @deprecated Use {@link #createQueue(String)} instead.
     */
-   @Deprecated
+   @Deprecated(forRemoval = true)
    @Operation(desc = "Create a queue with the specified address, name and durability", impact = MBeanOperationInfo.ACTION)
    void createQueue(@Parameter(name = "address", desc = "Address of the queue") String address,
                     @Parameter(name = "name", desc = "Name of the queue") String name,
@@ -646,8 +710,10 @@ public interface ActiveMQServerControl {
     * @param name    name of the queue
     * @param filter  of the queue
     * @param durable whether the queue is durable
+    *
+    * @deprecated Use {@link #createQueue(String)} instead.
     */
-   @Deprecated
+   @Deprecated(forRemoval = true)
    @Operation(desc = "Create a queue", impact = MBeanOperationInfo.ACTION)
    void createQueue(@Parameter(name = "address", desc = "Address of the queue") String address,
                     @Parameter(name = "name", desc = "Name of the queue") String name,
@@ -667,8 +733,10 @@ public interface ActiveMQServerControl {
     * @param filter      of the queue
     * @param durable     whether the queue is durable
     * @param routingType The routing type used for this address, MULTICAST or ANYCAST
+    *
+    * @deprecated Use {@link #createQueue(String)} instead.
     */
-   @Deprecated
+   @Deprecated(forRemoval = true)
    @Operation(desc = "Create a queue", impact = MBeanOperationInfo.ACTION)
    void createQueue(@Parameter(name = "address", desc = "Address of the queue") String address,
                     @Parameter(name = "name", desc = "Name of the queue") String name,
@@ -697,8 +765,10 @@ public interface ActiveMQServerControl {
     * @param delayBeforeDispatch     delay to wait before dispatching if number of consumers before dispatch is not met
     * @param autoCreateAddress       create an address with default values should a matching address not be found
     * @return a textual summary of the queue
+    *
+    * @deprecated Use {@link #createQueue(String)} instead.
     */
-   @Deprecated
+   @Deprecated(forRemoval = true)
    @Operation(desc = "Create a queue", impact = MBeanOperationInfo.ACTION)
    String createQueue(@Parameter(name = "address", desc = "Address of the queue") String address,
                       @Parameter(name = "routingType", desc = "The routing type used for this address, MULTICAST or ANYCAST") String routingType,
@@ -1166,15 +1236,72 @@ public interface ActiveMQServerControl {
    String[] listPreparedTransactions() throws Exception;
 
    /**
-    * List all the prepared transaction, sorted by date, oldest first, with details, in text format.
+    * List all the prepared transaction as JSON. The JSON consists of an array of objects containing the details of each
+    * transaction, including transaction branch details, and an array listing the messages involved, e.g.:
+    * <pre>
+    * [
+    *   {
+    *     "creation_time": "5/22/79, 12:00:00 AM",
+    *     "xid_as_base64": "eGExODAyZDNlOGItZDlmYy0xMWYwLTliOWUtM2NlMWExZDEyOTM5AQAAAA==",
+    *     "xid_format_id": 1,
+    *     "xid_global_txid": "802d3e8b-d9fc-11f0-9b9e-3ce1a1d12939",
+    *     "xid_branch_qual": "xa1",
+    *     "tx_related_messages": [
+    *       {
+    *         "message_operation_type": "(+) send",
+    *         "message_type": "TextMessage",
+    *         "message_properties": {
+    *           "durable": true,
+    *           "address": "AddressA",
+    *           "myPropertyKey": "myPropertyValue",
+    *           "messageID": 123,
+    *           "expiration": 0,
+    *           "type": 3,
+    *           "priority": 4,
+    *           "timestamp": 296197200
+    *         }
+    *       },
+    *       {
+    *         "message_operation_type": "(+) send",
+    *         "message_type": "TextMessage",
+    *         "message_properties": {
+    *           "durable": true,
+    *           "address": "AddressB",
+    *           "messageID": 456,
+    *           "expiration": 0,
+    *           "type": 3,
+    *           "priority": 4,
+    *           "timestamp": 296197200
+    *         },
+    *       },
+    *       {
+    *         "message_operation_type": "(-) receive",
+    *         "message_type": "TextMessage",
+    *         "message_properties": {
+    *           "durable": true,
+    *           "address": "AddressC",
+    *           "messageID": 789,
+    *           "expiration": 0,
+    *           "type": 3,
+    *           "priority": 4,
+    *           "timestamp": 296197200
+    *         }
+    *       }
+    *     ]
+    *   }
+    * ]
+    * </pre>
+    * Transactions are sorted by date, oldest first.
     */
-   @Operation(desc = "List all the prepared transaction, sorted by date, oldest first, with details, in JSON format")
+   @Operation(desc = "List all the prepared transaction as JSON")
    String listPreparedTransactionDetailsAsJSON() throws Exception;
 
    /**
     * List all the prepared transaction, sorted by date, oldest first, with details, in HTML format
+    *
+    * @deprecated Use {@link #listPreparedTransactionDetailsAsJSON()} instead.
     */
-   @Deprecated
+   @Deprecated(forRemoval = true)
    @Operation(desc = "List all the prepared transaction, sorted by date, oldest first, with details, in HTML format")
    String listPreparedTransactionDetailsAsHTML() throws Exception;
 
@@ -1274,12 +1401,31 @@ public interface ActiveMQServerControl {
    @Operation(desc = "List all the connection IDs", impact = MBeanOperationInfo.INFO)
    String[] listConnectionIDs() throws Exception;
 
-   @Operation(desc = "List all producers", impact = MBeanOperationInfo.INFO)
+   /**
+    * List details as JSON about the producers sending messages to this broker. The JSON consists of an array of objects
+    * containing details about each producer, e.g.:
+    * <pre>
+    * [
+    *   {
+    *     "id": "1",
+    *     "name": "artemis:sender:ID:338502e5-da02-11f0-900f-3ce1a1d12939",
+    *     "connectionID": "33848db2-da02-11f0-900f-3ce1a1d12939",
+    *     "sessionID": "3384b4c4-da02-11f0-900f-3ce1a1d12939",
+    *     "creationTime": "1765836343763",
+    *     "destination": "AddressA",
+    *     "lastProducedMessageID": null,
+    *     "msgSent": 8,
+    *     "msgSizeSent": 607
+    *   }
+    * ]
+    * </pre>
+    */
+   @Operation(desc = "List all producers")
    String listProducersInfoAsJSON() throws Exception;
 
    /**
-    * Lists all the connections connected to this server. The returned String is a JSON string containing details about
-    * each connection, e.g.:
+    * Lists all the connections to this server as JSON. The JSON consists of an array of objects containing details
+    * about each connection, e.g.:
     * <pre>
     * [
     *   {
@@ -1287,7 +1433,7 @@ public interface ActiveMQServerControl {
     *     "sessionCount": 1,
     *     "implementation": "RemotingConnectionImpl",
     *     "connectionID": "1648309901",
-    *     "clientAddress": "\/127.0.0.1:57649"
+    *     "clientAddress": "127.0.0.1:57649"
     *   }
     * ]
     * </pre>
@@ -1296,8 +1442,8 @@ public interface ActiveMQServerControl {
    String listConnectionsAsJSON() throws Exception;
 
    /**
-    * Lists all the consumers which belongs to the connection specified by the connectionID. The returned String is a
-    * JSON string containing details about each consumer, e.g.:
+    * Lists all the consumers that belong to the connection specified by the connectionID. The returned String is JSON
+    * containing details about each consumer, e.g.:
     * <pre>
     * [
     *   {
@@ -1313,11 +1459,11 @@ public interface ActiveMQServerControl {
     * ]
     * </pre>
     */
-   @Operation(desc = "List all consumers associated with a connection as a JSON string")
+   @Operation(desc = "List all consumers associated with a connection as JSON")
    String listConsumersAsJSON(@Parameter(desc = "a connection ID", name = "connectionID") String connectionID) throws Exception;
 
    /**
-    * Lists all the consumers connected to this server. The returned String is a JSON string containing details about
+    * Lists all the consumers connected to this server. The returned String is JSON containing details about
     * each consumer, e.g.:
     * <pre>
     * [
@@ -1333,12 +1479,12 @@ public interface ActiveMQServerControl {
     * ]
     * </pre>
     */
-   @Operation(desc = "List all consumers as a JSON string")
+   @Operation(desc = "List all consumers as JSON")
    String listAllConsumersAsJSON() throws Exception;
 
    /**
-    * Lists details about all the sessions for the specified connection ID. The returned String is a JSON string
-    * containing details about each session associated with the specified ID, e.g.:
+    * Lists details about all the sessions for the specified connection ID. The returned String is JSON containing
+    * details about each session associated with the specified ID, e.g.:
     * <pre>
     * [
     *   {
@@ -1354,8 +1500,7 @@ public interface ActiveMQServerControl {
    String listSessionsAsJSON(@Parameter(desc = "a connection ID", name = "connectionID") String connectionID) throws Exception;
 
    /**
-    * Lists details about all sessions. The returned String is a JSON string containing details about each and every
-    * session, e.g.:
+    * Lists details about all sessions. The returned String is JSON containing details about every session, e.g.:
     * <pre>
     * [
     *   {
@@ -1490,13 +1635,59 @@ public interface ActiveMQServerControl {
    @Operation(desc = "Get roles for a specific address match", impact = MBeanOperationInfo.INFO)
    Object[] getRoles(@Parameter(desc = "an address match", name = "addressMatch") String addressMatch) throws Exception;
 
+   /**
+    * Retrieves roles associated with a specific address match as JSON. The JSON consists of an array of objects
+    * containing the name of the role and a boolean for every permission type indicating whether that role has that
+    * permission, e.g.:
+    * <pre>
+    * [
+    *   {
+    *     "name": "myRole",
+    *     "send": true,
+    *     "consume": true,
+    *     "createDurableQueue": false,
+    *     "deleteDurableQueue": false,
+    *     "createNonDurableQueue": true,
+    *     "deleteNonDurableQueue": false,
+    *     "manage": false,
+    *     "browse": false,
+    *     "createAddress": true,
+    *     "deleteAddress": true,
+    *     "view": false,
+    *     "edit": false
+    *   },
+    *   {
+    *     "name": "myOtherRole",
+    *     "send": false,
+    *     "consume": true,
+    *     "createDurableQueue": false,
+    *     "deleteDurableQueue": true,
+    *     "createNonDurableQueue": true,
+    *     "deleteNonDurableQueue": false,
+    *     "manage": false,
+    *     "browse": true,
+    *     "createAddress": false,
+    *     "deleteAddress": false,
+    *     "view": false,
+    *     "edit": false
+    *   }
+    * ]
+    * </pre>
+    * This JSON can be converted into an array of {@link RoleInfo} objects using {@link RoleInfo#from(String)}.
+    *
+    * @param addressMatch the address match for which roles are to be retrieved
+    * @return JSON representing the roles associated with the specified address match
+    * @throws Exception if an error occurs during the retrieval process
+    */
    @Operation(desc = "Get roles (as a JSON string) for a specific address match", impact = MBeanOperationInfo.INFO)
    String getRolesAsJSON(@Parameter(desc = "an address match", name = "addressMatch") String addressMatch) throws Exception;
 
    /**
     * adds a new address setting for a specific address
+    *
+    * @deprecated Use {@link #addAddressSettings(String, String)} instead.
     */
-   @Deprecated
+   @Deprecated(forRemoval = true)
    @Operation(desc = "Add address settings for addresses matching the addressMatch", impact = MBeanOperationInfo.ACTION)
    void addAddressSettings(@Parameter(desc = "an address match", name = "addressMatch") String addressMatch,
                            @Parameter(desc = "the dead letter address setting", name = "DLA") String DLA,
@@ -1523,8 +1714,10 @@ public interface ActiveMQServerControl {
 
    /**
     * adds a new address setting for a specific address
+    *
+    * @deprecated Use {@link #addAddressSettings(String, String)} instead.
     */
-   @Deprecated
+   @Deprecated(forRemoval = true)
    @Operation(desc = "Add address settings for addresses matching the addressMatch", impact = MBeanOperationInfo.ACTION)
    void addAddressSettings(@Parameter(desc = "an address match", name = "addressMatch") String addressMatch,
                            @Parameter(desc = "the dead letter address setting", name = "DLA") String DLA,
@@ -1555,8 +1748,10 @@ public interface ActiveMQServerControl {
 
    /**
     * adds a new address setting for a specific address
+    *
+    * @deprecated Use {@link #addAddressSettings(String, String)} instead.
     */
-   @Deprecated
+   @Deprecated(forRemoval = true)
    @Operation(desc = "Add address settings for addresses matching the addressMatch", impact = MBeanOperationInfo.ACTION)
    void addAddressSettings(@Parameter(desc = "an address match", name = "addressMatch") String addressMatch,
                            @Parameter(desc = "the dead letter address setting", name = "DLA") String DLA,
@@ -1610,8 +1805,10 @@ public interface ActiveMQServerControl {
 
    /**
     * adds a new address setting for a specific address
+    *
+    * @deprecated Use {@link #addAddressSettings(String, String)} instead.
     */
-   @Deprecated
+   @Deprecated(forRemoval = true)
    @Operation(desc = "Add address settings for addresses matching the addressMatch", impact = MBeanOperationInfo.ACTION)
    void addAddressSettings(@Parameter(desc = "an address match", name = "addressMatch") String addressMatch,
                            @Parameter(desc = "the dead letter address setting", name = "DLA") String DLA,
@@ -1671,8 +1868,10 @@ public interface ActiveMQServerControl {
 
    /**
     * adds a new address setting for a specific address
+    *
+    * @deprecated Use {@link #addAddressSettings(String, String)} instead.
     */
-   @Deprecated
+   @Deprecated(forRemoval = true)
    @Operation(desc = "Add address settings for addresses matching the addressMatch", impact = MBeanOperationInfo.ACTION)
    void addAddressSettings(@Parameter(desc = "an address match", name = "addressMatch") String addressMatch,
                            @Parameter(desc = "the dead letter address setting", name = "DLA") String DLA,
@@ -1733,18 +1932,48 @@ public interface ActiveMQServerControl {
                            @Parameter(desc = "the maximum expiry delay setting", name = "maxExpiryDelay") long maxExpiryDelay,
                            @Parameter(desc = "whether or not to enable metrics", name = "enableMetrics") boolean enableMetrics) throws Exception;
 
-
    /**
-    * adds a new address setting for a specific address
+    * Adds address-settings for matching addresses. The address-settings must be JSON consisting of a simple object of
+    * key/value pairs, e.g.:
+    * <pre>
+    * {
+    *   "addressFullMessagePolicy": "DROP",
+    *   "maxSizeBytes": 1024,
+    *   "prefetchPageMessages": 256,
+    *   "redeliveryDelay": 60000,
+    *   "redeliveryMultiplier": 1.0,
+    *   "deadLetterAddress": "myDeadLetterAddress",
+    *   "expiryAddress": "myExpiryAddress"
+    * }
+    * </pre>
+    *
+    * @param address               the address match pattern for the addresses to apply settings to
+    * @param addressSettingsAsJson the configuration of the address settings as JSON
+    * @return the effective settings for the input address once the input settings are merged with any existing matches
+    * @throws Exception if there is an error adding the address settings
     */
    @Operation(desc = "Add address settings for addresses matching the addressMatch", impact = MBeanOperationInfo.ACTION)
-   String addAddressSettings(@Parameter(desc = "an address match", name = "addressMatch") String address, @Parameter(desc = "The configuration of the address settings as JSON", name = "addressSettingsConfigurationAsJson") String addressSettingsConfigurationAsJson) throws Exception;
+   String addAddressSettings(@Parameter(desc = "an address match", name = "addressMatch") String address,
+                             @Parameter(desc = "The configuration of the address settings as JSON", name = "addressSettingsAsJson")  String addressSettingsAsJson) throws Exception;
 
    @Operation(desc = "Remove address settings", impact = MBeanOperationInfo.ACTION)
    void removeAddressSettings(@Parameter(desc = "an address match", name = "addressMatch") String addressMatch) throws Exception;
 
    /**
-    * {@return the address settings as a JSON string}
+    * Get address-settings for matching address, e.g.:
+    * <pre>
+    * {
+    *   "addressFullMessagePolicy": "DROP",
+    *   "maxSizeBytes": 1024,
+    *   "prefetchPageMessages": 256,
+    *   "redeliveryDelay": 60000,
+    *   "redeliveryMultiplier": 1.0,
+    *   "deadLetterAddress": "myDeadLetterAddress",
+    *   "expiryAddress": "myExpiryAddress"
+    * }
+    * </pre>
+    *
+    * @return the address-settings as JSON
     */
    @Operation(desc = "Returns the address settings as a JSON string for an address match", impact = MBeanOperationInfo.INFO)
    String getAddressSettingsAsJSON(@Parameter(desc = "an address match", name = "addressMatch") String addressMatch) throws Exception;
@@ -1763,7 +1992,7 @@ public interface ActiveMQServerControl {
    /**
     * @deprecated Deprecated in favor of {@link #createDivert(String)}
     */
-   @Deprecated
+   @Deprecated(forRemoval = true)
    @Operation(desc = "Create a Divert", impact = MBeanOperationInfo.ACTION)
    void createDivert(@Parameter(name = "name", desc = "Name of the divert") String name,
                      @Parameter(name = "routingName", desc = "Routing name of the divert") String routingName,
@@ -1776,7 +2005,7 @@ public interface ActiveMQServerControl {
    /**
     * @deprecated Deprecated in favor of {@link #createDivert(String)}
     */
-   @Deprecated
+   @Deprecated(forRemoval = true)
    @Operation(desc = "Create a Divert", impact = MBeanOperationInfo.ACTION)
    void createDivert(@Parameter(name = "name", desc = "Name of the divert") String name,
                      @Parameter(name = "routingName", desc = "Routing name of the divert") String routingName,
@@ -1790,7 +2019,7 @@ public interface ActiveMQServerControl {
    /**
     * @deprecated Deprecated in favor of {@link #createDivert(String)}
     */
-   @Deprecated
+   @Deprecated(forRemoval = true)
    @Operation(desc = "Create a Divert", impact = MBeanOperationInfo.ACTION)
    void createDivert(@Parameter(name = "name", desc = "Name of the divert") String name,
                      @Parameter(name = "routingName", desc = "Routing name of the divert") String routingName,
@@ -1805,7 +2034,7 @@ public interface ActiveMQServerControl {
    /**
     * @deprecated Deprecated in favor of {@link #createDivert(String)}
     */
-   @Deprecated
+   @Deprecated(forRemoval = true)
    @Operation(desc = "Create a Divert", impact = MBeanOperationInfo.ACTION)
    void createDivert(@Parameter(name = "name", desc = "Name of the divert") String name,
                      @Parameter(name = "routingName", desc = "Routing name of the divert") String routingName,
@@ -1818,7 +2047,16 @@ public interface ActiveMQServerControl {
                      @Parameter(name = "routingType", desc = "How should the routing-type on the diverted messages be set?") String routingType) throws Exception;
 
    /**
-    * Create a Divert.
+    * Adds a divert. The divert configuration must be JSON consisting of a simple object of key/value pairs, e.g.:
+    * <pre>
+    * {
+    *   "name": "myDivert",
+    *   "address": "myAddress",
+    *   "forwarding-address": "myForwardingAddress",
+    *   "exclusive": false,
+    *   "routing-type": "STRIP"
+    * }
+    * </pre>
     *
     * @param divertConfiguration the configuration of the divert in JSON format
     */
@@ -1827,8 +2065,10 @@ public interface ActiveMQServerControl {
 
    /**
     * update a divert
+    *
+    * @deprecated Use {@link #createDivert(String)} instead.
     */
-   @Deprecated
+   @Deprecated(forRemoval = true)
    @Operation(desc = "Update a divert", impact = MBeanOperationInfo.ACTION)
    void updateDivert(@Parameter(name = "name", desc = "Name of the queue") String name,
                      @Parameter(name = "forwardingAddress", desc = "Address to divert to") String forwardingAddress,
@@ -1838,7 +2078,8 @@ public interface ActiveMQServerControl {
                      @Parameter(name = "routingType", desc = "How should the routing-type on the diverted messages be set?") String routingType) throws Exception;
 
    /**
-    * update a divert
+    * Updates a divert. The divert configuration must be JSON consisting of a simple object of key/value pairs. For an
+    * example, see {@link #createDivert(String)}.
     */
    @Operation(desc = "Update a divert", impact = MBeanOperationInfo.ACTION)
    void updateDivert(@Parameter(name = "divertConfiguration", desc = "the configuration of the divert in JSON format") String divertConfiguration) throws Exception;
@@ -1852,7 +2093,7 @@ public interface ActiveMQServerControl {
    /**
     * @deprecated Deprecated in favour of {@link #createBridge(String)}
     */
-   @Deprecated
+   @Deprecated(forRemoval = true)
    @Operation(desc = "Create a Bridge", impact = MBeanOperationInfo.ACTION)
    void createBridge(@Parameter(name = "name", desc = "Name of the bridge") String name,
                      @Parameter(name = "queueName", desc = "Name of the source queue") String queueName,
@@ -1876,7 +2117,7 @@ public interface ActiveMQServerControl {
    /**
     * @deprecated Deprecated in favour of {@link #createBridge(String)}
     */
-   @Deprecated
+   @Deprecated(forRemoval = true)
    @Operation(desc = "Create a Bridge", impact = MBeanOperationInfo.ACTION)
    void createBridge(@Parameter(name = "name", desc = "Name of the bridge") String name,
                      @Parameter(name = "queueName", desc = "Name of the source queue") String queueName,
@@ -1901,7 +2142,7 @@ public interface ActiveMQServerControl {
    /**
     * @deprecated Deprecated in favour of {@link #createBridge(String)}
     */
-   @Deprecated
+   @Deprecated(forRemoval = true)
    @Operation(desc = "Create a Bridge", impact = MBeanOperationInfo.ACTION)
    void createBridge(@Parameter(name = "name", desc = "Name of the bridge") String name,
                      @Parameter(name = "queueName", desc = "Name of the source queue") String queueName,
@@ -1926,7 +2167,7 @@ public interface ActiveMQServerControl {
    /**
     * @deprecated Deprecated in favour of {@link #createBridge(String)}
     */
-   @Deprecated
+   @Deprecated(forRemoval = true)
    @Operation(desc = "Create a Bridge", impact = MBeanOperationInfo.ACTION)
    void createBridge(@Parameter(name = "name", desc = "Name of the bridge") String name,
                      @Parameter(name = "queueName", desc = "Name of the source queue") String queueName,
@@ -1947,7 +2188,23 @@ public interface ActiveMQServerControl {
                      @Parameter(name = "password", desc = "User password") String password) throws Exception;
 
    /**
-    * Create a bridge.
+    * Create a bridge. The bridge configuration must be JSON consisting of a simple object of key/value pairs, e.g.:
+    * <pre>
+    * {
+    *   "name": "myBridge",
+    *   "queue-name": "myQueue",
+    *   "forwarding-address": "myForwardingAddress",
+    *   "retry-interval": 2000,
+    *   "retry-interval-multiplier": 1.0,
+    *   "reconnect-attempts": -1,
+    *   "use-duplicate-detection": false,
+    *   "producer-window-size": -1,
+    *   "routing-type": "PASS",
+    *   "static-connectors": [
+    *     "myConnector"
+    *   ]
+    * }
+    * </pre>
     *
     * @param bridgeConfiguration the configuration of the queue in JSON format
     */

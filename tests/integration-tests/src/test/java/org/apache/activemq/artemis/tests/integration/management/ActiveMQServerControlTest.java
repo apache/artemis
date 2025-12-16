@@ -1324,7 +1324,6 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       assertNull(info.getExpiryAddress());
       assertEquals(0, addressSettings.getRedeliveryDelay());
 
-
       addressSettings.setExpiryAddress(SimpleString.of("EA"));
       returnedSettings = serverControl.addAddressSettings("foo", addressSettings.toJSON());
       info = AddressSettings.fromJSON(returnedSettings);

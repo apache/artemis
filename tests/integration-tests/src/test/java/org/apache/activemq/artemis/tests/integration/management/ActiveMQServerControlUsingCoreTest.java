@@ -1471,8 +1471,8 @@ public class ActiveMQServerControlUsingCoreTest extends ActiveMQServerControlTes
          }
 
          @Override
-         public String addAddressSettings(String address, String addressSettingsConfigurationAsJson) throws Exception {
-            return (String) proxy.invokeOperation("addAddressSettings", address, addressSettingsConfigurationAsJson);
+         public String addAddressSettings(String address, String addressSettingsAsJson) throws Exception {
+            return (String) proxy.invokeOperation("addAddressSettings", address, addressSettingsAsJson);
          }
 
          @Override

@@ -2169,7 +2169,7 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
    }
 
    @Override
-   public void describeProducersInfo(JsonArrayBuilder array) throws Exception {
+   public void describeProducersInfo(JsonArrayBuilder array) {
       Map<String, ServerProducer> targetCopy = cloneProducers();
       for (Map.Entry<String, ServerProducer> entry : targetCopy.entrySet()) {
          String uuid = null;

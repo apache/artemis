@@ -3570,19 +3570,19 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
    }
 
    @Override
-   public String addAddressSettings(String address, String addressSettingsConfigurationAsJson) throws Exception {
+   public String addAddressSettings(String address, String addressSettingsAsJson) throws Exception {
       if (AuditLogger.isBaseLoggingEnabled()) {
-         AuditLogger.addAddressSettings(this.server, addressSettingsConfigurationAsJson);
+         AuditLogger.addAddressSettings(this.server, addressSettingsAsJson);
       }
       checkStarted();
 
       clearIO();
 
       try {
-         AddressSettings addressSettingsConfiguration = AddressSettings.fromJSON(addressSettingsConfigurationAsJson);
+         AddressSettings addressSettingsConfiguration = AddressSettings.fromJSON(addressSettingsAsJson);
 
          if (addressSettingsConfiguration == null) {
-            throw ActiveMQMessageBundle.BUNDLE.failedToParseJson(addressSettingsConfigurationAsJson);
+            throw ActiveMQMessageBundle.BUNDLE.failedToParseJson(addressSettingsAsJson);
          }
          if (addressSettingsConfiguration.getPageSizeBytes() > addressSettingsConfiguration.getMaxSizeBytes() && addressSettingsConfiguration.getMaxSizeBytes() > 0) {
             throw new IllegalStateException("pageSize has to be lower than maxSizeBytes. Invalid argument (" + addressSettingsConfiguration.getPageSizeBytes() + " < " + addressSettingsConfiguration.getMaxSizeBytes() + ")");
@@ -3593,7 +3593,7 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
          }
          server.getAddressSettingsRepository().addMatch(address, addressSettingsConfiguration);
 
-         storageManager.storeAddressSetting(new PersistedAddressSettingJSON(SimpleString.of(address), addressSettingsConfiguration, SimpleString.of(addressSettingsConfigurationAsJson)));
+         storageManager.storeAddressSetting(new PersistedAddressSettingJSON(SimpleString.of(address), addressSettingsConfiguration, SimpleString.of(addressSettingsAsJson)));
          return addressSettingsConfiguration.toJSON();
       } catch (ActiveMQException e) {
          throw new IllegalStateException(e.getMessage());

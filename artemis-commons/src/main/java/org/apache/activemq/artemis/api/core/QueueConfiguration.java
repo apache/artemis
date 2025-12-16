@@ -717,7 +717,15 @@ public class QueueConfiguration implements Serializable {
 
    /**
     * This method returns a JSON-formatted {@code String} representation of this {@code QueueConfiguration}. It is a
-    * simple collection of key/value pairs. The keys used are referenced in {@link #set(String, String)}.
+    * simple collection of key/value pairs. The keys used are referenced in {@link #set(String, String)}. For example:
+    * <pre>
+    * {
+    *   "name": "myQueue",
+    *   "address": "myAddress",
+    *   "routing-type": "ANYCAST",
+    *   "durable": true
+    * }
+    * </pre>
     *
     * @return a JSON-formatted {@code String} representation of this {@code QueueConfiguration}
     */
@@ -826,7 +834,16 @@ public class QueueConfiguration implements Serializable {
 
    /**
     * This method returns a {@code QueueConfiguration} created from the JSON-formatted input {@code String}. The input
-    * should be a simple object of key/value pairs. Valid keys are referenced in {@link #set(String, String)}.
+    * should be a simple object of key/value pairs. Valid keys are referenced in {@link #set(String, String)}. For
+    * example:
+    * <pre>
+    * {
+    *   "name": "myQueue",
+    *   "address": "myAddress",
+    *   "routing-type": "ANYCAST",
+    *   "durable": true
+    * }
+    * </pre>
     *
     * @return the {@code QueueConfiguration} created from the JSON-formatted input {@code String}
     */
