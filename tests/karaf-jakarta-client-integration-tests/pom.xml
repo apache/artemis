@@ -18,9 +18,9 @@
    <modelVersion>4.0.0</modelVersion>
 
    <parent>
-      <groupId>org.apache.activemq.tests</groupId>
+      <groupId>org.apache.artemis.tests</groupId>
       <artifactId>artemis-tests-pom</artifactId>
-      <version>2.45.0-SNAPSHOT</version>
+      <version>2.50.0-SNAPSHOT</version>
    </parent>
 
    <artifactId>karaf-jakarta-client-integration-tests</artifactId>
@@ -43,7 +43,7 @@
          <scope>test</scope>
       </dependency>
       <dependency>
-         <groupId>org.apache.activemq</groupId>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-jakarta-client</artifactId>
          <scope>test</scope>
       </dependency>
@@ -97,14 +97,14 @@
          <scope>test</scope>
       </dependency>
       <dependency>
-         <groupId>org.apache.activemq</groupId>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-features</artifactId>
          <classifier>features</classifier>
          <type>xml</type>
          <scope>test</scope>
       </dependency>
       <dependency>
-         <groupId>org.apache.activemq</groupId>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-unit-test-support</artifactId>
          <version>${project.version}</version>
          <scope>test</scope>
@@ -127,7 +127,7 @@
             </executions>
          </plugin>
          <plugin>
-            <groupId>org.apache.activemq</groupId>
+            <groupId>org.apache.artemis</groupId>
             <artifactId>artemis-maven-plugin</artifactId>
             <executions>
                <execution>

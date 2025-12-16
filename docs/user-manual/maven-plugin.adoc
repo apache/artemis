@@ -37,7 +37,7 @@ On your pom, use the plugins section:
 <build>
    <plugins>
       <plugin>
-         <groupId>org.apache.activemq</groupId>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-maven-plugin</artifactId>
       </plugin>
    </plugins>
@@ -174,7 +174,7 @@ You may refer to it directly under the examples directory tree.
    <modelVersion>4.0.0</modelVersion>
 
    <parent>
-      <groupId>org.apache.activemq.examples.broker</groupId>
+      <groupId>org.apache.artemis.examples.broker</groupId>
       <artifactId>jms-examples</artifactId>
       <version>1.1.0</version>
    </parent>
@@ -189,7 +189,7 @@ You may refer to it directly under the examples directory tree.
 
    <dependencies>
       <dependency>
-         <groupId>org.apache.activemq</groupId>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-jms-client</artifactId>
          <version>${project.version}</version>
       </dependency>
@@ -198,7 +198,7 @@ You may refer to it directly under the examples directory tree.
    <build>
       <plugins>
          <plugin>
-            <groupId>org.apache.activemq</groupId>
+            <groupId>org.apache.artemis</groupId>
             <artifactId>artemis-maven-plugin</artifactId>
             <executions>
                <execution>
@@ -245,7 +245,7 @@ You may refer to it directly under the examples directory tree.
             </executions>
             <dependencies>
                <dependency>
-                  <groupId>org.apache.activemq.examples.broker</groupId>
+                  <groupId>org.apache.artemis.examples.broker</groupId>
                   <artifactId>queue</artifactId>
                   <version>${project.version}</version>
                </dependency>

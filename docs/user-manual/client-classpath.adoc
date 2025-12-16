@@ -7,7 +7,7 @@
 
 The recommended way to define a client dependency for your java application is through a Maven dependency declaration.
 
-There are two dependencies you can choose from, `org.apache.activemq:artemis-jms-client` for JMS 2.0 or `org.apache.activemq:artemis-jakarta-client` for Jakarta Messaging 3.x.
+There are two dependencies you can choose from, `org.apache.artemis:artemis-jms-client` for JMS 2.0 or `org.apache.artemis:artemis-jakarta-client` for Jakarta Messaging 3.x.
 
 For JMS:
 
@@ -15,7 +15,7 @@ For JMS:
 ----
 ...
 <dependency>
-   <groupId>org.apache.activemq</groupId>
+   <groupId>org.apache.artemis</groupId>
    <artifactId>artemis-jms-client</artifactId>
    <version>{project-version}</version>
 </dependency>
@@ -28,7 +28,7 @@ For Jakarta:
 ----
 ...
 <dependency>
-   <groupId>org.apache.activemq</groupId>
+   <groupId>org.apache.artemis</groupId>
    <artifactId>artemis-jakarta-client</artifactId>
    <version>{project-version}</version>
 </dependency>
@@ -50,8 +50,8 @@ Even though it is highly recommend to use the maven dependencies, in cases this 
 
 These jars are available at Maven Central:
 
-* https://repo.maven.apache.org/maven2/org/apache/activemq/artemis-jms-client-all/{project-version}/[artemis-jms-client-all-{project-version}.jar]
-* https://repo.maven.apache.org/maven2/org/apache/activemq/artemis-jakarta-client-all/{project-version}/[artemis-jakarta-client-all-{project-version}.jar]
+* https://repo.maven.apache.org/maven2/org/apache/artemis/artemis-jms-client-all/{project-version}/[artemis-jms-client-all-{project-version}.jar]
+* https://repo.maven.apache.org/maven2/org/apache/artemis/artemis-jakarta-client-all/{project-version}/[artemis-jakarta-client-all-{project-version}.jar]
 
 Whether you are using JMS or just the Core API simply add the `artemis-jms-client-all` jar to your client classpath.
 For Jakarta Messaging add the `artemis-jakarta-client-all` jar instead.

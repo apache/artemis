@@ -17,7 +17,7 @@ These are provided by the packages `artemis-junit` (JUnit 4) and `artemis-junit-
 [,xml,subs="normal"]
 ----
 <dependency>
-   <groupId>org.apache.activemq</groupId>
+   <groupId>org.apache.artemis</groupId>
    <artifactId>artemis-junit</artifactId>
    <!-- replace this for the version you are using -->
    <version>{project-version}</version>
@@ -53,7 +53,7 @@ public class MyTest {
 [,xml,subs="normal"]
 ----
 <dependency>
-   <groupId>org.apache.activemq</groupId>
+   <groupId>org.apache.artemis</groupId>
    <artifactId>artemis-junit-5</artifactId>
    <!-- replace this for the version you are using -->
    <version>{project-version}</version>

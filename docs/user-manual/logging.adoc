@@ -72,7 +72,7 @@ Taking Log4J2 as an example logging implementation, since it used by the broker,
 [,xml,subs="normal"]
 ----
 <dependency>
-   <groupId>org.apache.activemq</groupId>
+   <groupId>org.apache.artemis</groupId>
    <artifactId>artemis-jms-client</artifactId>
    <version>{project-version}</version>
 </dependency>

@@ -13,7 +13,7 @@ NOTE: If the upgrade spans multiple versions then the steps from *each* version 
 
 NOTE: Follow the general upgrade procedure outlined in the xref:upgrading.adoc#upgrading-the-broker[Upgrading the Broker]  chapter in addition to any version-specific upgrade instructions outlined here.
 
-== 2.45.0
+== 2.50.0
 
 https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=xxx[Full release notes]
 
@@ -23,6 +23,8 @@ https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&versio
 
 === Upgrading from 2.44.0
 
+* The components Maven groupId has changed to "org.apache.artemis" to reflect the new Apache Artemis project. You should update your dependency declarations.
+https://artemis.apache.org/artemis-tlp-groupid-migration[Click here] for more details.
 * Due to https://issues.apache.org/jira/browse/ARTEMIS-5770[ARTEMIS-5770] the formatting of the "Local Address" field has changed.
 This field is available on the "Connections," "Sessions," "Consumers," and "Producers" tabs.
 This may impact users filtering results based on this field.
