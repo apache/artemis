@@ -33,6 +33,7 @@
 
    <properties>
       <checkstyle.skip>true</checkstyle.skip>
+      <maven.deploy.skip>true</maven.deploy.skip>
    </properties>
 
    <distributionManagement>
@@ -41,4 +42,13 @@
          <message>Update the groupId in your project build file. Refer to https://artemis.apache.org/artemis-tlp-groupid-migration for more information.</message>
       </relocation>
    </distributionManagement>
+
+   <profiles>
+      <profile>
+         <id>deploy-relocations</id>
+         <properties>
+            <maven.deploy.skip>false</maven.deploy.skip>
+         </properties>
+      </profile>
+   </profiles>
 </project>

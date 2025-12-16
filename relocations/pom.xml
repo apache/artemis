@@ -30,14 +30,19 @@
    <name>Artemis Relocations Parent</name>
 
    <properties>
-      <activemq.basedir>${project.basedir}/..</activemq.basedir>
       <checkstyle.skip>true</checkstyle.skip>
+      <maven.deploy.skip>true</maven.deploy.skip>
    </properties>
 
    <modules>
+      <!-- Modules that use org.apache.artemis:artemis-project as their parent -->
+      <module>artemis-bom</module>
+      <module>artemis-log-annotation-processor</module>
+      <module>artemis-project</module>
+
+      <!-- Other modules, use this pom (and in turn artemis-pom) as their parent -->
       <module>apache-artemis</module>
       <module>artemis-amqp-protocol</module>
-      <module>artemis-bom</module>
       <module>artemis-boot</module>
       <module>artemis-cdi-client</module>
       <module>artemis-cli</module>
@@ -73,12 +78,10 @@
       <module>artemis-lockmanager-api</module>
       <module>artemis-lockmanager</module>
       <module>artemis-lockmanager-ri</module>
-      <module>artemis-log-annotation-processor</module>
       <module>artemis-maven-plugin</module>
       <module>artemis-mqtt-protocol</module>
       <module>artemis-openwire-protocol</module>
       <module>artemis-pom</module>
-      <module>artemis-project</module>
       <module>artemis-protocols</module>
       <module>artemis-ra</module>
       <module>artemis-selector</module>
@@ -90,4 +93,13 @@
       <module>artemis-web</module>
       <module>artemis-website</module>
    </modules>
+
+   <profiles>
+      <profile>
+         <id>deploy-relocations</id>
+         <properties>
+            <maven.deploy.skip>false</maven.deploy.skip>
+         </properties>
+      </profile>
+   </profiles>
 </project>

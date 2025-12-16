@@ -32,7 +32,6 @@
       <!-- Modules that use artemis-project as their parent -->
       <module>artemis-bom</module>
       <module>artemis-log-annotation-processor</module>
-      <module>relocations</module>
       <module>artemis-pom</module>
 
       <!-- Other modules, use artemis-pom as their parent -->
@@ -417,6 +416,7 @@
          <id>release</id>
          <modules>
             <module>artemis-website</module>
+            <module>relocations</module>
          </modules>
          <properties>
             <shade-plugin-create-sources>true</shade-plugin-create-sources>
