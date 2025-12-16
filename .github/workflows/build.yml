@@ -8,17 +8,17 @@ on:
       examplesRepo:
         description: 'The examples repo to use'
         required: true
-        default: 'apache/artemis-examples'
+        default: 'gemmellr/artemis-examples'
         type: string
       examplesRepoBranch:
         description: 'Branch in examples repo'
         required: true
-        default: 'development'
+        default: 'development-old-groupid'
         type: string
 
 env:
-  EXAMPLES_REPO: ${{ inputs.examplesRepo || 'apache/artemis-examples' }}
-  EXAMPLES_BRANCH: ${{ inputs.examplesRepoBranch || 'development' }}
+  EXAMPLES_REPO: ${{ inputs.examplesRepo || 'gemmellr/artemis-examples' }}
+  EXAMPLES_BRANCH: ${{ inputs.examplesRepoBranch || 'development-old-groupid' }}
 
 
 jobs:
