@@ -13,12 +13,12 @@ on:
       examplesRepoBranch:
         description: 'Branch in examples repo'
         required: true
-        default: 'development-old-groupid'
+        default: 'development-new-groupid'
         type: string
 
 env:
   EXAMPLES_REPO: ${{ inputs.examplesRepo || 'gemmellr/artemis-examples' }}
-  EXAMPLES_BRANCH: ${{ inputs.examplesRepoBranch || 'development-old-groupid' }}
+  EXAMPLES_BRANCH: ${{ inputs.examplesRepoBranch || 'development-new-groupid' }}
 
 
 jobs:
