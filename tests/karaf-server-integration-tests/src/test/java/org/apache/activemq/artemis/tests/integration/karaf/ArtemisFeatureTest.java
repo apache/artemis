@@ -133,7 +133,7 @@ public class ArtemisFeatureTest extends Assert {
 
    public static UrlReference getArtemisMQKarafFeatureUrl() {
       String type = "xml/features";
-      UrlReference urlReference = mavenBundle().groupId("org.apache.activemq").
+      UrlReference urlReference = mavenBundle().groupId("org.apache.artemis").
          artifactId("artemis-features").versionAsInProject().type(type);
       log.debug("FeatureURL: {}", urlReference.getURL());
       return urlReference;

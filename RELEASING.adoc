@@ -153,6 +153,14 @@ mvn release:perform -Prelease
 
 This can take quite a while depending on your Internet connection speed.
 
+Finally, upload the relocations to ASF Nexus:
+
+[,console]
+----
+cd target/checkout/relocations/
+mvn deploy -Papache-release,deploy-relocations
+----
+
 [NOTE]
 .Resume Release Upload
 ====
@@ -175,13 +183,15 @@ scm.tag=2.31.0
 Keep the checkout used to run the release process for later.
 The website update scripts will reference it for documentation output.
 
-== Close the Staging Repository
+== Close the Staging Repositories
 
 Give the https://repository.apache.org/#stagingRepositories[staging repository] contents a quick inspection using the content navigation area.
 If everything looks good close the staging repo using the "Close" button on ASF Nexus website, locking it from further modification and exposing its contents at a staging URL to allow testing.
 Set a description such as "Apache Artemis <version> (RC1)" while closing.
 
-Note the staging repo URL, of form `\https://repository.apache.org/content/repositories/orgapacheartemis-<repo-id>`
+Note the staging repo URL, of form `https://repository.apache.org/content/repositories/orgapacheartemis-<repo-id>`
+
+Do similar for the relocations staging repository, of form `https://repository.apache.org/content/repositories/orgapacheactivemq-<repo-id>`
 
 == Verify build reproducibility
 
@@ -348,6 +358,9 @@ https://dist.apache.org/repos/dist/dev/artemis/artemis/<version>/
 * Maven staging repository:
 https://repository.apache.org/content/repositories/orgapacheartemis-<repoID>
 
+* Relocations maven staging repository:
+https://repository.apache.org/content/repositories/orgapacheactivemq-<repoID>
+
 * How to validate the release:
 https://artemis.apache.org/components/artemis/documentation/hacking-guide/#validating-releases
 
@@ -485,9 +498,9 @@ cd artemis
 It takes ~15 minutes to sync with the CDN.
 The CDN content can be viewed https://dlcdn.apache.org/artemis/artemis/[here].
 
-== Release the Staging Repository
+== Release the Staging Repositories
 
-Go to https://repository.apache.org/#stagingRepositories[ASF Nexus] and click the "Release" button.
+Go to https://repository.apache.org/#stagingRepositories[ASF Nexus] and click the "Release" button on both the main and relocations staging repositories.
 
 It takes ~30-60 minutes to sync with Maven Central.
 The content can be viewed https://repo1.maven.org/maven2/org/apache/artemis/[here].

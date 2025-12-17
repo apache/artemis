@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+   <parent>
+      <groupId>org.apache.artemis</groupId>
+      <artifactId>artemis-pom</artifactId>
+      <version>2.50.0-SNAPSHOT</version>
+      <relativePath>../artemis-pom/pom.xml</relativePath>
+   </parent>
+
+   <groupId>org.apache.activemq</groupId>
+   <artifactId>artemis-relocations-parent</artifactId>
+   <packaging>pom</packaging>
+   <name>Artemis Relocations Parent</name>
+
+   <properties>
+      <checkstyle.skip>true</checkstyle.skip>
+      <maven.deploy.skip>true</maven.deploy.skip>
+   </properties>
+
+   <modules>
+      <!-- Modules that use org.apache.artemis:artemis-project as their parent -->
+      <module>artemis-bom</module>
+      <module>artemis-log-annotation-processor</module>
+      <module>artemis-project</module>
+
+      <!-- Other modules, use this pom (and in turn artemis-pom) as their parent -->
+      <module>apache-artemis</module>
+      <module>artemis-amqp-protocol</module>
+      <module>artemis-boot</module>
+      <module>artemis-cdi-client</module>
+      <module>artemis-cli</module>
+      <module>artemis-commons</module>
+      <module>artemis-console</module>
+      <module>artemis-core-client-all</module>
+      <module>artemis-core-client</module>
+      <module>artemis-core-client-osgi</module>
+      <module>artemis-dto</module>
+      <module>artemis-features</module>
+      <module>artemis-hornetq-protocol</module>
+      <module>artemis-hqclient-protocol</module>
+      <module>artemis-image-examples</module>
+      <module>artemis-image</module>
+      <module>artemis-jakarta-cdi-client</module>
+      <module>artemis-jakarta-client-all</module>
+      <module>artemis-jakarta-client</module>
+      <module>artemis-jakarta-client-osgi</module>
+      <module>artemis-jakarta-openwire-protocol</module>
+      <module>artemis-jakarta-ra</module>
+      <module>artemis-jakarta-server</module>
+      <module>artemis-jakarta-service-extensions</module>
+      <module>artemis-jdbc-store</module>
+      <module>artemis-jms-client-all</module>
+      <module>artemis-jms-client</module>
+      <module>artemis-jms-client-osgi</module>
+      <module>artemis-jms-server</module>
+      <module>artemis-journal</module>
+      <module>artemis-junit-5</module>
+      <module>artemis-junit-commons</module>
+      <module>artemis-junit</module>
+      <module>artemis-junit-parent</module>
+      <module>artemis-lockmanager-api</module>
+      <module>artemis-lockmanager</module>
+      <module>artemis-lockmanager-ri</module>
+      <module>artemis-maven-plugin</module>
+      <module>artemis-mqtt-protocol</module>
+      <module>artemis-openwire-protocol</module>
+      <module>artemis-pom</module>
+      <module>artemis-protocols</module>
+      <module>artemis-ra</module>
+      <module>artemis-selector</module>
+      <module>artemis-server</module>
+      <module>artemis-server-osgi</module>
+      <module>artemis-service-extensions</module>
+      <module>artemis-stomp-protocol</module>
+      <module>artemis-unit-test-support</module>
+      <module>artemis-web</module>
+      <module>artemis-website</module>
+   </modules>
+
+   <profiles>
+      <profile>
+         <id>deploy-relocations</id>
+         <properties>
+            <maven.deploy.skip>false</maven.deploy.skip>
+         </properties>
+      </profile>
+   </profiles>
+</project>

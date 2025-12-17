@@ -28,7 +28,7 @@
         <unpack>false</unpack>
         <useTransitiveDependencies>false</useTransitiveDependencies>
         <includes>
-           <include>org.apache.activemq:artemis-boot</include>
+           <include>org.apache.artemis:artemis-boot</include>
         </includes>
         <useProjectArtifact>false</useProjectArtifact>
       </dependencySet>
@@ -38,10 +38,10 @@
          <fileMode>0644</fileMode>
          <excludes>
             <!-- Handled above -->
-            <exclude>org.apache.activemq:artemis-boot</exclude>
+            <exclude>org.apache.artemis:artemis-boot</exclude>
 
             <!-- Handled later in web subdir for console bits -->
-            <exclude>org.apache.activemq:artemis-console:war</exclude>
+            <exclude>org.apache.artemis:artemis-console:war</exclude>
          </excludes>
          <outputDirectory>lib</outputDirectory>
          <unpack>false</unpack>
@@ -68,7 +68,7 @@
       <!-- Management Console Dependencies -->
       <dependencySet>
          <includes>
-            <include>org.apache.activemq:artemis-console:war</include>
+            <include>org.apache.artemis:artemis-console:war</include>
          </includes>
          <outputDirectory>web/console.war</outputDirectory>
          <unpack>true</unpack>

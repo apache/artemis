@@ -19,8 +19,8 @@
 
    <parent>
       <artifactId>artemis-protocols</artifactId>
-      <groupId>org.apache.activemq</groupId>
-      <version>2.45.0-SNAPSHOT</version>
+      <groupId>org.apache.artemis</groupId>
+      <version>2.50.0-SNAPSHOT</version>
    </parent>
 
    <artifactId>artemis-amqp-protocol</artifactId>
@@ -33,20 +33,20 @@
 
    <dependencies>
       <dependency>
-         <groupId>org.apache.activemq</groupId>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-selector</artifactId>
       </dependency>
       <dependency>
-         <groupId>org.apache.activemq</groupId>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-core-client</artifactId>
       </dependency>
       <dependency>
-         <groupId>org.apache.activemq</groupId>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-commons</artifactId>
       </dependency>
       <!-- logging -->
       <dependency>
-         <groupId>org.apache.activemq</groupId>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-log-annotation-processor</artifactId>
          <version>${project.version}</version>
          <scope>provided</scope>
@@ -64,11 +64,11 @@
       </dependency>
 
       <dependency>
-         <groupId>org.apache.activemq</groupId>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-server</artifactId>
       </dependency>
       <dependency>
-         <groupId>org.apache.activemq</groupId>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-journal</artifactId>
       </dependency>
       <dependency>
@@ -112,7 +112,7 @@
          <scope>test</scope>
       </dependency>
       <dependency>
-         <groupId>org.apache.activemq</groupId>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-unit-test-support</artifactId>
          <version>${project.version}</version>
          <scope>test</scope>

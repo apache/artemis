@@ -54,7 +54,7 @@ public enum PaxExamOptions {
    ARTEMIS_CORE_CLIENT(
            features(
                    maven()
-                           .groupId("org.apache.activemq")
+                           .groupId("org.apache.artemis")
                            .artifactId("artemis-features")
                            .type("xml")
                            .classifier("features")
@@ -64,7 +64,7 @@ public enum PaxExamOptions {
    ARTEMIS_JMS_CLIENT(
            features(
                    maven()
-                           .groupId("org.apache.activemq")
+                           .groupId("org.apache.artemis")
                            .artifactId("artemis-features")
                            .type("xml")
                            .classifier("features")
@@ -74,7 +74,7 @@ public enum PaxExamOptions {
    ARTEMIS_AMQP_CLIENT(
            features(
                    maven()
-                           .groupId("org.apache.activemq")
+                           .groupId("org.apache.artemis")
                            .artifactId("artemis-features")
                            .type("xml")
                            .classifier("features")
@@ -84,7 +84,7 @@ public enum PaxExamOptions {
    ARTEMIS_OPENWIRE_CLIENT(
            features(
                    maven()
-                           .groupId("org.apache.activemq")
+                           .groupId("org.apache.artemis")
                            .artifactId("artemis-features")
                            .type("xml")
                            .classifier("features")

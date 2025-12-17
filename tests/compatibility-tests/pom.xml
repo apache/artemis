@@ -18,9 +18,9 @@
    <modelVersion>4.0.0</modelVersion>
 
    <parent>
-      <groupId>org.apache.activemq.tests</groupId>
+      <groupId>org.apache.artemis.tests</groupId>
       <artifactId>artemis-tests-pom</artifactId>
-      <version>2.45.0-SNAPSHOT</version>
+      <version>2.50.0-SNAPSHOT</version>
    </parent>
 
    <artifactId>compatibility-tests</artifactId>
@@ -34,43 +34,43 @@
 
    <dependencies>
       <dependency>
-         <groupId>org.apache.activemq</groupId>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-jms-client</artifactId>
       </dependency>
       <dependency>
-         <groupId>org.apache.activemq</groupId>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-jms-server</artifactId>
       </dependency>
       <dependency>
-         <groupId>org.apache.activemq</groupId>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-ra</artifactId>
       </dependency>
       <dependency>
-         <groupId>org.apache.activemq</groupId>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-cli</artifactId>
       </dependency>
       <dependency>
-         <groupId>org.apache.activemq</groupId>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-commons</artifactId>
       </dependency>
       <dependency>
-         <groupId>org.apache.activemq</groupId>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-journal</artifactId>
       </dependency>
       <dependency>
-         <groupId>org.apache.activemq</groupId>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-jdbc-store</artifactId>
       </dependency>
       <dependency>
-         <groupId>org.apache.activemq</groupId>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-amqp-protocol</artifactId>
       </dependency>
       <dependency>
-         <groupId>org.apache.activemq</groupId>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-stomp-protocol</artifactId>
       </dependency>
       <dependency>
-         <groupId>org.apache.activemq</groupId>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-openwire-protocol</artifactId>
          <exclusions>
             <exclusion>
@@ -80,15 +80,15 @@
          </exclusions>
       </dependency>
       <dependency>
-         <groupId>org.apache.activemq</groupId>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-hornetq-protocol</artifactId>
       </dependency>
       <dependency>
-         <groupId>org.apache.activemq</groupId>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-core-client</artifactId>
       </dependency>
       <dependency>
-         <groupId>org.apache.activemq</groupId>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-server</artifactId>
       </dependency>
       <dependency>
@@ -97,22 +97,22 @@
          <version>${activemq-artemis-native-version}</version>
       </dependency>
       <dependency>
-         <groupId>org.apache.activemq</groupId>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-service-extensions</artifactId>
       </dependency>
       <dependency>
-         <groupId>org.apache.activemq</groupId>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-unit-test-support</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>org.apache.activemq.tests</groupId>
+         <groupId>org.apache.artemis.tests</groupId>
          <artifactId>artemis-test-support</artifactId>
          <version>${project.version}</version>
          <scope>test</scope>
       </dependency>
       <dependency>
-         <groupId>org.apache.activemq</groupId>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-features</artifactId>
          <classifier>features</classifier>
          <type>xml</type>
@@ -145,7 +145,7 @@
          </exclusions>
       </dependency>
       <dependency>
-         <groupId>org.apache.activemq</groupId>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-mqtt-protocol</artifactId>
       </dependency>
       <dependency>
@@ -330,7 +330,7 @@
          <build>
             <plugins>
                <plugin>
-                  <groupId>org.apache.activemq</groupId>
+                  <groupId>org.apache.artemis</groupId>
                   <artifactId>artemis-maven-plugin</artifactId>
                   <version>${project.version}</version>
                   <executions>
@@ -343,17 +343,17 @@
                         </goals>
                         <configuration>
                            <libListWithDeps>
-                              <arg>org.apache.activemq:artemis-jms-server:${project.version}</arg>
-                              <arg>org.apache.activemq:artemis-cli:${project.version}</arg>
-                              <arg>org.apache.activemq:artemis-jms-client:${project.version}</arg>
-                              <arg>org.apache.activemq:artemis-hornetq-protocol:${project.version}</arg>
-                              <arg>org.apache.activemq:artemis-amqp-protocol:${project.version}</arg>
-                              <arg>org.apache.activemq:artemis-hornetq-protocol:${project.version}</arg>
+                              <arg>org.apache.artemis:artemis-jms-server:${project.version}</arg>
+                              <arg>org.apache.artemis:artemis-cli:${project.version}</arg>
+                              <arg>org.apache.artemis:artemis-jms-client:${project.version}</arg>
+                              <arg>org.apache.artemis:artemis-hornetq-protocol:${project.version}</arg>
+                              <arg>org.apache.artemis:artemis-amqp-protocol:${project.version}</arg>
+                              <arg>org.apache.artemis:artemis-hornetq-protocol:${project.version}</arg>
                               <arg>org.apache.groovy:groovy-all:pom:${groovy.version}</arg>
                            </libListWithDeps>
                            <libList>
-                              <arg>org.apache.activemq:artemis-unit-test-support:${project.version}</arg>
-                              <arg>org.apache.activemq.tests:compatibility-tests:${project.version}</arg>
+                              <arg>org.apache.artemis:artemis-unit-test-support:${project.version}</arg>
+                              <arg>org.apache.artemis.tests:compatibility-tests:${project.version}</arg>
                            </libList>
                            <file>${basedir}/target/ARTEMIS-SNAPSHOT.cp</file>
                         </configuration>
@@ -366,13 +366,13 @@
                         </goals>
                         <configuration>
                            <libListWithDeps>
-                              <arg>org.apache.activemq:artemis-core-client:${project.version}</arg>
-                              <arg>org.apache.activemq:artemis-commons:${project.version}</arg>
-                              <arg>org.apache.activemq:artemis-selector:${project.version}</arg>
-                              <arg>org.apache.activemq:artemis-server:${project.version}</arg>
-                              <arg>org.apache.activemq:artemis-journal:${project.version}</arg>
-                              <arg>org.apache.activemq:artemis-hornetq-protocol:${project.version}</arg>
-                              <arg>org.apache.activemq:artemis-jakarta-openwire-protocol:${project.version}</arg>
+                              <arg>org.apache.artemis:artemis-core-client:${project.version}</arg>
+                              <arg>org.apache.artemis:artemis-commons:${project.version}</arg>
+                              <arg>org.apache.artemis:artemis-selector:${project.version}</arg>
+                              <arg>org.apache.artemis:artemis-server:${project.version}</arg>
+                              <arg>org.apache.artemis:artemis-journal:${project.version}</arg>
+                              <arg>org.apache.artemis:artemis-hornetq-protocol:${project.version}</arg>
+                              <arg>org.apache.artemis:artemis-jakarta-openwire-protocol:${project.version}</arg>
                               <arg>org.apache.logging.log4j:log4j-slf4j2-impl:${log4j.version}</arg>
                               <arg>org.apache.groovy:groovy-all:pom:${groovy.version}</arg>
                            </libListWithDeps>
@@ -380,11 +380,11 @@
                               <arg>jakarta.jms:jakarta.jms-api:3.0.0</arg>
                               <arg>jakarta.json:jakarta.json-api:2.0.0</arg>
                               <arg>jakarta.transaction:jakarta.transaction-api:2.0.0</arg>
-                              <arg>org.apache.activemq:artemis-jakarta-server:${project.version}</arg>
-                              <arg>org.apache.activemq:artemis-jakarta-client:${project.version}</arg>
-                              <arg>org.apache.activemq:artemis-jakarta-service-extensions:${project.version}</arg>
-                              <arg>org.apache.activemq:artemis-unit-test-support:${project.version}</arg>
-                              <arg>org.apache.activemq.tests:compatibility-tests:${project.version}</arg>
+                              <arg>org.apache.artemis:artemis-jakarta-server:${project.version}</arg>
+                              <arg>org.apache.artemis:artemis-jakarta-client:${project.version}</arg>
+                              <arg>org.apache.artemis:artemis-jakarta-service-extensions:${project.version}</arg>
+                              <arg>org.apache.artemis:artemis-unit-test-support:${project.version}</arg>
+                              <arg>org.apache.artemis.tests:compatibility-tests:${project.version}</arg>
                            </libList>
                            <file>${basedir}/target/ARTEMIS-JAKARTAEE.cp</file>
                         </configuration>
@@ -406,7 +406,7 @@
                               <arg>org.apache.groovy:groovy-all:pom:${groovy.version}</arg>
                            </libListWithDeps>
                            <libList>
-                              <arg>org.apache.activemq.tests:compatibility-tests:${project.version}</arg>
+                              <arg>org.apache.artemis.tests:compatibility-tests:${project.version}</arg>
                            </libList>
                            <file>${basedir}/target/ARTEMIS-2_6_3.cp</file>
                         </configuration>
@@ -428,7 +428,7 @@
                               <arg>org.apache.groovy:groovy-all:pom:${groovy.version}</arg>
                            </libListWithDeps>
                            <libList>
-                              <arg>org.apache.activemq.tests:compatibility-tests:${project.version}</arg>
+                              <arg>org.apache.artemis.tests:compatibility-tests:${project.version}</arg>
                            </libList>
                            <file>${basedir}/target/ARTEMIS-2_7_0.cp</file>
                         </configuration>
@@ -452,7 +452,7 @@
                               <arg>org.jboss.marshalling:jboss-marshalling-river:2.0.9.Final</arg>
                            </libListWithDeps>
                            <libList>
-                              <arg>org.apache.activemq.tests:compatibility-tests:${project.version}</arg>
+                              <arg>org.apache.artemis.tests:compatibility-tests:${project.version}</arg>
                            </libList>
                            <file>${basedir}/target/ARTEMIS-2_10_0.cp</file>
                         </configuration>
@@ -476,7 +476,7 @@
                               <arg>org.jboss.marshalling:jboss-marshalling-river:2.0.9.Final</arg>
                            </libListWithDeps>
                            <libList>
-                              <arg>org.apache.activemq.tests:compatibility-tests:${project.version}</arg>
+                              <arg>org.apache.artemis.tests:compatibility-tests:${project.version}</arg>
                            </libList>
                            <file>${basedir}/target/ARTEMIS-2_17_0.cp</file>
                         </configuration>
@@ -500,7 +500,7 @@
                               <arg>org.jboss.marshalling:jboss-marshalling-river:2.0.9.Final</arg>
                            </libListWithDeps>
                            <libList>
-                              <arg>org.apache.activemq.tests:compatibility-tests:${project.version}</arg>
+                              <arg>org.apache.artemis.tests:compatibility-tests:${project.version}</arg>
                            </libList>
                            <file>${basedir}/target/ARTEMIS-2_44_0.cp</file>
                         </configuration>
@@ -522,7 +522,7 @@
                               <arg>org.apache.groovy:groovy-all:pom:${groovy.version}</arg>
                            </libListWithDeps>
                            <libList>
-                              <arg>org.apache.activemq.tests:compatibility-tests:${project.version}</arg>
+                              <arg>org.apache.artemis.tests:compatibility-tests:${project.version}</arg>
                            </libList>
                            <file>${basedir}/target/ARTEMIS-2_33_0.cp</file>
                         </configuration>
@@ -544,7 +544,7 @@
                               <arg>org.apache.groovy:groovy-all:pom:${groovy.version}</arg>
                            </libListWithDeps>
                            <libList>
-                              <arg>org.apache.activemq.tests:compatibility-tests:${project.version}</arg>
+                              <arg>org.apache.artemis.tests:compatibility-tests:${project.version}</arg>
                            </libList>
                            <file>${basedir}/target/ARTEMIS-2_28_0.cp</file>
                         </configuration>
@@ -569,7 +569,7 @@
                               <arg>org.jboss.marshalling:jboss-marshalling-river:2.0.9.Final</arg>
                            </libListWithDeps>
                            <libList>
-                              <arg>org.apache.activemq.tests:compatibility-tests:${project.version}</arg>
+                              <arg>org.apache.artemis.tests:compatibility-tests:${project.version}</arg>
                            </libList>
                            <file>${basedir}/target/ARTEMIS-2_22_0.cp</file>
                         </configuration>
@@ -592,7 +592,7 @@
                               <arg>org.apache.groovy:groovy-all:pom:${groovy.version}</arg>
                            </libListWithDeps>
                            <libList>
-                              <arg>org.apache.activemq.tests:compatibility-tests:${project.version}</arg>
+                              <arg>org.apache.artemis.tests:compatibility-tests:${project.version}</arg>
                            </libList>
                            <file>${basedir}/target/ARTEMIS-2_4_0.cp</file>
                         </configuration>
@@ -615,7 +615,7 @@
                               <arg>org.apache.groovy:groovy-all:pom:${groovy.version}</arg>
                            </libListWithDeps>
                            <libList>
-                              <arg>org.apache.activemq.tests:compatibility-tests:${project.version}</arg>
+                              <arg>org.apache.artemis.tests:compatibility-tests:${project.version}</arg>
                            </libList>
                            <file>${basedir}/target/ARTEMIS-2_1_0.cp</file>
                         </configuration>
@@ -637,7 +637,7 @@
                               <arg>org.apache.groovy:groovy-all:pom:${groovy.version}</arg>
                            </libListWithDeps>
                            <libList>
-                              <arg>org.apache.activemq.tests:compatibility-tests:${project.version}</arg>
+                              <arg>org.apache.artemis.tests:compatibility-tests:${project.version}</arg>
                            </libList>
                            <file>${basedir}/target/ARTEMIS-1_4_0.cp</file>
                         </configuration>
@@ -660,7 +660,7 @@
                               <arg>org.apache.groovy:groovy-all:pom:${groovy.version}</arg>
                            </libListWithDeps>
                            <libList>
-                              <arg>org.apache.activemq.tests:compatibility-tests:${project.version}</arg>
+                              <arg>org.apache.artemis.tests:compatibility-tests:${project.version}</arg>
                            </libList>
                            <file>${basedir}/target/HORNETQ-2_3_5.cp</file>
                         </configuration>
@@ -683,7 +683,7 @@
                               <arg>org.apache.groovy:groovy-all:pom:${groovy.version}</arg>
                            </libListWithDeps>
                            <libList>
-                              <arg>org.apache.activemq.tests:compatibility-tests:${project.version}</arg>
+                              <arg>org.apache.artemis.tests:compatibility-tests:${project.version}</arg>
                            </libList>
                            <file>${basedir}/target/HORNETQ-2_4_7.cp</file>
                         </configuration>
@@ -703,7 +703,7 @@
                               <arg>org.apache.groovy:groovy-all:pom:${groovy.version}</arg>
                            </libListWithDeps>
                            <libList>
-                              <arg>org.apache.activemq.tests:compatibility-tests:${project.version}</arg>
+                              <arg>org.apache.artemis.tests:compatibility-tests:${project.version}</arg>
                            </libList>
                            <file>${basedir}/target/AMQ_5_11.cp</file>
                         </configuration>

@@ -54,7 +54,7 @@ public enum PaxExamOptions {
    ARTEMIS_JAKARTA_CLIENT(
            features(
                    maven()
-                           .groupId("org.apache.activemq")
+                           .groupId("org.apache.artemis")
                            .artifactId("artemis-features")
                            .type("xml")
                            .classifier("features")
