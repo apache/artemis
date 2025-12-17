@@ -57,24 +57,31 @@ The value is an integer.
 
 Any other identifiers used in core filter expressions will be assumed to be properties of the message.
 
-The JMS and Jakarta Messaging specs state that a String property should not get converted to a numeric when used in a selector.
-So for example, if a message has the `age` property set to `String` `21` then the following selector should not match it: `age > 18`.
-STOMP clients, for example, can only send messages with string properties, which is a bit limiting.
-Therefore, if you want your filter expressions to auto-convert `String` properties to the appropriate number type, just prefix it with `convert_string_expressions:`.
-If you changed the filter expression in the previous example to be `convert_string_expressions:age > 18`, then it would  match the aforementioned message.
+== Property Identifier Constraints
 
-The JMS and Jakarta Messaging specs also state that property identifiers (and therefore the identifiers which are valid for use in a filter expression) are an:
+The JMS and Jakarta Messaging specs state that property identifiers (and therefore the identifiers which are valid for use in a filter expression) are an:
 
 ____
 unlimited-length sequence of letters and digits, the first of which must be a letter.
-A letter is any character for which the method  `Character.isJavaLetter` returns `true`.
+A letter is any character for which the method  https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/Character.html#isJavaLetter(char)[`Character.isJavaLetter`] returns `true`.
 This includes `_` and `$`.
-A letter or digit is any character for which the method `Character.isJavaLetterOrDigit` returns `true`.
+A letter or digit is any character for which the method https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/Character.html#isJavaLetterOrDigit(char)[`Character.isJavaLetterOrDigit`] returns `true`.
 ____
 
-This constraint means that hyphens (i.e. `-`) cannot be used.
-However, this constraint can be overcome by using the `hyphenated_props:` prefix.
-For example, if a message had the `foo-bar` property set to `0` then the filter expression `hyphenated_props:foo-bar = 0` would match it.
+=== Working Around These Constraints
+
+These constraints mean that characters like `.` (dot) and `-` (hyphen) cannot be used within property identifiers.
+However, if you want to work around these constraints, you can surround the identifier with quotation marks in the filter expression.
+For example, if a message had a property named `foo-bar` set to `0` then the filter expression `"foo-bar" = 0` would match it, whereas `foo-bar = 0` would *not* match.
+
+== Property Value Conversion
+
+The JMS and Jakarta Messaging specs also state that a `String` property should not get converted to a numeric value when used in a selector.
+So for example, if a message has the `age` property set to the `String` "21" then the following selector should not match it: `age > 18`.
+
+However, some protocols (e.g. STOMP) can only send messages with `String` properties, which is a bit limiting.
+Therefore, if you want your filter expressions to auto-convert `String` properties to the appropriate number type, just prefix it with `convert_string_expressions:`.
+If you changed the filter expression in the previous example to be `convert_string_expressions:age > 18`, then it would  match the aforementioned message.
 
 == XPath
 

@@ -104,12 +104,20 @@ public class SelectorTest {
 
    @Test
    public void testDottedProperty() throws Exception {
-      MockMessage message = createMessage();
-      message.setJMSType("selector-test");
-      message.setStringProperty("a.test", "value");
-      message.setJMSMessageID("id:test:1:1:1:1");
+      testQuotedProperty('.');
+   }
 
-      assertSelector(message, "\"a.test\" = 'value'", true);
+   @Test
+   public void testHyphenatedProperty() throws Exception {
+      testQuotedProperty('-');
+   }
+
+   private void testQuotedProperty(char c) throws Exception {
+      final String value = "value";
+      final String key = "a" + c + "test";
+      MockMessage message = createMessage();
+      message.setStringProperty(key, value);
+      assertSelector(message, "\"" + key + "\" = '" + value + "'", true);
    }
 
    @Test
