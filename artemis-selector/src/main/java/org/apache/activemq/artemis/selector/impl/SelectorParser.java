@@ -22,12 +22,14 @@ import org.apache.activemq.artemis.selector.filter.BooleanExpression;
 import org.apache.activemq.artemis.selector.filter.ComparisonExpression;
 import org.apache.activemq.artemis.selector.filter.FilterException;
 import org.apache.activemq.artemis.selector.hyphenated.HyphenatedParser;
+import org.apache.activemq.artemis.selector.dotted.DottedParser;
 import org.apache.activemq.artemis.selector.strict.StrictParser;
 
 public class SelectorParser {
 
    private static final String CONVERT_STRING_EXPRESSIONS_PREFIX = "convert_string_expressions:";
    private static final String HYPHENATED_PROPS_PREFIX = "hyphenated_props:";
+   private static final String DOTTED_PROPS_PREFIX = "dotted_props:";
    private static final String NO_CONVERT_STRING_EXPRESSIONS_PREFIX = "no_convert_string_expressions:";
    private static final String NO_HYPHENATED_PROPS_PREFIX = "no_hyphenated_props:";
 
@@ -35,6 +37,8 @@ public class SelectorParser {
       String actual = sql;
       boolean convertStringExpressions = false;
       boolean hyphenatedProps = false;
+      boolean dottedProps = false;
+
       while (true) {
          if (actual.startsWith(CONVERT_STRING_EXPRESSIONS_PREFIX)) {
             convertStringExpressions = true;
@@ -44,6 +48,11 @@ public class SelectorParser {
          if (actual.startsWith(HYPHENATED_PROPS_PREFIX)) {
             hyphenatedProps = true;
             actual = actual.substring(HYPHENATED_PROPS_PREFIX.length());
+            continue;
+         }
+         if (actual.startsWith(DOTTED_PROPS_PREFIX)) {
+            dottedProps = true;
+            actual = actual.substring(DOTTED_PROPS_PREFIX.length());
             continue;
          }
          if (actual.startsWith(NO_CONVERT_STRING_EXPRESSIONS_PREFIX)) {
@@ -66,6 +75,9 @@ public class SelectorParser {
          BooleanExpression e = null;
          if (hyphenatedProps) {
             HyphenatedParser parser = new HyphenatedParser(new StringReader(actual));
+            e = parser.JmsSelector();
+         } else if (dottedProps) {
+            DottedParser parser = new DottedParser(new StringReader(actual));
             e = parser.JmsSelector();
          } else {
             StrictParser parser = new StrictParser(new StringReader(actual));
