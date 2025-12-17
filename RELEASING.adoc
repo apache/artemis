@@ -157,8 +157,8 @@ Finally, upload the relocations to ASF Nexus:
 
 [,console]
 ----
-cd target/checkout/relocations
-mvn deploy -Pdeploy-relocations
+cd target/checkout/relocations/
+mvn deploy -Papache-release,deploy-relocations
 ----
 
 [NOTE]
