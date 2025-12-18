@@ -34,6 +34,7 @@ import org.apache.activemq.artemis.api.core.ActiveMQDuplicateIdException;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
+import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.api.core.client.ActiveMQClient;
@@ -52,6 +53,7 @@ import org.apache.activemq.artemis.tests.extensions.parameterized.Parameter;
 import org.apache.activemq.artemis.tests.extensions.parameterized.ParameterizedTestExtension;
 import org.apache.activemq.artemis.tests.extensions.parameterized.Parameters;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
+import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
@@ -1347,6 +1349,36 @@ public class DuplicateDetectionTest extends ActiveMQTestBase {
    }
 
    @TestTemplate
+   public void testDuplicateCacheCleanupWhenAddressRemoved() throws Exception {
+      final SimpleString addressName = SimpleString.of("DuplicateDetectionTestQueue");
+
+      // send a message to create a cache
+      sf = createSessionFactory(locator);
+      ClientSession session = sf.createSession(false, true, true);
+      session.createAddress(addressName, RoutingType.MULTICAST, false);
+      ClientProducer producer = session.createProducer(addressName);
+      ClientMessage message = createMessage(session, 1);
+      message.putBytesProperty(Message.HDR_DUPLICATE_DETECTION_ID, RandomUtil.randomBytes(10));
+      producer.send(message);
+      session.close();
+      sf.close();
+
+      assertNotNull(((PostOfficeImpl) server.getPostOffice()).getDuplicateIDCaches().get(addressName));
+
+      server.removeAddressInfo(addressName, null);
+
+      assertNull(((PostOfficeImpl) server.getPostOffice()).getDuplicateIDCaches().get(addressName));
+
+      server.stop();
+
+      waitForServerToStop(server);
+
+      server.start();
+
+      assertNull(((PostOfficeImpl) server.getPostOffice()).getDuplicateIDCaches().get(addressName));
+   }
+
+   @TestTemplate
    public void testDuplicateCachePersisted() throws Exception {
       server.stop();
 
@@ -1364,7 +1396,7 @@ public class DuplicateDetectionTest extends ActiveMQTestBase {
 
       final SimpleString queueName = SimpleString.of("DuplicateDetectionTestQueue");
 
-      session.createQueue(QueueConfiguration.of(queueName).setDurable(false));
+      session.createQueue(QueueConfiguration.of(queueName).setDurable(true));
 
       ClientProducer producer = session.createProducer(queueName);
 
@@ -1399,8 +1431,6 @@ public class DuplicateDetectionTest extends ActiveMQTestBase {
       session = sf.createSession(false, true, true);
 
       session.start();
-
-      session.createQueue(QueueConfiguration.of(queueName).setDurable(false));
 
       producer = session.createProducer(queueName);
 
@@ -1439,7 +1469,7 @@ public class DuplicateDetectionTest extends ActiveMQTestBase {
 
       final SimpleString queueName = SimpleString.of("DuplicateDetectionTestQueue");
 
-      session.createQueue(QueueConfiguration.of(queueName).setDurable(false));
+      session.createQueue(QueueConfiguration.of(queueName).setDurable(true));
 
       ClientProducer producer = session.createProducer(queueName);
 
@@ -1469,8 +1499,6 @@ public class DuplicateDetectionTest extends ActiveMQTestBase {
       session = sf.createSession(false, true, true);
 
       session.start();
-
-      session.createQueue(QueueConfiguration.of(queueName).setDurable(false));
 
       producer = session.createProducer(queueName);
 
@@ -1645,7 +1673,7 @@ public class DuplicateDetectionTest extends ActiveMQTestBase {
 
       final SimpleString queueName = SimpleString.of("DuplicateDetectionTestQueue");
 
-      session.createQueue(QueueConfiguration.of(queueName).setDurable(false));
+      session.createQueue(QueueConfiguration.of(queueName).setDurable(true));
 
       ClientProducer producer = session.createProducer(queueName);
 
@@ -1686,8 +1714,6 @@ public class DuplicateDetectionTest extends ActiveMQTestBase {
       session = sf.createSession(false, false, false);
 
       session.start();
-
-      session.createQueue(QueueConfiguration.of(queueName).setDurable(false));
 
       producer = session.createProducer(queueName);
 
@@ -1906,7 +1932,7 @@ public class DuplicateDetectionTest extends ActiveMQTestBase {
 
       final SimpleString queueName = SimpleString.of("DuplicateDetectionTestQueue");
 
-      session.createQueue(QueueConfiguration.of(queueName).setDurable(false));
+      session.createQueue(QueueConfiguration.of(queueName).setDurable(true));
 
       ClientProducer producer = session.createProducer(queueName);
 
@@ -1945,8 +1971,6 @@ public class DuplicateDetectionTest extends ActiveMQTestBase {
       session.start(xid2, XAResource.TMNOFLAGS);
 
       session.start();
-
-      session.createQueue(QueueConfiguration.of(queueName).setDurable(false));
 
       producer = session.createProducer(queueName);
 

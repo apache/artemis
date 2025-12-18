@@ -904,6 +904,9 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
          }
 
          removeRetroactiveResources(address);
+
+         deleteDuplicateCache(address);
+
          if (server.hasBrokerAddressPlugins()) {
             server.callBrokerAddressPlugins(plugin -> plugin.afterRemoveAddress(address, addressInfo));
          }

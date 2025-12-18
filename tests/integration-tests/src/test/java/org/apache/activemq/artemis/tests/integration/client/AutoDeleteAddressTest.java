@@ -77,6 +77,19 @@ public class AutoDeleteAddressTest extends ActiveMQTestBase {
    }
 
    @Test
+   public void testDuplicateIdCacheDeletedWithAddress() throws Exception {
+      // auto-delete-addresses defaults to true
+      server.createQueue(QueueConfiguration.of(queueA).setAddress(addressA).setRoutingType(RoutingType.ANYCAST).setAutoCreated(true));
+      // this will create a duplicate ID cache for this address without actually having to send a message with a duplicate ID
+      server.getPostOffice().getDuplicateIDCache(addressA);
+      assertNotNull(((PostOfficeImpl) server.getPostOffice()).getDuplicateIDCaches().get(addressA));
+      assertNotNull(server.getAddressInfo(addressA));
+      cf.createSession().createConsumer(queueA).close();
+      PostOfficeTestAccessor.sweepAndReapAddresses((PostOfficeImpl) server.getPostOffice());
+      Wait.assertNull(() -> ((PostOfficeImpl) server.getPostOffice()).getDuplicateIDCaches().get(addressA), 500, 50);
+   }
+
+   @Test
    public void testNegativeAutoDeleteAutoCreatedAddress() throws Exception {
       server.getAddressSettingsRepository().addMatch(addressA.toString(), new AddressSettings().setAutoDeleteAddresses(false));
       server.createQueue(QueueConfiguration.of(queueA).setAddress(addressA).setRoutingType(RoutingType.ANYCAST).setAutoCreated(true));
