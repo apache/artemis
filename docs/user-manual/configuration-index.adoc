@@ -115,6 +115,15 @@ acceptorConfigurations.tcp.params.port=61616
  . set the acceptor named "tcp" 'HOST' parameter to localhost
  . set the acceptor named "tcp" 'PORT' parameter to 61616
 
+=== JAAS
+Broker properties can configure JAAS via the `jaasConfigs` collection, this provides a means to dynamically configure the jaas realms accessed by the broker. The jaas configuration provider will look first for any realm configured in the `jaasConfigs` collection before delegating to the platform defaults.
+For example, to configure the `guestRealm` and use it from the above `tcp` acceptor, configure properties of the form:
+
+----
+acceptorConfigurations.tcp.params.securityDomain=guestRealm
+jaasConfigs.guestRealm.modules.guest.loginModuleClass=org.apache.activemq.artemis.spi.core.security.jaas.GuestLoginModule
+jaasConfigs.guestRealm.modules.guest.controlFlag=required
+----
 ==== Usage
 
 The `artemis run` command script supports `--properties <path to properties files comma list>` where properties file paths can be configured.

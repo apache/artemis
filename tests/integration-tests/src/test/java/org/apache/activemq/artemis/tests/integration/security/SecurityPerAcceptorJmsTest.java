@@ -16,40 +16,55 @@
  */
 package org.apache.activemq.artemis.tests.integration.security;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
+import javax.jms.JMSSecurityException;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.QueueBrowser;
 import javax.jms.Session;
+import javax.security.auth.Subject;
 import java.lang.management.ManagementFactory;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 
+import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.core.config.impl.ConfigurationImpl;
+import org.apache.activemq.artemis.core.persistence.OperationContext;
 import org.apache.activemq.artemis.core.security.Role;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ActiveMQServers;
 import org.apache.activemq.artemis.core.server.impl.AddressInfo;
+import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerSessionPlugin;
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
+import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
+import org.apache.activemq.artemis.spi.core.protocol.SessionCallback;
 import org.apache.activemq.artemis.spi.core.security.ActiveMQJAASSecurityManager;
+import org.apache.activemq.artemis.spi.core.security.jaas.GuestLoginModule;
+import org.apache.activemq.artemis.spi.core.security.jaas.UserPrincipal;
 import org.apache.activemq.artemis.tests.extensions.parameterized.Parameter;
 import org.apache.activemq.artemis.tests.extensions.parameterized.ParameterizedTestExtension;
 import org.apache.activemq.artemis.tests.extensions.parameterized.Parameters;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.qpid.jms.JmsConnectionFactory;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @ExtendWith(ParameterizedTestExtension.class)
 public class SecurityPerAcceptorJmsTest extends ActiveMQTestBase {
@@ -68,7 +83,7 @@ public class SecurityPerAcceptorJmsTest extends ActiveMQTestBase {
    }
 
    @Parameter(index = 0)
-   public Protocol protocol;
+   public Protocol protocol = Protocol.AMQP;
 
    static {
       String path = System.getProperty("java.security.auth.login.config");
@@ -93,11 +108,70 @@ public class SecurityPerAcceptorJmsTest extends ActiveMQTestBase {
             cf = new ActiveMQConnectionFactory(URL);
             break;
          case OPENWIRE:
-            cf = new org.apache.activemq.ActiveMQConnectionFactory(URL);
+            cf = new org.apache.activemq.ActiveMQConnectionFactory(URL + "?jms.watchTopicAdvisories=false");
             break;
          case AMQP:
             cf = new JmsConnectionFactory("amqp://localhost:61616");
+      }
+   }
 
+   @TestTemplate
+   public void testJAASSecurityManagerRealmFromPropertiesConfigOk() throws Exception {
+      ActiveMQServer server = addServer(ActiveMQServers.newActiveMQServer(createDefaultInVMConfig().setSecurityEnabled(true).setResolveProtocols(true).addAcceptorConfiguration("netty", URL), ManagementFactory.getPlatformMBeanServer(), new ActiveMQJAASSecurityManager(), false));
+
+      final String CUSTOM_GUEST_USER = "foo";
+      ConfigurationImpl.InsertionOrderedProperties props = new ConfigurationImpl.InsertionOrderedProperties();
+      props.put("acceptorConfigurations.netty.params.securityDomain", "first");
+      props.put("jaasConfigs.first.modules.guest.loginModuleClass", "org.apache.activemq.artemis.spi.core.security.jaas.GuestLoginModule");
+      props.put("jaasConfigs.first.modules.guest.controlFlag", "required");
+      props.put("jaasConfigs.first.modules.guest.params.debug", "true");
+      // these need surround because the login module param keys have dots
+      props.put("jaasConfigs.first.modules.guest.params.\"" + GuestLoginModule.GUEST_USER + "\"", CUSTOM_GUEST_USER);
+
+      server.getConfiguration().parsePrefixedProperties(server.getConfiguration(), "test", props, "");
+      assertEquals(2, server.getConfiguration().getStatus().split(":\\[\\]").length);
+
+      final Stack<Subject> subjects = new Stack<>();
+      server.getBrokerSessionPlugins().add(new ActiveMQServerSessionPlugin() {
+         @Override
+         public void beforeCreateSession(String name, String username, int minLargeMessageSize, RemotingConnection connection, boolean autoCommitSends, boolean autoCommitAcks, boolean preAcknowledge, boolean xa, String defaultAddress, SessionCallback callback, boolean autoCreateQueues, OperationContext context, Map<SimpleString, RoutingType> prefixes) throws ActiveMQException {
+            subjects.add(connection.getSubject());
+         }
+      });
+      server.start();
+      assertTrue(server.getConfiguration().getJaasConfigs().get("first").getModules().get(0).getParams().containsKey(GuestLoginModule.GUEST_USER));
+      try (Connection c = cf.createConnection("first", "secret")) {
+         try (Session s = c.createSession(false, 1)) {
+            Thread.sleep(200);
+         }
+      } catch (JMSException e) {
+         fail("should not throw exception but " + e);
+      }
+
+      Assertions.assertFalse(subjects.empty());
+      Subject subject = subjects.pop();
+      assertTrue(subject.getPrincipals(UserPrincipal.class).stream().findFirst().isPresent());
+      assertTrue(subject.getPrincipals(UserPrincipal.class).stream().findFirst().get().getName().equals(CUSTOM_GUEST_USER));
+   }
+
+   @Test
+   public void testJAASSecurityManagerRealmFromIncorrectConfig() throws Exception {
+      ActiveMQServer server = addServer(ActiveMQServers.newActiveMQServer(createDefaultInVMConfig().setSecurityEnabled(true).setResolveProtocols(true).addAcceptorConfiguration("netty", URL + "?securityDomain=first"), ManagementFactory.getPlatformMBeanServer(), new ActiveMQJAASSecurityManager(), false));
+
+      ConfigurationImpl.InsertionOrderedProperties props = new ConfigurationImpl.InsertionOrderedProperties();
+      // no login module class configured
+      props.put("jaasConfigs.first.modules.guest.controlFlag", "required");
+
+      server.getConfiguration().parsePrefixedProperties(server.getConfiguration(), "test", props, "");
+      assertEquals(2, server.getConfiguration().getStatus().split(":\\[\\]").length);
+
+      server.start();
+      try (Connection c = cf.createConnection("first", "secret")) {
+         try (Session s = c.createSession(false, 1)) {
+            // no op
+         }
+         fail("should throw exception here");
+      } catch (JMSSecurityException expected) {
       }
    }
 

@@ -1538,4 +1538,6 @@ public interface Configuration {
    default boolean isUsingDatabasePersistence() {
       return getStoreConfiguration() != null && getStoreConfiguration().getStoreType() == StoreConfiguration.StoreType.DATABASE;
    }
+
+   Map<String, JaasAppConfiguration> getJaasConfigs();
 }

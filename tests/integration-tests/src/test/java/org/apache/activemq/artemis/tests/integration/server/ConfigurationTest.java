@@ -107,6 +107,7 @@ public class ConfigurationTest extends ActiveMQTestBase {
       config.put("addressConfigurations.mytopic_4.queueConfigs.\"queue.B4\".routingType", "MULTICAST");
 
       config.put("status", "{\"generation\": \"1\"}");
+      config.put("jaasConfigs.artemisRealm.modules.guest.controlFlag", "optional");
 
       try (FileOutputStream outStream = new FileOutputStream(propsFile)) {
          config.store(outStream, null);
@@ -127,6 +128,9 @@ public class ConfigurationTest extends ActiveMQTestBase {
          Bindings mytopic_3 = server.getPostOffice().getBindingsForAddress(SimpleString.of("mytopic_3"));
          assertEquals(2, mytopic_3.getBindings().size());
 
+         assertEquals(1, server.getConfiguration().getJaasConfigs().size());
+         config.remove("jaasConfigs.artemisRealm.modules.guest.controlFlag");
+         config.put("jaasConfigs.artemisRealm", "-");
          Bindings myqueue_1 = server.getPostOffice().getBindingsForAddress(SimpleString.of("myqueue_1"));
          assertEquals(1, myqueue_1.getBindings().size());
 
@@ -148,6 +152,8 @@ public class ConfigurationTest extends ActiveMQTestBase {
             Bindings mytopic_31 = server.getPostOffice().getBindingsForAddress(SimpleString.of("mytopic_3"));
             return mytopic_31.getBindings().size() == 3;
          });
+         // verify empty errors in the status json
+         assertEquals(3, server.getConfiguration().getStatus().split(":\\[\\]").length, server.getConfiguration().getStatus());
 
          // verify round trip apply
          assertTrue(server.getActiveMQServerControl().getStatus().contains("2"));
@@ -155,6 +161,8 @@ public class ConfigurationTest extends ActiveMQTestBase {
          // verify some server attributes
          assertTrue(server.getActiveMQServerControl().getStatus().contains("version"));
          assertTrue(server.getActiveMQServerControl().getStatus().contains("uptime"));
+
+         assertEquals(0, server.getConfiguration().getJaasConfigs().size());
 
       } finally {
          try {

@@ -57,6 +57,7 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.Stack;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -86,6 +87,7 @@ import org.apache.activemq.artemis.core.config.CoreQueueConfiguration;
 import org.apache.activemq.artemis.core.config.DivertConfiguration;
 import org.apache.activemq.artemis.core.config.FederationConfiguration;
 import org.apache.activemq.artemis.core.config.HAPolicyConfiguration;
+import org.apache.activemq.artemis.core.config.JaasAppConfiguration;
 import org.apache.activemq.artemis.core.config.MetricsConfiguration;
 import org.apache.activemq.artemis.core.config.StoreConfiguration;
 import org.apache.activemq.artemis.core.config.WildcardConfiguration;
@@ -159,9 +161,11 @@ import org.apache.commons.beanutils.expression.Resolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.security.auth.login.AppConfigurationEntry;
+
 import static org.apache.activemq.artemis.utils.PasswordMaskingUtil.isEncMasked;
 
-public class ConfigurationImpl implements Configuration, Serializable {
+public class ConfigurationImpl extends javax.security.auth.login.Configuration implements Configuration, Serializable {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -478,6 +482,8 @@ public class ConfigurationImpl implements Configuration, Serializable {
 
    private boolean purgePageFolders = ActiveMQDefaultConfiguration.getPurgePageFolders();
 
+   private Map<String, JaasAppConfiguration> jaasConfigs = new ConcurrentHashMap<>();
+
    /**
     * Parent folder for all data folders.
     */
@@ -670,6 +676,26 @@ public class ConfigurationImpl implements Configuration, Serializable {
 
       if (!beanProperties.isEmpty()) {
          populateWithProperties(target, name, beanProperties);
+      }
+      if (!jaasConfigs.isEmpty()) {
+         initJaasConfigOverride();
+      }
+   }
+
+   private javax.security.auth.login.Configuration defaultJaasConfiguration = null;
+   private void initJaasConfigOverride() {
+      if (defaultJaasConfiguration == null) {
+         defaultJaasConfiguration = javax.security.auth.login.Configuration.getConfiguration();
+         javax.security.auth.login.Configuration.setConfiguration(this);
+      }
+   }
+
+   @Override
+   public AppConfigurationEntry[] getAppConfigurationEntry(String realm) {
+      if (getJaasConfigs().containsKey(realm)) {
+         return JaasAppConfiguration.asAppConfigurationEntry(getJaasConfigs().get(realm));
+      } else {
+         return defaultJaasConfiguration.getAppConfigurationEntry(realm);
       }
    }
 
@@ -1000,6 +1026,15 @@ public class ConfigurationImpl implements Configuration, Serializable {
       try (FileWriter writer = new FileWriter(file, StandardCharsets.UTF_8)) {
          writeProperties(writer);
       }
+   }
+
+   @Override
+   public Map<String, JaasAppConfiguration> getJaasConfigs() {
+      return jaasConfigs;
+   }
+
+   public void addJaasConfig(JaasAppConfiguration config) {
+      jaasConfigs.put(config.getName(), config);
    }
 
    private void writeProperties(FileWriter writer) throws Exception {
