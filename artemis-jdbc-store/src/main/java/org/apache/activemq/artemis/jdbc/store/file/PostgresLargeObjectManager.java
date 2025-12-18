@@ -23,6 +23,7 @@ import java.sql.SQLException;
 
 import org.postgresql.PGConnection;
 import org.postgresql.largeobject.LargeObject;
+import org.postgresql.largeobject.LargeObjectManager;
 
 /**
  * Helper class for when the postresql driver is not directly availalbe.
@@ -68,6 +69,23 @@ public class PostgresLargeObjectManager {
       } else {
          return (connection.unwrap(PGConnection.class)).getLargeObjectAPI().createLO();
       }
+   }
+
+   public final void deleteLO(Connection connection, long oid) throws SQLException {
+      Object largeObjectManager = getLargeObjectManager(connection);
+      if (shouldUseReflection) {
+         try {
+            Method method = largeObjectManager.getClass().getMethod("delete", long.class);
+            method.invoke(largeObjectManager, oid);
+         } catch (Exception ex) {
+            throw new SQLException("Couldn't access org.postgresql.largeobject.LargeObjectManager", ex);
+         }
+      } else {
+         if (largeObjectManager != null) {
+            ((LargeObjectManager) largeObjectManager).delete(oid);
+         }
+      }
+
    }
 
    public Object open(Connection connection, long oid, int mode) throws SQLException {

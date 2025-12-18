@@ -54,11 +54,13 @@ public class RealServerDatabasePagingTest extends ParameterDBTestBase {
 
    private static final String TEST_NAME = "PGDB";
 
-   private static final int MAX_MESSAGES = Integer.parseInt(testProperty(TEST_NAME, "MAX_MESSAGES", "200"));
+   private static final int MAX_MESSAGES = Integer.parseInt(testProperty(TEST_NAME, "MAX_MESSAGES", "1000"));
+   private static final int MAX_LARGE_MESSAGES = Integer.parseInt(testProperty(TEST_NAME, "MAX_LARGE_MESSAGES", "200"));
 
    private static final int SOAK_MAX_MESSAGES = Integer.parseInt(testProperty(TEST_NAME, "SOAK_MAX_MESSAGES", "100000"));
 
    private static final int MESSAGE_SIZE = Integer.parseInt(testProperty(TEST_NAME, "MESSAGE_SIZE", "1000"));
+   private static final int LARGE_MESSAGE_SIZE = Integer.parseInt(testProperty(TEST_NAME, "LARGE_MESSAGE_SIZE", "500000"));
    private static final int SOAK_MESSAGE_SIZE = Integer.parseInt(testProperty(TEST_NAME, "SOAK_MESSAGE_SIZE", "1000"));
 
    private static final int COMMIT_INTERVAL = Integer.parseInt(testProperty(TEST_NAME, "COMMIT_INTERVAL", "1000"));
@@ -86,12 +88,22 @@ public class RealServerDatabasePagingTest extends ParameterDBTestBase {
 
 
    @TestTemplate
+   public void testPagingWithLargeMessages() throws Exception {
+      testPaging("CORE", MAX_LARGE_MESSAGES, LARGE_MESSAGE_SIZE);
+      testPaging("AMQP", MAX_LARGE_MESSAGES, LARGE_MESSAGE_SIZE);
+   }
+
+   @TestTemplate
    public void testSoakPaging() throws Exception {
       testPaging("AMQP", SOAK_MAX_MESSAGES, SOAK_MESSAGE_SIZE);
    }
 
    private void testPaging(String protocol, int messages, int messageSize) throws Exception {
       logger.info("performing paging test on protocol={} and db={}", protocol, database);
+
+      if (database == Database.POSTGRES) {
+         prepareCheckPostgres();
+      }
 
       final String queueName = "QUEUE_" + RandomUtil.randomUUIDString() + "_" + protocol + "_" + database;
 
@@ -142,6 +154,10 @@ public class RealServerDatabasePagingTest extends ParameterDBTestBase {
          }
          session.commit();
          assertNull(consumer.receiveNoWait());
+      }
+
+      if (database == Database.POSTGRES) {
+         checkPostgres();
       }
 
 

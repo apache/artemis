@@ -89,6 +89,9 @@ public class RealServerDatabaseLargeMessageTest extends ParameterDBTestBase {
    }
 
    public void testLargeMessage(String protocol) throws Exception {
+      if (database == Database.POSTGRES) {
+         prepareCheckPostgres();
+      }
       logger.info("testLargeMessage({})", protocol);
       final String queueName = "QUEUE_" + RandomUtil.randomUUIDString() + "_" + protocol + "_" + database;
 
@@ -156,6 +159,10 @@ public class RealServerDatabaseLargeMessageTest extends ParameterDBTestBase {
 
       assertTrue(done.await(120, TimeUnit.SECONDS));
       assertEquals(0, errors.get());
+
+      if (database == Database.POSTGRES) {
+         checkPostgres();
+      }
 
    }
 

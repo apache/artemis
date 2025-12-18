@@ -28,10 +28,12 @@ import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.config.storage.DatabaseStorageConfiguration;
 import org.apache.activemq.artemis.tests.extensions.parameterized.Parameter;
 import org.apache.activemq.artemis.tests.extensions.parameterized.ParameterizedTestExtension;
+import org.apache.activemq.artemis.utils.Wait;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 @ExtendWith(ParameterizedTestExtension.class)
 public abstract class ParameterDBTestBase extends DBTestBase {
@@ -45,6 +47,27 @@ public abstract class ParameterDBTestBase extends DBTestBase {
    @Override
    protected final String getTestJDBCConnectionUrl() {
       return database.getJdbcURI();
+   }
+
+   int postgres_loCount;
+
+   protected int countPostgresLargeObjects() {
+      try (java.sql.Connection jdbcConnection = database.getConnection()) {
+         ResultSet resultSet = jdbcConnection.createStatement().executeQuery("select count(*) from pg_largeobject");
+         resultSet.next();
+         return resultSet.getInt(1);
+      } catch (Exception e) {
+         // not throwing a SQLException as this method is used on Supplier<String>
+         // however if an exception still happened, the test should receive an error
+         throw new RuntimeException(e.getMessage(), e);
+      }
+   }
+   public void prepareCheckPostgres() throws Exception {
+      postgres_loCount = countPostgresLargeObjects();
+   }
+
+   public void checkPostgres() throws Exception {
+      Wait.assertTrue(() -> "There are still " + countPostgresLargeObjects() + " pg_largeObject records", () -> countPostgresLargeObjects() - postgres_loCount < 10, 60_000, 100);
    }
 
 
@@ -99,6 +122,15 @@ public abstract class ParameterDBTestBase extends DBTestBase {
    }
 
    public int dropDatabase() {
+      if (database == Database.POSTGRES) {
+         try (Connection connection = getConnection()) {
+            logger.info("Removing large objects on postgres");
+            connection.createStatement().execute("DELETE FROM pg_largeobject");
+         } catch (Exception e) {
+            logger.warn(e.getMessage(), e);
+         }
+      }
+
       return switch (database) {
          case JOURNAL -> 0;
          case DERBY -> {

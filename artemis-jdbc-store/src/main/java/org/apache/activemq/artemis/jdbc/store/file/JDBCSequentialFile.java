@@ -58,7 +58,12 @@ public class JDBCSequentialFile implements SequentialFile {
 
    private AtomicBoolean isLoaded = new AtomicBoolean(false);
 
+   private volatile boolean deleted = false;
+
    private long id = -1;
+
+   // used in postgres
+   private long oid = -1;
 
    private long readPosition = 0;
 
@@ -172,9 +177,13 @@ public class JDBCSequentialFile implements SequentialFile {
    public void delete() throws IOException, InterruptedException, ActiveMQException {
       try {
          synchronized (this) {
+            if (deleted) {
+               return;
+            }
             if (load()) {
                dbDriver.deleteFile(this);
             }
+            deleted = true;
          }
       } catch (SQLException e) {
          // file is already gone from a drop somewhere
@@ -471,6 +480,14 @@ public class JDBCSequentialFile implements SequentialFile {
 
    public long getId() {
       return id;
+   }
+
+   public long getOid() {
+      return oid;
+   }
+
+   public void setOid(long oid) {
+      this.oid = oid;
    }
 
    public void setId(long id) {
