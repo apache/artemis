@@ -16,13 +16,10 @@
  */
 package org.apache.activemq.artemis.core.management.impl.view.predicate;
 
-import org.apache.activemq.artemis.core.management.impl.view.ProducerField;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ServerProducer;
 
-public class ProducerFilterPredicate extends ActiveMQFilterPredicate<ServerProducer> {
-
-   private ProducerField f;
+public class ProducerFilterPredicate extends ActiveMQFilterPredicate<ServerProducer, ProducerPredicateFilterPart> {
 
    private final ActiveMQServer server;
 
@@ -32,38 +29,12 @@ public class ProducerFilterPredicate extends ActiveMQFilterPredicate<ServerProdu
    }
 
    @Override
-   public boolean test(ServerProducer producer) {
-      // Using switch over enum vs string comparison is better for perf.
-      if (f == null)
-         return true;
-      return switch (f) {
-         case ID -> matches(producer.getID());
-         case CONNECTION_ID -> matches(producer.getConnectionID());
-         case SESSION -> matches(producer.getSessionID());
-         case USER -> matches(server.getSessionByID(producer.getSessionID()).getUsername());
-         case VALIDATED_USER -> matches(server.getSessionByID(producer.getSessionID()).getValidatedUser());
-         case ADDRESS ->
-            matches(producer.getAddress() != null ? producer.getAddress() : server.getSessionByID(producer.getSessionID()).getDefaultAddress());
-         case PROTOCOL -> matches(producer.getProtocol());
-         case CLIENT_ID ->
-            matches(server.getSessionByID(producer.getSessionID()).getRemotingConnection().getClientID());
-         case LOCAL_ADDRESS ->
-            matches(server.getSessionByID(producer.getSessionID()).getRemotingConnection().getTransportConnection().getLocalAddress());
-         case REMOTE_ADDRESS ->
-            matches(server.getSessionByID(producer.getSessionID()).getRemotingConnection().getTransportConnection().getRemoteAddress());
-         default -> true;
-      };
+   protected boolean filter(ServerProducer producer, ProducerPredicateFilterPart filterPart) throws Exception {
+      return filterPart.filterPart(producer);
    }
 
    @Override
-   public void setField(String field) {
-      if (field != null && !field.isEmpty()) {
-         this.f = ProducerField.valueOfName(field);
-
-         //for backward compatibility
-         if (this.f == null) {
-            this.f = ProducerField.valueOf(field);
-         }
-      }
+   public ProducerPredicateFilterPart createFilterPart(String field, String operation, String value) {
+      return new ProducerPredicateFilterPart(server, field, operation, value);
    }
 }

@@ -16,14 +16,11 @@
  */
 package org.apache.activemq.artemis.core.management.impl.view.predicate;
 
-import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.management.QueueControl;
 import org.apache.activemq.artemis.core.management.impl.view.QueueField;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
-import org.apache.activemq.artemis.core.server.Consumer;
-import org.apache.activemq.artemis.core.server.Queue;
 
-public class QueueFilterPredicate extends ActiveMQFilterPredicate<QueueControl> {
+public class QueueFilterPredicate extends ActiveMQFilterPredicate<QueueControl, QueuePredicateFilterPart> {
 
    private QueueField f;
 
@@ -35,58 +32,12 @@ public class QueueFilterPredicate extends ActiveMQFilterPredicate<QueueControl> 
    }
 
    @Override
-   public boolean test(QueueControl queue) {
-      if (f == null)
-         return true;
-      try {
-         return switch (f) {
-            case ID -> matches(queue.getID());
-            case NAME -> matches(queue.getName());
-            case CONSUMER_ID -> {
-               Queue q = server.locateQueue(SimpleString.of(queue.getName()));
-               for (Consumer consumer : q.getConsumers()) {
-                  if (matches(consumer.sequentialID()))
-                     yield true;
-               }
-               yield false;
-            }
-            case MAX_CONSUMERS -> matches(queue.getMaxConsumers());
-            case ADDRESS -> matches(queue.getAddress());
-            case FILTER -> matches(queue.getFilter());
-            case MESSAGE_COUNT -> matches(queue.getMessageCount());
-            case CONSUMER_COUNT -> matches(queue.getConsumerCount());
-            case DELIVERING_COUNT -> matches(queue.getDeliveringCount());
-            case MESSAGES_ADDED -> matches(queue.getMessagesAdded());
-            case MESSAGES_ACKED -> matches(queue.getMessagesAcknowledged());
-            case MESSAGES_EXPIRED -> matches(queue.getMessagesExpired());
-            case ROUTING_TYPE -> matches(queue.getRoutingType());
-            case AUTO_CREATED -> matches(server.locateQueue(SimpleString.of(queue.getName())).isAutoCreated());
-            case DURABLE -> matches(queue.isDurable());
-            case PAUSED -> matches(queue.isPaused());
-            case TEMPORARY -> matches(queue.isTemporary());
-            case PURGE_ON_NO_CONSUMERS -> matches(queue.isPurgeOnNoConsumers());
-            case MESSAGES_KILLED -> matches(queue.getMessagesKilled());
-            case EXCLUSIVE -> matches(queue.isExclusive());
-            case LAST_VALUE -> matches(queue.isLastValue());
-            case SCHEDULED_COUNT -> matches(queue.getScheduledCount());
-            case USER -> matches(queue.getUser());
-            case INTERNAL_QUEUE -> matches(queue.isInternalQueue());
-            default -> true;
-         };
-      } catch (Exception e) {
-         return true;
-      }
+   protected boolean filter(QueueControl queue, QueuePredicateFilterPart filterPart) throws Exception {
+      return filterPart.filterPart(queue);
    }
 
    @Override
-   public void setField(String field) {
-      if (field != null && !field.isEmpty()) {
-         this.f = QueueField.valueOfName(field);
-
-         //for backward compatibility
-         if (this.f == null) {
-            this.f = QueueField.valueOf(field);
-         }
-      }
+   public QueuePredicateFilterPart createFilterPart(String field, String operation, String value) {
+      return new QueuePredicateFilterPart(server, field, operation, value);
    }
 }
