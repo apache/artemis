@@ -103,6 +103,14 @@
          <artifactId>jetty-alpn-java-server</artifactId>
       </dependency>
       <dependency>
+         <groupId>org.eclipse.jetty.compression</groupId>
+         <artifactId>jetty-compression-server</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.eclipse.jetty.compression</groupId>
+         <artifactId>jetty-compression-gzip</artifactId>
+      </dependency>
+      <dependency>
          <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-server</artifactId>
          <scope>test</scope>

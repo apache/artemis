@@ -113,6 +113,12 @@ public class WebServerDTO extends ComponentDTO {
    @XmlAttribute
    public Integer maxResponseHeaderSize;
 
+   @XmlAttribute
+   public Boolean compressionEnabled;
+
+   @XmlAttribute
+   public Integer compressionLevel;
+
    public String getPath() {
       return path;
    }

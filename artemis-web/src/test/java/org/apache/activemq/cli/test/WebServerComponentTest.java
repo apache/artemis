@@ -65,6 +65,7 @@ import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpRequest;
@@ -194,6 +195,62 @@ public class WebServerComponentTest extends ArtemisTestCase {
       }
       assertEquals("12345", clientHandler.body.toString());
       assertNull(clientHandler.serverHeader);
+      // Wait for the server to close the connection.
+      ch.close();
+      ch.eventLoop().shutdownNow();
+      assertTrue(webServerComponent.isStarted());
+      webServerComponent.stop(true);
+      assertFalse(webServerComponent.isStarted());
+   }
+
+   @Test
+   public void testCompressionEnabled() throws Exception {
+      testCompression(true);
+   }
+
+   @Test
+   public void testCompressionDisabled() throws Exception {
+      testCompression(false);
+   }
+
+   private void testCompression(boolean compressionEnabled) throws Exception {
+      final String encoding = "gzip";
+
+      BindingDTO bindingDTO = new BindingDTO();
+      bindingDTO.uri = "http://localhost:0";
+      WebServerDTO webServerDTO = new WebServerDTO();
+      webServerDTO.setBindings(Collections.singletonList(bindingDTO));
+      webServerDTO.path = "webapps";
+      webServerDTO.webContentEnabled = true;
+      webServerDTO.compressionEnabled = compressionEnabled;
+      WebServerComponent webServerComponent = new WebServerComponent();
+      assertFalse(webServerComponent.isStarted());
+      webServerComponent.configure(webServerDTO, "src/test/resources/", "src/test/resources/");
+      testedComponents.add(webServerComponent);
+      webServerComponent.start();
+      final int port = webServerComponent.getPort();
+      // Make the connection attempt.
+      CountDownLatch latch = new CountDownLatch(1);
+      final ClientHandler clientHandler = new ClientHandler(latch);
+      Channel ch = getChannel(port, clientHandler);
+
+      // this file is different from the other tests because it has to be above a certain size in order to be compressed
+      URI uri = new URI("http://localhost/WebServerComponentCompressionTest.txt");
+      // Prepare the HTTP request.
+      HttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uri.getRawPath());
+      request.headers().set(HttpHeaderNames.HOST, "localhost");
+      request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, encoding);
+
+      // Send the HTTP request.
+      ch.writeAndFlush(request);
+      assertTrue(latch.await(5, TimeUnit.SECONDS));
+      String contentEncoding = clientHandler.headers.get(HttpHeaderNames.CONTENT_ENCODING);
+      if (compressionEnabled) {
+         assertEquals(encoding, contentEncoding);
+      } else {
+         assertNull(contentEncoding);
+      }
+
       // Wait for the server to close the connection.
       ch.close();
       ch.eventLoop().shutdownNow();
@@ -1133,6 +1190,7 @@ public class WebServerComponentTest extends ArtemisTestCase {
       private CountDownLatch latch;
       private StringBuilder body = new StringBuilder();
       private String serverHeader;
+      private HttpHeaders headers;
 
       ClientHandler(CountDownLatch latch) {
          this.latch = latch;
@@ -1141,6 +1199,7 @@ public class WebServerComponentTest extends ArtemisTestCase {
       @Override
       public void channelRead0(ChannelHandlerContext ctx, HttpObject msg) {
          if (msg instanceof HttpResponse response) {
+            headers = response.headers();
             serverHeader = response.headers().get("Server");
          } else if (msg instanceof HttpContent content) {
             body.append(content.content().toString(CharsetUtil.UTF_8));

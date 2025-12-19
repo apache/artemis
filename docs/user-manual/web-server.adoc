@@ -34,6 +34,15 @@ The location to redirect the requests with the root target.
 webContentEnabled::
 Whether or not the content included in the web folder of the home and the instance directories is accessible.
 Default is `false`.
+compressionEnabled::
+Whether to compress HTTP responses.
+Uses `gzip` encoding for maximum compatibility.
+This will impact any client communicating with the embedded web server including the web console and consumers of xref:metrics.adoc#metrics[metrics] (e.g. Prometheus) assuming they set the `Accept-Encoding` header to `gzip` in their HTTP requests.
+Default is `false`.
+compressionLevel::
+The level of compression for HTTP responses.
+Only valid if `compressionEnabled` is `true`.
+Default is `6`. Must be between `0` and `9` inclusive.
 maxThreads::
 The maximum number of threads the embedded web server can create to service HTTP requests.
 Default is `200`.

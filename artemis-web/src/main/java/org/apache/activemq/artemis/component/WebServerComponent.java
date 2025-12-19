@@ -57,6 +57,11 @@ import org.apache.activemq.artemis.utils.ClassloadingUtil;
 import org.apache.activemq.artemis.utils.PemConfigUtil;
 import org.apache.activemq.artemis.utils.sm.SecurityManagerShim;
 import org.eclipse.jetty.alpn.server.ALPNServerConnectionFactory;
+import org.eclipse.jetty.compression.Compression;
+import org.eclipse.jetty.compression.EncoderConfig;
+import org.eclipse.jetty.compression.gzip.GzipCompression;
+import org.eclipse.jetty.compression.gzip.GzipEncoderConfig;
+import org.eclipse.jetty.compression.server.CompressionHandler;
 import org.eclipse.jetty.ee9.security.DefaultAuthenticatorFactory;
 import org.eclipse.jetty.ee9.servlet.FilterHolder;
 import org.eclipse.jetty.ee9.webapp.WebAppContext;
@@ -149,6 +154,21 @@ public class WebServerComponent implements ExternalComponent, WebServerComponent
       Scheduler scheduler = new ScheduledExecutorScheduler("activemq-web-scheduled", false);
       server = new Server(threadPool, scheduler, null);
       handlers = new Handler.Sequence();
+      if (webServerConfig.compressionEnabled != null && webServerConfig.compressionEnabled) {
+         int compressionLevel = Objects.requireNonNullElse(webServerConfig.compressionLevel, 6);
+         logger.debug("embedded web server is using GZIP compression level {}", compressionLevel);
+         EncoderConfig encoderConfig = new GzipEncoderConfig();
+         encoderConfig.setCompressionLevel(compressionLevel);
+         Compression compression = new GzipCompression();
+         compression.setDefaultEncoderConfig(encoderConfig);
+         CompressionHandler compressionHandler = new CompressionHandler();
+         compressionHandler.putCompression(compression);
+         compressionHandler.setHandler(handlers);
+         server.setHandler(compressionHandler);
+      } else {
+         server.setHandler(handlers);
+      }
+
 
       HttpConfiguration httpConfiguration = new HttpConfiguration();
 
@@ -252,8 +272,6 @@ public class WebServerComponent implements ExternalComponent, WebServerComponent
       }
 
       handlers.addHandler(defaultHandler); // this should be last
-
-      server.setHandler(handlers);
 
       server.start();
 
