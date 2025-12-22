@@ -595,7 +595,7 @@ public class Create extends InstallAbstract {
          allowAnonymous = Boolean.FALSE;
       }
 
-      context.out.println(String.format("Creating ActiveMQ Artemis instance at: %s", directory.getCanonicalPath()));
+      context.out.println(String.format("Creating Apache Artemis instance at: %s", directory.getCanonicalPath()));
 
       Map<String, String> filters = new LinkedHashMap<>();
 

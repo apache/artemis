@@ -28,7 +28,7 @@ public interface ActiveMQBootstrapLogger {
 
    ActiveMQBootstrapLogger LOGGER = BundleFactory.newBundle(ActiveMQBootstrapLogger.class, ActiveMQBootstrapLogger.class.getPackage().getName());
 
-   @LogMessage(id = 101000, value = "Starting ActiveMQ Artemis Server version {}", level = LogMessage.Level.INFO)
+   @LogMessage(id = 101000, value = "Starting Apache Artemis Server version {}", level = LogMessage.Level.INFO)
    void serverStarting(String version);
 
    @LogMessage(id = 104000, value = "Failed to delete file {}", level = LogMessage.Level.ERROR)

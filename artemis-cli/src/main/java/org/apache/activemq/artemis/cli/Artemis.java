@@ -70,7 +70,7 @@ import picocli.CommandLine.Command;
  * Notice that this class should not use any logging as it's part of the bootstrap and using logging here could disrupt
  * the order of bootstrapping on certain components (e.g. JMX being started from log4j)
  */
-@Command(name = "artemis", description = "ActiveMQ Artemis Command Line")
+@Command(name = "artemis", description = "Apache Artemis Command Line")
 public class Artemis implements Runnable {
 
 

@@ -27,9 +27,9 @@ public class PrintVersion extends ActionAbstract {
    public Object execute(ActionContext context) throws Exception {
       Version version = VersionLoader.getVersion();
 
-      context.out.println("Apache ActiveMQ Artemis " + version.getFullVersion());
-      context.out.println("ActiveMQ Artemis home: " + this.getBrokerHome());
-      context.out.println("ActiveMQ Artemis instance: " + this.getBrokerInstance());
+      context.out.println("Apache Artemis " + version.getFullVersion());
+      context.out.println("Apache Artemis home: " + this.getBrokerHome());
+      context.out.println("Apache Artemis instance: " + this.getBrokerInstance());
 
       return version;
    }

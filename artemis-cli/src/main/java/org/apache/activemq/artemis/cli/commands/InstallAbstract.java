@@ -42,13 +42,13 @@ public class InstallAbstract extends InputAbstract {
    @Parameters(description = "The instance directory to hold the broker's configuration and data. Path must be writable.")
    protected File directory;
 
-   @Option(names = "--etc", description = "Directory where ActiveMQ configuration is located. Paths can be absolute or relative to artemis.instance directory. Default: etc.")
+   @Option(names = "--etc", description = "Directory where Apache Artemis configuration is located. Paths can be absolute or relative to artemis.instance directory. Default: etc.")
    protected String etc = "etc";
 
-   @Option(names = "--data", description = "Directory where ActiveMQ data are stored. Paths can be absolute or relative to artemis.instance directory. Default: data.")
+   @Option(names = "--data", description = "Directory where Apache Artemis data is stored. Paths can be absolute or relative to artemis.instance directory. Default: data.")
    protected String data = "data";
 
-   @Option(names = "--home", description = "Directory where ActiveMQ Artemis is installed.")
+   @Option(names = "--home", description = "Directory where Apache Artemis is installed.")
    protected File home;
 
    @Option(names = "--encoding", description = "The encoding that text files should use. Default: UTF-8.")

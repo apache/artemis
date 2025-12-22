@@ -67,10 +67,10 @@ public interface ActiveMQServerLogger {
    @LogMessage(id = 221000, value = "{} message broker is starting with configuration {}", level = LogMessage.Level.INFO)
    void serverStarting(String type, Configuration configuration);
 
-   @LogMessage(id = 221001, value = "Apache ActiveMQ Artemis Message Broker version {} [{}, nodeID={}] {}", level = LogMessage.Level.INFO)
+   @LogMessage(id = 221001, value = "Apache Artemis Message Broker version {} [{}, nodeID={}] {}", level = LogMessage.Level.INFO)
    void serverStarted(String fullVersion, String name, SimpleString nodeId, String identity);
 
-   @LogMessage(id = 221002, value = "Apache ActiveMQ Artemis Message Broker version {} [{}] stopped, uptime {}", level = LogMessage.Level.INFO)
+   @LogMessage(id = 221002, value = "Apache Artemis Message Broker version {} [{}] stopped, uptime {}", level = LogMessage.Level.INFO)
    void serverStopped(String version, SimpleString nodeId, String uptime);
 
    @LogMessage(id = 221003, value = "Deploying {} queue {} on address {}", level = LogMessage.Level.INFO)
@@ -91,7 +91,7 @@ public interface ActiveMQServerLogger {
    @LogMessage(id = 221008, value = "primary server wants to restart, restarting server in backup", level = LogMessage.Level.INFO)
    void awaitFailBack();
 
-   @LogMessage(id = 221109, value = "Apache ActiveMQ Artemis Backup Server version {} [{}] started; waiting for primary to fail before activating", level = LogMessage.Level.INFO)
+   @LogMessage(id = 221109, value = "Apache Artemis Backup Server version {} [{}] started; waiting for primary to fail before activating", level = LogMessage.Level.INFO)
    void backupServerStarted(String version, SimpleString nodeID);
 
    @LogMessage(id = 221010, value = "Backup Server is now active", level = LogMessage.Level.INFO)
@@ -342,7 +342,7 @@ public interface ActiveMQServerLogger {
    @LogMessage(id = 222006, value = "Binding already exists with name {}, divert will not be deployed", level = LogMessage.Level.WARN)
    void divertBindingAlreadyExists(SimpleString bindingName);
 
-   @LogMessage(id = 222007, value = "Security risk! Apache ActiveMQ Artemis is running with the default cluster admin user and default password. Please see the cluster chapter in the ActiveMQ Artemis User Guide for instructions on how to change this.", level = LogMessage.Level.WARN)
+   @LogMessage(id = 222007, value = "Security risk! Apache Artemis is running with the default cluster admin user and default password. Please see the cluster chapter in the Artemis User Guide for instructions on how to change this.", level = LogMessage.Level.WARN)
    void clusterSecurityRisk();
 
    @LogMessage(id = 222008, value = "unable to restart server, please kill and restart manually", level = LogMessage.Level.WARN)
@@ -1361,7 +1361,7 @@ public interface ActiveMQServerLogger {
    @LogMessage(id = 224099, value = "Message with ID {} has a header too large. More information available on debug level for class {}", level = LogMessage.Level.WARN)
    void messageWithHeaderTooLarge(Long messageID, String loggerClass);
 
-   @LogMessage(id = 224101, value = "Apache ActiveMQ Artemis is using a scheduled pool without remove on cancel policy, so a cancelled task could be not automatically removed from the work queue, it may also cause unbounded retention of cancelled tasks.", level = LogMessage.Level.WARN)
+   @LogMessage(id = 224101, value = "Apache Artemis is using a scheduled pool without remove on cancel policy, so a cancelled task could be not automatically removed from the work queue, it may also cause unbounded retention of cancelled tasks.", level = LogMessage.Level.WARN)
    void scheduledPoolWithNoRemoveOnCancelPolicy();
 
    @LogMessage(id = 224102, value = "unable to undeploy address {} : reason {}", level = LogMessage.Level.INFO)

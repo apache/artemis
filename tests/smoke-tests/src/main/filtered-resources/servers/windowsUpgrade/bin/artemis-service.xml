@@ -19,8 +19,8 @@
 
 <service>
    <id>artemis-windowsUpgrade-0.0.0.0</id>
-   <name>ActiveMQ Artemis: windowsUpgrade @ 0.0.0.0</name>
-   <description>Apache ActiveMQ Artemis is a reliable messaging broker</description>
+   <name>Apache Artemis: windowsUpgrade @ 0.0.0.0</name>
+   <description>Apache Artemis is a reliable messaging broker</description>
 
    <env name="ARTEMIS_HOME" value="must-change"/>
    <env name="ARTEMIS_INSTANCE" value="${project.basedir}/target/classes/servers/windowsUpgrade"/>
@@ -37,7 +37,7 @@
    <startargument>-Xms512M</startargument>
    <startargument>-Xmx1G</startargument>
 
-   <!-- Cluster Properties: Used to pass startarguments to ActiveMQ Artemis which can be referenced in broker.xml
+   <!-- Cluster Properties: Used to pass startarguments to Apache Artemis which can be referenced in broker.xml
    <startargument>-Dartemis.remoting.default.port=61617</startargument>
    <startargument>-Dartemis.remoting.amqp.port=5673</startargument>
    <startargument>-Dartemis.remoting.stomp.port=61614</startargument>

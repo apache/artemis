@@ -65,7 +65,7 @@ import picocli.CommandLine.Option;
 
 /**
  * Read XML output from {@code org.apache.activemq.artemis.core.persistence.impl.journal.XmlDataExporter}, create a core
- * session, and send the messages to a running instance of ActiveMQ Artemis.  It uses the StAX
+ * session, and send the messages to a running instance of Apache Artemis.  It uses the StAX
  * {@code javax.xml.stream.XMLStreamReader} for speed and simplicity.
  */
 @Command(name = "imp", description = "Import all message-data using an XML that could be interpreted by any system.")

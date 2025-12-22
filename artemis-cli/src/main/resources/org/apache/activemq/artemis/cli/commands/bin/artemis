@@ -18,7 +18,7 @@
 
 if [ -z "$ARTEMIS_INSTANCE" ] ; then
 
-  ## resolve links - $0 may be a link to ActiveMQ's home
+  ## resolve links - $0 may be a link to Artemis' home
   PRG="$0"
   progname=`basename "$0"`
   saveddir=`pwd`
