@@ -47,8 +47,8 @@ public class PageConstants {
 
    public static final String COLUMN_ORIGINAL_QUEUE = "Original Queue";
 
-   // Node prrefixes
-   public static final String BROKER_NODE = "org.apache.activemq.artemis-folder-0.0.0.0";
+   // Node prefixes
+   public static final String BROKER_NODE = "Broker0.0.0.0";
 
    public static final String ADDRESS_NODE_SUFFIX = "folder-addresses-folder-";
 
@@ -73,7 +73,7 @@ public class PageConstants {
    public static final By BUTTON_LOCATOR = By.tagName(BUTTON);
 
    //Branding and Image locations
-   public static final String DEFAULT_CONSOLE_LOGIN_BRAND_IMAGE = "/img/activemq.png";
+   public static final String DEFAULT_CONSOLE_LOGIN_BRAND_IMAGE = "/img/artemis.png";
 
    public static final String DEFAULT_CONSOLE_NAME = "Artemis";
 
@@ -137,4 +137,5 @@ public class PageConstants {
 
    public static final By BROKER_NODE_LOCATOR = By.id(BROKER_NODE);
 
+   public static final By BROKER_BUTTON_LOCATOR = By.xpath("//button[contains(text(), 'Broker 0.0.0.0')]");
 }
