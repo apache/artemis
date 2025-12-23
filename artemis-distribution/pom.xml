@@ -156,7 +156,7 @@
                   <configuration>
                      <artifactItems>
                         <artifactItem>
-                           <groupId>org.apache.activemq</groupId>
+                           <groupId>org.apache.artemis</groupId>
                            <artifactId>apache-artemis-console</artifactId>
                            <type>zip</type>
                            <classifier>bin</classifier>

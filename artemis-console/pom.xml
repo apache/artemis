@@ -39,7 +39,7 @@
     </dependency>
 
     <dependency>
-      <groupId>org.apache.activemq</groupId>
+      <groupId>org.apache.artemis</groupId>
       <artifactId>artemis-console-war</artifactId>
       <type>war</type>
     </dependency>
@@ -86,7 +86,7 @@
           </webResources>
           <overlays>
             <overlay>
-              <groupId>org.apache.activemq</groupId>
+              <groupId>org.apache.artemis</groupId>
               <artifactId>artemis-console-war</artifactId>
               <excludes>
                 <exclude>WEB-INF/lib/guava*.jar</exclude>
