@@ -2,24 +2,24 @@
   "branding": {
     "appName": "Artemis Console",
     "showAppName": false,
-    "appLogoUrl": "img/activemq.png",
-    "companyLogoUrl": "img/activemq.png",
-    "css": "css/activemq.css",
+    "appLogoUrl": "img/artemis.png",
+    "companyLogoUrl": "img/artemis.png",
+    "css": "css/artemis.css",
     "favicon": "img/favicon.png"
   },
   "login": {
-    "description": "Login page for ActiveMQ Artemis Console.",
+    "description": "Login page for Apache Artemis Console.",
     "links": [
-      { "url": "https://activemq.apache.org/components/artemis/documentation/", "text": "Documentation" },
-      { "url": "https://activemq.apache.org/", "text": "Website" }
+      { "url": "https://artemis.apache.org/components/artemis/documentation/", "text": "Documentation" },
+      { "url": "https://artemis.apache.org/", "text": "Website" }
     ]
   },
   "about": {
-    "title": "ActiveMQ Artemis Management Console",
-    "productInfo": [{"name": "ActiveMQ Artemis", "value": "${project.version}"}],
+    "title": "Apache Artemis Management Console",
+    "productInfo": [{"name": "Apache Artemis", "value": "${project.version}"}],
     "additionalInfo": "",
     "copyright": " ",
-    "imgSrc": "img/activemq.png"
+    "imgSrc": "img/artemis.png"
   },
   "disabledRoutes": []
 }

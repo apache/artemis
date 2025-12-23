@@ -232,14 +232,14 @@
             <!-- License: Apache 2.0 -->
          </dependency>
          <dependency>
-            <groupId>org.apache.activemq</groupId>
+            <groupId>org.apache.artemis</groupId>
             <artifactId>artemis-console-war</artifactId>
             <type>war</type>
             <version>${artemis-console-version}</version>
          </dependency>
          <!-- License: Apache 2.0 -->
          <dependency>
-            <groupId>org.apache.activemq</groupId>
+            <groupId>org.apache.artemis</groupId>
             <artifactId>apache-artemis-console</artifactId>
             <version>${artemis-console-version}</version>
             <type>zip</type>
