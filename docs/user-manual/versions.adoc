@@ -28,6 +28,16 @@ https://artemis.apache.org/artemis-tlp-groupid-migration[Click here] for more de
 * Due to https://issues.apache.org/jira/browse/ARTEMIS-5770[ARTEMIS-5770] the formatting of the "Local Address" field has changed.
 This field is available on the "Connections," "Sessions," "Consumers," and "Producers" tabs.
 This may impact users filtering results based on this field.
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-5819[ARTEMIS-5819] the following HTTP-specific transport configuration parameters have been deprecated:
+** `httpClientIdleTime`
+** `httpClientIdleScanPeriod`
+** `httpResponseTime`
+** `httpServerScanPeriod`
+
++
+
+The functionality previously provided via these parameters was non-functional and ultimately unnecessary.
+Idle connection management should be done through xref:connection-ttl.adoc#detecting-dead-connections[existing parameters].
 
 == 2.44.0
 

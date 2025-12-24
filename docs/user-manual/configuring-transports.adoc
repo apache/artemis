@@ -507,21 +507,9 @@ Activates HTTP on the client.
 This is not needed on the broker.
 With single port support the broker will now automatically detect if HTTP is being used and configure itself.
 
-httpClientIdleTime::
-How long a client can be idle before sending an empty HTTP request to keep the connection alive
-
-httpClientIdleScanPeriod::
-How often, in milliseconds, to scan for idle clients
-
-httpResponseTime::
-How long the server can wait before sending an empty HTTP response to keep the connection alive
-
-httpServerScanPeriod::
-How often, in milliseconds, to scan for clients needing responses
-
 httpRequiresSessionId::
 If `true` the client will wait after the first call to receive a session id.
-Used the HTTP connector is connecting to servlet acceptor (not recommended)
+Used when the HTTP connector is connecting to servlet acceptor (not recommended).
 
 === Configuring Netty SOCKS Proxy
 

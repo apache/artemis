@@ -44,14 +44,18 @@ public class TransportConstants {
 
    public static final String HTTP_ENABLED_PROP_NAME = "httpEnabled";
 
+   @Deprecated(forRemoval = true)
    public static final String HTTP_CLIENT_IDLE_PROP_NAME = "httpClientIdleTime";
 
+   @Deprecated(forRemoval = true)
    public static final String HTTP_CLIENT_IDLE_SCAN_PERIOD = "httpClientIdleScanPeriod";
 
    public static final String NETTY_HTTP_HEADER_PREFIX = "nettyHttpHeader.";
 
+   @Deprecated(forRemoval = true)
    public static final String HTTP_RESPONSE_TIME_PROP_NAME = "httpResponseTime";
 
+   @Deprecated(forRemoval = true)
    public static final String HTTP_SERVER_SCAN_PERIOD_PROP_NAME = "httpServerScanPeriod";
 
    public static final String HTTP_REQUIRES_SESSION_ID = "httpRequiresSessionId";
