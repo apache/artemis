@@ -33,74 +33,62 @@ public class PredicateTest {
    @Test
    public void testBasePredicateEquals() {
       String string = RandomUtil.randomUUIDString();
-      ActiveMQFilterPredicate<String> predicate = new ActiveMQFilterPredicate<>();
-      predicate.setOperation(EQUALS.name());
-      predicate.setValue(string);
+      PredicateFilterPart<String> predicate = new PredicateFilterPart<>(EQUALS.name(), string);
       assertTrue(predicate.matches(string));
       assertFalse(predicate.matches(RandomUtil.randomUUIDString()));
-      assertFalse(predicate.matches(0L));
-      assertFalse(predicate.matches(0f));
-      assertFalse(predicate.matches(0));
+      assertFalse(predicate.matchesLong(0L));
+      assertFalse(predicate.matchesFloat(0f));
+      assertFalse(predicate.matchesInt(0));
    }
 
    @Test
    public void testBasePredicateNotEquals() {
       String string = RandomUtil.randomUUIDString();
-      ActiveMQFilterPredicate<String> predicate = new ActiveMQFilterPredicate<>();
-      predicate.setOperation(NOT_EQUALS.name());
-      predicate.setValue(string);
+      PredicateFilterPart<String> predicate = new PredicateFilterPart<>(NOT_EQUALS.name(), string);
       assertFalse(predicate.matches(string));
       assertTrue(predicate.matches(RandomUtil.randomUUIDString()));
-      assertTrue(predicate.matches(0L));
-      assertTrue(predicate.matches(0f));
-      assertTrue(predicate.matches(0));
+      assertTrue(predicate.matchesLong(0L));
+      assertTrue(predicate.matchesFloat(0f));
+      assertTrue(predicate.matchesInt(0));
    }
 
    @Test
    public void testBasePredicateContains() {
-      ActiveMQFilterPredicate<String> predicate = new ActiveMQFilterPredicate<>();
-      predicate.setOperation(CONTAINS.name());
-      predicate.setValue("12");
+      PredicateFilterPart<String> predicate = new PredicateFilterPart<>(CONTAINS.name(), "12");
       assertTrue(predicate.matches("0123"));
       assertFalse(predicate.matches("43"));
-      assertFalse(predicate.matches(0L));
-      assertFalse(predicate.matches(0f));
-      assertFalse(predicate.matches(0));
+      assertFalse(predicate.matchesLong(0L));
+      assertFalse(predicate.matchesFloat(0f));
+      assertFalse(predicate.matchesInt(0));
    }
 
    @Test
    public void testBasePredicateNotContains() {
-      ActiveMQFilterPredicate<String> predicate = new ActiveMQFilterPredicate<>();
-      predicate.setOperation(NOT_CONTAINS.name());
-      predicate.setValue("12");
+      PredicateFilterPart<String> predicate = new PredicateFilterPart<>(NOT_CONTAINS.name(), "12");
       assertFalse(predicate.matches("0123"));
       assertTrue(predicate.matches("42"));
-      assertTrue(predicate.matches(0L));
-      assertTrue(predicate.matches(0f));
-      assertTrue(predicate.matches(0));
+      assertTrue(predicate.matchesLong(0L));
+      assertTrue(predicate.matchesFloat(0f));
+      assertTrue(predicate.matchesInt(0));
    }
 
    @Test
    public void testBasePredicateLessThan() {
-      ActiveMQFilterPredicate<Integer> predicate = new ActiveMQFilterPredicate<>();
-      predicate.setOperation(LESS_THAN.name());
-      predicate.setValue("12");
+      PredicateFilterPart<Integer> predicate = new PredicateFilterPart<>(LESS_THAN.name(), "12");
       assertFalse(predicate.matches("foo"));
-      assertFalse(predicate.matches(42));
-      assertTrue(predicate.matches(0L));
-      assertTrue(predicate.matches(0f));
-      assertTrue(predicate.matches(0));
+      assertFalse(predicate.matchesInt(42));
+      assertTrue(predicate.matchesLong(0L));
+      assertTrue(predicate.matchesFloat(0f));
+      assertTrue(predicate.matchesInt(0));
    }
 
    @Test
    public void testBasePredicateGreaterThan() {
-      ActiveMQFilterPredicate<Integer> predicate = new ActiveMQFilterPredicate<>();
-      predicate.setOperation(GREATER_THAN.name());
-      predicate.setValue("12");
+      PredicateFilterPart<Integer> predicate = new PredicateFilterPart<>(GREATER_THAN.name(), "12");
       assertFalse(predicate.matches("foo"));
-      assertTrue(predicate.matches(42));
-      assertFalse(predicate.matches(0L));
-      assertFalse(predicate.matches(0f));
-      assertFalse(predicate.matches(0));
+      assertTrue(predicate.matchesInt(42));
+      assertFalse(predicate.matchesLong(0L));
+      assertFalse(predicate.matchesFloat(0f));
+      assertFalse(predicate.matchesInt(0));
    }
 }

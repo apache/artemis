@@ -17,12 +17,13 @@
 package org.apache.activemq.artemis.core.management.impl.view;
 
 import org.apache.activemq.artemis.api.core.management.AddressControl;
+import org.apache.activemq.artemis.core.management.impl.view.predicate.AddressPredicateFilterPart;
 import org.apache.activemq.artemis.json.JsonObjectBuilder;
 import org.apache.activemq.artemis.core.management.impl.view.predicate.AddressFilterPredicate;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.utils.JsonLoader;
 
-public class AddressView extends ActiveMQAbstractView<AddressControl> {
+public class AddressView extends ActiveMQAbstractView<AddressControl, AddressPredicateFilterPart> {
 
    private static final String defaultSortField = AddressField.ID.getName();
 
@@ -31,7 +32,7 @@ public class AddressView extends ActiveMQAbstractView<AddressControl> {
    public AddressView(ActiveMQServer server) {
       super();
       this.server = server;
-      this.predicate = new AddressFilterPredicate(server);
+      this.predicate = new AddressFilterPredicate();
    }
 
    @Override

@@ -30,6 +30,7 @@ import javax.jms.Connection;
 import javax.jms.Session;
 import javax.jms.TemporaryQueue;
 import javax.jms.TemporaryTopic;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -78,11 +79,11 @@ public class AdvisoryOpenWireTest extends BasicOpenWireTest {
 
    private AddressControl assertNonNullAddressControl(String match) {
       AddressControl advisoryAddressControl = null;
-      Object[] addressResources = server.getManagementService().getResources(AddressControl.class);
+      List<AddressControl> addressResources = server.getManagementService().getAddressControls();
 
-      for (Object addressResource : addressResources) {
-         if (((AddressControl) addressResource).getAddress().equals(match)) {
-            advisoryAddressControl = (AddressControl) addressResource;
+      for (AddressControl addressResource : addressResources) {
+         if (addressResource.getAddress().equals(match)) {
+            advisoryAddressControl = addressResource;
          }
       }
       assertNotNull(advisoryAddressControl, "addressControl for temp advisory");
