@@ -200,10 +200,6 @@ public class NettyConnector extends AbstractConnector {
 
    private boolean httpEnabled;
 
-   private long httpMaxClientIdleTime;
-
-   private long httpClientIdleScanPeriod;
-
    private boolean httpRequiresSessionId;
 
    // if true, after the connection, the connector will send
@@ -368,8 +364,6 @@ public class NettyConnector extends AbstractConnector {
       httpEnabled = ConfigurationHelper.getBooleanProperty(TransportConstants.HTTP_ENABLED_PROP_NAME, TransportConstants.DEFAULT_HTTP_ENABLED, configuration);
       servletPath = ConfigurationHelper.getStringProperty(TransportConstants.SERVLET_PATH, TransportConstants.DEFAULT_SERVLET_PATH, configuration);
       if (httpEnabled) {
-         httpMaxClientIdleTime = ConfigurationHelper.getLongProperty(TransportConstants.HTTP_CLIENT_IDLE_PROP_NAME, TransportConstants.DEFAULT_HTTP_CLIENT_IDLE_TIME, configuration);
-         httpClientIdleScanPeriod = ConfigurationHelper.getLongProperty(TransportConstants.HTTP_CLIENT_IDLE_SCAN_PERIOD, TransportConstants.DEFAULT_HTTP_CLIENT_SCAN_PERIOD, configuration);
          httpRequiresSessionId = ConfigurationHelper.getBooleanProperty(TransportConstants.HTTP_REQUIRES_SESSION_ID, TransportConstants.DEFAULT_HTTP_REQUIRES_SESSION_ID, configuration);
          httpHeaders = new HashMap<>();
          for (Map.Entry<String, Object> header : configuration.entrySet()) {
@@ -378,8 +372,6 @@ public class NettyConnector extends AbstractConnector {
             }
          }
       } else {
-         httpMaxClientIdleTime = 0;
-         httpClientIdleScanPeriod = -1;
          httpRequiresSessionId = false;
          httpHeaders = Collections.emptyMap();
       }
@@ -1120,14 +1112,6 @@ public class NettyConnector extends AbstractConnector {
 
    public class HttpHandler extends ChannelDuplexHandler {
 
-      private Channel channel;
-
-      private long lastSendTime = 0;
-
-      private boolean waitingGet = false;
-
-      private HttpIdleTimer task;
-
       private final String url;
 
       private final FutureLatch handShakeFuture = new FutureLatch();
@@ -1149,26 +1133,6 @@ public class NettyConnector extends AbstractConnector {
       }
 
       @Override
-      public void channelActive(final ChannelHandlerContext ctx) throws Exception {
-         super.channelActive(ctx);
-         channel = ctx.channel();
-         if (httpClientIdleScanPeriod > 0) {
-            task = new HttpIdleTimer();
-            java.util.concurrent.Future<?> future = scheduledThreadPool.scheduleAtFixedRate(task, httpClientIdleScanPeriod, httpClientIdleScanPeriod, TimeUnit.MILLISECONDS);
-            task.setFuture(future);
-         }
-      }
-
-      @Override
-      public void channelInactive(final ChannelHandlerContext ctx) throws Exception {
-         if (task != null) {
-            task.close();
-         }
-
-         super.channelInactive(ctx);
-      }
-
-      @Override
       public void channelRead(final ChannelHandlerContext ctx, final Object msg) throws Exception {
          FullHttpResponse response = (FullHttpResponse) msg;
          if (httpRequiresSessionId && !active) {
@@ -1183,12 +1147,12 @@ public class NettyConnector extends AbstractConnector {
             active = true;
             handShakeFuture.run();
          }
-         waitingGet = false;
          ctx.fireChannelRead(response.content());
       }
 
       @Override
       public void write(final ChannelHandlerContext ctx, final Object msg, ChannelPromise promise) throws Exception {
+         Object toSend = msg;
          if (msg instanceof ByteBuf buf) {
             if (httpRequiresSessionId && !active) {
                if (handshaking) {
@@ -1208,48 +1172,9 @@ public class NettyConnector extends AbstractConnector {
                httpRequest.headers().add(HttpHeaderNames.COOKIE, cookie);
             }
             httpRequest.headers().add(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(buf.readableBytes()));
-            ctx.write(httpRequest, promise);
-            lastSendTime = System.currentTimeMillis();
-         } else {
-            ctx.write(msg, promise);
-            lastSendTime = System.currentTimeMillis();
+            toSend = httpRequest;
          }
-      }
-
-      private class HttpIdleTimer implements Runnable {
-
-         private boolean closed = false;
-
-         private java.util.concurrent.Future<?> future;
-
-         @Override
-         public synchronized void run() {
-            if (closed) {
-               return;
-            }
-
-            if (!waitingGet && System.currentTimeMillis() > lastSendTime + httpMaxClientIdleTime) {
-               FullHttpRequest httpRequest = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, url);
-               httpRequest.headers().add(HttpHeaderNames.HOST, String.format("%s:%d", host, port));
-               for (Map.Entry<String, String> header : headers.entrySet()) {
-                  httpRequest.headers().add(header.getKey(), header.getValue());
-               }
-               waitingGet = true;
-               channel.writeAndFlush(httpRequest);
-            }
-         }
-
-         public synchronized void setFuture(final java.util.concurrent.Future<?> future) {
-            this.future = future;
-         }
-
-         public void close() {
-            if (future != null) {
-               future.cancel(false);
-            }
-
-            closed = true;
-         }
+         ctx.write(toSend, promise);
       }
    }
 

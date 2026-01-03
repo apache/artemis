@@ -55,7 +55,7 @@ public class CoreClientOverHttpTest extends ActiveMQTestBase {
       Map<String, Object> params = new HashMap<>();
       params.put(TransportConstants.HTTP_ENABLED_PROP_NAME, true);
 
-      conf = createDefaultInVMConfig().clearAcceptorConfigurations().addAcceptorConfiguration(new TransportConfiguration(NETTY_ACCEPTOR_FACTORY, params));
+      conf = createDefaultInVMConfig().clearAcceptorConfigurations().addAcceptorConfiguration(new TransportConfiguration(NETTY_ACCEPTOR_FACTORY));
 
       server = addServer(ActiveMQServers.newActiveMQServer(conf, false));
       server.start();
