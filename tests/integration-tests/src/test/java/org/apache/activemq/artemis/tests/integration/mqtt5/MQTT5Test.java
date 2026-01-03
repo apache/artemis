@@ -41,6 +41,7 @@ import org.apache.activemq.artemis.core.postoffice.impl.PostOfficeImpl;
 import org.apache.activemq.artemis.core.postoffice.impl.PostOfficeTestAccessor;
 import org.apache.activemq.artemis.core.protocol.mqtt.MQTTInterceptor;
 import org.apache.activemq.artemis.core.protocol.mqtt.MQTTProtocolManager;
+import org.apache.activemq.artemis.core.protocol.mqtt.MQTTPublishManager;
 import org.apache.activemq.artemis.core.protocol.mqtt.MQTTReasonCodes;
 import org.apache.activemq.artemis.core.protocol.mqtt.MQTTSessionAccessor;
 import org.apache.activemq.artemis.core.protocol.mqtt.MQTTSessionState;
@@ -364,20 +365,53 @@ public class MQTT5Test extends MQTT5TestSupport {
 
    @Test
    @Timeout(DEFAULT_TIMEOUT_SEC)
-   public void testQueueCleanOnRestart() throws Exception {
+   public void testResourceCleanUpOnRestartWithNonZeroSessionExpiryInterval() throws Exception {
+      testResourceCleanUpOnRestartWithSessionExpiryInterval(2);
+   }
+
+   @Test
+   @Timeout(DEFAULT_TIMEOUT_SEC)
+   public void testResourceCleanUpOnRestartWithZeroSessionExpiryInterval() throws Exception {
+      testResourceCleanUpOnRestartWithSessionExpiryInterval(0);
+   }
+
+   private void testResourceCleanUpOnRestartWithSessionExpiryInterval(long sessionExpiryInterval) throws Exception {
       String topic = RandomUtil.randomUUIDString();
       String clientId = RandomUtil.randomUUIDString();
+      CountDownLatch latch = new CountDownLatch(1);
 
       MqttClient client = createPahoClient(clientId);
+      client.setCallback(new LatchedMqttCallback(latch));
       MqttConnectionOptions options = new MqttConnectionOptionsBuilder()
-         .sessionExpiryInterval(999L)
+         .sessionExpiryInterval(sessionExpiryInterval)
          .cleanStart(true)
          .build();
       client.connect(options);
-      client.subscribe(topic, AT_LEAST_ONCE);
+      client.subscribe(topic, EXACTLY_ONCE);
+      client.publish(topic, new byte[0], EXACTLY_ONCE, true);
+      assertTrue(latch.await(2, TimeUnit.SECONDS));
+      assertNotNull(server.locateQueue(MQTTPublishManager.getQoS2ManagementAddressName(SimpleString.of(clientId))));
+      assertEquals(1, getProtocolManager().getStateManager().getDurableSessionStateCount());
       server.stop();
+      try {
+         client.disconnect();
+      } catch (MqttException e) {
+         // ignore
+      }
+      client.close();
       server.start();
-      org.apache.activemq.artemis.tests.util.Wait.assertTrue(() -> getSubscriptionQueue(topic, clientId) != null, 3000, 10);
+      scanSessions();
+      if (sessionExpiryInterval > 0) {
+         assertNotNull(getSubscriptionQueue(topic, clientId));
+         Wait.assertNull(() -> {
+            scanSessions();
+            return getSubscriptionQueue(topic, clientId);
+         }, sessionExpiryInterval * 2 * 1000, 25);
+      } else {
+         assertNull(getSubscriptionQueue(topic, clientId));
+      }
+      assertNull(server.locateQueue(MQTTPublishManager.getQoS2ManagementAddressName(SimpleString.of(clientId))));
+      assertEquals(0, getProtocolManager().getStateManager().getDurableSessionStateCount());
    }
 
    @Test

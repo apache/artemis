@@ -107,7 +107,7 @@ public class MQTTSessionState {
     * <li>byte: version
     * <li>int: subscription count
     * </ul>
-    *  There may be 0 or more subscriptions. The subscription format is as follows.
+    * There may be 0 or more subscriptions. The subscription format is as follows.
     * <ul>
     * <li>String: topic name
     * <li>int: QoS
@@ -115,6 +115,10 @@ public class MQTTSessionState {
     * <li>boolean: retain as published
     * <li>int: retain handling
     * <li>int (nullable): subscription identifier
+    * </ul>
+    * After the subscriptions there is:
+    * <ul>
+    * <li>int (nullable): session expiry interval
     * </ul>
     *
     * @param message the message holding the MQTT session data
@@ -139,7 +143,16 @@ public class MQTTSessionState {
 
          subscriptions.put(topicName, new SubscriptionItem(new MqttTopicSubscription(topicName, new MqttSubscriptionOption(qos, nolocal, retainAsPublished, retainedHandlingPolicy)), subscriptionId));
       }
+      if (buf.readable()) {
+         clientSessionExpiryInterval = buf.readNullableInt();
+      } else {
+         // this is for old records where we don't know the session expiry interval and can't risk removing a subscription illegitimately
+         clientSessionExpiryInterval = session.getProtocolManager().getDefaultMqttSessionExpiryInterval();
+      }
+      disconnectedTime = System.currentTimeMillis();
    }
+
+   // TODO: create a way to send a message in the old format in order to test upgrade functionality
 
    public MQTTSession getSession() {
       return session;
@@ -266,7 +279,10 @@ public class MQTTSessionState {
       return clientSessionExpiryInterval;
    }
 
-   public void setClientSessionExpiryInterval(int sessionExpiryInterval) {
+   public void setClientSessionExpiryInterval(int sessionExpiryInterval) throws Exception {
+      if (session != null && (sessionExpiryInterval != 0 || this.clientSessionExpiryInterval != 0)) {
+         session.getStateManager().storeDurableSessionState(this);
+      }
       this.clientSessionExpiryInterval = sessionExpiryInterval;
    }
 

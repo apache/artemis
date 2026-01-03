@@ -276,7 +276,11 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
       if (disconnect != null && disconnect.variableHeader() instanceof MqttReasonCodeAndPropertiesVariableHeader) {
          Integer sessionExpiryInterval = MQTTUtil.getProperty(Integer.class, ((MqttReasonCodeAndPropertiesVariableHeader)disconnect.variableHeader()).properties(), SESSION_EXPIRY_INTERVAL, null);
          if (sessionExpiryInterval != null) {
-            session.getState().setClientSessionExpiryInterval(sessionExpiryInterval);
+            try {
+               session.getState().setClientSessionExpiryInterval(sessionExpiryInterval);
+            } catch (Exception e) {
+               throw new RuntimeException(e);
+            }
          }
       }
       session.getConnectionManager().disconnect(error);
