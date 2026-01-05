@@ -23,6 +23,8 @@ updates:
       # Ignore all these until we move to JDK >= 21
       - dependency-name: 'org.apache.derby:*'
         versions: '>= 10.16'
+      - dependency-name: 'com.puppycrawl.tools:*'
+        versions: '>= 13'
 
       # Ignore all these until we move to Jakarta
       - dependency-name: 'org.springframework:*'
