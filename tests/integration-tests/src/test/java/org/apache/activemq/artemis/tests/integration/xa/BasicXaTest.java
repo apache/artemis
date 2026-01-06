@@ -233,6 +233,83 @@ public class BasicXaTest extends ActiveMQTestBase {
    }
 
    @TestTemplate
+   public void testInterleavedXaTxRollbackSuccess() throws Exception {
+      Xid xid1 = newXID();
+      Xid xid2 = newXID();
+      ClientSession producerSession = sessionFactory.createSession();
+      ClientProducer producer = producerSession.createProducer(atestq);
+      ClientConsumer consumer = clientSession.createConsumer(atestq);
+      clientSession.start();
+      Queue testQueue = messagingService.locateQueue(atestq);
+
+      clientSession.start(xid1, XAResource.TMNOFLAGS);
+      ClientMessage message = consumer.receiveImmediate();
+      assertNull(message);
+      clientSession.end(xid1, XAResource.TMSUCCESS);
+
+      clientSession.start(xid2, XAResource.TMNOFLAGS);
+
+      clientSession.rollback(xid1);
+
+      // send message outside any tx
+      producer.send(createTextMessage(clientSession, "m1"));
+      Wait.assertEquals(1, () -> testQueue.getMessageCount());
+
+      message = consumer.receiveImmediate();
+      assertNotNull(message);
+      assertEquals(1, testQueue.getDeliveringCount());
+      message.acknowledge();
+
+      clientSession.end(xid2, XAResource.TMSUCCESS);
+      clientSession.prepare(xid2);
+      clientSession.commit(xid2, false);
+      assertEquals(1, testQueue.getMessagesAcknowledged());
+      assertEquals(0, testQueue.getDeliveringCount());
+      assertEquals(0, testQueue.getMessageCount());
+   }
+
+   @TestTemplate
+   public void testInterleavedXaTxRollbackFailed() throws Exception {
+      Xid xid1 = newXID();
+      Xid xid2 = newXID();
+      ClientSession producerSession = sessionFactory.createSession();
+      ClientProducer producer = producerSession.createProducer(atestq);
+      ClientConsumer consumer = clientSession.createConsumer(atestq);
+      clientSession.start();
+      clientSession.setTransactionTimeout(1);
+      Queue testQueue = messagingService.locateQueue(atestq);
+
+      clientSession.start(xid1, XAResource.TMNOFLAGS);
+      ClientMessage message = consumer.receive(2000);
+      // TX will time out here
+      assertNull(message);
+
+      clientSession.start(xid2, XAResource.TMNOFLAGS);
+
+      try {
+         clientSession.rollback(xid1);
+         fail("This rollback should have failed due to the time out");
+      } catch (XAException e) {
+         assertEquals(XAException.XAER_NOTA, e.errorCode);
+      }
+
+      // send message outside any tx
+      producer.send(createTextMessage(clientSession, "m1"));
+      Wait.assertEquals(1, () -> testQueue.getMessageCount());
+
+      message = consumer.receiveImmediate();
+      assertNotNull(message);
+      assertEquals(1, testQueue.getDeliveringCount());
+      message.acknowledge();
+
+      clientSession.end(xid2, XAResource.TMSUCCESS);
+      clientSession.rollback(xid2);
+      assertEquals(0, testQueue.getMessagesAcknowledged());
+      assertEquals(0, testQueue.getDeliveringCount());
+      assertEquals(1, testQueue.getMessageCount());
+   }
+
+   @TestTemplate
    public void testRestartWithTXPrepareDeletedQueue() throws Exception {
 
       ClientSession clientSession2 = sessionFactory.createSession(false, true, true);

@@ -1619,16 +1619,6 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
                // checked heuristic rolled back transactions
                throw new ActiveMQXAException(XAException.XA_HEURRB, "transaction has ben heuristically rolled back: " + xid);
             } else {
-               logger.trace("xarollback into {}, xid={} forcing a rollback regular", theTx, xid);
-
-               try {
-                  // This could have happened because the TX timed out, at this point we would be better on rolling back
-                  // this session as a way to prevent consumers from holding their messages
-                  this.rollback(false);
-               } catch (Exception e) {
-                  ActiveMQServerLogger.LOGGER.unableToRollbackOnTxTimedOut(e);
-               }
-
                throw new ActiveMQXAException(XAException.XAER_NOTA, "Cannot find xid in resource manager: " + xid);
             }
          } else {
