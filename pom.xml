@@ -165,7 +165,7 @@
       <version.org.jacoco.plugin>0.8.14</version.org.jacoco.plugin>
       <version.micrometer>1.16.1</version.micrometer>
       <hamcrest.version>3.0</hamcrest.version>
-      <junit.version>6.0.1</junit.version>
+      <junit.version>6.0.2</junit.version>
       <junit5.version>5.14.0</junit5.version>
       <junit4.version>4.13.2</junit4.version>
       <version.jaxb.runtime>2.3.9</version.jaxb.runtime>
