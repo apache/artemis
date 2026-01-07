@@ -25,7 +25,7 @@
    <parent>
       <groupId>org.apache</groupId>
       <artifactId>apache</artifactId>
-      <version>35</version>
+      <version>36</version>
    </parent>
 
    <modules>
@@ -177,8 +177,6 @@
       <apache.httpcore.version>4.4.16</apache.httpcore.version>
       <apache.httpclient.version>4.5.14</apache.httpclient.version>
       <shrinkwrap-api.version>1.2.6</shrinkwrap-api.version>
-      <!-- Override parent property for shade plugin version -->
-      <version.maven-shade-plugin>3.6.1</version.maven-shade-plugin>
 
       <!-- for JakartaEE -->
       <version.batavia>1.0.15.Final</version.batavia>
