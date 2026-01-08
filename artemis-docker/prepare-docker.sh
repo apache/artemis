@@ -53,20 +53,20 @@ Well done! Now you can continue with building the Docker image:
   # Go to $ARTEMIS_DIST_DIR
   $ cd $ARTEMIS_DIST_DIR
 
-  # For Ubuntu with full JDK 21
-  $ docker build -f ./docker/Dockerfile-ubuntu-21 -t artemis-ubuntu .
+  # For Ubuntu with full JDK 25
+  $ docker build -f ./docker/Dockerfile-ubuntu-25 -t artemis-ubuntu .
 
-  # For Ubuntu with just JRE 21
-  $ docker build -f ./docker/Dockerfile-ubuntu-21-jre -t artemis-ubuntu-jre .
+  # For Ubuntu with just JRE 25
+  $ docker build -f ./docker/Dockerfile-ubuntu-25-jre -t artemis-ubuntu-jre .
 
-  # For Alpine with full JDK 21
-  $ docker build -f ./docker/Dockerfile-alpine-21 -t artemis-alpine .
+  # For Alpine with full JDK 25
+  $ docker build -f ./docker/Dockerfile-alpine-25 -t artemis-alpine .
 
-  # For Alpine with just JRE 21
-  $ docker build -f ./docker/Dockerfile-alpine-21-jre -t artemis-alpine-jre .
+  # For Alpine with just JRE 25
+  $ docker build -f ./docker/Dockerfile-alpine-25-jre -t artemis-alpine-jre .
 
   # Multi-platform for Ubuntu on Linux AMD64 & ARM64 with full JDK
-  $ docker buildx build --platform linux/amd64,linux/arm64 --push -t {your-repository}/apache-artemis:{your-version} -f ./docker/Dockerfile-ubuntu-21 .
+  $ docker buildx build --platform linux/amd64,linux/arm64 --push -t {your-repository}/apache-artemis:{your-version} -f ./docker/Dockerfile-ubuntu-25 .
 
 Note: -t artemis-alpine and -t artemis-ubuntu are just tag names for the purpose of this guide
 
