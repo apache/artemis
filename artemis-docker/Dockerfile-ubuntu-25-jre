@@ -15,10 +15,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# ActiveMQ Artemis
-
 FROM eclipse-temurin:25-jre
-LABEL maintainer="Apache ActiveMQ Team"
+LABEL maintainer="Apache Artemis Team"
 WORKDIR /opt
 
 ENV ARTEMIS_USER=artemis
@@ -37,7 +35,7 @@ RUN apt-get -qq -o=Dpkg::Use-Pty=0 update && \
 
 USER artemis
 
-ADD . /opt/activemq-artemis
+ADD . /opt/artemis
 
 EXPOSE \
 # Port for HTTP

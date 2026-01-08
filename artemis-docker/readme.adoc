@@ -1,1 +1,1 @@
-See the Docker documentation in the xref:../docs/user-manual/docker.adoc[ActiveMQ Artemis User Manual].
+See the Docker documentation in the xref:../docs/user-manual/docker.adoc[Artemis User Manual].

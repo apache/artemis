@@ -15,10 +15,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# ActiveMQ Artemis
-
 FROM eclipse-temurin:25-jre-alpine
-LABEL maintainer="Apache ActiveMQ Team"
+LABEL maintainer="Apache Artemis Team"
 
 # add user and group for artemis
 RUN addgroup --gid 1001 --system artemis && adduser --uid 1001 --ingroup artemis --disabled-password --no-create-home artemis
@@ -35,7 +33,7 @@ ENV EXTRA_ARGS="--http-host 0.0.0.0 --relax-jolokia"
 
 USER artemis
 
-ADD . /opt/activemq-artemis
+ADD . /opt/artemis
 
 EXPOSE \
 # Port for HTTP

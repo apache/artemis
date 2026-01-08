@@ -129,8 +129,8 @@ if [ -n "${FROM_RELEASE}" ]; then
 
   # Check if the release is already available locally, if not try to download it
   if [ -z "$(ls -A ${ARTEMIS_DIST_DIR})" ]; then
-    CDN="$(curl -s https://www.apache.org/dyn/closer.cgi\?preferred=true)activemq/activemq-artemis/${ARTEMIS_VERSION}/"
-    ARCHIVE="https://archive.apache.org/dist/activemq/activemq-artemis/${ARTEMIS_VERSION}/"
+    CDN="$(curl -s https://www.apache.org/dyn/closer.cgi\?preferred=true)artemis/artemis/${ARTEMIS_VERSION}/"
+    ARCHIVE="https://archive.apache.org/dist/artemis/artemis/${ARTEMIS_VERSION}/"
     ARTEMIS_BASE_URL=${CDN}
     ARTEMIS_DIST_FILE_NAME="apache-artemis-${ARTEMIS_VERSION}-bin.tar.gz"
     CURL_OUTPUT="${ARTEMIS_DIST_DIR}/${ARTEMIS_DIST_FILE_NAME}"

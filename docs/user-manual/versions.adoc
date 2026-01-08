@@ -59,6 +59,7 @@ This may impact users filtering results based on this field.
 The functionality previously provided via these parameters was non-functional and ultimately unnecessary.
 Idle connection management should be done through xref:connection-ttl.adoc#detecting-dead-connections[existing parameters].
 * Due to https://issues.apache.org/jira/browse/ARTEMIS-5092[ARTEMIS-5092] all the existing `addSecuritySettings` management methods have been deprecated in favor of the new JSON-based implementation.
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-5843[ARTEMIS-5843] all Docker images use the directory `/opt/artemis` instead of `/opt/activemq-artemis`.
 
 == 2.44.0
 
