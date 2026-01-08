@@ -148,20 +148,28 @@ The broker will add messages as long as all these limits are satisfied.
 If all these values are set to -1 the broker will keep reading messages as long as the consumer is reaching for more messages.
 However this would keep the broker unprotected from consumers allocating huge transactions or consumers that don't have flow control enabled.
 
-== Global Max Size
+== Global Settings
 
-Beyond the `max-size-bytes` on the address you can also set the global-max-size on the main configuration.
-If you set `max-size-bytes` = `-1` on paging the `global-max-size` can still be used.
+Aside from `max-size-bytes` and `max-messages`, which operate on a per-address basis, there are also _global_ settings which apply to all addresses.
 
-== Global Max Messages
+When the total accumulated size or number of messages sent to a the broker exceeds the global limit then the `address-full-policy` for the corresponding address will be enforced.
 
-You can also specify `global-max-messages` on the main configuration, specifying how many messages the system would accept before entering into the configured full policy mode configured.
+If both `max-size-bytes` and `max-messages` are set to `-1` on a particular address the global setting will still be enforced.
 
-When you have more messages than what is configured `global-max-size` any new produced message will make that destination to go through its paging policy.
+=== Global Max Size
 
-`global-max-size` is calculated as a percentage of the max memory available to the Java Virtual Machine, unless specified in the broker.xml configuration directly. The percentage value used is configurable using the option `global-max-size-percent-of-jvm-max-memory` in the XML configuration and if not specified the default value of `global-max-size-percent-of-jvm-max-memory` is 50% or half the max available memory.
+The `global-max-size` is the total number of bytes that can be sent to all the addresses on the broker.
+It is calculated as a percentage of the max memory available to the Java Virtual Machine (i.e. the value of `-Xmx`), unless specified explicitly in `broker.xml`.
+By default, 50% of the max memory is used.
+However, this percentage can be changed using `global-max-size-percent-of-jvm-max-memory` in `broker.xml`.
 
-By default `global-max-messages` = `-1` meaning it's disabled.
+Use `-1` to disable this functionality.
+
+=== Global Max Messages
+
+The `global-max-messages` is the total number of messages that can be sent to all the addresses on the broker.
+
+By default `global-max-messages` is `-1` (i.e. disabled).
 
 == Dropping messages
 
