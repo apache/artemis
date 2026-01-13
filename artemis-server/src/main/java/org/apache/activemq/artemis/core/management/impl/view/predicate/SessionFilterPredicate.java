@@ -16,44 +16,21 @@
  */
 package org.apache.activemq.artemis.core.management.impl.view.predicate;
 
-import org.apache.activemq.artemis.core.management.impl.view.SessionField;
 import org.apache.activemq.artemis.core.server.ServerSession;
 
-public class SessionFilterPredicate extends ActiveMQFilterPredicate<ServerSession> {
-
-   private SessionField f;
+public class SessionFilterPredicate extends ActiveMQFilterPredicate<ServerSession, SessionPredicateFilterPart> {
 
    public SessionFilterPredicate() {
       super();
    }
 
    @Override
-   public boolean test(ServerSession session) {
-      // Using switch over enum vs string comparison is better for perf.
-      if (f == null)
-         return true;
-      return switch (f) {
-         case ID -> matches(session.getName());
-         case CONNECTION_ID -> matches(session.getConnectionID());
-         case CONSUMER_COUNT -> matches(session.getServerConsumers().size());
-         case PRODUCER_COUNT -> matches(session.getServerProducers().size());
-         case PROTOCOL -> matches(session.getRemotingConnection().getProtocolName());
-         case CLIENT_ID -> matches(session.getRemotingConnection().getClientID());
-         case LOCAL_ADDRESS -> matches(session.getRemotingConnection().getTransportConnection().getLocalAddress());
-         case REMOTE_ADDRESS -> matches(session.getRemotingConnection().getTransportConnection().getRemoteAddress());
-         default -> true;
-      };
+   public SessionPredicateFilterPart createFilterPart(String field, String operation, String value) {
+      return new SessionPredicateFilterPart(field, operation, value);
    }
 
    @Override
-   public void setField(String field) {
-      if (field != null && !field.isEmpty()) {
-         this.f = SessionField.valueOfName(field);
-
-         //for backward compatibility
-         if (this.f == null) {
-            this.f = SessionField.valueOf(field);
-         }
-      }
+   protected boolean filter(ServerSession session, SessionPredicateFilterPart filterPart) throws Exception {
+      return filterPart.filterPart(session);
    }
 }
