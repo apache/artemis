@@ -204,6 +204,8 @@
 
       <jackson.version>2.20.1</jackson.version>
 
+      <jolokia.version>2.4.3</jolokia.version>
+
       <activemq.version.versionName>${project.version}</activemq.version.versionName>
       <activemq.version.majorVersion>1</activemq.version.majorVersion>
       <activemq.version.minorVersion>0</activemq.version.minorVersion>

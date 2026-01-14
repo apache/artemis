@@ -57,6 +57,30 @@
         </exclusion>
       </exclusions>
     </dependency>
+    <dependency>
+      <groupId>org.jolokia</groupId>
+      <artifactId>jolokia-json</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.jolokia</groupId>
+      <artifactId>jolokia-server-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.jolokia</groupId>
+      <artifactId>jolokia-server-detector</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.jolokia</groupId>
+      <artifactId>jolokia-service-jmx</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.jolokia</groupId>
+      <artifactId>jolokia-service-jsr160</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.jolokia</groupId>
+      <artifactId>jolokia-service-serializer</artifactId>
+    </dependency>
   </dependencies>
 
   <build>
@@ -94,6 +118,12 @@
                 <exclude>WEB-INF/lib/error_prone_annotations-*.jar</exclude>
                 <exclude>WEB-INF/lib/j2objc-annotations-*.jar</exclude>
                 <exclude>WEB-INF/classes/log4j2.properties</exclude>
+                <exclude>WEB-INF/lib/jolokia-json-*.jar</exclude>
+                <exclude>WEB-INF/lib/jolokia-server-core-*.jar</exclude>
+                <exclude>WEB-INF/lib/jolokia-server-detector-*.jar</exclude>
+                <exclude>WEB-INF/lib/jolokia-service-jmx-*.jar</exclude>
+                <exclude>WEB-INF/lib/jolokia-service-jsr160-*.jar</exclude>
+                <exclude>WEB-INF/lib/jolokia-service-serializer-*.jar</exclude>
               </excludes>
             </overlay>
           </overlays>

@@ -943,6 +943,14 @@
             <type>pom</type>
             <scope>import</scope>
          </dependency>
+
+         <dependency>
+            <groupId>org.jolokia</groupId>
+            <artifactId>jolokia-bom</artifactId>
+            <version>${jolokia.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+         </dependency>
       </dependencies>
    </dependencyManagement>
 
