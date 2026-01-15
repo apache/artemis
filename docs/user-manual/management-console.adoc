@@ -2,17 +2,19 @@
 :idprefix:
 :idseparator: -
 :docinfo: shared
+:experimental:
 
-{project-name-full} ships by default with a management console.
-It is powered by http://hawt.io[Hawt.io].
+{project-name-full} ships by default with a management console powered by http://hawt.io[Hawt.io].
 
-Its purpose is to expose the xref:management.adoc#management[Management API] via a user-friendly web ui.
+Its purpose is to expose the xref:management.adoc#management[Management API] via a user-friendly web interface.
 
-== Login
+== Logging In
 
 To access the management console, use a browser and go to the URL link:[http://localhost:8161/console].
 
-A login screen will be presented, if your broker is secure, you will need to use a user with admin role, if it is unsecure simply enter any user/password.
+A login screen will be presented.
+If your broker is secured, you will need to use a user with admin role.
+If it is unsecured, enter any user/password.
 
 image::images/console-login.png[Apache Artemis Console Login]
 
@@ -31,6 +33,7 @@ Pay particular attention to the `<cors>` restrictions when exposing the console 
 Any request with an `Origin` header using the HTTPS scheme which is ultimately received by Jolokia via HTTP is discarded by default since it is deemed insecure.
 If you use a TLS proxy that transforms secure requests to insecure requests (e.g. in a Kubernetes environment) then consider changing the proxy to preserve HTTPS and switching the embedded web server to HTTPS.
 If that isn’t feasible then you can accept the risk by specifying following element
+
 [,xml]
 ----
 <cors>
@@ -45,117 +48,262 @@ Problems with Jolokia security are often observed as the ability to login to the
 
 == Console
 
-Once logged in you should be presented with a screen similar to.
+Once logged in you should be presented with a screen similar to:
 
 image::images/console-artemis-plugin.png[Apache Artemis Console Artemis Plugin]
 
-=== Navigation Menu
+=== Utility Menu
 
-On the top right is a small menu area where you will see some icons.
+On the top right is a small menu area where you will see some icons:
 
-* `question mark`
-This will open a menu with the following items
-** `Help` This will navigate to the console user guide
-** `About` this will load an about screen, here you will be able to see and validate versions
-* `person`
-will provide a drop-down menu with
-** `Preferences` this will open the preference page
+image::images/utility_menu.png[Apache Artemis Console Utility Menu]
+
+* `?` (question mark) A drop-down menu with:
+** `Help` The console user guide
+** `About` A screen displaying version number for the various components that comprise the web console
+* `<username>` A drop-down menu with:
+** `Preferences` Open the preference page for the current user
 ** `Log out` self descriptive.
 
-=== Navigation Tabs
+=== Management Views
 
-Running below the navigation menu, you will see several default feature tabs.
+On the left you will see menu items to switch between the various management views.
 The first two are specific to the broker.
-The rest of this document will feature on these two tabs.
+The rest of this document will focus on these two views.
 
-* `Artemis` This shows detailed information of {project-name-full} specific functionality in a tabular format.
-* `Artemis JMX` This is a JMX view of {project-name-full} specific functionality.
-* `JMX` This exposes the raw Jolokia JMX so you can browse/access all the JMX endpoints exposed by the JVM.
-* `Runtime` This allows you to monitor the thread usage and their state as well as view metrics, etc.
+This menu can be disabled or enabled using the `☰` icon in the very top left.
+
+image::images/managment_views.png[Apache Artemis Console Management Views]
+
+Artemis:: A tabbed view containing paged detailes about various broker resources like addresses, queues, connections, etc.
+The most common management operations for the corresponding resource are available on this view.
+Artemis JMX:: A tree view allowing access to all the JMX MBeans registered by the broker.
+_Every_ management operation and attribute is available in this view.
+JMX:: A tree view allowing access to all the JMX MBeans registered in the JVM, not just ones registered by the broker.
+Runtime:: A tabbed view containing information about system properties, metrics about system load, and thread details.
 
 In previous versions there was a "Connect" tab which could be used to connect to a remote broker from the same console.
 This was disabled by default for security purposes, but it can be enabled again by removing `-Dhawtio.disableProxy=true` from `artemis.profile` (or `artemis.profile.cmd` on Windows).
 
-You can install further hawtio plugins if you wish to have further functionality.
+You can install further Hawtio plugins if you wish to have further functionality.
 
-== Artemis Tab
+== Artemis View
 
-Click `Artemis` in the left navigation bar to see the broker-specific plugin.
-The `Artemis` tab shows information in a tabular format.
-(The Artemis tab won't appear if there is no broker in this JVM).
+Click kbd:[Artemis] in the left navigation bar to see the broker-specific plugin.
+The Artemis view shows data in a tabular format.
+(The Artemis view won't appear if there is no broker in this JVM).
+
+The following functionality is available on every tab that shows tabulated data:
+
+Configurable Columns::
+The columns displayed are configurable via kbd:[Manage Columns].
+This is persisted in the web session's local storage and available when a new session is started.
+
+Ordered Rows::
+Data can be ordered by clicking on the sort icon on the top left toolbar, selecting the column to sort, and choosing either ascending or descending or by clicking kbd:[↑] or kbd:[↓].
+
+Searchable::
+Data can also be filtered by a value in a particular column by selecting the column and operator from the dropdowns and entering a value to search for.
+
+Contextual Operations::
+At the end of most rows is a kbd:[⋮] which can be clicked to show a menu of contextual operations for that particular resource.
 
 === Status Tab
 
-The `Status` tab shows the basic health of the broker.
-
-==== Acceptors
-
-This expands to show and expose details of the current configured acceptors.
-
-==== Broker Network
-
-This expands to show and expose details of the current cluster of brokers.
+The Status tab is the default tab shown after login and shows the basic state of the broker, including uptime, the address memory used, and the type of broker deployed.
+It also shows the status of each acceptor configured as well as the network status is a cluster of brokers.
+This status refreshes every 5 seconds.
 
 === Connections Tab
 
-This shows a table of all the connections from clients and other brokers.
+The Connections tab lists all the connection to the broker.
+
+image::images/connections_tab.png[Apache Artemis Console Connections Tab]
+
+Clicking on the `Session Count` _value_ will navigate to the Sessions tab and automatically filter on the chosen connection.
+
+Contextual Operations in kbd:[⋮]
+
+* kbd:[Close]
 
 === Sessions Tab
 
-This shows a table of all sessions that belong to connected clients.
+The Sessions tab will list all the session open on the broker.
+
+image::images/sessions_tab.png[Apache Artemis Console Sessions Tab]
+
+Clicking on the `Connection ID` _value_ will automatically navigate to the Connections tab and filter on that connection.
+
+Clicking on the `Consumer Count` _value_ will automatically navigate to the Consumers tab and filter on the consumer chosen.
+
+Clicking on the `Producer Count` _value_ will automatically navigate to the Producers tab and filter on the producer chosen.
+
+Contextual Operations in kbd:[⋮]
+
+* kbd:[Close]
 
 === Producers Tab
 
-This shows a table of all client producers, including messages sent information.
+The Producers tab will list all the producers open on the broker.
+
+image::images/producers_tab.png[Apache Artemis Console Producers Tab]
+
+Clicking on the `Session` value will navigate to the Sessions tab and filter on the session chosen.
+
+Clicking on the `Address` value will navigate to the Address tab and filter on that address
 
 === Consumers Tab
 
-This shows a table of all client consumers, including messages delivered information.
+The Consumers tab will list all the Consumers open on the broker.
+
+image::images/consumers_tab.png[Apache Artemis Console Consumers Tab]
+
+Clicking on the `Session` value will navigate to the Sessions tab and filter on the session chosen.
+
+Clicking on the `Address` value will navigate to the Address tab and filter on that address
+
+Clicking on the `Queue` value will navigate to the Queue tab and filter on that queue
+
+Contextual Operations in kbd:[⋮]
+
+* kbd:[Close]
 
 === Addresses Tab
 
-This shows a table of all the Broker's addresses
+The Addresses tab will list all the addresses on the broker.
 
-==== Key Operations
+image::images/addresses_tab.png[Apache Artemis Console Addresses Tab]
 
-===== Creating a new Address
+To create a new address click kbd:[Create Address] and fill in the form presented.
 
-To create a new address simply click on the "Create Address" button and fill in the form presented.
+Clicking on the `Queue Count` value will navigate to the Queues tab and filter on those queues.
 
-You can also perform operations on an address by clicking on the 3 dots and choosing the appropriate operation.
+Contextual Operations in kbd:[⋮]
 
+* kbd:[Show in Artemis JMX] - Navigate to the Artemis JMX view and automatically select the addresses MBean.
+* kbd:[Attributes] - Show all the address MBean attributes and allow editing if permissions allow.
+* kbd:[Operations] - Show all the address MBean operations and allow execution of permissions allow.
+* kbd:[Delete Address] - Confirm deletion of the address if permissions allow.
+* kbd:[Send Message] - Send a message to this queue if permissions allow.
+This in turn will route it to any queues that are bound to this address.
+Both headers and a body can be added. The message type is always _text_.
+
+NOTE: Sending will be authenticated using the _current user_.
+Unselect the current logged in user to specify a different user.
+
+* kbd:[Create Queue] - Open up a dialog which will allow the user to create queues that are bound to the corresponding address.
+A subset of queue parameters are available for direct configuration.
+However, parameters not exposed can be configured using a set of key/value pairs, for instance `delay-before-dispatch` or `auto-delete`.
 
 === Queues Tab
 
-This shows a table of all the Broker's queues
+The Queues tab will list all the queues on the broker.
 
-== Artemis JMX Tab
+image::images/queues_tab.png[Apache Artemis Console Queues Tab]
 
-Click `Artemis JMX` in the left navigation bar to see the Artemis JMX specific plugin.
+Clicking on the `Address` value will navigate to the Addresses tab and filter on the address chosen.
+
+Clicking on the `Consumer Count` value will navigate to the Consumers tab and filter on the queue chosen.
+
+Clicking on the `Message Count` value will show a different view allowing the user to <<#browsing-messages,browse messages>>.
+
+Contextual Operations in kbd:[⋮]
+
+* kbd:[Show in Artemis JMX] - Navigate to the Artemis JMX view and automatically select the queue MBean.
+* kbd:[Attributes] - Show all the queue MBean attributes and allow editing if permissions allow.
+* kbd:[Operations] - Show all the queue MBean operations and allow execution of permissions allow.
+* kbd:[Send Message] - Send a message to this queue if permissions allow.
+This in turn will route it to any queues that are bound to this address.
+Both headers and a body can be added. The message type is always _text_.
+
+NOTE: Sending will be authenticated using the _current user_.
+Unselect the current logged in user to specify a different user.
+
+* kbd:[Purge] - Remove *all* messages from the queue if permissions allow.
+* kbd:[Browse] - Details <<#browsing-messages,here>>.
+* kbd:[Delete] - Confirm deletion of the queue if permissions allow.
+
+==== Browsing Messages
+
+Users can view a paginated list of the messages on a queue.
+Messages can be filtered, deleted, moved, copied, and resent.
+Although there may be a large number of messages in the queue the console only fetches a single page at a time from the broker.
+The console will retrieve each page of messages afresh when the list is iterated over or the order or filters are changed.
+
+image::images/browse_messagse.png[Apache Artemis Console Browse Messages]
+
+===== Filtering
+
+Messages can be filtered using the JMS Message Selector Syntax as described xref:filter-expressions.adoc#filter-expressions[here].
+For example, if you wanted to filter on messages that contained the Message Header myheader which was set to octopus, you would enter `myheader=’octopus’` in the text box in the top left and click kbd:[Filter].
+
+===== Deleting
+
+Messages can be deleted in bulk by selecting the relevant checkbox of each message on the left hand side and clicking kbd:[Delete].
+This will open up a dialog box to confirm deletion.
+Note that this operation cannot be undone.
+
+NOTE: Messages can also be individually deleted by using the contextual operation in kbd:[⋮].
+
+===== Moving
+
+Messages can be moved in bulk to another queue by selecting the relevant checkbox of each message on the left hand side and clicking kbd:[Move].
+This will open up a dialog box that has a searchable drop down box for easy searching of available target queues.
+Start typing the name of the queue to which you want to move the messages.
+
+Moving a message removes it from the source queue and adds it to the target queue.
+This operation cannot be undone.
+
+===== Copying
+
+Messages can be moved in bulk to another queue by selecting the relevant checkbox of each message on the left hand side and clicking kbd:[Copy].
+This will open up a dialog box that has a searchable drop down box for easy searching of available target queues.
+Start typing the name of the queue to which you want to move the messages.
+
+Copying a message does _not_ remove it from the source queue.
+It simply adds it to the target queue.
+This operation cannot be undone.
+
+===== Resending
+
+Messages can be __re__sent to the original address by using the contextual operation in kbd:[⋮].
+This will open up a dialog that allows you to send a _new_ message _initialized with the details of the selected message_.
+
+This operation allows the user to change the details of the message if necessary (e.g. body, properties, user, etc.).
+It's not necessarily a strict _copy_ of the message.
+
+===== Detailed Viewing
+
+It's possible to get a detailed view of a single message by clicking on the `Message ID` value or by using the contextual operation in kbd:[⋮].
+Details include the body of the message (insofar as it can be deserialized), message properties, and message headers.
+
+=== Broker Diagram
+
+The Broker Diagram tab shows a visual representation of the broker, its addresses & queues, and any other broker that may be in the cluster.
+You can choose which nodes to show by clicking on kbd:[Node Options].
+
+Clicking on the node will also fetch up the attributes of the associated MBean.
+
+image::images/broker_diagram_tab.png[Apache Artemis Console Broker Diagram]
+
+== Artemis JMX View
+
+Click kbd:[Artemis JMX] in the left navigation bar to see the Artemis JMX specific plugin.
 (The Artemis JMX tab won't appear if there is no broker in this JVM).
-The Artemis JMX plugin works very much the same as the JMX plugin however with a focus on interacting with an Artemis broker.
+The Artemis JMX plugin works very much the same as the normal JMX plugin, however with a focus on interacting with an Artemis broker.
 
-=== Tree View
+image::images/artemis_jmx_tree.png[Apache Artemis Console Broker Diagram]
 
-The tree view on the left-hand side shows the top level JMX tree of each broker instance running in the JVM.
-Expanding the tree will show the various MBeans registered by Artemis that you can inspect via the *Attributes* tab.
+Aside from MBean attributes and operations other tabs are also available based on what kind of resource is being viewed:
 
-=== Key Operations
-
-==== Creating a new Address
-
-To create a new address simply click on the broker or the address folder in the jmx tree and click on the create tab.
-
-Once you have created an address you should be able to *Send* to it by clicking on it in the jmx tree and clicking on the send tab.
-
-==== Creating a new Queue
-
-To create a new queue click on the address you want to bind the queue to and click on the create tab.
-
-Once you have created a queue you should be able to *Send* a message to it or *Browse* it or view the  *Attributes* or *Charts*.
-Simply click on the queue in th ejmx tree and click on the appropriate tab.
-
-You can also see a graphical view of all brokers, addresses, queues and their consumers using the *Diagram* tab.
+* Address
+** Create Queue
+** Delete Address
+** Send Message
+* Queue
+** Browse Messages
+** Delete Queue
+** Send Message
 
 == Status Logging
 
