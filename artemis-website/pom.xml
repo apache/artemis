@@ -386,6 +386,7 @@
                         <project-name-full-url>apache-artemis</project-name-full-url>
                         <project-name-short>Artemis</project-name-short>
                         <log4j-version>${log4j.version}</log4j-version>
+                        <artemis-console-version>${artemis-console-version}</artemis-console-version>
                      </attributes>
                      <logHandler>
                         <outputToConsole>false</outputToConsole>

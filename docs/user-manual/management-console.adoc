@@ -3,18 +3,7 @@
 :idseparator: -
 :docinfo: shared
 
-{project-name-full} ships by default with a management console.
-It is powered by http://hawt.io[Hawt.io].
-
-Its purpose is to expose the xref:management.adoc#management[Management API] via a user-friendly web ui.
-
-== Login
-
-To access the management console, use a browser and go to the URL link:[http://localhost:8161/console].
-
-A login screen will be presented, if your broker is secure, you will need to use a user with admin role, if it is unsecure simply enter any user/password.
-
-image::images/console-login.png[Apache Artemis Console Login]
+{project-name-full} ships by default with a management console powered by http://hawt.io[Hawt.io].
 
 == Security
 
@@ -31,6 +20,7 @@ Pay particular attention to the `<cors>` restrictions when exposing the console 
 Any request with an `Origin` header using the HTTPS scheme which is ultimately received by Jolokia via HTTP is discarded by default since it is deemed insecure.
 If you use a TLS proxy that transforms secure requests to insecure requests (e.g. in a Kubernetes environment) then consider changing the proxy to preserve HTTPS and switching the embedded web server to HTTPS.
 If that isn’t feasible then you can accept the risk by specifying following element
+
 [,xml]
 ----
 <cors>
@@ -43,119 +33,17 @@ If that isn’t feasible then you can accept the risk by specifying following el
 
 Problems with Jolokia security are often observed as the ability to login to the console, but the console is blank.
 
-== Console
+=== Logging In
 
-Once logged in you should be presented with a screen similar to.
+To access the management console, use a browser and go to the URL link:[http://localhost:8161/console].
 
-image::images/console-artemis-plugin.png[Apache Artemis Console Artemis Plugin]
+A login screen will be presented.
+If your broker is secured, you will need to use a user with admin role.
+If it is unsecured, enter any user/password.
 
-=== Navigation Menu
+image::images/console-login.png[Apache Artemis Console Login]
 
-On the top right is a small menu area where you will see some icons.
-
-* `question mark`
-This will open a menu with the following items
-** `Help` This will navigate to the console user guide
-** `About` this will load an about screen, here you will be able to see and validate versions
-* `person`
-will provide a drop-down menu with
-** `Preferences` this will open the preference page
-** `Log out` self descriptive.
-
-=== Navigation Tabs
-
-Running below the navigation menu, you will see several default feature tabs.
-The first two are specific to the broker.
-The rest of this document will feature on these two tabs.
-
-* `Artemis` This shows detailed information of {project-name-full} specific functionality in a tabular format.
-* `Artemis JMX` This is a JMX view of {project-name-full} specific functionality.
-* `JMX` This exposes the raw Jolokia JMX so you can browse/access all the JMX endpoints exposed by the JVM.
-* `Runtime` This allows you to monitor the thread usage and their state as well as view metrics, etc.
-
-In previous versions there was a "Connect" tab which could be used to connect to a remote broker from the same console.
-This was disabled by default for security purposes, but it can be enabled again by removing `-Dhawtio.disableProxy=true` from `artemis.profile` (or `artemis.profile.cmd` on Windows).
-
-You can install further hawtio plugins if you wish to have further functionality.
-
-== Artemis Tab
-
-Click `Artemis` in the left navigation bar to see the broker-specific plugin.
-The `Artemis` tab shows information in a tabular format.
-(The Artemis tab won't appear if there is no broker in this JVM).
-
-=== Status Tab
-
-The `Status` tab shows the basic health of the broker.
-
-==== Acceptors
-
-This expands to show and expose details of the current configured acceptors.
-
-==== Broker Network
-
-This expands to show and expose details of the current cluster of brokers.
-
-=== Connections Tab
-
-This shows a table of all the connections from clients and other brokers.
-
-=== Sessions Tab
-
-This shows a table of all sessions that belong to connected clients.
-
-=== Producers Tab
-
-This shows a table of all client producers, including messages sent information.
-
-=== Consumers Tab
-
-This shows a table of all client consumers, including messages delivered information.
-
-=== Addresses Tab
-
-This shows a table of all the Broker's addresses
-
-==== Key Operations
-
-===== Creating a new Address
-
-To create a new address simply click on the "Create Address" button and fill in the form presented.
-
-You can also perform operations on an address by clicking on the 3 dots and choosing the appropriate operation.
-
-
-=== Queues Tab
-
-This shows a table of all the Broker's queues
-
-== Artemis JMX Tab
-
-Click `Artemis JMX` in the left navigation bar to see the Artemis JMX specific plugin.
-(The Artemis JMX tab won't appear if there is no broker in this JVM).
-The Artemis JMX plugin works very much the same as the JMX plugin however with a focus on interacting with an Artemis broker.
-
-=== Tree View
-
-The tree view on the left-hand side shows the top level JMX tree of each broker instance running in the JVM.
-Expanding the tree will show the various MBeans registered by Artemis that you can inspect via the *Attributes* tab.
-
-=== Key Operations
-
-==== Creating a new Address
-
-To create a new address simply click on the broker or the address folder in the jmx tree and click on the create tab.
-
-Once you have created an address you should be able to *Send* to it by clicking on it in the jmx tree and clicking on the send tab.
-
-==== Creating a new Queue
-
-To create a new queue click on the address you want to bind the queue to and click on the create tab.
-
-Once you have created a queue you should be able to *Send* a message to it or *Browse* it or view the  *Attributes* or *Charts*.
-Simply click on the queue in th ejmx tree and click on the appropriate tab.
-
-You can also see a graphical view of all brokers, addresses, queues and their consumers using the *Diagram* tab.
+Once logged in check out the https://artemis.apache.org/components/artemis-console/documentation/version/${artemis-console-version}[Artemis Console documentation] for details on how to use the console.
 
 == Status Logging
 
