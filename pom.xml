@@ -170,7 +170,7 @@
       <junit4.version>4.13.2</junit4.version>
       <version.jaxb.runtime>2.3.9</version.jaxb.runtime>
       <paho.client.mqtt.version>1.2.5</paho.client.mqtt.version>
-      <postgresql.version>42.7.8</postgresql.version>
+      <postgresql.version>42.7.9</postgresql.version>
       <testcontainers.version>1.21.4</testcontainers.version>
       <selenium.version>4.39.0</selenium.version>
       <exec-maven-plugin.version>3.6.3</exec-maven-plugin.version>
