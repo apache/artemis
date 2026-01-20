@@ -1753,6 +1753,10 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
 
          Transaction tx = lookupTX(messageSend.getTransactionId(), session);
 
+         if (messageSend.getTransactionId() != null && tx == null) {
+            throw new IllegalStateException("Transaction not started, " + messageSend.getTransactionId());
+         }
+
          session.getCoreSession().resetTX(tx);
          try {
             session.send(producerInfo, messageSend, sendProducerAck);

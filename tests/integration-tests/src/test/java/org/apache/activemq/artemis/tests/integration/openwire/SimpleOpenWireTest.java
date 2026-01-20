@@ -1338,6 +1338,35 @@ public class SimpleOpenWireTest extends BasicOpenWireTest {
    }
 
    @Test
+   public void testXAFailureBeforeSend() throws Exception {
+      try {
+         XAConnection connection = xaFactory.createXAConnection();
+
+         XASession xasession = connection.createXASession();
+
+         Xid xid = newXID();
+         xasession.getXAResource().start(xid, XAResource.TMNOFLAGS);
+         Queue queue = xasession.createQueue(queueName);
+         MessageProducer producer = xasession.createProducer(queue);
+         // removing the tx here should cause the send to fail on the broker
+         server.getResourceManager().removeTransaction(xid, null);
+         try {
+            producer.send(xasession.createTextMessage("hello"));
+            xasession.getXAResource().end(xid, XAResource.TMSUCCESS);
+            fail("Should have thrown an exception here");
+         } catch (XAException e) {
+            // ignore
+         }
+
+         connection.close();
+
+         assertEquals(0, server.locateQueue(queueName).getMessageCount());
+      } catch (Exception e) {
+         e.printStackTrace();
+      }
+   }
+
+   @Test
    public void testAutoSend() throws Exception {
       connection.start();
       Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
