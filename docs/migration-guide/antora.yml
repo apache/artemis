@@ -1,0 +1,6 @@
+name: migration-guide
+title: Migration Guide
+version: ~ # version is essentially ignored since we always just deploy the latest
+start_page: ROOT:index.adoc
+nav:
+  - modules/ROOT/nav.adoc

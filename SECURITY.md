@@ -6,7 +6,7 @@ Artemis is a project of the [Apache Software Foundation](https://apache.org) and
 
 Before reporting a vulnerability please ensure:
 
-- It falls within the scope of our [threat model](docs/user-manual/threat-model.adoc).
+- It falls within the scope of our [threat model](docs/user-manual/modules/ROOT/pages/threat-model.adoc).
 - It has not already been reported. Existing advisories are enumerated on [our website](https://artemis.apache.org/components/artemis/security).
 
 To report a new vulnerability please follow the [ASF vulnerability reporting process](https://security.apache.org/report/).

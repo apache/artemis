@@ -1,0 +1,1 @@
+This User Manual outlines how to configure and use {project-name-full} {project-version}.

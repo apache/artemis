@@ -1,0 +1,1589 @@
+= Version History
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+This chapter provides the following information for each release:
+
+* A link to the full release notes which includes all issues resolved in the release.
+* A brief list of "highlights" when applicable.
+* If necessary, specific steps required when upgrading from the previous version.
+
+NOTE: If the upgrade spans multiple versions then the steps from *each* version need to be followed in order.
+
+NOTE: Follow the general upgrade procedure outlined in the xref:upgrading.adoc#upgrading-the-broker[Upgrading the Broker]  chapter in addition to any version-specific upgrade instructions outlined here.
+
+:sectnums!:
+
+== Version 2.54.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12356777[Full release notes]
+
+=== Highlights
+
+* OpenID Connect is now supported via the xref:security.adoc#oidcloginmodule[`OIDCLoginModule`].
+A full demonstration is available in the https://github.com/apache/artemis-examples/tree/main/examples/features/standard/security-oidc[examples repo].
+* The xref:configuring-transports.adoc#configuring-netty-ssl[`keyPassword`] property is now supported for SSL connections.
+It is used to access the private key within a keystore.
+It is only supported for JKS & JCEKS stores.
+* The xref:using-cli.adoc[CLI] now supports listing xref:lock-coordination.adoc[locks] and their status via the `lock list` command.
+* The xref:management-console.adoc[web console] was upgraded to 1.8.0.
+This release mainly contains bug fixes and dependency updates.
+See the https://issues.apache.org/jira/projects/ARTEMIS/versions/12356761[release notes] for more details.
+
+=== Upgrading from 2.53.0
+
+* To improve security we've hardened the broker in a few areas:
+** First, *any connection using the default values of `cluster-user` and `cluster-password` will be rejected*.
++
+Therefore, any broker using the default `cluster-user` and `cluster-password` will no longer cluster properly.
+To restore functionality, use a non-default value for `cluster-user` and `cluster-password`.
++
+This change similarly impacts any Core bridge connecting to a secured broker using the default `user` and `password` because those defaults are based on the default  `cluster-user` and `cluster-password` respectively.
+To restore functionality, we recommend specifying `user` and `password` values on the `bridge` that correspond to a valid user account on the target broker. The corresponding role on the target broker should have the xref:security.adoc#role-based-security-for-addresses[`send` permission] for the bridge's `forwarding-address`.
+** When creating a broker via the xref:using-cli.adoc[CLI] (i.e., using the `create` command) we've always prompted users for default credentials.
+However, there was a `--silent` option that would skip all prompts and use default values.
+This has been changed so that that no passwords will have default values, even when using the `--silent` option.
+**When using `--silent` you will need to explicitly define password values** (e.g., via `--password`, `--cluster-password`, etc.) or creation will fail.
+** Values specified for `--cluster-user` when creating a broker instance (either explicitly via the command-line switch or interactively) will be masked automatically using the xref:masking-passwords.adoc#the-default-codec[the default codec].
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-5949[ARTEMIS-5949], the `security-settings` in the default `broker.xml` have changed so that permissions are explicitly set on the management address.
+There is no semantic change.
+This is simply to clarify permissions so that security is easier to understand.
+
+== Version 2.53.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12356748[Full release notes]
+
+=== Highlights
+
+* The documentation chapters have been reorganized
+* The PDF output has been improved for better readability
+* https://issues.apache.org/jira/browse/ARTEMIS-5925[ARTEMIS-5925] - The Lock coordinator can now be applied to broker connections, supporting "Star Mirror" for enhanced HA topologies
+* https://issues.apache.org/jira/browse/ARTEMIS-5946[ARTEMIS-5946] - Update to Artemis Console 1.7.0
+* https://issues.apache.org/jira/browse/ARTEMIS-5941[ARTEMIS-5941] - Route wildcard subscriptions direct to demand bindings for improved performance
+* https://issues.apache.org/jira/browse/ARTEMIS-5951[ARTEMIS-5951] - CTRL+C is now properly handled on `artemis shell`
+* https://issues.apache.org/jira/browse/ARTEMIS-5954[ARTEMIS-5954] - `artemis shell` now supports command history
+* https://issues.apache.org/jira/browse/ARTEMIS-5607[ARTEMIS-5607] - It is now possible to disable JMX notifications
+* For developers, due to https://issues.apache.org/jira/browse/ARTEMIS-5896[ARTEMIS-5896] ErrorProne will only run when building with Java 25+.
+
+== Version 2.52.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12356678[Full release notes]
+
+=== Highlights
+
+* Fix for https://issues.apache.org/jira/browse/ARTEMIS-5928[ARTEMIS-5928].
+
+=== Upgrading from 2.51.0
+
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-5928[ARTEMIS-5928], any broker receiving Core downstream federation requests from another broker (e.g. for xref:federation-address.adoc#configuring-downstream-federation[addresses] or xref:federation-queue.adoc#configuring-downstream-federation[queues]) will reject those requests until the appropriate authorization is configured.
+Authorization is configured in `broker.xml` via the `federations` element using the `downstream-authorization` attribute.
+See the xref:federation-address.adoc#configuring-downstream-federation[downstream address federation] or xref:federation-queue.adoc#configuring-downstream-federation[downstream queue federation] documentation for more details.
+
+== Version 2.51.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12356605[Full release notes]
+
+=== Highlights
+
+* https://issues.apache.org/jira/browse/ARTEMIS-5852[Lock Coordinator for Acceptors]
+** When you combine this new functionality with Mirroring, it can now be used for High Availability as a better alternative to journal replication
+* https://issues.apache.org/jira/browse/ARTEMIS-5862[CLI command to export broker.properties]
+
+== Version 2.50.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12356368[Full release notes]
+
+=== Highlights
+
+* This is our first release as *Apache Artemis*!
+To be clear, we are maintaining package & code compatibility and publishing relocations to Maven so that *users don't need to make any changes in the short term*.
+* Compression for HTTP is now possible.
+This will benefit any use-case involving large payloads for HTTP-based management responses.
+For example, if you're using the web console and you have a large number of addresses and/or queues, if you're browsing a large number of messages, etc.
+This will also benefit any use-case where a large number of metrics are reported via HTTP (e.g. using the Prometheus metrics plugin).
+Configuration details are xref:web-server.adoc#configuration[here].
+* Broker properties can now be used to configure JAAS.
+This was previously only possible via `login.config`.
+See more details xref:configuration-index.adoc#jaas[here].
+* Improvements to the management API:
+** Support for adding security-settings via JSON.
+** The `AddressControl` now reports whether an address is blocked via management using the `BlockedViaManagement` attribute.
+Previously it was unclear if message production to the address had been blocked via the `block` management operation.
+** The `QueueControl` now has ability to "retry" messages in a DLQ using a xref:filter-expressions.adoc#filter-expressions[filter].
+* The `consumer` CLI command now supports `subscriptionName` for JMS durable subscriber use-cases.
+Run `./artemis help consumer` from your broker instance's `bin` directory for more details.
+* There are two new TLS transport options - `crcOptions` & `ocspResponderURL`.
+These will help with certificate management.
+See details xref:configuring-transports.adoc#configuring-netty-ssl[here].
+* The new xref:paging.adoc#monitoring-disk[`disk-full-policy`] `address-setting` allows new behaviors when the broker's disk fills up instead of always blocking.
+* There's a new `artemis-jakarta-client` feature for Karaf use-cases needing Jakarta compatibility.
+
+=== Upgrading from 2.44.0
+
+* The components Maven groupId has changed to `org.apache.artemis` to reflect the new Apache Artemis project.
+You should update your dependency declarations.
+https://artemis.apache.org/artemis-tlp-groupid-migration[Click here] for more details.
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-5770[ARTEMIS-5770] the formatting of the "Local Address" field has changed.
+This field is available on the "Connections," "Sessions," "Consumers," and "Producers" tabs.
+This may impact users filtering results based on this field.
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-5819[ARTEMIS-5819] the following HTTP-specific transport configuration parameters have been deprecated:
+** `httpClientIdleTime`
+** `httpClientIdleScanPeriod`
+** `httpResponseTime`
+** `httpServerScanPeriod`
+
++
+
+The functionality previously provided via these parameters was non-functional and ultimately unnecessary.
+Idle connection management should be done through xref:connection-ttl.adoc#detecting-dead-connections[existing parameters].
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-5092[ARTEMIS-5092] all the existing `addSecuritySettings` management methods have been deprecated in favor of the new JSON-based implementation.
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-5843[ARTEMIS-5843] all Docker images use the directory `/opt/artemis` instead of `/opt/activemq-artemis`.
+
+== Version 2.44.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12356324[Full release notes]
+
+=== Highlights
+
+* Support for building and running on Java 25. https://issues.apache.org/jira/browse/ARTEMIS-5711[Click here] for more details.
+* Support xref:web-server.adoc#binding[toggling off HTTP/2 support] for the management web server. https://issues.apache.org/jira/browse/ARTEMIS-5723[Click here] for more details.
+
+== Version 2.43.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12356053[Full release notes]
+
+=== Highlights
+
+* Broker observability has improved with the new ability to export xref:metrics.adoc#executor-services[metrics for executor services] (aka thread pools).
+* The https://github.com/haproxy/haproxy/blob/master/doc/proxy-protocol.txt[PROXY Protocol] is now supported!
+This means that clients connecting through an applicable reverse proxy (e.g. HAProxy, nginx, etc.) will have the original client IP address reflected in the logs and in the web console rather than that of the proxy itself.
+More details available xref:proxy-protocol.adoc[here].
+* It is now possible to remove or add acceptors or a running broker. https://issues.apache.org/jira/browse/ARTEMIS-5609[Click here] for more details.
+* AMQP Federation now supports filtering. https://issues.apache.org/jira/browse/ARTEMIS-5625[Click here] for more details.
+
+=== Upgrading from 2.42.0
+
+* As part of the work for https://issues.apache.org/jira/browse/ARTEMIS-5557[ARTEMIS-5557] to report executor service metrics the names of many Artemis-related threads were changed to be more clear and consistent.
+This will be visible, for example, when inspecting thread dumps or if you happen to include the thread name in your logging output.
+Here's examples of old names vs. the new ones.
++
+|===
+|Old Thread Name |New Thread Name
+
+|Thread-0 (ActiveMQ-scheduled-threads)
+|Thread-0 (activemq-scheduled-0.0.0.0)
+
+|Thread-0 (ActiveMQ-server-ActiveMQServerImpl::name=0.0.0.0)
+|Thread-0 (activemq-0.0.0.0)
+
+|Thread-0 (ActiveMQ-IO-server-ActiveMQServerImpl::name=0.0.0.0)
+|Thread-0 (activemq-io-0.0.0.0)
+
+|Thread-0 (ActiveMQ-PageExecutor-server-org.apache.activemq.artemis.core.server.impl.ActiveMQServerImpl$2@7841111)
+|Thread-0 (activemq-paging-0.0.0.0)
+
+|Thread-0 (activemq-netty-threads)
+|Thread-0 (activemq-remoting-amqp-0.0.0.0)
+
+|ActiveMQ Artemis Server Shutdown Timer
+|activemq-shutdown-timer
+
+|Critical-Analyzer-0 (CriticalAnalyzer)
+|Thread-0 (activemq-critical-analyzer)
+
+|Network-Checker-0 (NetworkChecker)
+|Thread-0 (activemq-network-checker)
+
+|Apache ActiveMQ Artemis libaio poller
+|activemq-libaio-poller
+
+|qtp748316439-74
+|Thread-0 (activemq-web)
+
+|Scheduler-624545052-1
+|activemq-web-scheduled-1
+|===
++
+See the xref:thread-pooling.adoc[Thread Pooling] documentation for more details.
+
+== Version 2.42.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12355900[Full release notes]
+
+=== Highlights
+
+* Apply `security-setting` configuration according to xref:address-model.adoc#uuid-resources[`uuid-namespace`].
+* Control the maximum number of in-flight MQTT messages for both 3.x and 5.0 clients via xref:mqtt.adoc#flow-control[`defaultMaximumInFlightPublishMessages`].
+* MQTT performance improvements for:
+** xref:mqtt.adoc#persistent-subscriptions[persisting subscriptions]
+** matching subscription identifiers to topic filters for 5.0 clients
+* Upgrade to https://artemis.apache.org/components/artemis-console/download/release-notes-1.2.1[{project-name-short} Console 1.2.1] with lots of usability improvements
+* Support for XOAUTH SASL mechanism for xref:amqp-broker-connections.adoc[AMQP broker connections]
+* And for developers...almost 2,500 lines of code were eliminated by consistently using the convenience methods from Java's `java.util.Objects` class across the code-base (e.g. https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Objects.html#hash(java.lang.Object...)[`hash`], https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Objects.html#toString(java.lang.Object)[`toString`], https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Objects.html#equals(java.lang.Object,java.lang.Object)[`equals`], https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Objects.html#requireNonNull(T)[`requireNonNull`], etc.).
+
+=== Upgrading from 2.41.0
+
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-5553[ARTEMIS-5553] the default `match` for management-related `address-settings` is now `activemq.management.\#`.
+Previously it was `activemq.management#` which technically worked but was not valid xref:wildcard-syntax.adoc[wildcard syntax].
++
+This change will have no functional impact.
+It is being identified here to avoid confusion when user's notice the difference.
+
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-5499[ARTEMIS-5499] the `mqtt-session-state-persistence-timeout` configuration parameter has been deprecated.
+Timeouts are no longer possible due to an adjustment of how the broker manages MQTT subscription persistence.
+You can continue to define `mqtt-session-state-persistence-timeout` in `broker.xml` without error, but it won't actually do anything.
++
+Furthermore, it is no longer recommended to disable MQTT subscription persistence by modifying the configuration of the `$sys.mqtt.sessions` queue. This method still works, but the xref:mqtt.adoc#persistent-subscriptions[`mqtt-subscription-persistence-enabled`] configuration parameter was added for convenience & clarity.
+Performance will also be _slightly_ better with this new parameter.
+
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-5444[ARTEMIS-5444] the `temporary-queue-namespace` configuration parameter has been renamed to xref:address-model.adoc#uuid-resources[`uuid-namespace`].
+Address-settings configured according to the `uuid-namespace` will be applied based on the name following a supported xref:address-model.adoc#uuid-formats[UUID format] rather than simply if the resource is _temporary_ as it was previously.
++
+The `temporary-queue-namespace` configuration parameter will still be supported for now although it will follow the new semantics.
++
+Further technical details are available on https://issues.apache.org/jira/browse/ARTEMIS-5444[the Jira].
+
+* The broker was always meant to scan MQTT sessions every `5000` milliseconds, but due to a bug it was doing so every `500` milliseconds instead.
+This has been fixed via https://issues.apache.org/jira/browse/ARTEMIS-5202[ARTEMIS-5202].
+Since this is technically changing the default behavior of the broker it is being enumerated here for clarity.
+Keep in mind that this is configurable via the xref:mqtt.adoc#automatic-subscription-clean-up[`mqtt-session-scan-interval`] parameter in `broker.xml`.
+
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-5364[ARTEMIS-5364] several adjustments have been made to the supporting files used to run the broker on both Linux and Windows.
+While these changes do not result in any significant behavioral differences, they're worth noting here since users often modify these files for their specific use-case.
++
+The relevant changes include:
+
+** Removing the following variables from all profiles (i.e. `artemis.profile` for Linux & `artemis.profile.cmd` for Windows):
+*** `ARTEMIS_INSTANCE_URI`
+*** `ARTEMIS_INSTANCE_ETC_URI`
+*** `ARTEMIS_ETC_DIR`
+** Removing the `ARTEMIS_OOME_DUMP` from the "utility" profiles
+** Update the order of Windows' profile `JAVA_ARGS` to match those from Linux
+
+== Version 2.41.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12355793[Full release notes]
+
+=== Highlights
+
+* xref:amqp-broker-connections.adoc#bridges[AMQP Broker Connections Advanced Bridges]
+* HTTP/2 support for the embedded web server
+* New data available via management for queues, addresses, and core bridges
+* Performance improvements when removing queues, especially in queue-heavy use-cases
+* A handful of paging improvements including additional tests
+* Several dependency upgrades
+
+== Version 2.40.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12355489[Full release notes]
+
+=== Highlights
+
+* New & Improved xref:management-console.adoc[Management Console]
+* Performance improvements for paging when multiple producers send to the same address
+* Performance improvements for read-heavy uses cases involving message properties
+* xref:using-server.adoc#system-property-or-environment-variable-substitution[Environment variable substitution] is now supported in `bootstrap.xml`
+* New management operation to dump the broker's config as a properties file
+* The global max size can now be set as a xref:paging.adoc#global-max-messages[percentage of the JVM's max memory via `global-max-size-percent-of-jvm-max-memory`]
+* Jakarta-based CDI Client
+* And for developers...lots of updates to the code-base for style consistency & clarity plus adoption of many Java 17 features and APIs
+
+=== Upgrading from 2.39.0
+
+* Due to EOL components in Hawio 2.x used by our web console we've moved to a https://github.com/apache/artemis-console[new web console] based on Hawtio 4.
+This move is about security just like the recent move to Java 17.
++
+--
+Notable differences:
+
+** From a graphical interface perspective the main change is that the prominently featured "tree" component was relocated to the "Artemis JMX" view available from the menu on the left of the screen.
+The categorized resource tabs which were available previously are now the main and recommended way to interact with the broker.
+These tabs offer a paged view which is filterable and sortable and scales well for resource heavy use-cases.
+
+** Any request with an origin header using the `https` scheme which is ultimately received by Jolokia via HTTP is now discarded by default since it is deemed insecure.
+If you use a TLS proxy that transforms secure requests to insecure requests (e.g. in a Kubernetes environment) then consider changing the proxy to preserve HTTPS and switching the xref:web-server.adoc[embedded web server] to HTTPS.
+If that isn't feasible then you can accept the risk by adding `<ignore-scheme/>` to `etc/jolokia-access.xml`.
+See the https://jolokia.org/reference/html/manual/security.html[Jolokia documentation] for more details.
+
+** The console will now automatically protect itself from brute-force attacks (e.g. i.e. repeated, quick login attempts).
+This behavior is controlled by the `hawtio.authenticationThrottled` system property.
+If you wish to disable this behavior then set this property to `false` (e.g. in `artemis.profile`).
+It is `true` by default. See the https://hawt.io/docs/security.html#_configuration_properties[Hawtio documentation] for more details.
+--
++
+The behavior and presentation should be more consistent overall, and anything that was possible before should still be possible since the underlying management API has not changed.
++
+In order to upgrade an existing instance of 2.39.0 to 2.40.0 you can use the xref:upgrading.adoc#upgrading-tool[`upgrade` command] which will *automatically perform* all the changes or you can make the following changes manually:
++
+. Remove references to the "branding" and "plugin" app in `bootstrap.xml`. These are the relevant lines from the default `bootstrap.xml` that should be removed:
++
+[,xml]
+----
+<app name="branding" url="activemq-branding" war="activemq-branding.war"/>
+<app name="plugin" url="artemis-plugin" war="artemis-plugin.war"/>
+----
++
+The only app needed for the new web console is `console.war`.
+. Rename the `hawtio.role` Java system property to `hawtio.roles`. A simple search & replace will suffice.
+.. If using Linux or similar this change will be in the `bin/artemis` script.
+.. If using Windows this change will be in `etc/artemis.profile.cmd`.
+
+== Version 2.39.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12355167[Full release notes]
+
+=== Highlights
+
+* *Java 17 is now required.*
+* AMQP federation and broker connections have new management controls.
+* The Core client (including the Core JMS client) supports a configurable timeout for `onMessage` invocations when closing/stopping a connection.
+* Datasource configuration is now available when configuring the broker via xref:configuration-index.adoc#broker-properties[properties].
+* Failure conditions for xref:using-cli.adoc#command-line-interface[CLI commands] (e.g. `artemis check`) now specifically return an exit code of `1` which means they can be more reliably incorporated into other scripts, etc.
+* The binary distribution is almost 8MB smaller than 2.38.0 due to reduced dependencies.
+* Lots of fixes for various flaky tests. This reduces spurious test failures improving the experience for developers building the broker and running the test-suite.
+
+=== Upgrading from 2.38.0
+
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-5202[ARTEMIS-5202] *support for Java 11 has been dropped*.
++
+The main reason for this change is that the version of Jetty we were embedding in previous versions (i.e. 10) https://github.com/jetty/jetty.project/issues/10485[will officially reach its end-of-life on January 1, 2025] and will therefore no longer be receiving _any_ fixes - including security fixes.
+Security is critical for us and most of our users so we therefore need to upgrade to Jetty 12 - the only version of Jetty now supported.
+Jetty 12 requires Java 17 so we must also move to Java 17 and drop support for Java 11.
++
+Please note that after upgrading the broker to Java 17 it will be backwards compatible with all previous clients.
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-5153[ARTEMIS-5153] the queues related to AMQP federation events and and controls are now marked as _internal_.
+
+== Version 2.38.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12355013[Full release notes]
+
+=== Highlights
+
+* WebSocket compression is now supported.
+This compression can be used transparently for AMQP, STOMP, or MQTT when communication is over WebSockets.
+* The xref:broker-plugins.adoc#plugin-support[`ActiveMQServerMessagePlugin`] now has a `messageMoved()` callback.
+* xref:core-bridges.adoc#configuring-core-bridges[Core bridge configuration] now supports `client-id` which will make it much easier to identify bridge connections on remote brokers.
+* The `consumer` xref:using-cli.adoc[CLI command] now supports consuming messages "forever" by specifying `-1` for `--receive-timeout`.
+* The xref:security.adoc#caching-security-operations[authentication & authorization caches] now have detailed debug logging.
+* There's been a handful of updates to broker management:
+** The documentation has been improved with more examples for xref:management.adoc#exposing-jmx-using-jolokia[Jolokia] and a new sub-section on xref:management.adoc#management-method-option-syntax[management method option syntax].
+** It's now possible to pass empty "options" to the xref:management.adoc#management-method-option-syntax[management methods] that accept them.
+** The management methods which return paged results can now return all the results together by specifying `-1` for either the page or the pageSize.
+** The xref:management.adoc#management-method-option-syntax[management method option syntax] now supports the `NOT_EQUALS` operator for greater flexibility with filtering results of management operations.
+** Configuration for diverts created via management can now be done via JSON.
+* The `TextFileCertificateLoginModule` now supports normalisation of DN property values.
+See https://issues.apache.org/jira/browse/ARTEMIS-5102[ARTEMIS-5102] for more details
+
+
+=== Upgrading from 2.37.0
+
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-5096[ARTEMIS-5096] the web console's archive (i.e. `console.war`) will now be uncompressed.
+This change was necessary in order to remove certain jar files from the archive which were already being distributed in the broker's main `lib` directory.
+Eliminating these duplicate jars will decrease the size of the broker distribution and it also means the console will, in some cases, use updated dependencies and prevent security tools from flagging older jars.
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-5101[ARTEMIS-5101] the `two-way` algorithm in the default sensitive string codec used for symmetric password masking is now deprecated.
+It will continue to work, but it will print a warning to the log.
+This is the first step in a process to get to eliminate passwords are stored in configuration files except those encoded by strong one-way hashing algorithms.
+Other use-cases will be pushed toward certificate-based security (i.e. mutual TLS) or something equivalent that requires no password.
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-5085[ARTEMIS-5085] the parameters `retryIntervalMultiplier` and `maxRetryInterval` will now be applied to "initial" connection attempts (i.e. controlled via `initialConnectAttempts`).
+This is to fix a bug where these parameters were incorrectly ignored.
+
+== Version 2.37.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12354977[Full release notes]
+
+=== Highlights
+
+* The environment variables of the CLI commands other than run is configurable via the `artemis-utility.profile` file.
+* The logging configuration of the CLI commands other than run is configurable via the `log4j2-utility.properties` file.
+* The run command has been removed from the artemis shell, use the `artemis` script (`artemis.cmd` on Windows) to execute it.
+* A version compatibility on voting (shared nothing replication quorum protocol) was fixed as part of https://issues.apache.org/jira/browse/ARTEMIS-4986[ARTEMIS-4986]
+
+=== Upgrading from 2.36.0
+
+The CLI commands other than run will now need to define the environment variables via the `artemis-utility.profile` file and the logging configuration via the `log4j2-utility.properties` file.
+See xref:logging.adoc#logging[logging] for more information.
+
+== Version 2.36.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12354818[Full release notes]
+
+=== Highlights
+
+* Numerous dependency upgrades triggered by integration with https://docs.github.com/en/code-security/getting-started/dependabot-quickstart-guide[GitHub's Dependabot].
+* Stability improvement for use-cases involving slower IO devices (e.g. NFS) and the NIO journal via https://issues.apache.org/jira/browse/ARTEMIS-4949[ARTEMIS-4949].
+* Code optimization in the address manager to decrease CPU utilization and increase broker scalability for use-cases involving a large number of addresses and queues courtesy of https://issues.apache.org/jira/browse/ARTEMIS-4814[ARTEMIS-4814].
+* Stability improvement for use-cases involving STOMP clients connecting over WebSockets via https://issues.apache.org/jira/browse/[ARTEMIS-3509].
+* Lots of internal "code gardening" improvements for developers to make the code-base simpler and more consistent.
+
+== Version 2.35.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12354784[Full release notes]
+
+=== Highlights
+
+* https://issues.apache.org/jira/browse/ARTEMIS-4813[There was a regression in broker replication in regard to Large Messages that was addressed]
+* https://issues.apache.org/jira/browse/ARTEMIS-4815[json output as an option on ./artemis queue stat --json]
+* https://issues.apache.org/jira/browse/ARTEMIS-4790[The codebase has migrated to JUNIT 5]
+
+== Version 2.34.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12354426[Full release notes]
+
+=== Highlights
+
+* https://issues.apache.org/jira/browse/ARTEMIS-4758[Extensive resiliency tests and hardening on Mirroring].
+* https://issues.apache.org/jira/browse/ARTEMIS-4773[Paging performance improvements on sync].
+* https://issues.apache.org/jira/browse/ARTEMIS-4306[Statistics about security events].
+* https://issues.apache.org/jira/browse/ARTEMIS-4675[Replication status metrics].
+
+
+=== Upgrading from 2.33.0
+
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-4712[ARTEMIS-4712] the connection pooling functionality configured via the `connectionPool` property in `login.config` is no longer supported in the `LDAPLoginModule`.
+The `login.config` may still use the `connectionPool` property.
+No error will be thrown.
+However, connections will no longer be pooled regardless of the configuration.
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-4498[ARTEMIS-4498] the web console will now report all internal objects.
+  ** This was done in an attempt to allow administrators to act when things are not working as expected, to get metrics on these objects and allow more transparency for the broker.
+  ** this includes all Openwire Advisor queues and addresses, MQTT internal objects, Cluster Store and Forward (SNF) Queues, Mirror SNF.
+  ** You may want to revisit authorizations if you mean to control access to certain users on the web console.
+* The CLI operation `./artemis queue stat` has its output improved and updated. If you parsed the previous output in scripts you will see differences in the output.
+  ** It is not recommended to parse the output of a CLI Operation. You may use jolokia calls over management instead with proper JSON output.
+
+== Version 2.33.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12354184[Full release notes]
+
+=== Highlights
+
+* Support for JSON formatted typed properties on CLI `producer` command
+* New CLI command `pwd` for showing directories related to the current instance
+* Maven Bill of Materials (BOM) `artemis-bom` to simplify integration
+* "FirstMessage" API for scheduled messages
+* New xref:security.adoc#role-based-security-for-addresses["view" and "edit"] permissions for management operations configurable via `security-settings` in `broker.xml`
+* New `sslAutoReload` parameter for the embedded web server configured in `bootstrap.xml` to detect and automatically reload whe SSL stores change on disk
+* Performance improvements on mirroring and paging
+* xref:metrics#optional-metrics[Logging metrics] to mitigate the risk of missing `WARN` or `ERROR` messages in the log.
+* Much improved documentation on xref:network-isolation.adoc[network isolation (aka split brain)]
+* xref:network-isolation.adoc#pluggable-lock-manager[Pluggable lock manager] (aka pluggable quorum voting) out of "experimental" status and ready for general use
+
+=== Upgrading from 2.32.0
+
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-4532[ARTEMIS-4532] the names of addresses and queues related to MQTT topics and subscriptions respectively may change.
+This will impact MQTT use-cases if *both* of the following are true:
++
+. The broker is configured to use a xref:wildcard-syntax.adoc[wildcard syntax] which _doesn't match_ the xref:mqtt.adoc#wildcard-subscriptions[MQTT wildcard syntax] (e.g. the default wildcard syntax).
+. You are using characters from the broker's wildcard syntax in your MQTT topic name or filter.
+For example, if you were using the default wildcard syntax and an MQTT topic named `1.0/group/device`.
+The dot (`.`) character here is part of the broker's wildcard syntax, and it is being used in the name of an MQTT topic.
++
+In this case the characters from the broker's wildcard syntax that do not match the characters in the MQTT wildcard syntax will be escaped with a backslash (i.e. `\`).
+To avoid this conversion you can configure the broker to use the MQTT wildcard syntax or change the name of the MQTT topic name or filter.
+
++
+This change will also impact OpenWire JMS consumers which are using `\#` instead of `<` for wildcard purposes.
+In previous versions the `#` character was just passed through when converting from the OpenWire wildcard format to the Core wildcard format.
+However, now the `\#` character is escaped during conversion.
+It is a bug for an application to use to use `#` as a wildcard with the OpenWire JMS client; `>` is the proper character to use as specified in the https://activemq.apache.org/components/classic/documentation/wildcards[ActiveMQ Classic documentation on wildcards].
+
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-4559[ARTEMIS-4559] folks embedding the broker and also depending on the `artemis-quorum-ri` and/or `artemis-quorum-api` modules and/or using `org.apache.activemq.artemis.core.config.ha.DistributedPrimitiveManagerConfiguration` will need to use `artemis-lockmanager-ri`, `artemis-lockmanager-api`, and `org.apache.activemq.artemis.core.config.ha.DistributedLockManagerConfiguration` respectively. Previously these were marked as "experimental" in the documentation and were changed strictly in name to clarify their use conceptually. Furthermore, the documentation around high availability and network isolation (i.e. split brain) was refactored significantly to be more clear and comprehensive.
+
+== Version 2.32.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12353769[Full release notes]
+
+=== Highlights
+
+* Mirrored Core Messages can now be sent on their native format without conversions
+* Mirror bug fixes and improvements
+* https://issues.apache.org/jira/browse/ARTEMIS-3474[{project-name-short} has now adopted] more inclusive language definitions.
+* The examples are now part of its own repository:  https://github.com/apache/artemis-examples/
+
+=== Upgrading from 2.31.x
+
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-4501[ARTEMIS-4501] MQTT subscription queues will be automatically removed when the corresponding session expires, either based on the session expiry interval passed by an MQTT 5 client or based on the configured `defaultMqttSessionExpiryInterval` for MQTT 3.x clients or MQTT 5 clients which don't explicitly pass a session expiry interval.
++
+Prior to this change removing subscription queues relied on the generic `auto-delete-*` `address-settings`.
++
+These settings are now no longer required.
++
+Configure `defaultMqttSessionExpiryInterval` instead.
+
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-3474[ARTEMIS-3474] the following configuration elements have changed wherever they occur (e.g. `broker.xml`, `bootstrap.xml`, etc.), although all the previous configurations will still be supported for the time being:
+** `master` -> `primary`
+** `slave` -> `backup`
+** `check-for-live-server` -> `check-for-active-server`
+** `whitelist` -> `allowlist`
+** `blacklist` -> `denylist`
+
++
+Additionally, references to these elements have also changed in the documentation and in management interfaces.
+Cluster topology information (e.g. returned from the `listNetworkTopology`) will contain both `primary` *and* `live` entries for nodes functioning as primary servers.
+
+== Version 2.31.2
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12353776[Full release notes]
+
+=== Highlights
+
+* Bug Fix
+
+
+== Version 2.31.1
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12353642[Full release notes]
+
+=== Highlights
+
+* Bug Fixes and component upgrades
+
+
+== Version 2.31.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12353446[Full release notes]
+
+=== Highlights
+
+* Introduced an xref:using-cli.adoc#shell[interactive shell] for running CLI command as well as xref:using-cli.adoc#bash-and-zsh-auto-complete[Bash & ZSH auto-complete support].
+* Added a CLI cluster verification tool to help monitor broker topologies.
+Use via the `check cluster` command.
+* The `queue stat` command is now able to verify the message counts on the entire cluster topology when clustering is in use.
+* Added xref:amqp-broker-connections.adoc#federation[AMQP Federation] support to broker connections.
+* xref:mqtt.adoc#persistent-subscriptions[MQTT subscription state is now persisted].
+* Significantly improved the Paging JDBC Persistence.
+* Converted much of the documentation from MarkDown to AsciiDoc.
+See https://issues.apache.org/jira/browse/ARTEMIS-4383[ARTEMIS-4383] for more details.
+* Many other bug fixes and improvements.
+
+=== Upgrading from 2.30.0
+
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-4372[ARTEMIS-4372] and the introduction of the new shell feature when you invoke `./artemis` it will now start the new shell to navigate through the CLI commands rather than just spitting out the `help` text.
+
+== Version 2.30.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12353357[Full release notes]
+
+=== Highlights
+
+* This is mainly a bug-fix release with a few small improvements and a handful of dependency upgrades.
+See the https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12353357[release notes] for all  the details.
+
+== Version 2.29.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?version=12352880&projectId=12315920[Full release notes]
+
+=== Highlights
+
+* This version underwent extensive testing and fixes regarding Large Messages, with a few JIRAs dedicated to this topic.
+Look on the https://issues.apache.org/jira/secure/ReleaseNote.jspa?version=12352880&projectId=12315920[release notes] for more information.
+
+=== Upgrading from 2.28.0
+
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-4151[ARTEMIS-4151] the default access for MBeans not defined in the `role-access` or `allowlist` of `management.xml` is now _read only_.
+This is a precautionary measure to ensure no unanticipated MBean deployed with the broker poses a risk.
+However, this will also impact JVM-specific and platform MBeans as well (e.g. which allow manual garbage collection, "flight recording," etc.).
+Write access and general operational access to these MBeans will now have to be manually enabled in `management.xml` either by changing the `default-access` (not recommended) or specifically configuring a `role-access` for the particular MBean in question.
++
+NOTE: This applies to all MBean access including directly via JMX and via the Jolokia JMX-HTTP bridge.
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-4212[ARTEMIS-4212] the broker will reject address definitions in `broker.xml` which don't specify a routing type, e.g.:
++
+[,xml]
+----
+<address name="myAddress"/>
+----
++
+Such configurations will need to be changed to specify a routing-type, e.g.:
++
+[,xml]
+----
+<address name="myAddress">
+   <anycast/>
+</address>
+----
++
+Or
++
+[,xml]
+----
+<address name="myAddress">
+   <multicast/>
+</address>
+----
++
+If an address without a routing type is configured the broker will throw an exception like this and fail to start:
++
+----
+java.lang.IllegalArgumentException: AMQ229247: Invalid address configuration for 'myAddress'. Address must support multicast and/or anycast.
+      at org.apache.activemq.artemis.core.deployers.impl.FileConfigurationParser.parseAddressConfiguration(FileConfigurationParser.java:1580)
+      at org.apache.activemq.artemis.core.deployers.impl.FileConfigurationParser.parseAddresses(FileConfigurationParser.java:1038)
+      at org.apache.activemq.artemis.core.deployers.impl.FileConfigurationParser.parseMainConfig(FileConfigurationParser.java:804)
+      at org.apache.activemq.artemis.core.config.impl.FileConfiguration.parse(FileConfiguration.java:56)
+      at org.apache.activemq.artemis.core.config.FileDeploymentManager.readConfiguration(FileDeploymentManager.java:81)
+      at org.apache.activemq.artemis.integration.FileBroker.createComponents(FileBroker.java:120)
+      at org.apache.activemq.artemis.cli.commands.Run.execute(Run.java:119)
+      at org.apache.activemq.artemis.cli.Artemis.internalExecute(Artemis.java:212)
+      at org.apache.activemq.artemis.cli.Artemis.execute(Artemis.java:162)
+      at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+      at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+      at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+      at java.base/java.lang.reflect.Method.invoke(Method.java:566)
+      at org.apache.activemq.artemis.boot.Artemis.execute(Artemis.java:144)
+      at org.apache.activemq.artemis.boot.Artemis.main(Artemis.java:61)
+----
+
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-3707[ARTEMIS-3707] all use of `javax.transaction.TransactionManager` was removed from the JCA Resource Adapter.
+However, this rendered the `transactionTimeout` activation configuration property useless.
+Some existing users rely on this behavior so it has been restored and properly deprecated for future removal.
+
+== Version 2.28.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?version=12352523&projectId=12315920[Full release notes]
+
+=== Highlights
+
+* Bug Fixes and improvements as usual
+* https://issues.apache.org/jira/browse/ARTEMIS-4136[ARTEMIS-4136] Mirror sync replication
+ ** Mirror now has an option to set sync=true.
+Blocking operations from clients will wait a round trip on the mirror.
+* https://issues.apache.org/jira/browse/ARTEMIS-4065[ARTEMIS-4065] Paging Counter Journal Records were removed
+ ** We don't store page counters records on the journal any longer what should simplify operation and improve performance.
+
+=== Upgrading from 2.27.0
+
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-3871[ARTEMIS-3871] the naming pattern used for MQTT _shared_ subscription queues has changed.
+Previously the subscription queue was named according to the subscription name provided in the MQTT `SUBSCRIBE` packet.
+However, MQTT allows the same name to be used across multiple subscriptions whereas queues in the broker must be named uniquely.
+Now the subscription queue will be named according to the subscription name and topic name so that all subscription queue names will be unique.
+Before upgrading please ensure all MQTT shared subscriptions are empty.
+When the subscribers reconnect they will get a new subscription queue.
+If they are not empty you can move the messages to the new subscription queue administratively.
+
+== Version 2.27.1
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?version=12352610&projectId=12315920[Full release notes]
+
+=== Highlights
+
+* Bug Fixes
+* AMQP Large Message over Bridges were broken
+* Rollback of massive transactions would take a long time to process
+* Improvements to auto-create and auto-delete queues.
+
+== Version 2.27.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?version=12352246&projectId=12315920[Full release notes]
+
+=== Highlights
+
+* 2.27.0 Introduced a new xref:upgrading.adoc#upgrading-tool[upgrade tool] to help migrating your instance to a newer version.
+* The client and broker now use https://www.slf4j.org/[SLF4J] for their logging API.
+* The broker distribution now uses https://logging.apache.org/log4j/2.x/manual/[Log4J 2] as its logging implementation.
+
+=== Upgrading from 2.26.0
+
+Client applications wanting logging will now need to supply an appropriate SLF4J-supporting logging implementation configured appropriately for their needs.
+See xref:logging.adoc#logging-in-a-client-application[client application logging] for more information plus an example around using Log4J 2.
+
+The broker distribution now includes and configures Log4J 2 as its logging implementation, see xref:logging.adoc#logging[logging] for more details.
+If upgrading an existing broker instance rather than creating a new instance, some configuration etc updates will be necessary for the brokers existing instance /etc and /bin files.
+
+You can use the new xref:upgrading.adoc#upgrading-tool[upgrade helper tool] from the newly downloaded broker to refresh various configuration files and scripts for an existing broker instance.
+The broker.xml and data are left in place as-is.
+
+WARNING: You should back up your existing broker instance before running the command.
+
+The command can be executed by running `./artemis upgrade <path-to-your-instance>` from the new downloaded broker home.
+
+[NOTE]
+====
+Most existing customisations to the old configuration files and scripts will be lost in the process of refreshing the files.
+As such you should compare the old configuration files with the refreshed ones and then port any missing customisations you may have made as necessary.
+The upgrade command itself will copy the older files it changes to an `old-config-bkp.` folder within the instance directory.
+
+Similarly, if you had customised the old `logging.properties` file you may need to prepare analogous changes for the new `log4j2.properties` file.
+====
+
+Note also that the `configuration-file-refresh-period` setting in `broker.xml` no longer covers logging configuration refresh.
+Log4J 2 has its own configuration reload handling, configured via the `monitorInterval` property within the Log4J configuration file itself.
+The default `<instance>/etc/log4j2.properties` file created has a 5 second `monitorInterval` value set to align with the prior default broker behaviour.
+
+=== Manual update
+
+Alternatively, rather than using the upgrade helper command as outlined above, you can instead perform the update manually, following the xref:upgrading.adoc#general-upgrade-procedure[general upgrading procedure] plus the additional steps below:
+
+. The new `<instance>/etc/log4j2.properties` file should be created with Log4J 2 configuration.
+The file used by the "artemis create" CLI command can be downloaded from: https://github.com/apache/artemis/blob/2.27.0/artemis-cli/src/main/resources/org/apache/activemq/artemis/cli/commands/etc/log4j2.properties[log4j2.properties]
+. The old `<instance>/etc/logging.properties` JBoss Logging configuration file should be deleted.
+. Related startup script or profile cleanups are needed: a diff file demonstrating the changes needed since 2.26.0 is available link:02-27-00-scripts-profiles.diff[here] for *nix or link:02-27-00-scripts-profiles-windows.diff[here] for Windows.
+
+== Version 2.26.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?version=12352297&projectId=12315920[Full release notes]
+
+=== Highlights
+
+* Bug fixes and improvements
+
+=== Upgrading from 2.25.0
+
+. Due to https://issues.apache.org/jira/browse/ARTEMIS-4006[ARTEMIS-4006] the `artemis-jms-client-all` and `artemis-jakarta-client-all` clients were removed from the `lib/client` directory in the binary distribution.
+If you use these libraries they can be found at Maven Central (e.g. https://repo1.maven.org/maven2/org/apache/activemq/artemis-jms-client-all/[here]).
+Please refer to the xref:client-classpath.adoc#the-client-classpath[client class path documentation] for more information.
+. We removed the REST interface from the code-base and documentation.
+If you still require the REST interface you can access the https://mvnrepository.com/artifact/org.apache.activemq.rest/artemis-rest/2.25.0[latest version] which is still viable.
+You can still follow the steps from the previous version to build and deploy the interface.
+However, you should stop using it as it will not be maintained any more.
+. Due to https://issues.apache.org/jira/browse/ARTEMIS-3980[ARTEMIS-3980] the web content was removed from the binary distribution.
+We now redirect web requests with the root target to the administration console.
+To enable this new redirect behavior on current instances you have to update `bootstrap.xml`.
+Change:
++
+[,xml]
+----
+<web path="web">
+----
++
+to:
++
+[,xml]
+----
+<web path="web" rootRedirectLocation="console">
+----
++
+If you used to customize the index page or to add custom content in the `web` folder please refer to the xref:web-server.adoc#embedded-web-server[web-server documentation] for more information on disabling the redirect and enabling the web content.
+
+== Version 2.25.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?version=12352143&projectId=12315920[Full release notes]
+
+=== Highlights
+
+* Improvement on Paging Flow Control
+* Many other bug fixes and improvements
+
+== Version 2.24.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?version=12351822&projectId=12315920[Full release notes]
+
+=== Highlights
+
+* Streamlined page caches and files are just read into queues without the need of soft caches.
+
+=== Upgrading from 2.23.0
+
+. Due to https://issues.apache.org/jira/browse/ARTEMIS-3851[ARTEMIS-3851]  the queue created for an MQTT 3.x subscriber using `CleanSession=1` is now *non-durable* rather than durable.
+This may impact `security-settings` for MQTT clients which previously only had `createDurableQueue` for their role.
+They will now need `createNonDurableQueue` as well.
+Again, this only has potential impact for MQTT 3.x clients using `CleanSession=1`.
+. Due to https://issues.apache.org/jira/browse/ARTEMIS-3892[ARTEMIS-3892] the username assigned to queues will be based on the *validated* user rather than just the username submitted by the client application.
+This will impact use-cases like the following:
+ .. When `login.config` is configured with the xref:security.adoc#guestloginmodule[`GuestLoginModule`] which causes some users to be assigned a specific username and role during the authentication process.
+ .. When `login.config` is configured with the xref:security.adoc#certificateloginmodule[`CertificateLoginModule`] which causes users to be assigned a username and role corresponding to the subject DN from their SSL certificate.
+
++
+In these kinds of situations the broker will use this assigned (i.e. validated) username for any queues created with the connection.
+In the past the queue's username would have been left blank.
+
+== Version 2.23.1
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?version=12351846&projectId=12315920[Full release notes]
+
+=== Highlights
+
+* https://issues.apache.org/jira/browse/ARTEMIS-3856[ARTEMIS-3856] - Failed to change channel state to ReadyForWriting : java.util.ConcurrentModificationException
+
+== Version 2.23.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12351677[Full release notes].
+
+=== Highlights
+
+* xref:web-server.adoc#management[management operations] for the embedded web server.
+* https://issues.apache.org/jira/browse/ARTEMIS-3700[JakartaEE 10 Support]
+* https://issues.apache.org/jira/browse/ARTEMIS-3848[BugFix: High cpu usage on ReadWrite locks]
+
+== Version 2.22.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12351488[Full release notes].
+
+=== Highlights
+
+* The default `producer-window-size` on `cluster-connection` was changed to 1MB to mitigate potential OutOfMemoryErrors in environments with with high latency networking.
+
+== Version 2.21.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?version=12351083&projectId=12315920[Full release notes].
+
+=== Highlights
+
+* xref:mqtt.adoc#mqtt[MQTT 5] is now supported.
+* A new set of xref:perf-tools.adoc#performance-tools[performance tools] are now available to evaluate throughput and Response Under Load performance of {project-name-short}
+* Diverts now support xref:diverts.adoc#composite-divert[multiple addresses]
+* xref:config-reload.adoc#configuration-reload[Runtime configuration reloading] now supports bridges.
+* xref:paging.adoc#paging-mode[Paging] can now be configured by message count.
+
+=== Upgrading from 2.20.0
+
+. Due to XML schema changes to correct an inaccurate domain name 2 files will need to be updated:
+ .. `etc/bootstrap.xml`
+ .. `etc/management.xml`
++
+In both files change the XML namespace from `activemq.org` to `activemq.apache.org`,  e.g. in `bootsrap.xml` use:
++
+[,xml]
+----
+ <broker xmlns="http://activemq.apache.org/schema">
+----
++
+And in `management.xml` use:
++
+[,xml]
+----
+ <management-context xmlns="http://activemq.apache.org/schema">
+----
+. *If you're using xref:persistence.adoc#jdbc-persistence[JDBC persistence]* then due to the changes in https://issues.apache.org/jira/browse/ARTEMIS-3679[ARTEMIS-3679] you'll need to update your database.
+The column `HOLDER_EXPIRATION_TIME` on the `NODE_MANAGER_STORE` changed from a `TIMESTAMP` to a `BIGINT` (or `NUMBER(19)` on Oracle).
+You will have to stop any broker that is accessing that table and either drop it or execute the proper `ALTER TABLE` statement for your database.
+If you drop the table then it will be automatically recreated when broker restarts and repopulated with a new, auto-generated node ID.
+. *If you're using JGroups* then due to the changes in  https://issues.apache.org/jira/browse/ARTEMIS-2413[ARTEMIS-2413] where JGroups was updated from 3.x to 5.x you will need to update your JGroups configuration.
+Many of the protocols have changed, and there's no automated tool to bring legacy configurations up to date so please refer to the  http://jgroups.org/manual5/index.html#protlist[JGroups documentation] for more details on the new configuration.
+You can find example configurations in the https://github.com/belaban/JGroups/tree/master/conf[JGroups repository] (e.g. `tcp.xml` and `udp.xml`).
+
+== Version 2.20.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?version=12350581&projectId=12315920[Full release notes].
+
+=== Highlights
+
+* *Java 11 is now required.*
+
+== Version 2.19.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12350519[Full release notes].
+
+=== Highlights
+
+* New ability to replay xref:persistence.adoc#journal-and-data-retention[retained journal] records via the management API.
+* New environment/system property to set the "key" for masked passwords when  using the xref:masking-passwords.adoc#the-default-codec[default codec].
+* Ability to disable xref:clusters.adoc#configuring-cluster-connections[message-load-balancing and still allow redistribution] via the new `OFF_WITH_REDISTRIBUTION` type.
+* MQTT session state can now be cleaned up automatically to avoid excessive accumulation in situations where client's don't clean up their own sessions.
+* Distribute full Jakarta Messaging 3.0 client in the `lib/client` directory along with a new example of how to use it in `examples/features/standard/queue-jakarta`.
+
+== Version 2.18.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12349689[Full release notes].
+
+=== Highlights
+
+* xref:amqp-broker-connections.adoc#dual-mirror-disaster-recovery[Dual Mirror] support improving capabilities on AMQP Mirror for Disaster Recovery
+* xref:persistence.adoc#journal-and-data-retention[Journal Retention]
+* xref:ha.adoc#apache-zookeeper-integration[Replication integrated with ZooKeeper]
+* xref:connection-routers.adoc#connection-routers[Connection Routers]
+* xref:core-bridges.adoc#configuring-core-bridges[Concurrency] configuration for core bridges.
+* xref:filter-expressions.adoc#xpath[XPath filter expressions] (for parity with ActiveMQ Classic).
+
+=== Upgrading from 2.17.0
+
+. Due to https://issues.apache.org/jira/browse/ARTEMIS-3367[ARTEMIS-3367] the default setting for `verifyHost` on _core connectors_ has been changed from `false` to `true`.
+This means that *Core clients will now expect the `CN` or Subject Alternative Name values of the broker's SSL certificate to match the hostname in the client's URL*.
++
+This impacts all core-based clients including core JMS clients and core connections between cluster nodes.
+Although this is a "breaking" change, _not_ performing hostname verification is a security risk (e.g. due to man-in-the-middle attacks).
+Enabling it by default aligns Core client behavior with industry standards.
+To deal with this you can do one of the following:
+
+ ** Update your SSL certificates to use a hostname which matches the hostname in the client's URL.
+This is the recommended option with regard to security.
+ ** Update any connector using `sslEnabled=true` to also use `verifyHost=false`.
+Using this option means that you won't get the extra security of hostname verification, but no certificates will need to change.
+This essentially restores the previous default behavior.
+
++
+For additional details about please refer to section 3.1 of https://datatracker.ietf.org/doc/html/rfc2818#section-3.1[RFC 2818 "HTTP over TLS"].
+
+. Due to https://issues.apache.org/jira/browse/ARTEMIS-3117[ARTEMIS-3117] SSL keystore and truststores are no longer reloaded automatically.
+Previously an instance of `javax.net.ssl.SSLContext` was created for _every_ connection.
+This would implicitly pick up any changes to the keystore and  truststore for any new connection.
+However, this was grossly inefficient and therefore didn't scale well with lots of connections.
+The behavior was changed so that just one `javax.net.ssl.SSLContext` is created for each `acceptor`.
+However, one can still reload keystores & truststores from disk without restarting the broker.
+Simply use the `reload` management operation on the `acceptor`.
+This is available via JMX, the web console, Jolokia, etc.
++
+Here's an example `curl` command you can use with Jolokia to invoke the `artemis` acceptor's `reload` operation:
++
+[,bash]
+----
+curl --user admin:admin --header "Content-Type: application/json" --request POST --data '{"type":"exec", "mbean":"org.apache.activemq.artemis:broker=\"0.0.0.0\",component=acceptors,name=\"artemis\"", "operation":"reload"}' http://localhost:8161/console/jolokia/exec
+----
++
+Of course you'll want to adjust the username & password as well as the broker and acceptor names for your environment.
+
+. The "rate" metric for queues was removed from the web console via https://issues.apache.org/jira/browse/ARTEMIS-3397[ARTEMIS-3397].
+This was a follow-up from https://issues.apache.org/jira/browse/ARTEMIS-2909[ARTEMIS-2909] in 2.16.0 (referenced in the <<version-2-16-0,upgrade instructions below>>).
+The "rate" metric mistakenly left visible on the web console after it was removed from the management API.
+. Due to https://issues.apache.org/jira/browse/ARTEMIS-3141[ARTEMIS-3141], https://issues.apache.org/jira/browse/ARTEMIS-3128[ARTEMIS-3128], & https://issues.apache.org/jira/browse/ARTEMIS-3175[ARTEMIS-3175] the data returned for any "list" or "browse" management method which return message data, including those exposed via the web console, will have their return data truncated by default.
+This is done to avoid adverse conditions with large volumes of message data which could potentially negatively impact broker stability.
+The `management-message-attribute-size-limit` address-setting controls this behavior.
+If you wish to restore the previous (and potentially dangerous behavior) then you can specify `-1` for this.
+It is `256` by default.
+
+== Version 2.17.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12349326[Full release notes].
+
+=== Highlights
+
+* xref:broker-plugins.adoc#using-the-brokermessageauthorizationplugin[Message-level authorization] similar to ActiveMQ Classic.
+* A count of addresses and queues is now available from the management API.
+* You can now reload the broker's configuration from disk via the management API rather than waiting for the periodic  disk scan to pick it up
+* Performance improvements on libaio journal.
+* New command-line option to transfer messages.
+* Performance improvements for the wildcard address manager.
+* JDBC datasource property values can now be masked.
+* Lots of usability improvements to the Hawtio 2 based web console introduced in 2.16.0
+* New management method to create a core bridge using JSON-based configuration input.
+* https://blogs.apache.org/activemq/entry/activemq-artemis-embraces-jakarta-ee[Jakarta Messaging 2.0 & 3.0 artifacts for Jakarta EE 8 & 9 respectively].
+
+== Version 2.16.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12348718[Full release notes].
+
+=== Highlights
+
+* Configurable namespace for temporary queues
+* xref:amqp-broker-connections.adoc#broker-connections[AMQP Server Connectivity]
+* "Basic" xref:security.adoc#basic-security-manager[`SecurityManager` implementation] that supports replication
+* Consumer window size support for individual STOMP clients
+* Improved JDBC connection management
+* New web console based on Hawtio 2
+* Performance optimizations (i.e. caching) for authentication and authorization
+* Support for admin objects in the JCA resource adapter to facilitate deployment into 3rd-party Java EE application servers
+* Ability to prevent an acceptor from automatically starting
+
+=== Upgrading from 2.15.0
+
+. Due to https://issues.apache.org/jira/browse/ARTEMIS-2893[ARTEMIS-2893] the fundamental way user management was implemented had to change to avoid data integrity issues related to concurrent modification.
+From a user's perspective two main things changed:
+ .. User management is no longer possible using the `artemis user` commands when the broker is *offline*.
+Of course users are still free to modify the properties files directly in this situation.
+ .. The parameters of the `artemis user` commands changed.
+Instead of using something like this:
++
+[,sh]
+----
+./artemis user add --user guest --password guest --role admin
+----
++
+Use this instead:
++
+[,sh]
+----
+./artemis user add --user-command-user guest --user-command-password guest --role admin
+----
++
+In short, use `user-command-user` in lieu of `user` and `user-command-password` in lieu of `password`.
+Both `user` and `password` parameters now apply to the connection used to send the command to the broker.
++
+For additional details see https://issues.apache.org/jira/browse/ARTEMIS-2893[ARTEMIS-2893] and https://issues.apache.org/jira/browse/ARTEMIS-3010[ARTEMIS-3010]
+. Due to https://issues.apache.org/jira/browse/ARTEMIS-2909[ARTEMIS-2909]  the "rate" metric was removed from the management API for queues.
+In short, the `org.apache.activemq.artemis.core.server.Queue#getRate` method is for slow-consumer detection and is designed for _internal_ use only.
++
+Furthermore, it's too opaque to be trusted by a remote user as it only returns the number of message added to the queue since _the last time it was called_.
+The problem here is that the user calling it doesn't know when it was invoked last.
+Therefore, they could be getting the rate of messages added for the last 5 minutes or the last 5 milliseconds.
+This can lead to inconsistent and misleading results.
++
+There are three main ways for users to track rates of message production and consumption (in recommended order):
+
+ .. Use a xref:metrics.adoc#metrics[metrics] plugin.
+This is the most feature-rich and flexible way to track broker metrics, although it requires tools (e.g. Prometheus) to store the metrics and display them (e.g. Grafana).
+ .. Invoke the `getMessageCount()` and `getMessagesAdded()` management methods and store the returned values along with the time they were retrieved.
+A time-series database is a great tool for this job.
+This is exactly what tools like Prometheus do.
+That data can then be used to create informative graphs, etc.
+using tools like Grafana.
+Of course, one can skip all the tools and just do some simple math to calculate rates based on the last time the counts were retrieved.
+ .. Use the broker's xref:management.adoc#message-counters[message counters].
+Message counters are the broker's simple way of providing historical information about the queue.
+They provide similar results to the previous solutions, but with less flexibility since they only track data while the broker is up and there's not really any good options for graphing.
+
+== Version 2.15.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12348568[Full release notes].
+
+=== Highlights
+
+* Ability to use FQQN syntax for both `security-settings` and JNDI lookup
+* Support pausing dispatch during group rebalance (to avoid potential out-of-order consumption)
+* Socks5h support
+
+== Version 2.14.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12348290[Full release notes].
+
+=== Highlights
+
+* Management methods to update diverts
+* Ability to "disable" a queue so that messages are not routed to it
+* Support JVM GC & thread metrics
+* Support for resetting queue properties by unsetting them in `broker.xml`
+* Undeploy diverts by removing them from `broker.xml`
+* Add `addressMemoryUsagePercentage` and `addressSize` as metrics
+
+=== Upgrading from 2.13.0
+
+This is likely a rare situation, but it's worth mentioning here anyway.
+Prior to 2.14.0 if you configured a parameter on a `queue` in `broker.xml` (e.g. `max-consumers`) and then later _removed_ that setting the configured value you set would remain.
+This has changed in 2.14.0 via ARTEMIS-2797.
+Any value that is not explicitly set in `broker.xml` will be set back to either the static default or the dynamic default configured in the address-settings (e.g. via `default-max-consumers` in this example).
+Therefore, ensure any existing queues have all the needed parameters set in `broker.xml` values before upgrading.
+
+== Version 2.13.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12348088[Full release notes].
+
+=== Highlights
+
+* Management methods for an address' duplicate ID cache to check the cache's size and clear it
+* Support for xref:message-expiry.adoc#configuring-expiry-delay[min/max expiry-delay]
+* xref:security.adoc#per-acceptor-security-domains[Per-acceptor security domains]
+* Command-line `check` tool for checking the health of a broker
+* Support disabling metrics per address via the xref:address-settings.adoc#address-settings[`enable-metrics` address setting]
+* Improvements to the xref:logging.adoc#configuring-broker-audit-logging[audit logging]
+* Speed optimizations for the `HierarchicalObjectRepository`, an internal object used to store address and security settings
+
+=== Upgrading from 2.12.0
+
+Version 2.13.0 added new xref:logging.adoc#configuring-broker-audit-logging[audit logging] which is logged at `INFO` level and can be very verbose.
+The `logging.properties` shipped with this new version is set up to filter this out by default.
+If your `logging.properties` isn't updated appropriately this audit logging will likely appear in your console and `artemis.log` file assuming you're using a logging configuration close to the default.
+Add this to your `logging.properties`:
+
+----
+# to enable audit change the level to INFO
+logger.org.apache.activemq.audit.base.level=ERROR
+logger.org.apache.activemq.audit.base.handlers=AUDIT_FILE
+logger.org.apache.activemq.audit.base.useParentHandlers=false
+
+logger.org.apache.activemq.audit.resource.level=ERROR
+logger.org.apache.activemq.audit.resource.handlers=AUDIT_FILE
+logger.org.apache.activemq.audit.resource.useParentHandlers=false
+
+logger.org.apache.activemq.audit.message.level=ERROR
+logger.org.apache.activemq.audit.message.handlers=AUDIT_FILE
+logger.org.apache.activemq.audit.message.useParentHandlers=false
+
+...
+
+#Audit logger
+handler.AUDIT_FILE=org.jboss.logmanager.handlers.PeriodicRotatingFileHandler
+handler.AUDIT_FILE.level=INFO
+handler.AUDIT_FILE.properties=suffix,append,autoFlush,fileName
+handler.AUDIT_FILE.suffix=.yyyy-MM-dd
+handler.AUDIT_FILE.append=true
+handler.AUDIT_FILE.autoFlush=true
+handler.AUDIT_FILE.fileName=${artemis.instance}/log/audit.log
+handler.AUDIT_FILE.formatter=AUDIT_PATTERN
+
+formatter.AUDIT_PATTERN=org.jboss.logmanager.formatters.PatternFormatter
+formatter.AUDIT_PATTERN.properties=pattern
+formatter.AUDIT_PATTERN.pattern=%d [AUDIT](%t) %s%E%n
+----
+
+== Version 2.12.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12346675[Full release notes].
+
+=== Highlights
+
+* Support for xref:configuring-transports.adoc#configuring-netty-socks-proxy[SOCKS proxy]
+* Real xref:large-messages.adoc#large-messages[large message] support for AMQP
+* xref:undelivered-messages.adoc#automatically-creating-dead-letter-resources[Automatic creation of dead-letter resources] akin to ActiveMQ 5's individual dead-letter strategy
+* xref:message-expiry.adoc#configuring-automatic-creation-of-expiry-resources[Automatic creation of expiry resources]
+* Improved API for queue creation
+* Allow users to override JAVA_ARGS via environment variable
+* Reduce heap usage during journal loading during broker start-up
+* Allow `server` header in STOMP `CONNECTED` frame to be disabled
+* Support disk store used percentage as an exportable metric (e.g. to be monitored by tools like Prometheus, etc.)
+* Ability to configure a "https://www.eclipse.org/jetty/javadoc/9.4.26.v20200117/org/eclipse/jetty/server/HttpConfiguration.Customizer.html[customizer]" for the embedded web server
+* Improved logging for errors when starting an `acceptor` to more easily identify the `acceptor` which has the problem.
+* The CLI will now read the `broker.xml` to find the default `connector` URL for commands which require it (e.g. `consumer`, `producer`, etc.)
+
+== Version 2.11.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12346258[Full release notes].
+
+=== Highlights
+
+* Support xref:retroactive-addresses.adoc#retroactive-addresses[retroactive addresses].
+* Support downstream federated xref:federation-queue.adoc#configuring-downstream-federation[queues] and xref:federation-address.adoc#configuring-downstream-federation[addresses].
+* Make security manager xref:security.adoc#custom-security-manager[configurable via XML].
+* Support pluggable SSL xref:configuring-transports.adoc#configuring-netty-ssl[TrustManagerFactory].
+* Add plugin support for federated queues/addresses.
+* Support `com.sun.jndi.ldap.read.timeout` in xref:security.adoc#ldaploginmodule[LDAPLoginModule].
+
+== Version 2.10.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12345602[Full release notes].
+
+This was mainly a bug-fix release with a notable dependency change impacting version upgrade.
+
+=== Upgrading from 2.9.0
+
+Due to the WildFly dependency upgrade the broker start scripts/configuration need to be adjusted after upgrading.
+
+==== On *nix
+
+Locate this statement in `bin/artemis`:
+
+----
+WILDFLY_COMMON="$ARTEMIS_HOME/lib/wildfly-common-1.5.1.Final.jar"
+----
+
+This needs to be replaced with this:
+
+----
+WILDFLY_COMMON="$ARTEMIS_HOME/lib/wildfly-common-1.5.2.Final.jar"
+----
+
+==== On Windows
+
+Locate this part of `JAVA_ARGS` in `etc/artemis.profile.cmd` respectively `bin/artemis-service.xml`:
+
+----
+%ARTEMIS_HOME%\lib\wildfly-common-1.5.1.Final.jar
+----
+
+This needs to be replaced with this:
+
+----
+%ARTEMIS_HOME%\lib\wildfly-common-1.5.2.Final.jar
+----
+
+== Version 2.9.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12345527[Full release notes].
+
+This was a light release.
+It included a handful of bug fixes, a few improvements, and one major new feature.
+
+=== Highlights
+
+* Support xref:metrics.adoc#metrics[exporting metrics].
+
+== Version 2.8.1
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12345432[Full release notes].
+
+This was mainly a bug-fix release with a notable dependency change impacting version upgrade.
+
+=== Upgrading from 2.8.0
+
+Due to the dependency upgrade made on https://issues.apache.org/jira/browse/ARTEMIS-2319[ARTEMIS-2319] the broker start scripts need to be adjusted after upgrading.
+
+==== On *nix
+
+Locate this `if` statement in `bin/artemis`:
+
+----
+if [ -z "$LOG_MANAGER" ] ; then
+ # this is the one found when the server was created
+ LOG_MANAGER="$ARTEMIS_HOME/lib/jboss-logmanager-2.0.3.Final.jar"
+fi
+----
+
+This needs to be replaced with this block:
+
+----
+if [ -z "$LOG_MANAGER" ] ; then
+ # this is the one found when the server was created
+ LOG_MANAGER="$ARTEMIS_HOME/lib/jboss-logmanager-2.1.10.Final.jar"
+fi
+
+WILDFLY_COMMON=`ls $ARTEMIS_HOME/lib/wildfly-common*jar 2>/dev/null`
+if [ -z "$WILDFLY_COMMON" ] ; then
+ # this is the one found when the server was created
+ WILDFLY_COMMON="$ARTEMIS_HOME/lib/wildfly-common-1.5.1.Final.jar"
+fi
+----
+
+Notice that the `jboss-logmanager` version has changed and there is also a new `wildfly-common` library.
+
+Not much further down there is this line:
+
+----
+-Xbootclasspath/a:"$LOG_MANAGER" \
+----
+
+This line should be changed to be:
+
+----
+-Xbootclasspath/a:"$LOG_MANAGER:$WILDFLY_COMMON" \
+----
+
+==== On Windows
+
+Locate this part of `JAVA_ARGS` in `etc/artemis.profile.cmd` respectively `bin/artemis-service.xml`:
+
+----
+-Xbootclasspath/a:%ARTEMIS_HOME%\lib\jboss-logmanager-2.1.10.Final.jar
+----
+
+This needs to be replaced with this:
+
+----
+-Xbootclasspath/a:%ARTEMIS_HOME%\lib\jboss-logmanager-2.1.10.Final.jar;%ARTEMIS_HOME%\lib\wildfly-common-1.5.1.Final.jar
+----
+
+
+== Version 2.8.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12345169[Full release notes].
+
+=== Highlights
+
+* Support ActiveMQ5 feature xref:message-grouping.adoc#notifying-consumer-of-group-ownership-change[JMSXGroupFirstForConsumer].
+* Clarify handshake timeout error with remote address.
+* Support xref:duplicate-detection.adoc#duplicate-message-detection[duplicate detection] for AMQP messages the same as core.
+
+
+== Version 2.7.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12342977[Full release notes].
+
+=== Highlights
+
+* Support advanced destination options like `consumersBeforeDispatchStarts` and `timeBeforeDispatchStarts` from Classic.
+* Add support for delays before deleting addresses and queues via xref:address-settings.adoc#address-settings[`auto-delete-queues-delay` and `auto-delete-addresses-delay` Address Settings].
+* Support xref:web-server.adoc#embedded-web-server[logging HTTP access].
+* Add a CLI command to purge a queue.
+* Support user and role manipulation for PropertiesLoginModule via management interfaces.
+* https://github.com/apache/artemis/tree/main/artemis-docker[Docker images].
+* xref:logging.adoc#configuring-broker-audit-logging[Audit logging].
+* Implementing xref:consumer-priority.adoc#consumer-priority[consumer priority].
+* Support xref:address-model.adoc#fully-qualified-queue-names[FQQN] for producers.
+* Track routed and unrouted messages sent to an address.
+* Support xref:security.adoc#ldaploginmodule[connection pooling in LDAPLoginModule].
+* Support configuring a default consumer window size via xref:address-settings.adoc#address-settings[`default-consumer-window-size` Address Setting].
+* Support xref:masking-passwords.adoc#masking-passwords[masking] `key-store-password` and `trust-store-password` in management.xml.
+* Support xref:message-grouping.adoc#closing-a-message-group[`JMSXGroupSeq` -1 to close/reset message groups] from Classic.
+* Allow configuration of xref:management.adoc#remote-jmx-access[RMI registry port].
+* Support routing-type configuration on xref:core-bridges.adoc#configuring-core-bridges[core bridge].
+* Move artemis-native as its own project, as https://github.com/apache/artemis-native[artemis-native].
+* Support xref:federation.adoc#federation[federated queues and addresses].
+
+
+== Version 2.6.4
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12344010[Full release notes].
+
+This was mainly a bug-fix release with a few improvements a couple notable new features:
+
+=== Highlights
+
+* Added the ability to set the text message content on the `producer` CLI command.
+* Support reload logging configuration at runtime.
+
+
+== Version 2.6.3
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12343472[Full release notes].
+
+This was mainly a bug-fix release with a few improvements but no substantial new features.
+
+
+== Version 2.6.2
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12343404[Full release notes].
+
+This was a bug-fix release with no substantial new features or improvements.
+
+
+== Version 2.6.1
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12343356[Full release notes].
+
+This was a bug-fix release with no substantial new features or improvements.
+
+
+== Version 2.6.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12342903[Full release notes].
+
+=== Highlights
+
+* Support xref:security.adoc#certificateloginmodule[regular expressions for matching client certificates].
+* Support `SASL_EXTERNAL` for AMQP clients.
+* New examples showing xref:examples.adoc#openwire[virtual topic mapping] and xref:examples.adoc#exclusive-queue[exclusive queue] features.
+
+
+== Version 2.5.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12342127[Full release notes].
+
+=== Highlights
+
+* xref:exclusive-queues.adoc#exclusive-queues[Exclusive consumers].
+* Equivalent ActiveMQ Classic Virtual Topic naming abilities.
+* SSL Certificate revocation list.
+* xref:last-value-queues.adoc#last-value-queues[Last-value queue] support for OpenWire.
+* Support xref:masking-passwords.adoc#masking-passwords[masked passwords] in bootstrap.xm and login.config
+* Configurable xref:broker-plugins.adoc#using-the-loggingactivemqserverplugin[broker plugin] implementation for logging various broker events (i.e. `LoggingActiveMQServerPlugin`).
+* Option to use OpenSSL provider for Netty via the xref:configuring-transports.adoc#configuring-netty-ssl[`sslProvider`] URL parameter.
+* Enable xref:configuration-index.adoc#configuration-reference[splitting of broker.xml into multiple files].
+* Enhanced message count and size metrics for queues.
+
+=== Upgrading from 2.4.0
+
+. Due to changes from https://issues.apache.org/jira/browse/ARTEMIS-1644[ARTEMIS-1644] any `acceptor` that needs to be compatible with HornetQ and/or {project-name-short} 1.x clients needs to have `anycastPrefix=jms.queue.;multicastPrefix=jms.topic.` in the `acceptor` url.
+This prefix used to be configured automatically behind the scenes when the broker detected  these old types of clients, but that broke certain use-cases with no possible work-around.
+See  https://issues.apache.org/jira/browse/ARTEMIS-1644[ARTEMIS-1644] for more details.
+
+
+== Version 2.4.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12341540[Full release notes].
+
+=== Highlights
+
+* xref:management.adoc#role-based-authorisation-for-jmx[JMX configuration via XML] rather than having to use system properties via command line or start script.
+* Configuration of xref:protocols-interoperability.adoc#stomp-over-websockets[max frame payload length for STOMP web-socket].
+* Ability to configure HA using JDBC persistence.
+* Implement xref:management.adoc#management[role-based access control for management objects].
+
+=== Upgrading from 2.3.0
+
+. Create `<ARTEMIS_INSTANCE>/etc/management.xml`.
+At the very least, the file must contain this:
++
+[,xml]
+----
+<management-context xmlns="http://activemq.apache.org/schema"/>
+----
++
+This configures role based authorisation for JMX.
+Read more in the xref:management.adoc#management[Management] documentation.
+
+. If configured, remove the Jolokia war file from the `web` element in `<ARTEMIS_INSTANCE>/etc/bootstrap.xml`:
++
+[,xml]
+----
+<app url="jolokia" war="jolokia.war"/>
+----
++
+This is no longer required as the Jolokia REST interface is now integrated into the console web application.
++
+If the following is absent and you desire to deploy the web console then add:
++
+[,xml]
+----
+<app url="console" war="console.war"/>
+----
++
+NOTE: the Jolokia REST interface URL will now be at `http://<host>:<port>/console/jolokia`
+
+
+== Version 2.3.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12341247[Full release notes].
+
+=== Highlights
+
+* xref:management-console.adoc#management-console[Web admin console]!
+* xref:critical-analysis.adoc#critical-analysis-of-the-broker[Critical Analysis] and deadlock detection on broker
+* Support xref:configuring-transports.adoc#macos-native-transport[Netty native kqueue] on Mac.
+* xref:last-value-queues.adoc#last-value-queues[Last-value queue] for AMQP
+
+=== Upgrading from 2.2.0
+
+. If you desire to deploy the web console then add the following to the `web` element in `<ARTEMIS_INSTANCE>/etc/bootstrap.xml`:
++
+[,xml]
+----
+<app url="console" war="console.war"/>
+----
+
+
+== Version 2.2.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12340541[Full release notes].
+
+=== Highlights
+
+* Scheduled messages with the STOMP protocol.
+* Support for JNDIReferenceFactory and JNDIStorable.
+* Ability to delete queues and addresses when xref:config-reload.adoc#configuration-reload[broker.xml changes].
+* xref:security.adoc#kerberos-authentication[Client authentication via Kerberos TLS Cipher Suites (RFC 2712)].
+
+
+== Version 2.1.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12339963[Full release notes].
+
+=== Highlights
+
+* xref:broker-plugins.adoc#plugin-support[Broker plugin support].
+* Support xref:configuring-transports.adoc#linux-native-transport[Netty native epoll] on Linux.
+* Ability to configure arbitrary security role mappings.
+* AMQP performance improvements.
+
+
+== Version 2.0.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12338813[Full release notes].
+
+=== Highlights
+
+* Huge update involving a significant refactoring of the xref:address-model.adoc#address-model[addressing model] yielding the following benefits:
+ ** Simpler and more flexible XML configuration.
+ ** Support for additional messaging use-cases.
+ ** Eliminates confusing JMS-specific queue naming conventions (i.e. "jms.queue." & "jms.topic." prefixes).
+* Pure encoding of messages so protocols like AMQP don't need to convert messages to "core" format unless absolutely necessary.
+* xref:persistence.adoc#memory-mapped["MAPPED" journal type] for increased performance in certain use-cases.
+
+
+== Version 1.5.6
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12340547[Full release notes].
+
+=== Highlights
+
+* Bug fixes.
+
+
+== Version 1.5.5
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12339947[Full release notes].
+
+=== Highlights
+
+* Bug fixes.
+
+
+== Version 1.5.4
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12339158[Full release notes].
+
+=== Highlights
+
+* Support Oracle12C for JDBC persistence.
+* Bug fixes.
+
+
+== Version 1.5.3
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12339575[Full release notes].
+
+=== Highlights
+
+* Support "byte notation" (e.g. "K", "KB", "Gb", etc.) in broker XML configuration.
+* CLI command to recalculate disk sync times.
+* Bug fixes.
+
+
+== Version 1.5.2
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12338833[Full release notes].
+
+=== Highlights
+
+* Support for paging using JDBC.
+* Bug fixes.
+
+
+== Version 1.5.1
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12338661[Full release notes].
+
+=== Highlights
+
+* Support outgoing connections for AMQP.
+* Bug fixes.
+
+
+== Version 1.5.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12338118[Full release notes].
+
+=== Highlights
+
+* AMQP performance improvements.
+* JUnit rule implementation so messaging resources like brokers can be easily configured in tests.
+* Basic CDI integration.
+* Store user's password in hash form by default.
+
+
+== Version 1.4.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12336052[Full release notes].
+
+=== Highlights
+
+* "Global" limit for disk usage.
+* Detect and reload certain XML configuration changes at runtime.
+* MQTT interceptors.
+* Support adding/deleting queues via CLI.
+* New "browse" security permission for clients who only wish to look at messages.
+* Option to populate JMSXUserID.
+* "Dual authentication" support to authenticate SSL-based and non-SSL-based clients differently.
+
+
+== Version 1.3.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12328978[Full release notes].
+
+=== Highlights
+
+* Better support of OpenWire features (e.g. reconnect, producer flow-control, optimized acknowledgements)
+* SSL keystore reload at runtime.
+* Initial support for JDBC persistence.
+* Support scheduled messages on last-value queue.
+
+
+== Version 1.2.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12333274[Full release notes].
+
+=== Highlights
+
+* Improvements around performance
+* OSGi support.
+* Support functionality equivalent to all Classic JAAS login modules including:
+ ** Properties file
+ ** LDAP
+ ** SSL certificate
+ ** "Guest"
+
+
+== Version 1.1.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?version=12332642&projectId=12315920[Full release notes].
+
+=== Highlights
+
+* MQTT support.
+* The examples now use the CLI programmatically to create, start, stop, etc.
+servers reflecting real cases used in  production.
+* CLI improvements.
+There are new tools to compact the journal and additional improvements to the user experience.
+* Configurable resource limits.
+* Ability to disable server-side message load-balancing.
+
+
+== Version 1.0.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12328953[Full release notes].
+
+=== Highlights
+
+* First release of the https://lists.apache.org/thread/7y4o61zzk5y9bdjqsho2p6k7860kmzbt[donated code-base] as ActiveMQ Artemis!
+* Lots of features for parity with ActiveMQ Classic including:
+ ** OpenWire support
+ ** AMQP 1.0 support
+ ** URL based connections
+ ** Auto-create addresses/queues
+ ** Jolokia integration
+
+:sectnums:

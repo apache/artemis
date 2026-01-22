@@ -29,11 +29,12 @@
    <name>Apache Artemis Website</name>
 
    <properties>
-      <!-- we need a "scratch" directory because we dynamically generate a few docs -->
-      <scratch-dir-user-manual>${project.build.directory}/scratch/user-manual</scratch-dir-user-manual>
       <skipWebsiteDocGeneration>false</skipWebsiteDocGeneration>
-      <skipWebsitePdfGeneration>${skipWebsiteDocGeneration}</skipWebsitePdfGeneration>
       <skipWebsiteJavadocGeneration>false</skipWebsiteJavadocGeneration>
+      <antora.playbook>docs-playbook.yml</antora.playbook>
+      <node.version>v24.16.0</node.version>
+      <npm.version>11.16.0</npm.version>
+      <frontend.plugin.version>2.0.0</frontend.plugin.version>
    </properties>
 
    <profiles>
@@ -68,7 +69,7 @@
             <dependency>
                <groupId>com.google.code.findbugs</groupId>
                <artifactId>jsr305</artifactId>
-              <scope>provided</scope>
+               <scope>provided</scope>
             </dependency>
             <dependency>
                <groupId>org.apache.artemis</groupId>
@@ -80,6 +81,50 @@
 
          <build>
             <plugins>
+               <plugin>
+                  <groupId>com.github.eirslett</groupId>
+                  <artifactId>frontend-maven-plugin</artifactId>
+                  <version>${frontend.plugin.version}</version>
+                  <configuration>
+                     <workingDirectory>${project.basedir}</workingDirectory>
+                     <installDirectory>${project.build.directory}</installDirectory>
+                  </configuration>
+                  <executions>
+                     <execution>
+                        <id>install-node-and-npm</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                           <goal>install-node-and-npm</goal>
+                        </goals>
+                        <configuration>
+                           <skip>${skipWebsiteDocGeneration}</skip>
+                           <nodeVersion>${node.version}</nodeVersion>
+                           <npmVersion>${npm.version}</npmVersion>
+                        </configuration>
+                     </execution>
+                     <execution>
+                        <id>build-docs-with-antora</id>
+                        <phase>compile</phase>
+                        <goals>
+                           <goal>npx</goal>
+                        </goals>
+                        <configuration>
+                           <skip>${skipWebsiteDocGeneration}</skip>
+                           <arguments>
+                              -y
+                              --package @antora/cli
+                              --package @antora/site-generator
+                              --package @antora/lunr-extension
+                              antora
+                              --attribute project-version=${project.version}
+                              --attribute log4j-version=${log4j.version}
+                              --attribute artemis-console-version=${artemis-console-version}
+                              ${antora.playbook}
+                           </arguments>
+                        </configuration>
+                     </execution>
+                  </executions>
+               </plugin>
                <plugin>
                   <artifactId>maven-javadoc-plugin</artifactId>
                   <executions>
@@ -118,284 +163,6 @@
                         </configuration>
                      </execution>
                   </executions>
-               </plugin>
-               <plugin>
-                  <groupId>org.apache.artemis</groupId>
-                  <artifactId>artemis-maven-plugin</artifactId>
-                  <version>${project.version}</version>
-                  <executions>
-                     <execution>
-                        <id>doc-jms-client</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                           <goal>dependency-doc</goal>
-                        </goals>
-                        <configuration>
-                           <file>${scratch-dir-user-manual}/client-classpath-jms.adoc</file>
-                           <groupOrder>
-                              <arg>org.apache.artemis</arg>
-                              <arg>jakarta.jms</arg>
-                              <arg>org.jgroups</arg>
-                              <arg>io.netty</arg>
-                           </groupOrder>
-                           <header>= Artemis JMS Client Dependencies
-// generated content!
-
-|===
-|File | package | observation
-
-                           </header>
-                           <line>|X{fileMD} | X{package} | X{detail} </line>
-                           <footer>|===</footer>
-                           <detailKey>
-                              <arg>io.netty:netty-transport-native-epoll</arg>
-                              <arg>io.netty:netty-transport-classes-epoll</arg>
-                              <arg>io.netty:netty-transport-native-kqueue</arg>
-                              <arg>io.netty:netty-transport-classes-kqueue</arg>
-                              <arg>org.jgroups:jgroups</arg>
-                           </detailKey>
-                           <detailValue>
-                              <arg>only if you want epoll on Linux</arg>
-                              <arg>only if you want epoll on Linux</arg>
-                              <arg>only if you want kqueue on MacOS</arg>
-                              <arg>only if you want kqueue on MacOS</arg>
-                              <arg>only if you want JGroups discovery from the clients</arg>
-                           </detailValue>
-                           <lib>org.apache.artemis:artemis-jms-client:${project.version}</lib>
-                        </configuration>
-                     </execution>
-                     <execution>
-                        <id>doc-jakarta-client</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                           <goal>dependency-doc</goal>
-                        </goals>
-                        <configuration>
-                           <file>${scratch-dir-user-manual}/client-classpath-jakarta.adoc</file>
-                           <groupOrder>
-                              <arg>org.apache.artemis</arg>
-                              <arg>jakarta.jms</arg>
-                              <arg>org.jgroups</arg>
-                              <arg>io.netty</arg>
-                           </groupOrder>
-                           <header>= Artemis Jakarta Client Dependencies
-// generated content!
-
-|===
-|File | package | observation
-
-                           </header>
-                           <line>|X{fileMD} | X{package} | X{detail} </line>
-                           <footer>|===</footer>
-                           <detailKey>
-                              <arg>io.netty:netty-transport-native-epoll</arg>
-                              <arg>io.netty:netty-transport-classes-epoll</arg>
-                              <arg>io.netty:netty-transport-native-kqueue</arg>
-                              <arg>io.netty:netty-transport-classes-kqueue</arg>
-                              <arg>org.jgroups:jgroups</arg>
-                           </detailKey>
-                           <detailValue>
-                              <arg>only if you want epoll on Linux</arg>
-                              <arg>only if you want epoll on Linux</arg>
-                              <arg>only if you want kqueue on MacOS</arg>
-                              <arg>only if you want kqueue on MacOS</arg>
-                              <arg>only if you want JGroups discovery from the clients</arg>
-                           </detailValue>
-                           <lib>org.apache.artemis:artemis-jakarta-client:${project.version}</lib>
-                        </configuration>
-                     </execution>
-                  </executions>
-               </plugin>
-               <plugin>
-                  <artifactId>maven-resources-plugin</artifactId>
-                  <executions>
-                     <execution>
-                        <id>copy-user-manual-resources</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                           <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                           <outputDirectory>${scratch-dir-user-manual}</outputDirectory>
-                           <skip>${skipWebsiteDocGeneration}</skip>
-                           <resources>
-                              <resource>
-                                 <directory>${activemq.basedir}/docs/user-manual</directory>
-                                 <includes>
-                                    <include>**/*</include>
-                                 </includes>
-                              </resource>
-                              <resource>
-                                 <directory>${activemq.basedir}/docs/resources/font-awesome</directory>
-                                 <includes>
-                                    <include>**/*</include>
-                                 </includes>
-                              </resource>
-                           </resources>
-                        </configuration>
-                     </execution>
-                     <execution>
-                        <id>copy-migration-guide-resources</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                           <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                           <outputDirectory>${project.build.outputDirectory}/migration-guide</outputDirectory>
-                           <skip>${skipWebsiteDocGeneration}</skip>
-                           <resources>
-                              <resource>
-                                 <directory>${activemq.basedir}/docs/resources/font-awesome</directory>
-                                 <includes>
-                                    <include>**/*</include>
-                                 </includes>
-                              </resource>
-                           </resources>
-                        </configuration>
-                     </execution>
-                     <execution>
-                        <id>copy-hacking-guide-resources</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                           <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                           <outputDirectory>${project.build.outputDirectory}/hacking-guide</outputDirectory>
-                           <skip>${skipWebsiteDocGeneration}</skip>
-                           <resources>
-                              <resource>
-                                 <directory>${activemq.basedir}/docs/resources/font-awesome</directory>
-                                 <includes>
-                                    <include>**/*</include>
-                                 </includes>
-                              </resource>
-                           </resources>
-                        </configuration>
-                     </execution>
-                  </executions>
-               </plugin>
-               <plugin>
-                  <groupId>org.asciidoctor</groupId>
-                  <artifactId>asciidoctor-maven-plugin</artifactId>
-                  <version>${asciidoctor.maven.plugin.version}</version>
-                  <dependencies>
-                     <dependency>
-                        <groupId>org.asciidoctor</groupId>
-                        <artifactId>asciidoctorj-pdf</artifactId>
-                        <version>${asciidoctorj.pdf.version}</version>
-                     </dependency>
-                  </dependencies>
-                  <executions>
-                     <execution>
-                        <id>generate-user-manual-html</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                           <goal>process-asciidoc</goal>
-                        </goals>
-                        <configuration>
-                           <sourceDirectory>${scratch-dir-user-manual}</sourceDirectory>
-                           <outputDirectory>${project.build.outputDirectory}/user-manual</outputDirectory>
-                           <backend>html5</backend>
-                           <attributes>
-                              <toc-title>&lt;a href="index.html"&gt;User Manual for ${project.version}&lt;/a&gt;</toc-title>
-                              <favicon>images/favicon.png</favicon>
-                           </attributes>
-                        </configuration>
-                     </execution>
-                     <execution>
-                        <id>generate-user-manual-pdf</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                           <goal>process-asciidoc</goal>
-                        </goals>
-                        <configuration>
-                           <sourceDirectory>${activemq.basedir}/docs/user-manual</sourceDirectory>
-                           <sourceDocumentName>_book.adoc</sourceDocumentName>
-                           <outputFile>book.pdf</outputFile>
-                           <outputDirectory>${project.build.outputDirectory}/user-manual</outputDirectory>
-                           <backend>pdf</backend>
-                           <skip>${skipWebsitePdfGeneration}</skip>
-                           <resources>
-                              <resource>
-                                 <directory>${activemq.basedir}/docs/user-manual</directory>
-                                 <includes>
-                                    <include>book.pdf</include>
-                                 </includes>
-                              </resource>
-                           </resources>
-                        </configuration>
-                     </execution>
-                     <execution>
-                        <id>generate-migration-guide-html</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                           <goal>process-asciidoc</goal>
-                        </goals>
-                        <configuration>
-                           <sourceDirectory>${activemq.basedir}/docs/migration-guide</sourceDirectory>
-                           <outputDirectory>${project.build.outputDirectory}/migration-guide</outputDirectory>
-                           <backend>html5</backend>
-                           <attributes>
-                              <favicon>images/favicon.png</favicon>
-                           </attributes>
-                        </configuration>
-                     </execution>
-                     <execution>
-                        <id>generate-hacking-guide-html</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                           <goal>process-asciidoc</goal>
-                        </goals>
-                        <configuration>
-                           <sourceDirectory>${activemq.basedir}/docs/hacking-guide</sourceDirectory>
-                           <outputDirectory>${project.build.outputDirectory}/hacking-guide</outputDirectory>
-                           <backend>html5</backend>
-                           <attributes>
-                              <favicon>images/favicon.png</favicon>
-                           </attributes>
-                        </configuration>
-                     </execution>
-                  </executions>
-                  <configuration>
-                     <doctype>book</doctype>
-                     <skip>${skipWebsiteDocGeneration}</skip>
-                     <attributes>
-                        <source-highlighter>rouge</source-highlighter>
-                        <toc>left</toc>
-                        <icons>font</icons>
-                        <toclevels>2</toclevels>
-                        <sectlinks />
-                        <sectanchors />
-                        <sectnumlevels>3</sectnumlevels>
-                        <sectnums />
-                        <idprefix />
-                        <idseparator>-</idseparator>
-                        <nofooter>true</nofooter>
-                        <linkcss>true</linkcss>
-                        <iconfont-remote>false</iconfont-remote>
-                        <stylesdir>css</stylesdir>
-                        <webfonts>false</webfonts>
-                        <prewrap>false</prewrap>
-                        <reproducible />
-                        <!-- enable "experimental" for keyboard macros - https://docs.asciidoctor.org/asciidoc/latest/macros/keyboard-macro/ -->
-                        <experimental>true</experimental>
-
-                        <!-- Version substitution attributes -->
-                        <project-version>${project.version}</project-version>
-                        <project-name-full>Apache Artemis</project-name-full>
-                        <project-name-full-url>apache-artemis</project-name-full-url>
-                        <project-name-short>Artemis</project-name-short>
-                        <log4j-version>${log4j.version}</log4j-version>
-                        <artemis-console-version>${artemis-console-version}</artemis-console-version>
-                     </attributes>
-                     <logHandler>
-                        <outputToConsole>false</outputToConsole>
-                        <failIf>
-                           <!-- https://docs.asciidoctor.org/asciidoctor/latest/errors-and-warnings/#info -->
-                           <containsText>possible invalid reference</containsText>
-                        </failIf>
-                     </logHandler>
-                  </configuration>
                </plugin>
             </plugins>
          </build>

@@ -1,0 +1,34 @@
+site:
+  title: Apache Artemis
+  url: https://artemis.apache.org
+  start_page: user-manual::index.adoc
+content:
+  sources:
+    - url: ..
+      branches: [HEAD]
+      start_path: docs/user-manual
+    - url: ..
+      branches: [HEAD]
+      start_path: docs/hacking-guide
+    - url: ..
+      branches: [HEAD]
+      start_path: docs/migration-guide
+ui:
+  bundle:
+    url: https://github.com/jbertram/artemis-antora-ui/releases/download/0.1/ui-bundle.zip
+antora:
+  extensions:
+    - require: '@antora/lunr-extension'
+      index_latest_only: true
+      index_by_heading: true
+asciidoc:
+  attributes:
+    sectnums: ''
+    project-name-full: Apache Artemis
+    project-name-full-url: apache-artemis
+    project-name-short: Artemis
+    project-version: ${project-version}
+    log4j-version: ${log4j-version}
+    artemis-console-version: ${artemis-console-version}
+output:
+  dir: target/site
