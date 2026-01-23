@@ -51,6 +51,8 @@ public class TransportConfiguration implements Serializable {
 
    private String name;
 
+   private String lockCoordinator;
+
    private String factoryClassName = "null";
 
    private Map<String, Object> params;
@@ -411,6 +413,15 @@ public class TransportConfiguration implements Serializable {
             params.put(key, val);
          }
       }
+   }
+
+   public String getLockCoordinator() {
+      return lockCoordinator;
+   }
+
+   public TransportConfiguration setLockCoordinator(String lockCoordinator) {
+      this.lockCoordinator = lockCoordinator;
+      return this;
    }
 
    private static String replaceWildcardChars(final String str) {

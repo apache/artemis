@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -57,13 +58,27 @@ import org.apache.activemq.artemis.core.server.impl.SharedStoreBackupActivation;
 import org.apache.activemq.artemis.core.server.impl.SharedStorePrimaryActivation;
 import org.apache.activemq.artemis.lockmanager.DistributedLock;
 import org.apache.activemq.artemis.lockmanager.DistributedLockManager;
+import org.apache.activemq.artemis.lockmanager.DistributedLockManagerFactory;
 import org.apache.activemq.artemis.lockmanager.MutableLong;
+import org.apache.activemq.artemis.lockmanager.Registry;
 import org.apache.activemq.artemis.lockmanager.UnavailableStateException;
 import org.apache.activemq.artemis.tests.util.ServerTestBase;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 public class HAPolicyConfigurationTest extends ServerTestBase {
+
+   @BeforeAll
+   public static void register() {
+      Registry.getInstance().register(new FakeDistributedLockManagerFactory());
+   }
+
+   @AfterAll
+   public static void unregister() {
+      Registry.getInstance().unregisterWithType("fake");
+   }
 
    @Override
    @AfterEach
@@ -163,6 +178,29 @@ public class HAPolicyConfigurationTest extends ServerTestBase {
          assertInstanceOf(PrimaryOnlyPolicy.class, haPolicy);
       } finally {
          server.stop();
+      }
+   }
+
+   public static class FakeDistributedLockManagerFactory implements DistributedLockManagerFactory {
+
+      @Override
+      public DistributedLockManager build(Map<String, String> properties) {
+         return new FakeDistributedLockManager(properties);
+      }
+
+      @Override
+      public String getName() {
+         return "fake";
+      }
+
+      @Override
+      public String getImplName() {
+         return FakeDistributedLockManager.class.getName();
+      }
+
+      @Override
+      public Set<String> getValidParametersList() {
+         return Set.of();
       }
    }
 

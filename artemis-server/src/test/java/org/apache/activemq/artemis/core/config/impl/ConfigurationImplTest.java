@@ -29,8 +29,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.beans.PropertyDescriptor;
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
@@ -62,6 +64,7 @@ import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.config.ConfigurationUtils;
 import org.apache.activemq.artemis.core.config.HAPolicyConfiguration;
+import org.apache.activemq.artemis.core.config.LockCoordinatorConfiguration;
 import org.apache.activemq.artemis.core.config.ScaleDownConfiguration;
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPBridgeAddressPolicyElement;
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPBridgeBrokerConnectionElement;
@@ -3042,6 +3045,79 @@ public class ConfigurationImplTest extends AbstractConfigurationTestBase {
       configuration.addAcceptorConfiguration("test", "tcp://0.0.0.0:61616?useKQueue");
       File fileOutput = new File(getTestDirfile(), "broker.properties");
       assertDoesNotThrow(() -> configuration.exportAsProperties(fileOutput));
+   }
+
+   /**
+    * Verifies the lock coordinator configuration parsing and export process:
+    * <ul>
+    * <li>Creates a configuration from broker properties</li>
+    * <li>Validates the configuration output</li>
+    * <li>Exports the configuration back to a new {@link java.util.Properties}</li>
+    * <li>Verifies that the new output contains all initially specified properties</li>
+    * </ul>
+    */
+   @Test
+   public void testParseLockCoordinator() throws Exception {
+      Properties properties = new Properties();
+
+      properties.put("lockCoordinatorConfigurations.hello.checkPeriod", "123");
+      properties.put("lockCoordinatorConfigurations.hello.lockId", "lock-id");
+      properties.put("lockCoordinatorConfigurations.hello.name", "hello");
+      properties.put("lockCoordinatorConfigurations.hello.lockType", "someLock");
+      for (int i = 0; i < 10; i++) {
+         properties.put("lockCoordinatorConfigurations.hello.properties.k" + i, "v" + i);
+      }
+
+      properties.put("acceptorConfigurations.netty.factoryClassName", "netty");
+      properties.put("acceptorConfigurations.netty.lockCoordinator", "hello");
+      properties.put("acceptorConfigurations.netty.name", "netty");
+      properties.put("acceptorConfigurations.netty.params.port", "8888");
+      properties.put("acceptorConfigurations.netty.params.host", "localhost");
+
+      ConfigurationImpl configuration = new ConfigurationImpl();
+      configuration.parsePrefixedProperties(properties, null);
+
+      assertEquals(1, configuration.getAcceptorConfigurations().size());
+      TransportConfiguration acceptorConfig = null;
+      for (TransportConfiguration t :configuration.getAcceptorConfigurations()) {
+         acceptorConfig = t;
+      }
+      // I am not going to validate all the parameters from netty since this is already tested elsewhere
+      assertEquals("hello", acceptorConfig.getLockCoordinator());
+      assertEquals("netty", acceptorConfig.getFactoryClassName());
+
+      assertEquals(1, configuration.getLockCoordinatorConfigurations().size());
+
+      LockCoordinatorConfiguration lockCoordinatorConfiguration = null;
+
+      for (LockCoordinatorConfiguration t : configuration.getLockCoordinatorConfigurations()) {
+         lockCoordinatorConfiguration = t;
+      }
+      Map<String, String> lockProperties = lockCoordinatorConfiguration.getProperties();
+      for (int i = 0; i < 10; i++) {
+         assertEquals("v" + i, lockProperties.get("k" + i));
+      }
+
+      assertEquals(123, lockCoordinatorConfiguration.getCheckPeriod());
+      assertEquals("lock-id", lockCoordinatorConfiguration.getLockId());
+      assertEquals("hello", lockCoordinatorConfiguration.getName());
+      assertEquals("someLock", lockCoordinatorConfiguration.getLockType());
+
+      File outputProperty = new File(getTestDirfile(), "broker.properties");
+      configuration.exportAsProperties(outputProperty);
+
+      Properties brokerProperties = new Properties();
+
+      try (FileInputStream is = new FileInputStream(outputProperty)) {
+         BufferedInputStream bis = new BufferedInputStream(is);
+         brokerProperties.load(bis);
+      }
+
+      properties.forEach((k, v) -> {
+         logger.debug("Validating {} = {}", k, v);
+         assertEquals(v, brokerProperties.get(k));
+      });
+
    }
 
    /**

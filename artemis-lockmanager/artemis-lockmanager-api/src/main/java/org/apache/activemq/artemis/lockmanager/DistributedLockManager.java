@@ -21,16 +21,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.apache.activemq.artemis.utils.ClassloadingUtil;
-
 public interface DistributedLockManager extends AutoCloseable {
 
    static DistributedLockManager newInstanceOf(String className, Map<String, String> properties) throws Exception {
-      return (DistributedLockManager) ClassloadingUtil.getInstanceForParamsWithTypeCheck(className,
-                                                                                         DistributedLockManager.class,
-                                                                                         DistributedLockManager.class.getClassLoader(),
-                                                                                         new Class[]{Map.class},
-                                                                                         properties);
+      DistributedLockManagerFactory factory = Registry.getInstance().getFactoryWithClassName(className);
+      if (factory == null) {
+         throw new IllegalArgumentException(className + " not found");
+      }
+      return factory.build(properties);
    }
 
    @FunctionalInterface

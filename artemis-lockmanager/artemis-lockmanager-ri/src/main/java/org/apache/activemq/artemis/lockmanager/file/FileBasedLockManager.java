@@ -31,21 +31,13 @@ import org.apache.activemq.artemis.lockmanager.DistributedLockManager;
 import org.apache.activemq.artemis.lockmanager.MutableLong;
 import org.apache.activemq.artemis.lockmanager.UnavailableStateException;
 
-/**
- * This is an implementation suitable to be used just on unit tests and it won't attempt to manage nor purge existing
- * stale locks files. It's part of the tests life-cycle to properly set-up and tear-down the environment.
- */
 public class FileBasedLockManager implements DistributedLockManager {
 
    private final File locksFolder;
    private final Map<String, FileDistributedLock> locks;
    private boolean started;
 
-   public FileBasedLockManager(Map<String, String> args) {
-      this(new File(args.get("locks-folder")));
-   }
-
-   public FileBasedLockManager(File locksFolder) {
+   FileBasedLockManager(File locksFolder) {
       Objects.requireNonNull(locksFolder);
       if (!locksFolder.exists()) {
          throw new IllegalStateException(locksFolder + " is supposed to already exists");

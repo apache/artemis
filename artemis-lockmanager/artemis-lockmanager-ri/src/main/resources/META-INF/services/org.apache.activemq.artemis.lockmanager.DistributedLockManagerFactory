@@ -1,0 +1,2 @@
+org.apache.activemq.artemis.lockmanager.zookeeper.CuratorDistributedLockManagerFactory
+org.apache.activemq.artemis.lockmanager.file.FileBasedLockManagerFactory

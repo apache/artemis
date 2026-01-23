@@ -22,10 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.activemq.artemis.tests.extensions.ThreadLeakCheckExtension;
 import org.apache.activemq.artemis.tests.extensions.parameterized.ParameterizedTestExtension;
-import org.apache.curator.test.InstanceSpec;
-import org.apache.curator.test.TestingCluster;
 import org.apache.curator.test.TestingZooKeeperServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,8 +30,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 
 //Parameters set in super class
@@ -46,34 +41,27 @@ public class ZookeeperLockManagerSinglePairTest extends LockManagerSinglePairTes
    // Beware: the server tick must be small enough that to let the session to be correctly expired
    private static final int SERVER_TICK_MS = 100;
 
-   private TestingCluster testingServer;
-   private InstanceSpec[] clusterSpecs;
-   private int nodes;
+   ZookeeperCluster zookeeperCluster;
 
    @BeforeEach
    @Override
    public void setup() throws Exception {
       super.setup();
-      nodes = 3;
-      clusterSpecs = new InstanceSpec[nodes];
-      for (int i = 0; i < nodes; i++) {
-         clusterSpecs[i] = new InstanceSpec(newFolder(temporaryFolder, "node" + i), BASE_SERVER_PORT + i, -1, -1, true, -1, SERVER_TICK_MS, -1);
-      }
-      testingServer = new TestingCluster(clusterSpecs);
-      testingServer.start();
-      assertEquals("127.0.0.1:6666,127.0.0.1:6667,127.0.0.1:6668", testingServer.getConnectString());
-      logger.info("Cluster of {} nodes on: {}", 3, testingServer.getConnectString());
+
+      zookeeperCluster = new ZookeeperCluster(temporaryFolder, 3, BASE_SERVER_PORT, SERVER_TICK_MS);
+      zookeeperCluster.start();
+      assertEquals("127.0.0.1:6666,127.0.0.1:6667,127.0.0.1:6668", zookeeperCluster.getConnectString());
+      logger.info("Cluster of {} nodes on: {}", 3, zookeeperCluster.getConnectString());
    }
 
    @Override
    @AfterEach
    public void after() throws Exception {
       // zk bits that leak from servers
-      ThreadLeakCheckExtension.addKownThread("ListenerHandler-");
       try {
          super.after();
       } finally {
-         testingServer.close();
+         zookeeperCluster.stop();
       }
    }
 
@@ -88,8 +76,8 @@ public class ZookeeperLockManagerSinglePairTest extends LockManagerSinglePairTes
 
    @Override
    protected int[] stopMajority() throws Exception {
-      List<TestingZooKeeperServer> followers = testingServer.getServers();
-      final int quorum = (nodes / 2) + 1;
+      List<TestingZooKeeperServer> followers = zookeeperCluster.getServers();
+      final int quorum = (zookeeperCluster.getNodes() / 2) + 1;
       final int[] stopped = new int[quorum];
       for (int i = 0; i < quorum; i++) {
          followers.get(i).stop();
@@ -100,18 +88,9 @@ public class ZookeeperLockManagerSinglePairTest extends LockManagerSinglePairTes
 
    @Override
    protected void restart(int[] nodes) throws Exception {
-      List<TestingZooKeeperServer> servers = testingServer.getServers();
+      List<TestingZooKeeperServer> servers = zookeeperCluster.getServers();
       for (int nodeIndex : nodes) {
          servers.get(nodeIndex).restart();
       }
-   }
-
-   private static File newFolder(File root, String... subDirs) throws IOException {
-      String subFolder = String.join("/", subDirs);
-      File result = new File(root, subFolder);
-      if (!result.mkdirs()) {
-         throw new IOException("Couldn't create folders " + root);
-      }
-      return result;
    }
 }

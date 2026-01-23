@@ -551,6 +551,8 @@
             </xsd:complexType>
          </xsd:element>
 
+         <xsd:element ref="lock-coordinators" maxOccurs="1" minOccurs="0"/>
+
          <xsd:element ref="bridges" maxOccurs="1" minOccurs="0"/>
 
          <xsd:element ref="federations" maxOccurs="1" minOccurs="0"/>
@@ -3224,6 +3226,78 @@
       </xsd:complexType>
    </xsd:element>
 
+
+   <xsd:complexType name="lock-coordinatorType">
+      <xsd:all>
+         <xsd:element name="lock-id" type="xsd:string" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  The lockID the implementation will use to reach the lock provider.
+                  This is different from the lock-coordinator name, but if lock-id is omitted, we will use name of the lock-coordinator as a value.
+                  Notice this feature is in tech preview and its configuration is subjected to changes.
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+         <xsd:element name="type" type="xsd:string" maxOccurs="1" minOccurs="1">
+            <xsd:annotation>
+               <xsd:documentation>
+                  The type of lock being used for coordination. Options: file, ZK.
+                  Notice this is a pluggable functionality so a provider may introduce additional options.
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+         <xsd:element name="check-period" type="xsd:integer" maxOccurs="1" minOccurs="0" default="5000">
+            <xsd:annotation>
+               <xsd:documentation>
+                  A period used to verify if the lock still valid and renew it if needed.
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+         <xsd:element name="properties" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  A list of options for the distributed-primitive-manager
+               </xsd:documentation>
+            </xsd:annotation>
+            <xsd:complexType>
+               <xsd:sequence>
+                  <xsd:element name="property" type="propertyType" minOccurs="1" maxOccurs="unbounded">
+                     <xsd:annotation>
+                        <xsd:documentation>
+                           A key-value pair option for the distributed-primitive-manager
+                        </xsd:documentation>
+                     </xsd:annotation>
+                  </xsd:element>
+               </xsd:sequence>
+            </xsd:complexType>
+         </xsd:element>
+      </xsd:all>
+
+      <xsd:attribute name="name" type="xsd:ID" use="required">
+         <xsd:annotation>
+            <xsd:documentation>
+               unique name for the lock coordinator
+            </xsd:documentation>
+         </xsd:annotation>
+      </xsd:attribute>
+
+   </xsd:complexType>
+
+   <xsd:element name="lock-coordinators">
+      <xsd:annotation>
+         <xsd:documentation>
+            a list of lock coordinators
+         </xsd:documentation>
+      </xsd:annotation>
+      <xsd:complexType>
+         <xsd:sequence>
+            <xsd:element name="lock-coordinator" type="lock-coordinatorType" maxOccurs="unbounded" minOccurs="0"/>
+         </xsd:sequence>
+         <xsd:attributeGroup ref="xml:specialAttrs"/>
+      </xsd:complexType>
+   </xsd:element>
+
+
    <xsd:complexType name="distributed-primitive-manager">
       <xsd:all>
          <xsd:element name="class-name" type="xsd:string" maxOccurs="1" minOccurs="0">
@@ -4900,6 +4974,8 @@
       <xsd:simpleContent>
          <xsd:extension base="xsd:string">
             <xsd:attribute name="name" type="xsd:string">
+            </xsd:attribute>
+            <xsd:attribute name="lock-coordinator" type="xsd:string">
             </xsd:attribute>
          </xsd:extension>
       </xsd:simpleContent>

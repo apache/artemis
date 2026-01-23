@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
 import java.util.Map;
 
@@ -63,14 +62,14 @@ public class FileDistributedLockTest extends DistributedLockTest {
 
    @Test
    public void reflectiveManagerCreationFailWithoutLocksFolder() throws Exception {
-      assertThrows(InvocationTargetException.class, () -> {
+      assertThrows(IllegalArgumentException.class, () -> {
          DistributedLockManager.newInstanceOf(managerClassName(), Collections.emptyMap());
       });
    }
 
    @Test
    public void reflectiveManagerCreationFailIfLocksFolderIsNotFolder() throws Exception {
-      assertThrows(InvocationTargetException.class, () -> {
+      assertThrows(IllegalStateException.class, () -> {
          DistributedLockManager.newInstanceOf(managerClassName(), Collections.singletonMap("locks-folder", File.createTempFile("junit", null, tmpFolder).toString()));
       });
    }
