@@ -134,6 +134,7 @@ import org.apache.activemq.artemis.tests.extensions.parameterized.Parameters;
 import org.apache.activemq.artemis.tests.unit.core.config.impl.fakes.FakeConnectorServiceFactory;
 import org.apache.activemq.artemis.tests.util.CFUtil;
 import org.apache.activemq.artemis.tests.util.Wait;
+import org.apache.activemq.artemis.utils.JsonLoader;
 import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.artemis.utils.SecurityFormatter;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
@@ -4440,6 +4441,74 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
          assertEquals(0, jsonConsumer.getInt(ConsumerField.LAST_ACKNOWLEDGED_TIME.getName()), "lastAcknowledgedTime");
       }
 
+   }
+
+   @TestTemplate
+   public void testListConsumersLastAckTime() throws Exception {
+      testListConsumersTime(ConsumerField.LAST_ACKNOWLEDGED_TIME.getName());
+   }
+
+   @TestTemplate
+   public void testListConsumersLastDeliveredTime() throws Exception {
+      testListConsumersTime(ConsumerField.LAST_DELIVERED_TIME.getName());
+   }
+
+   private void testListConsumersTime(String field) throws Exception {
+      SimpleString queueName = SimpleString.of(getName());
+
+      ActiveMQServerControl serverControl = createManagementControl();
+
+      Queue queue;
+      if (legacyCreateQueue) {
+         queue = server.createQueue(queueName, RoutingType.ANYCAST, queueName, null, false, false);
+      } else {
+         queue = server.createQueue(QueueConfiguration.of(queueName).setAddress(queueName).setRoutingType(RoutingType.ANYCAST).setDurable(false));
+      }
+
+      try (ServerLocator locator = createInVMNonHALocator();
+           ClientSessionFactory csf = createSessionFactory(locator);
+           ClientSession session = csf.createSession()) {
+
+         ClientConsumer consumer1 = session.createConsumer(queueName);
+         ClientConsumer consumer2 = session.createConsumer(queueName);
+         ClientConsumer consumer3 = session.createConsumer(queueName);
+         session.start();
+         ClientProducer producer = session.createProducer(queueName);
+         producer.send(session.createMessage(true));
+         ClientMessage message = consumer1.receiveImmediate();
+         assertNotNull(message);
+         message.individualAcknowledge();
+         Thread.sleep(3);
+         producer.send(session.createMessage(true));
+         message = consumer2.receiveImmediate();
+         assertNotNull(message);
+         message.individualAcknowledge();
+         Wait.assertEquals(2L, () -> queue.getMessagesAcknowledged(), 1000, 20);
+
+         JsonArray array = (JsonArray) JsonUtil.readJsonObject(serverControl.listConsumers(null, -1, -1)).get("data");
+         long time1 = array.getJsonObject(0).getJsonNumber(field).longValue();
+         long time2 = array.getJsonObject(1).getJsonNumber(field).longValue();
+         long time3 = array.getJsonObject(2).getJsonNumber(field).longValue();
+
+         verifyConsumerCount(serverControl, createJsonFilter(field, "EQUALS", String.valueOf(time1)), queueName, 1);
+         verifyConsumerCount(serverControl, createJsonFilter(field, "EQUALS", String.valueOf(time2)), queueName, 1);
+         verifyConsumerCount(serverControl, createJsonFilter(field, "EQUALS", String.valueOf(time3)), queueName, 1);
+         verifyConsumerCount(serverControl, createJsonFilter(field, "GREATER_THAN", "0"), queueName, 2);
+         verifyConsumerCount(serverControl, createJsonFilter(field, "LESS_THAN", "1"), queueName, 1);
+      }
+   }
+
+   private static void verifyConsumerCount(ActiveMQServerControl serverControl, String filterString, SimpleString expectedQueueName, int expectedConsumerCount) throws Exception {
+      String consumersAsJsonString = serverControl.listConsumers(filterString, -1, -1);
+      JsonArray data = (JsonArray) JsonUtil.readJsonObject(consumersAsJsonString).get("data");
+      int consumerCount = 0;
+      for (int i = 0; i < data.size(); i++) {
+         String consumerQueueName = data.getJsonObject(i).getString(ConsumerField.QUEUE.getName());
+         if (consumerQueueName != null && consumerQueueName.equals(expectedQueueName.toString())) {
+            consumerCount++;
+         }
+      }
+      assertEquals(expectedConsumerCount, consumerCount, "number of consumers returned from query using filter: " + filterString + "\n" + JsonLoader.prettyPrint(consumersAsJsonString));
    }
 
    @TestTemplate
