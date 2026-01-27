@@ -1105,10 +1105,12 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
                stream = stream.filter((Map.Entry<?, ?> entry)-> filterOn.isAssignableFrom(entry.getClass()));
             }
             stream.forEach(entry -> {
-               // nested by name
-               nested.push(entry.getKey().toString());
-               export(beanUtils, nested, bufferedWriter, entry.getValue());
-               nested.pop();
+               if (entry.getValue() != null) {
+                  // nested by name
+                  nested.push(entry.getKey().toString());
+                  export(beanUtils, nested, bufferedWriter, entry.getValue());
+                  nested.pop();
+               }
             });
          }
       } else if (isComplexConfigObject(value)) {
@@ -1168,7 +1170,7 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
          });
       } else {
          // string form works ok otherwise
-         exportKeyValue(nested, bufferedWriter, value.toString());
+         exportKeyValue(nested, bufferedWriter, String.valueOf(value));
       }
    }
 

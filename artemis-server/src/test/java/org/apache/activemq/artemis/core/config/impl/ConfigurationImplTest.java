@@ -17,6 +17,7 @@
 package org.apache.activemq.artemis.core.config.impl;
 
 import static org.apache.activemq.artemis.core.config.impl.ConfigurationImpl.REDACTED;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -3031,6 +3032,16 @@ public class ConfigurationImplTest extends AbstractConfigurationTestBase {
 
       assertFalse(configuration.getStatus().contains("\"errors\":[]"));
       assertTrue(configuration.getStatus().contains("initialContextFactory"));
+   }
+
+   @Test
+   public void testExportInvalidPropertyOnAcceptor() throws Exception {
+      ConfigurationImpl configuration = new ConfigurationImpl();
+
+      // useKQueue here would generate a hashMap Value null, what would break the exportAsProperties.
+      configuration.addAcceptorConfiguration("test", "tcp://0.0.0.0:61616?useKQueue");
+      File fileOutput = new File(getTestDirfile(), "broker.properties");
+      assertDoesNotThrow(() -> configuration.exportAsProperties(fileOutput));
    }
 
    /**
