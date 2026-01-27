@@ -80,7 +80,7 @@ It also stores data such as id sequence counters.
 +
 The bindings journal is always a NIO journal as it is typically low throughput compared to the message journal.
 +
-The files on this journal are prefixed as `activemq-bindings`.
+The files on this journal are prefixed as `artemis-bindings`.
 Each file has a `bindings` extension.
 File size is `1048576`, and it is located at the bindings folder.
 
@@ -91,7 +91,7 @@ This journal instance stores all message related data, including the message the
 By default, the broker will try to use an AIO journal.
 If AIO is not available, e.g. the platform is not Linux with the correct kernel version or AIO has not been installed then it will automatically fall back to using Java NIO which is available on any Java platform.
 +
-The files on this journal are prefixed as `activemq-data`.
+The files on this journal are prefixed as `artemis-data`.
 Each file has an `amq` extension.
 File size is by the default `10485760` (configurable), and it is located at the journal folder.
 

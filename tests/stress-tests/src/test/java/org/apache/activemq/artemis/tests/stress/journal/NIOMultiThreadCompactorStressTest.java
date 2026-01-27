@@ -85,7 +85,7 @@ public class NIOMultiThreadCompactorStressTest extends ActiveMQTestBase {
          stopServer();
 
          NIOSequentialFileFactory factory = new NIOSequentialFileFactory(new File(getJournalDir()), 1);
-         JournalImpl journal = new JournalImpl(ActiveMQDefaultConfiguration.getDefaultJournalFileSize(), 2, 2, 0, 0, factory, "activemq-data", "amq", 100);
+         JournalImpl journal = new JournalImpl(ActiveMQDefaultConfiguration.getDefaultJournalFileSize(), 2, 2, 0, 0, factory, "artemis-data", "amq", 100);
 
          List<RecordInfo> committedRecords = new ArrayList<>();
          List<PreparedTransactionInfo> preparedTransactions = new ArrayList<>();

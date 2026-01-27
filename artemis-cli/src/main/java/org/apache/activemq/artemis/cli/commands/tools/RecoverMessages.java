@@ -90,7 +90,7 @@ public class RecoverMessages extends DBOption {
 
       SequentialFileFactory outputFF = new NIOSequentialFileFactory(journalOutput, null, 1);
       outputFF.setDatasync(false);
-      JournalImpl targetJournal = new JournalImpl(configuration.getJournalFileSize(), 2, 2, -1, 0, outputFF, "activemq-data", "amq", 1);
+      JournalImpl targetJournal = new JournalImpl(configuration.getJournalFileSize(), 2, 2, -1, 0, outputFF, "artemis-data", "amq", 1);
       targetJournal.setAutoReclaim(false);
 
       targetJournal.start();
@@ -100,7 +100,7 @@ public class RecoverMessages extends DBOption {
       SequentialFileFactory largeMessagesFF = new NIOSequentialFileFactory(largeMessage, null, 1);
 
       // Will use only default values. The load function should adapt to anything different
-      JournalImpl messagesJournal = new JournalImpl(configuration.getJournalFileSize(), configuration.getJournalMinFiles(), configuration.getJournalPoolFiles(), 0, 0, messagesFF, "activemq-data", "amq", 1);
+      JournalImpl messagesJournal = new JournalImpl(configuration.getJournalFileSize(), configuration.getJournalMinFiles(), configuration.getJournalPoolFiles(), 0, 0, messagesFF, "artemis-data", "amq", 1);
 
       List<JournalFile> files = messagesJournal.orderFiles();
 

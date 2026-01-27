@@ -40,16 +40,16 @@ public class ExportFormatTest extends ActiveMQTestBase {
 
    // Case the format was changed, and the change was agreed, use _testCreateFormat to recreate this field
    String bindingsFile = """
-      #File,JournalFileImpl: (activemq-bindings-1.bindings id = 1, recordID = 1)
+      #File,JournalFileImpl: (artemis-bindings-1.bindings id = 1, recordID = 1)
       operation@AddRecord,id@1,userRecordType@24,length@8,isUpdate@false,compactCount@0,data@AAAAAH____8=
       operation@AddRecordTX,txID@2,id@3,userRecordType@21,length@43,isUpdate@false,compactCount@0,data@AAAABEEAMQAAAAAEQQAxAAABAAAAFHUAcwBlAHIAPQBuAHUAbABsADsAAA==
       operation@Commit,txID@2,numberOfRecords@1
       operation@AddRecord,id@20,userRecordType@24,length@8,isUpdate@false,compactCount@0,data@AAAAAAAAABQ=
-      #File,JournalFileImpl: (activemq-bindings-2.bindings id = 2, recordID = 2)""";
+      #File,JournalFileImpl: (artemis-bindings-2.bindings id = 2, recordID = 2)""";
 
    // Case the format was changed, and the change was agreed, use _testCreateFormat to recreate this field
    String journalFile = """
-      #File,JournalFileImpl: (activemq-data-1.amq id = 1, recordID = 1)
+      #File,JournalFileImpl: (artemis-data-1.amq id = 1, recordID = 1)
       operation@AddRecordTX,txID@0,id@7,userRecordType@45,length@83,isUpdate@false,compactCount@0,data@AQAAAAAAAAAHAQAAAARBADEAAAAAPQAAAA0AAAAAAAAABwEAAAAEQQAxAAAAAQAAAAAAAAAAAAABWpf6WFoEAQAAAAEAAAAGawBlAHkABgAAAAA=
       operation@UpdateTX,txID@0,id@7,userRecordType@32,length@8,isUpdate@true,compactCount@0,data@AAAAAAAAAAM=
       operation@AddRecordTX,txID@0,id@8,userRecordType@45,length@83,isUpdate@false,compactCount@0,data@AQAAAAAAAAAIAQAAAARBADEAAAAAPQAAAA0AAAAAAAAACAEAAAAEQQAxAAAAAQAAAAAAAAAAAAABWpf6WF4EAQAAAAEAAAAGawBlAHkABgAAAAE=
@@ -71,7 +71,7 @@ public class ExportFormatTest extends ActiveMQTestBase {
       operation@Update,id@18,userRecordType@32,length@8,isUpdate@true,compactCount@0,data@AAAAAAAAAAM=
       operation@AddRecord,id@19,userRecordType@45,length@83,isUpdate@false,compactCount@0,data@AQAAAAAAAAATAQAAAARBADEAAAAAPQAAAA0AAAAAAAAAEwEAAAAEQQAxAAAAAQAAAAAAAAAAAAABWpf6WL4EAQAAAAEAAAAGawBlAHkABgAAAAk=
       operation@Update,id@19,userRecordType@32,length@8,isUpdate@true,compactCount@0,data@AAAAAAAAAAM=
-      #File,JournalFileImpl: (activemq-data-2.amq id = 2, recordID = 2)""";
+      #File,JournalFileImpl: (artemis-data-2.amq id = 2, recordID = 2)""";
 
    @Test
    @Disabled
@@ -112,20 +112,20 @@ public class ExportFormatTest extends ActiveMQTestBase {
       System.out.println();
       System.out.println("copy & paste the following as bindingsFile:");
 
-      EncodeJournal.exportJournal(server.getConfiguration().getBindingsLocation().getAbsolutePath(), "activemq-bindings", "bindings", 2, 1048576, System.out);
+      EncodeJournal.exportJournal(server.getConfiguration().getBindingsLocation().getAbsolutePath(), "artemis-bindings", "bindings", 2, 1048576, System.out);
 
       System.out.println();
       System.out.println("copy & paste the following as dataFile:");
 
-      EncodeJournal.exportJournal(server.getConfiguration().getJournalLocation().getAbsolutePath(), "activemq-data", "amq", 2, 102400, System.out);
+      EncodeJournal.exportJournal(server.getConfiguration().getJournalLocation().getAbsolutePath(), "artemis-data", "amq", 2, 102400, System.out);
    }
 
    @Test
    public void testConsumeFromFormat() throws Exception {
       ActiveMQServer server = createServer(true);
 
-      DecodeJournal.importJournal(server.getConfiguration().getJournalLocation().getAbsolutePath(), "activemq-data", "amq", 2, 102400, new StringReader(journalFile));
-      DecodeJournal.importJournal(server.getConfiguration().getBindingsLocation().getAbsolutePath(), "activemq-bindings", "bindings", 2, 1048576, new StringReader(bindingsFile));
+      DecodeJournal.importJournal(server.getConfiguration().getJournalLocation().getAbsolutePath(), "artemis-data", "amq", 2, 102400, new StringReader(journalFile));
+      DecodeJournal.importJournal(server.getConfiguration().getBindingsLocation().getAbsolutePath(), "artemis-bindings", "bindings", 2, 1048576, new StringReader(bindingsFile));
       server.start();
 
       ServerLocator locator = createInVMNonHALocator();

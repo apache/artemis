@@ -105,7 +105,7 @@ public class ReplayManager {
       SequentialFileFactory messagesFF = new NIOSequentialFileFactory(retentionFolder, null, 1);
 
       // Will use only default values. The load function should adapt to anything different
-      JournalImpl messagesJournal = new JournalImpl(server.getConfiguration().getJournalFileSize(), server.getConfiguration().getJournalMinFiles(), server.getConfiguration().getJournalPoolFiles(), 0, 0, messagesFF, "activemq-data", "amq", 1);
+      JournalImpl messagesJournal = new JournalImpl(server.getConfiguration().getJournalFileSize(), server.getConfiguration().getJournalMinFiles(), server.getConfiguration().getJournalPoolFiles(), 0, 0, messagesFF, "artemis-data", "amq", 1);
 
       List<JournalFile> files = messagesJournal.orderFiles();
 

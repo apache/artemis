@@ -171,14 +171,15 @@ public class Upgrade extends InstallAbstract {
          File artemisUtilityProfileCmdTmp = new File(tmp, Create.ETC_ARTEMIS_UTILITY_PROFILE_CMD);
          File artemisUtilityProfileCmdBkp = new File(etcBkp, Create.ETC_ARTEMIS_UTILITY_PROFILE_CMD);
 
+         dataFolder = getDATA(context, dataFolder, artemisProfileCmd, "set ARTEMIS_DATA_DIR=");
+         renameDataFiles(dataFolder);
+
          if (artemisUtilityProfileCmd.exists()) {
             write("etc/" + Create.ETC_ARTEMIS_UTILITY_PROFILE_CMD, artemisUtilityProfileCmdTmp, filters, false, false);
             upgradeJDK(context, JDK_PREFIX_WINDOWS, "", KEEPING_JVM_ARGUMENTS_ALTERNATES, KEEPING_JVM_ARGUMENTS, artemisUtilityProfileCmdTmp, artemisUtilityProfileCmd, artemisUtilityProfileCmdBkp,
                        Collections.emptyMap(), "set ARTEMIS_INSTANCE=\"", "set ARTEMIS_DATA_DIR=");
          } else {
             if (data == null || data.equals("data")) {
-               dataFolder = getDATA(context, dataFolder, artemisProfileCmd, "set ARTEMIS_DATA_DIR=");
-
                Create.addScriptFilters(filters, getHome(), getInstance(), etcFolder, dataFolder, oomeDumpFile, javaMemory, getJavaOptions(), getJavaUtilityOptions(), "NA");
             }
 
@@ -215,14 +216,16 @@ public class Upgrade extends InstallAbstract {
          File artemisUtilityProfileTmp = new File(tmp, Create.ETC_ARTEMIS_UTILITY_PROFILE);
          File artemisUtilityProfileBkp = new File(etcBkp, Create.ETC_ARTEMIS_UTILITY_PROFILE);
 
+         dataFolder = getDATA(context, dataFolder, artemisProfile, "ARTEMIS_DATA_DIR=");
+
+         renameDataFiles(dataFolder);
+
          if (artemisUtilityProfile.exists()) {
             write("etc/" + Create.ETC_ARTEMIS_UTILITY_PROFILE, artemisUtilityProfileTmp, filters, false, false);
             upgradeJDK(context, JDK_PREFIX_LINUX, "\"", KEEPING_JVM_ARGUMENTS_ALTERNATES, KEEPING_JVM_ARGUMENTS, artemisUtilityProfileTmp, artemisUtilityProfile, artemisUtilityProfileBkp,
                   keepPrefixAlternates, "ARTEMIS_INSTANCE=", "ARTEMIS_DATA_DIR=");
          } else {
             if (data == null || data.equals("data")) {
-               dataFolder = getDATA(context, dataFolder, artemisProfile, "ARTEMIS_DATA_DIR=");
-
                Create.addScriptFilters(filters, getHome(), getInstance(), etcFolder, dataFolder, oomeDumpFile, javaMemory, getJavaOptions(), getJavaUtilityOptions(), "NA");
             }
 
@@ -477,6 +480,31 @@ public class Upgrade extends InstallAbstract {
          try (InputStream inputStream = new ByteArrayInputStream(sb.toString().getBytes(StandardCharsets.UTF_8));
               OutputStream outputStream = new FileOutputStream(bootstrapXml)) {
             copy(inputStream, outputStream);
+         }
+      }
+
+   }
+
+   private void renameDataFiles(File dataFolder) throws Exception {
+
+      File journalFilesDirectory = new File(dataFolder, "journal");
+      File bindingsFilesDirectory = new File(dataFolder, "bindings");
+
+      for (File file : journalFilesDirectory.listFiles()) {
+         String filename = file.getAbsolutePath();
+         if (filename.endsWith(".amq")) {
+            filename = filename.replace("activemq", "artemis");
+            File newFile = new File(filename);
+            file.renameTo(newFile);
+         }
+      }
+
+      for (File file : bindingsFilesDirectory.listFiles()) {
+         String filename = file.getAbsolutePath();
+         if (filename.endsWith(".bindings")) {
+            filename = filename.replace("activemq", "artemis");
+            File newFile = new File(filename);
+            file.renameTo(newFile);
          }
       }
 

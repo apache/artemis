@@ -40,8 +40,8 @@ public class EncodeJournal extends LockAbstract {
    @Option(names = "--directory", description = "The journal folder. Default: read 'journal-directory' from broker.xml.")
    public String directory;
 
-   @Option(names = "--prefix", description = "The journal prefix. Default: activemq-data.")
-   public String prefix = "activemq-data";
+   @Option(names = "--prefix", description = "The journal prefix. Default: artemis-data.")
+   public String prefix = "artemis-data";
 
    @Option(names = "--suffix", description = "The journal suffix. Default: amq.")
    public String suffix = "amq";

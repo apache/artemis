@@ -60,7 +60,7 @@ public class JournalCompactSplitTest extends ActiveMQTestBase {
       final int minFiles = 2;
       final int compactMinFiles = 2;
       final int compactPercentage = 30;
-      final String filePrefix = "activemq-data";
+      final String filePrefix = "artemis-data";
       final String fileExtension = "amq";
       final int maxAIO = 1024;
       JournalImpl journalImpl = new JournalImpl(JOURNAL_FILE_SIZE, minFiles, 2, compactMinFiles, compactPercentage, fileFactory, filePrefix, fileExtension, maxAIO, 1);
@@ -99,7 +99,7 @@ public class JournalCompactSplitTest extends ActiveMQTestBase {
    }
 
    private void createFileWithRecords(SequentialFileFactory fileFactory) throws Exception {
-      SequentialFile file = fileFactory.createSequentialFile("activemq-data-1.amq", JOURNAL_FILE_SIZE);
+      SequentialFile file = fileFactory.createSequentialFile("artemis-data-1.amq", JOURNAL_FILE_SIZE);
       file.open();
       file.fill(JOURNAL_FILE_SIZE);
       file.position(0);
