@@ -54,10 +54,12 @@ public class ConsumerFilterPredicate extends ActiveMQFilterPredicate<ServerConsu
             matches(server.getSessionByID(consumer.getSessionID()).getRemotingConnection().getTransportConnection().getRemoteAddress());
          case MESSAGES_IN_TRANSIT -> matches(consumer.getMessagesInTransit());
          case MESSAGES_IN_TRANSIT_SIZE -> matches(consumer.getMessagesInTransitSize());
-         case MESSAGES_DELIVERED -> matches(consumer.getDeliveringMessages());
+         case MESSAGES_DELIVERED -> matches(consumer.getMessagesDelivered());
          case MESSAGES_DELIVERED_SIZE -> matches(consumer.getMessagesDeliveredSize());
          case MESSAGES_ACKNOWLEDGED -> matches(consumer.getMessagesAcknowledged());
          case MESSAGES_ACKNOWLEDGED_AWAITING_COMMIT -> matches(consumer.getMessagesAcknowledgedAwaitingCommit());
+         case LAST_ACKNOWLEDGED_TIME -> matches(consumer.getLastAcknowledgedTime());
+         case LAST_DELIVERED_TIME -> matches(consumer.getLastDeliveredTime());
          default -> true;
       };
    }
