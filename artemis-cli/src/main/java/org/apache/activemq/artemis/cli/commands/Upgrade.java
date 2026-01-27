@@ -466,10 +466,10 @@ public class Upgrade extends InstallAbstract {
          while (linesIterator.hasNext()) {
             String line = linesIterator.next();
             if (line.matches("^(.*)<app name=(.*branding.*)$")) {
-               context.out.println("removing branding war as no longer needed");
+               context.out.println("Removing branding war as no longer needed");
                remove = true;
             } else if (line.matches("^(.*)<app name=(.*plugin.*)$")) {
-               context.out.println("removing plugin war as no longer needed");
+               context.out.println("Removing plugin war as no longer needed");
                remove = true;
             } else {
                sb.append(line).append(System.lineSeparator());
