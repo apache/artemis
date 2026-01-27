@@ -53,6 +53,7 @@ import org.apache.activemq.artemis.cli.commands.messages.Transfer;
 import org.apache.activemq.artemis.cli.commands.messages.perf.PerfGroup;
 import org.apache.activemq.artemis.cli.commands.queue.QueueGroup;
 import org.apache.activemq.artemis.cli.commands.tools.DataGroup;
+import org.apache.activemq.artemis.cli.commands.tools.config.ExportProperties;
 import org.apache.activemq.artemis.cli.commands.tools.journal.PerfJournal;
 import org.apache.activemq.artemis.cli.commands.user.UserGroup;
 import org.apache.activemq.artemis.dto.ManagementContextDTO;
@@ -281,6 +282,7 @@ public class Artemis implements Runnable {
       }
 
       if (includeInstanceCommands) {
+         commandLine.addSubcommand(new ExportProperties());
          commandLine.addSubcommand(new ActivationGroup(commandLine));
          commandLine.addSubcommand(new DataGroup(commandLine));
          commandLine.addSubcommand(new UserGroup(commandLine));
