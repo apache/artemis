@@ -796,23 +796,8 @@ public class NettyAcceptor extends AbstractAcceptor {
             batchFlusherFuture = null;
          }
 
-         // serverChannelGroup has been unbound in pause()
-         if (serverChannelGroup != null) {
-            serverChannelGroup.close().awaitUninterruptibly();
-         }
-
-         if (channelGroup != null) {
-            ChannelGroupFuture future = channelGroup.close().awaitUninterruptibly();
-
-            if (!future.isSuccess()) {
-               ActiveMQServerLogger.LOGGER.nettyChannelGroupError();
-               for (Channel channel : future.group()) {
-                  if (channel.isActive()) {
-                     ActiveMQServerLogger.LOGGER.nettyChannelStillOpen(channel, ProxyProtocolUtil.getRemoteAddress(channel));
-                  }
-               }
-            }
-         }
+         closeChannelGroup(serverChannelGroup);
+         closeChannelGroup(channelGroup);
 
          channelClazz = null;
 
@@ -831,6 +816,17 @@ public class NettyAcceptor extends AbstractAcceptor {
             // 3000ms elapsed.
             eventLoopGroup.shutdownGracefully(quietPeriod, shutdownTimeout, TimeUnit.MILLISECONDS).addListener(f -> callback.run());
             eventLoopGroup = null;
+         }
+      }
+   }
+
+   private void closeChannelGroup(ChannelGroup channelGroup) {
+      if (channelGroup != null && !channelGroup.close().awaitUninterruptibly(shutdownTimeout, TimeUnit.MILLISECONDS)) {
+         ActiveMQServerLogger.LOGGER.nettyChannelGroupError(getName());
+         for (Channel channel : channelGroup) {
+            if (channel.isActive()) {
+               ActiveMQServerLogger.LOGGER.nettyChannelStillOpen(channel, ProxyProtocolUtil.getRemoteAddress(channel), getName());
+            }
          }
       }
    }
@@ -868,10 +864,9 @@ public class NettyAcceptor extends AbstractAcceptor {
 
       // We *pause* the acceptor so no new connections are made
       if (serverChannelGroup != null) {
-         ChannelGroupFuture future = serverChannelGroup.close().awaitUninterruptibly();
-         if (!future.isSuccess()) {
+         if (!serverChannelGroup.close().awaitUninterruptibly(shutdownTimeout, TimeUnit.MILLISECONDS)) {
             ActiveMQServerLogger.LOGGER.nettyChannelGroupBindError();
-            for (Channel channel : future.group()) {
+            for (Channel channel : serverChannelGroup) {
                if (channel.isActive()) {
                   ActiveMQServerLogger.LOGGER.nettyChannelStillBound(channel, ProxyProtocolUtil.getRemoteAddress(channel));
                }

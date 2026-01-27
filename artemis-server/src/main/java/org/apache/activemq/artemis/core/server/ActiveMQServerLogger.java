@@ -492,11 +492,11 @@ public interface ActiveMQServerLogger {
    @LogMessage(id = 222072, value = "Timed out flushing channel on InVMConnection", level = LogMessage.Level.WARN)
    void timedOutFlushingInvmChannel();
 
-   @LogMessage(id = 222074, value = "channel group did not completely close", level = LogMessage.Level.WARN)
-   void nettyChannelGroupError();
+   @LogMessage(id = 222074, value = "Netty ChannelGroup did not completely close for acceptor '{}'", level = LogMessage.Level.WARN)
+   void nettyChannelGroupError(String acceptor);
 
-   @LogMessage(id = 222075, value = "{} is still connected to {}", level = LogMessage.Level.WARN)
-   void nettyChannelStillOpen(Channel channel, String remoteAddress);
+   @LogMessage(id = 222075, value = "{} is still connected to {} for acceptor '{}'", level = LogMessage.Level.WARN)
+   void nettyChannelStillOpen(Channel channel, String remoteAddress, String acceptor);
 
    @LogMessage(id = 222076, value = "channel group did not completely unbind", level = LogMessage.Level.WARN)
    void nettyChannelGroupBindError();

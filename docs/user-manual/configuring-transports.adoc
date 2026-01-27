@@ -236,6 +236,12 @@ autoStart::
 Determines whether or not an acceptor will start automatically when the broker is started.
 Default value is `true`.
 
+shutdownTimeout::
+This is only valid for acceptors.
+It is the number of milliseconds the broker will wait when shutting down each of the various Netty `ChannelGroup` instances as well as the `EventLoopGroup` instance associated with the acceptor.
+The default is `3000`.
+The default can also be set with the Java system property `DEFAULT_SHUTDOWN_TIMEOUT`.
+
 === Configuring Netty Native Transport
 
 Netty Native Transport support exists for selected OS platforms in order to use native sockets/io instead of Java NIO.
