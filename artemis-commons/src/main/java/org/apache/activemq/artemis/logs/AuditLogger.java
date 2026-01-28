@@ -2645,11 +2645,11 @@ public interface AuditLogger {
    void isAutoDelete(String user, Object source);
 
    static void createdConnection(String protocol, Object connectionID, String remoteAddress) {
-      RESOURCE_LOGGER.createdConnection(protocol, String.valueOf(connectionID), String.format("unknown%s", formatRemoteAddress(remoteAddress)));
+      RESOURCE_LOGGER.createdConnection(protocol, String.valueOf(connectionID), remoteAddress);
    }
 
-   @LogMessage(id = 601767, value = "{} connection {} for user {} created", level = LogMessage.Level.INFO)
-   void createdConnection(String protocol, String connectionID, String user);
+   @LogMessage(id = 601767, value = "{} connection {} from {} created", level = LogMessage.Level.INFO)
+   void createdConnection(String protocol, String connectionID, String remoteAddress);
 
    static void destroyedConnection(String protocol, Object connectionID, Subject subject, String remoteAddress) {
       RESOURCE_LOGGER.destroyedConnection(protocol, String.valueOf(connectionID), getCaller(subject, remoteAddress));
