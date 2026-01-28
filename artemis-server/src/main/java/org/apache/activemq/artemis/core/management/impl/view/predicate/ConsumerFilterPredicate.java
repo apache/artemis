@@ -16,13 +16,10 @@
  */
 package org.apache.activemq.artemis.core.management.impl.view.predicate;
 
-import org.apache.activemq.artemis.core.management.impl.view.ConsumerField;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ServerConsumer;
 
-public class ConsumerFilterPredicate extends ActiveMQFilterPredicate<ServerConsumer> {
-
-   private ConsumerField f;
+public class ConsumerFilterPredicate extends ActiveMQFilterPredicate<ServerConsumer, ConsumerPredicateFilterPart> {
 
    private final ActiveMQServer server;
 
@@ -32,45 +29,12 @@ public class ConsumerFilterPredicate extends ActiveMQFilterPredicate<ServerConsu
    }
 
    @Override
-   public boolean test(ServerConsumer consumer) {
-      // Using switch over enum vs string comparison is better for perf.
-      if (f == null)
-         return true;
-      return switch (f) {
-         case ID -> matches(consumer.getSequentialID());
-         case SESSION -> matches(consumer.getSessionID());
-         case USER -> matches(server.getSessionByID(consumer.getSessionID()).getUsername());
-         case VALIDATED_USER -> matches(server.getSessionByID(consumer.getSessionID()).getValidatedUser());
-         case ADDRESS -> matches(consumer.getQueue().getAddress());
-         case QUEUE -> matches(consumer.getQueue().getName());
-         case FILTER -> matches(consumer.getFilterString());
-         case PROTOCOL ->
-            matches(server.getSessionByID(consumer.getSessionID()).getRemotingConnection().getProtocolName());
-         case CLIENT_ID ->
-            matches(server.getSessionByID(consumer.getSessionID()).getRemotingConnection().getClientID());
-         case LOCAL_ADDRESS ->
-            matches(server.getSessionByID(consumer.getSessionID()).getRemotingConnection().getTransportConnection().getLocalAddress());
-         case REMOTE_ADDRESS ->
-            matches(server.getSessionByID(consumer.getSessionID()).getRemotingConnection().getTransportConnection().getRemoteAddress());
-         case MESSAGES_IN_TRANSIT -> matches(consumer.getMessagesInTransit());
-         case MESSAGES_IN_TRANSIT_SIZE -> matches(consumer.getMessagesInTransitSize());
-         case MESSAGES_DELIVERED -> matches(consumer.getDeliveringMessages());
-         case MESSAGES_DELIVERED_SIZE -> matches(consumer.getMessagesDeliveredSize());
-         case MESSAGES_ACKNOWLEDGED -> matches(consumer.getMessagesAcknowledged());
-         case MESSAGES_ACKNOWLEDGED_AWAITING_COMMIT -> matches(consumer.getMessagesAcknowledgedAwaitingCommit());
-         default -> true;
-      };
+   protected boolean filter(ServerConsumer consumer, ConsumerPredicateFilterPart filterPart) throws Exception {
+      return filterPart.filterPart(consumer);
    }
 
    @Override
-   public void setField(String field) {
-      if (field != null && !field.isEmpty()) {
-         this.f = ConsumerField.valueOfName(field);
-
-         //for backward compatibility
-         if (this.f == null) {
-            this.f = ConsumerField.valueOf(field);
-         }
-      }
+   public ConsumerPredicateFilterPart createFilterPart(String field, String operation, String value) {
+      return new ConsumerPredicateFilterPart(server, field, operation, value);
    }
 }

@@ -16,6 +16,7 @@
  */
 package org.apache.activemq.artemis.core.management.impl.view;
 
+import org.apache.activemq.artemis.core.management.impl.view.predicate.SessionPredicateFilterPart;
 import org.apache.activemq.artemis.json.JsonObjectBuilder;
 import java.util.Date;
 import java.util.Objects;
@@ -24,7 +25,7 @@ import org.apache.activemq.artemis.core.management.impl.view.predicate.SessionFi
 import org.apache.activemq.artemis.core.server.ServerSession;
 import org.apache.activemq.artemis.utils.JsonLoader;
 
-public class SessionView extends ActiveMQAbstractView<ServerSession> {
+public class SessionView extends ActiveMQAbstractView<ServerSession, SessionPredicateFilterPart> {
 
    private static final String defaultSortField = SessionField.ID.getName();
 
