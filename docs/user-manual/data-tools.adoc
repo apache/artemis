@@ -388,7 +388,7 @@ COMMANDS
             With --paging option, The folder used for paging (default from
             broker.xml)
 
-            With --prefix option, The journal prefix (default activemq-data)
+            With --prefix option, The journal prefix (default artemis-data)
 
             With --suffix option, The journal suffix (default amq)
 
@@ -419,7 +419,7 @@ COMMANDS
             With --paging option, The folder used for paging (default from
             broker.xml)
 
-            With --prefix option, The journal prefix (default activemq-data)
+            With --prefix option, The journal prefix (default artemis-data)
 
             With --suffix option, The journal suffix (default amq)
 

@@ -1731,7 +1731,7 @@ public abstract class ActiveMQTestBase extends ArtemisTestCase {
       try {
          SequentialFileFactory messagesFF = new NIOSequentialFileFactory(new File(getJournalDir()), null, 1);
 
-         messagesJournal = new JournalImpl(config.getJournalFileSize(), config.getJournalMinFiles(), config.getJournalPoolFiles(), 0, 0, messagesFF, "activemq-data", "amq", 1);
+         messagesJournal = new JournalImpl(config.getJournalFileSize(), config.getJournalMinFiles(), config.getJournalPoolFiles(), 0, 0, messagesFF, "artemis-data", "amq", 1);
          final List<RecordInfo> committedRecords = new LinkedList<>();
          final List<PreparedTransactionInfo> preparedTransactions = new LinkedList<>();
 
@@ -1764,7 +1764,7 @@ public abstract class ActiveMQTestBase extends ArtemisTestCase {
       final HashMap<Integer, AtomicInteger> recordsType = new HashMap<>();
       SequentialFileFactory messagesFF = new NIOSequentialFileFactory(location, null, 1);
 
-      JournalImpl messagesJournal = new JournalImpl(journalFileSize, minFiles, poolfiles, 0, 0, messagesFF, "activemq-data", "amq", 1);
+      JournalImpl messagesJournal = new JournalImpl(journalFileSize, minFiles, poolfiles, 0, 0, messagesFF, "artemis-data", "amq", 1);
       List<JournalFile> filesToRead = messagesJournal.orderFiles();
 
       for (JournalFile file : filesToRead) {
@@ -1777,7 +1777,7 @@ public abstract class ActiveMQTestBase extends ArtemisTestCase {
       final HashMap<Integer, AtomicInteger> recordsType = new HashMap<>();
       SequentialFileFactory messagesFF = new NIOSequentialFileFactory(config.getBindingsLocation(), null, 1);
 
-      JournalImpl messagesJournal = new JournalImpl(config.getJournalFileSize(), config.getJournalMinFiles(), config.getJournalPoolFiles(), 0, 0, messagesFF, "activemq-bindings", "bindings", 1);
+      JournalImpl messagesJournal = new JournalImpl(config.getJournalFileSize(), config.getJournalMinFiles(), config.getJournalPoolFiles(), 0, 0, messagesFF, "artemis-bindings", "bindings", 1);
       List<JournalFile> filesToRead = messagesJournal.orderFiles();
 
       for (JournalFile file : filesToRead) {
@@ -1807,10 +1807,10 @@ public abstract class ActiveMQTestBase extends ArtemisTestCase {
 
       if (messageJournal) {
          ff = new NIOSequentialFileFactory(config.getJournalLocation(), null, 1);
-         journal = new JournalImpl(config.getJournalFileSize(), config.getJournalMinFiles(), config.getJournalPoolFiles(), 0, 0, ff, "activemq-data", "amq", 1);
+         journal = new JournalImpl(config.getJournalFileSize(), config.getJournalMinFiles(), config.getJournalPoolFiles(), 0, 0, ff, "artemis-data", "amq", 1);
       } else {
          ff = new NIOSequentialFileFactory(config.getBindingsLocation(), null, 1);
-         journal = new JournalImpl(1024 * 1024, 2, config.getJournalCompactMinFiles(), config.getJournalPoolFiles(), config.getJournalCompactPercentage(), ff, "activemq-bindings", "bindings", 1);
+         journal = new JournalImpl(1024 * 1024, 2, config.getJournalCompactMinFiles(), config.getJournalPoolFiles(), config.getJournalCompactPercentage(), ff, "artemis-bindings", "bindings", 1);
       }
       journal.start();
 

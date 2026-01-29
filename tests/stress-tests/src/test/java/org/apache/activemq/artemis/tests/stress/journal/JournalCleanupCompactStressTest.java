@@ -114,7 +114,7 @@ public class JournalCleanupCompactStressTest extends ActiveMQTestBase {
          maxAIO = ActiveMQDefaultConfiguration.getDefaultJournalMaxIoNio();
       }
 
-      journal = new JournalImpl(50 * 1024, 20, 20, 50, ActiveMQDefaultConfiguration.getDefaultJournalCompactPercentage(), factory, "activemq-data", "amq", maxAIO) {
+      journal = new JournalImpl(50 * 1024, 20, 20, 50, ActiveMQDefaultConfiguration.getDefaultJournalCompactPercentage(), factory, "artemis-data", "amq", maxAIO) {
          @Override
          protected void onCompactLockingTheJournal() throws Exception {
          }

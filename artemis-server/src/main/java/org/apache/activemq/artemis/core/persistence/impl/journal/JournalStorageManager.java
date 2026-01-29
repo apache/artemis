@@ -77,7 +77,7 @@ import java.lang.invoke.MethodHandles;
 public class JournalStorageManager extends AbstractJournalStorageManager {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-   public static final String ACTIVEMQ_DATA = "activemq-data";
+   public static final String ACTIVEMQ_DATA = "artemis-data";
 
    protected SequentialFileFactory journalFF;
 
@@ -148,7 +148,7 @@ public class JournalStorageManager extends AbstractJournalStorageManager {
       bindingsFF = new NIOSequentialFileFactory(config.getBindingsLocation(), criticalErrorListener, config.getJournalMaxIO_NIO());
       bindingsFF.setDatasync(config.isJournalDatasync());
 
-      Journal localBindings = new JournalImpl(ioExecutorFactory, 1024 * 1024, 2, config.getJournalPoolFiles(), config.getJournalCompactMinFiles(), config.getJournalCompactPercentage(), config.getJournalFileOpenTimeout(), bindingsFF, "activemq-bindings", "bindings", 1, 0, criticalErrorListener, config.getJournalMaxAtticFiles());
+      Journal localBindings = new JournalImpl(ioExecutorFactory, 1024 * 1024, 2, config.getJournalPoolFiles(), config.getJournalCompactMinFiles(), config.getJournalCompactPercentage(), config.getJournalFileOpenTimeout(), bindingsFF, "artemis-bindings", "bindings", 1, 0, criticalErrorListener, config.getJournalMaxAtticFiles());
 
       bindingsJournal = localBindings;
       originalBindingsJournal = localBindings;

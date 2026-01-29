@@ -265,7 +265,7 @@ public class RedeliveryConsumerTest extends ActiveMQTestBase {
 
       server.stop();
 
-      JournalImpl journal = new JournalImpl(server.getConfiguration().getJournalFileSize(), 2, 2, 0, 0, new NIOSequentialFileFactory(server.getConfiguration().getJournalLocation(), 1), "activemq-data", "amq", 1);
+      JournalImpl journal = new JournalImpl(server.getConfiguration().getJournalFileSize(), 2, 2, 0, 0, new NIOSequentialFileFactory(server.getConfiguration().getJournalLocation(), 1), "artemis-data", "amq", 1);
 
       final AtomicInteger updates = new AtomicInteger();
 

@@ -200,7 +200,7 @@ public class AMQPMirrorFastACKTest extends AmqpClientTestSupport {
          protected Journal createMessageJournal(Configuration config,
                                                 IOCriticalErrorListener criticalErrorListener,
                                                 int fileSize) {
-            return new JournalImpl(ioExecutorFactory, fileSize, config.getJournalMinFiles(), config.getJournalPoolFiles(), config.getJournalCompactMinFiles(), config.getJournalCompactPercentage(), config.getJournalFileOpenTimeout(), journalFF, "activemq-data", "amq", journalFF.getMaxIO(), 0, criticalErrorListener, config.getJournalMaxAtticFiles()) {
+            return new JournalImpl(ioExecutorFactory, fileSize, config.getJournalMinFiles(), config.getJournalPoolFiles(), config.getJournalCompactMinFiles(), config.getJournalCompactPercentage(), config.getJournalFileOpenTimeout(), journalFF, "artemis-data", "amq", journalFF.getMaxIO(), 0, criticalErrorListener, config.getJournalMaxAtticFiles()) {
                @Override
                public void appendAddRecordTransactional(long txID,
                                                         long id,

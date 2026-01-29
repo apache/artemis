@@ -44,11 +44,11 @@ public final class CompactJournal extends LockAbstract {
    }
 
    public static void compactJournals(Configuration configuration) throws Exception {
-      compactJournal(configuration.getJournalLocation(), configuration.getJournalRetentionLocation(), "activemq-data", "amq", configuration.getJournalMinFiles(),
+      compactJournal(configuration.getJournalLocation(), configuration.getJournalRetentionLocation(), "artemis-data", "amq", configuration.getJournalMinFiles(),
                      configuration.getJournalPoolFiles(), configuration.getJournalFileSize(), null, JournalRecordIds.UPDATE_DELIVERY_COUNT,
                      JournalRecordIds.SET_SCHEDULED_DELIVERY_TIME);
       System.out.println("Compactation succeeded for " + configuration.getJournalLocation().getAbsolutePath());
-      compactJournal(configuration.getBindingsLocation(), null, "activemq-bindings", "bindings", 2, 2, 1048576, null);
+      compactJournal(configuration.getBindingsLocation(), null, "artemis-bindings", "bindings", 2, 2, 1048576, null);
       System.out.println("Compactation succeeded for " + configuration.getBindingsLocation());
    }
 

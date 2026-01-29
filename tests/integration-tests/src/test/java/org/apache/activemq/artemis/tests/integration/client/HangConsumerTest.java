@@ -411,7 +411,7 @@ public class HangConsumerTest extends ActiveMQTestBase {
 
             SequentialFileFactory messagesFF = new NIOSequentialFileFactory(server.getConfiguration().getBindingsLocation(), null, 1);
 
-            JournalImpl messagesJournal = new JournalImpl(1024 * 1024, 2, 2, 0, 0, messagesFF, "activemq-bindings", "bindings", 1);
+            JournalImpl messagesJournal = new JournalImpl(1024 * 1024, 2, 2, 0, 0, messagesFF, "artemis-bindings", "bindings", 1);
 
             messagesJournal.start();
 
