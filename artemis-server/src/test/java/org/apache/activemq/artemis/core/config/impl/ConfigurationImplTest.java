@@ -32,11 +32,13 @@ import java.beans.PropertyDescriptor;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -3040,8 +3042,26 @@ public class ConfigurationImplTest extends AbstractConfigurationTestBase {
 
       // useKQueue here would generate a hashMap Value null, what would break the exportAsProperties.
       configuration.addAcceptorConfiguration("test", "tcp://0.0.0.0:61616?useKQueue");
+
+      assertTrue(configuration.getAcceptorConfigurations().stream().findFirst().get().getCombinedParams().containsKey("useKQueue"));
+      // org.apache.activemq.artemis.utils.uri.URISchema.parseQuery generated the null on trimming the value
+      assertEquals(null, configuration.getAcceptorConfigurations().stream().findFirst().get().getCombinedParams().get("useKQueue"));
+
       File fileOutput = new File(getTestDirfile(), "broker.properties");
       assertDoesNotThrow(() -> configuration.exportAsProperties(fileOutput));
+      Properties properties = new Properties();
+      try (InputStream inStream = Files.newInputStream(fileOutput.toPath())) {
+         properties.load(inStream);
+      }
+      assertFalse(properties.isEmpty());
+      assertTrue(properties.containsKey("acceptorConfigurations.test.params.useKQueue"));
+      assertEquals("", properties.get("acceptorConfigurations.test.params.useKQueue"));
+
+      // a null value is not an option for properties
+      properties.put("networCheckNIC", "");
+      configuration.parsePrefixedProperties(properties, null);
+      assertEquals(1, configuration.getAcceptorConfigurations().size());
+      assertEquals("", configuration.getAcceptorConfigurations().stream().findFirst().get().getCombinedParams().get("useKQueue"));
    }
 
    /**
