@@ -4443,6 +4443,189 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
    }
 
    @TestTemplate
+   public void testListConsumersLastAckTime() throws Exception {
+      SimpleString queueName1 = SimpleString.of("my_queue_one");
+      SimpleString queueName2 = SimpleString.of("my_queue_two");
+      SimpleString queueName3 = SimpleString.of("other_queue_three");
+      SimpleString addressName1 = SimpleString.of("my_address_one");
+      SimpleString addressName2 = SimpleString.of("my_address_two");
+
+      ActiveMQServerControl serverControl = createManagementControl();
+
+      server.addAddressInfo(new AddressInfo(addressName1, RoutingType.ANYCAST));
+      if (legacyCreateQueue) {
+         server.createQueue(addressName1, RoutingType.ANYCAST, queueName1, null, false, false);
+      } else {
+         server.createQueue(QueueConfiguration.of(queueName1).setAddress(addressName1).setRoutingType(RoutingType.ANYCAST).setDurable(false));
+      }
+
+      server.addAddressInfo(new AddressInfo(addressName2, RoutingType.ANYCAST));
+      if (legacyCreateQueue) {
+         server.createQueue(addressName2, RoutingType.ANYCAST, queueName2, null, false, false);
+         server.createQueue(addressName2, RoutingType.ANYCAST, queueName3, null, false, false);
+      } else {
+         server.createQueue(QueueConfiguration.of(queueName2).setAddress(addressName2).setRoutingType(RoutingType.ANYCAST).setDurable(false));
+         server.createQueue(QueueConfiguration.of(queueName3).setAddress(addressName2).setRoutingType(RoutingType.ANYCAST).setDurable(false));
+      }
+
+      // create some consumers
+      try (ServerLocator locator = createInVMNonHALocator();
+           ClientSessionFactory csf = createSessionFactory(locator);
+           ClientSession session = csf.createSession()) {
+
+         ClientConsumer consumer1_q1 = session.createConsumer(queueName1);
+         ClientConsumer consumer1_q2 = session.createConsumer(queueName2);
+         ClientConsumer consumer1_q3 = session.createConsumer(queueName3);
+         session.start();
+         //now send some methods
+         ClientProducer producer1_q1 = session.createProducer(addressName1);
+         ClientProducer producer1_q2 = session.createProducer(addressName2);
+         producer1_q1.send(session.createMessage(true));
+         ClientMessage message = consumer1_q1.receiveImmediate();
+         message.individualAcknowledge();
+         producer1_q2.send(session.createMessage(true));
+         ClientMessage message1 = consumer1_q2.receiveImmediate();
+         message1.individualAcknowledge();
+         producer1_q1.close();
+         producer1_q2.close();
+         Thread.sleep(1000);
+
+         //now get all consumer so we can get propert value
+         String allConsumers = serverControl.listConsumers(null, 1, 50);
+         JsonObject consumersAsJsonObject = JsonUtil.readJsonObject(allConsumers);
+         JsonArray array = (JsonArray) consumersAsJsonObject.get("data");
+         long time1 = array.getJsonObject(0).getJsonNumber(ConsumerField.LAST_ACKNOWLEDGED_TIME.getName()).longValue();
+         long time2 = array.getJsonObject(1).getJsonNumber(ConsumerField.LAST_ACKNOWLEDGED_TIME.getName()).longValue();
+         long time3 = array.getJsonObject(2).getJsonNumber(ConsumerField.LAST_ACKNOWLEDGED_TIME.getName()).longValue();
+         //test with filter  EQUALS on property, it should only be 1 consumer returned each time
+         String filterString = createJsonFilter(ConsumerField.LAST_ACKNOWLEDGED_TIME.getName(), "EQUALS", "" + time1);
+         String consumersAsJsonString = serverControl.listConsumers(filterString, 1, 50);
+         consumersAsJsonObject = JsonUtil.readJsonObject(consumersAsJsonString);
+         array = (JsonArray) consumersAsJsonObject.get("data");
+         assertEquals(1, array.size(), "number of consumers returned from query ");
+
+         filterString = createJsonFilter(ConsumerField.LAST_ACKNOWLEDGED_TIME.getName(), "EQUALS", "" + time3);
+         consumersAsJsonString = serverControl.listConsumers(filterString, 1, 50);
+         consumersAsJsonObject = JsonUtil.readJsonObject(consumersAsJsonString);
+         array = (JsonArray) consumersAsJsonObject.get("data");
+         assertEquals(1, array.size(), "number of consumers returned from query ");
+
+         filterString = createJsonFilter(ConsumerField.LAST_ACKNOWLEDGED_TIME.getName(), "EQUALS", "" + time2);
+         consumersAsJsonString = serverControl.listConsumers(filterString, 1, 50);
+         consumersAsJsonObject = JsonUtil.readJsonObject(consumersAsJsonString);
+         array = (JsonArray) consumersAsJsonObject.get("data");
+         assertEquals(1, array.size(), "number of consumers returned from query");
+
+         //now test greater than 0, should return only 2 consumers
+         filterString = createJsonFilter(ConsumerField.LAST_ACKNOWLEDGED_TIME.getName(), "GREATER_THAN", "0");
+         consumersAsJsonString = serverControl.listConsumers(filterString, 1, 50);
+         consumersAsJsonObject = JsonUtil.readJsonObject(consumersAsJsonString);
+         array = (JsonArray) consumersAsJsonObject.get("data");
+         assertEquals(2, array.size(), "number of consumers returned from query");
+
+         //now test smaller than 1, should return only 2 consumers
+         filterString = createJsonFilter(ConsumerField.LAST_ACKNOWLEDGED_TIME.getName(), "LESS_THAN", "1");
+         consumersAsJsonString = serverControl.listConsumers(filterString, 1, 50);
+         consumersAsJsonObject = JsonUtil.readJsonObject(consumersAsJsonString);
+         array = (JsonArray) consumersAsJsonObject.get("data");
+         assertEquals(1, array.size(), "number of consumers returned from query");
+      }
+
+   }
+
+
+   @TestTemplate
+   public void testListConsumersLastDeliveredTime() throws Exception {
+      SimpleString queueName1 = SimpleString.of("my_queue_one");
+      SimpleString queueName2 = SimpleString.of("my_queue_two");
+      SimpleString queueName3 = SimpleString.of("other_queue_three");
+      SimpleString addressName1 = SimpleString.of("my_address_one");
+      SimpleString addressName2 = SimpleString.of("my_address_two");
+
+      ActiveMQServerControl serverControl = createManagementControl();
+
+      server.addAddressInfo(new AddressInfo(addressName1, RoutingType.ANYCAST));
+      if (legacyCreateQueue) {
+         server.createQueue(addressName1, RoutingType.ANYCAST, queueName1, null, false, false);
+      } else {
+         server.createQueue(QueueConfiguration.of(queueName1).setAddress(addressName1).setRoutingType(RoutingType.ANYCAST).setDurable(false));
+      }
+
+      server.addAddressInfo(new AddressInfo(addressName2, RoutingType.ANYCAST));
+      if (legacyCreateQueue) {
+         server.createQueue(addressName2, RoutingType.ANYCAST, queueName2, null, false, false);
+         server.createQueue(addressName2, RoutingType.ANYCAST, queueName3, null, false, false);
+      } else {
+         server.createQueue(QueueConfiguration.of(queueName2).setAddress(addressName2).setRoutingType(RoutingType.ANYCAST).setDurable(false));
+         server.createQueue(QueueConfiguration.of(queueName3).setAddress(addressName2).setRoutingType(RoutingType.ANYCAST).setDurable(false));
+      }
+
+      // create some consumers
+      try (ServerLocator locator = createInVMNonHALocator();
+           ClientSessionFactory csf = createSessionFactory(locator);
+           ClientSession session = csf.createSession()) {
+
+         ClientConsumer consumer1_q1 = session.createConsumer(queueName1);
+         ClientConsumer consumer1_q2 = session.createConsumer(queueName2);
+         ClientConsumer consumer1_q3 = session.createConsumer(queueName3);
+         session.start();
+         //now send some methods
+         ClientProducer producer1_q1 = session.createProducer(addressName1);
+         ClientProducer producer1_q2 = session.createProducer(addressName2);
+         producer1_q1.send(session.createMessage(true));
+         ClientMessage message = consumer1_q1.receiveImmediate();
+         message.individualAcknowledge();
+         producer1_q2.send(session.createMessage(true));
+         ClientMessage message1 = consumer1_q2.receiveImmediate();
+         message1.individualAcknowledge();
+         producer1_q1.close();
+         producer1_q2.close();
+         Thread.sleep(1000);
+
+         //now get all consumer so we can get propert value
+         String allConsumers = serverControl.listConsumers(null, 1, 50);
+         JsonObject consumersAsJsonObject = JsonUtil.readJsonObject(allConsumers);
+         JsonArray array = (JsonArray) consumersAsJsonObject.get("data");
+         long time1 = array.getJsonObject(0).getJsonNumber(ConsumerField.LAST_DELIVERED_TIME.getName()).longValue();
+         long time2 = array.getJsonObject(1).getJsonNumber(ConsumerField.LAST_DELIVERED_TIME.getName()).longValue();
+         long time3 = array.getJsonObject(2).getJsonNumber(ConsumerField.LAST_DELIVERED_TIME.getName()).longValue();
+         //test with filter  EQUALS on property, it should only be 1 consumer returned each time
+         String filterString = createJsonFilter(ConsumerField.LAST_DELIVERED_TIME.getName(), "EQUALS", "" + time1);
+         String consumersAsJsonString = serverControl.listConsumers(filterString, 1, 50);
+         consumersAsJsonObject = JsonUtil.readJsonObject(consumersAsJsonString);
+         array = (JsonArray) consumersAsJsonObject.get("data");
+         assertEquals(1, array.size(), "number of consumers returned from query ");
+
+         filterString = createJsonFilter(ConsumerField.LAST_DELIVERED_TIME.getName(), "EQUALS", "" + time3);
+         consumersAsJsonString = serverControl.listConsumers(filterString, 1, 50);
+         consumersAsJsonObject = JsonUtil.readJsonObject(consumersAsJsonString);
+         array = (JsonArray) consumersAsJsonObject.get("data");
+         assertEquals(1, array.size(), "number of consumers returned from query ");
+
+         filterString = createJsonFilter(ConsumerField.LAST_DELIVERED_TIME.getName(), "EQUALS", "" + time2);
+         consumersAsJsonString = serverControl.listConsumers(filterString, 1, 50);
+         consumersAsJsonObject = JsonUtil.readJsonObject(consumersAsJsonString);
+         array = (JsonArray) consumersAsJsonObject.get("data");
+         assertEquals(1, array.size(), "number of consumers returned from query");
+
+         //now test greater than 0, should return only 2 consumers
+         filterString = createJsonFilter(ConsumerField.LAST_DELIVERED_TIME.getName(), "GREATER_THAN", "0");
+         consumersAsJsonString = serverControl.listConsumers(filterString, 1, 50);
+         consumersAsJsonObject = JsonUtil.readJsonObject(consumersAsJsonString);
+         array = (JsonArray) consumersAsJsonObject.get("data");
+         assertEquals(2, array.size(), "number of consumers returned from query");
+
+         //now test smaller than 1, should return only 2 consumers
+         filterString = createJsonFilter(ConsumerField.LAST_DELIVERED_TIME.getName(), "LESS_THAN", "1");
+         consumersAsJsonString = serverControl.listConsumers(filterString, 1, 50);
+         consumersAsJsonObject = JsonUtil.readJsonObject(consumersAsJsonString);
+         array = (JsonArray) consumersAsJsonObject.get("data");
+         assertEquals(1, array.size(), "number of consumers returned from query");
+      }
+
+   }
+
+   @TestTemplate
    public void testListConsumersOrder() throws Exception {
       SimpleString queueName1 = SimpleString.of("my_queue_one");
       SimpleString addressName1 = SimpleString.of("my_address_one");
