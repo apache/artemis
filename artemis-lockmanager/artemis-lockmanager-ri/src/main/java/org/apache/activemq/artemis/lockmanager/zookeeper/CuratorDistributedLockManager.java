@@ -44,6 +44,20 @@ import org.apache.curator.utils.DebugUtils;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 
+/**
+ * ZooKeeper-based distributed lock manager using Apache Curator.
+ * <p>
+ * Valid configuration parameters:
+ * <ul>
+ *   <li><b>connect-string</b> (required): ZooKeeper connection string (e.g., "localhost:2181" or "host1:2181,host2:2181,host3:2181")</li>
+ *   <li><b>namespace</b> (required): Namespace prefix for all ZooKeeper paths to isolate lock manager data</li>
+ *   <li><b>session-ms</b> (optional, default: 18000): Session timeout in milliseconds</li>
+ *   <li><b>session-percent</b> (optional, default: 33): Percentage of session timeout to use for lock operations</li>
+ *   <li><b>connection-ms</b> (optional, default: 8000): Connection timeout in milliseconds</li>
+ *   <li><b>retries</b> (optional, default: 1): Number of retry attempts for failed operations</li>
+ *   <li><b>retries-ms</b> (optional, default: 1000): Delay in milliseconds between retry attempts</li>
+ * </ul>
+ */
 public class CuratorDistributedLockManager implements DistributedLockManager, ConnectionStateListener {
 
    enum PrimitiveType {

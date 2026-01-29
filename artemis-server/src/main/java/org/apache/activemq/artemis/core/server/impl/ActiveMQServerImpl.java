@@ -73,6 +73,7 @@ import org.apache.activemq.artemis.core.config.CoreAddressConfiguration;
 import org.apache.activemq.artemis.core.config.DivertConfiguration;
 import org.apache.activemq.artemis.core.config.FederationConfiguration;
 import org.apache.activemq.artemis.core.config.HAPolicyConfiguration;
+import org.apache.activemq.artemis.core.config.LockCoordinatorConfiguration;
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPFederationBrokerPlugin;
 import org.apache.activemq.artemis.core.config.impl.ConfigurationImpl;
 import org.apache.activemq.artemis.core.config.impl.LegacyJMSConfiguration;
@@ -161,6 +162,7 @@ import org.apache.activemq.artemis.core.server.group.impl.GroupingHandlerConfigu
 import org.apache.activemq.artemis.core.server.group.impl.LocalGroupingHandler;
 import org.apache.activemq.artemis.core.server.group.impl.RemoteGroupingHandler;
 import org.apache.activemq.artemis.core.server.impl.jdbc.JdbcNodeManager;
+import org.apache.activemq.artemis.core.server.lock.LockCoordinator;
 import org.apache.activemq.artemis.core.server.management.ManagementService;
 import org.apache.activemq.artemis.core.server.management.impl.ManagementServiceImpl;
 import org.apache.activemq.artemis.core.server.metrics.BrokerMetricNames;
@@ -195,6 +197,7 @@ import org.apache.activemq.artemis.core.settings.impl.ResourceLimitSettings;
 import org.apache.activemq.artemis.core.transaction.ResourceManager;
 import org.apache.activemq.artemis.core.transaction.impl.ResourceManagerImpl;
 import org.apache.activemq.artemis.core.version.Version;
+import org.apache.activemq.artemis.lockmanager.DistributedLockManager;
 import org.apache.activemq.artemis.logs.AuditLogger;
 import org.apache.activemq.artemis.spi.core.protocol.ProtocolManagerFactory;
 import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
@@ -290,6 +293,8 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    private volatile ExecutorService ioExecutorPool;
 
    private ReplayManager replayManager;
+
+   private ConcurrentHashMap<String, LockCoordinator> lockCoordinators = new ConcurrentHashMap<>();
 
    /**
     * Certain management operations shouldn't use more than one thread. this semaphore is used to guarantee a single
@@ -552,6 +557,10 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       return this.rebuildCounters;
    }
 
+   @Override
+   public LockCoordinator getLockCoordinator(String name) {
+      return lockCoordinators.get(name);
+   }
 
    @Override
    public void replay(Date start, Date end, String address, String target, String filter) throws Exception {
@@ -735,6 +744,8 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
          ActiveMQServerLogger.LOGGER.serverStarting((haPolicy.isBackup() ? "Backup" : "Primary"), configuration);
 
+         startLockCoordinators();
+
          final boolean wasPrimary = !haPolicy.isBackup();
          if (!haPolicy.isBackup()) {
             activation = haPolicy.createActivation(this, false, activationParams, ioCriticalErrorListener);
@@ -793,6 +804,35 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       }
    }
 
+   private void startLockCoordinators() {
+      for (LockCoordinatorConfiguration lockCoordinatorConfiguration : configuration.getLockCoordinatorConfigurations()) {
+         String className = lockCoordinatorConfiguration.getClassName();
+         String name = lockCoordinatorConfiguration.getName();
+         String lockId = lockCoordinatorConfiguration.getLockId();
+         int checkPeriod = lockCoordinatorConfiguration.getCheckPeriod();
+
+         DistributedLockManager lockManager;
+
+         try {
+            lockManager = DistributedLockManager.newInstanceOf(className, lockCoordinatorConfiguration.getProperties());
+         } catch (Exception e) {
+            ActiveMQServerLogger.LOGGER.invalidTypeLockCoordinator(lockCoordinatorConfiguration.getName(), className, e);
+            continue;
+         }
+
+         LockCoordinator lockCoordinator = new LockCoordinator(scheduledPool, executorFactory.getExecutor(), checkPeriod, lockManager, lockId, name);
+         lockCoordinators.put(name, lockCoordinator);
+         ActiveMQServerLogger.LOGGER.lockCoordinatorStarting(name, className, lockId, checkPeriod);
+         lockCoordinator.start();
+      }
+   }
+
+   private void stopLockCoordinators() {
+      if (lockCoordinators != null) {
+         lockCoordinators.values().forEach(LockCoordinator::stop);
+         lockCoordinators.clear();
+      }
+   }
 
    private void takingLongToStart(Object criticalComponent) {
       ActiveMQServerLogger.LOGGER.tooLongToStart(criticalComponent);
@@ -1380,6 +1420,8 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       } catch (Throwable t) {
          ActiveMQServerLogger.LOGGER.errorStoppingComponent(remotingService.getClass().getName(), t);
       }
+
+      stopLockCoordinators();
 
       stopComponent(pagingManager);
 

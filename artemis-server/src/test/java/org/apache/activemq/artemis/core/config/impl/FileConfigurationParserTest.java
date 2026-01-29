@@ -26,7 +26,9 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.PrintStream;
+import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +42,7 @@ import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.config.FederationConfiguration;
 import org.apache.activemq.artemis.core.config.FileDeploymentManager;
 import org.apache.activemq.artemis.core.config.HAPolicyConfiguration;
+import org.apache.activemq.artemis.core.config.LockCoordinatorConfiguration;
 import org.apache.activemq.artemis.core.config.ScaleDownConfiguration;
 import org.apache.activemq.artemis.core.config.WildcardConfiguration;
 import org.apache.activemq.artemis.core.config.federation.FederationQueuePolicyConfiguration;
@@ -55,9 +58,13 @@ import org.apache.activemq.artemis.utils.DefaultSensitiveStringCodec;
 import org.apache.activemq.artemis.utils.PasswordMaskingUtil;
 import org.apache.activemq.artemis.utils.StringPrintStream;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXParseException;
 
 public class FileConfigurationParserTest extends ServerTestBase {
+
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private static final String PURGE_FOLDER_FALSE = """
       <configuration>
@@ -90,6 +97,7 @@ public class FileConfigurationParserTest extends ServerTestBase {
             <acceptor name="netty">tcp://localhost:5545</acceptor>
             <acceptor name="netty-throughput">tcp://localhost:5545</acceptor>
             <acceptor name="in-vm">vm://0</acceptor>
+            <acceptor name="netty-with-lock" lock-coordinator="my-lock">tcp://localhost:5545</acceptor>
          </acceptors>
          <security-settings>
             <security-setting match="#">
@@ -129,6 +137,21 @@ public class FileConfigurationParserTest extends ServerTestBase {
             </static-connectors>
          </bridge>
       </bridges>""";
+
+
+   private static final String LOCK_COORDINATOR_PART = """
+      <lock-coordinators>
+         <lock-coordinator name="my-lock">
+            <lock-id>sausage-factory</lock-id>
+            <class-name>some.class.somewhere</class-name>
+            <check-period>333</check-period>
+            <properties>
+               <property key='test1' value='value1'/>
+               <property key='test2' value='value2'/>
+            </properties>
+         </lock-coordinator>
+      </lock-coordinators>""";
+
 
    /**
     * These "InvalidConfigurationTest*.xml" files are modified copies of {@literal ConfigurationTest-full-config.xml},
@@ -421,6 +444,27 @@ public class FileConfigurationParserTest extends ServerTestBase {
       BridgeConfiguration bconfig = bridgeConfigs.get(0);
 
       assertEquals("helloworld", bconfig.getPassword());
+   }
+
+   @Test
+   public void testLockCoordinatorParse() throws Exception {
+      FileConfigurationParser parser = new FileConfigurationParser();
+      String configStr = FIRST_PART + LOCK_COORDINATOR_PART + LAST_PART;
+      Configuration configuration = parser.parseMainConfig(new ByteArrayInputStream(configStr.getBytes(StandardCharsets.UTF_8)));
+
+      Collection<LockCoordinatorConfiguration> lockConfigurations = configuration.getLockCoordinatorConfigurations();
+      lockConfigurations.forEach(f -> logger.info("lockConfiguration={}", f));
+      assertEquals(1, lockConfigurations.size());
+      for (LockCoordinatorConfiguration lockConfiguration : lockConfigurations) {
+         assertEquals("my-lock", lockConfiguration.getName());
+         assertEquals("sausage-factory", lockConfiguration.getLockId());
+         assertEquals("some.class.somewhere", lockConfiguration.getClassName());
+         Map<String, String> properties = lockConfiguration.getProperties();
+         assertEquals(2, properties.size());
+         assertEquals("value1", properties.get("test1"));
+         assertEquals("value2", properties.get("test2"));
+      }
+      configuration.getAcceptorConfigurations().stream().filter(f -> f.getName().equals("netty-with-lock")).forEach(f -> assertEquals("my-lock", f.getLockCoordinator()));
    }
 
    @Test

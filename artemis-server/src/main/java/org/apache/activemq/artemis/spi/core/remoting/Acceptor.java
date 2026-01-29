@@ -24,6 +24,7 @@ import org.apache.activemq.artemis.core.protocol.ProtocolHandler;
 import org.apache.activemq.artemis.core.security.ActiveMQPrincipal;
 import org.apache.activemq.artemis.core.server.ActiveMQComponent;
 import org.apache.activemq.artemis.core.server.cluster.ClusterConnection;
+import org.apache.activemq.artemis.core.server.lock.LockCoordinator;
 import org.apache.activemq.artemis.core.server.management.NotificationService;
 
 import static org.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants.DEFAULT_AUTO_START;
@@ -38,6 +39,14 @@ public interface Acceptor extends ActiveMQComponent {
     * The name of the acceptor used on the configuration. for logging and debug purposes.
     */
    String getName();
+
+   default Acceptor setLockCoordinator(LockCoordinator lockCoordinator) {
+      return this;
+   }
+
+   default LockCoordinator getLockCoordinator() {
+      return null;
+   }
 
    /**
     * Pause the acceptor and stop it from receiving client requests.

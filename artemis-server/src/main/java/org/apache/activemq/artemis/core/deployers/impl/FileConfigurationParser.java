@@ -51,6 +51,7 @@ import org.apache.activemq.artemis.core.config.ConnectorServiceConfiguration;
 import org.apache.activemq.artemis.core.config.CoreAddressConfiguration;
 import org.apache.activemq.artemis.core.config.DivertConfiguration;
 import org.apache.activemq.artemis.core.config.FederationConfiguration;
+import org.apache.activemq.artemis.core.config.LockCoordinatorConfiguration;
 import org.apache.activemq.artemis.core.config.MetricsConfiguration;
 import org.apache.activemq.artemis.core.config.ScaleDownConfiguration;
 import org.apache.activemq.artemis.core.config.TransformerConfiguration;
@@ -97,6 +98,7 @@ import org.apache.activemq.artemis.core.server.JournalType;
 import org.apache.activemq.artemis.core.server.SecuritySettingPlugin;
 import org.apache.activemq.artemis.core.server.cluster.impl.MessageLoadBalancingType;
 import org.apache.activemq.artemis.core.server.group.impl.GroupingHandlerConfiguration;
+import org.apache.activemq.artemis.core.server.lock.LockCoordinator;
 import org.apache.activemq.artemis.core.server.metrics.ActiveMQMetricsPlugin;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerPlugin;
 import org.apache.activemq.artemis.core.server.routing.KeyType;
@@ -737,6 +739,22 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
          }
       }
 
+      NodeList lockCoordinators = e.getElementsByTagName("lock-coordinators");
+
+      if (lockCoordinators != null) {
+         for (int i = 0; i < lockCoordinators.getLength(); i++) {
+            Element lockCoordinatorElement = (Element) lockCoordinators.item(i);
+
+            for (int j = 0; j < lockCoordinatorElement.getChildNodes().getLength(); ++j) {
+               Node node = lockCoordinatorElement.getChildNodes().item(j);
+
+               if (node.getNodeName().equalsIgnoreCase("lock-coordinator")) {
+                  parseLockCoordinator((Element) node, config);
+               }
+            }
+         }
+      }
+
       // Persistence config
 
       config.setLargeMessagesDirectory(getString(e, "large-messages-directory", config.getLargeMessagesDirectory(), NOT_NULL_OR_EMPTY));
@@ -915,6 +933,31 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
          parseWildcardConfiguration((Element) wildCardConfiguration.item(0), config);
       }
    }
+
+   private void parseLockCoordinator(final Element lockCoordinatorElement, final Configuration mainConfig) throws Exception {
+      String name = lockCoordinatorElement.getAttribute("name");
+      String lockId = getString(lockCoordinatorElement, "lock-id", name, NO_CHECK);
+      String className = getString(lockCoordinatorElement, "class-name", null, NOT_NULL_OR_EMPTY);
+      int checkPeriod = getInteger(lockCoordinatorElement, "check-period", LockCoordinator.DEFAULT_CHECK_PERIOD, NO_CHECK);
+
+      HashMap<String, String> properties = new HashMap<>();
+
+      if (parameterExists(lockCoordinatorElement, "properties")) {
+         final NodeList propertyNodeList = lockCoordinatorElement.getElementsByTagName("property");
+         final int propertiesCount = propertyNodeList.getLength();
+         properties = new HashMap<>(propertiesCount);
+         for (int i = 0; i < propertiesCount; i++) {
+            final Element propertyNode = (Element) propertyNodeList.item(i);
+            final String propertyName = propertyNode.getAttributeNode("key").getValue();
+            final String propertyValue = propertyNode.getAttributeNode("value").getValue();
+            properties.put(propertyName, propertyValue);
+         }
+      }
+
+      LockCoordinatorConfiguration lockCoordinatorConfiguration = new LockCoordinatorConfiguration(properties).setName(name).setLockId(lockId).setClassName(className).setCheckPeriod(checkPeriod);
+      mainConfig.addLockCoordinatorConfiguration(lockCoordinatorConfiguration);
+   }
+
 
 
    private void parseJournalRetention(final Element e, final Configuration config) {
@@ -1621,13 +1664,21 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
                                                                       final Configuration mainConfig) throws Exception {
       Node nameNode = e.getAttributes().getNamedItem("name");
 
+      String lockCoordinator = e.getAttribute("lock-coordinator");
+
+
       String name = nameNode != null ? nameNode.getNodeValue() : null;
 
       String uri = e.getChildNodes().item(0).getNodeValue();
 
       List<TransportConfiguration> configurations = ConfigurationUtils.parseAcceptorURI(name, uri);
+      TransportConfiguration transportConfiguration = configurations.get(0);
 
-      Map<String, Object> params = configurations.get(0).getParams();
+      Map<String, Object> params = transportConfiguration.getParams();
+
+      if (lockCoordinator != null) {
+         transportConfiguration.setLockCoordinator(lockCoordinator);
+      }
 
       if (mainConfig.isMaskPassword() != null) {
          params.put(ActiveMQDefaultConfiguration.getPropMaskPassword(), mainConfig.isMaskPassword());
@@ -1637,7 +1688,7 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
          }
       }
 
-      return configurations.get(0);
+      return transportConfiguration;
    }
 
    private TransportConfiguration parseConnectorTransportConfiguration(final Element e,

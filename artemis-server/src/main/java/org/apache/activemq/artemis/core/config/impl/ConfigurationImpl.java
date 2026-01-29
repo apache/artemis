@@ -88,6 +88,7 @@ import org.apache.activemq.artemis.core.config.DivertConfiguration;
 import org.apache.activemq.artemis.core.config.FederationConfiguration;
 import org.apache.activemq.artemis.core.config.HAPolicyConfiguration;
 import org.apache.activemq.artemis.core.config.JaasAppConfiguration;
+import org.apache.activemq.artemis.core.config.LockCoordinatorConfiguration;
 import org.apache.activemq.artemis.core.config.MetricsConfiguration;
 import org.apache.activemq.artemis.core.config.StoreConfiguration;
 import org.apache.activemq.artemis.core.config.WildcardConfiguration;
@@ -226,6 +227,8 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
    protected int idCacheSize = ActiveMQDefaultConfiguration.getDefaultIdCacheSize();
 
    private boolean persistIDCache = ActiveMQDefaultConfiguration.isDefaultPersistIdCache();
+
+   private Set<LockCoordinatorConfiguration> lockCoordinatorConfigurations = new HashSet<>();
 
    private List<String> incomingInterceptorClassNames = new ArrayList<>();
 
@@ -3507,6 +3510,16 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
       logger.debug("Setting mirrorIgnorePageTransactions={}", ignorePageTransactions);
       this.mirrorPageTransaction = ignorePageTransactions;
       return this;
+   }
+
+   @Override
+   public Set<LockCoordinatorConfiguration> getLockCoordinatorConfigurations() {
+      return lockCoordinatorConfigurations;
+   }
+
+   @Override
+   public void addLockCoordinatorConfiguration(LockCoordinatorConfiguration configuration) {
+      lockCoordinatorConfigurations.add(configuration);
    }
 
    // extend property utils with ability to auto-fill and locate from collections
