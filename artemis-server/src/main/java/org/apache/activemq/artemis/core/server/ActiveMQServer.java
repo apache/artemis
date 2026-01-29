@@ -56,6 +56,7 @@ import org.apache.activemq.artemis.core.server.group.GroupingHandler;
 import org.apache.activemq.artemis.core.server.impl.Activation;
 import org.apache.activemq.artemis.core.server.impl.AddressInfo;
 import org.apache.activemq.artemis.core.server.impl.ConnectorsService;
+import org.apache.activemq.artemis.core.server.lock.LockCoordinator;
 import org.apache.activemq.artemis.core.server.management.ManagementService;
 import org.apache.activemq.artemis.core.server.metrics.MetricsManager;
 import org.apache.activemq.artemis.core.server.mirror.MirrorController;
@@ -176,6 +177,8 @@ public interface ActiveMQServer extends ServiceComponent {
    NodeManager getNodeManager();
 
    CriticalAnalyzer getCriticalAnalyzer();
+
+   LockCoordinator getLockCoordinator(String name);
 
    void updateStatus(String component, String statusJson);
 

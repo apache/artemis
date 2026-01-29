@@ -1,11 +1,15 @@
-= Restart Sequence
+= Restart Sequence if using Journal replication
 :idprefix:
 :idseparator: -
 :docinfo: shared
 
-{project-name-full} ships with 2 architectures for providing HA features.
-The primary and backup brokers can be configured either using network replication or using shared storage.
-This document will share restart sequences for the brokers under various circumstances when the client applications are  connected to it.
+{project-name-full} ships with 3 possibilities for providing HA:
+
+- Shared storage
+- Network Journal Replication
+- AMQP Broker Connection Mirroring
+
+This page will cover steps to restart the broker while using journal replication.
 
 == Restarting 1 broker at a time
 

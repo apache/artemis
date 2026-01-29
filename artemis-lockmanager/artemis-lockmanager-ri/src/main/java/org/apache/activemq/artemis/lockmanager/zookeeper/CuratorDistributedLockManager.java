@@ -20,13 +20,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.apache.activemq.artemis.lockmanager.DistributedLock;
 import org.apache.activemq.artemis.lockmanager.DistributedLockManager;
@@ -42,7 +39,6 @@ import org.apache.curator.retry.RetryNTimes;
 import org.apache.curator.utils.DebugUtils;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.joining;
 
 public class CuratorDistributedLockManager implements DistributedLockManager, ConnectionStateListener {
 
@@ -97,41 +93,6 @@ public class CuratorDistributedLockManager implements DistributedLockManager, Co
       }
    }
 
-   private static final String CONNECT_STRING_PARAM = "connect-string";
-   private static final String NAMESPACE_PARAM = "namespace";
-   private static final String SESSION_MS_PARAM = "session-ms";
-   private static final String SESSION_PERCENT_PARAM = "session-percent";
-   private static final String CONNECTION_MS_PARAM = "connection-ms";
-   private static final String RETRIES_PARAM = "retries";
-   private static final String RETRIES_MS_PARAM = "retries-ms";
-   private static final Set<String> VALID_PARAMS = Stream.of(
-      CONNECT_STRING_PARAM,
-      NAMESPACE_PARAM,
-      SESSION_MS_PARAM,
-      SESSION_PERCENT_PARAM,
-      CONNECTION_MS_PARAM,
-      RETRIES_PARAM,
-      RETRIES_MS_PARAM).collect(Collectors.toSet());
-   private static final String VALID_PARAMS_ON_ERROR = VALID_PARAMS.stream().collect(joining(","));
-   // It's 9 times the default ZK tick time ie 2000 ms
-   private static final String DEFAULT_SESSION_TIMEOUT_MS = Integer.toString(18_000);
-   private static final String DEFAULT_CONNECTION_TIMEOUT_MS = Integer.toString(8_000);
-   private static final String DEFAULT_RETRIES = Integer.toString(1);
-   private static final String DEFAULT_RETRIES_MS = Integer.toString(1000);
-   // why 1/3 of the session? https://cwiki.apache.org/confluence/display/CURATOR/TN14
-   private static final String DEFAULT_SESSION_PERCENT = Integer.toString(33);
-
-   private static Map<String, String> validateParameters(Map<String, String> config) {
-      config.forEach((parameterName, ignore) -> validateParameter(parameterName));
-      return config;
-   }
-
-   private static void validateParameter(String parameterName) {
-      if (!VALID_PARAMS.contains(parameterName)) {
-         throw new IllegalArgumentException("non existent parameter " + parameterName + ": accepted list is " + VALID_PARAMS_ON_ERROR);
-      }
-   }
-
    private CuratorFramework client;
    private final Map<PrimitiveId, CuratorDistributedPrimitive> primitives;
    private List<UnavailableManagerListener> listeners;
@@ -146,21 +107,7 @@ public class CuratorDistributedLockManager implements DistributedLockManager, Co
       }
    }
 
-   public CuratorDistributedLockManager(Map<String, String> config) {
-      this(validateParameters(config), true);
-   }
-
-   private CuratorDistributedLockManager(Map<String, String> config, boolean ignore) {
-      this(config.get(CONNECT_STRING_PARAM),
-           config.get(NAMESPACE_PARAM),
-           Integer.parseInt(config.getOrDefault(SESSION_MS_PARAM, DEFAULT_SESSION_TIMEOUT_MS)),
-           Integer.parseInt(config.getOrDefault(SESSION_PERCENT_PARAM, DEFAULT_SESSION_PERCENT)),
-           Integer.parseInt(config.getOrDefault(CONNECTION_MS_PARAM, DEFAULT_CONNECTION_TIMEOUT_MS)),
-           Integer.parseInt(config.getOrDefault(RETRIES_PARAM, DEFAULT_RETRIES)),
-           Integer.parseInt(config.getOrDefault(RETRIES_MS_PARAM, DEFAULT_RETRIES_MS)));
-   }
-
-   private CuratorDistributedLockManager(String connectString,
+   CuratorDistributedLockManager(String connectString,
                                          String namespace,
                                          int sessionMs,
                                          int sessionPercent,
