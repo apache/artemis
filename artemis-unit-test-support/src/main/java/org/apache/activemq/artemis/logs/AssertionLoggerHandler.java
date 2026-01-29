@@ -79,13 +79,43 @@ public class AssertionLoggerHandler extends AbstractAppender implements Closeabl
    }
 
    /**
-    * is there any record matching Level?
+    * Determines whether there is any log entry matching the specified log level.
+    *
+    * @param level the log level to check for in the log entries
+    * @return true if a log entry matches the specified log level; otherwise, false
     */
    public boolean hasLevel(LogLevel level) {
+      return hasLevel(level, null);
+   }
+
+   /**
+    * Determines whether there is any log entry matching the specified log level while optionally ignoring messages that
+    * contain specified substrings.
+    *
+    * @param level   the log level to check for in the log entries
+    * @param ignores a list of substrings; log messages containing any of these substrings will be ignored during the
+    *                check
+    * @return true if a log entry matches the specified log level and does not contain any of the ignored substrings;
+    * otherwise, false
+    */
+   public boolean hasLevel(LogLevel level, List<String> ignores) {
       Level implLevel = level.toImplLevel();
       for (LogEntry logEntry : messages) {
          if (implLevel == logEntry.level) {
-            return true;
+            if (ignores != null) {
+               boolean ignoreFound = false;
+               for (String ignore : ignores) {
+                  if (logEntry.message.contains(ignore)) {
+                     ignoreFound = true;
+                     break;
+                  }
+               }
+               if (!ignoreFound) {
+                  return true;
+               }
+            } else {
+               return true;
+            }
          }
       }
 

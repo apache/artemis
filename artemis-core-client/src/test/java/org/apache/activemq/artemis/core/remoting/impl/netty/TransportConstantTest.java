@@ -29,6 +29,6 @@ public class TransportConstantTest {
    @Test
    public void testDefaultOnPom() {
       assertEquals(0, TransportConstants.DEFAULT_QUIET_PERIOD, "It is expected to have the default at 0 on the testsuite");
-      assertEquals(0, TransportConstants.DEFAULT_SHUTDOWN_TIMEOUT, "It is expected to have the default at 0 on the testsuite");
+      assertEquals(7200000, TransportConstants.DEFAULT_SHUTDOWN_TIMEOUT, "It is expected to have the default at 0 on the testsuite");
    }
 }

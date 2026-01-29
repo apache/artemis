@@ -258,9 +258,14 @@
       <!-- for tests that will need a new server created -->
       <artemis.distribution.output>${activemq.basedir}/artemis-distribution/target/apache-artemis-${project.version}-bin/apache-artemis-${project.version}</artemis.distribution.output>
 
-      <activemq-surefire-argline>-Dbrokerconfig.maxDiskUsage=100 -Dorg.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants.DEFAULT_QUIET_PERIOD=0 -Dorg.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants.DEFAULT_SHUTDOWN_TIMEOUT=0
-         -Djava.library.path="${activemq.basedir}/target/bin/lib/linux-x86_64:${activemq.basedir}/target/bin/lib/linux-i686" -Djgroups.bind_addr=localhost
-         -Djava.net.preferIPv4Stack=true -Dbasedir=${basedir}
+      <activemq-surefire-argline>
+         -Dbrokerconfig.maxDiskUsage=100
+         -Dorg.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants.DEFAULT_QUIET_PERIOD=0
+         -Dorg.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants.DEFAULT_SHUTDOWN_TIMEOUT=7200000
+         -Djava.library.path="${activemq.basedir}/target/bin/lib/linux-x86_64:${activemq.basedir}/target/bin/lib/linux-i686"
+         -Djgroups.bind_addr=localhost
+         -Djava.net.preferIPv4Stack=true
+         -Dbasedir=${basedir}
          -Djdk.attach.allowAttachSelf=true
          -Dartemis.distribution.output="${artemis.distribution.output}"
          -Dlog4j2.configurationFile="file:${activemq.basedir}/tests/config/${logging.config}"

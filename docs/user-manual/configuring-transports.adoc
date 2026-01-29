@@ -240,7 +240,7 @@ shutdownTimeout::
 This is only valid for acceptors.
 It is the number of milliseconds the broker will wait when shutting down each of the various Netty `ChannelGroup` instances as well as the `EventLoopGroup` instance associated with the acceptor.
 The default is `3000`.
-The default can also be set with the Java system property `DEFAULT_SHUTDOWN_TIMEOUT`.
+The default can also be set with the Java system property `org.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants.DEFAULT_SHUTDOWN_TIMEOUT`.
 
 === Configuring Netty Native Transport
 
