@@ -852,12 +852,16 @@ public class NettyAcceptor extends AbstractAcceptor {
    }
 
    private void closeChannelGroup(ChannelGroup channelGroup) {
-      if (channelGroup != null && !channelGroup.close().awaitUninterruptibly(shutdownTimeout, TimeUnit.MILLISECONDS)) {
-         ActiveMQServerLogger.LOGGER.nettyChannelGroupError(getName());
-         for (Channel channel : channelGroup) {
-            if (channel.isActive()) {
-               ActiveMQServerLogger.LOGGER.nettyChannelStillOpen(channel, ProxyProtocolUtil.getRemoteAddress(channel), getName());
+      if (channelGroup != null) {
+         if (shutdownTimeout > 0 && !channelGroup.close().awaitUninterruptibly(shutdownTimeout, TimeUnit.MILLISECONDS)) {
+            ActiveMQServerLogger.LOGGER.nettyChannelGroupError(getName(), shutdownTimeout);
+            for (Channel channel : channelGroup) {
+               if (channel.isActive()) {
+                  ActiveMQServerLogger.LOGGER.nettyChannelStillOpen(channel, ProxyProtocolUtil.getRemoteAddress(channel), getName());
+               }
             }
+         } else {
+            channelGroup.close();
          }
       }
    }
@@ -895,13 +899,15 @@ public class NettyAcceptor extends AbstractAcceptor {
 
       // We *pause* the acceptor so no new connections are made
       if (serverChannelGroup != null) {
-         if (!serverChannelGroup.close().awaitUninterruptibly(shutdownTimeout, TimeUnit.MILLISECONDS)) {
-            ActiveMQServerLogger.LOGGER.nettyChannelGroupBindError();
+         if (shutdownTimeout > 0 && !serverChannelGroup.close().awaitUninterruptibly(shutdownTimeout, TimeUnit.MILLISECONDS)) {
+            ActiveMQServerLogger.LOGGER.nettyChannelGroupBindErrorOnPause(getName(), shutdownTimeout);
             for (Channel channel : serverChannelGroup) {
                if (channel.isActive()) {
-                  ActiveMQServerLogger.LOGGER.nettyChannelStillBound(channel, ProxyProtocolUtil.getRemoteAddress(channel));
+                  ActiveMQServerLogger.LOGGER.nettyChannelStillBoundOnPause(channel, ProxyProtocolUtil.getRemoteAddress(channel), getName());
                }
             }
+         } else {
+            serverChannelGroup.close();
          }
       }
       paused = true;

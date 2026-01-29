@@ -16,9 +16,8 @@
  */
 package org.apache.activemq.artemis.tests.integration.cluster.warnings;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-
 import java.lang.invoke.MethodHandles;
+
 import org.apache.activemq.artemis.core.server.cluster.impl.MessageLoadBalancingType;
 import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
 import org.apache.activemq.artemis.tests.integration.cluster.distribution.ClusterTestBase;
@@ -26,6 +25,8 @@ import org.apache.activemq.artemis.utils.Wait;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class ClusterCleanNodeShutdownTest extends ClusterTestBase {
 
