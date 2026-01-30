@@ -102,7 +102,7 @@
       <commons.collections.version>3.2.2</commons.collections.version>
       <commons.text.version>1.15.0</commons.text.version>
       <commons.io.version>2.21.0</commons.io.version>
-      <commons.codec.version>1.20.0</commons.codec.version>
+      <commons.codec.version>1.21.0</commons.codec.version>
       <commons.compress.version>1.28.0</commons.compress.version>
       <fuse.mqtt.client.version>1.16</fuse.mqtt.client.version>
       <caffeine.version>3.2.3</caffeine.version>
