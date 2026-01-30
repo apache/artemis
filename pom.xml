@@ -90,7 +90,7 @@
       <modular.jdk.surefire.arg>--add-modules java.sql,jdk.unsupported </modular.jdk.surefire.arg>
 
       <activemq-artemis-native-version>2.0.0</activemq-artemis-native-version>
-      <artemis-console-version>1.5.0</artemis-console-version>
+      <artemis-console-version>1.6.0</artemis-console-version>
       <karaf.version>4.4.8</karaf.version>
       <pax.exam.version>4.14.0</pax.exam.version>
       <commons.config.version>2.13.0</commons.config.version>
@@ -203,8 +203,6 @@
       <spring.version>5.3.39</spring.version>
 
       <jackson.version>2.21.0</jackson.version>
-
-      <jolokia.version>2.4.3</jolokia.version>
 
       <activemq.version.versionName>${project.version}</activemq.version.versionName>
       <activemq.version.majorVersion>1</activemq.version.majorVersion>
