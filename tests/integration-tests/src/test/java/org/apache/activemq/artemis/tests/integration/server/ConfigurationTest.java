@@ -183,11 +183,15 @@ public class ConfigurationTest extends ActiveMQTestBase {
       properties.put("configurationFileRefreshPeriod", "100");
       properties.put("persistenceEnabled", "false");
       properties.put("connectionRouters.joe.localTargetFilter", "LF");
+      properties.put("acceptorConfigurations.tcp.factoryClassName", NETTY_ACCEPTOR_FACTORY);
+      properties.put("acceptorConfigurations.tcp.params.HOST", "LOCALHOST");
+      properties.put("acceptorConfigurations.tcp.params.PORT", "61616");
 
       try (FileOutputStream outStream = new FileOutputStream(propsFile)) {
          properties.store(outStream, null);
       }
       assertTrue(propsFile.exists());
+      properties.clear();
 
       FileConfiguration fc = new FileConfiguration();
       ActiveMQJAASSecurityManager sm = new ActiveMQJAASSecurityManager(InVMLoginModule.class.getName(), new SecurityConfiguration());
@@ -199,11 +203,10 @@ public class ConfigurationTest extends ActiveMQTestBase {
 
          assertEquals(1, server.getConfiguration().getConnectionRouters().size());
          assertEquals("LF", server.getConfiguration().getConnectionRouters().get(0).getLocalTargetFilter());
-
-         properties.put("persistenceEnabled", "false");
-         properties.put("configurationFileRefreshPeriod", "100");
-
+         assertEquals(1, server.getActiveMQServerControl().getAcceptors().length);
          // verify update
+         properties.put("configurationFileRefreshPeriod", "100");
+         properties.put("persistenceEnabled", "false");
          properties.put("connectionRouters.joe.localTargetFilter", "UPDATED");
          try (FileOutputStream outStream = new FileOutputStream(propsFile)) {
             properties.store(outStream, null);
@@ -212,6 +215,9 @@ public class ConfigurationTest extends ActiveMQTestBase {
          Wait.assertTrue(() -> {
             return "UPDATED".equals(server.getConfiguration().getConnectionRouters().get(0).getLocalTargetFilter());
          });
+
+         // verify remove
+         assertEquals(0, server.getActiveMQServerControl().getAcceptors().length);
 
       } finally {
          try {

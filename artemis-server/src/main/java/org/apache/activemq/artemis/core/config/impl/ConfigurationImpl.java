@@ -1040,6 +1040,13 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
       jaasConfigs.put(config.getName(), config);
    }
 
+   @Override
+   public Configuration setJaasConfigs(Map<String, JaasAppConfiguration> configs) {
+      jaasConfigs.clear();
+      jaasConfigs.putAll(configs);
+      return this;
+   }
+
    private void writeProperties(FileWriter writer) throws Exception {
       final BeanUtilsBean beanUtilsBean = new BeanUtilsBean();
       beanUtilsBean.getPropertyUtils().addBeanIntrospector(new FluentPropertyBeanIntrospectorWithIgnores());
