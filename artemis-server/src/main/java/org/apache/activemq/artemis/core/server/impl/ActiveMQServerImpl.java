@@ -4682,22 +4682,28 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    }
 
    private void reloadConfigurationFile(URL xmlConfigUri) throws Exception {
+      Configuration config = new ConfigurationImpl();
       if (xmlConfigUri != null) {
-         Configuration config = new FileConfigurationParser().parseMainConfig(xmlConfigUri.openStream());
+         config = new FileConfigurationParser().parseMainConfig(xmlConfigUri.openStream());
          LegacyJMSConfiguration legacyJMSConfiguration = new LegacyJMSConfiguration(config);
          legacyJMSConfiguration.parseConfiguration(xmlConfigUri.openStream());
-         configuration.setSecurityRoles(config.getSecurityRoles());
-         configuration.setAddressSettings(config.getAddressSettings());
-         configuration.setDivertConfigurations(config.getDivertConfigurations());
-         configuration.setAddressConfigurations(config.getAddressConfigurations());
-         configuration.setQueueConfigs(config.getQueueConfigs());
-         configuration.setBridgeConfigurations(config.getBridgeConfigurations());
-         configuration.setConnectorConfigurations(config.getConnectorConfigurations());
-         configuration.setAcceptorConfigurations(config.getAcceptorConfigurations());
-         configuration.setAMQPConnectionConfigurations(config.getAMQPConnection());
-         configuration.setPurgePageFolders(config.isPurgePageFolders());
       }
-      configuration.parseProperties(propertiesFileUrl);
+      config.parseProperties(propertiesFileUrl);
+      configuration.setStatus(config.getStatus());
+
+      configuration.setSecurityRoles(config.getSecurityRoles());
+      configuration.setAddressSettings(config.getAddressSettings());
+      configuration.setDivertConfigurations(config.getDivertConfigurations());
+      configuration.setAddressConfigurations(config.getAddressConfigurations());
+      configuration.setQueueConfigs(config.getQueueConfigs());
+      configuration.setBridgeConfigurations(config.getBridgeConfigurations());
+      configuration.setConnectorConfigurations(config.getConnectorConfigurations());
+      configuration.setAcceptorConfigurations(config.getAcceptorConfigurations());
+      configuration.setAMQPConnectionConfigurations(config.getAMQPConnection());
+      configuration.setPurgePageFolders(config.isPurgePageFolders());
+      configuration.setConnectionRouters(config.getConnectionRouters());   // needs reload logic
+      configuration.setJaasConfigs(config.getJaasConfigs());
+
       updateStatus(ServerStatus.CONFIGURATION_COMPONENT, configuration.getStatus());
       configurationReloadDeployed.set(false);
       if (isActive()) {
