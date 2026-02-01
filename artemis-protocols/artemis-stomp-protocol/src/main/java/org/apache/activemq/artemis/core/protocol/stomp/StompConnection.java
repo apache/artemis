@@ -28,6 +28,7 @@ import java.util.StringTokenizer;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import org.apache.activemq.artemis.api.core.ActiveMQAddressDoesNotExistException;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
@@ -81,11 +82,10 @@ public final class StompConnection extends AbstractRemotingConnection {
    //this means login is valid. (stomp connection ok)
    private boolean valid;
 
-   private boolean destroyed = false;
+   private static final AtomicIntegerFieldUpdater<StompConnection> DESTROYED_UPDATER = AtomicIntegerFieldUpdater.newUpdater(StompConnection.class, "destroyed");
+   private volatile int destroyed;
 
    private final Acceptor acceptorUsed;
-
-   private final Object failLock = new Object();
 
    private final boolean enableMessageID;
 
@@ -224,15 +224,9 @@ public final class StompConnection extends AbstractRemotingConnection {
 
    @Override
    public void destroy() {
-      synchronized (failLock) {
-         if (destroyed) {
-            return;
-         }
-
-         destroyed = true;
+      if (DESTROYED_UPDATER.compareAndSet(this, 0, 1)) {
+         internalClose();
       }
-
-      internalClose();
    }
 
    public Acceptor getAcceptorUsed() {
@@ -255,24 +249,17 @@ public final class StompConnection extends AbstractRemotingConnection {
 
    @Override
    public void fail(final ActiveMQException me) {
-      synchronized (failLock) {
-         if (destroyed) {
-            return;
-         }
-
+      if (DESTROYED_UPDATER.compareAndSet(this, 0, 1)) {
          StompFrame frame = frameHandler.createStompFrame(Stomp.Responses.ERROR);
          frame.addHeader(Stomp.Headers.Error.MESSAGE, me.getMessage());
          sendFrame(frame, null);
+         ActiveMQServerLogger.LOGGER.connectionFailureDetected(me.getMessage(), me.getType());
 
-         destroyed = true;
+         // Then call the listeners
+         callFailureListeners(me);
+
+         internalClose();
       }
-
-      ActiveMQServerLogger.LOGGER.connectionFailureDetected(me.getMessage(), me.getType());
-
-      // Then call the listeners
-      callFailureListeners(me);
-
-      internalClose();
    }
 
    @Override
