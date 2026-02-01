@@ -121,12 +121,11 @@ public class ConsumerView extends ActiveMQAbstractView<ServerConsumer> {
    }
 
    public static String checkConsumerStatus(ServerConsumer consumer, ActiveMQServer server) {
-      if (server.getRemotingService().getConnection((consumer).getConnectionID()) == null) {
+      if (server.getRemotingService() != null && server.getRemotingService().getConnection((consumer).getConnectionID()) == null) {
          return CONSUMER_STATUS_ORPHANED;
       } else {
          return CONSUMER_STATUS_OK;
       }
-
    }
 
    @Override
