@@ -17,8 +17,14 @@
 package org.apache.activemq.artemis.tests.integration.cluster.warnings;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.invoke.MethodHandles;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.activemq.artemis.api.core.TransportConfiguration;
+import org.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants;
 import org.apache.activemq.artemis.core.server.cluster.impl.MessageLoadBalancingType;
 import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
 import org.apache.activemq.artemis.tests.integration.cluster.distribution.ClusterTestBase;
@@ -31,8 +37,35 @@ public class ClusterCleanNodeShutdownTest extends ClusterTestBase {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
+   public long shutdownTimeout = 0;
+
+
+   @Override
+   protected final TransportConfiguration createTransportConfiguration(String name,
+                                                                       boolean netty,
+                                                                       boolean acceptor,
+                                                                       Map<String, Object> params) {
+
+      assertTrue(netty);
+      TransportConfiguration transportConfiguration = super.createTransportConfiguration(name, netty, acceptor, params);
+
+      transportConfiguration.getParams().put(TransportConstants.SHUTDOWN_TIMEOUT, String.valueOf(shutdownTimeout));
+
+      return transportConfiguration;
+   }
+
    @Test
-   public void testNoWarningErrorsDuringRestartingNodesInCluster() throws Exception {
+   public void testNoWarningErrorsDuringRestartingNodesInClusterTimeoutNoTimeout() throws Exception {
+      internalTest(0);
+   }
+
+   @Test
+   public void testNoWarningErrorsDuringRestartingNodesInClusterTimeoutLargeTimeout() throws Exception {
+      internalTest(TimeUnit.HOURS.toMillis(2));
+   }
+
+   public void internalTest(final long timeout) throws Exception {
+      shutdownTimeout = timeout;
       setupServer(0, isFileStorage(), isNetty());
       setupServer(1, isFileStorage(), isNetty());
 
@@ -40,14 +73,8 @@ public class ClusterCleanNodeShutdownTest extends ClusterTestBase {
       setupClusterConnection("cluster1", "queues", MessageLoadBalancingType.ON_DEMAND, 1, isNetty(), 1, 0);
 
       startServers(0, 1);
-      Wait.assertTrue(() -> {
-         getServer(0).getClusterManager().getClusterController().awaitConnectionToReplicationCluster();
-         return true;
-      }, 2000L);
-      Wait.assertTrue(() -> {
-         getServer(1).getClusterManager().getClusterController().awaitConnectionToReplicationCluster();
-         return true;
-      }, 2000L);
+      getServer(0).getClusterManager().getClusterController().awaitConnectionToReplicationCluster();
+      getServer(1).getClusterManager().getClusterController().awaitConnectionToReplicationCluster();
 
       logger.debug("server 0 = {}", getServer(0).getNodeID());
       logger.debug("server 1 = {}", getServer(1).getNodeID());

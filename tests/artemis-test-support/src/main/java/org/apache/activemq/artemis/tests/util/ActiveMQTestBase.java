@@ -1191,13 +1191,13 @@ public abstract class ActiveMQTestBase extends ArtemisTestCase {
       return new TransportConfiguration(NETTY_CONNECTOR_FACTORY, server1Params);
    }
 
-   protected static final TransportConfiguration createTransportConfiguration(boolean netty,
+   protected TransportConfiguration createTransportConfiguration(boolean netty,
                                                                               boolean acceptor,
                                                                               Map<String, Object> params) {
       return createTransportConfiguration(UUIDGenerator.getInstance().generateStringUUID(), netty, acceptor, params);
    }
 
-   protected static final TransportConfiguration createTransportConfiguration(String name,
+   protected TransportConfiguration createTransportConfiguration(String name,
                                                                               boolean netty,
                                                                               boolean acceptor,
                                                                               Map<String, Object> params) {

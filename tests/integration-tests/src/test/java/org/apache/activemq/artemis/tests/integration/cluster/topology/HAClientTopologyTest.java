@@ -53,7 +53,7 @@ public class HAClientTopologyTest extends TopologyClusterTestBase {
 
    @Override
    protected ServerLocator createHAServerLocator() {
-      TransportConfiguration tc = ActiveMQTestBase.createTransportConfiguration(isNetty(), false, ActiveMQTestBase.generateParams(0, isNetty()));
+      TransportConfiguration tc = createTransportConfiguration(isNetty(), false, ActiveMQTestBase.generateParams(0, isNetty()));
       ServerLocator locator = addServerLocator(ActiveMQClient.createServerLocatorWithHA(tc));
       locator.setBlockOnNonDurableSend(true).setBlockOnDurableSend(true);
       return locator;
