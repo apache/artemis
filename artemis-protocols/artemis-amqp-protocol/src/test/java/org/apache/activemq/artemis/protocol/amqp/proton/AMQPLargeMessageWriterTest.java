@@ -187,7 +187,6 @@ public class AMQPLargeMessageWriterTest {
 
       verify(message).usageDown();
       verify(protonSender).getSession();
-      verify(protonDelivery).getTag();
       verify(protonSender, atLeastOnce()).getLocalState();
 
       verifyNoMoreInteractions(reference);
@@ -246,7 +245,6 @@ public class AMQPLargeMessageWriterTest {
       verify(message).usageDown();
       verify(reference).getMessage();
       verify(protonSender).getSession();
-      verify(protonDelivery).getTag();
       verify(protonSender, atLeastOnce()).getLocalState();
 
       verifyNoMoreInteractions(reference);

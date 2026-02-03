@@ -37,6 +37,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import javax.jms.BytesMessage;
@@ -51,6 +55,7 @@ import javax.jms.ObjectMessage;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
+import javax.jms.Topic;
 
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
@@ -83,12 +88,14 @@ import org.apache.qpid.proton.amqp.messaging.Section;
 import org.apache.qpid.proton.codec.ReadableBuffer;
 import org.apache.qpid.proton.message.impl.MessageImpl;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @ExtendWith(ParameterizedTestExtension.class)
 public class AmqpLargeMessageTest extends AmqpClientTestSupport {
@@ -1175,6 +1182,147 @@ public class AmqpLargeMessageTest extends AmqpClientTestSupport {
       validateNoFilesOnLargeDir();
       runAfter(server::stop);
    }
+
+
+   @Test
+   public void testInterruptStreaming() throws Exception {
+      ConnectionFactory factory = CFUtil.createConnectionFactory("AMQP", "tcp://localhost:61616");
+
+      final int MESSAGE_COUNT = 20;
+      final int MESSAGE_SIZE = 1500000; // 1.5 MB
+      final int THREADS = 10;
+      byte[] payload = createLargePayload(MESSAGE_SIZE);
+
+      try (AssertionLoggerHandler loggerHandler = new AssertionLoggerHandler(true)) {
+
+         final CyclicBarrier consumersReady = new CyclicBarrier(THREADS + 1);
+         final CountDownLatch consumersDone = new CountDownLatch(THREADS);
+         final CountDownLatch producersDone = new CountDownLatch(THREADS);
+         final AtomicInteger sentCount = new AtomicInteger(0);
+         final AtomicInteger countError = new AtomicInteger(0);
+
+         ExecutorService executorService = Executors.newFixedThreadPool(THREADS * 2);
+         runAfter(executorService::shutdownNow);
+
+         for (int i = 0; i < THREADS; i++) {
+            final int threadId = i;
+            executorService.execute(() -> {
+               try {
+                  consumeForInterruptedStreaming(factory, threadId, consumersReady, MESSAGE_COUNT, payload);
+               } catch (Throwable error) {
+                  countError.incrementAndGet();
+                  logger.warn(error.getMessage(), error);
+               } finally {
+                  consumersDone.countDown();
+               }
+            });
+         }
+
+         consumersReady.await(30, TimeUnit.SECONDS);
+
+         for (int i = 0; i < THREADS; i++) {
+            final int threadId = i;
+            executorService.execute(() -> {
+               try {
+                  produceForInterruptedStreaming(factory, sentCount, MESSAGE_COUNT, payload);
+               } catch (Throwable e) {
+                  countError.incrementAndGet();
+                  logger.warn(e.getMessage(), e);
+               } finally {
+                  producersDone.countDown();
+               }
+            });
+         }
+
+         assertTrue(consumersDone.await(5, TimeUnit.MINUTES));
+         assertTrue(producersDone.await(5, TimeUnit.MINUTES));
+
+         assertEquals(0, countError.get(), "There are exceptions on the producers or consumers");
+
+         assertFalse(loggerHandler.findTrace("IllegalArgumentException"), "Server log contains IllegalArgumentException");
+      }
+   }
+
+   private static void produceForInterruptedStreaming(ConnectionFactory factory, AtomicInteger sentCount, int messageCount, byte[] payload) throws Throwable {
+      Connection connection = null;
+      try {
+         connection = factory.createConnection();
+         Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+         Topic topic = session.createTopic("testTopic");
+         MessageProducer producer = session.createProducer(topic);
+
+
+         for (int j = 0; j < messageCount; j++) {
+            BytesMessage message = session.createBytesMessage();
+            message.writeBytes(payload);
+            producer.send(message);
+            sentCount.incrementAndGet();
+
+            if ((j + 1) % 10 == 0) {
+               session.commit();
+            }
+         }
+         session.commit();
+      } finally {
+         if (connection != null) {
+            try {
+               connection.close();
+            } catch (Exception e) {
+               logger.error("Error closing producer connection", e);
+            }
+         }
+      }
+   }
+
+
+   private static void consumeForInterruptedStreaming(ConnectionFactory factory,
+                               int threadId,
+                               CyclicBarrier startFlag, int messageCount, byte[] expectedPayload) throws Exception {
+
+      Connection connection = null;
+      try {
+         connection = factory.createConnection();
+         connection.setClientID("consumer-" + threadId);
+
+         Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+         Topic topic = session.createTopic("testTopic");
+
+         // Create durable subscriber
+         MessageConsumer consumer = session.createDurableSubscriber(topic, "sub-" + threadId);
+
+         startFlag.await(10, TimeUnit.SECONDS);
+         connection.start();
+
+         for (int i = 0; i < messageCount; i++) {
+            BytesMessage msg = (BytesMessage) consumer.receive(TimeUnit.SECONDS.toMillis(30));
+            assertNotNull(msg);
+
+            int bodySize = (int)msg.getBodyLength();
+
+            assertEquals(bodySize, expectedPayload.length);
+
+            byte[] receivedPayLoad =  new byte[bodySize];
+            msg.readBytes(receivedPayLoad);
+
+            assertArrayEquals(expectedPayload, receivedPayLoad);
+
+            if (i % 10 == 0) {
+               session.commit();
+            }
+         }
+         session.commit();
+
+      } finally {
+         if (connection != null) {
+            try {
+               connection.close();
+            } catch (Exception e) {
+               logger.error("Error closing consumer connection", e);
+            }
+         }
+      }
+   }
+
 
 
    private void sendObjectMessages(int nMsgs, ConnectionFactory factory) throws Exception {

@@ -281,7 +281,7 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
          // MessageReferences are sent to the Connection executor (Netty Loop)
          // as a result the returning references have to be done later after they
          // had their chance to finish and clear the runnable
-         connection.runLater(() -> {
+         connection.runNow(() -> {
             try {
                protonSession.removeSender(sender);
                if (brokerConsumer != null) {

@@ -146,7 +146,7 @@ public class AMQPLargeMessageWriter implements MessageWriter {
       }
 
       if (closed) {
-         throw new IllegalStateException("Cannot write to an AMQP Large Message Writer that has been closed");
+         return;
       }
 
       if (sessionSPI.invokeOutgoing(message, (ActiveMQProtonRemotingConnection) sessionSPI.getTransportConnection().getProtocolConnection()) != null) {
@@ -173,6 +173,11 @@ public class AMQPLargeMessageWriter implements MessageWriter {
          logger.trace("AMQP Large Message Writer was closed before queued write attempt was executed");
          return;
       }
+      if (protonSender.getSession().getConnection().getRemoteState() != EndpointState.ACTIVE || protonSender.getSession().getConnection().getLocalState() != EndpointState.ACTIVE) {
+         logger.debug("connection was closed either remotely or locally, the delivery cannot be completed");
+         return;
+      }
+
 
       // This is discounting some bytes due to Transfer payload
       final int frameSize = protonSender.getSession().getConnection().getTransport().getOutboundFrameSizeLimit() - 50 - (delivery.getTag() != null ? delivery.getTag().length : 0);

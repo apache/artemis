@@ -326,7 +326,7 @@ public class AMQPConnectionContext extends ProtonInitializable implements EventH
    }
 
    public void destroy() {
-      handler.runLater(() -> connectionCallback.close());
+      handler.runNow(() -> connectionCallback.close());
    }
 
    public boolean isSyncOnFlush() {
@@ -806,7 +806,7 @@ public class AMQPConnectionContext extends ProtonInitializable implements EventH
          transport.getCondition().getDescription() : "Unknown Internal Error";
 
       // Cleanup later after the any pending work gets sent to the remote via an IO flush.
-      runLater(() -> connectionCallback.getProtonConnectionDelegate().fail(new ActiveMQAMQPInternalErrorException(errorMessage)));
+      runNow(() -> connectionCallback.getProtonConnectionDelegate().fail(new ActiveMQAMQPInternalErrorException(errorMessage)));
    }
 
    @Override
@@ -872,7 +872,7 @@ public class AMQPConnectionContext extends ProtonInitializable implements EventH
 
    @Override
    public void onRemoteClose(Session session) throws Exception {
-      handler.runLater(() -> {
+      handler.runNow(() -> {
          session.close();
          session.free();
 
