@@ -11,6 +11,7 @@ On the remote peer a queue binding is created on the federated address which wil
 Once a message arrives at the federation address consumer on the initiating broker it is then published into the local address which routes the message into each of the queues bound to that address.
 
 Address federation can be configured to operate in a single direction between peers or can configured to operate in both directions between peers allowing message to flow in both directions delivering messages to consumers on either broker that were sent to the matching address on the opposing broker instance.
+For a more complete reference of the AMQP Address Federation configuration elements refer to the xref:amqp-federation-configuration-glossary.adoc[AMQP Federation Configuration Glossary]
 
 image::images/amqp-federation-address-concept.png[]
 

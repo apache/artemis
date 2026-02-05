@@ -464,6 +464,8 @@ The broker connection federation configuration consists of one or more policies 
 </broker-connections>
 ----
 
+For a more complete reference of the AMQP Federation configuration elements refer to the xref:amqp-federation-configuration-glossary.adoc[AMQP Federation Configuration Glossary]
+
 === Address federation
 
 Address federation can be thought of as full multicast over a set of loosely coupled brokers.
