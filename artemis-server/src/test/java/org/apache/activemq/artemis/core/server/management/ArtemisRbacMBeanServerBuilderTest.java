@@ -18,7 +18,6 @@
 package org.apache.activemq.artemis.core.server.management;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -666,7 +665,7 @@ public class ArtemisRbacMBeanServerBuilderTest extends ServerTestBase {
          }
       });
       assertNotNull(result);
-      assertFalse((Boolean) result, "in the absence of an operation to check, update required");
+      assertTrue((Boolean) result, "in the absence of an operation to check, view is sufficient");
 
       result = SecurityManagerShim.callAs(viewSubject, (Callable<Object>) () -> {
          try {
@@ -705,6 +704,94 @@ public class ArtemisRbacMBeanServerBuilderTest extends ServerTestBase {
       CompositeData cd = ((TabularData)result).get(new Object[]{runtimeName.toString(), "getVmName()"});
       assertEquals(runtimeName.toString(), cd.get("ObjectName"));
       assertEquals("getVmName()", cd.get("Method"));
+      assertEquals(true, cd.get("CanInvoke"));
+   }
+
+   @Test
+   public void testCanInvokeStripsParameterList() throws Exception {
+
+      MBeanServer proxy = underTest.newMBeanServer("d", mbeanServer, mBeanServerDelegate);
+
+      final ActiveMQServer server = createServer(false);
+      server.setMBeanServer(proxy);
+      server.getConfiguration().setJMXManagementEnabled(true).setSecurityEnabled(true);
+
+      Set<Role> editRoles = new HashSet<>();
+      editRoles.add(new Role("editors", false, false, false, false, false, false, false, false, false, false, false, true));
+
+      // Grant edit permission to deleteAddress operation WITHOUT parameter list
+      // This simulates the typical permission setup where operations are configured without parameter signatures
+      server.getConfiguration().putSecurityRoles("mops.broker.deleteAddress", editRoles);
+
+      server.start();
+
+      final HawtioSecurityControl securityControl = JMX.newMBeanProxy(
+         proxy, ObjectNameBuilder.DEFAULT.getSecurityObjectName(), HawtioSecurityControl.class, false);
+
+      ObjectName serverObjectName = ObjectNameBuilder.DEFAULT.getActiveMQServerObjectName();
+      final ActiveMQServerControl serverControl = JMX.newMBeanProxy(
+         proxy, serverObjectName, ActiveMQServerControl.class, false);
+      assertNotNull(serverControl);
+
+      Subject editSubject = new Subject();
+      editSubject.getPrincipals().add(new UserPrincipal("e"));
+      editSubject.getPrincipals().add(new RolePrincipal("editors"));
+
+      // Test with operation name including parameter list as sent by console
+      Object result = SecurityManagerShim.callAs(editSubject, (Callable<Object>) () -> {
+         try {
+            return securityControl.canInvoke(serverObjectName.toString(), "deleteAddress(java.lang.String)");
+         } catch (Exception e1) {
+            return e1.getCause();
+         }
+      });
+      assertNotNull(result);
+      assertTrue((Boolean) result, "Should be able to invoke deleteAddress(java.lang.String) - parameter list should be stripped to match permission");
+
+      // Test with empty parameter list
+      result = SecurityManagerShim.callAs(editSubject, (Callable<Object>) () -> {
+         try {
+            return securityControl.canInvoke(serverObjectName.toString(), "deleteAddress()");
+         } catch (Exception e1) {
+            return e1.getCause();
+         }
+      });
+      assertNotNull(result);
+      assertTrue((Boolean) result, "Should be able to invoke deleteAddress() - parameter list should be stripped");
+
+      // Test without parameter list (should also work)
+      result = SecurityManagerShim.callAs(editSubject, (Callable<Object>) () -> {
+         try {
+            return securityControl.canInvoke(serverObjectName.toString(), "deleteAddress");
+         } catch (Exception e1) {
+            return e1.getCause();
+         }
+      });
+      assertNotNull(result);
+      assertTrue((Boolean) result, "Should be able to invoke deleteAddress without parameters");
+
+      // Test bulk query with parameter lists
+      Map<String, List<String>> bulkQuery = new HashMap<>();
+      bulkQuery.put(serverObjectName.toString(), List.of("deleteAddress(java.lang.String)", "deleteAddress()"));
+
+      result = SecurityManagerShim.callAs(editSubject, (Callable<Object>) () -> {
+         try {
+            return securityControl.canInvoke(bulkQuery);
+         } catch (Exception e1) {
+            return e1.getCause();
+         }
+      });
+      assertNotNull(result);
+      assertEquals(2, ((TabularData)result).size());
+
+      CompositeData cd = ((TabularData)result).get(new Object[]{serverObjectName.toString(), "deleteAddress(java.lang.String)"});
+      assertEquals(serverObjectName.toString(), cd.get("ObjectName"));
+      assertEquals("deleteAddress(java.lang.String)", cd.get("Method"));
+      assertEquals(true, cd.get("CanInvoke"));
+
+      cd = ((TabularData)result).get(new Object[]{serverObjectName.toString(), "deleteAddress()"});
+      assertEquals(serverObjectName.toString(), cd.get("ObjectName"));
+      assertEquals("deleteAddress()", cd.get("Method"));
       assertEquals(true, cd.get("CanInvoke"));
    }
 }

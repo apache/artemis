@@ -26,8 +26,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @ExtendWith(ParameterizedTestExtension.class)
 public class RootTest extends ConsoleTest {
 
-   public RootTest(String browser) {
-      super(browser);
+   public RootTest(String browser, String serverName) {
+      super(browser, serverName);
    }
 
    @TestTemplate

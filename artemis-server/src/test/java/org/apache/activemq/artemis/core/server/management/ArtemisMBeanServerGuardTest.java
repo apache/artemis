@@ -100,4 +100,49 @@ public class ArtemisMBeanServerGuardTest extends ServerTestBase {
       });
       assertFalse((Boolean) result);
    }
+
+   @Test
+   public void testCanInvokeStripsParameterList() throws Throwable {
+      ArtemisMBeanServerGuard guard = new ArtemisMBeanServerGuard();
+      JMXAccessControlList controlList = new JMXAccessControlList();
+      guard.setJMXAccessControlList(controlList);
+      ObjectNameBuilder objectNameBuilder = ObjectNameBuilder.create("testdomain", "myBroker");
+      ObjectName activeMQServerObjectName = objectNameBuilder.getActiveMQServerObjectName();
+
+      // Configure permission for operation without parameter list
+      controlList.addToRoleAccess("testdomain", "broker=myBroker", "deleteAddress", "admin");
+
+      Subject subject = new Subject();
+      subject.getPrincipals().add(new RolePrincipal("admin"));
+
+      // Test with operation name including parameter list
+      Object result = SecurityManagerShim.callAs(subject, (Callable<Object>) () -> {
+         try {
+            return guard.canInvoke(activeMQServerObjectName.getCanonicalName(), "deleteAddress(java.lang.String)");
+         } catch (Exception e1) {
+            return e1;
+         }
+      });
+      assertTrue((Boolean) result, "Should be able to invoke deleteAddress(java.lang.String) - parameter list should be stripped");
+
+      // Test with empty parameter list
+      result = SecurityManagerShim.callAs(subject, (Callable<Object>) () -> {
+         try {
+            return guard.canInvoke(activeMQServerObjectName.getCanonicalName(), "deleteAddress()");
+         } catch (Exception e1) {
+            return e1;
+         }
+      });
+      assertTrue((Boolean) result, "Should be able to invoke deleteAddress() - parameter list should be stripped");
+
+      // Test without parameter list (should also work)
+      result = SecurityManagerShim.callAs(subject, (Callable<Object>) () -> {
+         try {
+            return guard.canInvoke(activeMQServerObjectName.getCanonicalName(), "deleteAddress");
+         } catch (Exception e1) {
+            return e1;
+         }
+      });
+      assertTrue((Boolean) result, "Should be able to invoke deleteAddress without parameters");
+   }
 }

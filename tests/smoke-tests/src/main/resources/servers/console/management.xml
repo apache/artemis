@@ -44,6 +44,7 @@
             <access method="listProducers" roles="producers,amq"/>
             <access method="listQueues" roles="queues,amq"/>
             <access method="listAddresses" roles="addresses,amq"/>
+            <access method="deleteAddress" roles="deleteAddresses,amq"/>
             <access method="list*" roles="amq"/>
             <access method="get*" roles="amq"/>
             <access method="is*" roles="amq"/>

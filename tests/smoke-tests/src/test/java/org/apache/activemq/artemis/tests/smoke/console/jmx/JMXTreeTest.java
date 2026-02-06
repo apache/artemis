@@ -33,8 +33,8 @@ import static org.junit.Assert.assertEquals;
 public class JMXTreeTest extends ArtemisJMXTest {
 
 
-   public JMXTreeTest(String browser) {
-      super(browser);
+   public JMXTreeTest(String browser, String serverName) {
+      super(browser, serverName);
    }
 
    @TestTemplate

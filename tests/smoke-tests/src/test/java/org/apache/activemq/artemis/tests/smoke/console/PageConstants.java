@@ -100,6 +100,8 @@ public class PageConstants {
 
    public static final By DATA_TABLE = By.id("data-table");
 
+   public static final  By DATA_ROW_CONTEXT_MENU = By.cssSelector("div[class='pf-v5-c-menu']");
+
    public static final By MESSAGE_TABLE = By.id("message-table");
 
    public static final By TABLE_ROW_LOCATOR = By.cssSelector("tr[data-ouia-component-type='PF5/TableRow']");
@@ -111,7 +113,7 @@ public class PageConstants {
 
    public static final By QUEUES_TAB_SELECTED = By.cssSelector("button[aria-label='queues'][aria-selected='true']");
 
-   public static final By ADDRESSES_TAB = By.xpath("//button/span[contains(text(),'Addresses')]");
+   public static final By ADDRESSES_TAB = By.xpath("//button[@role='tab']/span[contains(text(),'Addresses')]");
 
    public static final By SEND_MESSAGE_BUTTON = By.xpath("//span[contains(text(),'Send Message')]");
 
@@ -138,4 +140,6 @@ public class PageConstants {
    public static final By BROKER_NODE_LOCATOR = By.id(BROKER_NODE);
 
    public static final By BROKER_BUTTON_LOCATOR = By.xpath("//button[contains(text(), 'Broker 0.0.0.0')]");
+
+   public static final By ALERT_LOCATOR = By.xpath("//ul/li/div[contains(@class, 'pf-v5-c-alert')]");
 }

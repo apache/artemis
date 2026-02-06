@@ -29,8 +29,8 @@ import org.openqa.selenium.NoSuchElementException;
 @ExtendWith(ParameterizedTestExtension.class)
 public class TabsTest extends ArtemisTest {
 
-   public TabsTest(String browser) {
-      super(browser);
+   public TabsTest(String browser, String serverName) {
+      super(browser, serverName);
    }
 
    @TestTemplate

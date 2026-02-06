@@ -142,6 +142,13 @@ public class ArtemisMBeanServerGuard implements GuardInvocationHandler {
       if (operationName == null || canBypassRBAC(objectName)) {
          return true;
       }
+
+      // Strip the parameter list from operationName.
+      int paramListIndex = operationName.indexOf('(');
+      if (paramListIndex > 0) {
+         operationName = operationName.substring(0, paramListIndex);
+      }
+
       List<String> requiredRoles = getRequiredRoles(objectName, operationName);
       for (String role : requiredRoles) {
          if (currentUserHasRole(role)) {

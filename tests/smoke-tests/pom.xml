@@ -304,29 +304,6 @@
             <executions>
                <execution>
                   <phase>test-compile</phase>
-                  <id>create-create-console</id>
-                  <goals>
-                     <goal>create</goal>
-                  </goals>
-                  <configuration>
-                     <role>amq,connections,sessions,consumers,producers,addresses,queues</role>
-                     <user>admin</user>
-                     <password>admin</password>
-                     <allowAnonymous>false</allowAnonymous>
-                     <noWeb>false</noWeb>
-                     <instance>${basedir}/target/console</instance>
-                     <configuration>${basedir}/target/classes/servers/console</configuration>
-                     <args>
-                        <arg>--http-host</arg>
-                        <arg>${sts-http-host}</arg>
-                        <arg>--http-port</arg>
-                        <arg>8161</arg>
-                     </args>
-                  </configuration>
-               </execution>
-
-               <execution>
-                  <phase>test-compile</phase>
                   <id>upgrade-linux</id>
                   <goals>
                      <goal>upgrade</goal>

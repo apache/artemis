@@ -25,16 +25,19 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.activemq.artemis.cli.commands.Create;
+import org.apache.activemq.artemis.cli.commands.helper.HelperCreate;
 import org.apache.activemq.artemis.tests.extensions.parameterized.ParameterizedTestExtension;
 import org.apache.activemq.artemis.tests.extensions.parameterized.Parameters;
 import org.apache.activemq.artemis.tests.smoke.common.SmokeTestBase;
 import org.apache.activemq.artemis.util.ServerUtil;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.openqa.selenium.MutableCapabilities;
@@ -51,15 +54,14 @@ import org.testcontainers.Testcontainers;
 import org.testcontainers.containers.BrowserWebDriverContainer;
 import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 
-/**
- * The server for ConsoleTest is created on the pom as there are some properties that are passed by argument on the CI
- */
 @ExtendWith(ParameterizedTestExtension.class)
 public abstract class ConsoleTest extends SmokeTestBase {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-   protected static final String SERVER_NAME = "console";
+   protected static final String SERVER_NAME_CONSOLE = "console";
+   protected static final String SERVER_NAME_CONSOLE_BROKER_SECURITY = "console-broker-security";
+
    protected static final String SERVER_ADMIN_USERNAME = "admin";
    protected static final String SERVER_ADMIN_PASSWORD = "admin";
 
@@ -68,29 +70,68 @@ public abstract class ConsoleTest extends SmokeTestBase {
 
    protected static final int DEFAULT_TIMEOUT = 10000;
 
+   protected String serverName;
    protected String browser;
    protected WebDriver driver;
    protected String webServerUrl;
    private BrowserWebDriverContainer browserWebDriverContainer;
 
-   @Parameters(name = "browser={0}")
+   @BeforeAll
+   public static void createServers() throws Exception {
+      File consoleServerLocation = getFileServerLocation(SERVER_NAME_CONSOLE);
+      deleteDirectory(consoleServerLocation);
+
+      {
+         String httpHost = System.getProperty("sts-http-host", "localhost");
+         HelperCreate cliCreateServer = helperCreate();
+         cliCreateServer.setRole("amq,connections,sessions,consumers,producers,addresses,queues,deleteAddresses")
+            .setUser(SERVER_ADMIN_USERNAME).setPassword(SERVER_ADMIN_PASSWORD)
+            .setAllowAnonymous(false).setNoWeb(false).setArtemisInstance(consoleServerLocation)
+            .setConfiguration("./src/main/resources/servers/" + SERVER_NAME_CONSOLE)
+            .setArgs("--http-host", httpHost, "--http-port", "8161");
+         cliCreateServer.createServer();
+      }
+
+      File consoleBrokerSecurityServerLocation = getFileServerLocation(SERVER_NAME_CONSOLE_BROKER_SECURITY);
+      deleteDirectory(consoleBrokerSecurityServerLocation);
+
+      {
+         String httpHost = System.getProperty("sts-http-host", "localhost");
+         HelperCreate cliCreateServer = helperCreate();
+         cliCreateServer.setRole("amq,connections,sessions,consumers,producers,addresses,queues,deleteAddresses")
+            .setUser(SERVER_ADMIN_USERNAME).setPassword(SERVER_ADMIN_PASSWORD)
+            .setAllowAnonymous(false).setNoWeb(false).setArtemisInstance(consoleBrokerSecurityServerLocation)
+            .setConfiguration("./src/main/resources/servers/" + SERVER_NAME_CONSOLE_BROKER_SECURITY)
+            .setArgs("--http-host", httpHost, "--http-port", "8161", "--java-options",
+               "-Djava.rmi.server.hostname=localhost -Djavax.management.builder.initial=org.apache.activemq.artemis.core.server.management.ArtemisRbacMBeanServerBuilder");
+         cliCreateServer.createServer();
+      }
+   }
+
+   @Parameters(name = "browser={0}, server={1}")
    public static Collection getParameters() {
       String webdriverBrowsers = System.getProperty("webdriver.browsers");
       if (webdriverBrowsers == null) {
          webdriverBrowsers = BROWSER_CHROME + "," + BROWSER_FIREFOX;
       }
-      return Arrays.stream(webdriverBrowsers.split(",")).
-          map(browser -> new Object[]{browser}).collect(Collectors.toList());
+      String[] browsers = webdriverBrowsers.split(",");
+      String[] servers = new String[]{SERVER_NAME_CONSOLE, SERVER_NAME_CONSOLE_BROKER_SECURITY};
+
+      return Arrays.stream(browsers)
+          .flatMap(browser -> Arrays.stream(servers)
+              .map(server -> new Object[]{browser, server}))
+          .collect(Collectors.toList());
    }
 
-   public ConsoleTest(String browser) {
+   public ConsoleTest(String browser, String serverName) {
       this.browser = browser;
+      this.serverName = serverName;
       this.webServerUrl = String.format("%s://%s:%d", "http", System.getProperty("sts-http-host", "localhost"), 8161);
    }
 
    @BeforeEach
    public void before() throws Exception {
-      File jolokiaAccessFile = Paths.get(getServerLocation(SERVER_NAME), "etc", Create.ETC_JOLOKIA_ACCESS_XML).toFile();
+      File jolokiaAccessFile = Paths.get(getServerLocation(serverName), "etc", Create.ETC_JOLOKIA_ACCESS_XML).toFile();
       String jolokiaAccessContent = FileUtils.readFileToString(jolokiaAccessFile, "UTF-8");
       if (!jolokiaAccessContent.contains("testcontainers")) {
          jolokiaAccessContent = jolokiaAccessContent.replaceAll("<strict-checking/>",
@@ -98,9 +139,9 @@ public abstract class ConsoleTest extends SmokeTestBase {
          FileUtils.writeStringToFile(jolokiaAccessFile, jolokiaAccessContent, "UTF-8");
       }
 
-      cleanupData(SERVER_NAME);
+      cleanupData(serverName);
       disableCheckThread();
-      startServer(SERVER_NAME, 0, 0);
+      startServer(serverName, 0, 0);
       ServerUtil.waitForServerToStart(0, SERVER_ADMIN_USERNAME, SERVER_ADMIN_PASSWORD, 30000);
 
 
@@ -136,6 +177,7 @@ public abstract class ConsoleTest extends SmokeTestBase {
          if (BROWSER_CHROME.equals(browser)) {
             webdriverName = "chrome";
             browserOptions = new ChromeOptions();
+            ((ChromeOptions)browserOptions).setExperimentalOption("prefs", Collections.singletonMap("profile.password_manager_leak_detection", false));
             webDriverConstructor = browserOpts -> new ChromeDriver((ChromeOptions)browserOpts);
             webdriverArgumentsSetter = (browserOpts, arguments) -> ((ChromeOptions) browserOpts).addArguments(arguments);
          } else if (BROWSER_FIREFOX.equals(browser)) {

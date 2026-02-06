@@ -28,6 +28,7 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
 
 import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.ADDRESSES_TAB;
+import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.ALERT_LOCATOR;
 import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.BUTTON_LOCATOR;
 import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.DATA_TABLE;
 import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.LOGOUT_DROPDOWN_LOCATOR;
@@ -73,6 +74,16 @@ public abstract class ArtemisPage extends ConsolePage {
       }
 
       return null;
+   }
+
+   public AddressesPage getAddressesPage(int timeout) {
+      WebElement queuesMenuItem = driver.findElement(ADDRESSES_TAB);
+
+      Actions actions = new Actions(driver);
+
+      actions.moveToElement(queuesMenuItem).click().perform();
+
+      return new AddressesPage(driver);
    }
 
    public SendMessagePage getAddressSendMessagePage(String address, int timeout) {
@@ -201,5 +212,20 @@ public abstract class ArtemisPage extends ConsolePage {
             "\",\"arguments\":[" + StringEscapeUtils.escapeString(arguments) + "]}');");
 
       return response;
+   }
+
+   public int countAlerts() {
+      return driver.findElements(ALERT_LOCATOR).size();
+   }
+
+   public void closeAlerts() {
+      List<WebElement> alerts = driver.findElements(ALERT_LOCATOR);
+
+      for (WebElement alert : alerts) {
+         List<WebElement> alertButtons = alert.findElements(By.tagName("button"));
+         for (WebElement alertButton : alertButtons) {
+            alertButton.click();
+         }
+      }
    }
 }

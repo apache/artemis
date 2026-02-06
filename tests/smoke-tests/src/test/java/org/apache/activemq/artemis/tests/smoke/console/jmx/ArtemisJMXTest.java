@@ -19,8 +19,8 @@ package org.apache.activemq.artemis.tests.smoke.console.jmx;
 import org.apache.activemq.artemis.tests.smoke.console.ConsoleTest;
 
 public abstract class ArtemisJMXTest extends ConsoleTest {
-   public ArtemisJMXTest(String browser) {
-      super(browser);
+   public ArtemisJMXTest(String browser, String serverName) {
+      super(browser, serverName);
    }
 
 

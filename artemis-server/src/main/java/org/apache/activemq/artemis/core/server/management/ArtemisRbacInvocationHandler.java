@@ -123,8 +123,23 @@ public class ArtemisRbacInvocationHandler implements GuardInvocationHandler {
       try {
          final ObjectName objectName = ObjectName.getInstance(name);
          if (!isUncheckedDomain(objectName)) {
-            final SimpleString rbacAddress = addressFrom(objectName, operationName);
-            securityStoreCheck(rbacAddress, permissionFrom(operationName));
+            if (operationName != null) {
+               // Strip the parameter list from operationName.
+               int paramListIndex = operationName.indexOf('(');
+               if (paramListIndex > 0) {
+                  operationName = operationName.substring(0, paramListIndex);
+               }
+
+               final SimpleString rbacAddress = addressFrom(objectName, operationName);
+               securityStoreCheck(rbacAddress, permissionFrom(operationName));
+            } else {
+               // When operationName is null, canInvoke checks if the user has any access to the MBean.
+               // We use VIEW permission rather than EDIT because hawtio-react's hasInvokeRights method
+               // checks both canInvoke(mbean, null) AND canInvoke(mbean, method). This allows users with
+               // VIEW permission to see MBeans and then determine which specific operations they can invoke.
+               final SimpleString rbacAddress = addressFrom(objectName, null);
+               securityStoreCheck(rbacAddress, CheckType.VIEW);
+            }
          }
          okInvoke = true;
       } catch (Throwable expectedOnCheckFailOrInvalidObjectName) {

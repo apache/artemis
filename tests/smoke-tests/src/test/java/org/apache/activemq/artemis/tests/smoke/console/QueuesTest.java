@@ -43,8 +43,8 @@ import javax.management.ObjectName;
 @ExtendWith(ParameterizedTestExtension.class)
 public class QueuesTest extends ArtemisTest {
 
-   public QueuesTest(String browser) {
-      super(browser);
+   public QueuesTest(String browser, String serverName) {
+      super(browser, serverName);
    }
 
    @TestTemplate

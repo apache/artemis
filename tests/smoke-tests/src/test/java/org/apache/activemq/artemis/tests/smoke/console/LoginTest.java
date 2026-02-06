@@ -30,8 +30,8 @@ import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.WEB_
 
 public class LoginTest extends ConsoleTest {
 
-   public LoginTest(String browser) {
-      super(browser);
+   public LoginTest(String browser, String serverName) {
+      super(browser, serverName);
    }
 
    @TestTemplate
