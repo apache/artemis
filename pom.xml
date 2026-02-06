@@ -20,7 +20,7 @@
    <groupId>org.apache.artemis</groupId>
    <artifactId>artemis-project</artifactId>
    <packaging>pom</packaging>
-   <version>2.51.0-SNAPSHOT</version>
+   <version>2.51.0</version>
 
    <parent>
       <groupId>org.apache</groupId>
@@ -284,14 +284,14 @@
 
       <fast-tests>false</fast-tests>
 
-      <project.build.outputTimestamp>2026-01-15T17:47:39Z</project.build.outputTimestamp>
+      <project.build.outputTimestamp>2026-02-06T17:59:10Z</project.build.outputTimestamp>
    </properties>
 
    <scm>
       <connection>scm:git:https://gitbox.apache.org/repos/asf/artemis.git</connection>
       <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/artemis.git</developerConnection>
       <url>https://github.com/apache/artemis</url>
-      <tag>2.50.0</tag>
+      <tag>2.51.0</tag>
    </scm>
 
    <issueManagement>
