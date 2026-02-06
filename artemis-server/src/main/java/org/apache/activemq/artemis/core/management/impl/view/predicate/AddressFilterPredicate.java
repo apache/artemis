@@ -16,66 +16,20 @@
  */
 package org.apache.activemq.artemis.core.management.impl.view.predicate;
 
-import java.util.Arrays;
-
 import org.apache.activemq.artemis.api.core.management.AddressControl;
-import org.apache.activemq.artemis.core.management.impl.view.AddressField;
-import org.apache.activemq.artemis.core.server.ActiveMQServer;
 
-public class AddressFilterPredicate extends ActiveMQFilterPredicate<AddressControl> {
-
-   private AddressField f;
-
-   private final ActiveMQServer server;
-
-   public AddressFilterPredicate(ActiveMQServer server) {
+public class AddressFilterPredicate extends ActiveMQFilterPredicate<AddressControl, AddressPredicateFilterPart> {
+   public AddressFilterPredicate() {
       super();
-      this.server = server;
    }
 
    @Override
-   public boolean test(AddressControl address) {
-      if (f == null)
-         return true;
-      try {
-         return switch (f) {
-            case ID -> matches(address.getId());
-            case NAME -> matches(address.getAddress());
-            case ROUTING_TYPES -> matchAny(Arrays.asList(address.getRoutingTypes()));
-            case QUEUE_COUNT -> matches(address.getQueueCount());
-            case INTERNAL -> matches(address.isInternal());
-            case TEMPORARY -> matches(address.isTemporary());
-            case AUTO_CREATED -> matches(address.isAutoCreated());
-            case PAUSED -> matches(address.isPaused());
-            case CURRENT_DUPLICATE_ID_CACHE_SIZE -> matches(address.getCurrentDuplicateIdCacheSize());
-            case RETROACTIVE_RESOURCE -> matches(address.isRetroactiveResource());
-            case UNROUTED_MESSAGE_COUNT -> matches(address.getUnRoutedMessageCount());
-            case ROUTED_MESSAGE_COUNT -> matches(address.getRoutedMessageCount());
-            case MESSAGE_COUNT -> matches(address.getMessageCount());
-            case NUMBER_OF_BYTES_PER_PAGE -> matches(address.getNumberOfBytesPerPage());
-            case ADDRESS_LIMIT_PERCENT -> matches(address.getAddressLimitPercent());
-            case PAGING -> matches(address.isPaging());
-            case NUMBER_OF_PAGES -> matches(address.getNumberOfPages());
-            case ADDRESS_SIZE -> matches(address.getAddressSize());
-            case MAX_PAGE_READ_BYTES -> matches(address.getMaxPageReadBytes());
-            case MAX_PAGE_READ_MESSAGES -> matches(address.getMaxPageReadMessages());
-            case PREFETCH_PAGE_BYTES -> matches(address.getPrefetchPageBytes());
-            case PREFETCH_PAGE_MESSAGES -> matches(address.getPrefetchPageBytes());
-         };
-      } catch (Exception e) {
-         return false;
-      }
+   protected boolean filter(AddressControl address, AddressPredicateFilterPart filterPart) throws Exception {
+      return filterPart.filterPart(address);
    }
 
    @Override
-   public void setField(String field) {
-      if (field != null && !field.isEmpty()) {
-         this.f = AddressField.valueOfName(field);
-
-         //for backward compatibility
-         if (this.f == null) {
-            this.f = AddressField.valueOf(field);
-         }
-      }
+   public AddressPredicateFilterPart createFilterPart(String field, String operation, String value) {
+      return new AddressPredicateFilterPart(this, field, operation, value);
    }
 }

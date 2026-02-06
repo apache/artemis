@@ -19,6 +19,7 @@ package org.apache.activemq.artemis.core.management.impl.view;
 import java.util.Date;
 
 import org.apache.activemq.artemis.core.management.impl.ActiveMQServerControlImpl;
+import org.apache.activemq.artemis.core.management.impl.view.predicate.ConsumerPredicateFilterPart;
 import org.apache.activemq.artemis.core.management.impl.view.predicate.ConsumerFilterPredicate;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ServerConsumer;
@@ -26,7 +27,7 @@ import org.apache.activemq.artemis.core.server.ServerSession;
 import org.apache.activemq.artemis.json.JsonObjectBuilder;
 import org.apache.activemq.artemis.utils.JsonLoader;
 
-public class ConsumerView extends ActiveMQAbstractView<ServerConsumer> {
+public class ConsumerView extends ActiveMQAbstractView<ServerConsumer, ConsumerPredicateFilterPart> {
 
    public static final String CONSUMER_STATUS_OK = "OK";
    public static final String CONSUMER_STATUS_ORPHANED = "Orphaned";

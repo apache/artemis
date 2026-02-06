@@ -16,21 +16,10 @@
  */
 package org.apache.activemq.artemis.core.management.impl.view.predicate;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Function;
-
-import org.apache.activemq.artemis.core.management.impl.view.ConnectionField;
-import org.apache.activemq.artemis.core.remoting.impl.netty.NettyServerConnection;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
-import org.apache.activemq.artemis.core.server.ServerSession;
 import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
 
-public class ConnectionFilterPredicate extends ActiveMQFilterPredicate<RemotingConnection> {
-
-   private ConnectionField f;
+public class ConnectionFilterPredicate extends ActiveMQFilterPredicate<RemotingConnection, ConnectionPredicateFilterPart> {
 
    private ActiveMQServer server;
 
@@ -39,46 +28,12 @@ public class ConnectionFilterPredicate extends ActiveMQFilterPredicate<RemotingC
    }
 
    @Override
-   public boolean test(RemotingConnection connection) {
-      // Using switch over enum vs string comparison is better for perf.
-      if (f == null)
-         return true;
-      return switch (f) {
-         case CONNECTION_ID -> matches(connection.getID());
-         case CLIENT_ID -> matches(connection.getClientID());
-         case USERS -> matchAny(collectFromSessions(connection.getID().toString(), s -> s.getUsername()));
-         case PROTOCOL -> matches(connection.getProtocolName());
-         case SESSION_COUNT -> matches(server.getSessions(connection.getID().toString()).size());
-         case REMOTE_ADDRESS -> matches(connection.getTransportConnection().getRemoteAddress());
-         case LOCAL_ADDRESS -> matches(connection.getTransportConnection().getLocalAddress());
-         case SESSION_ID -> matchAny(server.getSessions(connection.getID().toString()));
-         case CREATION_TIME -> matches(connection.getCreationTime());
-         case IMPLEMENTATION -> matches(connection.getClass().getSimpleName());
-         case PROXY_ADDRESS -> matches(NettyServerConnection.getProxyAddress(connection.getTransportConnection()));
-         case PROXY_PROTOCOL_VERSION -> matches(NettyServerConnection.getProxyProtocolVersion(connection.getTransportConnection()));
-      };
-   }
-
-   Set<String> collectFromSessions(String connectionId, Function<ServerSession, String> getter) {
-      List<ServerSession> sessions = server.getSessions(connectionId);
-      Set<String> sessionAttributes = new HashSet<>();
-      for (ServerSession session : sessions) {
-         String value = getter.apply(session);
-         String string = Objects.requireNonNullElse(value, "");
-         sessionAttributes.add(string);
-      }
-      return sessionAttributes;
+   protected boolean filter(RemotingConnection input, ConnectionPredicateFilterPart filterPart) throws Exception {
+      return filterPart.filterPart(input);
    }
 
    @Override
-   public void setField(String field) {
-      if (field != null && !field.isEmpty()) {
-         this.f = ConnectionField.valueOfName(field);
-
-         //for backward compatibility
-         if (this.f == null) {
-            this.f = ConnectionField.valueOf(field);
-         }
-      }
+   public ConnectionPredicateFilterPart createFilterPart(String field, String operation, String value) {
+      return new ConnectionPredicateFilterPart(server, field, operation, value);
    }
 }

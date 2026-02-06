@@ -16,6 +16,7 @@
  */
 package org.apache.activemq.artemis.core.management.impl.view;
 
+import org.apache.activemq.artemis.core.management.impl.view.predicate.QueuePredicateFilterPart;
 import org.apache.activemq.artemis.json.JsonObjectBuilder;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.management.QueueControl;
@@ -24,7 +25,7 @@ import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.utils.JsonLoader;
 
-public class QueueView extends ActiveMQAbstractView<QueueControl> {
+public class QueueView extends ActiveMQAbstractView<QueueControl, QueuePredicateFilterPart> {
 
    private static final String defaultSortField = QueueField.NAME.getName();
 
