@@ -18,6 +18,7 @@ package org.apache.activemq.artemis.core.management.impl.view;
 
 import java.util.Objects;
 
+import org.apache.activemq.artemis.core.management.impl.view.predicate.ProducerPredicateFilterPart;
 import org.apache.activemq.artemis.core.management.impl.view.predicate.ProducerFilterPredicate;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ServerProducer;
@@ -25,7 +26,7 @@ import org.apache.activemq.artemis.core.server.ServerSession;
 import org.apache.activemq.artemis.json.JsonObjectBuilder;
 import org.apache.activemq.artemis.utils.JsonLoader;
 
-public class ProducerView extends ActiveMQAbstractView<ServerProducer> {
+public class ProducerView extends ActiveMQAbstractView<ServerProducer, ProducerPredicateFilterPart> {
 
    private static final String defaultSortField = ProducerField.CREATION_TIME.getName();
 
