@@ -150,7 +150,7 @@ public class QueueControlUsingCoreTest extends QueueControlTest {
 
          @Override
          public int changeMessagesPriority(final String filter, final int newPriority) throws Exception {
-            return (Integer) proxy.invokeOperation("changeMessagesPriority", filter, newPriority);
+            return (Integer) proxy.invokeOperation(Integer.class, "changeMessagesPriority", filter, newPriority);
          }
 
          @Override

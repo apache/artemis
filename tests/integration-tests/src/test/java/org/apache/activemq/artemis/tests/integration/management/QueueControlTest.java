@@ -5051,7 +5051,157 @@ public class QueueControlTest extends ManagementTestBase {
       clientConsumer.close();
    }
 
+   @TestTemplate
+   public void testChangeMessagesPriorityIncludesPagedMessage() throws Exception {
+      final SimpleString queueName = SimpleString.of("queue");
+      final String sampleText = "Message Content";
+      final int messageCount = 10;
 
+      AddressSettings addressSettings = new AddressSettings().setMaxSizeBytes(200L);
+      server.getAddressSettingsRepository().addMatch(queueName.toString(), addressSettings);
+      session.createQueue(QueueConfiguration.of(queueName).setDurable(durable));
+
+      // Send message to queue, make sure it enters paging.
+      ClientProducer producer = session.createProducer(queueName);
+      for (int i = 0; i < messageCount; i++) {
+         producer.send(createTextMessage(session, sampleText).setPriority((byte) 2));
+      }
+
+      Wait.assertTrue(server.locateQueue(queueName).getPagingStore()::isPaging);
+
+      //Send identifiable message to paging queue
+      producer.send(createTextMessage(session, sampleText).setPriority((byte) 2));
+
+      QueueControl queueControl = createManagementControl(queueName, queueName);
+
+      for (Map<String, Object> messageMap : queueControl.listMessages(null)) {
+         assertEquals(2, getPriorityStraight(messageMap.get("priority")));
+      }
+
+      queueControl.changeMessagesPriority(null, 5);
+
+      //Make sure priority is changed on all messages
+      for (Map<String, Object> messageMap : queueControl.listMessages(null)) {
+         assertEquals(5, getPriorityStraight(messageMap.get("priority")));
+      }
+
+      queueControl.removeAllMessages();
+
+   }
+
+   @TestTemplate
+   public void testChangeMessagePriorityIncludesPagedMessage() throws Exception {
+      final SimpleString queueName = SimpleString.of("queue");
+      final String sampleText = "Message Content";
+      final int messageCount = 10;
+
+      AddressSettings addressSettings = new AddressSettings().setMaxSizeBytes(200L);
+      server.getAddressSettingsRepository().addMatch(queueName.toString(), addressSettings);
+      session.createQueue(QueueConfiguration.of(queueName).setDurable(durable));
+
+      // Send message to queue, make sure it enters paging.
+      ClientProducer producer = session.createProducer(queueName);
+      for (int i = 0; i < messageCount; i++) {
+         producer.send(createTextMessage(session, sampleText));
+      }
+
+      Wait.assertTrue(server.locateQueue(queueName).getPagingStore()::isPaging);
+
+      //Send identifiable message to paging queue
+      producer.send(createTextMessage(session, sampleText).putStringProperty("myID", "unique").setPriority((byte) 2));
+
+      QueueControl queueControl = createManagementControl(queueName, queueName);
+      Map<String, Object>[] messages = queueControl.listMessages(null);
+      long messageID = (Long) messages[messageCount].get("messageID");
+
+      assertEquals(2, getPriorityStraight(messages[messageCount].get("priority")));
+
+      queueControl.changeMessagePriority(messageID, 5);
+
+      //Make sure priority is changed on the message
+      for (Map<String, Object> messageMap : queueControl.listMessages(null)) {
+         if (messageMap.get("messageID").equals(messageID)) {
+            assertEquals(5, getPriorityStraight(messageMap.get("priority")));
+         }
+      }
+
+      queueControl.removeAllMessages();
+
+   }
+
+   @TestTemplate
+   public void testMoveMessageIncludesPagedMessage() throws Exception {
+      final String queueNameMatch = "queue.#";
+      final SimpleString queueName1 = SimpleString.of("queue.1");
+      final SimpleString queueName2 = SimpleString.of("queue.2");
+      final String sampleText = "Message Content";
+      final int messageCount = 10;
+
+      AddressSettings addressSettings = new AddressSettings().setMaxSizeBytes(200L);
+      server.getAddressSettingsRepository().addMatch(queueNameMatch, addressSettings);
+      session.createQueue(QueueConfiguration.of(queueName1).setDurable(durable));
+      session.createQueue(QueueConfiguration.of(queueName2).setDurable(durable));
+
+      // Send message to queue, make sure it enters paging.
+      ClientProducer producer = session.createProducer(queueName1);
+      for (int i = 0; i < messageCount; i++) {
+         producer.send(createTextMessage(session, sampleText));
+      }
+
+      Wait.assertTrue(server.locateQueue(queueName1).getPagingStore()::isPaging);
+
+      //Send identifiable message to paging queue
+      producer.send(createTextMessage(session, sampleText).putStringProperty("myID", "unique").setPriority((byte) 2));
+
+      QueueControl queueControl = createManagementControl(queueName1, queueName1);
+      Map<String, Object>[] messages = queueControl.listMessages(null);
+      long messageID = (Long) messages[messageCount].get("messageID");
+
+      assertEquals(messageCount + 1, server.locateQueue(queueName1).getMessageCount());
+
+      queueControl.moveMessage(messageID, queueName2.toString());
+
+      assertEquals(messageCount, server.locateQueue(queueName1).getMessageCount());
+      assertEquals(1, server.locateQueue(queueName2).getMessageCount());
+
+   }
+
+   @TestTemplate
+   public void testCopyMessageIncludesPagedMessage() throws Exception {
+      final String queueNameMatch = "queue.#";
+      final SimpleString queueName1 = SimpleString.of("queue.1");
+      final SimpleString queueName2 = SimpleString.of("queue.2");
+      final String sampleText = "Message Content";
+      final int messageCount = 10;
+
+      AddressSettings addressSettings = new AddressSettings().setMaxSizeBytes(200L);
+      server.getAddressSettingsRepository().addMatch(queueNameMatch, addressSettings);
+      session.createQueue(QueueConfiguration.of(queueName1).setDurable(durable));
+      session.createQueue(QueueConfiguration.of(queueName2).setDurable(durable));
+
+      // Send message to queue, make sure it enters paging.
+      ClientProducer producer = session.createProducer(queueName1);
+      for (int i = 0; i < messageCount; i++) {
+         producer.send(createTextMessage(session, sampleText));
+      }
+
+      Wait.assertTrue(server.locateQueue(queueName1).getPagingStore()::isPaging);
+
+      //Send identifiable message to paging queue
+      producer.send(createTextMessage(session, sampleText).putStringProperty("myID", "unique").setPriority((byte) 2));
+
+      QueueControl queueControl = createManagementControl(queueName1, queueName1);
+      Map<String, Object>[] messages = queueControl.listMessages(null);
+      long messageID = (Long) messages[messageCount].get("messageID");
+
+      assertEquals(messageCount + 1, server.locateQueue(queueName1).getMessageCount());
+
+      queueControl.copyMessage(messageID, queueName2.toString());
+
+      assertEquals(messageCount + 1, server.locateQueue(queueName1).getMessageCount());
+      assertEquals(1, server.locateQueue(queueName2).getMessageCount());
+
+   }
 
    @Override
    @BeforeEach
@@ -5066,6 +5216,17 @@ public class QueueControlTest extends ManagementTestBase {
       ClientSessionFactory sf = createSessionFactory(locator);
       session = sf.createSession(false, true, false);
       session.start();
+   }
+
+   protected int getPriorityStraight(Object priority) {
+      if (priority instanceof Byte) {
+         return ((Byte) priority).intValue();
+
+      } else if (priority instanceof Long) {
+         return ((Long) priority).intValue();
+      }
+
+      return (Integer) priority;
    }
 
    protected long getFirstMessageId(final QueueControl queueControl) throws Exception {

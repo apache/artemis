@@ -17,7 +17,6 @@
 package org.apache.activemq.artemis.tests.integration.management;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -230,7 +229,7 @@ public class ManagementWithPagingServerTest extends ManagementTestBase {
 
       long messageID = (Long) messages[99].get("messageID");
 
-      assertFalse(queueControl.copyMessage(messageID, otherQueue.toString()));
+      assertTrue(queueControl.copyMessage(messageID, otherQueue.toString()));
 
       messageID = (Long) messages[0].get("messageID");
 
@@ -238,7 +237,8 @@ public class ManagementWithPagingServerTest extends ManagementTestBase {
 
       Map<String, Object>[] copiedMessages = otherQueueControl.listMessages(null);
 
-      assertEquals(1, copiedMessages.length);
+      //this validates copying of a paged message
+      assertEquals(2, copiedMessages.length);
    }
 
    @Test
@@ -281,8 +281,8 @@ public class ManagementWithPagingServerTest extends ManagementTestBase {
 
       messageID = (Long) otherMessages[100].get("messageID");
 
-      //this should fail as the message was paged successfully
-      assertFalse(otherQueueControl.copyMessage(messageID, queue.toString()));
+      //this validates copying of a paged message
+      assertTrue(otherQueueControl.copyMessage(messageID, queue.toString()));
    }
 
    @Test
