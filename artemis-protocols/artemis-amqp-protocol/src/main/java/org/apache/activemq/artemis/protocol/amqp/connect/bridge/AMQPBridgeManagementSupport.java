@@ -109,9 +109,9 @@ public final class AMQPBridgeManagementSupport {
       final ManagementService management = server.getManagementService();
       final AMQPBridgeManagerControlType control = new AMQPBridgeManagerControlType(server, bridge);
 
-
-      management.registerInJMX(getBridgeManagerObjectName(management, brokerConnectionName, bridgeName), control);
-      management.registerAMQPControl(getBridgeManagerResourceName(brokerConnectionName, bridgeName), control);
+      management.registerUntypedControl(getBridgeManagerResourceName(brokerConnectionName, bridgeName),
+                                        control,
+                                        getBridgeManagerObjectName(management, brokerConnectionName, bridgeName));
    }
 
    /**
@@ -128,8 +128,8 @@ public final class AMQPBridgeManagementSupport {
       final ActiveMQServer server = bridge.getServer();
       final ManagementService management = server.getManagementService();
 
-      management.unregisterFromJMX(getBridgeManagerObjectName(management, brokerConnectionName, bridgeName));
-      management.unRegisterAMQPControl(getBridgeManagerResourceName(brokerConnectionName, bridgeName));
+      management.unregisterUntypedControl(getBridgeManagerResourceName(brokerConnectionName, bridgeName),
+                                          getBridgeManagerObjectName(management, brokerConnectionName, bridgeName));
    }
 
    public static String getBridgeManagerResourceName(String brokerConnectionName, String bridgeName) {
@@ -160,8 +160,9 @@ public final class AMQPBridgeManagementSupport {
       final String bridgeName = bridgeManager.getName();
       final String policyName = manager.getPolicyName();
 
-      management.registerInJMX(getBridgePolicyManagerObjectName(management, brokerConnectionName, bridgeName, manager.getPolicyType().toString(), policyName), control);
-      management.registerAMQPControl(getBridgePolicyManagerResourceName(brokerConnectionName, bridgeName, policyName), control);
+      management.registerUntypedControl(getBridgePolicyManagerResourceName(brokerConnectionName, bridgeName, policyName),
+                                        control,
+                                        getBridgePolicyManagerObjectName(management, brokerConnectionName, bridgeName, manager.getPolicyType().toString(), policyName));
    }
 
    /**
@@ -180,8 +181,8 @@ public final class AMQPBridgeManagementSupport {
       final String bridgeName = bridgeManager.getName();
       final String policyName = manager.getPolicyName();
 
-      management.unregisterFromJMX(getBridgePolicyManagerObjectName(management, brokerConnectionName, bridgeName, manager.getPolicyType().toString(), policyName));
-      management.unRegisterAMQPControl(getBridgePolicyManagerResourceName(brokerConnectionName, bridgeName, policyName));
+      management.unregisterUntypedControl(getBridgePolicyManagerResourceName(brokerConnectionName, bridgeName, policyName),
+                                          getBridgePolicyManagerObjectName(management, brokerConnectionName, bridgeName, manager.getPolicyType().toString(), policyName));
    }
 
    public static String getBridgePolicyManagerResourceName(String brokerConnectionName, String bridgeName, String policyName) {
@@ -216,11 +217,13 @@ public final class AMQPBridgeManagementSupport {
       final String policyName = manager.getPolicyName();
 
       if (receiver.getRole() == ReceiverRole.ADDRESS_RECEIVER) {
-         management.registerInJMX(getBridgeAddressReceiverObjectName(management, brokerConnectionName, bridgeName, manager.getPolicyType().toString(), policyName, receiver.getReceiverInfo().getLocalAddress()), control);
-         management.registerAMQPControl(getBridgeAddressReceiverResourceName(brokerConnectionName, bridgeName, policyName, receiver.getReceiverInfo().getLocalAddress()), control);
+         management.registerUntypedControl(getBridgeAddressReceiverResourceName(brokerConnectionName, bridgeName, policyName, receiver.getReceiverInfo().getLocalAddress()),
+                                           control,
+                                           getBridgeAddressReceiverObjectName(management, brokerConnectionName, bridgeName, manager.getPolicyType().toString(), policyName, receiver.getReceiverInfo().getLocalAddress()));
       } else {
-         management.registerInJMX(getBridgeQueueReceiverObjectName(management, brokerConnectionName, bridgeName, manager.getPolicyType().toString(), policyName, receiver.getReceiverInfo().getLocalFqqn()), control);
-         management.registerAMQPControl(getBridgeQueueReceiverResourceName(brokerConnectionName, bridgeName, policyName, receiver.getReceiverInfo().getLocalFqqn()), control);
+         management.registerUntypedControl(getBridgeQueueReceiverResourceName(brokerConnectionName, bridgeName, policyName, receiver.getReceiverInfo().getLocalFqqn()),
+                                           control,
+                                           getBridgeQueueReceiverObjectName(management, brokerConnectionName, bridgeName, manager.getPolicyType().toString(), policyName, receiver.getReceiverInfo().getLocalFqqn()));
       }
    }
 
@@ -242,11 +245,11 @@ public final class AMQPBridgeManagementSupport {
       final String policyName = manager.getPolicyName();
 
       if (receiver.getRole() == ReceiverRole.ADDRESS_RECEIVER) {
-         management.unregisterFromJMX(getBridgeAddressReceiverObjectName(management, brokerConnectionName, bridgeName, manager.getPolicyType().toString(), policyName, receiver.getReceiverInfo().getLocalAddress()));
-         management.unRegisterAMQPControl(getBridgeAddressReceiverResourceName(brokerConnectionName, bridgeName, policyName, receiver.getReceiverInfo().getLocalAddress()));
+         management.unregisterUntypedControl(getBridgeAddressReceiverResourceName(brokerConnectionName, bridgeName, policyName, receiver.getReceiverInfo().getLocalAddress()),
+                                             getBridgeAddressReceiverObjectName(management, brokerConnectionName, bridgeName, manager.getPolicyType().toString(), policyName, receiver.getReceiverInfo().getLocalAddress()));
       } else {
-         management.unregisterFromJMX(getBridgeQueueReceiverObjectName(management, brokerConnectionName, bridgeName, manager.getPolicyType().toString(), policyName, receiver.getReceiverInfo().getLocalFqqn()));
-         management.unRegisterAMQPControl(getBridgeQueueReceiverResourceName(brokerConnectionName, bridgeName, policyName, receiver.getReceiverInfo().getLocalFqqn()));
+         management.unregisterUntypedControl(getBridgeQueueReceiverResourceName(brokerConnectionName, bridgeName, policyName, receiver.getReceiverInfo().getLocalFqqn()),
+                                             getBridgeQueueReceiverObjectName(management, brokerConnectionName, bridgeName, manager.getPolicyType().toString(), policyName, receiver.getReceiverInfo().getLocalFqqn()));
       }
    }
 
@@ -299,13 +302,15 @@ public final class AMQPBridgeManagementSupport {
       if (sender.getRole() == SenderRole.ADDRESS_SENDER) {
          final String address = control.getAddress();
 
-         management.registerInJMX(getBridgeAddressSenderObjectName(management, brokerConnectionName, bridgeName, manager.getPolicyType().toString(), policyName, address), control);
-         management.registerAMQPControl(getBridgeAddressSenderResourceName(brokerConnectionName, bridgeName, policyName, address), control);
+         management.registerUntypedControl(getBridgeAddressSenderResourceName(brokerConnectionName, bridgeName, policyName, address),
+                                           control,
+                                           getBridgeAddressSenderObjectName(management, brokerConnectionName, bridgeName, manager.getPolicyType().toString(), policyName, address));
       } else {
          final String fqqn = control.getFqqn();
 
-         management.registerInJMX(getBridgeQueueSenderObjectName(management, brokerConnectionName, bridgeName, manager.getPolicyType().toString(), policyName, fqqn), control);
-         management.registerAMQPControl(getBridgeQueueSenderResourceName(brokerConnectionName, bridgeName, policyName, fqqn), control);
+         management.registerUntypedControl(getBridgeQueueSenderResourceName(brokerConnectionName, bridgeName, policyName, fqqn),
+                                           control,
+                                           getBridgeQueueSenderObjectName(management, brokerConnectionName, bridgeName, manager.getPolicyType().toString(), policyName, fqqn));
       }
    }
 
@@ -329,13 +334,13 @@ public final class AMQPBridgeManagementSupport {
       if (sender.getRole() == SenderRole.ADDRESS_SENDER) {
          final String address = sender.getServerConsumer().getQueueAddress().toString();
 
-         management.unregisterFromJMX(getBridgeAddressSenderObjectName(management, brokerConnectionName, bridgeName, manager.getPolicyType().toString(), policyName, address));
-         management.unRegisterAMQPControl(getBridgeAddressSenderResourceName(brokerConnectionName, bridgeName, policyName, address));
+         management.unregisterUntypedControl(getBridgeAddressSenderResourceName(brokerConnectionName, bridgeName, policyName, address),
+                                             getBridgeAddressSenderObjectName(management, brokerConnectionName, bridgeName, manager.getPolicyType().toString(), policyName, address));
       } else {
          final String fqqn = CompositeAddress.toFullyQualified(sender.getServerConsumer().getQueueAddress().toString(), sender.getServerConsumer().getQueueName().toString());
 
-         management.unregisterFromJMX(getBridgeQueueSenderObjectName(management, brokerConnectionName, bridgeName, manager.getPolicyType().toString(), policyName, fqqn));
-         management.unRegisterAMQPControl(getBridgeQueueSenderResourceName(brokerConnectionName, bridgeName, policyName, fqqn));
+         management.unregisterUntypedControl(getBridgeQueueSenderResourceName(brokerConnectionName, bridgeName, policyName, fqqn),
+                                             getBridgeQueueSenderObjectName(management, brokerConnectionName, bridgeName, manager.getPolicyType().toString(), policyName, fqqn));
       }
    }
 

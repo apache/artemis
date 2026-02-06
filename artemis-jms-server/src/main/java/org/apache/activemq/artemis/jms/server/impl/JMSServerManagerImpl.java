@@ -37,7 +37,6 @@ import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.api.core.management.AddressControl;
-import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.api.jms.ActiveMQJMSClient;
 import org.apache.activemq.artemis.api.jms.JMSFactoryType;
 import org.apache.activemq.artemis.core.config.Configuration;
@@ -783,7 +782,7 @@ public class JMSServerManagerImpl extends CleaningActivateCallback implements JM
    @Override
    public synchronized boolean destroyTopic(final String name, final boolean removeConsumers) throws Exception {
       checkInitialised();
-      AddressControl addressControl = server.getManagementService().getAddressControl(ResourceNames.ADDRESS + name);
+      AddressControl addressControl = server.getManagementService().getAddressControl(name);
       if (addressControl != null) {
          for (String queueName : addressControl.getAllQueueNames()) {
             Binding binding = server.getPostOffice().getBinding(SimpleString.of(queueName));

@@ -53,6 +53,10 @@ public abstract class ActiveMQFilterPredicate<T, V extends PredicateFilterPart<T
       this.filterParts.addAll(filterParts);
    }
 
+   public void addFilterPart(V filterPart) {
+      this.filterParts.add(filterPart);
+   }
+
    protected abstract boolean filter(T input, V filterPart) throws Exception;
 
    public abstract V createFilterPart(String field, String operation, String value);

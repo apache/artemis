@@ -103,7 +103,7 @@ public class FailoverBackupLeakTest extends OpenwireArtemisBaseTest {
 
    private int getConnectionCount(EmbeddedJMS server) throws Exception {
       ManagementService managementService = server.getActiveMQServer().getManagementService();
-      ActiveMQServerControl jmsControl = (ActiveMQServerControl) managementService.getResource(ResourceNames.BROKER);
+      ActiveMQServerControl jmsControl = (ActiveMQServerControl) managementService.getServerControl();
       String[] ids = jmsControl.listConnectionIDs();
       if (ids != null) {
          return ids.length;

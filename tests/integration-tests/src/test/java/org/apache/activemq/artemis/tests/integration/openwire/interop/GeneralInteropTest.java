@@ -16,12 +16,6 @@
  */
 package org.apache.activemq.artemis.tests.integration.openwire.interop;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import javax.jms.BytesMessage;
 import javax.jms.Connection;
 import javax.jms.MapMessage;
@@ -48,7 +42,6 @@ import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.management.QueueControl;
-import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.core.protocol.openwire.OpenWireInterceptor;
 import org.apache.activemq.artemis.core.server.ServerSession;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
@@ -60,6 +53,12 @@ import org.apache.activemq.command.Command;
 import org.apache.activemq.transport.TransportListener;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * This test covers interactions between core clients and openwire clients, i.e. core producers sending messages to be
@@ -243,11 +242,9 @@ public class GeneralInteropTest extends BasicOpenWireTest {
          Message message = null;
          Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
          Queue queue = session.createQueue(queueName);
-         QueueControl queueControl = (QueueControl)server.getManagementService().
-            getResource(ResourceNames.QUEUE + queueName);
+         QueueControl queueControl = server.getManagementService().getQueueControl(queueName);
 
-         QueueControl dlqControl = (QueueControl)server.getManagementService().
-            getResource(ResourceNames.QUEUE + dlq.toString());
+         QueueControl dlqControl = server.getManagementService().getQueueControl(dlq.toString());
 
          MessageConsumer consumer = session.createConsumer(queue);
 
@@ -324,8 +321,7 @@ public class GeneralInteropTest extends BasicOpenWireTest {
          Message message = null;
          Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
          Queue queue = session.createQueue(queueName);
-         QueueControl queueControl = (QueueControl)server.getManagementService().
-            getResource(ResourceNames.QUEUE + queueName);
+         QueueControl queueControl = server.getManagementService().getQueueControl(queueName);
          MessageConsumer consumer = session.createConsumer(queue);
 
          message = consumer.receive(5000);

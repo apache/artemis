@@ -16,8 +16,6 @@
  */
 package org.apache.activemq.artemis.tests.soak.client;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import javax.jms.Connection;
 import javax.jms.MessageConsumer;
 import javax.jms.Queue;
@@ -31,7 +29,6 @@ import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
 import org.apache.activemq.artemis.api.core.client.SendAcknowledgementHandler;
 import org.apache.activemq.artemis.api.core.client.ServerLocator;
 import org.apache.activemq.artemis.api.core.management.QueueControl;
-import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
@@ -40,6 +37,8 @@ import org.apache.activemq.artemis.utils.Wait;
 import org.apache.activemq.artemis.utils.critical.CriticalAnalyzerPolicy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ClientCrashMassiveRollbackTest extends ActiveMQTestBase {
    protected ActiveMQServer server;
@@ -97,7 +96,7 @@ public class ClientCrashMassiveRollbackTest extends ActiveMQTestBase {
       session.setSendAcknowledgementHandler(sendHandler);
       session.createQueue(QueueConfiguration.of(queueName).setAddress(queueName).setRoutingType(RoutingType.ANYCAST));
       ClientProducer producer = session.createProducer(queueName);
-      QueueControl queueControl = (QueueControl)server.getManagementService().getResource(ResourceNames.QUEUE + queueName);
+      QueueControl queueControl = server.getManagementService().getQueueControl(queueName);
 
       thread.start();
 

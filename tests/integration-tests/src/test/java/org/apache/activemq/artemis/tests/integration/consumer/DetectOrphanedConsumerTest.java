@@ -17,15 +17,10 @@
 
 package org.apache.activemq.artemis.tests.integration.consumer;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
-
 import java.lang.invoke.MethodHandles;
 
 import org.apache.activemq.artemis.api.core.JsonUtil;
@@ -33,7 +28,6 @@ import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.management.ActiveMQServerControl;
 import org.apache.activemq.artemis.api.core.management.QueueControl;
-import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.core.management.impl.view.ConsumerField;
 import org.apache.activemq.artemis.core.management.impl.view.ConsumerView;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
@@ -46,6 +40,10 @@ import org.apache.activemq.artemis.tests.util.Wait;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * This test is simulating an orphaned consumer situation that was fixed in ARTEMIS-4476. the method
@@ -92,7 +90,7 @@ public class DetectOrphanedConsumerTest extends ActiveMQTestBase {
 
       Wait.assertEquals(1, queue::getConsumerCount, 5000);
 
-      QueueControl queueControl = (QueueControl) server.getManagementService().getResource("queue." + queue.getName().toString());
+      QueueControl queueControl = server.getManagementService().getQueueControl(queue.getName().toString());
       assertNotNull(queueControl);
 
       String result = queueControl.listConsumersAsJSON();
@@ -116,7 +114,7 @@ public class DetectOrphanedConsumerTest extends ActiveMQTestBase {
       assertEquals(1, resultArray.size());
       assertEquals(ConsumerView.CONSUMER_STATUS_ORPHANED, resultArray.getJsonObject(0).getString(ConsumerField.STATUS.getName()));
 
-      ActiveMQServerControl serverControl = (ActiveMQServerControl) server.getManagementService().getResource(ResourceNames.BROKER);
+      ActiveMQServerControl serverControl = (ActiveMQServerControl) server.getManagementService().getServerControl();
       String sessionID = resultArray.getJsonObject(0).getString(ConsumerField.SESSION.getAlternativeName());
       int consumerID = resultArray.getJsonObject(0).getInt(ConsumerField.SEQUENTIAL_ID.getAlternativeName());
       logger.debug("SessionID{} ConsumerID::{}", sessionID, consumerID);

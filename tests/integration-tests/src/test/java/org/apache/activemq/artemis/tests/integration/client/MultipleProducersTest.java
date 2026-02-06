@@ -16,9 +16,6 @@
  */
 package org.apache.activemq.artemis.tests.integration.client;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
-
 import javax.jms.Connection;
 import javax.jms.DeliveryMode;
 import javax.jms.Message;
@@ -28,7 +25,6 @@ import javax.jms.Session;
 
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.management.QueueControl;
-import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.core.settings.HierarchicalRepository;
 import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
@@ -37,6 +33,9 @@ import org.apache.activemq.artemis.tests.util.JMSTestBase;
 import org.apache.activemq.artemis.tests.util.Wait;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class MultipleProducersTest extends JMSTestBase {
 
@@ -129,7 +128,7 @@ public class MultipleProducersTest extends JMSTestBase {
       // after draining queueOne send 5 message to queueOne
       queueTwoMsgCount = server.locateQueue(queueTwoName).getMessageCount();
 
-      control = (QueueControl) server.getManagementService().getResource(ResourceNames.QUEUE + queueOne.getQueueName());
+      control = server.getManagementService().getQueueControl(queueOne.getQueueName());
 
       control.removeMessages(null);
 

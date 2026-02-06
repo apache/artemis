@@ -37,6 +37,7 @@ import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.tests.util.JMSTestBase;
 import org.apache.activemq.artemis.tests.util.Wait;
+import org.apache.activemq.artemis.utils.DestinationUtil;
 import org.junit.jupiter.api.Test;
 
 public class AutoDeleteJmsDestinationTest extends JMSTestBase {
@@ -49,11 +50,12 @@ public class AutoDeleteJmsDestinationTest extends JMSTestBase {
 
    @Test
    public void testAutoDeleteQueue() throws Exception {
+      final String queueName = "test";
       Connection connection = cf.createConnection();
       try {
          Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-         javax.jms.Queue queue = ActiveMQJMSClient.createQueue("test");
+         javax.jms.Queue queue = ActiveMQJMSClient.createQueue(queueName);
 
          MessageProducer producer = session.createProducer(queue);
 
@@ -75,14 +77,14 @@ public class AutoDeleteJmsDestinationTest extends JMSTestBase {
          }
 
          Wait.waitFor(() -> {
-            Binding binding = server.getPostOffice().getBinding(SimpleString.of("test"));
+            Binding binding = server.getPostOffice().getBinding(SimpleString.of(queueName));
             if (binding == null) {
                return false;
             }
             return binding.getBindable() != null;
          });
          // ensure the queue is still there
-         Queue q = (Queue) server.getPostOffice().getBinding(SimpleString.of("test")).getBindable();
+         Queue q = (Queue) server.getPostOffice().getBinding(SimpleString.of(queueName)).getBindable();
          Wait.assertEquals(1, q::getMessageCount);
          assertEquals(numMessages, q.getMessagesAdded());
 
@@ -94,14 +96,12 @@ public class AutoDeleteJmsDestinationTest extends JMSTestBase {
 
          connection.close();
 
-         SimpleString qname = SimpleString.of("test");
-         Wait.waitFor(() -> server.getPostOffice().getBinding(qname) == null);
-
+         SimpleString queueNameSimple = SimpleString.of(queueName);
          // ensure the queue was removed
-         assertNull(server.getPostOffice().getBinding(SimpleString.of("test")));
+         Wait.waitFor(() -> server.getPostOffice().getBinding(queueNameSimple) == null);
 
          // make sure the JMX control was removed for the JMS queue
-         assertNull(server.getManagementService().getResource("test"));
+         assertNull(server.getManagementService().getQueueControl(queueName));
 
          messageConsumer2.close();
       } finally {
@@ -156,10 +156,11 @@ public class AutoDeleteJmsDestinationTest extends JMSTestBase {
 
    @Test
    public void testAutoDeleteTopic() throws Exception {
+      final String topicName = "test";
       Connection connection = cf.createConnection();
       Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-      javax.jms.Topic topic = ActiveMQJMSClient.createTopic("test");
+      javax.jms.Topic topic = ActiveMQJMSClient.createTopic(topicName);
 
       MessageConsumer messageConsumer = session.createConsumer(topic);
       MessageProducer producer = session.createProducer(topic);
@@ -181,13 +182,12 @@ public class AutoDeleteJmsDestinationTest extends JMSTestBase {
 
       connection.close();
 
-      SimpleString qName = SimpleString.of("test");
-      Wait.waitFor(() -> server.locateQueue(qName) == null);
+      SimpleString topicNameSimple = SimpleString.of(topicName);
       // ensure the topic was removed
-      assertNull(server.locateQueue(qName));
+      Wait.waitFor(() -> server.getAddressInfo(topicNameSimple) == null);
 
       // make sure the JMX control was removed for the JMS topic
-      assertNull(server.getManagementService().getResource("jtest"));
+      assertNull(server.getManagementService().getAddressControl(topicName));
    }
 
    @Test
@@ -225,13 +225,17 @@ public class AutoDeleteJmsDestinationTest extends JMSTestBase {
 
    @Test
    public void testAutoDeleteTopicDurableSubscriber() throws Exception {
+      final String topicName = "test";
+      final String subscriptionName = "mySub";
+      final String clientID = "myClientID";
+
       Connection connection = cf.createConnection();
-      connection.setClientID("myClientID");
+      connection.setClientID(clientID);
       Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-      javax.jms.Topic topic = ActiveMQJMSClient.createTopic("test");
+      javax.jms.Topic topic = ActiveMQJMSClient.createTopic(topicName);
 
-      MessageConsumer messageConsumer = session.createDurableConsumer(topic, "mySub");
+      MessageConsumer messageConsumer = session.createDurableConsumer(topic, subscriptionName);
       MessageProducer producer = session.createProducer(topic);
 
       final int numMessages = 100;
@@ -250,14 +254,14 @@ public class AutoDeleteJmsDestinationTest extends JMSTestBase {
       }
 
       messageConsumer.close();
-      session.unsubscribe("mySub");
+      session.unsubscribe(subscriptionName);
 
       connection.close();
 
       // ensure the topic was removed
-      assertNull(server.locateQueue(SimpleString.of("test")));
+      assertNull(server.locateQueue(DestinationUtil.createQueueNameForSubscription(true, clientID, subscriptionName)));
 
       // make sure the JMX control was removed for the JMS topic
-      assertNull(server.getManagementService().getResource("test"));
+      assertNull(server.getManagementService().getAddressControl(topicName));
    }
 }

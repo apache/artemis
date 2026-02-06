@@ -16,13 +16,14 @@
  */
 package org.apache.activemq.artemis.tests.integration.client;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
-
+import javax.jms.BytesMessage;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.Destination;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+import javax.management.openmbean.CompositeData;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -49,9 +50,7 @@ import org.apache.activemq.artemis.api.core.client.ClientSession;
 import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
 import org.apache.activemq.artemis.api.core.client.ServerLocator;
 import org.apache.activemq.artemis.api.core.management.QueueControl;
-import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.core.config.StoreConfiguration;
-import org.apache.activemq.artemis.core.management.impl.QueueControlImpl;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
 import org.apache.activemq.artemis.tests.extensions.parameterized.ParameterizedTestExtension;
@@ -60,14 +59,12 @@ import org.apache.activemq.artemis.utils.RandomUtil;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import javax.jms.BytesMessage;
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.Destination;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
-import javax.jms.Session;
-import javax.management.openmbean.CompositeData;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 //Parameters set in superclass
 @ExtendWith(ParameterizedTestExtension.class)
@@ -119,7 +116,7 @@ public class LargeMessageCompressTest extends LargeMessageTestBase {
 
       session.close();
 
-      QueueControlImpl queueControl = (QueueControlImpl) server.getManagementService().getResource("queue.SimpleAddress");
+      QueueControl queueControl = server.getManagementService().getQueueControl(ADDRESS.toString());
 
       CompositeData[] browse = queueControl.browse();
 
@@ -673,12 +670,9 @@ public class LargeMessageCompressTest extends LargeMessageTestBase {
       producer2.send(message2);
       producer3.send(message3);
 
-      QueueControl queueControl1 = (QueueControl)server.getManagementService().
-         getResource(ResourceNames.QUEUE + address1);
-      QueueControl queueControl2 = (QueueControl)server.getManagementService().
-         getResource(ResourceNames.QUEUE + address2);
-      QueueControl queueControl3 = (QueueControl)server.getManagementService().
-         getResource(ResourceNames.QUEUE + address3);
+      QueueControl queueControl1 = server.getManagementService().getQueueControl(address1.toString());
+      QueueControl queueControl2 = server.getManagementService().getQueueControl(address2.toString());
+      QueueControl queueControl3 = server.getManagementService().getQueueControl(address3.toString());
 
       assertEquals(1, queueControl1.getMessageCount());
       assertEquals(1, queueControl2.getMessageCount());

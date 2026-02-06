@@ -45,7 +45,6 @@ import org.apache.activemq.artemis.api.core.client.ClientSession;
 import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
 import org.apache.activemq.artemis.api.core.client.ServerLocator;
 import org.apache.activemq.artemis.api.core.management.QueueControl;
-import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.core.config.BridgeConfiguration;
 import org.apache.activemq.artemis.core.persistence.impl.journal.JournalRecordIds;
 import org.apache.activemq.artemis.core.remoting.impl.invm.InVMConnector;
@@ -410,7 +409,7 @@ public class BridgeReconnectTest extends BridgeTestBase {
       forwardingConnection.fail(new ActiveMQNotConnectedException());
 
       final ManagementService managementService = server0.getManagementService();
-      QueueControl coreQueueControl = (QueueControl) managementService.getResource(ResourceNames.QUEUE + queueName);
+      QueueControl coreQueueControl = managementService.getQueueControl(queueName);
       assertEquals(0, coreQueueControl.getDeliveringCount());
 
       final int numMessages = NUM_MESSAGES;
@@ -477,7 +476,7 @@ public class BridgeReconnectTest extends BridgeTestBase {
       session1.start();
 
       final ManagementService managementService = server0.getManagementService();
-      QueueControl coreQueueControl = (QueueControl) managementService.getResource(ResourceNames.QUEUE + queueName);
+      QueueControl coreQueueControl = managementService.getQueueControl(queueName);
       assertEquals(0, coreQueueControl.getDeliveringCount());
 
       final int numMessages = NUM_MESSAGES;

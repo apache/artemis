@@ -16,20 +16,20 @@
  */
 package org.apache.activemq.artemis.tests.integration.client;
 
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import javax.jms.Connection;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
 import javax.jms.TopicSubscriber;
+
 import org.apache.activemq.artemis.api.core.management.AddressControl;
-import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.tests.util.JMSTestBase;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AddressPauseTest extends JMSTestBase {
 
@@ -47,7 +47,7 @@ public class AddressPauseTest extends JMSTestBase {
          try (Session session = connection.createSession(true, Session.AUTO_ACKNOWLEDGE)) {
             Topic topic = session.createTopic("jms.topic.MyTopic");
             TopicSubscriber subscriber1 = session.createDurableSubscriber(topic, "my-subscription1");
-            AddressControl addressControl = (AddressControl) server.getManagementService().getResource(ResourceNames.ADDRESS + "jms.topic.MyTopic");
+            AddressControl addressControl = server.getManagementService().getAddressControl("jms.topic.MyTopic");
             MessageProducer producer = session.createProducer(topic);
             final int numMessages = 100;
             for (int i = 0; i < numMessages; i++) {
@@ -101,7 +101,7 @@ public class AddressPauseTest extends JMSTestBase {
          try (Session session = connection.createSession(true, Session.AUTO_ACKNOWLEDGE)) {
             Topic topic = session.createTopic("jms.topic.MyTopic");
             TopicSubscriber subscriber1 = session.createDurableSubscriber(topic, "my-subscription1");
-            AddressControl addressControl = (AddressControl) server.getManagementService().getResource(ResourceNames.ADDRESS + "jms.topic.MyTopic");
+            AddressControl addressControl = server.getManagementService().getAddressControl("jms.topic.MyTopic");
             MessageProducer producer = session.createProducer(topic);
             for (int i = 0; i < numMessages; i++) {
                TextMessage mess = session.createTextMessage("msg" + i);
@@ -128,7 +128,7 @@ public class AddressPauseTest extends JMSTestBase {
          try (Session session = connection.createSession(true, Session.AUTO_ACKNOWLEDGE)) {
             Topic topic = session.createTopic("jms.topic.MyTopic");
             TopicSubscriber subscriber1 = session.createDurableSubscriber(topic, "my-subscription1");
-            AddressControl addressControl = (AddressControl) server.getManagementService().getResource(ResourceNames.ADDRESS + "jms.topic.MyTopic");
+            AddressControl addressControl = server.getManagementService().getAddressControl("jms.topic.MyTopic");
             MessageProducer producer = session.createProducer(topic);
             assertTrue(addressControl.isPaused());
             //subscriber2 should be paused too

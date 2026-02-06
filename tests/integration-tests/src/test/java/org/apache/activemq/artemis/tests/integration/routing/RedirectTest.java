@@ -30,7 +30,6 @@ import java.util.Map;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.management.QueueControl;
-import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants;
 import org.apache.activemq.artemis.core.server.cluster.impl.MessageLoadBalancingType;
 import org.apache.activemq.artemis.core.server.routing.KeyType;
@@ -93,10 +92,8 @@ public class RedirectTest extends RoutingTestBase {
    }
 
    private void testSimpleRedirectWithProtocol(final String protocol, final String queueName) throws Exception {
-      QueueControl queueControl0 = (QueueControl)getServer(0).getManagementService()
-          .getResource(ResourceNames.QUEUE + queueName);
-      QueueControl queueControl1 = (QueueControl)getServer(1).getManagementService()
-          .getResource(ResourceNames.QUEUE + queueName);
+      QueueControl queueControl0 = getServer(0).getManagementService().getQueueControl(queueName);
+      QueueControl queueControl1 = getServer(1).getManagementService().getQueueControl(queueName);
 
       assertEquals(0, queueControl0.countMessages());
       assertEquals(0, queueControl1.countMessages());
@@ -195,8 +192,8 @@ public class RedirectTest extends RoutingTestBase {
       QueueControl[] queueControls = new QueueControl[nodes.length];
 
       for (int node : nodes) {
-         queueControls[node] = (QueueControl)getServer(node).getManagementService()
-             .getResource(ResourceNames.QUEUE + queueName);
+         queueControls[node] = getServer(node).getManagementService()
+             .getQueueControl(queueName);
 
          assertEquals(0, queueControls[node].countMessages(), "Unexpected message count for node " + node);
       }
@@ -234,8 +231,8 @@ public class RedirectTest extends RoutingTestBase {
 
          startServers(0);
 
-         queueControls[0] = (QueueControl)getServer(0).getManagementService()
-             .getResource(ResourceNames.QUEUE + queueName);
+         queueControls[0] = getServer(0).getManagementService()
+             .getQueueControl(queueName);
       }
 
       for (int i = 0; i < nodes.length - 1; i++) {
@@ -290,10 +287,10 @@ public class RedirectTest extends RoutingTestBase {
    }
 
    private void testSymmetricRedirectWithProtocol(final String protocol, final String queueName) throws Exception {
-      QueueControl queueControl0 = (QueueControl)getServer(0).getManagementService()
-          .getResource(ResourceNames.QUEUE + queueName);
-      QueueControl queueControl1 = (QueueControl)getServer(1).getManagementService()
-          .getResource(ResourceNames.QUEUE + queueName);
+      QueueControl queueControl0 = getServer(0).getManagementService()
+          .getQueueControl(queueName);
+      QueueControl queueControl1 = getServer(1).getManagementService()
+          .getQueueControl(queueName);
 
       assertEquals(0, queueControl0.countMessages(), "Unexpected message count for node 0");
       assertEquals(0, queueControl1.countMessages(), "Unexpected message count for node 1");
@@ -370,8 +367,7 @@ public class RedirectTest extends RoutingTestBase {
    private void testRedirectAfterFailureWithProtocol(final String protocol, final String queueName, final int[] nodes) throws Exception {
       QueueControl[] queueControls = new QueueControl[nodes.length];
       for (int node : nodes) {
-         queueControls[node] = (QueueControl)getServer(node).getManagementService()
-             .getResource(ResourceNames.QUEUE + queueName);
+         queueControls[node] = getServer(node).getManagementService().getQueueControl(queueName);
 
          assertEquals(0, queueControls[node].countMessages(), "Unexpected message count for node " + node);
       }
@@ -403,8 +399,7 @@ public class RedirectTest extends RoutingTestBase {
 
       startServers(failedNode);
 
-      queueControls[failedNode] = (QueueControl)getServer(failedNode).getManagementService()
-          .getResource(ResourceNames.QUEUE + queueName);
+      queueControls[failedNode] = getServer(failedNode).getManagementService().getQueueControl(queueName);
 
       try (Connection connection = connectionFactory.createConnection()) {
          connection.start();

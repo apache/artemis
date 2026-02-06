@@ -16,12 +16,6 @@
  */
 package org.apache.activemq.artemis.tests.integration.jms.multiprotocol;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.fail;
-
 import javax.jms.BytesMessage;
 import javax.jms.Connection;
 import javax.jms.JMSException;
@@ -30,6 +24,7 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -47,7 +42,6 @@ import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.management.QueueControl;
-import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.core.postoffice.QueueBinding;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.impl.AddressInfo;
@@ -60,7 +54,12 @@ import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.lang.invoke.MethodHandles;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @ExtendWith(ParameterizedTestExtension.class)
 public class JMSNonDestructiveTest extends MultiprotocolJMSClientTestSupport {
@@ -176,7 +175,7 @@ public class JMSNonDestructiveTest extends MultiprotocolJMSClientTestSupport {
       receive(consumerConnectionSupplier, NON_DESTRUCTIVE_QUEUE_NAME);
       assertEquals(1, queueBinding.getQueue().getMessageCount(), "Ensure Message count");
 
-      QueueControl control = (QueueControl) server.getManagementService().getResource(ResourceNames.QUEUE + NON_DESTRUCTIVE_QUEUE_NAME);
+      QueueControl control = server.getManagementService().getQueueControl(NON_DESTRUCTIVE_QUEUE_NAME);
       control.removeAllMessages();
 
       assertEquals(0, queueBinding.getQueue().getMessageCount(), "Message count after clearing queue via queue control should be 0");
@@ -197,7 +196,7 @@ public class JMSNonDestructiveTest extends MultiprotocolJMSClientTestSupport {
       receiveDualConsumer(consumerConnectionSupplier, NON_DESTRUCTIVE_QUEUE_NAME);
       assertEquals(1, queueBinding.getQueue().getMessageCount(), "Ensure Message count");
 
-      QueueControl control = (QueueControl) server.getManagementService().getResource(ResourceNames.QUEUE + NON_DESTRUCTIVE_QUEUE_NAME);
+      QueueControl control = server.getManagementService().getQueueControl(NON_DESTRUCTIVE_QUEUE_NAME);
       control.removeAllMessages();
 
       assertEquals(0, queueBinding.getQueue().getMessageCount(), "Message count after clearing queue via queue control should be 0");
@@ -222,7 +221,7 @@ public class JMSNonDestructiveTest extends MultiprotocolJMSClientTestSupport {
       receiveNull(consumerConnectionSupplier, NON_DESTRUCTIVE_EXPIRY_QUEUE_NAME);
       assertEquals(0, queueBinding.getQueue().getMessageCount(), "Ensure Message count");
 
-      QueueControl control = (QueueControl) server.getManagementService().getResource(ResourceNames.QUEUE + NON_DESTRUCTIVE_EXPIRY_QUEUE_NAME);
+      QueueControl control = server.getManagementService().getQueueControl(NON_DESTRUCTIVE_EXPIRY_QUEUE_NAME);
       control.removeAllMessages();
 
       assertEquals(0, queueBinding.getQueue().getMessageCount(), "Message count after clearing queue via queue control should be 0");
@@ -243,7 +242,7 @@ public class JMSNonDestructiveTest extends MultiprotocolJMSClientTestSupport {
       //Consume Again as should be non-destructive
       receive(consumerConnectionSupplier, NON_DESTRUCTIVE_QUEUE_NAME, 3);
 
-      QueueControl control = (QueueControl) server.getManagementService().getResource(ResourceNames.QUEUE + NON_DESTRUCTIVE_QUEUE_NAME);
+      QueueControl control = server.getManagementService().getQueueControl(NON_DESTRUCTIVE_QUEUE_NAME);
       control.removeAllMessages();
 
       assertEquals(0, queueBinding.getQueue().getMessageCount(), "Message count after clearing queue via queue control should be 0");
@@ -264,7 +263,7 @@ public class JMSNonDestructiveTest extends MultiprotocolJMSClientTestSupport {
       //Consume Again as should be non-destructive
       receiveDualConsumer(consumerConnectionSupplier, NON_DESTRUCTIVE_QUEUE_NAME, 3);
 
-      QueueControl control = (QueueControl) server.getManagementService().getResource(ResourceNames.QUEUE + NON_DESTRUCTIVE_QUEUE_NAME);
+      QueueControl control = server.getManagementService().getQueueControl(NON_DESTRUCTIVE_QUEUE_NAME);
       control.removeAllMessages();
 
       assertEquals(0, queueBinding.getQueue().getMessageCount(), "Message count after clearing queue via queue control should be 0");
@@ -300,7 +299,7 @@ public class JMSNonDestructiveTest extends MultiprotocolJMSClientTestSupport {
 
       assertEquals(1, queueBinding.getQueue().getMessageCount(), "Ensure Message count");
 
-      QueueControl control = (QueueControl) server.getManagementService().getResource(ResourceNames.QUEUE + NON_DESTRUCTIVE_LVQ_QUEUE_NAME);
+      QueueControl control = server.getManagementService().getQueueControl(NON_DESTRUCTIVE_LVQ_QUEUE_NAME);
       control.removeAllMessages();
 
       assertEquals(0, queueBinding.getQueue().getMessageCount(), "Message count after clearing queue via queue control should be 0");
@@ -423,7 +422,7 @@ public class JMSNonDestructiveTest extends MultiprotocolJMSClientTestSupport {
       receive(CoreConnection, NON_DESTRUCTIVE_QUEUE_NAME);
       assertEquals(2, queueBinding.getQueue().getMessageCount(), "Ensure Message count");
 
-      QueueControl control = (QueueControl) server.getManagementService().getResource(ResourceNames.QUEUE + NON_DESTRUCTIVE_QUEUE_NAME);
+      QueueControl control = server.getManagementService().getQueueControl(NON_DESTRUCTIVE_QUEUE_NAME);
       control.removeAllMessages();
 
       assertEquals(0, queueBinding.getQueue().getMessageCount(), "Message count after clearing queue via queue control should be 0");

@@ -16,10 +16,6 @@
  */
 package org.apache.activemq.artemis.tests.integration.routing;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.TabularData;
 import java.lang.management.ManagementFactory;
@@ -33,12 +29,11 @@ import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.management.ConnectionRouterControl;
 import org.apache.activemq.artemis.api.core.management.QueueControl;
-import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.core.protocol.mqtt.MQTTReasonCodes;
 import org.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants;
 import org.apache.activemq.artemis.core.server.ActiveMQServers;
-import org.apache.activemq.artemis.core.server.routing.policies.FirstElementPolicy;
 import org.apache.activemq.artemis.core.server.routing.KeyType;
+import org.apache.activemq.artemis.core.server.routing.policies.FirstElementPolicy;
 import org.apache.activemq.artemis.spi.core.security.ActiveMQJAASSecurityManager;
 import org.apache.activemq.artemis.tests.integration.security.SecurityTest;
 import org.apache.activemq.artemis.utils.Wait;
@@ -48,6 +43,10 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class MQTTRedirectTest extends RoutingTestBase {
 
@@ -75,10 +74,8 @@ public class MQTTRedirectTest extends RoutingTestBase {
       getServer(0).createQueue(QueueConfiguration.of(topicName).setRoutingType(RoutingType.ANYCAST));
       getServer(1).createQueue(QueueConfiguration.of(topicName).setRoutingType(RoutingType.ANYCAST));
 
-      QueueControl queueControl0 = (QueueControl)getServer(0).getManagementService()
-         .getResource(ResourceNames.QUEUE + topicName);
-      QueueControl queueControl1 = (QueueControl)getServer(1).getManagementService()
-         .getResource(ResourceNames.QUEUE + topicName);
+      QueueControl queueControl0 = getServer(0).getManagementService().getQueueControl(topicName);
+      QueueControl queueControl1 = getServer(1).getManagementService().getQueueControl(topicName);
 
       assertEquals(0, queueControl0.countMessages());
       assertEquals(0, queueControl1.countMessages());
@@ -97,8 +94,7 @@ public class MQTTRedirectTest extends RoutingTestBase {
       }
       client0.close();
 
-      ConnectionRouterControl connectionRouterControl = (ConnectionRouterControl)getServer(0).getManagementService()
-         .getResource(ResourceNames.CONNECTION_ROUTER + CONNECTION_ROUTER_NAME);
+      ConnectionRouterControl connectionRouterControl = (ConnectionRouterControl)getServer(0).getManagementService().getConnectionRouterControl(CONNECTION_ROUTER_NAME);
 
       CompositeData targetData = connectionRouterControl.getTarget("admin");
       CompositeData targetConnectorData = (CompositeData)targetData.get("connector");

@@ -16,12 +16,6 @@
  */
 package org.apache.activemq.artemis.tests.integration.openwire.amq;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import javax.jms.DeliveryMode;
 import javax.jms.Destination;
 import javax.jms.Message;
@@ -30,17 +24,15 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
-
 import java.util.concurrent.TimeUnit;
 
 import org.apache.activemq.ActiveMQConnection;
 import org.apache.activemq.RedeliveryPolicy;
+import org.apache.activemq.artemis.api.core.management.QueueControl;
 import org.apache.activemq.artemis.core.protocol.openwire.amq.AMQConsumer;
 import org.apache.activemq.artemis.core.protocol.openwire.amq.AMQConsumerAccessor;
 import org.apache.activemq.artemis.core.server.ServerConsumer;
 import org.apache.activemq.artemis.core.server.ServerSession;
-import org.apache.activemq.artemis.api.core.management.QueueControl;
-import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.tests.integration.openwire.BasicOpenWireTest;
 import org.apache.activemq.artemis.tests.util.Wait;
 import org.apache.activemq.broker.region.policy.RedeliveryPolicyMap;
@@ -49,6 +41,12 @@ import org.apache.activemq.command.ActiveMQQueue;
 import org.apache.activemq.command.ActiveMQTopic;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * adapted from: org.apache.activemq.RedeliveryPolicyTest
@@ -405,8 +403,7 @@ public class RedeliveryPolicyTest extends BasicOpenWireTest {
       ActiveMQQueue destination = new ActiveMQQueue("TEST");
       this.makeSureCoreQueueExist("TEST");
 
-      QueueControl queueControl = (QueueControl)server.getManagementService().
-              getResource(ResourceNames.QUEUE + "TEST");
+      QueueControl queueControl = server.getManagementService().getQueueControl("TEST");
 
       MessageProducer producer = session.createProducer(destination);
       for (int i = 0; i < messageCount; i++) {
@@ -448,8 +445,7 @@ public class RedeliveryPolicyTest extends BasicOpenWireTest {
       ActiveMQQueue destination = new ActiveMQQueue("TEST");
       this.makeSureCoreQueueExist("TEST");
 
-      QueueControl queueControl = (QueueControl)server.getManagementService().
-         getResource(ResourceNames.QUEUE + "TEST");
+      QueueControl queueControl = server.getManagementService().getQueueControl("TEST");
 
       MessageProducer producer = session.createProducer(destination);
       for (int i = 0; i < messageCount; i++) {
@@ -490,8 +486,7 @@ public class RedeliveryPolicyTest extends BasicOpenWireTest {
       ActiveMQQueue destination = new ActiveMQQueue("TEST");
       this.makeSureCoreQueueExist("TEST");
 
-      QueueControl queueControl = (QueueControl)server.getManagementService().
-              getResource(ResourceNames.QUEUE + "TEST");
+      QueueControl queueControl = server.getManagementService().getQueueControl("TEST");
 
       MessageProducer producer = session.createProducer(destination);
       producer.send(session.createTextMessage("The Message"));

@@ -140,13 +140,13 @@ public class QueueControlTest extends ManagementTestBase {
 
    @TestTemplate
    public void testMoveMessagesInPagingMode() throws Exception {
+      SimpleString queueName = SimpleString.of("testQueue");
       final int TOTAL_MESSAGES = 100;
       final String DLA = "DLA";
       ClientSessionFactory sf = createSessionFactory(locator);
       ClientSession session = sf.createSession(false, false);
 
-      SimpleString queueAddr = SimpleString.of("testQueue");
-      session.createQueue(QueueConfiguration.of(queueAddr).setDurable(durable));
+      session.createQueue(QueueConfiguration.of(queueName).setDurable(durable));
       SimpleString dlq = SimpleString.of(DLA);
       session.createQueue(QueueConfiguration.of(dlq));
 
@@ -154,9 +154,9 @@ public class QueueControlTest extends ManagementTestBase {
       AddressSettings addressSettings = new AddressSettings().setPageSizeBytes(1024 * 1024).setMaxSizeBytes(1).setDeadLetterAddress(dlq);
       server.getAddressSettingsRepository().addMatch("#", addressSettings);
 
-      sendMessageBatch(TOTAL_MESSAGES, session, queueAddr);
+      sendMessageBatch(TOTAL_MESSAGES, session, queueName);
 
-      Queue queue = server.locateQueue(queueAddr);
+      Queue queue = server.locateQueue(queueName);
 
       // Give time Queue.deliverAsync to deliver messages
       assertTrue(waitForMessages(queue, TOTAL_MESSAGES, 5000));
@@ -165,9 +165,7 @@ public class QueueControlTest extends ManagementTestBase {
       assertTrue(queuePagingStore != null && queuePagingStore.isPaging());
 
       //invoke moveMessages op
-      String queueControlResourceName = ResourceNames.QUEUE + "testQueue";
-      Object resource = server.getManagementService().getResource(queueControlResourceName);
-      QueueControl queueControl = (QueueControl) resource;
+      QueueControl queueControl = server.getManagementService().getQueueControl(queueName.toString());
       assertEquals(TOTAL_MESSAGES, queueControl.getMessageCount());
 
       // move messages to DLQ
@@ -176,7 +174,7 @@ public class QueueControlTest extends ManagementTestBase {
 
       //messages shouldn't move on to the same queue
       try {
-         queueControl.moveMessages(1000, "", "testQueue", false, 9000);
+         queueControl.moveMessages(1000, "", queueName.toString(), false, 9000);
          fail("messages cannot be moved on to the queue itself");
       } catch (IllegalArgumentException ok) {
          //ok

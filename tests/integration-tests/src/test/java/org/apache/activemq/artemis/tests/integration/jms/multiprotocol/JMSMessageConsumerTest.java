@@ -31,8 +31,6 @@ import java.lang.invoke.MethodHandles;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
-import org.apache.activemq.artemis.api.core.management.AddressControl;
-import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.core.paging.PagingStore;
 import org.apache.activemq.artemis.core.postoffice.impl.PostOfficeImpl;
 import org.apache.activemq.artemis.core.postoffice.impl.PostOfficeTestAccessor;
@@ -511,7 +509,7 @@ public class JMSMessageConsumerTest extends MultiprotocolJMSClientTestSupport {
 
          assertEquals(0, server.locateQueue(getQueueName()).getMessageCount());
          Wait.assertEquals(0, store::getAddressSize, 5000);
-         assertEquals(0, ((AddressControl) server.getManagementService().getResource(ResourceNames.ADDRESS + getQueueName())).getAddressSize());
+         assertEquals(0, (server.getManagementService().getAddressControl(getQueueName())).getAddressSize());
       }
    }
 
