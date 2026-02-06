@@ -19,7 +19,6 @@ package org.apache.activemq.artemis.core.server;
 import javax.naming.NamingException;
 import javax.transaction.xa.Xid;
 import java.io.File;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 import io.netty.channel.Channel;
@@ -51,7 +50,7 @@ import org.apache.activemq.artemis.spi.core.remoting.Connection;
 /**
  * Logger Codes 220000 - 228999
  */
-@LogBundle(projectCode = "AMQ", regexID = "22[0-8][0-9]{3}", retiredIDs = {221026, 221052, 222003, 222012, 222015, 222020, 222021, 222022, 222024, 222027, 222028, 222029, 222048, 222052, 222058, 222064, 222071, 222078, 222079, 222083, 222084, 222088, 222090, 222102, 222105, 222110, 222128, 222134, 222135, 222152, 222159, 222163, 222167, 222170, 222171, 222182, 222190, 222192, 222193, 222204, 222249, 222252, 222255, 222257, 222259, 222260, 222276, 222277, 222288, 224001, 224002, 224003, 224005, 224013, 224031, 224035, 224070, 224100, 224121})
+@LogBundle(projectCode = "AMQ", regexID = "22[0-8][0-9]{3}", retiredIDs = {221026, 221052, 222003, 222012, 222015, 222020, 222021, 222022, 222024, 222027, 222028, 222029, 222048, 222052, 222058, 222064, 222071, 222078, 222079, 222083, 222084, 222088, 222090, 222102, 222105, 222110, 222113, 222128, 222134, 222135, 222152, 222159, 222163, 222167, 222170, 222171, 222182, 222190, 222192, 222193, 222204, 222249, 222252, 222255, 222257, 222259, 222260, 222276, 222277, 222288, 224001, 224002, 224003, 224005, 224013, 224031, 224035, 224070, 224100, 224121})
 public interface ActiveMQServerLogger {
 
    // Note: logger ID 224127 uses "org.apache.activemq.artemis.core.server.Queue" for its logger category, rather than ActiveMQServerLogger.class.getPackage().getName()
@@ -581,9 +580,6 @@ public interface ActiveMQServerLogger {
 
    @LogMessage(id = 222112, value = "exception while retrieving attribute {} on {}", level = LogMessage.Level.TRACE)
    void managementAttributeError(String att, String resourceName, Exception e);
-
-   @LogMessage(id = 222113, value = "On ManagementService stop, there are {} unexpected registered MBeans: {}", level = LogMessage.Level.WARN)
-   void managementStopError(Integer size, List<String> unexpectedResourceNames);
 
    @LogMessage(id = 222114, value = "Unable to delete group binding info {}", level = LogMessage.Level.WARN)
    void unableToDeleteGroupBindings(SimpleString groupId, Exception e);

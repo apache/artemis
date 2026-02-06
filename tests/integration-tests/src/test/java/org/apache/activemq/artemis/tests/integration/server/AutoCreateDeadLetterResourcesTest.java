@@ -16,10 +16,6 @@
  */
 package org.apache.activemq.artemis.tests.integration.server;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-
 import javax.jms.JMSContext;
 
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
@@ -32,18 +28,21 @@ import org.apache.activemq.artemis.api.core.client.ClientSession;
 import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
 import org.apache.activemq.artemis.api.core.client.ServerLocator;
 import org.apache.activemq.artemis.api.core.management.QueueControl;
-import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.core.config.DivertConfiguration;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
-import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.artemis.tests.util.Wait;
 import org.apache.activemq.artemis.utils.CompositeAddress;
+import org.apache.activemq.artemis.utils.RandomUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class AutoCreateDeadLetterResourcesTest extends ActiveMQTestBase {
    public final SimpleString addressA = SimpleString.of("addressA");
@@ -281,10 +280,10 @@ public class AutoCreateDeadLetterResourcesTest extends ActiveMQTestBase {
          producer.send(message);
       }
 
-      QueueControl queueControl = (QueueControl)server.getManagementService().getResource(ResourceNames.QUEUE + queueA);
+      QueueControl queueControl = server.getManagementService().getQueueControl(queueA.toString());
       queueControl.sendMessagesToDeadLetterAddress(null);
 
-      QueueControl dlqControl = (QueueControl)server.getManagementService().getResource(ResourceNames.QUEUE + dlqName);
+      QueueControl dlqControl = server.getManagementService().getQueueControl(dlqName.toString());
       dlqControl.retryMessages();
 
       for (int i = 0; i < 10; i++) {

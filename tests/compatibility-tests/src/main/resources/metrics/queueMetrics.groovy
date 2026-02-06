@@ -41,4 +41,3 @@ for (QueueControl c : queueControls) {
     GroovyRun.assertEquals(33l, c.getMessageCount());
     GroovyRun.assertEquals(33l, c.getDurableMessageCount());
 }
-

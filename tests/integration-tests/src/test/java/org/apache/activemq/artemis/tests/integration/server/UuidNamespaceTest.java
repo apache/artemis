@@ -21,7 +21,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.management.QueueControl;
-import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.core.config.MetricsConfiguration;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.metrics.plugins.SimpleMetricsPlugin;
@@ -70,7 +69,7 @@ public class UuidNamespaceTest extends SingleServerTestBase {
 
       session.createQueue(QueueConfiguration.of(queue).setAddress(address).setDurable(false).setTemporary(true));
 
-      QueueControl queueControl = (QueueControl) server.getManagementService().getResource(ResourceNames.QUEUE + queue);
+      QueueControl queueControl = server.getManagementService().getQueueControl(queue.toString());
       assertEquals(RING_SIZE, queueControl.getRingSize());
       assertEquals(DLA.toString(), queueControl.getDeadLetterAddress());
       assertEquals(EA.toString(), queueControl.getExpiryAddress());

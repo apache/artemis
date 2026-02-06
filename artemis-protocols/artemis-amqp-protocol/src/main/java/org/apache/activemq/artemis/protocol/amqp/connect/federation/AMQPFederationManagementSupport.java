@@ -135,8 +135,9 @@ public abstract class AMQPFederationManagementSupport {
       final ManagementService management = server.getManagementService();
       final AMQPFederationSourceControlType control = new AMQPFederationSourceControlType(server, federation);
 
-      management.registerInJMX(getFederationSourceObjectName(management, brokerConnectionName, federationName), control);
-      management.registerAMQPControl(getFederationSourceResourceName(brokerConnectionName, federationName), control);
+      management.registerUntypedControl(getFederationSourceResourceName(brokerConnectionName, federationName),
+                                        control,
+                                        getFederationSourceObjectName(management, brokerConnectionName, federationName));
    }
 
    /**
@@ -151,8 +152,8 @@ public abstract class AMQPFederationManagementSupport {
       final ActiveMQServer server = federation.getServer();
       final ManagementService management = server.getManagementService();
 
-      management.unregisterFromJMX(getFederationSourceObjectName(management, brokerConnectionName, federationName));
-      management.unRegisterAMQPControl(getFederationSourceResourceName(brokerConnectionName, federationName));
+      management.unregisterUntypedControl(getFederationSourceResourceName(brokerConnectionName, federationName),
+                                          getFederationSourceObjectName(management, brokerConnectionName, federationName));
    }
 
    public static String getFederationSourceResourceName(String brokerConnectionName, String federationName) {
@@ -178,8 +179,9 @@ public abstract class AMQPFederationManagementSupport {
       final ManagementService management = server.getManagementService();
       final AMQPFederationTargetControlType control = new AMQPFederationTargetControlType(server, federation);
 
-      management.registerInJMX(getFederationTargetObjectName(management, remoteNodeId, brokerConnectionName, federationName), control);
-      management.registerAMQPControl(getFederationTargetResourceName(remoteNodeId, brokerConnectionName, federationName), control);
+      management.registerUntypedControl(getFederationTargetResourceName(remoteNodeId, brokerConnectionName, federationName),
+                                        control,
+                                        getFederationTargetObjectName(management, remoteNodeId, brokerConnectionName, federationName));
    }
 
    /**
@@ -193,8 +195,8 @@ public abstract class AMQPFederationManagementSupport {
       final ActiveMQServer server = federation.getServer();
       final ManagementService management = server.getManagementService();
 
-      management.unregisterFromJMX(getFederationTargetObjectName(management, remoteNodeId, brokerConnectionName, federationName));
-      management.unRegisterAMQPControl(getFederationTargetResourceName(remoteNodeId, brokerConnectionName, federationName));
+      management.unregisterUntypedControl(getFederationTargetResourceName(remoteNodeId, brokerConnectionName, federationName),
+                                          getFederationTargetObjectName(management, remoteNodeId, brokerConnectionName, federationName));
    }
 
    public static String getFederationTargetResourceName(String remoteNodeId, String brokerConnectionName, String federationName) {
@@ -225,8 +227,9 @@ public abstract class AMQPFederationManagementSupport {
       final String federationName = federation.getName();
       final String policyName = manager.getPolicyName();
 
-      management.registerInJMX(getFederationSourcePolicyObjectName(management, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName), control);
-      management.registerAMQPControl(getFederationSourcePolicyResourceName(brokerConnectionName, federationName, policyName), control);
+      management.registerUntypedControl(getFederationSourcePolicyResourceName(brokerConnectionName, federationName, policyName),
+                                        control,
+                                        getFederationSourcePolicyObjectName(management, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName));
    }
 
    /**
@@ -243,8 +246,8 @@ public abstract class AMQPFederationManagementSupport {
       final String federationName = federation.getName();
       final String policyName = manager.getPolicyName();
 
-      management.unregisterFromJMX(getFederationSourcePolicyObjectName(management, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName));
-      management.unRegisterAMQPControl(getFederationSourcePolicyResourceName(brokerConnectionName, federationName, policyName));
+      management.unregisterUntypedControl(getFederationSourcePolicyResourceName(brokerConnectionName, federationName, policyName),
+                                          getFederationSourcePolicyObjectName(management, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName));
    }
 
    /**
@@ -262,8 +265,9 @@ public abstract class AMQPFederationManagementSupport {
       final String federationName = federation.getName();
       final String policyName = manager.getPolicyName();
 
-      management.registerInJMX(getFederationSourcePolicyObjectName(management, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName), control);
-      management.registerAMQPControl(getFederationSourcePolicyResourceName(brokerConnectionName, federationName, policyName), control);
+      management.registerUntypedControl(getFederationSourcePolicyResourceName(brokerConnectionName, federationName, policyName),
+                                        control,
+                                        getFederationSourcePolicyObjectName(management, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName));
    }
 
    /**
@@ -280,8 +284,8 @@ public abstract class AMQPFederationManagementSupport {
       final String federationName = federation.getName();
       final String policyName = manager.getPolicyName();
 
-      management.unregisterFromJMX(getFederationSourcePolicyObjectName(management, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName));
-      management.unRegisterAMQPControl(getFederationSourcePolicyResourceName(brokerConnectionName, federationName, policyName));
+      management.unregisterUntypedControl(getFederationSourcePolicyResourceName(brokerConnectionName, federationName, policyName),
+                                          getFederationSourcePolicyObjectName(management, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName));
    }
 
    public static String getFederationSourcePolicyResourceName(String brokerConnectionName, String federationName, String policyName) {
@@ -313,8 +317,9 @@ public abstract class AMQPFederationManagementSupport {
       final String federationName = federation.getName();
       final String policyName = manager.getPolicyName();
 
-      management.registerInJMX(getFederationTargetPolicyObjectName(management, remoteNodeId, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName), control);
-      management.registerAMQPControl(getFederationTargetPolicyResourceName(remoteNodeId, brokerConnectionName, federationName, policyName), control);
+      management.registerUntypedControl(getFederationTargetPolicyResourceName(remoteNodeId, brokerConnectionName, federationName, policyName),
+                                        control,
+                                        getFederationTargetPolicyObjectName(management, remoteNodeId, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName));
    }
 
    /**
@@ -332,8 +337,8 @@ public abstract class AMQPFederationManagementSupport {
       final String federationName = federation.getName();
       final String policyName = manager.getPolicyName();
 
-      management.unregisterFromJMX(getFederationTargetPolicyObjectName(management, remoteNodeId, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName));
-      management.unRegisterAMQPControl(getFederationTargetPolicyResourceName(remoteNodeId, brokerConnectionName, federationName, policyName));
+      management.unregisterUntypedControl(getFederationTargetPolicyResourceName(remoteNodeId, brokerConnectionName, federationName, policyName),
+                                          getFederationTargetPolicyObjectName(management, remoteNodeId, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName));
    }
 
    /**
@@ -352,8 +357,9 @@ public abstract class AMQPFederationManagementSupport {
       final String federationName = federation.getName();
       final String policyName = manager.getPolicyName();
 
-      management.registerInJMX(getFederationTargetPolicyObjectName(management, remoteNodeId, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName), control);
-      management.registerAMQPControl(getFederationTargetPolicyResourceName(remoteNodeId, brokerConnectionName, federationName, policyName), control);
+      management.registerUntypedControl(getFederationTargetPolicyResourceName(remoteNodeId, brokerConnectionName, federationName, policyName),
+                                        control,
+                                        getFederationTargetPolicyObjectName(management, remoteNodeId, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName));
    }
 
    /**
@@ -371,8 +377,8 @@ public abstract class AMQPFederationManagementSupport {
       final String federationName = federation.getName();
       final String policyName = manager.getPolicyName();
 
-      management.unregisterFromJMX(getFederationTargetPolicyObjectName(management, remoteNodeId, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName));
-      management.unRegisterAMQPControl(getFederationTargetPolicyResourceName(remoteNodeId, brokerConnectionName, federationName, policyName));
+      management.unregisterUntypedControl(getFederationTargetPolicyResourceName(remoteNodeId, brokerConnectionName, federationName, policyName),
+                                          getFederationTargetPolicyObjectName(management, remoteNodeId, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName));
    }
 
    public static String getFederationTargetPolicyResourceName(String remoteNodeId, String brokerConnectionName, String federationName, String policyName) {
@@ -407,11 +413,13 @@ public abstract class AMQPFederationManagementSupport {
       final String policyName = manager.getPolicyName();
 
       if (consumer.getRole() == FederationConsumerInfo.Role.ADDRESS_CONSUMER) {
-         management.registerInJMX(getFederationSourceAddressConsumerObjectName(management, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, consumer.getConsumerInfo().getAddress()), control);
-         management.registerAMQPControl(getFederationSourceAddressConsumerResourceName(brokerConnectionName, federationName, policyName, consumer.getConsumerInfo().getAddress()), control);
+         management.registerUntypedControl(getFederationSourceAddressConsumerResourceName(brokerConnectionName, federationName, policyName, consumer.getConsumerInfo().getAddress()),
+                                           control,
+                                           getFederationSourceAddressConsumerObjectName(management, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, consumer.getConsumerInfo().getAddress()));
       } else {
-         management.registerInJMX(getFederationSourceQueueConsumerObjectName(management, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, consumer.getConsumerInfo().getFqqn()), control);
-         management.registerAMQPControl(getFederationSourceQueueConsumerResourceName(brokerConnectionName, federationName, policyName, consumer.getConsumerInfo().getFqqn()), control);
+         management.registerUntypedControl(getFederationSourceQueueConsumerResourceName(brokerConnectionName, federationName, policyName, consumer.getConsumerInfo().getFqqn()),
+                                           control,
+                                           getFederationSourceQueueConsumerObjectName(management, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, consumer.getConsumerInfo().getFqqn()));
       }
    }
 
@@ -431,11 +439,11 @@ public abstract class AMQPFederationManagementSupport {
       final String policyName = manager.getPolicyName();
 
       if (consumer.getRole() == FederationConsumerInfo.Role.ADDRESS_CONSUMER) {
-         management.unregisterFromJMX(getFederationSourceAddressConsumerObjectName(management, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, consumer.getConsumerInfo().getAddress()));
-         management.unRegisterAMQPControl(getFederationSourceAddressConsumerResourceName(brokerConnectionName, federationName, policyName, consumer.getConsumerInfo().getAddress()));
+         management.unregisterUntypedControl(getFederationSourceAddressConsumerResourceName(brokerConnectionName, federationName, policyName, consumer.getConsumerInfo().getAddress()),
+                                             getFederationSourceAddressConsumerObjectName(management, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, consumer.getConsumerInfo().getAddress()));
       } else {
-         management.unregisterFromJMX(getFederationSourceQueueConsumerObjectName(management, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, consumer.getConsumerInfo().getFqqn()));
-         management.unRegisterAMQPControl(getFederationSourceQueueConsumerResourceName(brokerConnectionName, federationName, policyName, consumer.getConsumerInfo().getFqqn()));
+         management.unregisterUntypedControl(getFederationSourceQueueConsumerResourceName(brokerConnectionName, federationName, policyName, consumer.getConsumerInfo().getFqqn()),
+                                             getFederationSourceQueueConsumerObjectName(management, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, consumer.getConsumerInfo().getFqqn()));
       }
    }
 
@@ -457,14 +465,14 @@ public abstract class AMQPFederationManagementSupport {
 
       if (sender.getRole() == Role.ADDRESS_PRODUCER) {
          final String address = control.getAddress();
-
-         management.registerInJMX(getFederationSourceAddressProducerObjectName(management, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, address), control);
-         management.registerAMQPControl(getFederationSourceAddressProducerResourceName(brokerConnectionName, federationName, policyName, address), control);
+         management.registerUntypedControl(getFederationSourceAddressProducerResourceName(brokerConnectionName, federationName, policyName, address),
+                                           control,
+                                           getFederationSourceAddressProducerObjectName(management, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, address));
       } else {
          final String fqqn = control.getFqqn();
-
-         management.registerInJMX(getFederationSourceQueueProducerObjectName(management, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, fqqn), control);
-         management.registerAMQPControl(getFederationSourceQueueProducerResourceName(brokerConnectionName, federationName, policyName, fqqn), control);
+         management.registerUntypedControl(getFederationSourceQueueProducerResourceName(brokerConnectionName, federationName, policyName, fqqn),
+                                           control,
+                                           getFederationSourceQueueProducerObjectName(management, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, fqqn));
       }
    }
 
@@ -485,14 +493,12 @@ public abstract class AMQPFederationManagementSupport {
 
       if (sender.getRole() == Role.ADDRESS_PRODUCER) {
          final String address = sender.getServerConsumer().getQueueAddress().toString();
-
-         management.unregisterFromJMX(getFederationSourceAddressProducerObjectName(management, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, address));
-         management.unRegisterAMQPControl(getFederationSourceAddressProducerResourceName(brokerConnectionName, federationName, policyName, address));
+         management.unregisterUntypedControl(getFederationSourceAddressProducerResourceName(brokerConnectionName, federationName, policyName, address),
+                                             getFederationSourceAddressProducerObjectName(management, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, address));
       } else {
          final String fqqn = CompositeAddress.toFullyQualified(sender.getServerConsumer().getQueueAddress().toString(), sender.getServerConsumer().getQueueName().toString());
-
-         management.unregisterFromJMX(getFederationSourceQueueProducerObjectName(management, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, fqqn));
-         management.unRegisterAMQPControl(getFederationSourceQueueProducerResourceName(brokerConnectionName, federationName, policyName, fqqn));
+         management.unregisterUntypedControl(getFederationSourceQueueProducerResourceName(brokerConnectionName, federationName, policyName, fqqn),
+                                             getFederationSourceQueueProducerObjectName(management, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, fqqn));
       }
    }
 
@@ -569,11 +575,13 @@ public abstract class AMQPFederationManagementSupport {
       final String policyName = manager.getPolicyName();
 
       if (consumer.getRole() == FederationConsumerInfo.Role.ADDRESS_CONSUMER) {
-         management.registerInJMX(getFederationTargetAddressConsumerObjectName(management, remoteNodeId, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, consumer.getConsumerInfo().getAddress()), control);
-         management.registerAMQPControl(getFederationTargetAddressConsumerResourceName(remoteNodeId, brokerConnectionName, federationName, policyName, consumer.getConsumerInfo().getAddress()), control);
+         management.registerUntypedControl(getFederationTargetAddressConsumerResourceName(remoteNodeId, brokerConnectionName, federationName, policyName, consumer.getConsumerInfo().getAddress()),
+                                           control,
+                                           getFederationTargetAddressConsumerObjectName(management, remoteNodeId, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, consumer.getConsumerInfo().getAddress()));
       } else {
-         management.registerInJMX(getFederationTargetQueueConsumerObjectName(management, remoteNodeId, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, consumer.getConsumerInfo().getFqqn()), control);
-         management.registerAMQPControl(getFederationTargetQueueConsumerResourceName(remoteNodeId, brokerConnectionName, federationName, policyName, consumer.getConsumerInfo().getFqqn()), control);
+         management.registerUntypedControl(getFederationTargetQueueConsumerResourceName(remoteNodeId, brokerConnectionName, federationName, policyName, consumer.getConsumerInfo().getFqqn()),
+                                           control,
+                                           getFederationTargetQueueConsumerObjectName(management, remoteNodeId, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, consumer.getConsumerInfo().getFqqn()));
       }
    }
 
@@ -593,11 +601,11 @@ public abstract class AMQPFederationManagementSupport {
       final String policyName = manager.getPolicyName();
 
       if (consumer.getRole() == FederationConsumerInfo.Role.ADDRESS_CONSUMER) {
-         management.unregisterFromJMX(getFederationTargetAddressConsumerObjectName(management, remoteNodeId, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, consumer.getConsumerInfo().getAddress()));
-         management.unRegisterAMQPControl(getFederationTargetAddressConsumerResourceName(remoteNodeId, brokerConnectionName, federationName, policyName, consumer.getConsumerInfo().getAddress()));
+         management.unregisterUntypedControl(getFederationTargetAddressConsumerResourceName(remoteNodeId, brokerConnectionName, federationName, policyName, consumer.getConsumerInfo().getAddress()),
+                                             getFederationTargetAddressConsumerObjectName(management, remoteNodeId, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, consumer.getConsumerInfo().getAddress()));
       } else {
-         management.unregisterFromJMX(getFederationTargetQueueConsumerObjectName(management, remoteNodeId, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, consumer.getConsumerInfo().getFqqn()));
-         management.unRegisterAMQPControl(getFederationTargetQueueConsumerResourceName(remoteNodeId, brokerConnectionName, federationName, policyName, consumer.getConsumerInfo().getFqqn()));
+         management.unregisterUntypedControl(getFederationTargetQueueConsumerResourceName(remoteNodeId, brokerConnectionName, federationName, policyName, consumer.getConsumerInfo().getFqqn()),
+                                             getFederationTargetQueueConsumerObjectName(management, remoteNodeId, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, consumer.getConsumerInfo().getFqqn()));
       }
    }
 
@@ -619,14 +627,14 @@ public abstract class AMQPFederationManagementSupport {
 
       if (sender.getRole() == Role.ADDRESS_PRODUCER) {
          final String address = control.getAddress();
-
-         management.registerInJMX(getFederationTargetAddressProducerObjectName(management, remoteNodeId, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, address), control);
-         management.registerAMQPControl(getFederationTargetAddressProducerResourceName(remoteNodeId, brokerConnectionName, federationName, policyName, address), control);
+         management.registerUntypedControl(getFederationTargetAddressProducerResourceName(remoteNodeId, brokerConnectionName, federationName, policyName, address),
+                                           control,
+                                           getFederationTargetAddressProducerObjectName(management, remoteNodeId, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, address));
       } else {
          final String fqqn = control.getFqqn();
-
-         management.registerInJMX(getFederationTargetQueueProducerObjectName(management, remoteNodeId, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, fqqn), control);
-         management.registerAMQPControl(getFederationTargetQueueProducerResourceName(remoteNodeId, brokerConnectionName, federationName, policyName, fqqn), control);
+         management.registerUntypedControl(getFederationTargetQueueProducerResourceName(remoteNodeId, brokerConnectionName, federationName, policyName, fqqn),
+                                           control,
+                                           getFederationTargetQueueProducerObjectName(management, remoteNodeId, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, fqqn));
       }
    }
 
@@ -647,14 +655,12 @@ public abstract class AMQPFederationManagementSupport {
 
       if (sender.getRole() == Role.ADDRESS_PRODUCER) {
          final String address = sender.getServerConsumer().getQueueAddress().toString();
-
-         management.unregisterFromJMX(getFederationTargetAddressProducerObjectName(management, remoteNodeId, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, address));
-         management.unRegisterAMQPControl(getFederationTargetAddressProducerResourceName(remoteNodeId, brokerConnectionName, federationName, policyName, address));
+         management.unregisterUntypedControl(getFederationTargetAddressProducerResourceName(remoteNodeId, brokerConnectionName, federationName, policyName, address),
+                                             getFederationTargetAddressProducerObjectName(management, remoteNodeId, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, address));
       } else {
          final String fqqn = CompositeAddress.toFullyQualified(sender.getServerConsumer().getQueueAddress().toString(), sender.getServerConsumer().getQueueName().toString());
-
-         management.unregisterFromJMX(getFederationTargetQueueProducerObjectName(management, remoteNodeId, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, fqqn));
-         management.unRegisterAMQPControl(getFederationTargetQueueProducerResourceName(remoteNodeId, brokerConnectionName, federationName, policyName, fqqn));
+         management.unregisterUntypedControl(getFederationTargetQueueProducerResourceName(remoteNodeId, brokerConnectionName, federationName, policyName, fqqn),
+                                             getFederationTargetQueueProducerObjectName(management, remoteNodeId, brokerConnectionName, federationName, manager.getPolicyType().toString(), policyName, fqqn));
       }
    }
 

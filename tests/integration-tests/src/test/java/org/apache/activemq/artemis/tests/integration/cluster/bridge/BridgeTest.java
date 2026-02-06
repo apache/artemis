@@ -2147,10 +2147,10 @@ public class BridgeTest extends ActiveMQTestBase {
          .setStaticConnectors(connectors)
          .setConcurrency(concurrency);
       server.deployBridge(config);
-      assertEquals(concurrency, server.getManagementService().getBridgeControls().size());
+      assertEquals(concurrency, server.getManagementService().getBridgeControlCount());
       server.destroyBridge(config.getName());
 
-      assertEquals(0, server.getManagementService().getBridgeControls().size());
+      assertEquals(0, server.getManagementService().getBridgeControlCount());
    }
 
    @TestTemplate

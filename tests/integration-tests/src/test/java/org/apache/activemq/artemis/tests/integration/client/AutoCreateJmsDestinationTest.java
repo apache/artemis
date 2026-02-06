@@ -16,16 +16,6 @@
  */
 package org.apache.activemq.artemis.tests.integration.client;
 
-import static org.apache.activemq.artemis.api.core.management.ResourceNames.ADDRESS;
-import static org.apache.activemq.artemis.api.core.management.ResourceNames.QUEUE;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
@@ -46,7 +36,6 @@ import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.client.ClientSession;
 import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
 import org.apache.activemq.artemis.api.core.client.ServerLocator;
-import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.api.jms.ActiveMQJMSClient;
 import org.apache.activemq.artemis.core.client.impl.ServerLocatorImpl;
 import org.apache.activemq.artemis.core.postoffice.impl.PostOfficeImpl;
@@ -61,9 +50,9 @@ import org.apache.activemq.artemis.jms.client.ActiveMQTemporaryTopic;
 import org.apache.activemq.artemis.jms.client.ActiveMQTopic;
 import org.apache.activemq.artemis.spi.core.security.ActiveMQJAASSecurityManager;
 import org.apache.activemq.artemis.tests.util.JMSTestBase;
-import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.artemis.tests.util.Wait;
 import org.apache.activemq.artemis.utils.CompositeAddress;
+import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -71,6 +60,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class AutoCreateJmsDestinationTest extends JMSTestBase {
 
@@ -108,8 +105,8 @@ public class AutoCreateJmsDestinationTest extends JMSTestBase {
       }
 
       // make sure the JMX control was created for the address and queue
-      assertNotNull(server.getManagementService().getResource(ADDRESS + QUEUE_NAME));
-      assertNotNull(server.getManagementService().getResource(QUEUE + QUEUE_NAME));
+      assertNotNull(server.getManagementService().getAddressControl(QUEUE_NAME));
+      assertNotNull(server.getManagementService().getQueueControl(QUEUE_NAME));
 
       connection.close();
    }
@@ -143,8 +140,8 @@ public class AutoCreateJmsDestinationTest extends JMSTestBase {
       }
 
       // make sure the JMX control was created for the address and queue
-      assertNotNull(server.getManagementService().getResource(ADDRESS + addressName));
-      assertNotNull(server.getManagementService().getResource(QUEUE + queueName));
+      assertNotNull(server.getManagementService().getAddressControl(addressName));
+      assertNotNull(server.getManagementService().getQueueControl(queueName));
 
       connection.close();
    }
@@ -245,7 +242,7 @@ public class AutoCreateJmsDestinationTest extends JMSTestBase {
 
       connection.close();
 
-      assertNotNull(server.getManagementService().getResource(ResourceNames.ADDRESS + "test"));
+      assertNotNull(server.getManagementService().getAddressControl("test"));
    }
 
    @Test
@@ -304,14 +301,14 @@ public class AutoCreateJmsDestinationTest extends JMSTestBase {
       connection.start();
       assertNotNull(consumer.receive(500));
 
-      assertNotNull(server.getManagementService().getResource(ResourceNames.ADDRESS + topicName));
+      assertNotNull(server.getManagementService().getAddressControl(topicName));
 
       connection.close();
 
       PostOfficeTestAccessor.reapAddresses((PostOfficeImpl) server.getPostOffice());
       PostOfficeTestAccessor.reapAddresses((PostOfficeImpl) server.getPostOffice());
 
-      Wait.assertTrue(() -> server.getManagementService().getResource(ResourceNames.ADDRESS + topicName) == null);
+      Wait.assertTrue(() -> server.getManagementService().getAddressControl(topicName) == null);
    }
 
    @Test
@@ -330,7 +327,7 @@ public class AutoCreateJmsDestinationTest extends JMSTestBase {
 
       connection.close();
 
-      assertNotNull(server.getManagementService().getResource(ResourceNames.ADDRESS + "test"));
+      assertNotNull(server.getManagementService().getAddressControl("test"));
 
       assertNotNull(server.locateQueue(SimpleString.of("myClientID.myDurableSub")));
    }

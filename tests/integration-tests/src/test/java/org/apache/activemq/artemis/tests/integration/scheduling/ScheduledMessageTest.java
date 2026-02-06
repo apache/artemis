@@ -16,11 +16,6 @@
  */
 package org.apache.activemq.artemis.tests.integration.scheduling;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 import java.util.ArrayList;
@@ -37,7 +32,6 @@ import org.apache.activemq.artemis.api.core.client.ClientSession;
 import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
 import org.apache.activemq.artemis.api.core.client.ServerLocator;
 import org.apache.activemq.artemis.api.core.management.QueueControl;
-import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
@@ -48,6 +42,11 @@ import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ScheduledMessageTest extends ActiveMQTestBase {
 
@@ -531,7 +530,7 @@ public class ScheduledMessageTest extends ActiveMQTestBase {
       ClientMessage message = consumer.receive(500);
       assertNull(message);
 
-      QueueControl queueControl = (QueueControl) server.getManagementService().getResource(ResourceNames.QUEUE + atestq);
+      QueueControl queueControl = server.getManagementService().getQueueControl(atestq.toString());
       queueControl.deliverScheduledMessage((long) queueControl.listScheduledMessages()[0].get("messageID"));
 
       message = consumer.receive(500);
@@ -557,7 +556,7 @@ public class ScheduledMessageTest extends ActiveMQTestBase {
          session.commit();
       }
 
-      QueueControl queueControl = (QueueControl) server.getManagementService().getResource(ResourceNames.QUEUE + atestq);
+      QueueControl queueControl = server.getManagementService().getQueueControl(atestq.toString());
       assertEquals(1, queueControl.getMessageCount());
       assertEquals(1, queueControl.getScheduledCount());
       assertTrue(queueControl.removeMessage((long) queueControl.listScheduledMessages()[0].get("messageID")));
@@ -593,7 +592,7 @@ public class ScheduledMessageTest extends ActiveMQTestBase {
       ClientMessage message = consumer.receive(500);
       assertNull(message);
 
-      QueueControl queueControl = (QueueControl) server.getManagementService().getResource(ResourceNames.QUEUE + atestq);
+      QueueControl queueControl = server.getManagementService().getQueueControl(atestq.toString());
       queueControl.deliverScheduledMessages(propertyName + " = '" + propertyValue + "'");
 
       message = consumer.receive(500);

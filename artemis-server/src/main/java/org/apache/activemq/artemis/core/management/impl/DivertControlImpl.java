@@ -18,7 +18,6 @@ package org.apache.activemq.artemis.core.management.impl;
 
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanOperationInfo;
-
 import java.util.Collections;
 import java.util.Map;
 

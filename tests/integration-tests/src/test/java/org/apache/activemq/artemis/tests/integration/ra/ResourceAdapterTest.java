@@ -33,8 +33,6 @@ import org.apache.activemq.artemis.api.core.UDPBroadcastEndpointFactory;
 import org.apache.activemq.artemis.api.core.client.ClientSession;
 import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
 import org.apache.activemq.artemis.api.core.client.ServerLocator;
-import org.apache.activemq.artemis.api.core.management.AddressControl;
-import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.api.jms.ActiveMQJMSClient;
 import org.apache.activemq.artemis.core.client.impl.ServerLocatorImpl;
 import org.apache.activemq.artemis.core.server.Queue;
@@ -176,7 +174,7 @@ public class ResourceAdapterTest extends ActiveMQRATestBase {
    public void testTopicPrefixWhenUseJndiIsFalse() throws Exception {
       final String prefix = "jms.topic.";
       final String destinationName = "test";
-      final SimpleString prefixedDestinationName = SimpleString.of(prefix + destinationName);
+      final String prefixedDestinationName = prefix + destinationName;
       server.addAddressInfo(new AddressInfo(prefixedDestinationName).addRoutingType(RoutingType.MULTICAST));
       ActiveMQResourceAdapter ra = new ActiveMQResourceAdapter();
       ra.setConnectorClassName(INVM_CONNECTOR_FACTORY);
@@ -197,7 +195,7 @@ public class ResourceAdapterTest extends ActiveMQRATestBase {
 
       activation.start();
 
-      assertEquals(1, ((AddressControl)server.getManagementService().getResource(ResourceNames.ADDRESS + prefixedDestinationName)).getQueueNames().length);
+      assertEquals(1, (server.getManagementService().getAddressControl(prefixedDestinationName)).getQueueNames().length);
 
       activation.stop();
    }

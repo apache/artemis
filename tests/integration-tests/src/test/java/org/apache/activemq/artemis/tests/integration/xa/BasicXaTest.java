@@ -303,10 +303,11 @@ public class BasicXaTest extends ActiveMQTestBase {
       message.acknowledge();
 
       clientSession.end(xid2, XAResource.TMSUCCESS);
+      Wait.assertEquals(1L, () -> testQueue.getAcknowledgeAttempts(), 2000, 20);
       clientSession.rollback(xid2);
-      assertEquals(0, testQueue.getMessagesAcknowledged());
-      assertEquals(0, testQueue.getDeliveringCount());
-      assertEquals(1, testQueue.getMessageCount());
+      Wait.assertEquals(0L, () -> testQueue.getMessagesAcknowledged(), 2000, 20);
+      Wait.assertEquals(0L, () -> testQueue.getDeliveringCount(), 5000, 20);
+      Wait.assertEquals(1L, () -> testQueue.getMessageCount(), 2000, 20);
    }
 
    @TestTemplate

@@ -40,7 +40,6 @@ import org.apache.activemq.artemis.api.core.client.ClientProducer;
 import org.apache.activemq.artemis.api.core.client.ClientSession;
 import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
 import org.apache.activemq.artemis.api.core.management.QueueControl;
-import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.core.client.impl.ClientSessionFactoryImpl;
 import org.apache.activemq.artemis.core.client.impl.ServerLocatorImpl;
 import org.apache.activemq.artemis.core.client.impl.ServerLocatorInternal;
@@ -187,7 +186,7 @@ public class ScaleDownTest extends ClusterTestBase {
       assertEquals(TEST_SIZE - 1, getMessageCount(((LocalQueueBinding) servers[0].getPostOffice().getBinding(SimpleString.of(queueName2))).getQueue()));
 
       // trigger scaleDown from node 0 to node 1
-      ActiveMQServerControlImpl serverControl = (ActiveMQServerControlImpl) servers[0].getManagementService().getResource(ResourceNames.BROKER);
+      ActiveMQServerControlImpl serverControl = (ActiveMQServerControlImpl) servers[0].getManagementService().getServerControl();
       serverControl.scaleDown(null);
 
       // get the 2 messages from queue 1

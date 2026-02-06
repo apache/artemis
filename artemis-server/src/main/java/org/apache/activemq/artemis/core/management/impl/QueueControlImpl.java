@@ -20,6 +20,7 @@ import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.openmbean.CompositeData;
 import javax.transaction.xa.Xid;
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -27,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 
 import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.ActiveMQInvalidFilterExpressionException;
@@ -43,7 +45,6 @@ import org.apache.activemq.artemis.core.messagecounter.MessageCounter;
 import org.apache.activemq.artemis.core.messagecounter.impl.MessageCounterHelper;
 import org.apache.activemq.artemis.core.persistence.StorageManager;
 import org.apache.activemq.artemis.core.postoffice.Binding;
-import org.apache.activemq.artemis.core.security.SecurityStore;
 import org.apache.activemq.artemis.core.server.ActiveMQMessageBundle;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.Consumer;
@@ -66,8 +67,6 @@ import org.apache.activemq.artemis.utils.JsonLoader;
 import org.apache.activemq.artemis.utils.collections.LinkedListIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.lang.invoke.MethodHandles;
-import java.util.Objects;
 
 public class QueueControlImpl extends AbstractControl implements QueueControl {
 
@@ -75,15 +74,12 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
    public static final int FLUSH_LIMIT = 500;
 
-
    private final Queue queue;
 
    private final String address;
 
    private final ActiveMQServer server;
 
-   private final StorageManager storageManager;
-   private final SecurityStore securityStore;
    private final HierarchicalRepository<AddressSettings> addressSettingsRepository;
 
    private MessageCounter counter;
@@ -118,14 +114,11 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
                            final String address,
                            final ActiveMQServer server,
                            final StorageManager storageManager,
-                           final SecurityStore securityStore,
                            final HierarchicalRepository<AddressSettings> addressSettingsRepository) throws Exception {
       super(QueueControl.class, storageManager);
       this.queue = queue;
       this.address = address;
       this.server = server;
-      this.storageManager = storageManager;
-      this.securityStore = securityStore;
       this.addressSettingsRepository = addressSettingsRepository;
    }
 

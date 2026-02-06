@@ -16,14 +16,6 @@
  */
 package org.apache.activemq.artemis.tests.db.paging;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
@@ -75,7 +67,6 @@ import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
 import org.apache.activemq.artemis.api.core.client.MessageHandler;
 import org.apache.activemq.artemis.api.core.client.ServerLocator;
 import org.apache.activemq.artemis.api.core.management.QueueControl;
-import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.core.client.impl.ClientConsumerInternal;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.config.DivertConfiguration;
@@ -140,6 +131,14 @@ import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @ExtendWith(ParameterizedTestExtension.class)
 public class PagingTest extends ParameterDBTestBase {
@@ -743,7 +742,7 @@ public class PagingTest extends ParameterDBTestBase {
 
       Wait.assertEquals(numberOfMessages * 2, queue::getMessageCount);
 
-      QueueControl queueControl = (QueueControl) this.server.getManagementService().getResource(ResourceNames.QUEUE + ADDRESS);
+      QueueControl queueControl = this.server.getManagementService().getQueueControl(ADDRESS.toString());
       int removedMessages = queueControl.removeAllMessages();
 
       assertEquals(numberOfMessages * 2, removedMessages);
@@ -1114,8 +1113,8 @@ public class PagingTest extends ParameterDBTestBase {
       Wait.assertEquals(numberOfMessages * 4, queue::getMessageCount);
       Wait.assertEquals(0, originalQueue::getMessageCount);
 
-      QueueControl queueControl = (QueueControl) this.server.getManagementService().getResource(ResourceNames.QUEUE + ADDRESS + "Queue");
-      QueueControl originalQueueControl = (QueueControl) this.server.getManagementService().getResource(ResourceNames.QUEUE + ADDRESS + "QueueOriginal");
+      QueueControl queueControl = this.server.getManagementService().getQueueControl(ADDRESS + "Queue");
+      QueueControl originalQueueControl = this.server.getManagementService().getQueueControl(ADDRESS + "QueueOriginal");
       queueControl.retryMessages();
 
       Wait.assertEquals(numberOfMessages * 2, queue::getMessageCount, 5000);

@@ -20,6 +20,7 @@ import javax.management.MBeanServerInvocationHandler;
 import javax.management.ObjectName;
 import javax.naming.InitialContext;
 import java.io.File;
+import java.lang.invoke.MethodHandles;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,7 +36,6 @@ import org.apache.activemq.artemis.api.core.client.ActiveMQClient;
 import org.apache.activemq.artemis.api.core.management.AddressControl;
 import org.apache.activemq.artemis.api.core.management.ObjectNameBuilder;
 import org.apache.activemq.artemis.api.core.management.QueueControl;
-import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.api.jms.JMSFactoryType;
 import org.apache.activemq.artemis.core.config.FileDeploymentManager;
 import org.apache.activemq.artemis.core.config.impl.FileConfiguration;
@@ -51,7 +51,6 @@ import org.apache.activemq.artemis.spi.core.security.ActiveMQJAASSecurityManager
 import org.apache.activemq.artemis.spi.core.security.jaas.InVMLoginModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.lang.invoke.MethodHandles;
 
 public class LocalTestServer implements Server, Runnable {
 
@@ -324,7 +323,7 @@ public class LocalTestServer implements Server, Runnable {
 
    @Override
    public Long getMessageCountForQueue(final String queueName) throws Exception {
-      QueueControl queue = (QueueControl) getActiveMQServer().getManagementService().getResource("queue." + queueName);
+      QueueControl queue = getActiveMQServer().getManagementService().getQueueControl(queueName);
       if (queue != null) {
          queue.flushExecutor();
          return queue.getMessageCount();
@@ -335,7 +334,7 @@ public class LocalTestServer implements Server, Runnable {
 
    @Override
    public void removeAllMessages(final String queueName) throws Exception {
-      QueueControl queue = (QueueControl) getActiveMQServer().getManagementService().getResource(ResourceNames.QUEUE + queueName);
+      QueueControl queue = getActiveMQServer().getManagementService().getQueueControl(queueName);
       queue.removeMessages(null);
    }
 

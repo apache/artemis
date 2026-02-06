@@ -16,21 +16,6 @@
  */
 package org.apache.activemq.artemis.tests.integration.amqp.connect;
 
-import static org.apache.activemq.artemis.protocol.amqp.connect.bridge.AMQPBridgeConstants.ADDRESS_RECEIVER_IDLE_TIMEOUT;
-import static org.apache.activemq.artemis.protocol.amqp.connect.bridge.AMQPBridgeConstants.QUEUE_RECEIVER_IDLE_TIMEOUT;
-import static org.hamcrest.CoreMatchers.allOf;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-
-import java.lang.invoke.MethodHandles;
-import java.net.URI;
-import java.util.concurrent.TimeUnit;
-
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.Message;
@@ -38,12 +23,14 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
+import java.lang.invoke.MethodHandles;
+import java.net.URI;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.management.BrokerConnectionControl;
-import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPBridgeAddressPolicyElement;
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPBridgeBrokerConnectionElement;
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPBridgeQueuePolicyElement;
@@ -63,6 +50,17 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.apache.activemq.artemis.protocol.amqp.connect.bridge.AMQPBridgeConstants.ADDRESS_RECEIVER_IDLE_TIMEOUT;
+import static org.apache.activemq.artemis.protocol.amqp.connect.bridge.AMQPBridgeConstants.QUEUE_RECEIVER_IDLE_TIMEOUT;
+import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests that the broker create management objects for AMQP bridge configurations.
@@ -132,10 +130,10 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
 
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
 
-         final String brokerConnectionName = ResourceNames.BROKER_CONNECTION + getTestName();
+         final String brokerConnectionName = getTestName();
 
-         final BrokerConnectionControl brokerConnection = (BrokerConnectionControl)
-            server.getManagementService().getResource(brokerConnectionName);
+         final BrokerConnectionControl brokerConnection =
+            server.getManagementService().getBrokerConnectionControl(brokerConnectionName);
 
          assertNotNull(brokerConnection);
          assertTrue(brokerConnection.isConnected());
@@ -145,9 +143,9 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
          final String consumerResourceName = AMQPBridgeManagementSupport.getBridgeAddressReceiverResourceName(getTestName(), getTestName(), "address-policy", getTestName());
 
          final AMQPBridgeManagerControl bridgeControl =
-            (AMQPBridgeManagerControl) server.getManagementService().getResource(bridgeResourceName);
+            (AMQPBridgeManagerControl) server.getManagementService().getUntypedControl(bridgeResourceName);
          final AMQPBridgePolicyManagerControl addressPolicyControl =
-            (AMQPBridgePolicyManagerControl) server.getManagementService().getResource(policyResourceName);
+            (AMQPBridgePolicyManagerControl) server.getManagementService().getUntypedControl(policyResourceName);
 
          assertNotNull(bridgeControl);
          assertEquals(getTestName(), bridgeControl.getName());
@@ -159,7 +157,7 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
          assertEquals(0, addressPolicyControl.getMessagesReceived());
 
          final AMQPBridgeReceiverControl consumerControl = (AMQPBridgeReceiverControl)
-            server.getManagementService().getResource(consumerResourceName);
+            server.getManagementService().getUntypedControl(consumerResourceName);
 
          assertNotNull(consumerControl);
          assertEquals(getTestName(), consumerControl.getAddress());
@@ -170,9 +168,9 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
          brokerConnection.stop();
 
          // Stopping the connection should remove the bridge consumer management objects.
-         Wait.assertTrue(() -> server.getManagementService().getResource(consumerResourceName) == null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getUntypedControl(consumerResourceName) == null, 5_000, 100);
 
-         assertNotNull(server.getManagementService().getResource(policyResourceName));
+         assertNotNull(server.getManagementService().getUntypedControl(policyResourceName));
 
          server.getBrokerConnections().forEach((connection) -> {
             try {
@@ -182,9 +180,9 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
             }
          });
 
-         Wait.assertTrue(() -> server.getManagementService().getResource(policyResourceName) == null, 5_000, 100);
-         Wait.assertTrue(() -> server.getManagementService().getResource(bridgeResourceName) == null, 5_000, 100);
-         Wait.assertTrue(() -> server.getManagementService().getResource(brokerConnectionName) == null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getUntypedControl(policyResourceName) == null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getUntypedControl(bridgeResourceName) == null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getBrokerConnectionControl(brokerConnectionName) == null, 5_000, 100);
 
          peer.close();
       }
@@ -239,8 +237,8 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
 
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
 
-         final BrokerConnectionControl brokerConnection = (BrokerConnectionControl)
-            server.getManagementService().getResource(ResourceNames.BROKER_CONNECTION + getTestName());
+         final BrokerConnectionControl brokerConnection =
+            server.getManagementService().getBrokerConnectionControl(getTestName());
 
          assertNotNull(brokerConnection);
          assertTrue(brokerConnection.isConnected());
@@ -250,11 +248,11 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
          final String consumerResourceName = AMQPBridgeManagementSupport.getBridgeAddressReceiverResourceName(getTestName(), getTestName(), "address-policy", getTestName());
 
          final AMQPBridgeManagerControl bridgeControl =
-            (AMQPBridgeManagerControl) server.getManagementService().getResource(bridgeResourceName);
+            (AMQPBridgeManagerControl) server.getManagementService().getUntypedControl(bridgeResourceName);
          final AMQPBridgePolicyManagerControl addressPolicyControl =
-            (AMQPBridgePolicyManagerControl) server.getManagementService().getResource(policyResourceName);
+            (AMQPBridgePolicyManagerControl) server.getManagementService().getUntypedControl(policyResourceName);
          final AMQPBridgeReceiverControl consumerControl = (AMQPBridgeReceiverControl)
-            server.getManagementService().getResource(consumerResourceName);
+            server.getManagementService().getUntypedControl(consumerResourceName);
 
          assertNotNull(bridgeControl);
          assertNotNull(addressPolicyControl);
@@ -265,8 +263,8 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
 
          // Closing the connection without a detach or close frame should still cleanup the management
          // resources for the consumer but the policy views should still be in place
-         Wait.assertTrue(() -> server.getManagementService().getResource(consumerResourceName) == null, 5_000, 100);
-         Wait.assertTrue(() -> server.getManagementService().getResource(policyResourceName) != null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getUntypedControl(consumerResourceName) == null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getUntypedControl(policyResourceName) != null, 5_000, 100);
       }
    }
 
@@ -319,8 +317,8 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
 
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
 
-         final BrokerConnectionControl brokerConnection = (BrokerConnectionControl)
-            server.getManagementService().getResource(ResourceNames.BROKER_CONNECTION + getTestName());
+         final BrokerConnectionControl brokerConnection =
+            server.getManagementService().getBrokerConnectionControl(getTestName());
 
          assertNotNull(brokerConnection);
          assertTrue(brokerConnection.isConnected());
@@ -330,11 +328,11 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
          final String consumerResourceName = AMQPBridgeManagementSupport.getBridgeAddressReceiverResourceName(getTestName(), getTestName(), "address-policy", getTestName());
 
          final AMQPBridgeManagerControl bridgeControl =
-            (AMQPBridgeManagerControl) server.getManagementService().getResource(bridgeResourceName);
+            (AMQPBridgeManagerControl) server.getManagementService().getUntypedControl(bridgeResourceName);
          final AMQPBridgePolicyManagerControl addressPolicyControl =
-            (AMQPBridgePolicyManagerControl) server.getManagementService().getResource(policyResourceName);
+            (AMQPBridgePolicyManagerControl) server.getManagementService().getUntypedControl(policyResourceName);
          final AMQPBridgeReceiverControl consumerControl = (AMQPBridgeReceiverControl)
-            server.getManagementService().getResource(consumerResourceName);
+            server.getManagementService().getUntypedControl(consumerResourceName);
 
          assertNotNull(bridgeControl);
          assertNotNull(addressPolicyControl);
@@ -349,9 +347,9 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
 
          // Closing the connection without a detach or close frame should still cleanup the management
          // resources for the consumer but the policy views should still be in place
-         Wait.assertTrue(() -> server.getManagementService().getResource(consumerResourceName) == null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getUntypedControl(consumerResourceName) == null, 5_000, 100);
 
-         assertNotNull(server.getManagementService().getResource(policyResourceName));
+         assertNotNull(server.getManagementService().getUntypedControl(policyResourceName));
 
          peer.close();
       }
@@ -415,15 +413,15 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
 
             peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
 
-            final String brokerConnectionName = ResourceNames.BROKER_CONNECTION + getTestName();
+            final String brokerConnectionName = getTestName();
             final String bridgeResourceName = AMQPBridgeManagementSupport.getBridgeManagerResourceName(getTestName(), getTestName());
             final String policyResourceName = AMQPBridgeManagementSupport.getBridgePolicyManagerResourceName(getTestName(), getTestName(), "queue-policy");
             final String consumerResourceName = AMQPBridgeManagementSupport.getBridgeQueueReceiverResourceName(getTestName(), getTestName(), "queue-policy", getTestName() + "::" + getTestName());
 
-            final BrokerConnectionControl brokerConnection = (BrokerConnectionControl)
-               server.getManagementService().getResource(brokerConnectionName);
+            final BrokerConnectionControl brokerConnection =
+               server.getManagementService().getBrokerConnectionControl(brokerConnectionName);
             final AMQPBridgeManagerControl bridgeControl =
-               (AMQPBridgeManagerControl) server.getManagementService().getResource(bridgeResourceName);
+               (AMQPBridgeManagerControl) server.getManagementService().getUntypedControl(bridgeResourceName);
 
             assertNotNull(brokerConnection);
             assertTrue(brokerConnection.isConnected());
@@ -433,14 +431,14 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
             assertEquals(0, bridgeControl.getMessagesSent());
 
             final AMQPBridgePolicyManagerControl queuePolicyControl =
-               (AMQPBridgePolicyManagerControl) server.getManagementService().getResource(policyResourceName);
+               (AMQPBridgePolicyManagerControl) server.getManagementService().getUntypedControl(policyResourceName);
 
             assertNotNull(queuePolicyControl);
             assertEquals("queue-policy", queuePolicyControl.getName());
             assertEquals(0, queuePolicyControl.getMessagesReceived());
 
             final AMQPBridgeReceiverControl consumerControl = (AMQPBridgeReceiverControl)
-               server.getManagementService().getResource(consumerResourceName);
+               server.getManagementService().getUntypedControl(consumerResourceName);
 
             assertNotNull(consumerControl);
             assertEquals(getTestName(), consumerControl.getAddress());
@@ -454,9 +452,9 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
             brokerConnection.stop();
 
             // Stopping the connection should remove the bridge management objects.
-            Wait.assertTrue(() -> server.getManagementService().getResource(consumerResourceName) == null, 5_000, 100);
+            Wait.assertTrue(() -> server.getManagementService().getUntypedControl(consumerResourceName) == null, 5_000, 100);
 
-            assertNotNull(server.getManagementService().getResource(policyResourceName));
+            assertNotNull(server.getManagementService().getUntypedControl(policyResourceName));
 
             server.getBrokerConnections().forEach((brConnection) -> {
                try {
@@ -466,9 +464,9 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
                }
             });
 
-            Wait.assertTrue(() -> server.getManagementService().getResource(policyResourceName) == null, 5_000, 100);
-            Wait.assertTrue(() -> server.getManagementService().getResource(bridgeResourceName) == null, 5_000, 100);
-            Wait.assertTrue(() -> server.getManagementService().getResource(brokerConnectionName) == null, 5_000, 100);
+            Wait.assertTrue(() -> server.getManagementService().getUntypedControl(policyResourceName) == null, 5_000, 100);
+            Wait.assertTrue(() -> server.getManagementService().getUntypedControl(bridgeResourceName) == null, 5_000, 100);
+            Wait.assertTrue(() -> server.getManagementService().getBrokerConnectionControl(brokerConnectionName) == null, 5_000, 100);
 
             peer.close();
          }
@@ -533,19 +531,19 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
 
             peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
 
-            final String brokerConnectionName = ResourceNames.BROKER_CONNECTION + getTestName();
+            final String brokerConnectionName = getTestName();
             final String bridgeResourceName = AMQPBridgeManagementSupport.getBridgeManagerResourceName(getTestName(), getTestName());
             final String policyResourceName = AMQPBridgeManagementSupport.getBridgePolicyManagerResourceName(getTestName(), getTestName(), "queue-policy");
             final String consumerResourceName = AMQPBridgeManagementSupport.getBridgeQueueReceiverResourceName(getTestName(), getTestName(), "queue-policy", getTestName() + "::" + getTestName());
 
-            final BrokerConnectionControl brokerConnection = (BrokerConnectionControl)
-               server.getManagementService().getResource(brokerConnectionName);
+            final BrokerConnectionControl brokerConnection =
+               server.getManagementService().getBrokerConnectionControl(brokerConnectionName);
             final AMQPBridgeManagerControl bridgeControl =
-               (AMQPBridgeManagerControl) server.getManagementService().getResource(bridgeResourceName);
+               (AMQPBridgeManagerControl) server.getManagementService().getUntypedControl(bridgeResourceName);
             final AMQPBridgePolicyManagerControl queuePolicyControl =
-               (AMQPBridgePolicyManagerControl) server.getManagementService().getResource(policyResourceName);
+               (AMQPBridgePolicyManagerControl) server.getManagementService().getUntypedControl(policyResourceName);
             final AMQPBridgeReceiverControl consumerControl = (AMQPBridgeReceiverControl)
-               server.getManagementService().getResource(consumerResourceName);
+               server.getManagementService().getUntypedControl(consumerResourceName);
 
             assertNotNull(brokerConnection);
             assertTrue(brokerConnection.isConnected());
@@ -558,8 +556,8 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
 
             // Closing the connection without a detach or close frame should still cleanup the management
             // resources for the consumer but the policy views should still be in place
-            Wait.assertTrue(() -> server.getManagementService().getResource(consumerResourceName) == null, 5_000, 100);
-            Wait.assertTrue(() -> server.getManagementService().getResource(policyResourceName) != null, 5_000, 100);
+            Wait.assertTrue(() -> server.getManagementService().getUntypedControl(consumerResourceName) == null, 5_000, 100);
+            Wait.assertTrue(() -> server.getManagementService().getUntypedControl(policyResourceName) != null, 5_000, 100);
          }
       }
    }
@@ -622,19 +620,19 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
 
             peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
 
-            final String brokerConnectionName = ResourceNames.BROKER_CONNECTION + getTestName();
+            final String brokerConnectionName = getTestName();
             final String bridgeResourceName = AMQPBridgeManagementSupport.getBridgeManagerResourceName(getTestName(), getTestName());
             final String policyResourceName = AMQPBridgeManagementSupport.getBridgePolicyManagerResourceName(getTestName(), getTestName(), "queue-policy");
             final String consumerResourceName = AMQPBridgeManagementSupport.getBridgeQueueReceiverResourceName(getTestName(), getTestName(), "queue-policy", getTestName() + "::" + getTestName());
 
-            final BrokerConnectionControl brokerConnection = (BrokerConnectionControl)
-               server.getManagementService().getResource(brokerConnectionName);
+            final BrokerConnectionControl brokerConnection =
+               server.getManagementService().getBrokerConnectionControl(brokerConnectionName);
             final AMQPBridgeManagerControl bridgeControl =
-               (AMQPBridgeManagerControl) server.getManagementService().getResource(bridgeResourceName);
+               (AMQPBridgeManagerControl) server.getManagementService().getUntypedControl(bridgeResourceName);
             final AMQPBridgePolicyManagerControl queuePolicyControl =
-               (AMQPBridgePolicyManagerControl) server.getManagementService().getResource(policyResourceName);
+               (AMQPBridgePolicyManagerControl) server.getManagementService().getUntypedControl(policyResourceName);
             final AMQPBridgeReceiverControl consumerControl = (AMQPBridgeReceiverControl)
-               server.getManagementService().getResource(consumerResourceName);
+               server.getManagementService().getUntypedControl(consumerResourceName);
 
             assertNotNull(brokerConnection);
             assertTrue(brokerConnection.isConnected());
@@ -651,9 +649,9 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
 
             // Closing the connection without a detach or close frame should still cleanup the management
             // resources for the consumer but the policy views should still be in place
-            Wait.assertTrue(() -> server.getManagementService().getResource(consumerResourceName) == null, 5_000, 100);
+            Wait.assertTrue(() -> server.getManagementService().getUntypedControl(consumerResourceName) == null, 5_000, 100);
 
-            assertNotNull(server.getManagementService().getResource(policyResourceName));
+            assertNotNull(server.getManagementService().getUntypedControl(policyResourceName));
 
             peer.close();
          }
@@ -711,7 +709,7 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
          final String consumerResourceName = AMQPBridgeManagementSupport.getBridgeAddressReceiverResourceName(getTestName(), getTestName(), "address-policy", getTestName());
 
          final AMQPBridgeManagerControl bridgeControl =
-            (AMQPBridgeManagerControl) server.getManagementService().getResource(bridgeResourceName);
+            (AMQPBridgeManagerControl) server.getManagementService().getUntypedControl(bridgeResourceName);
 
          final ConnectionFactory factory = CFUtil.createConnectionFactory("AMQP", "tcp://localhost:" + AMQP_PORT);
 
@@ -729,9 +727,9 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
             peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
 
             final AMQPBridgePolicyManagerControl addressPolicyControl =
-               (AMQPBridgePolicyManagerControl) server.getManagementService().getResource(policyResourceName);
+               (AMQPBridgePolicyManagerControl) server.getManagementService().getUntypedControl(policyResourceName);
             final AMQPBridgeReceiverControl consumerControl = (AMQPBridgeReceiverControl)
-               server.getManagementService().getResource(consumerResourceName);
+               server.getManagementService().getUntypedControl(consumerResourceName);
 
             assertEquals(1, bridgeControl.getMessagesReceived());
             assertEquals(1, addressPolicyControl.getMessagesReceived());
@@ -748,9 +746,9 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
          // Policy bean should still be active but consumer bean should be unregistered
          {
             final AMQPBridgePolicyManagerControl addressPolicyControl =
-               (AMQPBridgePolicyManagerControl) server.getManagementService().getResource(policyResourceName);
+               (AMQPBridgePolicyManagerControl) server.getManagementService().getUntypedControl(policyResourceName);
             final AMQPBridgeReceiverControl consumerControl = (AMQPBridgeReceiverControl)
-               server.getManagementService().getResource(consumerResourceName);
+               server.getManagementService().getUntypedControl(consumerResourceName);
 
             assertNotNull(addressPolicyControl);
             assertNull(consumerControl);
@@ -787,9 +785,9 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
             peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
 
             final AMQPBridgePolicyManagerControl addressPolicyControl =
-               (AMQPBridgePolicyManagerControl) server.getManagementService().getResource(policyResourceName);
+               (AMQPBridgePolicyManagerControl) server.getManagementService().getUntypedControl(policyResourceName);
             final AMQPBridgeReceiverControl consumerControl = (AMQPBridgeReceiverControl)
-               server.getManagementService().getResource(consumerResourceName);
+               server.getManagementService().getUntypedControl(consumerResourceName);
 
             assertEquals(2, bridgeControl.getMessagesReceived());
             assertEquals(2, addressPolicyControl.getMessagesReceived());
@@ -861,7 +859,7 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
          final String consumerResourceName = AMQPBridgeManagementSupport.getBridgeQueueReceiverResourceName(getTestName(), getTestName(), "queue-policy", getTestName() + "::" + getTestName());
 
          final AMQPBridgeManagerControl bridgeControl =
-            (AMQPBridgeManagerControl) server.getManagementService().getResource(bridgeResourceName);
+            (AMQPBridgeManagerControl) server.getManagementService().getUntypedControl(bridgeResourceName);
 
          final ConnectionFactory factory = CFUtil.createConnectionFactory("AMQP", "tcp://localhost:" + AMQP_PORT);
 
@@ -879,9 +877,9 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
             peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
 
             final AMQPBridgePolicyManagerControl queuePolicyControl =
-               (AMQPBridgePolicyManagerControl) server.getManagementService().getResource(policyResourceName);
+               (AMQPBridgePolicyManagerControl) server.getManagementService().getUntypedControl(policyResourceName);
             final AMQPBridgeReceiverControl consumerControl = (AMQPBridgeReceiverControl)
-               server.getManagementService().getResource(consumerResourceName);
+               server.getManagementService().getUntypedControl(consumerResourceName);
 
             assertEquals(1, bridgeControl.getMessagesReceived());
             assertEquals(1, queuePolicyControl.getMessagesReceived());
@@ -898,9 +896,9 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
          // Policy bean should still be active but consumer bean should be unregistered
          {
             final AMQPBridgePolicyManagerControl queuePolicyControl =
-               (AMQPBridgePolicyManagerControl) server.getManagementService().getResource(policyResourceName);
+               (AMQPBridgePolicyManagerControl) server.getManagementService().getUntypedControl(policyResourceName);
             final AMQPBridgeReceiverControl consumerControl = (AMQPBridgeReceiverControl)
-               server.getManagementService().getResource(consumerResourceName);
+               server.getManagementService().getUntypedControl(consumerResourceName);
 
             assertNotNull(queuePolicyControl);
             assertNull(consumerControl);
@@ -937,9 +935,9 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
             peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
 
             final AMQPBridgePolicyManagerControl queuePolicyControl =
-               (AMQPBridgePolicyManagerControl) server.getManagementService().getResource(policyResourceName);
+               (AMQPBridgePolicyManagerControl) server.getManagementService().getUntypedControl(policyResourceName);
             final AMQPBridgeReceiverControl consumerControl = (AMQPBridgeReceiverControl)
-               server.getManagementService().getResource(consumerResourceName);
+               server.getManagementService().getUntypedControl(consumerResourceName);
 
             assertEquals(2, bridgeControl.getMessagesReceived());
             assertEquals(2, queuePolicyControl.getMessagesReceived());
@@ -1001,21 +999,21 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
 
          Wait.assertTrue(() -> server.bindingQuery(SimpleString.of(getTestName()), false).getQueueNames().size() >= 1);
 
-         final String brokerConnectionName = ResourceNames.BROKER_CONNECTION + getTestName();
+         final String brokerConnectionName = getTestName();
          final String bridgeResourceName = AMQPBridgeManagementSupport.getBridgeManagerResourceName(getTestName(), getTestName());
          final String policyResourceName = AMQPBridgeManagementSupport.getBridgePolicyManagerResourceName(getTestName(), getTestName(), "to-address-policy");
          final String producerResourceName = AMQPBridgeManagementSupport.getBridgeAddressSenderResourceName(getTestName(), getTestName(), "to-address-policy", getTestName());
 
-         Wait.assertTrue(() -> server.getManagementService().getResource(producerResourceName) != null, 5_000, 50);
+         Wait.assertTrue(() -> server.getManagementService().getUntypedControl(producerResourceName) != null, 5_000, 50);
 
-         final BrokerConnectionControl brokerConnection = (BrokerConnectionControl)
-            server.getManagementService().getResource(brokerConnectionName);
+         final BrokerConnectionControl brokerConnection =
+            server.getManagementService().getBrokerConnectionControl(brokerConnectionName);
          final AMQPBridgeManagerControl bridgeControl =
-            (AMQPBridgeManagerControl) server.getManagementService().getResource(bridgeResourceName);
+            (AMQPBridgeManagerControl) server.getManagementService().getUntypedControl(bridgeResourceName);
          final AMQPBridgePolicyManagerControl addressPolicyControl =
-            (AMQPBridgePolicyManagerControl) server.getManagementService().getResource(policyResourceName);
+            (AMQPBridgePolicyManagerControl) server.getManagementService().getUntypedControl(policyResourceName);
          final AMQPBridgeSenderControl producerControl = (AMQPBridgeSenderControl)
-            server.getManagementService().getResource(producerResourceName);
+            server.getManagementService().getUntypedControl(producerResourceName);
 
          assertNotNull(brokerConnection);
          assertTrue(brokerConnection.isConnected());
@@ -1054,9 +1052,9 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
          brokerConnection.stop();
 
          // Stopping the connection should remove the bridge producer management objects.
-         Wait.assertTrue(() -> server.getManagementService().getResource(producerResourceName) == null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getUntypedControl(producerResourceName) == null, 5_000, 100);
 
-         assertNotNull(server.getManagementService().getResource(policyResourceName));
+         assertNotNull(server.getManagementService().getUntypedControl(policyResourceName));
 
          server.getBrokerConnections().forEach((connection) -> {
             try {
@@ -1066,9 +1064,9 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
             }
          });
 
-         Wait.assertTrue(() -> server.getManagementService().getResource(policyResourceName) == null, 5_000, 100);
-         Wait.assertTrue(() -> server.getManagementService().getResource(bridgeResourceName) == null, 5_000, 100);
-         Wait.assertTrue(() -> server.getManagementService().getResource(brokerConnectionName) == null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getUntypedControl(policyResourceName) == null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getUntypedControl(bridgeResourceName) == null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getBrokerConnectionControl(brokerConnectionName) == null, 5_000, 100);
 
          peer.close();
       }
@@ -1121,21 +1119,21 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
 
          Wait.assertTrue(() -> server.queueQuery(SimpleString.of(getTestName())).getConsumerCount() >= 1, 10_000);
 
-         final String brokerConnectionName = ResourceNames.BROKER_CONNECTION + getTestName();
+         final String brokerConnectionName = getTestName();
          final String bridgeResourceName = AMQPBridgeManagementSupport.getBridgeManagerResourceName(getTestName(), getTestName());
          final String policyResourceName = AMQPBridgeManagementSupport.getBridgePolicyManagerResourceName(getTestName(), getTestName(), "to-queue-policy");
          final String producerResourceName = AMQPBridgeManagementSupport.getBridgeAddressSenderResourceName(getTestName(), getTestName(), "to-queue-policy", getTestName() + "::" + getTestName());
 
-         Wait.assertTrue(() -> server.getManagementService().getResource(producerResourceName) != null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getUntypedControl(producerResourceName) != null, 5_000, 100);
 
-         final BrokerConnectionControl brokerConnection = (BrokerConnectionControl)
-            server.getManagementService().getResource(brokerConnectionName);
+         final BrokerConnectionControl brokerConnection =
+            server.getManagementService().getBrokerConnectionControl(brokerConnectionName);
          final AMQPBridgeManagerControl bridgeControl =
-            (AMQPBridgeManagerControl) server.getManagementService().getResource(bridgeResourceName);
+            (AMQPBridgeManagerControl) server.getManagementService().getUntypedControl(bridgeResourceName);
          final AMQPBridgePolicyManagerControl queuePolicyControl =
-            (AMQPBridgePolicyManagerControl) server.getManagementService().getResource(policyResourceName);
+            (AMQPBridgePolicyManagerControl) server.getManagementService().getUntypedControl(policyResourceName);
          final AMQPBridgeSenderControl producerControl = (AMQPBridgeSenderControl)
-            server.getManagementService().getResource(producerResourceName);
+            server.getManagementService().getUntypedControl(producerResourceName);
 
          assertNotNull(brokerConnection);
          assertTrue(brokerConnection.isConnected());
@@ -1174,9 +1172,9 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
          brokerConnection.stop();
 
          // Stopping the connection should remove the bridge producer management objects.
-         Wait.assertTrue(() -> server.getManagementService().getResource(producerResourceName) == null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getUntypedControl(producerResourceName) == null, 5_000, 100);
 
-         assertNotNull(server.getManagementService().getResource(policyResourceName));
+         assertNotNull(server.getManagementService().getUntypedControl(policyResourceName));
 
          server.getBrokerConnections().forEach((connection) -> {
             try {
@@ -1186,9 +1184,9 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
             }
          });
 
-         Wait.assertTrue(() -> server.getManagementService().getResource(policyResourceName) == null, 5_000, 100);
-         Wait.assertTrue(() -> server.getManagementService().getResource(bridgeResourceName) == null, 5_000, 100);
-         Wait.assertTrue(() -> server.getManagementService().getResource(brokerConnectionName) == null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getUntypedControl(policyResourceName) == null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getUntypedControl(bridgeResourceName) == null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getBrokerConnectionControl(brokerConnectionName) == null, 5_000, 100);
 
          peer.close();
       }
@@ -1239,29 +1237,29 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
 
          Wait.assertTrue(() -> server.bindingQuery(SimpleString.of(getTestName()), false).getQueueNames().size() >= 1);
 
-         final String brokerConnectionName = ResourceNames.BROKER_CONNECTION + getTestName();
+         final String brokerConnectionName = getTestName();
          final String bridgeResourceName = AMQPBridgeManagementSupport.getBridgeManagerResourceName(getTestName(), getTestName());
          final String policyResourceName = AMQPBridgeManagementSupport.getBridgePolicyManagerResourceName(getTestName(), getTestName(), "to-address-policy");
          final String producerResourceName = AMQPBridgeManagementSupport.getBridgeAddressSenderResourceName(getTestName(), getTestName(), "to-address-policy", getTestName());
 
-         final BrokerConnectionControl brokerConnection = (BrokerConnectionControl)
-            server.getManagementService().getResource(brokerConnectionName);
+         final BrokerConnectionControl brokerConnection =
+            server.getManagementService().getBrokerConnectionControl(brokerConnectionName);
          final AMQPBridgeManagerControl bridgeControl =
-            (AMQPBridgeManagerControl) server.getManagementService().getResource(bridgeResourceName);
+            (AMQPBridgeManagerControl) server.getManagementService().getUntypedControl(bridgeResourceName);
 
          assertNotNull(brokerConnection);
          assertNotNull(bridgeControl);
 
-         Wait.assertTrue(() -> server.getManagementService().getResource(policyResourceName) != null, 5_000, 100);
-         Wait.assertTrue(() -> server.getManagementService().getResource(producerResourceName) != null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getUntypedControl(policyResourceName) != null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getUntypedControl(producerResourceName) != null, 5_000, 100);
 
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
          peer.close();
 
          // Closing the connection without a detach or close frame should still cleanup the management
          // resources for the consumer but the policy views should still be in place
-         Wait.assertTrue(() -> server.getManagementService().getResource(producerResourceName) == null, 5_000, 100);
-         Wait.assertTrue(() -> server.getManagementService().getResource(policyResourceName) != null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getUntypedControl(producerResourceName) == null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getUntypedControl(policyResourceName) != null, 5_000, 100);
       }
    }
 
@@ -1310,21 +1308,21 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
 
          Wait.assertTrue(() -> server.bindingQuery(SimpleString.of(getTestName()), false).getQueueNames().size() >= 1);
 
-         final String brokerConnectionName = ResourceNames.BROKER_CONNECTION + getTestName();
+         final String brokerConnectionName = getTestName();
          final String bridgeResourceName = AMQPBridgeManagementSupport.getBridgeManagerResourceName(getTestName(), getTestName());
          final String policyResourceName = AMQPBridgeManagementSupport.getBridgePolicyManagerResourceName(getTestName(), getTestName(), "to-address-policy");
          final String producerResourceName = AMQPBridgeManagementSupport.getBridgeAddressSenderResourceName(getTestName(), getTestName(), "to-address-policy", getTestName());
 
-         final BrokerConnectionControl brokerConnection = (BrokerConnectionControl)
-            server.getManagementService().getResource(brokerConnectionName);
+         final BrokerConnectionControl brokerConnection =
+            server.getManagementService().getBrokerConnectionControl(brokerConnectionName);
          final AMQPBridgeManagerControl bridgeControl =
-            (AMQPBridgeManagerControl) server.getManagementService().getResource(bridgeResourceName);
+            (AMQPBridgeManagerControl) server.getManagementService().getUntypedControl(bridgeResourceName);
 
          assertNotNull(brokerConnection);
          assertNotNull(bridgeControl);
 
-         Wait.assertTrue(() -> server.getManagementService().getResource(policyResourceName) != null, 5_000, 100);
-         Wait.assertTrue(() -> server.getManagementService().getResource(producerResourceName) != null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getUntypedControl(policyResourceName) != null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getUntypedControl(producerResourceName) != null, 5_000, 100);
 
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
          peer.expectDetach().optional();
@@ -1337,9 +1335,9 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
 
          // Closing the connection without a detach or close frame should still cleanup the management
          // resources for the consumer but the policy views should still be in place
-         Wait.assertTrue(() -> server.getManagementService().getResource(producerResourceName) == null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getUntypedControl(producerResourceName) == null, 5_000, 100);
 
-         assertNotNull(server.getManagementService().getResource(policyResourceName));
+         assertNotNull(server.getManagementService().getUntypedControl(policyResourceName));
 
          peer.close();
       }
@@ -1392,21 +1390,21 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
 
          Wait.assertTrue(() -> server.queueQuery(SimpleString.of(getTestName())).getConsumerCount() >= 1, 10_000);
 
-         final String brokerConnectionName = ResourceNames.BROKER_CONNECTION + getTestName();
+         final String brokerConnectionName = getTestName();
          final String bridgeResourceName = AMQPBridgeManagementSupport.getBridgeManagerResourceName(getTestName(), getTestName());
          final String policyResourceName = AMQPBridgeManagementSupport.getBridgePolicyManagerResourceName(getTestName(), getTestName(), "to-queue-policy");
          final String producerResourceName = AMQPBridgeManagementSupport.getBridgeAddressSenderResourceName(getTestName(), getTestName(), "to-queue-policy", getTestName() + "::" + getTestName());
 
-         Wait.assertTrue(() -> server.getManagementService().getResource(brokerConnectionName) != null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getBrokerConnectionControl(brokerConnectionName) != null, 5_000, 100);
 
-         final BrokerConnectionControl brokerConnection = (BrokerConnectionControl)
-            server.getManagementService().getResource(brokerConnectionName);
+         final BrokerConnectionControl brokerConnection =
+            server.getManagementService().getBrokerConnectionControl(brokerConnectionName);
          final AMQPBridgeManagerControl bridgeControl =
-            (AMQPBridgeManagerControl) server.getManagementService().getResource(bridgeResourceName);
+            (AMQPBridgeManagerControl) server.getManagementService().getUntypedControl(bridgeResourceName);
          final AMQPBridgePolicyManagerControl queuePolicyControl =
-            (AMQPBridgePolicyManagerControl) server.getManagementService().getResource(policyResourceName);
+            (AMQPBridgePolicyManagerControl) server.getManagementService().getUntypedControl(policyResourceName);
          final AMQPBridgeSenderControl producerControl = (AMQPBridgeSenderControl)
-            server.getManagementService().getResource(producerResourceName);
+            server.getManagementService().getUntypedControl(producerResourceName);
 
          assertNotNull(brokerConnection);
          assertNotNull(bridgeControl);
@@ -1418,8 +1416,8 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
 
          // Closing the connection without a detach or close frame should still cleanup the management
          // resources for the consumer but the policy views should still be in place
-         Wait.assertTrue(() -> server.getManagementService().getResource(producerResourceName) == null, 5_000, 100);
-         Wait.assertTrue(() -> server.getManagementService().getResource(policyResourceName) != null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getUntypedControl(producerResourceName) == null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getUntypedControl(policyResourceName) != null, 5_000, 100);
       }
    }
 
@@ -1470,18 +1468,18 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
 
          Wait.assertTrue(() -> server.queueQuery(SimpleString.of(getTestName())).getConsumerCount() >= 1, 10_000);
 
-         final String brokerConnectionName = ResourceNames.BROKER_CONNECTION + getTestName();
+         final String brokerConnectionName = getTestName();
          final String bridgeResourceName = AMQPBridgeManagementSupport.getBridgeManagerResourceName(getTestName(), getTestName());
          final String policyResourceName = AMQPBridgeManagementSupport.getBridgePolicyManagerResourceName(getTestName(), getTestName(), "to-queue-policy");
          final String producerResourceName = AMQPBridgeManagementSupport.getBridgeAddressSenderResourceName(getTestName(), getTestName(), "to-queue-policy", getTestName() + "::" + getTestName());
 
-         Wait.assertTrue(() -> server.getManagementService().getResource(brokerConnectionName) != null, 5_000, 100);
-         Wait.assertTrue(() -> server.getManagementService().getResource(bridgeResourceName) != null, 5_000, 100);
-         Wait.assertTrue(() -> server.getManagementService().getResource(policyResourceName) != null, 5_000, 100);
-         Wait.assertTrue(() -> server.getManagementService().getResource(producerResourceName) != null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getBrokerConnectionControl(brokerConnectionName) != null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getUntypedControl(bridgeResourceName) != null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getUntypedControl(policyResourceName) != null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getUntypedControl(producerResourceName) != null, 5_000, 100);
 
-         final BrokerConnectionControl brokerConnection = (BrokerConnectionControl)
-            server.getManagementService().getResource(brokerConnectionName);
+         final BrokerConnectionControl brokerConnection =
+            server.getManagementService().getBrokerConnectionControl(brokerConnectionName);
 
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
          peer.expectDetach().optional();
@@ -1494,9 +1492,9 @@ public class AMQPBridgeManagementTest extends AmqpClientTestSupport {
 
          // Closing the connection without a detach or close frame should still cleanup the management
          // resources for the consumer but the policy views should still be in place
-         Wait.assertTrue(() -> server.getManagementService().getResource(producerResourceName) == null, 5_000, 100);
+         Wait.assertTrue(() -> server.getManagementService().getUntypedControl(producerResourceName) == null, 5_000, 100);
 
-         assertNotNull(server.getManagementService().getResource(policyResourceName));
+         assertNotNull(server.getManagementService().getUntypedControl(policyResourceName));
 
          peer.close();
       }

@@ -33,7 +33,6 @@ import org.apache.activemq.artemis.api.core.client.ClientProducer;
 import org.apache.activemq.artemis.api.core.client.ClientSession;
 import org.apache.activemq.artemis.api.core.client.TopologyMember;
 import org.apache.activemq.artemis.api.core.management.AddressControl;
-import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.core.client.impl.TopologyMemberImpl;
 import org.apache.activemq.artemis.core.postoffice.Binding;
 import org.apache.activemq.artemis.core.postoffice.Bindings;
@@ -372,9 +371,7 @@ public class ClusteredBridgeReconnectTest extends ClusterTestBase {
       assertNull(consumer1.receiveImmediate());
 
       //pause address from node0
-      String addressControlResourceName = ResourceNames.ADDRESS + "queues.testaddress";
-      Object resource = servers[0].getManagementService().getResource(addressControlResourceName);
-      AddressControl addressControl0 = (AddressControl) resource;
+      AddressControl addressControl0 = servers[0].getManagementService().getAddressControl("queues.testaddress");
       addressControl0.pause();
 
       Bindings bindings0 = servers[0].getPostOffice().getBindingsForAddress(SimpleString.of("queues.testaddress"));

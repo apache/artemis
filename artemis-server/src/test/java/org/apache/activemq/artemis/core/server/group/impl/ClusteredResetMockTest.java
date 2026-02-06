@@ -34,12 +34,18 @@ import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.api.core.management.AcceptorControl;
+import org.apache.activemq.artemis.api.core.management.ActiveMQServerControl;
 import org.apache.activemq.artemis.api.core.management.AddressControl;
+import org.apache.activemq.artemis.api.core.management.BaseBroadcastGroupControl;
 import org.apache.activemq.artemis.api.core.management.BridgeControl;
+import org.apache.activemq.artemis.api.core.management.BrokerConnectionControl;
+import org.apache.activemq.artemis.api.core.management.ClusterConnectionControl;
+import org.apache.activemq.artemis.api.core.management.ConnectionRouterControl;
 import org.apache.activemq.artemis.api.core.management.DivertControl;
 import org.apache.activemq.artemis.api.core.management.ManagementHelper;
 import org.apache.activemq.artemis.api.core.management.ObjectNameBuilder;
 import org.apache.activemq.artemis.api.core.management.QueueControl;
+import org.apache.activemq.artemis.api.core.management.RemoteBrokerConnectionControl;
 import org.apache.activemq.artemis.core.config.ClusterConnectionConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.management.impl.ActiveMQServerControlImpl;
@@ -62,6 +68,7 @@ import org.apache.activemq.artemis.core.server.cluster.BroadcastGroup;
 import org.apache.activemq.artemis.core.server.cluster.ClusterConnection;
 import org.apache.activemq.artemis.core.server.impl.AddressInfo;
 import org.apache.activemq.artemis.core.server.management.GuardInvocationHandler;
+import org.apache.activemq.artemis.core.server.management.HawtioSecurityControl;
 import org.apache.activemq.artemis.core.server.management.ManagementService;
 import org.apache.activemq.artemis.core.server.management.Notification;
 import org.apache.activemq.artemis.core.server.management.NotificationListener;
@@ -234,22 +241,32 @@ public class ClusteredResetMockTest extends ServerTestBase {
       }
 
       @Override
-      public AddressControl getAddressControl(String resourceName) {
+      public AddressControl getAddressControl(String name) {
          return null;
       }
 
       @Override
-      public AcceptorControl getAcceptorControl(String resourceName) {
+      public List<String> getAddressControlNames() {
+         return List.of();
+      }
+
+      @Override
+      public AcceptorControl getAcceptorControl(String name) {
          return null;
       }
 
       @Override
-      public void registerAMQPControl(String amqpResourceName, Object control) {
+      public ConnectionRouterControl getConnectionRouterControl(String name) {
+         return null;
+      }
+
+      @Override
+      public void registerUntypedControl(String name, Object control, ObjectName objectName) {
 
       }
 
       @Override
-      public void unRegisterAMQPControl(String amqpResourceName) {
+      public void unregisterUntypedControl(String name, ObjectName objectName) {
 
       }
 
@@ -259,8 +276,58 @@ public class ClusteredResetMockTest extends ServerTestBase {
       }
 
       @Override
+      public List<String> getDivertControlNames() {
+         return List.of();
+      }
+
+      @Override
       public List<BridgeControl> getBridgeControls() {
          return List.of();
+      }
+
+      @Override
+      public List<String> getBridgeControlNames() {
+         return List.of();
+      }
+
+      @Override
+      public int getBridgeControlCount() {
+         return 0;
+      }
+
+      @Override
+      public BrokerConnectionControl getBrokerConnectionControl(String name) {
+         return null;
+      }
+
+      @Override
+      public RemoteBrokerConnectionControl getRemoteBrokerConnectionControl(String name) {
+         return null;
+      }
+
+      @Override
+      public Object getUntypedControl(String name) {
+         return null;
+      }
+
+      @Override
+      public List<Object> getUntypedControls(Class<?> resourceType) {
+         return List.of();
+      }
+
+      @Override
+      public Object getResource(String resourceName) {
+         return null;
+      }
+
+      @Override
+      public Object[] getResources(Class<?> resourceType) {
+         return new Object[0];
+      }
+
+      @Override
+      public ActiveMQServerControl getServerControl() {
+         return null;
       }
 
       @Override
@@ -280,11 +347,6 @@ public class ClusteredResetMockTest extends ServerTestBase {
 
       @Override
       public void registerAddress(AddressInfo addressInfo) throws Exception {
-
-      }
-
-      @Override
-      public void registerAddressMeters(AddressInfo addressInfo, AddressControl addressControl) throws Exception {
 
       }
 
@@ -319,6 +381,11 @@ public class ClusteredResetMockTest extends ServerTestBase {
       }
 
       @Override
+      public List<AcceptorControl> getAcceptorControls() {
+         return List.of();
+      }
+
+      @Override
       public void registerDivert(Divert divert) throws Exception {
 
       }
@@ -337,6 +404,11 @@ public class ClusteredResetMockTest extends ServerTestBase {
       @Override
       public void unregisterBroadcastGroup(String name) throws Exception {
 
+      }
+
+      @Override
+      public List<BaseBroadcastGroupControl> getBroadcastGroupControls() {
+         return List.of();
       }
 
       @Override
@@ -361,6 +433,16 @@ public class ClusteredResetMockTest extends ServerTestBase {
       }
 
       @Override
+      public List<ClusterConnectionControl> getClusterConnectionControls() {
+         return List.of();
+      }
+
+      @Override
+      public List<String> getClusterConnectionControlNames() {
+         return List.of();
+      }
+
+      @Override
       public void registerConnectionRouter(ConnectionRouter router) throws Exception {
 
       }
@@ -371,8 +453,8 @@ public class ClusteredResetMockTest extends ServerTestBase {
       }
 
       @Override
-      public Object getResource(String resourceName) {
-         return null;
+      public List<ConnectionRouterControl> getConnectionRouterControls() {
+         return List.of();
       }
 
       @Override
@@ -391,6 +473,11 @@ public class ClusteredResetMockTest extends ServerTestBase {
       }
 
       @Override
+      public HawtioSecurityControl getHawtioSecurity() {
+         return null;
+      }
+
+      @Override
       public Object getAttribute(String resourceName, String attribute, SecurityAuth auth) {
          return null;
       }
@@ -401,6 +488,11 @@ public class ClusteredResetMockTest extends ServerTestBase {
       }
 
       @Override
+      public int getQueueControlCount() {
+         return 0;
+      }
+
+      @Override
       public List<QueueControl> getQueueControls() {
          return List.of();
       }
@@ -408,6 +500,21 @@ public class ClusteredResetMockTest extends ServerTestBase {
       @Override
       public List<QueueControl> getQueueControls(Predicate<QueueControl> predicate) {
          return List.of();
+      }
+
+      @Override
+      public QueueControl getQueueControl(String name) {
+         return null;
+      }
+
+      @Override
+      public List<String> getQueueControlNames() {
+         return List.of();
+      }
+
+      @Override
+      public int getAddressControlCount() {
+         return 0;
       }
 
       @Override
@@ -428,6 +535,11 @@ public class ClusteredResetMockTest extends ServerTestBase {
       @Override
       public void unregisterBrokerConnection(String name) {
 
+      }
+
+      @Override
+      public List<BrokerConnectionControl> getBrokerConnectionControls() {
+         return List.of();
       }
 
       @Override
@@ -474,6 +586,11 @@ public class ClusteredResetMockTest extends ServerTestBase {
       @Override
       public void unregisterRemoteBrokerConnection(String nodeId, String name) throws Exception {
 
+      }
+
+      @Override
+      public List<RemoteBrokerConnectionControl> getRemoteBrokerConnectionControls() {
+         return List.of();
       }
    }
 }

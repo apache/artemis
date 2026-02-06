@@ -32,8 +32,6 @@ import org.apache.activemq.artemis.api.core.client.ClientProducer;
 import org.apache.activemq.artemis.api.core.client.ClientSession;
 import org.apache.activemq.artemis.api.core.client.FailoverEventListener;
 import org.apache.activemq.artemis.api.core.client.FailoverEventType;
-import org.apache.activemq.artemis.api.core.management.QueueControl;
-import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.core.client.impl.ClientSessionFactoryInternal;
 import org.apache.activemq.artemis.core.client.impl.ServerLocatorInternal;
 import org.apache.activemq.artemis.core.config.Configuration;
@@ -311,7 +309,7 @@ public class BackupSyncJournalTest extends FailoverTestBase {
       final boolean purgeOnNoConsumers = true;
       createProducerSendSomeMessages();
       primaryServer.getServer().locateQueue(ADDRESS).setPurgeOnNoConsumers(purgeOnNoConsumers);
-      assertEquals(n_msgs, ((QueueControl) primaryServer.getServer().getManagementService().getResource(ResourceNames.QUEUE + ADDRESS.toString())).removeAllMessages());
+      assertEquals(n_msgs, primaryServer.getServer().getManagementService().getQueueControl(ADDRESS.toString()).removeAllMessages());
       startBackupCrashPrimary();
       assertNoMoreMessages();
    }

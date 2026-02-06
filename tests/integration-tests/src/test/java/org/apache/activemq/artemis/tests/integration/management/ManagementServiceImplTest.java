@@ -153,14 +153,16 @@ public class ManagementServiceImplTest extends ActiveMQTestBase {
       List<AddressControl> addresses = managementService.getAddressControls();
       assertEquals(1, addresses.size());
       assertInstanceOf(AddressControl.class, addresses.get(0));
-      AddressControl addressControl = (AddressControl) addresses.get(0);
+      AddressControl addressControl = addresses.get(0);
       assertEquals(address.toString(), addressControl.getAddress());
+      assertEquals(1, managementService.getAddressControlCount());
 
       List<QueueControl> queues = managementService.getQueueControls();
       assertEquals(1, queues.size());
       assertInstanceOf(QueueControl.class, queues.get(0));
-      QueueControl queueControl = (QueueControl) queues.get(0);
+      QueueControl queueControl = queues.get(0);
       assertEquals(queue.getName().toString(), queueControl.getName());
+      assertEquals(1, managementService.getQueueControlCount());
    }
 
    @Test

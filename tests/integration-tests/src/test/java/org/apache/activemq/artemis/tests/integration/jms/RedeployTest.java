@@ -16,15 +16,18 @@
  */
 package org.apache.activemq.artemis.tests.integration.jms;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.JMSContext;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+import javax.management.MBeanServer;
+import javax.management.MBeanServerFactory;
 import java.io.File;
 import java.io.InputStream;
 import java.io.Writer;
@@ -41,19 +44,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSContext;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
-import javax.jms.Queue;
-import javax.jms.Session;
-import javax.jms.TextMessage;
-import javax.management.MBeanServer;
-import javax.management.MBeanServerFactory;
-
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
@@ -62,7 +52,6 @@ import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.api.core.client.ActiveMQClient;
 import org.apache.activemq.artemis.api.core.client.ServerLocator;
 import org.apache.activemq.artemis.api.core.management.AcceptorControl;
-import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.config.impl.ConfigurationImpl;
 import org.apache.activemq.artemis.core.postoffice.Binding;
@@ -87,6 +76,15 @@ import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.tests.util.Wait;
 import org.apache.activemq.artemis.utils.ReusableLatch;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class RedeployTest extends ActiveMQTestBase {
 
@@ -1499,7 +1497,7 @@ public class RedeployTest extends ActiveMQTestBase {
          assertEquals("127.0.0.1", acceptor0.getParams().get(TransportConstants.HOST_PROP_NAME));
          assertEquals("61616", acceptor0.getParams().get(TransportConstants.PORT_PROP_NAME));
 
-         final AcceptorControl acceptorControl = (AcceptorControl) managementService.getResource(ResourceNames.ACCEPTOR + "artemis");
+         final AcceptorControl acceptorControl = managementService.getAcceptorControl("artemis");
 
          assertNotNull(acceptorControl);
          assertTrue(acceptorControl.isStarted());
@@ -1523,7 +1521,7 @@ public class RedeployTest extends ActiveMQTestBase {
          latch.await(10, TimeUnit.SECONDS);
 
          // Should not be present in the server any longer
-         final AcceptorControl afterReload = (AcceptorControl) managementService.getResource(ResourceNames.ACCEPTOR + "artemis");
+         final AcceptorControl afterReload = managementService.getAcceptorControl("artemis");
          assertNull(afterReload);
 
          final TransportConfiguration acceptor1 = findInConfiguration("artemis1", embeddedActiveMQ.getActiveMQServer().getConfiguration());
@@ -1533,7 +1531,7 @@ public class RedeployTest extends ActiveMQTestBase {
          assertEquals("127.0.0.2", acceptor1.getParams().get(TransportConstants.HOST_PROP_NAME));
          assertEquals("61617", acceptor1.getParams().get(TransportConstants.PORT_PROP_NAME));
 
-         final AcceptorControl acceptorControl1 = (AcceptorControl) managementService.getResource(ResourceNames.ACCEPTOR + "artemis1");
+         final AcceptorControl acceptorControl1 = managementService.getAcceptorControl("artemis1");
 
          assertNotNull(acceptorControl1);
          assertTrue(acceptorControl1.isStarted());
@@ -1542,7 +1540,7 @@ public class RedeployTest extends ActiveMQTestBase {
          assertEquals("127.0.0.3", acceptor2.getParams().get(TransportConstants.HOST_PROP_NAME));
          assertEquals("61618", acceptor2.getParams().get(TransportConstants.PORT_PROP_NAME));
 
-         final AcceptorControl acceptorControl2 = (AcceptorControl) managementService.getResource(ResourceNames.ACCEPTOR + "artemis2");
+         final AcceptorControl acceptorControl2 = managementService.getAcceptorControl("artemis2");
 
          assertNotNull(acceptorControl2);
          assertFalse(acceptorControl2.isStarted());
@@ -1591,7 +1589,7 @@ public class RedeployTest extends ActiveMQTestBase {
          assertEquals("61616", acceptor.getParams().get(TransportConstants.PORT_PROP_NAME));
          assertNull(acceptor.getParams().get(TransportConstants.AUTO_START));
 
-         final AcceptorControl acceptorControl = (AcceptorControl) managementService.getResource(ResourceNames.ACCEPTOR + "artemis");
+         final AcceptorControl acceptorControl = (AcceptorControl) managementService.getAcceptorControl("artemis");
 
          assertNotNull(acceptorControl);
          assertTrue(acceptorControl.isStarted());
@@ -1621,7 +1619,7 @@ public class RedeployTest extends ActiveMQTestBase {
          assertEquals("61616", acceptorUpdated.getParams().get(TransportConstants.PORT_PROP_NAME));
          assertEquals("false", acceptorUpdated.getParams().get(TransportConstants.AUTO_START));
 
-         final AcceptorControl acceptorControl2 = (AcceptorControl) managementService.getResource(ResourceNames.ACCEPTOR + "artemis");
+         final AcceptorControl acceptorControl2 = managementService.getAcceptorControl("artemis");
 
          assertNotNull(acceptorControl2);
 

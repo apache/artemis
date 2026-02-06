@@ -20,9 +20,9 @@ import java.util.Collection;
 
 public class PredicateFilterPart<T> {
 
-   private final  String value;
+   private final String value;
 
-   private final  String operation;
+   private final String operation;
 
    private final ActiveMQFilterPredicate.Operation filterOperation;
 
