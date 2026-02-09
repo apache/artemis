@@ -60,11 +60,13 @@ import java.util.stream.Collectors;
 
 import org.apache.activemq.artemis.ArtemisConstants;
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
+import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.config.ConfigurationUtils;
+import org.apache.activemq.artemis.core.config.CoreAddressConfiguration;
 import org.apache.activemq.artemis.core.config.HAPolicyConfiguration;
 import org.apache.activemq.artemis.core.config.LockCoordinatorConfiguration;
 import org.apache.activemq.artemis.core.config.ScaleDownConfiguration;
@@ -3065,6 +3067,28 @@ public class ConfigurationImplTest extends AbstractConfigurationTestBase {
       configuration.parsePrefixedProperties(properties, null);
       assertEquals(1, configuration.getAcceptorConfigurations().size());
       assertEquals("", configuration.getAcceptorConfigurations().stream().findFirst().get().getCombinedParams().get("useKQueue"));
+   }
+
+
+   @Test
+   public void testInvalidPropertiesOnQueue() throws Exception {
+      ConfigurationImpl configuration = new ConfigurationImpl();
+      configuration.addQueueConfiguration(QueueConfiguration.of("shouldNotBeHere"));
+
+      // useKQueue here would generate a hashMap Value null, what would break the exportAsProperties.
+      configuration.addAcceptorConfiguration("test", "tcp://0.0.0.0:61616?useKQueue");
+      configuration.addAddressConfiguration(new CoreAddressConfiguration().setName("test").addQueueConfiguration(QueueConfiguration.of("test").setAddress("test").setRingSize(777L).setRoutingType(RoutingType.ANYCAST)).addRoutingType(RoutingType.ANYCAST));
+      File fileOutput = new File(getTestDirfile(), "broker.properties");
+      assertDoesNotThrow(() -> configuration.exportAsProperties(fileOutput));
+      Properties properties = new Properties();
+      try (InputStream inStream = Files.newInputStream(fileOutput.toPath())) {
+         properties.load(inStream);
+      }
+      assertFalse(properties.isEmpty());
+      properties.forEach((a, b) -> {
+         assertFalse(String.valueOf(a).contains("queueConfigurations"));
+         assertFalse(String.valueOf(b).contains("shouldNotBeHere"));
+      });
    }
 
    /**

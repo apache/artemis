@@ -1055,7 +1055,7 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
       // we cannot import a map<string,set<string>> property and this feature is only applied by the xml parser
       "securityRoleNameMappings",
       // another xml ism using a deprecated config object
-      "queueConfigs",
+      "queueConfigurations",
       "encodeSize",
       // duplicates
       "federationPolicyMap",       // core federation
