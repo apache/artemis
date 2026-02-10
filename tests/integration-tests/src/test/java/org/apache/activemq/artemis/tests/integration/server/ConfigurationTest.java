@@ -45,6 +45,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ConfigurationTest extends ActiveMQTestBase {
@@ -195,20 +196,21 @@ public class ConfigurationTest extends ActiveMQTestBase {
          properties.store(outStream, null);
       }
       assertTrue(propsFile.exists());
-      properties.clear();
 
       FileConfiguration fc = new FileConfiguration();
       ActiveMQJAASSecurityManager sm = new ActiveMQJAASSecurityManager(InVMLoginModule.class.getName(), new SecurityConfiguration());
       ActiveMQServer server = addServer(new ActiveMQServerImpl(fc, sm));
       server.setProperties(propsFile.getAbsolutePath());    // no xml config
       try {
-
          server.start();
 
          assertEquals(1, server.getConfiguration().getConnectionRouters().size());
          assertEquals("LF", server.getConfiguration().getConnectionRouters().get(0).getLocalTargetFilter());
          assertEquals(1, server.getActiveMQServerControl().getAcceptors().length);
-         // verify update
+         assertEquals(100, server.getConfiguration().getConfigurationFileRefreshPeriod());
+
+         // verify update and remove of tcp acceptor
+         properties.clear();
          properties.put("configurationFileRefreshPeriod", "100");
          properties.put("persistenceEnabled", "false");
          properties.put("connectionRouters.joe.localTargetFilter", "UPDATED");
@@ -222,6 +224,8 @@ public class ConfigurationTest extends ActiveMQTestBase {
             return "UPDATED".equals(server.getConfiguration().getConnectionRouters().get(0).getLocalTargetFilter());
          });
 
+         // no change
+         assertEquals(100, server.getConfiguration().getConfigurationFileRefreshPeriod());
          // verify remove
          assertEquals(0, server.getActiveMQServerControl().getAcceptors().length);
 
@@ -371,6 +375,35 @@ public class ConfigurationTest extends ActiveMQTestBase {
          } catch (Exception e) {
          }
       }
+   }
+
+   @Test
+   public void testPropertiesAndProgrammaticReloadableConfigArg() throws Exception {
+
+      File propsFile = new File(getTestDirfile(), "somemore.props");
+      propsFile.createNewFile();
+
+
+      Properties properties = new ConfigurationImpl.InsertionOrderedProperties();
+      properties.put("configurationFileRefreshPeriod", "100");
+      properties.put("persistenceEnabled", "false");
+      properties.put("acceptorConfigurations.reloadable.factoryClassName", NETTY_ACCEPTOR_FACTORY);
+      properties.put("acceptorConfigurations.reloadable.params.HOST", "LOCALHOST");
+      properties.put("acceptorConfigurations.reloadable.params.PORT", "61616");
+
+      try (FileOutputStream outStream = new FileOutputStream(propsFile)) {
+         properties.store(outStream, null);
+      }
+      assertTrue(propsFile.exists());
+
+      ConfigurationImpl programmatic = new ConfigurationImpl();
+      programmatic.addAcceptorConfiguration("tcp", "tcp://localhost:62618");
+      ActiveMQJAASSecurityManager sm = new ActiveMQJAASSecurityManager(InVMLoginModule.class.getName(), new SecurityConfiguration());
+      ActiveMQServer server = addServer(new ActiveMQServerImpl(programmatic, sm));
+
+      assertThrows(IllegalStateException.class, () -> {
+         server.setProperties(propsFile.getAbsolutePath());
+      });
    }
 
    protected ActiveMQServer getActiveMQServer(String brokerConfig) throws Exception {

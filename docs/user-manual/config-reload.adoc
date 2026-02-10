@@ -544,4 +544,7 @@ Adding, updating and removing an `<acceptor>` is supported, updating or removing
 === `<queues>` _(Deprecated)_
 
 == Broker Properties
-The location of xref:configuration-index.adoc#broker-properties[brokerProperties] files will be tracked for reload. Any property values that relfect reloadable parameters will take effect after the `configuration-file-refresh-period`.
+The location of xref:configuration-index.adoc#broker-properties[brokerProperties] files will be tracked for reload. Any property values that reflect reloadable parameters will take effect after the `configuration-file-refresh-period`.
+
+[NOTE]
+If programmatic configuration is in play, any configuration object passed to the broker must not contain reloadable config *and* have a broker properties source. The broker does not have any config reload callbacks at this time to protect the programmatic configuration. An IllegalStateException will be thrown if this arises.
