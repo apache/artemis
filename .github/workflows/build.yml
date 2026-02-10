@@ -116,7 +116,7 @@ jobs:
         if: matrix.java != '25'
         run: |
           cd artemis
-          mvn -s .github/maven-settings.xml -DskipTests -Derrorprone -Pdev -Pjmh -Popenwire-tests -DskipActiveMQ5Tests -Pcompatibility-tests -DskipCompatibilityTests -Dshade-plugin-create-sources=true install
+          mvn -s .github/maven-settings.xml -DskipTests -Pdev -Pjmh -Popenwire-tests -DskipActiveMQ5Tests -Pcompatibility-tests -DskipCompatibilityTests -Dshade-plugin-create-sources=true install
 
       - name: Set Examples Version to Artemis Version
         run: |

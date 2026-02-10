@@ -28,6 +28,7 @@ https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&versio
 * https://issues.apache.org/jira/browse/ARTEMIS-5941[ARTEMIS-5941] - Route wildcard subscriptions direct to demand bindings for improved performance
 * https://issues.apache.org/jira/browse/ARTEMIS-5951[ARTEMIS-5951] - CTRL-C is now properly handled on 'artemis shell'
 * https://issues.apache.org/jira/browse/ARTEMIS-5607[ARTEMIS-5607] - It is now possible to disable JMX notifications
+* For developers, due to https://issues.apache.org/jira/browse/ARTEMIS-5896[ARTEMIS-5896] ErrorProne will only run when building with Java 25+.
 
 == Version 2.52.0
 
