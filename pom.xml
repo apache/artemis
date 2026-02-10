@@ -113,7 +113,7 @@
       <jetty.version>12.1.6</jetty.version>
       <jetty-servlet-api.version>5.0.2</jetty-servlet-api.version>
       <jgroups.version>5.3.13.Final</jgroups.version>
-      <errorprone.version>2.42.0</errorprone.version>
+      <errorprone.version>2.47.0</errorprone.version>
       <maven.bundle.plugin.version>6.0.0</maven.bundle.plugin.version>
       <jib.maven.plugin.version>3.5.1</jib.maven.plugin.version>
       <versions.maven.plugin.version>2.16.1</versions.maven.plugin.version>
@@ -329,6 +329,7 @@
             <property>
                <name>errorprone</name>
             </property>
+            <jdk>[25,)</jdk>
          </activation>
          <build>
             <plugins>
