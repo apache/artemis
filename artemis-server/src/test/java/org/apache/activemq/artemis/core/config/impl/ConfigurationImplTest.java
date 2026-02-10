@@ -16,6 +16,7 @@
  */
 package org.apache.activemq.artemis.core.config.impl;
 
+
 import static org.apache.activemq.artemis.core.config.impl.ConfigurationImpl.REDACTED;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -60,11 +61,13 @@ import java.util.stream.Collectors;
 
 import org.apache.activemq.artemis.ArtemisConstants;
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
+import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.config.ConfigurationUtils;
+import org.apache.activemq.artemis.core.config.CoreAddressConfiguration;
 import org.apache.activemq.artemis.core.config.HAPolicyConfiguration;
 import org.apache.activemq.artemis.core.config.LockCoordinatorConfiguration;
 import org.apache.activemq.artemis.core.config.ScaleDownConfiguration;
@@ -3065,6 +3068,47 @@ public class ConfigurationImplTest extends AbstractConfigurationTestBase {
       configuration.parsePrefixedProperties(properties, null);
       assertEquals(1, configuration.getAcceptorConfigurations().size());
       assertEquals("", configuration.getAcceptorConfigurations().stream().findFirst().get().getCombinedParams().get("useKQueue"));
+   }
+
+   @Test
+   public void testDeprecatedConfigsAreNotExportedAsProperties() throws Exception {
+      ConfigurationImpl configuration = new ConfigurationImpl();
+      configuration.addQueueConfiguration(QueueConfiguration.of("shouldNotBeHere"));
+
+      configuration.addAddressConfiguration(new CoreAddressConfiguration().setName("test").addQueueConfiguration(QueueConfiguration.of("test").setAddress("test").setRoutingType(RoutingType.ANYCAST)).addRoutingType(RoutingType.ANYCAST));
+
+      CoreAddressConfiguration carAddress = new CoreAddressConfiguration();
+      carAddress.setName("CarOrders");
+      carAddress.addRoutingType(RoutingType.MULTICAST);
+
+      carAddress.addQueueConfiguration(QueueConfiguration.of("tires").setRoutingType(RoutingType.MULTICAST));
+      carAddress.addQueueConfiguration(QueueConfiguration.of("batteries").setRoutingType(RoutingType.MULTICAST));
+      configuration.addAddressConfiguration(carAddress);
+
+      File fileOutput = new File(getTestDirfile(), "broker.properties");
+      assertDoesNotThrow(() -> configuration.exportAsProperties(fileOutput));
+      Properties properties = new Properties();
+      try (InputStream inStream = Files.newInputStream(fileOutput.toPath())) {
+         properties.load(inStream);
+      }
+
+      AtomicBoolean foundTires = new AtomicBoolean(false);
+      AtomicBoolean foundBatteries = new AtomicBoolean(false);
+      assertFalse(properties.isEmpty());
+      properties.forEach((a, b) -> {
+         assertFalse(String.valueOf(a).contains("queueConfigurations"));
+         assertFalse(String.valueOf(b).contains("shouldNotBeHere"));
+         if (String.valueOf(b).equals("batteries")) {
+            foundBatteries.set(true);
+         }
+         if (String.valueOf(b).equals("tires")) {
+            foundTires.set(true);
+         }
+      });
+      assertTrue(foundBatteries.get());
+      assertTrue(foundTires.get());
+      assertTrue(properties.containsKey("addressConfigurations.test.name"));
+      assertTrue(properties.containsKey("addressConfigurations.test.queueConfigs.test.name"));
    }
 
    /**

@@ -1049,12 +1049,13 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
       }
    }
 
-   final Set<String> ignored = Set.of(
+   static final Set<String> defaultIgnoredForExportProperties = Set.of(
       // we report errors through the status, it should not typically be set
       "status",
       // we cannot import a map<string,set<string>> property and this feature is only applied by the xml parser
       "securityRoleNameMappings",
-      // another xml ism using a deprecated config object
+      // using a deprecated config object
+      "queueConfigurations",
       "queueConfigs",
       "encodeSize",
       // duplicates
@@ -1072,6 +1073,19 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
       // and connectionElements need to be split
       "connectionElements"
    );
+
+   static Map<Class, Set<String>> ignoredByType = Map.of(
+      CoreAddressConfiguration.class, Set.of("queueConfigurations")
+   );
+
+   static boolean isIgnored(Class clazz, PropertyDescriptor descriptor) {
+      Set<String> ignoredByTypeSet = ignoredByType.get(clazz);
+      if (ignoredByTypeSet != null) {
+         return ignoredByTypeSet.contains(descriptor.getName());
+      }
+      return defaultIgnoredForExportProperties.contains(descriptor.getName());
+   }
+
    private void export(BeanUtilsBean beanUtils, Stack<String> nested, BufferedWriter bufferedWriter, Object value) {
 
       if (value instanceof Collection collection) {
@@ -1141,7 +1155,7 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
          // recursive export via accessors
          Arrays.stream(beanUtils.getPropertyUtils().getPropertyDescriptors(value)).filter(propertyDescriptor -> {
 
-            if (ignored.contains(propertyDescriptor.getName())) {
+            if (isIgnored(value.getClass(), propertyDescriptor)) {
                return false;
             }
             final Method descriptorReadMethod = propertyDescriptor.getReadMethod();

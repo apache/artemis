@@ -185,6 +185,10 @@ public class FileConfigurationTest extends AbstractConfigurationTestBase {
    }
 
    private void validateFullConfig(Configuration configInstance) {
+      validateFullConfig(configInstance, false);
+   }
+
+   private void validateFullConfig(Configuration configInstance, boolean fromProperties) {
       // Check they match the values from the test file
       assertEquals("SomeNameForUseOnTheApplicationServer", configInstance.getName());
       assertFalse(configInstance.isPersistenceEnabled());
@@ -610,20 +614,22 @@ public class FileConfigurationTest extends AbstractConfigurationTestBase {
       assertEquals(104, configInstance.getResourceLimitSettings().get("myUser").getMaxSessions());
       assertEquals(13, configInstance.getResourceLimitSettings().get("myUser").getMaxQueues());
 
-      assertEquals(2, configInstance.getQueueConfigs().size());
+      if (!fromProperties) {
+         // we don't export deprecated entries
+         assertEquals(2, configInstance.getQueueConfigs().size());
 
-      assertEquals("queue1", configInstance.getQueueConfigs().get(0).getName().toString());
-      assertEquals("address1", configInstance.getQueueConfigs().get(0).getAddress().toString());
-      assertEquals("color='red'", configInstance.getQueueConfigs().get(0).getFilterString().toString());
-      assertNotNull(configInstance.getQueueConfigs().get(0).isDurable());
-      assertFalse(configInstance.getQueueConfigs().get(0).isDurable());
+         assertEquals("queue1", configInstance.getQueueConfigs().get(0).getName().toString());
+         assertEquals("address1", configInstance.getQueueConfigs().get(0).getAddress().toString());
+         assertEquals("color='red'", configInstance.getQueueConfigs().get(0).getFilterString().toString());
+         assertNotNull(configInstance.getQueueConfigs().get(0).isDurable());
+         assertFalse(configInstance.getQueueConfigs().get(0).isDurable());
 
-      assertEquals("queue2", configInstance.getQueueConfigs().get(1).getName().toString());
-      assertEquals("address2", configInstance.getQueueConfigs().get(1).getAddress().toString());
-      assertEquals("color='blue'", configInstance.getQueueConfigs().get(1).getFilterString().toString());
-      assertNotNull(configInstance.getQueueConfigs().get(1).isDurable());
-      assertFalse(configInstance.getQueueConfigs().get(1).isDurable());
-
+         assertEquals("queue2", configInstance.getQueueConfigs().get(1).getName().toString());
+         assertEquals("address2", configInstance.getQueueConfigs().get(1).getAddress().toString());
+         assertEquals("color='blue'", configInstance.getQueueConfigs().get(1).getFilterString().toString());
+         assertNotNull(configInstance.getQueueConfigs().get(1).isDurable());
+         assertFalse(configInstance.getQueueConfigs().get(1).isDurable());
+      }
       verifyAddresses();
 
       Map<String, Set<Role>> roles = configInstance.getSecurityRoles();
@@ -1048,7 +1054,7 @@ public class FileConfigurationTest extends AbstractConfigurationTestBase {
 
       assertTrue(REDACTED.equals(configuration.getClusterPassword()));
       configuration.setClusterPassword("Wombat");
-      validateFullConfig(configuration);
+      validateFullConfig(configuration, true);
    }
 
    private Configuration createConfiguration(String filename) throws Exception {
