@@ -45,6 +45,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ConfigurationTest extends ActiveMQTestBase {
@@ -365,6 +366,55 @@ public class ConfigurationTest extends ActiveMQTestBase {
          Wait.assertTrue(() -> {
             return "UPDATED".equals(server.getConfiguration().getConnectionRouters().get(0).getLocalTargetFilter());
          });
+      } finally {
+         try {
+            server.stop();
+         } catch (Exception e) {
+         }
+      }
+   }
+
+   @Test
+   public void testPropertiesAndProgrammaticReloadableConfigArg() throws Exception {
+
+      File propsFile = new File(getTestDirfile(), "somemore.props");
+      propsFile.createNewFile();
+
+
+      Properties properties = new ConfigurationImpl.InsertionOrderedProperties();
+      properties.put("configurationFileRefreshPeriod", "100");
+      properties.put("persistenceEnabled", "false");
+      properties.put("acceptorConfigurations.reloadable.factoryClassName", NETTY_ACCEPTOR_FACTORY);
+      properties.put("acceptorConfigurations.reloadable.params.HOST", "LOCALHOST");
+      properties.put("acceptorConfigurations.reloadable.params.PORT", "61616");
+
+      try (FileOutputStream outStream = new FileOutputStream(propsFile)) {
+         properties.store(outStream, null);
+      }
+      assertTrue(propsFile.exists());
+
+      ConfigurationImpl programmatic = new ConfigurationImpl();
+      programmatic.addAcceptorConfiguration("tcp", "tcp://localhost:62618");
+      ActiveMQJAASSecurityManager sm = new ActiveMQJAASSecurityManager(InVMLoginModule.class.getName(), new SecurityConfiguration());
+      ActiveMQServer server = addServer(new ActiveMQServerImpl(programmatic, sm));
+
+      assertThrows(IllegalArgumentException.class, () -> {
+         server.setProperties(propsFile.getAbsolutePath());
+      });
+      try {
+
+         server.start();
+
+         assertEquals(2, server.getActiveMQServerControl().getAcceptors().length);
+
+         // no change, just a touch
+         try (FileOutputStream outStream = new FileOutputStream(propsFile)) {
+            properties.store(outStream, null);
+         }
+
+         // reloaded properties are the source of truth
+         Wait.assertEquals(1, ()-> server.getActiveMQServerControl().getAcceptors().length);
+
       } finally {
          try {
             server.stop();

@@ -230,6 +230,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static java.util.stream.Collectors.groupingBy;
+import static org.apache.activemq.artemis.core.config.ConfigurationUtils.throwIfReloadableConfigProvidedWithoutFileAndBrokerPropertiesUrlNonNullAndReload;
 import static org.apache.activemq.artemis.utils.collections.IterableStream.iterableOf;
 
 /**
@@ -681,6 +682,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    @Override
    public void setProperties(String fileUrltoBrokerProperties) {
       propertiesFileUrl = fileUrltoBrokerProperties;
+      throwIfReloadableConfigProvidedWithoutFileAndBrokerPropertiesUrlNonNullAndReload(configuration, propertiesFileUrl);
    }
 
    @Override
