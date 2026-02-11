@@ -73,7 +73,7 @@ This will copy all the files necessary to build any of the pre-configured Docker
 Follow these instructions to finish building the image you want based on one of the provided Docker files or even one of your own.
 
 === Using an Official Apache Release
-If you would rather use an official Apache release in your image rather than a local release then run the following command from the `artemis-docker` directory where `<version>` is the release version you wish to use (e.g. `2.30.0`):
+To use an official Apache Artemis release in your image, rather than a local build, then run the following command from the `artemis-docker` directory where `<version>` is the release version you wish to use (e.g. `2.51.0`):
 
 [,console]
 ----
