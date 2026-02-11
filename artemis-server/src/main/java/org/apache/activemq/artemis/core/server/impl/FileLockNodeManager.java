@@ -20,6 +20,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.nio.channels.Channel;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.util.Date;
@@ -233,7 +235,7 @@ public class FileLockNodeManager extends FileBasedNodeManager {
       ActiveMQServerLogger.LOGGER.waitingToBecomeBackup();
       try {
          backupLock = lock(FileLockNodeManager.BACKUP_LOCK_POS);
-      } catch (ActiveMQLockAcquisitionTimeoutException e) {
+      } catch (ClosedChannelException | ActiveMQLockAcquisitionTimeoutException e) {
          throw new NodeManagerException(e);
       }
       ActiveMQServerLogger.LOGGER.gotBackupLock();
@@ -267,7 +269,7 @@ public class FileLockNodeManager extends FileBasedNodeManager {
                }
             }
          };
-      } catch (ActiveMQLockAcquisitionTimeoutException e) {
+      } catch (ClosedChannelException | ActiveMQLockAcquisitionTimeoutException e) {
          throw new NodeManagerException(e);
       }
    }
@@ -328,7 +330,7 @@ public class FileLockNodeManager extends FileBasedNodeManager {
       bb.put(status);
       bb.position(0);
       try {
-         if (!channel.isOpen()) {
+         if (channel == null || !channel.isOpen()) {
             setUpServerLockFile();
          }
          FileLock lock = null;
@@ -412,7 +414,7 @@ public class FileLockNodeManager extends FileBasedNodeManager {
       }
    }
 
-   protected FileLock lock(final int lockPosition) throws ActiveMQLockAcquisitionTimeoutException {
+   protected FileLock lock(final int lockPosition) throws ClosedChannelException, ActiveMQLockAcquisitionTimeoutException {
       long start = System.nanoTime();
       boolean isRecurringFailure = false;
 
@@ -437,6 +439,9 @@ public class FileLockNodeManager extends FileBasedNodeManager {
             } else {
                return lock;
             }
+         } catch (ClosedChannelException e) {
+            // This is an unrecoverable error as there's no guarantee the channel will ever be opened again.
+            throw e;
          } catch (IOException e) {
             // IOException during trylock() may be a temporary issue, e.g. NFS volume not being accessible
 
@@ -574,5 +579,9 @@ public class FileLockNodeManager extends FileBasedNodeManager {
 
          return modified;
       }
+   }
+
+   protected Channel getChannel() {
+      return channel;
    }
 }
