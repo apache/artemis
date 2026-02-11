@@ -7,13 +7,13 @@ One of the simplest ways to get started is by using one of our Docker images.
 
 == Official Images
 
-Official https://www.docker.com/[Docker] images are https://hub.docker.com/r/apache/activemq-artemis/tags[available on dockerhub].
+Official https://www.docker.com/[Docker] images are https://hub.docker.com/r/apache/artemis/tags[available on dockerhub].
 Images are pushed along with all the other distribution artifacts for every release.
 The fastest, simplest way to get started is with this command which will create and start a detached container named `mycontainer`, expose the main messaging port (i.e. `61616`) and HTTP port (i.e. `8161`), and remove it when it terminates:
 
 [,console]
 ----
-$ docker run --detach --name mycontainer -p 61616:61616 -p 8161:8161 --rm apache/activemq-artemis:latest-alpine
+$ docker run --detach --name mycontainer -p 61616:61616 -p 8161:8161 --rm apache/artemis:latest-alpine
 ----
 
 Once the broker starts you can open the xref:management-console.adoc[web management console] at http://localhost:8161 and log in with the default username & password `artemis`.
@@ -115,7 +115,7 @@ Note: `LOGIN_OPTION` is either `--allow-anonymous` or `--require-login` dependin
 These variables can be set in the relevant Dockerfile or, for example, on the command-line, e.g.:
 [,console]
 ----
-$ docker run -e ARTEMIS_USER=myUser -e ARTEMIS_PASSWORD=myPass --name mycontainer -it -p 61616:61616 -p 8161:8161 apache/activemq-artemis:latest-alpine
+$ docker run -e ARTEMIS_USER=myUser -e ARTEMIS_PASSWORD=myPass --name mycontainer -it -p 61616:61616 -p 8161:8161 apache/artemis:latest-alpine
 ----
 
 ==== Mapping point
@@ -124,7 +124,7 @@ The image will use the directory `/var/lib/artemis-instance` to hold the configu
 You can map this to a folder on the host for when you want the configuration and data persisted *outside* of a container, e.g.:
 [,console]
 ----
-docker run -it -p 61616:61616 -p 8161:8161 -v <broker folder on host>:/var/lib/artemis-instance apache/activemq-artemis:latest-alpine
+docker run -it -p 61616:61616 -p 8161:8161 -v <broker folder on host>:/var/lib/artemis-instance apache/artemis:latest-alpine
 ----
 In this case the value `<broker folder on host>` is a directory where the broker instance is supposed to
 be saved and reused on each run.
