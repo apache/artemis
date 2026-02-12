@@ -44,20 +44,33 @@ final class CopyOnWriteBindings {
       int getIndex();
 
       /**
+       * Cannot return a negative value and returns {@code 0} if uninitialized.
+       */
+      int getRedistributorIndex();
+
+      /**
        * Cannot set a negative value.
        */
       void setIndex(int v);
+
+      /**
+       * Cannot set a negative value.
+       */
+      void setRedistributorIndex(int v);
    }
 
    private static final class BindingsAndPosition extends AtomicReference<Binding[]> implements BindingIndex {
 
       private static final AtomicIntegerFieldUpdater<BindingsAndPosition> NEXT_POSITION_UPDATER = AtomicIntegerFieldUpdater.newUpdater(BindingsAndPosition.class, "nextPosition");
+      private static final AtomicIntegerFieldUpdater<BindingsAndPosition> NEXT_REDISTRIBUTION_POSITION_UPDATER = AtomicIntegerFieldUpdater.newUpdater(BindingsAndPosition.class, "nextRedistributionPosition");
 
       public volatile int nextPosition;
+      public volatile int nextRedistributionPosition;
 
       BindingsAndPosition(Binding[] bindings) {
          super(bindings);
          NEXT_POSITION_UPDATER.lazySet(this, 0);
+         NEXT_REDISTRIBUTION_POSITION_UPDATER.lazySet(this, 0);
       }
 
       @Override
@@ -66,11 +79,24 @@ final class CopyOnWriteBindings {
       }
 
       @Override
+      public int getRedistributorIndex() {
+         return nextRedistributionPosition;
+      }
+
+      @Override
       public void setIndex(int v) {
          if (v < 0) {
             throw new IllegalArgumentException("cannot set a negative position");
          }
          NEXT_POSITION_UPDATER.lazySet(this, v);
+      }
+
+      @Override
+      public void setRedistributorIndex(int v) {
+         if (v < 0) {
+            throw new IllegalArgumentException("cannot set a negative position");
+         }
+         NEXT_REDISTRIBUTION_POSITION_UPDATER.lazySet(this, v);
       }
    }
 
