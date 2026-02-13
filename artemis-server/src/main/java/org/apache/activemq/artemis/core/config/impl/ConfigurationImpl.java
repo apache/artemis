@@ -1040,6 +1040,15 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
       jaasConfigs.put(config.getName(), config);
    }
 
+   @Override
+   public Configuration setJaasConfigs(Map<String, JaasAppConfiguration> configs) {
+      jaasConfigs.putAll(configs);
+      // prune removed entries after update to retain existing entries, this is live config referenced by jaas
+      // see org.apache.activemq.artemis.core.config.impl.ConfigurationImpl.getAppConfigurationEntry
+      jaasConfigs.keySet().retainAll(configs.keySet());
+      return this;
+   }
+
    private void writeProperties(FileWriter writer) throws Exception {
       final BeanUtilsBean beanUtilsBean = new BeanUtilsBean();
       beanUtilsBean.getPropertyUtils().addBeanIntrospector(new FluentPropertyBeanIntrospectorWithIgnores());

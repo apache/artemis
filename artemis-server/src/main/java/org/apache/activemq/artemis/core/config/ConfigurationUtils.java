@@ -149,6 +149,25 @@ public final class ConfigurationUtils {
       compareTTLWithCheckPeriod(configuration);
    }
 
+   public static void throwIfReloadableConfigProvidedWithoutFileAndBrokerPropertiesUrlNonNullAndReload(Configuration configuration, String propertiesFileUrl) {
+      if (configuration.getConfigurationUrl() == null && configuration.getConfigurationFileRefreshPeriod() > 0 && configuration.resolvePropertiesSources(propertiesFileUrl) != null) {
+         // if any non xml (programmatic) provided config is reloadable, on the first properties source reload it will whack that config as the reload has the source of truth for reloadable attributes
+         if (!configuration.getSecurityRoles().isEmpty() ||
+               !configuration.getAddressSettings().isEmpty() ||
+               !configuration.getDivertConfigurations().isEmpty() ||
+               !configuration.getAddressConfigurations().isEmpty() ||
+               !configuration.getQueueConfigs().isEmpty() ||
+               !configuration.getBridgeConfigurations().isEmpty() ||
+               !configuration.getConnectorConfigurations().isEmpty() ||
+               !configuration.getAcceptorConfigurations().isEmpty() ||
+               !configuration.getAMQPConnection().isEmpty() ||
+               !configuration.getConnectionRouters().isEmpty()) {
+
+            throw new IllegalArgumentException(String.format("a properties source (%s) is illegal, programmatic config contains reloadable elements and configurationFileRefreshPeriod > 0; your programmatic config will be replaced on reload of the properties source", propertiesFileUrl));
+         }
+      }
+   }
+
    public static List<TransportConfiguration> parseAcceptorURI(String name, String uri) {
       try {
          // remove all whitespace

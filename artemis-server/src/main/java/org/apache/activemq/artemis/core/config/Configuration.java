@@ -1545,4 +1545,5 @@ public interface Configuration {
    }
 
    Map<String, JaasAppConfiguration> getJaasConfigs();
+   Configuration setJaasConfigs(Map<String, JaasAppConfiguration> configs);
 }

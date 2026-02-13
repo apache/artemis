@@ -427,6 +427,7 @@ public class ElasticQueueTest extends ActiveMQTestBase {
          .setAutoDeleteQueues(false).setAutoDeleteAddresses(false); // so slow consumer can kick in!
 
       Configuration baseConfig = new ConfigurationImpl();
+      baseConfig.setConfigurationFileRefreshPeriod(-1);  // the classpath has broker.properties we don't want to reload
       baseConfig.getAddressSettings().put(qName, blockingQueue);
 
       ConnectionRouterConfiguration connectionRouterConfiguration = new ConnectionRouterConfiguration();
