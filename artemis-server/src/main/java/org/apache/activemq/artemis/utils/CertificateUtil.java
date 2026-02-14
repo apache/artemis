@@ -40,13 +40,15 @@ public class CertificateUtil {
 
    private static final String SSL_HANDLER_NAME = "ssl";
 
+   public static final String CERT_SUBJECT_DN_UNAVAILABLE = "unavailable";
+
    public static String getCertSubjectDN(RemotingConnection connection) {
-      String certSubjectDN = "unavailable";
       X509Certificate[] certs = getCertsFromConnection(connection);
       if (certs != null && certs.length > 0 && certs[0] != null) {
-         certSubjectDN = certs[0].getSubjectDN().getName();
+         return certs[0].getSubjectDN().getName();
+      } else {
+         return CERT_SUBJECT_DN_UNAVAILABLE;
       }
-      return certSubjectDN;
    }
 
    public static X509Certificate[] getCertsFromConnection(RemotingConnection remotingConnection) {

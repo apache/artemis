@@ -28,6 +28,7 @@ import org.apache.activemq.artemis.core.security.CheckType;
 import org.apache.activemq.artemis.core.security.Role;
 import org.apache.activemq.artemis.core.security.SecurityAuth;
 import org.apache.activemq.artemis.core.settings.impl.HierarchicalObjectRepository;
+import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
 import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
 import org.apache.activemq.artemis.spi.core.security.ActiveMQSecurityManager5;
 import org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal;
@@ -39,6 +40,7 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -215,5 +217,15 @@ public class SecurityStoreImplTest {
       assertEquals(0, securityStore.getAuthenticationSuccessCount());
       assertEquals(1, securityStore.getAuthenticationFailureCount());
       assertEquals(0, securityStore.getAuthenticationCacheSize());
+   }
+
+   @Test
+   public void testCacheAlgorithm() throws Exception {
+      final String user = RandomUtil.randomUUIDString();
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), securityManager, 999, true, "", null, null, 0, 0);
+      try (AssertionLoggerHandler handler = new AssertionLoggerHandler()) {
+         securityStore.createAuthenticationCacheKey(user, RandomUtil.randomUUIDString(), null);
+         assertFalse(handler.findText("AMQ224159"));
+      }
    }
 }

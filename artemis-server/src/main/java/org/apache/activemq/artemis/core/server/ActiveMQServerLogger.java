@@ -1529,4 +1529,7 @@ public interface ActiveMQServerLogger {
 
    @LogMessage(id = 224158, value = "The operation {} on queue {} cannot read more data from paging into memory and will be interrupted.", level = LogMessage.Level.INFO)
    void preventQueueManagementToFloodMemory(String operation, String queue);
+
+   @LogMessage(id = 224159, value = "Failed to clone SHA256 MessageDigest, falling back to getInstance", level = LogMessage.Level.INFO)
+   void sha256CloneNotSupported(CloneNotSupportedException cns);
 }

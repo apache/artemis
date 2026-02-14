@@ -63,12 +63,16 @@ import org.apache.activemq.artemis.utils.sm.SecurityManagerShim;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.apache.activemq.artemis.utils.CertificateUtil.CERT_SUBJECT_DN_UNAVAILABLE;
+
 /**
  * The Apache Artemis SecurityStore implementation
  */
 public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryChangeListener {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+   private static final byte[] CACHE_KEY_SEPARATOR = new byte[]{0};
 
    private final HierarchicalRepository<Set<Role>> securityRepository;
 
@@ -95,6 +99,8 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
    private static final AtomicLongFieldUpdater<SecurityStoreImpl> AUTHORIZATION_FAILURE_COUNT_UPDATER = AtomicLongFieldUpdater.newUpdater(SecurityStoreImpl.class, "authorizationFailureCount");
    private volatile long authorizationFailureCount;
 
+   private static final MessageDigest SHA256 = getDigestInstance();
+   private static volatile boolean messageDigestCnsLogged = false;
 
    /**
     * @param notificationService can be {@code null}
@@ -568,10 +574,41 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
       return granted;
    }
 
-   private String createAuthenticationCacheKey(String username, String password, RemotingConnection connection) {
+   protected String createAuthenticationCacheKey(String username, String password, RemotingConnection connection) {
+      MessageDigest md = getDigestClone();
+      if (username != null) {
+         md.update(username.getBytes(StandardCharsets.UTF_8));
+      }
+      md.update(CACHE_KEY_SEPARATOR);
+      if (password != null) {
+         md.update(password.getBytes(StandardCharsets.UTF_8));
+      }
+      md.update(CACHE_KEY_SEPARATOR);
+      String certSubjectDN = CertificateUtil.getCertSubjectDN(connection);
+      if (!CERT_SUBJECT_DN_UNAVAILABLE.equals(certSubjectDN)) {
+         md.update(certSubjectDN.getBytes(StandardCharsets.UTF_8));
+      }
+      return ByteUtil.bytesToHex(md.digest());
+   }
+
+   private static MessageDigest getDigestClone() {
       try {
-         return ByteUtil.bytesToHex(MessageDigest.getInstance("SHA-256").digest((username + password + CertificateUtil.getCertSubjectDN(connection)).getBytes(StandardCharsets.UTF_8)));
+         return (MessageDigest) SHA256.clone();
+      } catch (CloneNotSupportedException cns) {
+         // This should never happen, but just in case log it and fail safely.
+         if (!messageDigestCnsLogged) {
+            ActiveMQServerLogger.LOGGER.sha256CloneNotSupported(cns);
+            messageDigestCnsLogged = true;
+         }
+         return getDigestInstance();
+      }
+   }
+
+   private static MessageDigest getDigestInstance() {
+      try {
+         return MessageDigest.getInstance("SHA-256");
       } catch (NoSuchAlgorithmException e) {
+         // This should never happen. The JavaDoc for MessageDigest states that SHA-256 is always available.
          throw new RuntimeException(e);
       }
    }
