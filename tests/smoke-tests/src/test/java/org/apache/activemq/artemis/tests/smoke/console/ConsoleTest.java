@@ -84,7 +84,7 @@ public abstract class ConsoleTest extends SmokeTestBase {
       {
          String httpHost = System.getProperty("sts-http-host", "localhost");
          HelperCreate cliCreateServer = helperCreate();
-         cliCreateServer.setRole("amq,connections,sessions,consumers,producers,addresses,queues,deleteAddresses")
+         cliCreateServer.setRole("amq,connections,sessions,consumers,producers,addresses,queues,deleteAddresses,testers")
             .setUser(SERVER_ADMIN_USERNAME).setPassword(SERVER_ADMIN_PASSWORD)
             .setAllowAnonymous(false).setNoWeb(false).setArtemisInstance(consoleServerLocation)
             .setConfiguration("./src/main/resources/servers/" + SERVER_NAME_CONSOLE)
@@ -98,7 +98,7 @@ public abstract class ConsoleTest extends SmokeTestBase {
       {
          String httpHost = System.getProperty("sts-http-host", "localhost");
          HelperCreate cliCreateServer = helperCreate();
-         cliCreateServer.setRole("amq,connections,sessions,consumers,producers,addresses,queues,deleteAddresses")
+         cliCreateServer.setRole("amq,connections,sessions,consumers,producers,addresses,queues,deleteAddresses,testers")
             .setUser(SERVER_ADMIN_USERNAME).setPassword(SERVER_ADMIN_PASSWORD)
             .setAllowAnonymous(false).setNoWeb(false).setArtemisInstance(consoleBrokerSecurityServerLocation)
             .setConfiguration("./src/main/resources/servers/" + SERVER_NAME_CONSOLE_BROKER_SECURITY)

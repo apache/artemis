@@ -50,6 +50,11 @@ public class AddressesTest extends ArtemisTest {
       testDefaultAddresses("deleteAddresses", "deleteAddresses", true, true, false, false);
    }
 
+   @TestTemplate
+   public void testDefaultAddressesWithTesterUser() throws Exception {
+      testDefaultAddresses("tester", "tester", true, false, false, false);
+   }
+
    private void testDefaultAddresses(String username, String password, boolean isAlertExpected, boolean canDeleteAddress, boolean canSendMessage, boolean canCreateQueue) throws Exception {
       loadLandingPage();
       LoginPage loginPage = new LoginPage(driver);
@@ -70,6 +75,43 @@ public class AddressesTest extends ArtemisTest {
       assertEquals(0, addressesPage.getMessagesCount("ExpiryQueue"));
 
       testAddressContextMenu(addressesPage, "ExpiryQueue", canDeleteAddress, canSendMessage, canCreateQueue);
+   }
+
+   @TestTemplate
+   public void testRestrictedAddress() throws Exception {
+      testRestrictedAddress(SERVER_ADMIN_USERNAME, SERVER_ADMIN_PASSWORD, false, true, true, true);
+   }
+
+   @TestTemplate
+   public void testRestrictedAddressWithViewUser() throws Exception {
+      testRestrictedAddress("addresses", "addresses", true, false, false, false);
+   }
+
+   @TestTemplate
+   public void testRestrictedAddressWithDeleteUser() throws Exception {
+      testRestrictedAddress("deleteAddresses", "deleteAddresses", true, true, false, false);
+   }
+
+   @TestTemplate
+   public void testRestrictedAddressWithTesterUser() throws Exception {
+      testRestrictedAddress("tester", "tester", true, false, true, false);
+   }
+
+   public void testRestrictedAddress(String username, String password, boolean isAlertExpected, boolean canDeleteAddress, boolean canSendMessage, boolean canCreateQueue) throws Exception {
+      loadLandingPage();
+      LoginPage loginPage = new LoginPage(driver);
+      org.apache.activemq.artemis.tests.smoke.console.pages.StatusPage statusPage = loginPage.loginValidUser(
+         username, password, DEFAULT_TIMEOUT);
+
+      assertEquals(isAlertExpected, statusPage.countAlerts() > 0);
+      statusPage.closeAlerts();
+
+      AddressesPage addressesPage = statusPage.getAddressesPage(DEFAULT_TIMEOUT);
+
+      Wait.assertEquals(1, () -> addressesPage.countAddress("RESTRICTED"));
+      assertEquals(0, addressesPage.getMessagesCount("RESTRICTED"));
+
+      testAddressContextMenu(addressesPage, "RESTRICTED", canDeleteAddress, canSendMessage, canCreateQueue);
    }
 
    private void testAddressContextMenu(AddressesPage addressesPage, String addressName, boolean canDeleteAddress, boolean canSendMessage, boolean canCreateQueue) {

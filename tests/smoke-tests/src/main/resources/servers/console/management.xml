@@ -43,13 +43,16 @@
             <access method="listConsumers" roles="consumers,amq"/>
             <access method="listProducers" roles="producers,amq"/>
             <access method="listQueues" roles="queues,amq"/>
-            <access method="listAddresses" roles="addresses,amq"/>
+            <access method="listAddresses" roles="addresses,testers,amq"/>
             <access method="deleteAddress" roles="deleteAddresses,amq"/>
             <access method="list*" roles="amq"/>
             <access method="get*" roles="amq"/>
             <access method="is*" roles="amq"/>
             <access method="set*" roles="amq"/>
             <access method="*" roles="amq"/>
+         </match>
+         <match domain="org.apache.activemq.artemis" key="address=RESTRICTED">
+            <access method="*" roles="testers,amq"/>
          </match>
       </role-access>
    </authorisation>
