@@ -736,17 +736,10 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
 
       destroyed = true;
 
-      //before closing transport, sendCommand the last response if any
-      Command command = context.getLastCommand();
-      if (command != null && command.isResponseRequired()) {
-         Response lastResponse = new Response();
-         lastResponse.setCorrelationId(command.getCommandId());
-         try {
-            dispatchSync(lastResponse);
-         } catch (Throwable e) {
-            logger.warn(e.getMessage(), e);
-         }
-      }
+      // In a previous version we used to send the last command's response here,
+      // however if that command is a TX commit, we would confirm something we can't be sure has completed,
+      // so it's better to leave it in doubt and let the client fail than to send a false success response.
+
       if (fail) {
          shutdown(fail);
       }

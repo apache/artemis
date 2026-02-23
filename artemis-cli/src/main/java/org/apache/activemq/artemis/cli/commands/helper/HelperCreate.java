@@ -78,6 +78,8 @@ public class HelperCreate extends HelperBase {
 
    String dataFolder = "./data";
 
+   private boolean useAIO = "Linux".equals(System.getProperty("os.name"));
+
    private boolean failoverOnShutdown = false;
 
    private boolean noAutoTune = true;
@@ -90,6 +92,15 @@ public class HelperCreate extends HelperBase {
 
    public HelperCreate setReplacePairs(String[] replacePairs) {
       this.replacePairs = replacePairs;
+      return this;
+   }
+
+   public boolean isUseAIO() {
+      return useAIO;
+   }
+
+   public HelperCreate setUseAIO(boolean useAIO) {
+      this.useAIO = useAIO;
       return this;
    }
 
@@ -339,8 +350,10 @@ public class HelperCreate extends HelperBase {
 
       add(listCommands, "--verbose");
 
-      if ("Linux".equals(System.getProperty("os.name"))) {
+      if (useAIO) {
          add(listCommands, "--aio");
+      } else {
+         add(listCommands, "--nio");
       }
 
       for (String str : args) {
