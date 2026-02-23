@@ -206,7 +206,7 @@
       <owasp.version>12.2.0</owasp.version>
       <spring.version>5.3.39</spring.version>
 
-      <jackson.version>2.21.0</jackson.version>
+      <jackson.version>2.21.1</jackson.version>
 
       <activemq.version.versionName>${project.version}</activemq.version.versionName>
       <activemq.version.majorVersion>1</activemq.version.majorVersion>
