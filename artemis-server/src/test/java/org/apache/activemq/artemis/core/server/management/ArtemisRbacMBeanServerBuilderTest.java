@@ -50,6 +50,7 @@ import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.management.ActiveMQServerControl;
 import org.apache.activemq.artemis.api.core.management.ObjectNameBuilder;
+import org.apache.activemq.artemis.core.config.WildcardConfiguration;
 import org.apache.activemq.artemis.core.security.CheckType;
 import org.apache.activemq.artemis.core.security.Role;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
@@ -81,6 +82,7 @@ public class ArtemisRbacMBeanServerBuilderTest extends ServerTestBase {
       ArtemisRbacInvocationHandler handler = (ArtemisRbacInvocationHandler) Proxy.getInvocationHandler(proxy);
       handler.brokerDomain = "a.b";
       handler.rbacPrefix = SimpleString.of("jmx");
+      handler.addressDelimiter = WildcardConfiguration.DEFAULT_WILDCARD_CONFIGURATION.getDelimiter();
 
       try {
          handler.addressFrom(null);
@@ -165,6 +167,7 @@ public class ArtemisRbacMBeanServerBuilderTest extends ServerTestBase {
          (ArtemisRbacInvocationHandler) Proxy.getInvocationHandler(proxy);
       handler.brokerDomain = ActiveMQDefaultConfiguration.getDefaultJmxDomain();
       handler.rbacPrefix = SimpleString.of(ActiveMQDefaultConfiguration.getManagementRbacPrefix());
+      handler.addressDelimiter = WildcardConfiguration.DEFAULT_WILDCARD_CONFIGURATION.getDelimiter();
 
       for (Method m : ObjectNameBuilder.class.getDeclaredMethods()) {
          if (Modifier.isPublic(m.getModifiers()) && ObjectName.class == m.getReturnType()) {
@@ -552,6 +555,44 @@ public class ArtemisRbacMBeanServerBuilderTest extends ServerTestBase {
       Set<Role> roles = new HashSet<>();
       roles.add(new Role("viewers", false, false, false, false, false, false, false, false, false, false, true, false));
       server.getConfiguration().putSecurityRoles("mops.mbeanserver.queryNames", roles);
+
+      server.start();
+
+      Hashtable<String, String> attrs = new Hashtable<>();
+      attrs.put("broker", "bb");
+      attrs.put("type", "security");
+      attrs.put("area", "jmx");
+      attrs.put("name", "*");
+
+      final ObjectName queryName = new ObjectName("*", attrs);
+
+      Subject viewSubject = new Subject();
+      viewSubject.getPrincipals().add(new UserPrincipal("v"));
+      viewSubject.getPrincipals().add(new RolePrincipal("viewers"));
+
+      Object result = SecurityManagerShim.callAs(viewSubject, (Callable<Object>) () -> {
+         try {
+            return proxy.queryNames(queryName, null);
+         } catch (Exception e1) {
+            return e1;
+         }
+      });
+      assertNotNull(result);
+      assertInstanceOf(Set.class, result);
+   }
+
+   @Test
+   public void testQueryWithCustomDelimeter() throws Exception {
+
+      MBeanServer proxy = underTest.newMBeanServer("d", mbeanServer, mBeanServerDelegate);
+
+      final ActiveMQServer server = createServer(false);
+      server.setMBeanServer(proxy);
+      server.getConfiguration().setJMXManagementEnabled(true).setSecurityEnabled(true).getWildcardConfiguration().setDelimiter('&');
+
+      Set<Role> roles = new HashSet<>();
+      roles.add(new Role("viewers", false, false, false, false, false, false, false, false, false, false, true, false));
+      server.getConfiguration().putSecurityRoles("mops&mbeanserver&queryNames", roles);
 
       server.start();
 

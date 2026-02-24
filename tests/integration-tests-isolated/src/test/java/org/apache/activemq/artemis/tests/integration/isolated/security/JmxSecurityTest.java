@@ -275,6 +275,21 @@ public class JmxSecurityTest {
    }
 
    @Test
+   public void testJxmAuthFlightRecorderWithCustomWildcardDelimiter() throws Exception {
+
+      server.getConfiguration().getWildcardConfiguration().setDelimiter('-');
+      Set<Role> roles = new HashSet<>();
+      roles.add(new Role("programmers", false, false, false, false, true, false, false, false, false, false, true, false));
+      server.getConfiguration().putSecurityRoles("jmx-jdk.management.jfr-#", roles);
+
+      server.start();
+
+      ObjectName runtimeName = new ObjectName("jdk.management.jfr", "type", "FlightRecorder");
+      FlightRecorderMXBean fr = JMX.newMXBeanProxy(ManagementFactory.getPlatformMBeanServer(), runtimeName, FlightRecorderMXBean.class, false);
+      fr.getConfigurations();
+   }
+
+   @Test
    public void testQueueAuthorization() throws Exception {
       final SimpleString ADDRESS = SimpleString.of("address");
       final SimpleString QUEUE_A = SimpleString.of("a");

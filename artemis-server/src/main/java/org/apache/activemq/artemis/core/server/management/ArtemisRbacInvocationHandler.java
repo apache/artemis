@@ -54,6 +54,7 @@ public class ArtemisRbacInvocationHandler implements GuardInvocationHandler {
    Pattern viewPermissionMatcher;
    SimpleString rbacPrefix;
    SimpleString mBeanServerRbacAddressPrefix;
+   char addressDelimiter;
 
    ArtemisRbacInvocationHandler(MBeanServer mbeanServer) {
       delegate = mbeanServer;
@@ -157,7 +158,8 @@ public class ArtemisRbacInvocationHandler implements GuardInvocationHandler {
 
             viewPermissionMatcher = Pattern.compile(activeMQServer.getConfiguration().getViewPermissionMethodMatchPattern());
             rbacPrefix = SimpleString.of(activeMQServer.getConfiguration().getManagementRbacPrefix());
-            mBeanServerRbacAddressPrefix = rbacPrefix.concat(".mbeanserver.");
+            addressDelimiter = activeMQServer.getConfiguration().getWildcardConfiguration().getDelimiter();
+            mBeanServerRbacAddressPrefix = rbacPrefix.concat(addressDelimiter).concat("mbeanserver").concat(addressDelimiter);
 
             serverControl.getServer().registerActivateCallback(new ActivateCallback() {
                @Override
@@ -306,21 +308,21 @@ public class ArtemisRbacInvocationHandler implements GuardInvocationHandler {
          }
       } else {
          // non artemis broker domain, prefix with domain
-         rbacAddress = rbacAddress.concat('.').concat(objectName.getDomain());
+         rbacAddress = rbacAddress.concat(addressDelimiter).concat(objectName.getDomain());
          type = removeQuotes(objectName.getKeyProperty("type"));
       }
 
       if (type != null) {
-         rbacAddress = rbacAddress.concat('.').concat(type);
+         rbacAddress = rbacAddress.concat(addressDelimiter).concat(type);
       }
       if (component != null) {
-         rbacAddress = rbacAddress.concat('.').concat(component);
+         rbacAddress = rbacAddress.concat(addressDelimiter).concat(component);
       }
       if (name != null) {
-         rbacAddress = rbacAddress.concat('.').concat(name);
+         rbacAddress = rbacAddress.concat(addressDelimiter).concat(name);
       }
       if (methodName != null) {
-         rbacAddress = rbacAddress.concat('.').concat(methodName);
+         rbacAddress = rbacAddress.concat(addressDelimiter).concat(methodName);
       }
 
       return rbacAddress;
