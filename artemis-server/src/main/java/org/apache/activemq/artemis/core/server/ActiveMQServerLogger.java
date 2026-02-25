@@ -1526,4 +1526,7 @@ public interface ActiveMQServerLogger {
 
    @LogMessage(id = 224157, value = "At least one of the components failed to start under the lockCoordinator {}. A retry will be executed", level = LogMessage.Level.INFO)
    void retryLockCoordinator(String name);
+
+   @LogMessage(id = 224158, value = "The operation {} on queue {} cannot read more data from paging into memory and will be interrupted.", level = LogMessage.Level.INFO)
+   void preventQueueManagementToFloodMemory(String operation, String queue);
 }

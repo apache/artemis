@@ -197,7 +197,6 @@ public class DualMirrorSingleAcceptorRunningTest extends SmokeTestBase {
          }
 
          // Send messages through the shared acceptor
-         cfX = CFUtil.createConnectionFactory("amqp", "tcp://localhost:61616");
          sendMessages(cfX, MESSAGES_SENT_PER_ITERATION);
 
          // Consume some messages

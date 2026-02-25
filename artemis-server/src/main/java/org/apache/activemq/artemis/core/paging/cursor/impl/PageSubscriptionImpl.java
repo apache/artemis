@@ -1431,9 +1431,14 @@ public final class PageSubscriptionImpl implements PageSubscription {
 
       @Override
       public synchronized NextResult tryNext() {
-         // if an unbehaved program called hasNext twice before next, we only cache it once.
          if (cachedNext != null) {
-            return NextResult.hasElements;
+            PageCursorInfo info = locatePageInfo(cachedNext.getPagedMessage().getPageNumber());
+            if (info != null && info.isRemoved(cachedNext.getPagedMessage().getMessageNumber())) {
+               logger.debug("Reference {} has been removed from another iterator, moving it next", cachedNext);
+               cachedNext = null;
+            } else {
+               return NextResult.hasElements;
+            }
          }
 
          if (!pageStore.isStorePaging()) {
