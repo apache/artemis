@@ -1102,7 +1102,7 @@ public class ActiveMQSessionContext extends SessionContext {
          }
          return chunkPacket.getPacketSize();
       } catch (Throwable e) {
-         throw new ActiveMQException(e.getMessage());
+         throw new ActiveMQException(e.getMessage(), e);
       }
    }
 

@@ -34,6 +34,11 @@ public class ActiveMQException extends Exception {
       type = ActiveMQExceptionType.GENERIC_EXCEPTION;
    }
 
+   public ActiveMQException(final String msg, Throwable t) {
+      super(msg, t);
+      type = ActiveMQExceptionType.GENERIC_EXCEPTION;
+   }
+
    public ActiveMQException(String msg, ActiveMQExceptionType t) {
       super(msg);
       type = t;
