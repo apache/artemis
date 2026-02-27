@@ -2225,33 +2225,14 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
    @Override
    public synchronized boolean deleteReference(final long messageID) throws Exception {
-      boolean deleted = false;
-
-      Transaction tx = new TransactionImpl(storageManager);
-
-      try (LinkedListIterator<MessageReference> iter = iterator()) {
-
-         while (iter.hasNext()) {
-            MessageReference ref = iter.next();
-            if (ref.getMessage().getMessageID() == messageID) {
-               incDelivering(ref);
-               acknowledge(tx, ref);
-               iter.remove();
-               refRemoved(ref);
-               deleted = true;
-               break;
-            }
+      return iterQueue("deleteReference", DEFAULT_FLUSH_LIMIT, null, new QueueIterateAction(messageID) {
+         @Override
+         public boolean actMessage(Transaction tx, MessageReference ref) throws Exception {
+            incDelivering(ref);
+            acknowledge(tx, ref);
+            return true;
          }
-
-         if (!deleted) {
-            // Look in scheduled deliveries
-            deleted = scheduledDeliveryHandler.removeReferenceWithID(messageID, tx) != null ? true : false;
-         }
-
-         tx.commit();
-
-         return deleted;
-      }
+      }) == 1;
    }
 
    @Override
