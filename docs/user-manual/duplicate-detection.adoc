@@ -138,7 +138,7 @@ Duplicate ID cache persistence is configured by the parameter `persist-id-cache`
 ----
 <core>
    ...
-   <persist-id-cache>false</id-cache-size>
+   <persist-id-cache>false</persist-id-cache>
    ...
 </core>
 ----
