@@ -73,10 +73,8 @@ public class DuplicateDetectionTest extends ActiveMQTestBase {
       });
    }
 
-   @Parameter(index = 0)
+   @Parameter
    public boolean persistCache;
-
-
 
    private ActiveMQServer server;
 
@@ -85,7 +83,7 @@ public class DuplicateDetectionTest extends ActiveMQTestBase {
    private final int cacheSize = 10;
 
    @TestTemplate
-   public void testSimpleDuplicateDetecion() throws Exception {
+   public void testSimpleDuplicateDetection() throws Exception {
       ClientSession session = sf.createSession(false, true, true);
 
       session.start();
@@ -217,6 +215,93 @@ public class DuplicateDetectionTest extends ActiveMQTestBase {
       producer.send(message);
       message2 = consumer.receiveImmediate();
       assertEquals(7, message2.getObjectProperty(propKey));
+   }
+
+   @TestTemplate
+   public void testDisabledDuplicateDetectionForBridgeMessage() throws Exception {
+      server.stop();
+
+      // disable duplicate detection
+      config = createDefaultInVMConfig().setIDCacheSize(0);
+
+      server = createServer(config);
+
+      server.start();
+
+      sf = createSessionFactory(locator);
+
+      ClientSession session = sf.createSession(false, true, true);
+
+      session.start();
+
+      final SimpleString queueName = SimpleString.of("DuplicateDetectionBridgeTestQueue");
+
+      session.createQueue(QueueConfiguration.of(queueName).setDurable(false));
+
+      ClientProducer producer = session.createProducer(queueName);
+
+      ClientConsumer consumer = session.createConsumer(queueName);
+
+      ClientMessage message = createMessage(session, 0);
+      producer.send(message);
+      ClientMessage receivedMessage = consumer.receive(1000);
+      assertEquals(0, receivedMessage.getObjectProperty(propKey));
+
+      message = createMessage(session, 1);
+      SimpleString dupID = SimpleString.of("1q2w3e4r5t6y7u8i9o0p");
+      message.putBytesProperty(Message.HDR_BRIDGE_DUPLICATE_ID, dupID.getData());
+      producer.send(message);
+      receivedMessage = consumer.receive(1000);
+      assertEquals(1, receivedMessage.getObjectProperty(propKey));
+
+      message = createMessage(session, 2);
+      SimpleString dupID1 = SimpleString.of("1q2w3e4r5t6y7u8i9o0p");
+      message.putBytesProperty(Message.HDR_BRIDGE_DUPLICATE_ID, dupID1.getData());
+      producer.send(message);
+      receivedMessage = consumer.receive(1000);
+      assertEquals(2, receivedMessage.getObjectProperty(propKey));
+
+   }
+
+   @TestTemplate
+   public void testEnabledDuplicateDetectionForBridgeMessage() throws Exception {
+
+      ClientSession session = sf.createSession(false, true, true);
+
+      session.start();
+
+      final SimpleString queueName = SimpleString.of("DuplicateDetectionBridge2TestQueue");
+
+      session.createQueue(QueueConfiguration.of(queueName).setDurable(false));
+
+      ClientProducer producer = session.createProducer(queueName);
+
+      ClientConsumer consumer = session.createConsumer(queueName);
+
+      ClientMessage message = createMessage(session, 0);
+      producer.send(message);
+      ClientMessage receivedMessage = consumer.receive(1000);
+      assertEquals(0, receivedMessage.getObjectProperty(propKey));
+
+      message = createMessage(session, 1);
+      SimpleString dupID = SimpleString.of("1q2w3e4r5t");
+      message.putBytesProperty(Message.HDR_BRIDGE_DUPLICATE_ID, dupID.getData());
+      producer.send(message);
+      receivedMessage = consumer.receive(1000);
+      assertEquals(1, receivedMessage.getObjectProperty(propKey));
+
+      message = createMessage(session, 2);
+      message.putBytesProperty(Message.HDR_BRIDGE_DUPLICATE_ID, dupID.getData());
+      producer.send(message);
+      receivedMessage = consumer.receiveImmediate();
+      assertNull(receivedMessage);
+
+      message = createMessage(session, 3);
+      message.putBytesProperty(Message.HDR_BRIDGE_DUPLICATE_ID, dupID.getData());
+      producer.send(message);
+      receivedMessage = consumer.receiveImmediate();
+      assertNull(receivedMessage);
+
    }
 
    @TestTemplate

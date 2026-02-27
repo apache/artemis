@@ -32,7 +32,7 @@ public final class NoOpDuplicateIDCache implements DuplicateIDCache {
 
    @Override
    public boolean atomicVerify(byte[] duplID, Transaction tx) throws Exception {
-      return false;
+      return true;
    }
 
    @Override
