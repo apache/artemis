@@ -62,6 +62,7 @@ import org.apache.activemq.artemis.core.server.Consumer;
 import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.impl.AddressInfo;
+import org.apache.activemq.artemis.core.server.lock.LockCoordinator;
 import org.apache.activemq.artemis.core.server.mirror.MirrorController;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerQueuePlugin;
 import org.apache.activemq.artemis.protocol.amqp.broker.AMQPMessage;
@@ -161,6 +162,38 @@ public class AMQPBrokerConnection implements ClientConnectionLifeCycleListener, 
    private final Set<Queue> senders = new HashSet<>();
    private final Set<Queue> receivers = new HashSet<>();
    private final Map<String, Predicate<Link>> linkClosedInterceptors = new ConcurrentHashMap<>();
+   private LockCoordinator lockCoordinator;
+
+   /**
+    * This will be false if the lock coordinator is in place and it is not holding the lock
+    */
+   private volatile boolean enabled = true;
+
+   /**
+    * This will return false when the LockCoordinator lose the lock.
+    *  */
+   public boolean isEnabled() {
+      return enabled;
+   }
+
+   private void enable() {
+      enabled = true;
+   }
+
+   private void disable() {
+      enabled = false;
+   }
+
+   @Override
+   public LockCoordinator getLockCoordinator() {
+      return lockCoordinator;
+   }
+
+   @Override
+   public AMQPBrokerConnection setLockCoordinator(LockCoordinator lockCoordinator) {
+      this.lockCoordinator = lockCoordinator;
+      return this;
+   }
 
    final Executor connectExecutor;
    final ScheduledExecutorService scheduledExecutorService;
@@ -252,6 +285,19 @@ public class AMQPBrokerConnection implements ClientConnectionLifeCycleListener, 
 
    @Override
    public synchronized void start() throws Exception {
+
+      if (lockCoordinator != null) {
+         disable();
+         lockCoordinator.onLockAcquired(this::resume);
+         lockCoordinator.onLockReleased(this::pause);
+      } else {
+         enable();
+      }
+
+      this.internalStart();
+   }
+
+   private synchronized void internalStart() throws Exception {
       if (!started) {
          started = true;
          server.getConfiguration().registerBrokerPlugin(this);
@@ -273,19 +319,21 @@ public class AMQPBrokerConnection implements ClientConnectionLifeCycleListener, 
             logger.warn(e.getMessage(), e);
          }
 
-         if (brokerFederation != null) {
-            try {
-               brokerFederation.start();
-            } catch (ActiveMQException e) {
-               logger.warn("Error caught while starting federation instance.", e);
+         if (isEnabled()) {
+            if (brokerFederation != null) {
+               try {
+                  brokerFederation.start();
+               } catch (ActiveMQException e) {
+                  logger.warn("Error caught while starting federation instance.", e);
+               }
             }
-         }
 
-         if (bridgeManagers != null) {
-            try {
-               bridgeManagers.start();
-            } catch (ActiveMQException e) {
-               logger.warn("Error caught while starting bridge managers instance.", e);
+            if (bridgeManagers != null) {
+               try {
+                  bridgeManagers.start();
+               } catch (ActiveMQException e) {
+                  logger.warn("Error caught while starting bridge managers instance.", e);
+               }
             }
          }
 
@@ -295,6 +343,12 @@ public class AMQPBrokerConnection implements ClientConnectionLifeCycleListener, 
 
    @Override
    public synchronized void stop() {
+      // NOTE: We don't set enabled=false in the stop for the following reason:
+      //       Mirror is supposed to keep capturing events as the broker is being shutdown or
+      //       the connection is being stopped, or even after stopped.
+      //       Say as the broker is going down a message is received and recorded
+      //       if the mirror stopped capturing that event, you would miss it for next time you restart the broker
+      //       and our tests would eventually miss an event, or more importantly users would lose a message during this process
       if (started) {
          started = false;
          server.getConfiguration().unRegisterBrokerPlugin(this);
@@ -358,6 +412,28 @@ public class AMQPBrokerConnection implements ClientConnectionLifeCycleListener, 
          server.getManagementService().unregisterBrokerConnection(getName());
       }
    }
+
+   private synchronized void pause() throws Exception {
+      disable();
+      if (bridgeManagers != null) {
+         bridgeManagers.stop();
+      }
+      if (brokerFederation != null) {
+         brokerFederation.stop();
+      }
+   }
+
+
+   private synchronized void resume() throws Exception {
+      enable();
+      if (bridgeManagers != null) {
+         bridgeManagers.start();
+      }
+      if (brokerFederation != null) {
+         brokerFederation.start();
+      }
+   }
+
 
    public ActiveMQServer getServer() {
       return server;

@@ -5,38 +5,39 @@
 
 The Lock Coordinator provides pluggable distributed lock mechanism monitoring.
 It allows multiple broker instances to coordinate the activation of specific configuration elements, ensuring that only one broker instance activates a particular element at any given time.
+This prevents split-brain scenarios where multiple brokers could simultaneously process messages, leading to duplicate processing or conflicting state.
 
-When a broker acquires a lock through a distributed lock, the associated configuration elements are activated.
-If the lock is lost or released, those elements are deactivated.
+In the current version, the Lock Coordinator can be applied to control the startup and shutdown of:
 
-In the current version, the Lock Coordinator can be applied to control the startup and shutdown of acceptors.
-When an acceptor is associated with a lock coordinator, it will only start accepting connections when the broker successfully acquires the distributed lock.
-If lock is lost for any reason, the acceptor automatically stops accepting new connections.
+* *Acceptors* - When an acceptor is associated with a lock coordinator, it will only start accepting connections when the broker successfully acquires the distributed lock. If the lock is lost for any reason, the acceptor automatically stops accepting new connections.
 
-The same pattern used on acceptors may eventually be applied to other configuration elements.
+* *Broker Connections* - When a broker connection (AMQP mirror, federation, or bridge) is associated with a lock coordinator, it will only be active when the broker successfully acquires the distributed lock. If the lock is lost, the connection is paused, preventing message flow. When the lock is reacquired, the connection resumes automatically.
+
+The same pattern used on acceptors and broker connections may eventually be applied to other configuration elements.
 If you have ideas for additional use cases where this pattern could be applied, please file a JIRA issue.
 
 WARNING: This feature is in technical preview and its configuration elements are subject to possible modifications.
 
 == Configuration
 
-It is possible to specify multiple lock-coordinators and associate them with other broker elements.
+You can define multiple lock-coordinators and associate them with broker elements such as acceptors and broker connections.
+When a broker element is associated with a lock-coordinator, it will only activate when the distributed lock has been acquired.
+If the lock cannot be acquired or is lost, the elements are automatically stopped or paused.
 
-The broker element associated with a lock-coordinator (e.g., an acceptor) will only be started if the distributed lock can be acquired.
-If the lock cannot be acquired or is lost, the associated element will be stopped.
+Different lock implementations (File-based, ZooKeeper-based, or custom plugins) provide different configuration properties.
+See the <<Configuration Options>> section below for detailed tables of available options for each lock implementation.
 
-This pattern can be used to ensure clients connect to only one of your mirrored brokers at a time, preventing split-brain scenarios and duplicate message processing.
+=== Configuration Example
 
-Depending on the provider selector, multiple configuration options can be provided.
-Please consult the javadoc for your lock implementation.
-A simple table will be provided in this chapter for the two reference implementations we provide, but this could be a plugin being added to your broker.
+The following example demonstrates a star topology HA configuration where only one broker is active at a time:
 
-In this next example, we configure a broker with:
-
-* Two acceptors: one for mirroring traffic (`for-mirroring-only`) and one for client connections (`for-clients-only`)
-* A File-based lock-coordinator named `clients-lock`
-* The client acceptor associated with the lock-coordinator, so it only activates when the distributed lock is acquired
-* A mirror connection to another broker for data replication
+* Two acceptors:
+  - `for-mirroring-only` - Always active to receive mirrored data from other brokers
+  - `for-clients-only` - Controlled by lock-coordinator; only active when lock is held
+* File-based lock-coordinator named `clients-lock` using shared storage
+* Broker connections controlled by the lock-coordinator (mirrors, bridges, or federations):
+  - Two mirror connections (`mirrorB` and `mirrorC`) for data replication
+  - One bridge connection for forwarding messages to a remote broker
 
 [,xml]
 ----
@@ -58,15 +59,44 @@ In this next example, we configure a broker with:
 </lock-coordinators>
 
 <broker-connections>
-   <amqp-connection uri="tcp://otherBroker:61000" name="mirror" retry-interval="2000">
+   <amqp-connection uri="tcp://otherBroker:61001" name="mirrorB" retry-interval="2000" lock-coordinator="clients-lock">
       <mirror sync="false"/>
+   </amqp-connection>
+   <amqp-connection uri="tcp://otherBroker:61002" name="mirrorC" retry-interval="2000" lock-coordinator="clients-lock">
+      <mirror sync="false"/>
+   </amqp-connection>
+   <amqp-connection uri="tcp://remoteBroker:61616" name="bridgeConnection" retry-interval="2000" lock-coordinator="clients-lock">
+      <bridge>
+         <bridge-to-queue name="orders" remote-address="orders">
+            <include queue-match="orders" address-match="orders"/>
+         </bridge-to-queue>
+      </bridge>
    </amqp-connection>
 </broker-connections>
 
 
 ----
 
-In the previous configuration, the broker will use a file lock, and the acceptor will only be active if it can hold the distributed lock between the mirrored brokers.
+==== How It Works
+
+When a broker successfully acquires the distributed lock:
+
+* The client acceptor (`for-clients-only`) starts accepting connections
+* Mirror connections activate and begin replicating data to other brokers
+* Bridge connections activate and forward messages to remote brokers
+* Federation connections activate (if configured)
+
+When the lock is lost (due to failure or network partition):
+
+* The client acceptor stops accepting new connections
+* All broker connections (mirrors, bridges, and federations) pause immediately
+* The broker continues to receive mirrored data on the `for-mirroring-only` acceptor
+
+This ensures only one broker actively processes client requests, replicates data, and forwards messages at any given time.
+
+==== Important Considerations
+
+WARNING: When mixing bridges or federations with mirrors in the same configuration, message duplication is possible during failover transitions. When a message arrives at a mirror target and that node's broker connections are active, the message may be forwarded even though it was already processed by the original source. Lock coordination significantly reduces this risk but cannot completely eliminate it during the brief window when locks are being transferred between brokers.
 
 image:images/lock-coordination-example.png[HA with mirroring]
 
@@ -74,9 +104,11 @@ You can find a https://github.com/apache/artemis-examples/tree/main/examples/fea
 
 == Configuration Options
 
+All lock-coordinator implementations share common configuration elements and provide implementation-specific properties.
+
 === Common Configuration
 
-The following elements are configured on lock-coordinator
+The following elements are configured on every lock-coordinator regardless of implementation:
 
 [cols="1,1,1,3"]
 |===
@@ -103,10 +135,14 @@ The following elements are configured on lock-coordinator
 |How often to check if the lock is still valid, in milliseconds
 |===
 
-=== File
+=== File-Based Lock Manager
 
-The file-based lock uses the file system to manage distributed locks.
-It is provided by the class-name=`org.apache.activemq.artemis.lockmanager.file.FileBasedLockManager`
+The file-based lock manager uses the file system to manage distributed locks through file locking mechanisms.
+All brokers must have access to a shared file system location.
+
+**Class name:** `org.apache.activemq.artemis.lockmanager.file.FileBasedLockManager`
+
+**Properties:**
 
 [cols="1,1,1,3"]
 |===
@@ -118,10 +154,14 @@ It is provided by the class-name=`org.apache.activemq.artemis.lockmanager.file.F
 |Path to the directory where lock files will be created and managed. The directory must be created in advance before using this lock.
 |===
 
-=== ZooKeeper
+=== ZooKeeper-Based Lock Manager
 
-The ZooKeeper-based lock uses Apache Curator to manage distributed locks via ZooKeeper.
-It is provided by the class-name=`org.apache.activemq.artemis.lockmanager.zookeeper.CuratorDistributedLockManager`
+The ZooKeeper-based lock manager uses Apache Curator to manage distributed locks via a ZooKeeper ensemble.
+This is the recommended approach for production deployments as it provides better fault tolerance and doesn't require shared storage.
+
+**Class name:** `org.apache.activemq.artemis.lockmanager.zookeeper.CuratorDistributedLockManager`
+
+**Properties:**
 
 [cols="1,1,1,3"]
 |===

@@ -152,6 +152,13 @@ public class FileConfigurationParserTest extends ServerTestBase {
          </lock-coordinator>
       </lock-coordinators>""";
 
+   private static final String BROKER_CONNECTION_PART = """
+            <broker-connections>
+               <amqp-connection uri="tcp://someHost:61000" name="someMirror" retry-interval="2000" lock-coordinator="my-lock">
+                  <mirror sync="false"/>
+               </amqp-connection>
+            </broker-connections>
+      """;
 
    /**
     * These "InvalidConfigurationTest*.xml" files are modified copies of {@literal ConfigurationTest-full-config.xml},
@@ -449,7 +456,7 @@ public class FileConfigurationParserTest extends ServerTestBase {
    @Test
    public void testLockCoordinatorParse() throws Exception {
       FileConfigurationParser parser = new FileConfigurationParser();
-      String configStr = FIRST_PART + LOCK_COORDINATOR_PART + LAST_PART;
+      String configStr = FIRST_PART + LOCK_COORDINATOR_PART + BROKER_CONNECTION_PART + LAST_PART;
       Configuration configuration = parser.parseMainConfig(new ByteArrayInputStream(configStr.getBytes(StandardCharsets.UTF_8)));
 
       Collection<LockCoordinatorConfiguration> lockConfigurations = configuration.getLockCoordinatorConfigurations();
@@ -465,6 +472,8 @@ public class FileConfigurationParserTest extends ServerTestBase {
          assertEquals("value2", properties.get("test2"));
       }
       configuration.getAcceptorConfigurations().stream().filter(f -> f.getName().equals("netty-with-lock")).forEach(f -> assertEquals("my-lock", f.getLockCoordinator()));
+      assertEquals(1, configuration.getAMQPConnection().size());
+      assertEquals("my-lock", configuration.getAMQPConnection().get(0).getLockCoordinator());
    }
 
    @Test

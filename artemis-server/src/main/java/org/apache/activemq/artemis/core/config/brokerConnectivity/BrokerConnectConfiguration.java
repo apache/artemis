@@ -29,6 +29,7 @@ public abstract class BrokerConnectConfiguration implements Serializable {
 
    private static final long serialVersionUID = 8026604526022462048L;
 
+   private String lockCoordinator;
    private String name;
    private String uri;
    private String user;
@@ -40,6 +41,15 @@ public abstract class BrokerConnectConfiguration implements Serializable {
    public BrokerConnectConfiguration(String name, String uri) {
       this.name = name;
       this.uri = uri;
+   }
+
+   public String getLockCoordinator() {
+      return lockCoordinator;
+   }
+
+   public BrokerConnectConfiguration setLockCoordinator(String lockCoordinator) {
+      this.lockCoordinator = lockCoordinator;
+      return this;
    }
 
    public abstract void parseURI() throws Exception;

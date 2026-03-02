@@ -204,6 +204,9 @@ public class AMQPMirrorControllerSource extends BasicMirrorController<Sender> im
 
    @Override
    public void addAddress(AddressInfo addressInfo) throws Exception {
+      if (!brokerConnection.isEnabled()) {
+         return;
+      }
       logger.trace("{} addAddress {}", server, addressInfo);
 
       if (getControllerInUse() != null && !addressInfo.isInternal()) {
@@ -230,6 +233,9 @@ public class AMQPMirrorControllerSource extends BasicMirrorController<Sender> im
 
    @Override
    public void deleteAddress(AddressInfo addressInfo) throws Exception {
+      if (!brokerConnection.isEnabled()) {
+         return;
+      }
       logger.trace("{} deleteAddress {}", server, addressInfo);
 
       if (invalidTarget(getControllerInUse()) || addressInfo.isInternal()) {
@@ -246,6 +252,9 @@ public class AMQPMirrorControllerSource extends BasicMirrorController<Sender> im
 
    @Override
    public void createQueue(QueueConfiguration queueConfiguration) throws Exception {
+      if (!brokerConnection.isEnabled()) {
+         return;
+      }
       logger.trace("{} createQueue {}", server, queueConfiguration);
 
       if (invalidTarget(getControllerInUse()) || queueConfiguration.isInternal()) {
@@ -274,6 +283,9 @@ public class AMQPMirrorControllerSource extends BasicMirrorController<Sender> im
 
    @Override
    public void deleteQueue(SimpleString address, SimpleString queue) throws Exception {
+      if (!brokerConnection.isEnabled()) {
+         return;
+      }
       if (logger.isTraceEnabled()) {
          logger.trace("{} deleteQueue {}/{}", server, address, queue);
       }
@@ -338,6 +350,9 @@ public class AMQPMirrorControllerSource extends BasicMirrorController<Sender> im
 
    @Override
    public void sendMessage(Transaction tx, Message message, RoutingContext context) {
+      if (!brokerConnection.isEnabled()) {
+         return;
+      }
       SimpleString address = context.getAddress(message);
 
       if (context.isInternal()) {
@@ -537,6 +552,9 @@ public class AMQPMirrorControllerSource extends BasicMirrorController<Sender> im
 
    @Override
    public void postAcknowledge(MessageReference ref, AckReason reason) throws Exception {
+      if (!brokerConnection.isEnabled()) {
+         return;
+      }
       if (!acks || ref.getQueue().isMirrorController()) {
          postACKInternalMessage(ref);
          return;
@@ -546,6 +564,9 @@ public class AMQPMirrorControllerSource extends BasicMirrorController<Sender> im
 
    @Override
    public void preAcknowledge(final Transaction tx, final MessageReference ref, final AckReason reason) throws Exception {
+      if (!brokerConnection.isEnabled()) {
+         return;
+      }
       if (logger.isTraceEnabled()) {
          logger.trace("preAcknowledge::tx={}, ref={}, reason={}", tx, ref, reason);
       }

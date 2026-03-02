@@ -106,6 +106,7 @@ public class LockCoordinatorTest extends ActiveMQTestBase {
       testAddAfterLocked(lockCoordinatorSupplier.apply(1).get(0));
       testRetryAfterError(lockCoordinatorSupplier.apply(1).get(0));
       testRetryAfterErrorWithDelayAdd(lockCoordinatorSupplier.apply(1).get(0));
+      testPriorityOrdering(lockCoordinatorSupplier.apply(1).get(0));
 
       {
          List<LockCoordinator> list = lockCoordinatorSupplier.apply(2);
@@ -174,6 +175,41 @@ public class LockCoordinatorTest extends ActiveMQTestBase {
 
          Wait.assertTrue(succeeded::get, 5000, 100);
          Wait.assertEquals(1, lockHolderCount::get);
+      } finally {
+         lockCoordinator.stop();
+      }
+   }
+
+   private void testPriorityOrdering(LockCoordinator lockCoordinator) throws Exception {
+      lockHolderCount.set(0);
+      lockChanged.set(0);
+
+      try {
+         // Add callbacks with different priorities (lower values execute first)
+         List<Integer> executionOrder = new ArrayList<>();
+         lockCoordinator.onLockAcquired(() -> executionOrder.add(3), 30);
+         lockCoordinator.onLockAcquired(() -> executionOrder.add(1), 10);
+         lockCoordinator.onLockAcquired(() -> executionOrder.add(2), 20);
+         lockCoordinator.onLockAcquired(() -> executionOrder.add(4), 40);
+
+         List<Integer> releaseOrder = new ArrayList<>();
+         lockCoordinator.onLockReleased(() -> releaseOrder.add(2), 20);
+         lockCoordinator.onLockReleased(() -> releaseOrder.add(4), 40);
+         lockCoordinator.onLockReleased(() -> releaseOrder.add(1), 10);
+         lockCoordinator.onLockReleased(() -> releaseOrder.add(3), 30);
+
+         lockCoordinator.start();
+         Wait.assertEquals(1, () -> lockHolderCount.get(), 15000, 100);
+
+         // Verify acquired callbacks executed in priority order (lowest first)
+         Wait.assertEquals(4, executionOrder::size, 5000, 100);
+         assertEquals(List.of(1, 2, 3, 4), executionOrder);
+
+         lockCoordinator.stop();
+
+         // Verify released callbacks executed in priority order (lowest first)
+         Wait.assertEquals(4, releaseOrder::size, 5000, 100);
+         assertEquals(List.of(1, 2, 3, 4), releaseOrder);
       } finally {
          lockCoordinator.stop();
       }

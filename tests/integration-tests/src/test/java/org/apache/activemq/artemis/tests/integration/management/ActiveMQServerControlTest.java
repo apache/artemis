@@ -110,6 +110,7 @@ import org.apache.activemq.artemis.core.server.ServerSession;
 import org.apache.activemq.artemis.core.server.ServiceComponent;
 import org.apache.activemq.artemis.core.server.impl.AddressInfo;
 import org.apache.activemq.artemis.core.server.impl.ServerLegacyProducersImpl;
+import org.apache.activemq.artemis.core.server.lock.LockCoordinator;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerPlugin;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerSessionPlugin;
 import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
@@ -6451,6 +6452,16 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
          @Override
          public void start() throws Exception {
             started = true;
+         }
+
+         @Override
+         public LockCoordinator getLockCoordinator() {
+            return null;
+         }
+
+         @Override
+         public BrokerConnection setLockCoordinator(LockCoordinator lockCoordinator) {
+            return null;
          }
 
          @Override

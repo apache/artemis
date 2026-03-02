@@ -2214,6 +2214,7 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
       String uri = e.getAttribute("uri");
 
+      String lockCoordinator = getAttributeValue(e, "lock-coordinator");
       int retryInterval = getAttributeInteger(e, "retry-interval", 5000, GT_ZERO);
       int reconnectAttempts = getAttributeInteger(e, "reconnect-attempts", -1, MINUS_ONE_OR_GT_ZERO);
       String user = getAttributeValue(e, "user");
@@ -2230,7 +2231,7 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
       AMQPBrokerConnectConfiguration config = new AMQPBrokerConnectConfiguration(name, uri);
       config.parseURI();
-      config.setRetryInterval(retryInterval).setReconnectAttempts(reconnectAttempts).setUser(user).setPassword(password).setAutostart(autoStart);
+      config.setRetryInterval(retryInterval).setReconnectAttempts(reconnectAttempts).setUser(user).setPassword(password).setAutostart(autoStart).setLockCoordinator(lockCoordinator);
 
       mainConfig.addAMQPConnection(config);
 

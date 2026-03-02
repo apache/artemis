@@ -19,6 +19,7 @@ package org.apache.activemq.artemis.core.server.lock;
 
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -47,6 +48,15 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
    /** Default period (in milliseconds) for checking lock status */
    public static final int DEFAULT_CHECK_PERIOD = 5000;
 
+   /** Default priority for callbacks when not specified */
+   public static final int DEFAULT_PRIORITY = 10;
+
+   public static final int HIGH_PRIORITY = 20;
+   public static final int LOW_PRIORITY = 5;
+
+   private record PrioritizedCallback(RunnableEx runnable, int priority) {
+   }
+
    String debugInfo;
 
    public String getDebugInfo() {
@@ -60,8 +70,8 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-   private final ArrayList<RunnableEx> lockAcquiredCallback = new ArrayList<>();
-   private final ArrayList<RunnableEx> lockReleasedCallback = new ArrayList<>();
+   private final ArrayList<PrioritizedCallback> lockAcquiredCallback = new ArrayList<>();
+   private final ArrayList<PrioritizedCallback> lockReleasedCallback = new ArrayList<>();
    private final long checkPeriod;
    private final String name;
    private final String lockID;
@@ -78,6 +88,7 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
     * Registers a callback to be executed when lock is acquired.
     * If the lock is already held when this method is called, the callback
     * will be executed immediately (on the executor thread).
+    * Uses the default priority ({@link #DEFAULT_PRIORITY}).
     *
     * Also In case the runnable throws any exceptions, the lock will be released, any previously added callback will be called for stop
     * and the monitor will retry the locks
@@ -85,7 +96,23 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
     * @param runnable the callback to execute when lock is acquired
     */
    public void onLockAcquired(RunnableEx runnable) {
-      this.lockAcquiredCallback.add(runnable);
+      onLockAcquired(runnable, DEFAULT_PRIORITY);
+   }
+
+   /**
+    * Registers a callback to be executed when lock is acquired with a specified priority.
+    * Callbacks are executed in ascending priority order (lowest priority first).
+    * If the lock is already held when this method is called, the callback
+    * will be executed immediately (on the executor thread).
+    *
+    * Also In case the runnable throws any exceptions, the lock will be released, any previously added callback will be called for stop
+    * and the monitor will retry the locks
+    *
+    * @param runnable the callback to execute when lock is acquired
+    * @param priority the priority for this callback (lower values execute first)
+    */
+   public void onLockAcquired(RunnableEx runnable, int priority) {
+      this.lockAcquiredCallback.add(new PrioritizedCallback(runnable, priority));
       // if it's locked we run the runnable being added,
       // however we must check this inside the executor
       // or within a global locking
@@ -94,11 +121,23 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
 
    /**
     * Registers a callback to be executed when lock is released or lost.
+    * Uses the default priority ({@link #DEFAULT_PRIORITY}).
     *
     * @param runnable the callback to execute when lock is released
     */
    public void onLockReleased(RunnableEx runnable) {
-      this.lockReleasedCallback.add(runnable);
+      onLockReleased(runnable, DEFAULT_PRIORITY);
+   }
+
+   /**
+    * Registers a callback to be executed when lock is released or lost with a specified priority.
+    * Callbacks are executed in ascending priority order (lowest priority first).
+    *
+    * @param runnable the callback to execute when lock is released
+    * @param priority the priority for this callback (lower values execute first)
+    */
+   public void onLockReleased(RunnableEx runnable, int priority) {
+      this.lockReleasedCallback.add(new PrioritizedCallback(runnable, priority));
    }
 
    /**
@@ -175,12 +214,18 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
       this.locked = locked;
       if (locked) {
          AtomicBoolean treatErrors = new AtomicBoolean(false);
-         lockAcquiredCallback.forEach(r -> doRunTreatingErrors(r, treatErrors));
+         // Sort callbacks by priority (lowest first) and execute them
+         lockAcquiredCallback.stream()
+            .sorted(Comparator.comparingInt(pc -> pc.priority))
+            .forEach(pc -> doRunTreatingErrors(pc.runnable, treatErrors));
          if (treatErrors.get()) {
             retryLock();
          }
       } else {
-         lockReleasedCallback.forEach(this::doRunWithLogException);
+         // Sort callbacks by priority (lowest first) and execute them
+         lockReleasedCallback.stream()
+            .sorted(Comparator.comparingInt(pc -> pc.priority))
+            .forEach(pc -> doRunWithLogException(pc.runnable));
       }
    }
 

@@ -468,8 +468,10 @@ public class NettyAcceptor extends AbstractAcceptor {
       if (lockCoordinator == null) {
          internalStart();
       } else {
-         lockCoordinator.onLockAcquired(this::internalStart);
-         lockCoordinator.onLockReleased(this::internalStop);
+         // The Acceptor needs to start before anything else, so low priority to start
+         lockCoordinator.onLockAcquired(this::internalStart, LockCoordinator.LOW_PRIORITY);
+         // And the Acceptor needs to stop after everything else, so high priority to stop
+         lockCoordinator.onLockReleased(this::internalStop, LockCoordinator.HIGH_PRIORITY);
       }
    }
 

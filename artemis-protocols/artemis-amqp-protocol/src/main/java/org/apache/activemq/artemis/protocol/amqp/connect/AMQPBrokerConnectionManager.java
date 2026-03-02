@@ -36,6 +36,7 @@ import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPBroker
 import org.apache.activemq.artemis.core.remoting.impl.netty.NettyConnection;
 import org.apache.activemq.artemis.core.server.ActiveMQComponent;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
+import org.apache.activemq.artemis.core.server.lock.LockCoordinator;
 import org.apache.activemq.artemis.protocol.amqp.broker.ProtonProtocolManager;
 import org.apache.activemq.artemis.protocol.amqp.broker.ProtonProtocolManagerFactory;
 import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
@@ -89,6 +90,13 @@ public class AMQPBrokerConnectionManager implements ActiveMQComponent, ClientCon
    private void createBrokerConnection(AMQPBrokerConnectConfiguration configuration, boolean start) throws Exception {
       AMQPBrokerConnection amqpBrokerConnection = new AMQPBrokerConnection(this, configuration, protonProtocolManagerFactory, server);
       amqpBrokerConnections.put(configuration.getName(), amqpBrokerConnection);
+      if (configuration.getLockCoordinator() != null) {
+         LockCoordinator lockCoordinator = server.getLockCoordinator(configuration.getLockCoordinator());
+         if (lockCoordinator == null) {
+            throw new IllegalStateException("lock coordinator " + configuration.getName() + " not found");
+         }
+         amqpBrokerConnection.setLockCoordinator(lockCoordinator);
+      }
 
       amqpBrokerConnection.initialize();
 
