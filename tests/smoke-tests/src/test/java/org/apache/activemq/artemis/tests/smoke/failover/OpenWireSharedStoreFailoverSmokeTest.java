@@ -218,7 +218,7 @@ public class OpenWireSharedStoreFailoverSmokeTest extends SmokeTestBase {
       assertEquals(NUMBER_OF_MESSAGES, duplicateSize, "Should have confirmed all messages (with retries during failover)");
 
       SimpleManagement management = new SimpleManagement("tcp://localhost:61617", null, null);
-      Wait.waitFor(() -> management.getMessageCountOnQueue(QUEUE_NAME) >= duplicateIDs.size(), 5000, 100);
+      Wait.waitFor(() -> management.getMessageCountOnQueue(QUEUE_NAME) >= duplicateIDs.size());
 
       long numberOfMessages = management.getMessageCountOnQueue(QUEUE_NAME);
 

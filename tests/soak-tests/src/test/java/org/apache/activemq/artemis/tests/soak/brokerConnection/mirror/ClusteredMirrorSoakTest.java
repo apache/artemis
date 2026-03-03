@@ -479,10 +479,10 @@ public class ClusteredMirrorSoakTest extends SoakTestBase {
 
          sendMessages(connectionFactoryDC1A, queueName, numberOfMessages, 10);
 
-         Wait.assertEquals(numberOfMessages, () -> simpleManagementDC1A.getMessageCountOnQueue(queueName), 5000);
-         Wait.assertEquals(0, () -> simpleManagementDC1B.getMessageCountOnQueue(queueName), 5000);
-         Wait.assertEquals(numberOfMessages, () -> simpleManagementDC2A.getMessageCountOnQueue(queueName), 5000);
-         Wait.assertEquals(0, () -> simpleManagementDC2B.getMessageCountOnQueue(queueName), 5000);
+         Wait.assertEquals(numberOfMessages, () -> simpleManagementDC1A.getMessageCountOnQueue(queueName));
+         Wait.assertEquals(0, () -> simpleManagementDC1B.getMessageCountOnQueue(queueName));
+         Wait.assertEquals(numberOfMessages, () -> simpleManagementDC2A.getMessageCountOnQueue(queueName));
+         Wait.assertEquals(0, () -> simpleManagementDC2B.getMessageCountOnQueue(queueName));
 
          CountDownLatch doneDC2B = startConsumer(executorService, connectionFactoryDC2B, queueName, runningConsumers, errors, receiverCount);
          Wait.assertEquals(numberOfMessages, receiverCount::get, 30_000);
