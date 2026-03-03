@@ -671,19 +671,24 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
          }
       }
 
+      // Ensure AMQP federation configuration isn't picked up here by core federation
+      // configuration parsing, any AMQP federation configuration would generate empty
+      // Core federation configurations that would not create active federations.
       NodeList federations = e.getElementsByTagName("federations");
 
       for (int i = 0; i < federations.getLength(); i++) {
-         Element fedNode = (Element) federations.item(i);
-         parseFederationsConfiguration(fedNode, config);
-      }
+         Element federationElement = (Element) federations.item(i);
 
-      NodeList fedNodes = e.getElementsByTagName("federation");
+         // Handle attributes at the federations level and then add each nested federation.
+         parseFederationsConfiguration(federationElement, config);
 
-      for (int i = 0; i < fedNodes.getLength(); i++) {
-         Element fedNode = (Element) fedNodes.item(i);
+         for (int j = 0; j < federationElement.getChildNodes().getLength(); ++j) {
+            Node node = federationElement.getChildNodes().item(j);
 
-         parseFederationConfiguration(fedNode, config);
+            if (node.getNodeName().equalsIgnoreCase("federation")) {
+               parseFederationConfiguration((Element) node, config);
+            }
+         }
       }
 
       NodeList gaNodes = e.getElementsByTagName("grouping-handler");
