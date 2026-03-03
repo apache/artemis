@@ -29,6 +29,7 @@ import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
 import java.io.File;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -53,6 +54,7 @@ import org.apache.activemq.artemis.utils.JsonLoader;
 import org.apache.activemq.artemis.utils.VersionLoader;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.HttpHostConnectException;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -60,10 +62,14 @@ import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 // clone of JmxRBACTest with jmx security settings in broker.xml and new guard that delegates to security settings
 // configured via -Djavax.management.builder.initial=org.apache.activemq.artemis.core.server.management.ArtemisRbacMBeanServerBuilder
 public class JmxRBACBrokerSecurityTest extends SmokeTestBase {
+
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private static final String JMX_SERVER_HOSTNAME = "localhost";
    private static final String JOLOKIA_URL = "http://localhost:8161/console/jolokia";
@@ -322,23 +328,36 @@ public class JmxRBACBrokerSecurityTest extends SmokeTestBase {
    }
 
    private void makeJolokiaRequest(String url, String jsonBody, String username, String password, Consumer<HttpResponse> responseConsumer) throws IOException {
-      try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-         HttpPost httpPost = new HttpPost(url);
+      final int retries = 30;
+      for (int i = 0; i < retries; i++) {
+         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+            HttpPost httpPost = new HttpPost(url);
 
-         // Set authentication header
-         String auth = username + ":" + password;
-         String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
-         httpPost.setHeader("Authorization", "Basic " + encodedAuth);
+            // Set authentication header
+            String auth = username + ":" + password;
+            String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
+            httpPost.setHeader("Authorization", "Basic " + encodedAuth);
 
-         // Set required headers for jolokia
-         httpPost.setHeader("Content-Type", "application/json");
-         httpPost.setHeader("Origin", "http://localhost");
+            // Set required headers for jolokia
+            httpPost.setHeader("Content-Type", "application/json");
+            httpPost.setHeader("Origin", "http://localhost");
 
-         // Set request body
-         StringEntity entity = new StringEntity(jsonBody, StandardCharsets.UTF_8);
-         httpPost.setEntity(entity);
+            // Set request body
+            StringEntity entity = new StringEntity(jsonBody, StandardCharsets.UTF_8);
+            httpPost.setEntity(entity);
 
-         responseConsumer.accept(httpClient.execute(httpPost));
+            responseConsumer.accept(httpClient.execute(httpPost));
+            return;
+         } catch (HttpHostConnectException e) {
+            // The web server is probably not active yet, retrying
+            logger.info("Host Exception {}, retrying", e.getMessage());
+            try {
+               // some sleep after a failure
+               Thread.sleep(1000);
+            } catch (Throwable ignored) {
+            }
+         }
       }
+      fail("could not makeJolokiaRequest after " + retries + " retries");
    }
 }
