@@ -430,6 +430,79 @@ public class PagingTest extends ParameterDBTestBase {
       assertFalse(iterator.hasNext());
    }
 
+
+   @TestTemplate
+   public void testSimpleRemoveOrAckWhileIterate() throws Exception {
+      Configuration config = createDefaultInVMConfig();
+
+      final int PAGE_MAX = 20 * 1024;
+
+      final int PAGE_SIZE = 10 * 1024;
+
+      server = createServer(true, config, PAGE_SIZE, PAGE_MAX);
+      server.start();
+
+      final int numberOfBytes = 124;
+
+      final int NUMBER_OF_MESSAGES = 201;
+
+      locator.setBlockOnNonDurableSend(false).setBlockOnDurableSend(false).setBlockOnAcknowledge(false);
+
+
+      Queue queue = server.createQueue(QueueConfiguration.of(ADDRESS).setAddress(ADDRESS));
+      assertNotNull(queue);
+      queue.pause();
+
+      PagingStore store = queue.getPagingStore();
+
+      store.startPaging();
+      store.disableCleanup();
+
+      {
+         ClientSessionFactory sf = addSessionFactory(createSessionFactory(locator));
+         ClientSession session = sf.createSession(null, null, false, false, false, false, 0);
+         ClientProducer producer = session.createProducer(ADDRESS);
+         for (int i = 0; i < NUMBER_OF_MESSAGES; i++) {
+            ClientMessage message = session.createMessage(true);
+
+            message.getBodyBuffer().writerIndex(0);
+
+            message.getBodyBuffer().writeBytes(new byte[numberOfBytes]);
+
+            for (int j = 1; j <= numberOfBytes; j++) {
+               message.getBodyBuffer().writeInt(j);
+            }
+
+            message.putIntProperty("i", i);
+
+            producer.send(message);
+            session.commit();
+         }
+         session.close();
+      }
+
+      PageCursorProvider provider = store.getCursorProvider();
+
+      PageSubscription cursorSubscription = provider.getSubscription(queue.getID());
+      PageIterator iterator1 = cursorSubscription.iterator(false);
+      PageIterator iterator2 = cursorSubscription.iterator(false);
+
+      // simulating 2 open cursors.. they both stop and leave stuff for later
+      assertTrue(iterator1.hasNext());
+      assertTrue(iterator2.hasNext());
+
+      PagedReference reference1 = iterator1.next();
+      assertEquals(0, reference1.getPagedMessage().getMessage().getIntProperty("i"));
+      iterator1.remove();
+
+
+      assertTrue(iterator2.hasNext());
+      PagedReference reference2 = iterator2.next();
+      assertEquals(1, reference2.getPagedMessage().getMessage().getIntProperty("i"));
+
+   }
+
+
    @TestTemplate
    public void testSimpleCursorIteratorLargeMessage() throws Exception {
       Configuration config = createDefaultInVMConfig();
