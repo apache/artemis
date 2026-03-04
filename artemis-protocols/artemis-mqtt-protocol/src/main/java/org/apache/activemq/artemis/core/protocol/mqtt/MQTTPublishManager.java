@@ -208,9 +208,6 @@ public class MQTTPublishManager {
          int packetId = message.variableHeader().packetId();
          boolean qos2PublishAlreadyReceived = state.getPubRec().contains(packetId);
          if (qos < 2 || !qos2PublishAlreadyReceived) {
-            if (qos == 2 && !internal)
-               state.getPubRec().add(packetId);
-
             Transaction tx = session.getServerSession().newTransaction();
             try {
                AddressInfo addressInfo = session.getServer().getAddressInfo(address);
@@ -222,6 +219,10 @@ public class MQTTPublishManager {
                   serverMessage.setRoutingType(addressInfo.getRoutingType());
                }
                session.getServerSession().send(tx, serverMessage, true, senderName, false);
+
+               if (qos == 2 && !internal) {
+                  state.getPubRec().add(packetId);
+               }
 
                if (message.fixedHeader().isRetain()) {
                   ByteBuf payload = message.payload();
