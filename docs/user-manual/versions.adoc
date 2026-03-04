@@ -1,4 +1,4 @@
-= Versions
+= Version History
 :idprefix:
 :idseparator: -
 :docinfo: shared

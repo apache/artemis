@@ -11,6 +11,11 @@ image::images/artemis_text_black_small.png[align="center"]
 
 include::project-info.adoc[leveloffset=1]
 include::preface.adoc[leveloffset=1]
+
+//== Upgrading
+include::upgrading.adoc[leveloffset=1]
+
+//== Concepts
 include::messaging-concepts.adoc[leveloffset=1]
 include::architecture.adoc[leveloffset=1]
 
@@ -28,13 +33,7 @@ include::using-jms.adoc[leveloffset=1]
 include::pre-acknowledge.adoc[leveloffset=1]
 include::proxy-protocol.adoc[leveloffset=1]
 
-//== Upgrading
-
-include::versions.adoc[leveloffset=1]
-include::upgrading.adoc[leveloffset=1]
-
 //== Getting Started
-
 include::docker.adoc[leveloffset=1]
 include::using-server.adoc[leveloffset=1]
 include::using-cli.adoc[leveloffset=1]
@@ -60,6 +59,7 @@ include::metrics.adoc[leveloffset=1]
 
 include::core-bridges.adoc[leveloffset=1]
 include::clusters.adoc[leveloffset=1]
+include::lock-coordination.adoc[leveloffset=1]
 include::ha.adoc[leveloffset=1]
 include::network-isolation.adoc[leveloffset=1]
 include::restart-sequence.adoc[leveloffset=1]
@@ -68,7 +68,6 @@ include::amqp-broker-connections.adoc[leveloffset=1]
 include::amqp-address-federation.adoc[leveloffset=2]
 include::amqp-queue-federation.adoc[leveloffset=2]
 include::amqp-federation-configuration-glossary.adoc[leveloffset=2]
-include::lock-coordination.adoc[leveloffset=1]
 include::federation.adoc[leveloffset=1]
 include::federation-address.adoc[leveloffset=1]
 include::federation-queue.adoc[leveloffset=1]
@@ -140,4 +139,7 @@ include::unit-testing.adoc[leveloffset=1]
 include::resource-adapter.adoc[leveloffset=1]
 include::configuration-index.adoc[leveloffset=1]
 include::examples.adoc[leveloffset=1]
+
+//== Addendum
+include::versions.adoc[leveloffset=1]
 include::notice.adoc[leveloffset=1]

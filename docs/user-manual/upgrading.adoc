@@ -17,7 +17,12 @@ It also simplifies updating to newer versions.
 
 == General Upgrade Procedure
 
-Upgrading may require some specific steps noted in the xref:versions.adoc#versions[versions], but the general process is as follows:
+[IMPORTANT]
+====
+Review the xref:versions.adoc#version-history[version] history for specific steps required for your upgrade before proceeding.
+====
+
+In general, the process is as follows:
 
 . Navigate to the `etc` folder of the broker instance that's being upgraded
 . Open `artemis.profile` and `artemis-utility.profile` (`artemis.profile.cmd` and `artemis-utility.profile.cmd` on Windows).
@@ -39,7 +44,7 @@ It contains a property which is relevant for the upgrade:
 
 The `ARTEMIS_HOME` property is used to link the instance with the home.
 _In most cases_ the instance can be upgraded to a newer version simply by changing the value of this property to the location of the new broker home.
-Please refer to the aforementioned xref:versions.adoc#versions[versions] document for additional upgrade steps (if required).
+Please refer to the aforementioned xref:versions.adoc#version-history[versions] document for additional upgrade steps (if required).
 
 It is also possible to do many of these update steps automatically, as can be seen in the next section.
 

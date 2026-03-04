@@ -1,4 +1,4 @@
-= Lock Coordination
+= Lock Coordination / HA with Mirroring
 :idprefix:
 :idseparator: -
 :docinfo: shared

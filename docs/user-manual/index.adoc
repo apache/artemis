@@ -12,9 +12,13 @@ image::images/artemis_text_black_small.png[align="center"]
 *An in-depth manual on all aspects of {project-name-full} {project-version}*
 
 == Overview
-
 * xref:project-info.adoc#general-project-information[General Project Information]
 * xref:preface.adoc#why-use-{project-name-full-url}[Why use {project-name-full}?]
+
+== Upgrading
+* xref:upgrading.adoc#upgrading-the-broker[Basic Upgrade Instructions]
+
+== Concepts
 * xref:messaging-concepts.adoc#messaging-concepts[Messaging Concepts]
 * xref:architecture.adoc#core-architecture[Core Architecture]
 
@@ -31,11 +35,6 @@ image::images/artemis_text_black_small.png[align="center"]
 * xref:using-jms.adoc#using-jms-or-jakarta-messaging[Using JMS or Jakarta Messaging]
 ** xref:pre-acknowledge.adoc#extra-acknowledge-modes[Extra Acknowledge Modes]
 * xref:proxy-protocol.adoc#proxy-protocol[PROXY Protocol]
-
-== Upgrading
-
-* xref:versions.adoc#versions[Version History]
-* xref:upgrading.adoc#upgrading-the-broker[Basic Upgrade Instructions]
 
 == Getting Started
 
@@ -64,7 +63,7 @@ image::images/artemis_text_black_small.png[align="center"]
 
 * xref:core-bridges.adoc#core-bridges[Core Bridges]
 * xref:clusters.adoc#clusters[Clustering]
-* xref:lock-coordination.adoc#lock-coordination[High Availability with Mirroring]
+* xref:lock-coordination.adoc#lock-coordination[Lock Coordination / HA with Mirroring]
 * xref:ha.adoc#high-availability-and-failover[High Availability & Failover]
 ** xref:network-isolation.adoc#network-isolation-split-brain[Network Isolation]
 ** xref:restart-sequence.adoc#restart-sequence[Restart Sequence]
@@ -149,4 +148,7 @@ image::images/artemis_text_black_small.png[align="center"]
 * xref:resource-adapter.adoc#jca-resource-adapter[JCA Resource Adapter]
 * xref:configuration-index.adoc#configuration-reference[Configuration Index]
 * xref:examples.adoc#examples[Examples]
+
+== Addendum
+* xref:versions.adoc#version-history[Version History]
 * xref:notice.adoc#legal-notice[Legal Notice]
