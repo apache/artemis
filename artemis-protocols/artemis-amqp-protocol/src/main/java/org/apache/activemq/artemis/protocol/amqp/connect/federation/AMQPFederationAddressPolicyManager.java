@@ -653,12 +653,22 @@ public final class AMQPFederationAddressPolicyManager extends AMQPFederationLoca
       }
 
       private boolean isUseConduitConsumer() {
-         // Only use binding filters when configured to do so and the remote supports FQQN subscriptions because
-         // we need to be able to open multiple uniquely named queues for an address if more than one consumer with
-         // differing filters are present and prior to FQQN subscription support we used a simple link name that
-         // would not be unique amongst multiple consumers.
-         return configuration.isIgnoreAddressBindingFilters() ||
-                !manager.getFederation().getCapabilities().isUseFQQNAddressSubscriptions();
+         if (!manager.getCapabilities().isUseFQQNAddressSubscriptions()) {
+            // prior to FQQN subscription support we used a simple link name that would not be unique amongst
+            // multiple consumers on the same address so for most features or behaviors that come later we cannot
+            // action them properly and we must fallback to a conduit consumer strategy.
+            return true;
+         } else if (manager.getWildcardConfiguration().isWild(addressInfo.getName())) {
+            // For a wildcard subscription we want to treat it as a bindings aware consumer and route messages only
+            // to the bindings we have tracked as demand on the address. The broker wild-card code is not known to
+            // support direct sends to the literal wildcard address and could fail to route messages correctly.
+            return false;
+         } else {
+            // If we get here then the only consideration is if we are honoring consumers filters on the address
+            // which decides if we can route straight to the address or must route to specific bindings groups that
+            // all share the same filter.
+            return configuration.isIgnoreAddressBindingFilters();
+         }
       }
 
       private String generateQueueName(AddressInfo address, Binding binding, boolean ignoreFilters) {

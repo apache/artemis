@@ -19,6 +19,7 @@ package org.apache.activemq.artemis.protocol.amqp.connect.federation;
 import java.lang.invoke.MethodHandles;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
+import org.apache.activemq.artemis.core.config.WildcardConfiguration;
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.Divert;
 import org.apache.activemq.artemis.core.server.Queue;
@@ -39,10 +40,15 @@ public abstract class AMQPFederationLocalPolicyManager extends AMQPFederationPol
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
+   private final WildcardConfiguration wildcardConfiguration;
+
    protected volatile AMQPFederationConsumerConfiguration configuration;
+   protected volatile AMQPFederationCapabilities capabilities;
 
    public AMQPFederationLocalPolicyManager(AMQPFederation federation, AMQPFederationMetrics metrics, FederationReceiveFromResourcePolicy policy) throws ActiveMQException {
       super(federation, metrics, policy.getPolicyName(), policy.getPolicyType());
+
+      this.wildcardConfiguration = federation.getWildcardConfiguration();
    }
 
    /**
@@ -55,6 +61,20 @@ public abstract class AMQPFederationLocalPolicyManager extends AMQPFederationPol
     */
    protected AMQPFederationConsumerConfiguration getConfiguration() {
       return configuration;
+   }
+
+   /**
+    * {@return the known connection capabilities at this time the method is called}
+    */
+   protected AMQPFederationCapabilities getCapabilities() {
+      return capabilities;
+   }
+
+   /**
+    * {@return the wild-card configuration the federation was configured with when created}
+    */
+   protected WildcardConfiguration getWildcardConfiguration() {
+      return wildcardConfiguration;
    }
 
    @Override
@@ -104,6 +124,7 @@ public abstract class AMQPFederationLocalPolicyManager extends AMQPFederationPol
       // Capture state for the current connection on each connection as different URIs could have different options we
       // need to capture in the current configuration state.
       configuration = new AMQPFederationConsumerConfiguration(federation.getConfiguration(), getPolicy().getProperties());
+      capabilities = federation.getCapabilities();
 
       updateStateAfterConnect(configuration, session);
 

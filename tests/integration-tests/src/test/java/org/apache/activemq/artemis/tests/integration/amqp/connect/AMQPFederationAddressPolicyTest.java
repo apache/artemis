@@ -7312,6 +7312,240 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
       }
    }
 
+   @Test
+   @Timeout(20)
+   public void testWildcardSubscriptionRoutedToBindingWhenFederatedFromRemote() throws Exception {
+      try (ProtonTestServer peer = new ProtonTestServer()) {
+         peer.expectSASLAnonymousConnect();
+         peer.expectOpen().respond();
+         peer.expectBegin().respond();
+         peer.expectAttach().ofSender()
+                            .withDesiredCapability(FEDERATION_CONTROL_LINK.toString())
+                            .withProperty(FEDERATION_VERSION.toString(), FEDERATION_V2)
+                            .respondInKind()
+                            .withProperty(FEDERATION_VERSION.toString(), FEDERATION_V2);
+         peer.expectAttach().ofReceiver()
+                            .withDesiredCapability(FEDERATION_EVENT_LINK.toString())
+                            .respondInKind();
+         peer.expectFlow().withLinkCredit(10);
+         peer.start();
+
+         final String wildcardAddressA = getTestName() + ".A.#";
+         final String wildcardAddressB = getTestName() + ".B.#";
+
+         final URI remoteURI = peer.getServerURI();
+         logger.info("Test started, peer listening on: {}", remoteURI);
+
+         final AMQPFederationAddressPolicyElement receiveFromAddress = new AMQPFederationAddressPolicyElement();
+         receiveFromAddress.setName("address-policy");
+         receiveFromAddress.addToIncludes(wildcardAddressA);
+         receiveFromAddress.addProperty(ADDRESS_RECEIVER_IDLE_TIMEOUT, 0);
+
+         final AMQPFederatedBrokerConnectionElement element = new AMQPFederatedBrokerConnectionElement();
+         element.setName(getTestName());
+         element.addLocalAddressPolicy(receiveFromAddress);
+
+         final AMQPBrokerConnectConfiguration amqpConnection =
+            new AMQPBrokerConnectConfiguration(getTestName(), "tcp://" + remoteURI.getHost() + ":" + remoteURI.getPort());
+         amqpConnection.setReconnectAttempts(0);// No reconnects
+         amqpConnection.addElement(element);
+
+         server.getConfiguration().addAMQPConnection(amqpConnection);
+         server.start();
+
+         peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+         peer.expectAttach().ofReceiver()
+                            .withDesiredCapability(FEDERATION_ADDRESS_RECEIVER.toString())
+                            .withName(allOf(containsString(wildcardAddressA),
+                                            containsString("address-receiver"),
+                                            containsString(server.getNodeID().toString())))
+                            .withSource().withAddress(not(containsString("filterId"))).also()
+                            .respondInKind();
+         peer.expectFlow().withLinkCredit(1000);
+
+         final ConnectionFactory factory = CFUtil.createConnectionFactory("AMQP", "tcp://localhost:" + AMQP_PORT);
+
+         try (Connection connection = factory.createConnection()) {
+            final Session session = connection.createSession(Session.AUTO_ACKNOWLEDGE);
+            // Both should have the message routed to them by a single federation receiver link to the remote
+            final MessageConsumer consumerA1 = session.createConsumer(session.createTopic(wildcardAddressA));
+            final MessageConsumer consumerA2 = session.createConsumer(session.createTopic(wildcardAddressA));
+            // Should not match and should not create any federation links
+            final MessageConsumer consumerB = session.createConsumer(session.createTopic(wildcardAddressB));
+
+            connection.start();
+
+            peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+            peer.expectDisposition().withSettled(true).withState().accepted();
+            peer.remoteTransfer().withMessage()
+                                 .withBody().withString("test-message").also()
+                                 .withDeliveryId(0)
+                                 .later(10);
+
+            final Message messageA1 = consumerA1.receive(5_000);
+            assertNotNull(messageA1);
+            assertInstanceOf(TextMessage.class, messageA1);
+            assertEquals("test-message", ((TextMessage) messageA1).getText());
+
+            final Message messageA2 = consumerA2.receive(5_000);
+            assertNotNull(messageA2);
+            assertInstanceOf(TextMessage.class, messageA2);
+            assertEquals("test-message", ((TextMessage) messageA2).getText());
+
+            peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+            peer.expectFlow().withLinkCredit(999).withDrain(true)
+                             .respond()
+                             .withLinkCredit(0).withDeliveryCount(1000).withDrain(true);
+            peer.expectDetach(); // demand will be gone and receiver link should close.
+
+            assertNull(consumerB.receiveNoWait());
+         }
+
+         peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+         peer.close();
+      }
+   }
+
+   @Test
+   @Timeout(20)
+   public void testWildcardSubscriptionWithFiltersRoutedToBindingsWhenFederatedFromRemote() throws Exception {
+      try (ProtonTestServer peer = new ProtonTestServer()) {
+         peer.expectSASLAnonymousConnect();
+         peer.expectOpen().respond();
+         peer.expectBegin().respond();
+         peer.expectAttach().ofSender()
+                            .withDesiredCapability(FEDERATION_CONTROL_LINK.toString())
+                            .withProperty(FEDERATION_VERSION.toString(), FEDERATION_V2)
+                            .respondInKind()
+                            .withProperty(FEDERATION_VERSION.toString(), FEDERATION_V2);
+         peer.expectAttach().ofReceiver()
+                            .withDesiredCapability(FEDERATION_EVENT_LINK.toString())
+                            .respondInKind();
+         peer.expectFlow().withLinkCredit(10);
+         peer.start();
+
+         final String wildcardAddressA = getTestName() + ".A.#";
+         final String wildcardAddressB = getTestName() + ".B.#";
+         final String expectedJMSFilter = "color='red'";
+         final AtomicReference<Attach> capturedAttach = new AtomicReference<>();
+         final Symbol jmsSelectorKey = Symbol.valueOf("jms-selector");
+         final org.apache.qpid.protonj2.test.driver.codec.primitives.UnsignedLong jmsSelectorCode =
+            org.apache.qpid.protonj2.test.driver.codec.primitives.UnsignedLong.valueOf(0x0000468C00000004L);
+
+         final URI remoteURI = peer.getServerURI();
+         logger.info("Test started, peer listening on: {}", remoteURI);
+
+         final AMQPFederationAddressPolicyElement receiveFromAddress = new AMQPFederationAddressPolicyElement();
+         receiveFromAddress.setName("address-policy");
+         receiveFromAddress.addToIncludes(wildcardAddressA);
+         receiveFromAddress.addProperty(ADDRESS_RECEIVER_IDLE_TIMEOUT, 0);
+         receiveFromAddress.addProperty(IGNORE_ADDRESS_BINDING_FILTERS, "false");
+
+         final AMQPFederatedBrokerConnectionElement element = new AMQPFederatedBrokerConnectionElement();
+         element.setName(getTestName());
+         element.addLocalAddressPolicy(receiveFromAddress);
+
+         final AMQPBrokerConnectConfiguration amqpConnection =
+            new AMQPBrokerConnectConfiguration(getTestName(), "tcp://" + remoteURI.getHost() + ":" + remoteURI.getPort());
+         amqpConnection.setReconnectAttempts(0);// No reconnects
+         amqpConnection.addElement(element);
+
+         server.getConfiguration().addAMQPConnection(amqpConnection);
+         server.start();
+
+         peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+         peer.expectAttach().ofReceiver()
+                            .withDesiredCapability(FEDERATION_ADDRESS_RECEIVER.toString())
+                            .withCapture(attach -> capturedAttach.set(attach))
+                            .withName(allOf(containsString(wildcardAddressA),
+                                            containsString("address-receiver"),
+                                            containsString(server.getNodeID().toString())))
+                            .withSource().withAddress(containsString("filterId")).also()
+                            .respondInKind();
+         peer.expectFlow().withLinkCredit(1000);
+
+         final ConnectionFactory factory = CFUtil.createConnectionFactory("AMQP", "tcp://localhost:" + AMQP_PORT);
+
+         try (Connection connection = factory.createConnection()) {
+            final Session session = connection.createSession(Session.AUTO_ACKNOWLEDGE);
+            // Both should have the message routed to them by a single federation receiver link to the remote
+            // that link should have a filter assigned to it so the remote only sends matches and nothing else.
+            final MessageConsumer consumerA1 = session.createConsumer(session.createTopic(wildcardAddressA), "color='red'");
+            final MessageConsumer consumerA2 = session.createConsumer(session.createTopic(wildcardAddressA), "color='red'");
+            // Should not match and should not create any federation links
+            final MessageConsumer consumerB = session.createConsumer(session.createTopic(wildcardAddressB));
+
+            connection.start();
+
+            peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+            peer.expectDisposition().withSettled(true).withState().accepted();
+            peer.remoteTransfer().withMessage()
+                                 .withBody().withString("test-message").also()
+                                 .withApplicationProperties().withProperty("color", "red").also()
+                                 .withDeliveryId(0)
+                                 .later(10);
+
+            final Message messageA1 = consumerA1.receive(5_000);
+            assertNotNull(messageA1);
+            assertInstanceOf(TextMessage.class, messageA1);
+            assertEquals("test-message", ((TextMessage) messageA1).getText());
+
+            final Message messageA2 = consumerA2.receive(5_000);
+            assertNotNull(messageA2);
+            assertInstanceOf(TextMessage.class, messageA2);
+            assertEquals("test-message", ((TextMessage) messageA2).getText());
+
+            final Map<Symbol, Object> filtersMap1 = capturedAttach.get().getSource().getFilter();
+
+            assertNotNull(filtersMap1);
+            assertTrue(filtersMap1.containsKey(jmsSelectorKey));
+            final DescribedType jmsSelectorEntry = (DescribedType) filtersMap1.get(jmsSelectorKey);
+            assertNotNull(jmsSelectorEntry);
+            assertEquals(jmsSelectorEntry.getDescriptor(), jmsSelectorCode);
+            assertEquals(jmsSelectorEntry.getDescribed().toString(), expectedJMSFilter);
+
+            // Attach another consumer on the same wild card address but with a different filter and we should
+            // see a new receiver link opened as that binding needs its own receiver.
+            peer.expectAttach().ofReceiver()
+                               .withDesiredCapability(FEDERATION_ADDRESS_RECEIVER.toString())
+                               .withCapture(attach -> capturedAttach.set(attach))
+                               .withName(allOf(containsString(wildcardAddressA),
+                                               containsString("address-receiver"),
+                                               containsString(server.getNodeID().toString())))
+                               .withSource().withAddress(containsString("filterId")).also()
+                               .respondInKind();
+            peer.expectFlow().withLinkCredit(1000);
+
+            final MessageConsumer consumerA3 = session.createConsumer(session.createTopic(wildcardAddressA), "color='blue'");
+
+            peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+
+            assertNull(consumerA3.receiveNoWait());  // Should be nothing to route here.
+
+            // Consumer A3 close should trigger federation link close with no messages read.
+            peer.expectFlow().withLinkCredit(1000).withDrain(true)
+                             .respond()
+                             .withLinkCredit(0).withDeliveryCount(1000).withDrain(true);
+            peer.expectDetach();
+
+            consumerA3.close();
+
+            peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+
+            // Now the other two consumers will close and the link should be torn down.
+            peer.expectFlow().withLinkCredit(999).withDrain(true)
+                             .respond()
+                             .withLinkCredit(0).withDeliveryCount(1000).withDrain(true);
+            peer.expectDetach();
+
+            assertNull(consumerB.receive(100));
+         }
+
+         peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+         peer.close();
+      }
+   }
+
    protected void configureSecurity(ActiveMQServer server, String allowed, String restricted, String... userAllowedOnly) {
       ActiveMQJAASSecurityManager securityManager = (ActiveMQJAASSecurityManager) server.getSecurityManager();
 
