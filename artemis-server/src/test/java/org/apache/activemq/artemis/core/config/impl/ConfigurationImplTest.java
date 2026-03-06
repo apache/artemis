@@ -3148,6 +3148,31 @@ public class ConfigurationImplTest extends AbstractConfigurationTestBase {
       assertTrue(properties.containsKey("addressConfigurations.test.queueConfigs.test.name"));
    }
 
+   @Test
+   public void testParseJMXEnabledOnProperties() throws Exception {
+      Properties properties = new Properties();
+
+      properties.put("JMXNotificationEnabled", "false");
+      ConfigurationImpl configuration = new ConfigurationImpl();
+      configuration.parsePrefixedProperties(properties, null);
+
+      assertFalse(configuration.isJMXNotificationEnabled());
+
+      File outputProperty = new File(getTestDirfile(), "broker.properties");
+      configuration.exportAsProperties(outputProperty);
+
+      Properties brokerProperties = new Properties();
+
+      try (FileInputStream is = new FileInputStream(outputProperty)) {
+         BufferedInputStream bis = new BufferedInputStream(is);
+         brokerProperties.load(bis);
+      }
+
+      assertEquals("false", brokerProperties.get("JMXNotificationEnabled"));
+   }
+
+
+
    /**
     * Verifies the lock coordinator configuration parsing and export process:
     * <ul>

@@ -210,6 +210,8 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
 
    protected boolean jmxManagementEnabled = ActiveMQDefaultConfiguration.isDefaultJmxManagementEnabled();
 
+   protected boolean jmxNotificationEnabled = ActiveMQDefaultConfiguration.isDefaultJmxNotificationEnabled();
+
    protected String jmxDomain = ActiveMQDefaultConfiguration.getDefaultJmxDomain();
 
    protected boolean jmxUseBrokerName = ActiveMQDefaultConfiguration.isDefaultJMXUseBrokerName();
@@ -2170,6 +2172,17 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
    @Override
    public ConfigurationImpl setJMXManagementEnabled(final boolean enabled) {
       jmxManagementEnabled = enabled;
+      return this;
+   }
+
+   @Override
+   public boolean isJMXNotificationEnabled() {
+      return jmxNotificationEnabled;
+   }
+
+   @Override
+   public ConfigurationImpl setJMXNotificationEnabled(final boolean enabled) {
+      jmxNotificationEnabled = enabled;
       return this;
    }
 

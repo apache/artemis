@@ -205,6 +205,7 @@ public class FileConfigurationTest extends AbstractConfigurationTestBase {
       assertEquals("Frog", configInstance.getClusterUser());
       assertEquals("Wombat", configInstance.getClusterPassword());
       assertFalse(configInstance.isJMXManagementEnabled());
+      assertFalse(configInstance.isJMXNotificationEnabled());
       assertEquals("gro.qtenroh", configInstance.getJMXDomain());
       assertTrue(configInstance.isMessageCounterEnabled());
       assertEquals(5, configInstance.getMessageCounterMaxDayHistory());

@@ -52,6 +52,8 @@ public class DefaultsFileConfigurationTest extends AbstractConfigurationTestBase
 
       assertEquals(ActiveMQDefaultConfiguration.isDefaultJmxManagementEnabled(), conf.isJMXManagementEnabled());
 
+      assertEquals(ActiveMQDefaultConfiguration.isDefaultJmxNotificationEnabled(), conf.isJMXNotificationEnabled());
+
       assertEquals(ActiveMQDefaultConfiguration.getDefaultJmxDomain(), conf.getJMXDomain());
 
       assertEquals(0, conf.getIncomingInterceptorClassNames().size());

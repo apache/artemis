@@ -192,6 +192,9 @@ public final class ActiveMQDefaultConfiguration {
    // true means that the management API is available via JMX
    private static boolean DEFAULT_JMX_MANAGEMENT_ENABLED = true;
 
+   // true means that management notifications are reproduced as JMX notifications
+   private static boolean DEFAULT_JMX_NOTIFICATION_ENABLED = true;
+
    // the JMX domain used to registered Apache Artemis MBeans in the MBeanServer
    private static String DEFAULT_JMX_DOMAIN = "org.apache.activemq.artemis";
 
@@ -898,6 +901,13 @@ public final class ActiveMQDefaultConfiguration {
     */
    public static boolean isDefaultJmxManagementEnabled() {
       return DEFAULT_JMX_MANAGEMENT_ENABLED;
+   }
+
+   /**
+    * {@code true} means that management notifications are reproduced as JMX notifications
+    */
+   public static boolean isDefaultJmxNotificationEnabled() {
+      return DEFAULT_JMX_NOTIFICATION_ENABLED;
    }
 
    /**

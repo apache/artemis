@@ -178,7 +178,7 @@ public class ManagementServiceImpl implements ManagementService {
       messageCounterEnabled = configuration.isMessageCounterEnabled();
       managementAddress = configuration.getManagementAddress();
       managementNotificationAddress = configuration.getManagementNotificationAddress();
-      broadcaster = new NotificationBroadcasterSupport();
+      broadcaster = configuration.isJMXNotificationEnabled() ? new NotificationBroadcasterSupport() : null;
       notificationsEnabled = true;
       objectNameBuilder = ObjectNameBuilder.create(configuration.getJMXDomain(), configuration.getName(), configuration.isJMXUseBrokerName());
       managementMessageRbacResourceNamePrefix = configuration.isManagementMessageRbac() ? SimpleString.of(configuration.getManagementRbacPrefix()).concat('.') : null;

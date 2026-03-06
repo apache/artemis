@@ -41,6 +41,7 @@
       <mask-password>true</mask-password>
       <log-delegate-factory-class-name>com.foo</log-delegate-factory-class-name>
       <jmx-management-enabled>false</jmx-management-enabled>
+      <jmx-notification-enabled>false</jmx-notification-enabled>
       <jmx-domain>gro.qtenroh</jmx-domain>
       <message-counter-enabled>true</message-counter-enabled>
       <message-counter-sample-period>123456</message-counter-sample-period>

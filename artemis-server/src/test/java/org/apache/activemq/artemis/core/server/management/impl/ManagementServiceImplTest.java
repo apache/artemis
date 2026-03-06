@@ -16,6 +16,7 @@
  */
 package org.apache.activemq.artemis.core.server.management.impl;
 
+import java.lang.reflect.Field;
 import javax.management.MBeanServer;
 
 import org.apache.activemq.artemis.api.core.RoutingType;
@@ -39,6 +40,9 @@ import org.apache.activemq.artemis.utils.ExecutorFactory;
 import org.apache.activemq.artemis.utils.actors.ArtemisExecutor;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class ManagementServiceImplTest {
 
@@ -188,6 +192,22 @@ public class ManagementServiceImplTest {
       expected = SimpleString.of("$mm.queue." + queueName + ".pause");
       Mockito.verify(securityStore).check(Mockito.eq(expected), Mockito.eq(CheckType.EDIT), Mockito.any(SecurityAuth.class));
 
+   }
+
+   @Test
+   public void testBroadcasterNullWhenJMXNotificationDisabled() throws Exception {
+      Field broadcasterField = ManagementServiceImpl.class.getDeclaredField("broadcaster");
+      broadcasterField.setAccessible(true);
+
+      FileConfiguration enabledConfig = new FileConfiguration();
+      enabledConfig.setJMXNotificationEnabled(true);
+      ManagementServiceImpl enabledService = new ManagementServiceImpl(mBeanServer, enabledConfig);
+      assertNotNull(broadcasterField.get(enabledService));
+
+      FileConfiguration disabledConfig = new FileConfiguration();
+      disabledConfig.setJMXNotificationEnabled(false);
+      ManagementServiceImpl disabledService = new ManagementServiceImpl(mBeanServer, disabledConfig);
+      assertNull(broadcasterField.get(disabledService));
    }
 
    @Test

@@ -285,6 +285,18 @@ public interface Configuration {
    Configuration setJMXManagementEnabled(boolean enabled);
 
    /**
+    * {@return whether management notifications are reproduced as JMX notifications; default is {@link
+    * ActiveMQDefaultConfiguration#DEFAULT_JMX_NOTIFICATION_ENABLED}}
+    */
+   boolean isJMXNotificationEnabled();
+
+   /**
+    * Sets whether management notifications are reproduced as JMX notifications; default is
+    * {@link ActiveMQDefaultConfiguration#DEFAULT_JMX_NOTIFICATION_ENABLED}}
+    */
+   Configuration setJMXNotificationEnabled(boolean enabled);
+
+   /**
     * {@return the domain used by JMX MBeans (provided JMX management is enabled); default is {@link
     * ActiveMQDefaultConfiguration#DEFAULT_JMX_DOMAIN}}
     */

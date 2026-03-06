@@ -4226,6 +4226,9 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
    public void removeNotificationListener(final NotificationListener listener,
                                           final NotificationFilter filter,
                                           final Object handback) throws ListenerNotFoundException {
+      if (broadcaster == null) {
+         return;
+      }
       if (AuditLogger.isBaseLoggingEnabled()) {
          AuditLogger.removeNotificationListener(this.server, listener, filter, handback);
       }
@@ -4239,6 +4242,9 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
 
    @Override
    public void removeNotificationListener(final NotificationListener listener) throws ListenerNotFoundException {
+      if (broadcaster == null) {
+         return;
+      }
       if (AuditLogger.isBaseLoggingEnabled()) {
          AuditLogger.removeNotificationListener(this.server, listener);
       }
@@ -4254,6 +4260,9 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
    public void addNotificationListener(final NotificationListener listener,
                                        final NotificationFilter filter,
                                        final Object handback) throws IllegalArgumentException {
+      if (broadcaster == null) {
+         return;
+      }
       if (AuditLogger.isBaseLoggingEnabled()) {
          AuditLogger.addNotificationListener(this.server, listener, filter, handback);
       }
@@ -4438,6 +4447,9 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
 
    @Override
    public void onNotification(org.apache.activemq.artemis.core.server.management.Notification notification) {
+      if (broadcaster == null) {
+         return;
+      }
       if (!(notification.getType() instanceof CoreNotificationType type))
          return;
       if (type == CoreNotificationType.SESSION_CREATED) {

@@ -462,6 +462,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
       config.setJMXManagementEnabled(getBoolean(e, "jmx-management-enabled", config.isJMXManagementEnabled()));
 
+      config.setJMXNotificationEnabled(getBoolean(e, "jmx-notification-enabled", config.isJMXNotificationEnabled()));
+
       config.setJMXDomain(getString(e, "jmx-domain", config.getJMXDomain(), NOT_NULL_OR_EMPTY));
 
       config.setJMXUseBrokerName(getBoolean(e, "jmx-use-broker-name", config.isJMXUseBrokerName()));
