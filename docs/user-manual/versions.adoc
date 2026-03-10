@@ -13,6 +13,8 @@ NOTE: If the upgrade spans multiple versions then the steps from *each* version 
 
 NOTE: Follow the general upgrade procedure outlined in the xref:upgrading.adoc#upgrading-the-broker[Upgrading the Broker]  chapter in addition to any version-specific upgrade instructions outlined here.
 
+:sectnums!:
+
 == Version 2.52.0
 
 https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12356678[Full release notes]
@@ -1532,3 +1534,5 @@ https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&versio
  ** URL based connections
  ** Auto-create addresses/queues
  ** Jolokia integration
+
+:sectnums:

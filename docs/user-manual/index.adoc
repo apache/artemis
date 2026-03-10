@@ -111,8 +111,7 @@ image::images/artemis_text_black_small.png[align="center"]
 * xref:duplicate-detection.adoc#duplicate-message-detection[Detecting Duplicate Messages]
 * xref:undelivered-messages.adoc#message-redelivery-and-undelivered-messages[Message Redelivery and Undelivered Messages]
 
-== Data & Disk
-
+== Data Storage
 * xref:persistence.adoc#persistence[Persistence]
 * xref:data-tools.adoc#data-tools[Data Tools]
 * xref:libaio.adoc#libaio-native-libraries[Libaio Native Libraries]
@@ -148,7 +147,5 @@ image::images/artemis_text_black_small.png[align="center"]
 * xref:resource-adapter.adoc#jca-resource-adapter[JCA Resource Adapter]
 * xref:configuration-index.adoc#configuration-reference[Configuration Index]
 * xref:examples.adoc#examples[Examples]
-
-== Addendum
 * xref:versions.adoc#version-history[Version History]
-* xref:notice.adoc#legal-notice[Legal Notice]
+* xref:notice.adoc#legal-notice[Notice]

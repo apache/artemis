@@ -2,10 +2,10 @@
 This is used to generate the single-page PDF manual.
 It *aggregates* all chapters into a single document following the same pattern as index.adoc. These two documents should stay in sync.
 ////
-image::images/artemis_text_black_small.png[align="center"]
-
-[.text-center]
-*An in-depth manual on all aspects of {project-name-full} {project-version}*
+= User Manual
+:doctype: book
+:title-logo-image: images/artemis_text_black_small.png
+{project-version}
 
 //== Overview
 
@@ -102,7 +102,7 @@ include::paging.adoc[leveloffset=1]
 include::duplicate-detection.adoc[leveloffset=1]
 include::undelivered-messages.adoc[leveloffset=1]
 
-//== Data & Disk
+//== Data Storage
 
 include::persistence.adoc[leveloffset=1]
 include::data-tools.adoc[leveloffset=1]
