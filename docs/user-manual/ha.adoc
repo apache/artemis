@@ -164,8 +164,6 @@ These settings are designed for reliability and to help the broker detect proble
 
 sync::
 Specifies that all changes are immediately flushed to disk.
-intr::
-Allows NFS requests to be interrupted if the server is shut down or cannot be reached.
 noac::
 Disables attribute caching. This behavior is needed to achieve attribute cache coherence among multiple clients.
 soft::
