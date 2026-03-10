@@ -75,7 +75,7 @@ public final class ActiveMQServers {
       LegacyJMSConfiguration legacyJMSConfiguration = new LegacyJMSConfiguration(config);
       new FileDeploymentManager(configURL).addDeployable(config).addDeployable(legacyJMSConfiguration).readConfiguration();
 
-      ActiveMQServer server = ActiveMQServers.newActiveMQServer(config, mbeanServer, securityManager);
+      ActiveMQServer server = ActiveMQServers.newActiveMQServer(config, mbeanServer, securityManager, config.isPersistenceEnabled());
 
       return server;
    }
