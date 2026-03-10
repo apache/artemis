@@ -32,15 +32,12 @@ public class ActiveMQServersTest {
    @Test
    public void testNewActiveMQServerFromConfigURLRespectsXmlPersistenceEnabled(@TempDir Path tempDir) throws Exception {
       Path configFile = tempDir.resolve("broker.xml");
-      String xml = "<configuration xmlns=\"urn:activemq\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
-         "               xsi:schemaLocation=\"urn:activemq ../../../../activemq-server/src/main/resources/schema/artemis-server.xsd\">\n" +
-         "   <core xmlns=\"urn:activemq:core\">\n" +
-         "      <persistence-enabled>false</persistence-enabled>\n" +
-         "      <acceptors>\n" +
-         "         <acceptor name=\"vm\">vm://0</acceptor>\n" +
-         "      </acceptors>\n" +
-         "   </core>\n" +
-         "</configuration>\n";
+      String xml = """
+         <configuration xmlns="urn:activemq">
+            <core xmlns="urn:activemq:core">
+               <persistence-enabled>false</persistence-enabled>
+            </core>
+         </configuration>""";
       Files.writeString(configFile, xml);
 
       ActiveMQJAASSecurityManager securityManager = new ActiveMQJAASSecurityManager(InVMLoginModule.class.getName(), new SecurityConfiguration());
