@@ -92,7 +92,7 @@
       </dependency>
       <dependency>
          <groupId>org.jctools</groupId>
-         <artifactId>jctools-core</artifactId>
+         <artifactId>jctools-core-jdk11</artifactId>
       </dependency>
       <dependency>
          <groupId>io.netty</groupId>
