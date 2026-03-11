@@ -125,7 +125,7 @@
       <netty.version>4.1.131.Final</netty.version>
       <hdrhistogram.version>2.2.2</hdrhistogram.version>
       <curator.version>5.9.0</curator.version>
-      <zookeeper.version>3.9.4</zookeeper.version>
+      <zookeeper.version>3.9.5</zookeeper.version>
       <woodstox.version>4.4.1</woodstox.version>
       <pem-keystore.version>3.0.0</pem-keystore.version>
 
