@@ -42,17 +42,12 @@ public class PageConstants {
    public static final String TABLE = "table";
 
    public static final String BUTTON = "button";
+
    //column headers
    public static final String COLUMN_MESSAGE_ID = "Message ID";
 
    public static final String COLUMN_ORIGINAL_QUEUE = "Original Queue";
 
-   // Node prefixes
-   public static final String BROKER_NODE = "Broker0.0.0.0";
-
-   public static final String ADDRESS_NODE_SUFFIX = "folder-addresses-folder-";
-
-   public static final String QUEUE_NODE_SUFFIX = "queues-folder-anycast-folder-DLQ";
    // Tag Locators
    public static final By STATUS_TAB_LOCATOR = By.xpath("//span[contains(text(),'Status')]");
 
@@ -80,7 +75,6 @@ public class PageConstants {
    public static final By BRAND_LOCATOR = By.xpath("//img[@class='pf-v5-c-brand']");
 
    //Component Locators
-
    public static final  By USERNAME_LOCATOR = By.id("pf-login-username-id");
 
    public static final  By PASSWORD_LOCATOR = By.id("pf-login-password-id");
@@ -136,8 +130,6 @@ public class PageConstants {
    public static final By COLLAPSE_BUTTON = By.xpath("//button[contains(text(), 'Collapse')]");
 
    public static final By NODE_TITLE_LOCATOR = By.cssSelector("h1.pf-m-lg[data-ouia-component-type='PF5/Title']");
-
-   public static final By BROKER_NODE_LOCATOR = By.id(BROKER_NODE);
 
    public static final By BROKER_BUTTON_LOCATOR = By.xpath("//button[contains(text(), 'Broker 0.0.0.0')]");
 

@@ -20,7 +20,6 @@ import org.apache.activemq.artemis.tests.smoke.console.pages.ConsolePage;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
-import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.BROKER_NODE_LOCATOR;
 import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.BROKER_BUTTON_LOCATOR;
 import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.COLLAPSE_BUTTON;
 import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.EXPAND_BUTTON;
@@ -53,7 +52,7 @@ public class ArtemisTreePage extends ConsolePage {
    }
 
    public AttributesPage selectBrokerNode() {
-      WebElement element = driver.findElement(BROKER_NODE_LOCATOR).findElement(BROKER_BUTTON_LOCATOR);
+      WebElement element = driver.findElement(BROKER_BUTTON_LOCATOR);
       element.click();
       return new AttributesPage(driver);
    }
