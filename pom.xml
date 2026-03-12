@@ -128,6 +128,7 @@
       <zookeeper.version>3.9.5</zookeeper.version>
       <woodstox.version>4.4.1</woodstox.version>
       <pem-keystore.version>3.0.0</pem-keystore.version>
+      <nimbus.jwt.version>10.8</nimbus.jwt.version>
 
       <!-- Overrides the parent pom property, downgrades dependency plugin
            https://github.com/apache/maven-dependency-plugin/issues/1588 -->

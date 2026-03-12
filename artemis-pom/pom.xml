@@ -943,6 +943,14 @@
             <type>pom</type>
             <scope>import</scope>
          </dependency>
+
+         <dependency>
+            <groupId>com.nimbusds</groupId>
+            <artifactId>nimbus-jose-jwt</artifactId>
+            <version>${nimbus.jwt.version}</version>
+            <!-- License: Apache 2.0 -->
+         </dependency>
+
       </dependencies>
    </dependencyManagement>
 

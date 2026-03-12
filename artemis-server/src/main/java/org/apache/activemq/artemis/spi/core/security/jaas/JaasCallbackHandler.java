@@ -57,6 +57,9 @@ public class JaasCallbackHandler implements CallbackHandler {
             nameCallback.setName(username);
          } else if (callback instanceof CertificateCallback certificateCallback) {
             certificateCallback.setCertificates(getCertsFromConnection(remotingConnection));
+         } else if (callback instanceof JwtCallback jwtCallback) {
+            // TODO: switch to obtaining the token from RemotingConnection and protocol-specific implementation (SASL frames)
+            jwtCallback.setJwtToken(password);
          } else if (callback instanceof PrincipalsCallback principalsCallback) {
 
             Subject peerSubject = remotingConnection.getSubject();

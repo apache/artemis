@@ -79,6 +79,7 @@
 		<bundle dependency="true">mvn:org.apache.commons/commons-pool2/${commons.pool2.version}</bundle>
 		<!-- Micrometer can't be included until it supports OSGi. It is currently an "optional" Maven dependency. -->
 		<!--bundle dependency="true">mvn:io.micrometer/micrometer-core/${version.micrometer}</bundle-->
+		<bundle dependency="true">mvn:com.nimbusds/nimbus-jose-jwt/${nimbus.jwt.version}</bundle>
 
 		<bundle>mvn:org.apache.activemq/activemq-artemis-native/${activemq-artemis-native-version}</bundle>
 		<bundle>mvn:org.apache.artemis/artemis-lockmanager-api/${pom.version}</bundle>

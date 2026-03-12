@@ -161,6 +161,10 @@
          <artifactId>micrometer-core</artifactId>
       </dependency>
       <dependency>
+         <groupId>com.nimbusds</groupId>
+         <artifactId>nimbus-jose-jwt</artifactId>
+      </dependency>
+      <dependency>
          <groupId>org.apache.activemq</groupId>
          <artifactId>activemq-artemis-native</artifactId>
          <version>${activemq-artemis-native-version}</version>
