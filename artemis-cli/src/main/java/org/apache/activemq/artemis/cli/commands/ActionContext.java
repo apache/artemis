@@ -19,6 +19,8 @@ package org.apache.activemq.artemis.cli.commands;
 import java.io.InputStream;
 import java.io.PrintStream;
 
+import org.jline.reader.LineReader;
+
 public class ActionContext {
 
    public ActionContext(InputStream in, PrintStream out, PrintStream err) {
@@ -34,6 +36,7 @@ public class ActionContext {
    public InputStream in;
    public PrintStream out;
    public PrintStream err;
+   public LineReader lineReader;
 
    private static ThreadLocal<ActionContext> contextThreadLocal = ThreadLocal.withInitial(() -> new ActionContext());
 

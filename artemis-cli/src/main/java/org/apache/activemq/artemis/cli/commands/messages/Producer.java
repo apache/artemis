@@ -229,11 +229,17 @@ public class Producer extends DestAbstract {
             }
 
             long messagesProduced = 0;
-            for (ProducerThread thread : threadsArray) {
-               thread.join();
-               messagesProduced += thread.getSentCount();
+            try {
+               for (ProducerThread thread : threadsArray) {
+                  thread.join();
+                  messagesProduced += thread.getSentCount();
+               }
+               return messagesProduced;
+            } catch (InterruptedException e) {
+               // Interrupt any sub threads if an interrupt is captured
+               for (Thread t : threadsArray) t.interrupt();
+               throw e;
             }
-            return messagesProduced;
          }
       }
    }

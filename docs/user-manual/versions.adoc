@@ -24,6 +24,7 @@ https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&versio
 * https://issues.apache.org/jira/browse/ARTEMIS-5925[ARTEMIS-5925] - The Lock coordinator can now be applied to broker connections, supporting "Star Mirror" for enhanced HA topologies
 * https://issues.apache.org/jira/browse/ARTEMIS-5946[ARTEMIS-5946] - Update to Artemis Console 1.7.0
 * https://issues.apache.org/jira/browse/ARTEMIS-5941[ARTEMIS-5941] - Route wildcard subscriptions direct to demand bindings for improved performance
+* https://issues.apache.org/jira/browse/ARTEMIS-5941[ARTEMIS-5951] - CTRL-C is now properly handled on 'artemis shell'
 
 == Version 2.52.0
 

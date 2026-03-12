@@ -131,20 +131,29 @@ public class Consumer extends DestAbstract {
 
          long received = 0;
 
-         for (ConsumerThread thread : threadsArray) {
-            thread.join();
-            received += thread.getReceived();
-         }
-
-         if (serializer != null) {
-            serializer.stop();
-         }
-
-         if (outputStream != null) {
-            outputStream.close();
+         try {
+            for (ConsumerThread thread : threadsArray) {
+               thread.join();
+               received += thread.getReceived();
+            }
+         } catch (InterruptedException e) {
+            // Interrupt any sub threads if an interrupt is captured
+            for (Thread t : threadsArray) t.interrupt();
+            throw e;
          }
 
          return received;
+      } finally {
+         try {
+            if (serializer != null) {
+               serializer.stop();
+            }
+
+            if (outputStream != null) {
+               outputStream.close();
+            }
+         } catch (Throwable ignored) {
+         }
       }
    }
 

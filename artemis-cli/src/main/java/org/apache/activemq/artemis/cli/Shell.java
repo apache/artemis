@@ -22,6 +22,7 @@ import java.nio.file.Paths;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
+import org.apache.activemq.artemis.cli.commands.ActionContext;
 import org.apache.activemq.artemis.cli.commands.Connect;
 import org.apache.activemq.artemis.cli.commands.messages.ConnectionAbstract;
 import org.jline.console.SystemRegistry;
@@ -101,7 +102,17 @@ public class Shell implements Runnable {
          PicocliCommands picocliCommands = new PicocliCommands(commandLine);
 
          Parser parser = new DefaultParser();
-         try (Terminal terminal = TerminalBuilder.terminal()) {
+         try (Terminal terminal = TerminalBuilder.builder()
+               .nativeSignals(true)
+               .build()) {
+            // Capture the main shell thread for signal handling
+            Thread shellThread = Thread.currentThread();
+
+            // Handle CTRL-C by interrupting the shell thread
+            terminal.handle(Terminal.Signal.INT, signal -> {
+               System.out.println("\n....Interrupted by the user.");
+               shellThread.interrupt();
+            });
             SystemRegistry systemRegistry = new SystemRegistryImpl(parser, terminal, workDir, null);
             systemRegistry.setCommandRegistries(picocliCommands);
             systemRegistry.register("help", picocliCommands);
@@ -113,6 +124,9 @@ public class Shell implements Runnable {
                .variable(LineReader.LIST_MAX, 50)   // max tab completion candidates
                .build();
             factory.setTerminal(terminal);
+            if (ActionContext.system() != null) {
+               ActionContext.system().lineReader = reader;
+            }
 
             String rightPrompt = null;
 
