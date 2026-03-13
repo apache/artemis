@@ -21,6 +21,7 @@ import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPF
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_AUTO_DELETE_DELAY;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_AUTO_DELETE_MSG_COUNT;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_ENABLE_DIVERT_BINDINGS;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_ALLOW_WILDCARD_GROUPINGS;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_EXCLUDES;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_INCLUDES;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_MAX_HOPS;
@@ -105,6 +106,7 @@ public final class AMQPFederationPolicySupport {
     * is created as these values are used to indicate no max hops for federated messages on an address.
     *
     * @param maxHops The max allowed number of hops before a message should stop crossing federation links.
+    *
     * @return the address filter string that should be applied (or null)
     */
    public static String generateAddressFilter(int maxHops) {
@@ -125,6 +127,7 @@ public final class AMQPFederationPolicySupport {
     * {@link FederationReceiveFromQueuePolicy}.
     *
     * @param policy The policy to encode into an AMQP message.
+    *
     * @return an AMQP Message with the encoded policy
     */
    public static AMQPMessage encodeQueuePolicyControlMessage(FederationReceiveFromQueuePolicy policy) {
@@ -194,6 +197,7 @@ public final class AMQPFederationPolicySupport {
     * {@link FederationReceiveFromAddressPolicy}.
     *
     * @param policy The policy to encode into an AMQP message.
+    *
     * @return an AMQP Message with the encoded policy
     */
    public static AMQPMessage encodeAddressPolicyControlMessage(FederationReceiveFromAddressPolicy policy) {
@@ -211,6 +215,7 @@ public final class AMQPFederationPolicySupport {
       policyMap.put(ADDRESS_AUTO_DELETE_MSG_COUNT, policy.getAutoDeleteMessageCount());
       policyMap.put(ADDRESS_MAX_HOPS, policy.getMaxHops());
       policyMap.put(ADDRESS_ENABLE_DIVERT_BINDINGS, policy.isEnableDivertBindings());
+      policyMap.put(ADDRESS_ALLOW_WILDCARD_GROUPINGS, policy.isAllowWildcardGroupings());
       if (!policy.getIncludes().isEmpty()) {
          policyMap.put(ADDRESS_INCLUDES, new ArrayList<>(policy.getIncludes()));
       }
@@ -250,11 +255,16 @@ public final class AMQPFederationPolicySupport {
    /**
     * Given an AMQP Message decode an {@link FederationReceiveFromQueuePolicy} from it and return the decoded value. The
     * message should have already been inspected and determined to be an control message of the add to policy type.
+    * The decoder ignores elements in the message that it does not know about so that future configuration additions do
+    * not break previous broker instances.
     *
-    * @param message        The {@link AMQPMessage} that should carry an encoded
-    *                       {@link FederationReceiveFromQueuePolicy}
-    * @param wildcardConfig The {@link WildcardConfiguration} to use in the decoded policy.
+    * @param message
+    *    The {@link AMQPMessage} that should carry an encoded {@link FederationReceiveFromQueuePolicy}
+    * @param wildcardConfig
+    *    The {@link WildcardConfiguration} to use in the decoded policy.
+    *
     * @return a decoded {@link FederationReceiveFromQueuePolicy} instance
+    *
     * @throws ActiveMQException if an error occurs while decoding the policy.
     */
    @SuppressWarnings("unchecked")
@@ -359,11 +369,16 @@ public final class AMQPFederationPolicySupport {
    /**
     * Given an AMQP Message decode an {@link FederationReceiveFromAddressPolicy} from it and return the decoded value.
     * The message should have already been inspected and determined to be an control message of the add to policy type.
+    * The decoder ignores elements in the message that it does not know about so that future configuration additions do
+    * not break previous broker instances.
     *
-    * @param message        The {@link AMQPMessage} that should carry an encoded
-    *                       {@link FederationReceiveFromQueuePolicy}
-    * @param wildcardConfig The {@link WildcardConfiguration} to use in the decoded policy.
+    * @param message
+    *    The {@link AMQPMessage} that should carry an encoded {@link FederationReceiveFromQueuePolicy}
+    * @param wildcardConfig
+    *    The {@link WildcardConfiguration} to use in the decoded policy.
+    *
     * @return a decoded {@link FederationReceiveFromAddressPolicy} instance
+    *
     * @throws ActiveMQException if an error occurs during the policy decode.
     */
    @SuppressWarnings("unchecked")
@@ -399,6 +414,7 @@ public final class AMQPFederationPolicySupport {
          final long autoDeleteMsgCount = ((Number) policyMap.getOrDefault(ADDRESS_AUTO_DELETE_MSG_COUNT, 0L)).longValue();
          final int maxHops = ((Number) policyMap.get(ADDRESS_MAX_HOPS)).intValue();
          final boolean enableDiverts = (Boolean) policyMap.getOrDefault(ADDRESS_ENABLE_DIVERT_BINDINGS, false);
+         final boolean allowWildcardGroupings = (Boolean) policyMap.getOrDefault(ADDRESS_ALLOW_WILDCARD_GROUPINGS, false);
 
          final Set<String> includes;
          final Set<String> excludes;
@@ -435,8 +451,8 @@ public final class AMQPFederationPolicySupport {
 
          return new FederationReceiveFromAddressPolicy(policyName, autoDelete, autoDeleteDelay,
                                                        autoDeleteMsgCount, maxHops, enableDiverts,
-                                                       includes, excludes, properties, transformerConfig,
-                                                       wildcardConfig);
+                                                       allowWildcardGroupings, includes, excludes,
+                                                       properties, transformerConfig, wildcardConfig);
       } catch (Exception e) {
          throw ActiveMQAMQPProtocolMessageBundle.BUNDLE.malformedFederationControlMessage(
             "Invalid encoded address policy entry: " + e.getMessage());
@@ -447,8 +463,11 @@ public final class AMQPFederationPolicySupport {
     * From the broker AMQP broker connection configuration element and the configured wild-card settings create an
     * address match policy.
     *
-    * @param element   The broker connections element configuration that creates this policy.
-    * @param wildcards The configured wild-card settings for the broker or defaults.
+    * @param element
+    *    The broker connections configuration that creates this federation address policy.
+    * @param wildcards
+    *    The configured wild-card settings for the broker or defaults.
+    *
     * @return a new address match and handling policy for use in the broker connection
     */
    public static FederationReceiveFromAddressPolicy create(AMQPFederationAddressPolicyElement element, WildcardConfiguration wildcards) {
@@ -481,6 +500,7 @@ public final class AMQPFederationPolicySupport {
          Objects.requireNonNullElse(element.getAutoDeleteMessageCount(), 0L),
          element.getMaxHops(),
          Objects.requireNonNullElse(element.isEnableDivertBindings(), false),
+         Objects.requireNonNullElse(element.isAllowWildcardGroupings(), false),
          includes,
          excludes,
          element.getProperties(),
@@ -496,8 +516,11 @@ public final class AMQPFederationPolicySupport {
     * in order to attempt to prevent federation consumers from consuming messages on the remote when a local consumer is
     * present.
     *
-    * @param element   The broker connections element configuration that creates this policy.
-    * @param wildcards The configured wild-card settings for the broker or defaults.
+    * @param element
+    *    The broker connections configuration that creates this federation queue policy.
+    * @param wildcards
+    *    The configured wild-card settings for the broker or defaults.
+    *
     * @return a new queue match and handling policy for use in the broker connection
     */
    public static FederationReceiveFromQueuePolicy create(AMQPFederationQueuePolicyElement element, WildcardConfiguration wildcards) {

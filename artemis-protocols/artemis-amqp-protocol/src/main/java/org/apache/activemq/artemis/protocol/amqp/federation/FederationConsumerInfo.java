@@ -59,21 +59,38 @@ public interface FederationConsumerInfo {
    String getQueueName();
 
    /**
-    * Gets the address that will be used for this federation consumer instance.
+    * Gets the address that will be the source of messages for the federation consumer instance.
     * <p>
     * For Queue federation this is the address under which the matching queue must reside. For Address federation this
-    * is the actual address whose messages are being federated.
+    * is the actual address whose messages are being federated from on the remote broker..
     *
-    * @return the address associated with this federation consumer
+    * @return the source address associated with this federation consumer
     */
-   String getAddress();
+   String getSourceAddress();
+
+   /**
+    * Gets the address that will be the target of messages for the federation consumer instance.
+    * <p>
+    * For Queue federation this is the address under which the matching queue must reside. For Address federation this
+    * is the actual address whose messages are being federated to on the local broker.
+    *
+    * @return the target address associated with this federation consumer
+    */
+   String getTargetAddress();
 
    /**
     * Gets the FQQN that comprises the address and queue where the remote consumer will be attached.
     *
-    * @return provides the FQQN that can be used to address the consumer queue directly
+    * @return provides the FQQN that can be used to address the remote consumer queue directly
     */
-   String getFqqn();
+   String getSourceFqqn();
+
+   /**
+    * Gets the FQQN that comprises the address and queue where the local sender will be attached..
+    *
+    * @return provides the FQQN that can be used to address the local sender queue directly
+    */
+   String getTargetFqqn();
 
    /**
     * Gets the routing type that will be requested when creating a consumer on the remote server.

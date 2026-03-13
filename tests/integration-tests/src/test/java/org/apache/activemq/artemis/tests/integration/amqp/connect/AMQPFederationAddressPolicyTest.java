@@ -22,6 +22,7 @@ import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPF
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_AUTO_DELETE_DELAY;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_AUTO_DELETE_MSG_COUNT;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_ENABLE_DIVERT_BINDINGS;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_ALLOW_WILDCARD_GROUPINGS;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_EXCLUDES;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_INCLUDES;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_MAX_HOPS;
@@ -106,6 +107,7 @@ import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.config.DivertConfiguration;
 import org.apache.activemq.artemis.core.config.TransformerConfiguration;
+import org.apache.activemq.artemis.core.config.WildcardConfiguration;
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPBrokerConnectConfiguration;
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPFederatedBrokerConnectionElement;
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPFederationAddressPolicyElement;
@@ -2035,7 +2037,7 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
 
       final FederationReceiveFromAddressPolicy policy =
          new FederationReceiveFromAddressPolicy("test-address-policy",
-                                                true, 30_000L, 1000L, 1, true,
+                                                true, 30_000L, 1000L, 1, true, false,
                                                 includes, excludes, null, null,
                                                 DEFAULT_WILDCARD_CONFIGURATION);
 
@@ -2081,7 +2083,7 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
 
       final FederationReceiveFromAddressPolicy policy =
          new FederationReceiveFromAddressPolicy("test-address-policy",
-                                                true, 30_000L, 1000L, 1, true,
+                                                true, 30_000L, 1000L, 1, true, false,
                                                 includes, excludes, null, transformerConfiguration,
                                                 DEFAULT_WILDCARD_CONFIGURATION);
 
@@ -2119,7 +2121,7 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
 
       final FederationReceiveFromAddressPolicy policy =
          new FederationReceiveFromAddressPolicy("test-address-policy",
-                                                true, 30_000L, 1000L, 1, true,
+                                                true, 30_000L, 1000L, 1, true, false,
                                                 includes, null, properties, null,
                                                 DEFAULT_WILDCARD_CONFIGURATION);
 
@@ -2189,7 +2191,7 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
 
       final FederationReceiveFromAddressPolicy policy =
          new FederationReceiveFromAddressPolicy("test-address-policy",
-                                                true, 30_000L, 1000L, 1, true,
+                                                true, 30_000L, 1000L, 1, true, false,
                                                 includes, null, properties, null,
                                                 DEFAULT_WILDCARD_CONFIGURATION);
 
@@ -2261,7 +2263,7 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
 
       final FederationReceiveFromAddressPolicy policy =
          new FederationReceiveFromAddressPolicy("test-address-policy",
-                                                true, 30_000L, 1000L, 1, true,
+                                                true, 30_000L, 1000L, 1, true, false,
                                                 includes, null, properties, null,
                                                 DEFAULT_WILDCARD_CONFIGURATION);
 
@@ -2335,7 +2337,7 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
 
       final FederationReceiveFromAddressPolicy policy =
          new FederationReceiveFromAddressPolicy("test-address-policy",
-                                                true, 30_000L, 1000L, 1, true,
+                                                true, 30_000L, 1000L, 1, true, false,
                                                 includes, null, properties, null,
                                                 DEFAULT_WILDCARD_CONFIGURATION);
 
@@ -2414,7 +2416,7 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
 
       final FederationReceiveFromAddressPolicy policy =
          new FederationReceiveFromAddressPolicy("test-address-policy",
-                                                true, 30_000L, 1000L, 1, true,
+                                                true, 30_000L, 1000L, 1, true, false,
                                                 includes, null, properties, transformerConfiguration,
                                                 DEFAULT_WILDCARD_CONFIGURATION);
 
@@ -3531,6 +3533,7 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
       policyMap.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
       policyMap.put(ADDRESS_MAX_HOPS, 5);
       policyMap.put(ADDRESS_ENABLE_DIVERT_BINDINGS, false);
+      policyMap.put(ADDRESS_ALLOW_WILDCARD_GROUPINGS, false);
       policyMap.put(ADDRESS_INCLUDES, includes);
 
       final EncodedAmqpValueMatcher bodyMatcher = new EncodedAmqpValueMatcher(policyMap);
@@ -3617,6 +3620,7 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
       policyMap.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
       policyMap.put(ADDRESS_MAX_HOPS, 5);
       policyMap.put(ADDRESS_ENABLE_DIVERT_BINDINGS, false);
+      policyMap.put(ADDRESS_ALLOW_WILDCARD_GROUPINGS, false);
       policyMap.put(ADDRESS_INCLUDES, includes);
 
       final EncodedAmqpValueMatcher bodyMatcher = new EncodedAmqpValueMatcher(policyMap);
@@ -6705,7 +6709,7 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
 
       final FederationReceiveFromAddressPolicy policy =
          new FederationReceiveFromAddressPolicy("test-address-policy",
-                                                true, 30_000L, 1000L, -1, true,
+                                                true, 30_000L, 1000L, -1, true, false,
                                                 includes, null, properties, null,
                                                 DEFAULT_WILDCARD_CONFIGURATION);
 
@@ -7063,7 +7067,7 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
 
       final FederationReceiveFromAddressPolicy policy =
          new FederationReceiveFromAddressPolicy("test-address-policy",
-                                                true, 30_000L, 1000L, 1, false,
+                                                true, 30_000L, 1000L, 1, false, false,
                                                 includes, null, properties, null,
                                                 DEFAULT_WILDCARD_CONFIGURATION);
 
@@ -7169,7 +7173,7 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
 
       final FederationReceiveFromAddressPolicy policy =
          new FederationReceiveFromAddressPolicy("test-address-policy",
-                                                true, 30_000L, 1000L, 1, true,
+                                                true, 30_000L, 1000L, 1, true, false,
                                                 includes, null, properties, null,
                                                 DEFAULT_WILDCARD_CONFIGURATION);
 
@@ -7543,6 +7547,493 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
 
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
          peer.close();
+      }
+   }
+
+   @Test
+   @Timeout(20)
+   public void testWildcardAddressUedForFederationSubscriptionWhenEnabled() throws Exception {
+      try (ProtonTestServer peer = new ProtonTestServer()) {
+         peer.expectSASLAnonymousConnect();
+         peer.expectOpen().respond();
+         peer.expectBegin().respond();
+         peer.expectAttach().ofSender()
+                            .withDesiredCapability(FEDERATION_CONTROL_LINK.toString())
+                            .withProperty(FEDERATION_VERSION.toString(), FEDERATION_V2)
+                            .respond()
+                            .withProperty(FEDERATION_VERSION.toString(), FEDERATION_V2)
+                            .withOfferedCapabilities(FEDERATION_CONTROL_LINK.toString());
+         peer.expectAttach().ofReceiver()
+                            .withSource().withDynamic(true)
+                            .and()
+                            .withDesiredCapability(FEDERATION_EVENT_LINK.toString())
+                            .respondInKind()
+                            .withTarget().withAddress("test-dynamic-events");
+         peer.expectFlow().withLinkCredit(10);
+         peer.start();
+
+         final URI remoteURI = peer.getServerURI();
+         logger.info("Test started, peer listening on: {}", remoteURI);
+
+         final String wildcardAddress = getTestName() + ".#";
+         final String addressA = getTestName() + ".A";
+         final String addressB = getTestName() + ".B";
+
+         final String expectedJMSFilterA = "AMQAddress='" + addressA + "'";
+         final String expectedJMSFilterB = "AMQAddress='" + addressB + "'";
+         final AtomicReference<Attach> capturedAttachA = new AtomicReference<>();
+         final AtomicReference<Attach> capturedAttachB = new AtomicReference<>();
+
+         final Symbol jmsSelectorKey = Symbol.valueOf("jms-selector");
+         final org.apache.qpid.protonj2.test.driver.codec.primitives.UnsignedLong jmsSelectorCode =
+            org.apache.qpid.protonj2.test.driver.codec.primitives.UnsignedLong.valueOf(0x0000468C00000004L);
+
+         final AMQPFederationAddressPolicyElement receiveFromAddress = new AMQPFederationAddressPolicyElement();
+         receiveFromAddress.setName("address-policy");
+         receiveFromAddress.addToIncludes(wildcardAddress);
+         receiveFromAddress.setAutoDelete(true);
+         receiveFromAddress.setAutoDeleteDelay(10_000L);
+         receiveFromAddress.setAutoDeleteMessageCount(-1L);
+         receiveFromAddress.setAllowWildcardGroupings(true);
+
+         final AMQPFederatedBrokerConnectionElement element = new AMQPFederatedBrokerConnectionElement();
+         element.setName(getTestName());
+         element.addLocalAddressPolicy(receiveFromAddress);
+
+         final AMQPBrokerConnectConfiguration amqpConnection =
+            new AMQPBrokerConnectConfiguration(getTestName(), "tcp://" + remoteURI.getHost() + ":" + remoteURI.getPort());
+         amqpConnection.setReconnectAttempts(0);// No reconnects
+         amqpConnection.addElement(element);
+
+         server.getConfiguration().addAMQPConnection(amqpConnection);
+         server.start();
+
+         peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+         // A first binding on the wildcard address what collects only messages for address A
+         peer.expectAttach().ofReceiver()
+                            .withDesiredCapability(FEDERATION_ADDRESS_RECEIVER.toString())
+                            .withCapture(attach -> capturedAttachA.set(attach))
+                            .withName(allOf(containsString(getTestName()),
+                                            containsString(addressA),
+                                            containsString("address-receiver"),
+                                            containsString(server.getNodeID().toString())))
+                            .withSource().withAddress(startsWith(wildcardAddress)).also()
+                            .withTarget().withAddress(addressA).also()
+                            .respond()
+                            .withOfferedCapabilities(FEDERATION_ADDRESS_RECEIVER.toString());
+         peer.expectFlow().withLinkCredit(1000);
+
+         final ConnectionFactory factory = CFUtil.createConnectionFactory("AMQP", "tcp://localhost:" + AMQP_PORT);
+
+         try (Connection connection = factory.createConnection()) {
+            final Session session = connection.createSession(Session.AUTO_ACKNOWLEDGE);
+            final MessageConsumer consumerA = session.createConsumer(session.createTopic(addressA));
+
+            connection.start();
+
+            peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+            // A second binding on the wildcard address what collects only messages for address B
+            peer.expectAttach().ofReceiver()
+                               .withDesiredCapability(FEDERATION_ADDRESS_RECEIVER.toString())
+                               .withCapture(attach -> capturedAttachB.set(attach))
+                               .withName(allOf(containsString(getTestName()),
+                                               containsString(addressB),
+                                               containsString("address-receiver"),
+                                               containsString(server.getNodeID().toString())))
+                               .withSource().withAddress(startsWith(wildcardAddress)).also()
+                               .withTarget().withAddress(addressB).also()
+                               .respond()
+                               .withOfferedCapabilities(FEDERATION_ADDRESS_RECEIVER.toString());
+            peer.expectFlow().withLinkCredit(1000);
+
+            final MessageConsumer consumerB = session.createConsumer(session.createTopic(addressB));
+
+            peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+
+            final Map<Symbol, Object> filtersMapA = capturedAttachA.get().getSource().getFilter();
+
+            assertNotNull(filtersMapA);
+            assertTrue(filtersMapA.containsKey(jmsSelectorKey));
+            final DescribedType jmsSelectorEntryA = (DescribedType) filtersMapA.get(jmsSelectorKey);
+            assertNotNull(jmsSelectorEntryA);
+            assertEquals(jmsSelectorEntryA.getDescriptor(), jmsSelectorCode);
+            assertEquals(jmsSelectorEntryA.getDescribed().toString(), expectedJMSFilterA);
+
+            final Map<Symbol, Object> filtersMapB = capturedAttachB.get().getSource().getFilter();
+
+            assertNotNull(filtersMapB);
+            assertTrue(filtersMapB.containsKey(jmsSelectorKey));
+            final DescribedType jmsSelectorEntryB = (DescribedType) filtersMapB.get(jmsSelectorKey);
+            assertNotNull(jmsSelectorEntryB);
+            assertEquals(jmsSelectorEntryB.getDescriptor(), jmsSelectorCode);
+            assertEquals(jmsSelectorEntryB.getDescribed().toString(), expectedJMSFilterB);
+
+            // Route some messages to check they arrive on the local consumers
+            peer.expectDisposition().withSettled(true).withState().accepted();
+            peer.expectDisposition().withSettled(true).withState().accepted();
+            peer.remoteTransfer().withHandle(2)
+                                 .withDeliveryId(0)
+                                 .withBody().withValue("Address A").also()
+                                 .now();
+            peer.remoteTransfer().withHandle(3)
+                                 .withDeliveryId(1)
+                                 .withBody().withValue("Address B").also()
+                                 .later(10);
+            peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+
+            final TextMessage messageA = (TextMessage) consumerA.receiveNoWait();
+            final TextMessage messageB = (TextMessage) consumerB.receiveNoWait();
+
+            assertNotNull(messageA);
+            assertNotNull(messageB);
+
+            assertEquals("Address A", messageA.getText());
+            assertEquals("Address B", messageB.getText());
+
+            assertNull(consumerA.receiveNoWait());
+            assertNull(consumerB.receiveNoWait());
+
+            peer.close();
+         }
+      }
+   }
+
+   @Test
+   @Timeout(20)
+   public void testFallbackToLegacySubscriptionIfNoFQQNSupportAndWildcardSubscriptionsGroupsEnabled() throws Exception {
+      try (ProtonTestServer peer = new ProtonTestServer()) {
+         peer.expectSASLAnonymousConnect();
+         peer.expectOpen().respond();
+         peer.expectBegin().respond();
+         peer.expectAttach().ofSender()
+                            .withDesiredCapability(FEDERATION_CONTROL_LINK.toString())
+                            .withProperty(FEDERATION_VERSION.toString(), FEDERATION_V2)
+                            .respond() // Respond with no V2 property
+                            .withOfferedCapabilities(FEDERATION_CONTROL_LINK.toString());
+         peer.expectAttach().ofReceiver()
+                            .withSource().withDynamic(true)
+                            .and()
+                            .withDesiredCapability(FEDERATION_EVENT_LINK.toString())
+                            .respondInKind()
+                            .withTarget().withAddress("test-dynamic-events");
+         peer.expectFlow().withLinkCredit(10);
+         peer.start();
+
+         final URI remoteURI = peer.getServerURI();
+         logger.info("Test started, peer listening on: {}", remoteURI);
+
+         final String wildcardAddress = getTestName() + ".#";
+         final String addressA = getTestName() + ".A";
+         final String addressB = getTestName() + ".B";
+
+         final AMQPFederationAddressPolicyElement receiveFromAddress = new AMQPFederationAddressPolicyElement();
+         receiveFromAddress.setName("address-policy");
+         receiveFromAddress.addToIncludes(wildcardAddress);
+         receiveFromAddress.setAutoDelete(true);
+         receiveFromAddress.setAutoDeleteDelay(10_000L);
+         receiveFromAddress.setAutoDeleteMessageCount(-1L);
+         receiveFromAddress.setAllowWildcardGroupings(true);
+
+         final AMQPFederatedBrokerConnectionElement element = new AMQPFederatedBrokerConnectionElement();
+         element.setName(getTestName());
+         element.addLocalAddressPolicy(receiveFromAddress);
+
+         final AMQPBrokerConnectConfiguration amqpConnection =
+            new AMQPBrokerConnectConfiguration(getTestName(), "tcp://" + remoteURI.getHost() + ":" + remoteURI.getPort());
+         amqpConnection.setReconnectAttempts(0);// No reconnects
+         amqpConnection.addElement(element);
+
+         server.getConfiguration().addAMQPConnection(amqpConnection);
+         server.start();
+
+         peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+         // Binding on the matching address since no FQQN support
+         peer.expectAttach().ofReceiver()
+                            .withDesiredCapability(FEDERATION_ADDRESS_RECEIVER.toString())
+                            .withName(allOf(containsString(getTestName()),
+                                            containsString(addressA),
+                                            containsString("address-receiver"),
+                                            containsString(server.getNodeID().toString())))
+                            .withSource().withAddress(addressA).also()
+                            .withTarget().withAddress(addressA).also()
+                            .respond()
+                            .withOfferedCapabilities(FEDERATION_ADDRESS_RECEIVER.toString());
+         peer.expectFlow().withLinkCredit(1000);
+
+         final ConnectionFactory factory = CFUtil.createConnectionFactory("AMQP", "tcp://localhost:" + AMQP_PORT);
+
+         try (Connection connection = factory.createConnection()) {
+            final Session session = connection.createSession(Session.AUTO_ACKNOWLEDGE);
+            final MessageConsumer consumerA = session.createConsumer(session.createTopic(addressA));
+
+            connection.start();
+
+            peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+            // Binding on the matching address since no FQQN support
+            peer.expectAttach().ofReceiver()
+                               .withDesiredCapability(FEDERATION_ADDRESS_RECEIVER.toString())
+                               .withName(allOf(containsString(getTestName()),
+                                               containsString(addressB),
+                                               containsString("address-receiver"),
+                                               containsString(server.getNodeID().toString())))
+                               .withSource().withAddress(addressB).also()
+                               .withTarget().withAddress(addressB).also()
+                               .respond()
+                               .withOfferedCapabilities(FEDERATION_ADDRESS_RECEIVER.toString());
+            peer.expectFlow().withLinkCredit(1000);
+
+            final MessageConsumer consumerB = session.createConsumer(session.createTopic(addressB));
+
+            peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+
+            // Route some messages to check they arrive on the local consumers
+            peer.expectDisposition().withSettled(true).withState().accepted();
+            peer.expectDisposition().withSettled(true).withState().accepted();
+            peer.remoteTransfer().withHandle(2)
+                                 .withDeliveryId(0)
+                                 .withBody().withValue("Address A").also()
+                                 .now();
+            peer.remoteTransfer().withHandle(3)
+                                 .withDeliveryId(1)
+                                 .withBody().withValue("Address B").also()
+                                 .later(10);
+            peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+
+            final TextMessage messageA = (TextMessage) consumerA.receiveNoWait();
+            final TextMessage messageB = (TextMessage) consumerB.receiveNoWait();
+
+            assertNotNull(messageA);
+            assertNotNull(messageB);
+
+            assertEquals("Address A", messageA.getText());
+            assertEquals("Address B", messageB.getText());
+
+            assertNull(consumerA.receiveNoWait());
+            assertNull(consumerB.receiveNoWait());
+
+            peer.close();
+         }
+      }
+   }
+
+   @Test
+   @Timeout(20)
+   public void testFederationTreatsNonWildcardMatchAsNormalWhenWildcardSubscriptionsSetToAllowed() throws Exception {
+      try (ProtonTestServer peer = new ProtonTestServer()) {
+         peer.expectSASLAnonymousConnect();
+         peer.expectOpen().respond();
+         peer.expectBegin().respond();
+         peer.expectAttach().ofSender()
+                            .withDesiredCapability(FEDERATION_CONTROL_LINK.toString())
+                            .withProperty(FEDERATION_VERSION.toString(), FEDERATION_V2)
+                            .respond() // Need V2 for wildcard subscription to even occur
+                            .withProperty(FEDERATION_VERSION.toString(), FEDERATION_V2)
+                            .withOfferedCapabilities(FEDERATION_CONTROL_LINK.toString());
+         peer.expectAttach().ofReceiver()
+                            .withSource().withDynamic(true)
+                            .and()
+                            .withDesiredCapability(FEDERATION_EVENT_LINK.toString())
+                            .respondInKind()
+                            .withTarget().withAddress("test-dynamic-events");
+         peer.expectFlow().withLinkCredit(10);
+         peer.start();
+
+         final URI remoteURI = peer.getServerURI();
+         logger.info("Test started, peer listening on: {}", remoteURI);
+
+         final AMQPFederationAddressPolicyElement receiveFromAddress = new AMQPFederationAddressPolicyElement();
+         receiveFromAddress.setName("address-policy");
+         receiveFromAddress.addToIncludes(getTestName());
+         receiveFromAddress.addToIncludes("unmatched.a.#");
+         receiveFromAddress.addToIncludes("unmatched.*.b");
+         receiveFromAddress.setAllowWildcardGroupings(true); // Allowed but match will not be on any of the wildcards
+
+         final AMQPFederatedBrokerConnectionElement element = new AMQPFederatedBrokerConnectionElement();
+         element.setName(getTestName());
+         element.addLocalAddressPolicy(receiveFromAddress);
+
+         final AMQPBrokerConnectConfiguration amqpConnection =
+            new AMQPBrokerConnectConfiguration(getTestName(), "tcp://" + remoteURI.getHost() + ":" + remoteURI.getPort());
+         amqpConnection.setReconnectAttempts(0);// No reconnects
+         amqpConnection.addElement(element);
+
+         server.getConfiguration().addAMQPConnection(amqpConnection);
+         server.start();
+         server.addAddressInfo(new AddressInfo(SimpleString.of("test"), RoutingType.MULTICAST));
+
+         peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+         peer.expectAttach().ofReceiver()
+                            .withDesiredCapability(FEDERATION_ADDRESS_RECEIVER.toString())
+                            .withName(allOf(containsString(getTestName()),
+                                            containsString("address-receiver"),
+                                            containsString(server.getNodeID().toString())))
+                            .withSource().withAddress(startsWith(getTestName() + "::")).also() // FQQN Address exact match
+                            .withTarget().withAddress(getTestName()).also()
+                            .respond()
+                            .withOfferedCapabilities(FEDERATION_ADDRESS_RECEIVER.toString());
+         peer.expectFlow().withLinkCredit(1000);
+
+         final ConnectionFactory factory = CFUtil.createConnectionFactory("AMQP", "tcp://localhost:" + AMQP_PORT);
+
+         try (Connection connection = factory.createConnection()) {
+            final Session session = connection.createSession(Session.AUTO_ACKNOWLEDGE);
+            session.createConsumer(session.createTopic(getTestName()));
+
+            connection.start();
+
+            peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+            peer.close();
+         }
+      }
+   }
+
+   @Test
+   @Timeout(20)
+   public void testFederationAttachesToRemoteBrokerWithWildcardRoutingDisabled() throws Exception {
+      // Disable wildcard routing to check / demonstrate that mis-configured federation topologies
+      // can fail to federate if wild card subscription grouping is enabled but the brokers can't do
+      // wildcard routing for those subscriptions.
+      server.getConfiguration().setWildCardConfiguration(new WildcardConfiguration().setRoutingEnabled(false));
+      server.start();
+
+      final String wildcardAddress = getTestName() + ".#";
+      final String actualAddress = getTestName() + ".A";
+
+      final Map<String, Object> remoteSourceProperties = new HashMap<>();
+      remoteSourceProperties.put(ADDRESS_AUTO_DELETE, true);
+      remoteSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, 10_000L);
+      remoteSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, 1L);
+
+      try (ProtonTestClient peer = new ProtonTestClient()) {
+         scriptFederationConnectToRemote(peer, "test", true);
+         peer.connect("localhost", AMQP_PORT);
+
+         peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+         peer.expectAttach().ofSender().withName("federation-address-receiver")
+                                       .withOfferedCapabilities(FEDERATION_ADDRESS_RECEIVER.toString())
+                                       .withTarget().withAddress(actualAddress).also()
+                                       .withSource().withAddress(wildcardAddress + "::federation-unique-queue-name");
+
+         // Connect to remote as if an queue had demand and matched our federation policy
+         peer.remoteAttach().ofReceiver()
+                            .withDesiredCapabilities(FEDERATION_ADDRESS_RECEIVER.toString())
+                            .withName("federation-address-receiver")
+                            .withSenderSettleModeUnsettled()
+                            .withReceivervSettlesFirst()
+                            .withProperty(FEDERATED_ADDRESS_SOURCE_PROPERTIES.toString(), remoteSourceProperties)
+                            .withTarget().withAddress(actualAddress).also()
+                            .withSource().withDurabilityOfNone()
+                                         .withExpiryPolicyOnLinkDetach()
+                                         .withAddress(wildcardAddress + "::federation-unique-queue-name")
+                                         .withCapabilities("topic")
+                                         .and()
+                            .withTarget().and()
+                            .now();
+
+         peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+         peer.remoteFlow().withLinkCredit(10).now();
+
+         Wait.assertTrue(() -> server.addressQuery(SimpleString.of(wildcardAddress)).isExists());
+
+         final ConnectionFactory factory = CFUtil.createConnectionFactory("AMQP", "tcp://localhost:" + AMQP_PORT);
+
+         try (Connection connection = factory.createConnection()) {
+            final Session session = connection.createSession(Session.AUTO_ACKNOWLEDGE);
+            final MessageProducer producer = session.createProducer(session.createTopic(actualAddress));
+
+            connection.start();
+
+            // We adon't expect the federation to get this as the remote broker has disabled wildcard
+            // routing but does not reject subscriptions on wildcard addresses in this configuration.
+            // This is a case where user has not properly configured their federation servers.
+            producer.send(session.createTextMessage("test-message"));
+         }
+
+         peer.expectClose();
+         peer.remoteClose().now();
+
+         peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+         peer.close();
+
+         server.stop();
+      }
+   }
+
+   @Test
+   @Timeout(20)
+   public void testFederationReceiverAttachedToWildcardAddressWhenAutoCreateAddressIsDisabledAndAddressesStaticallyDefined() throws Exception {
+      final AddressSettings addressSettings = new AddressSettings();
+      addressSettings.setAutoCreateQueues(true);
+      addressSettings.setAutoCreateAddresses(false);
+
+      final String wildcardAddress = getTestName() + ".#";
+      final String actualAddress = getTestName() + ".A";
+
+      server.getConfiguration().getAddressSettings().put("#", addressSettings);
+      server.start();
+      server.addAddressInfo(new AddressInfo(SimpleString.of(wildcardAddress), RoutingType.MULTICAST));
+      server.addAddressInfo(new AddressInfo(SimpleString.of(actualAddress), RoutingType.MULTICAST));
+
+      final Map<String, Object> remoteSourceProperties = new HashMap<>();
+      remoteSourceProperties.put(ADDRESS_AUTO_DELETE, true);
+      remoteSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, 10_000L);
+      remoteSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, 1L);
+
+      try (ProtonTestClient peer = new ProtonTestClient()) {
+         scriptFederationConnectToRemote(peer, "test", true);
+         peer.connect("localhost", AMQP_PORT);
+
+         peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+         peer.expectAttach().ofSender().withName("federation-address-receiver")
+                                       .withOfferedCapabilities(FEDERATION_ADDRESS_RECEIVER.toString())
+                                       .withTarget().withAddress(actualAddress).also()
+                                       .withSource().withAddress(wildcardAddress + "::federation-unique-queue-name");
+
+         // Connect to remote as if an queue had demand and matched our federation policy
+         peer.remoteAttach().ofReceiver()
+                            .withDesiredCapabilities(FEDERATION_ADDRESS_RECEIVER.toString())
+                            .withName("federation-address-receiver")
+                            .withSenderSettleModeUnsettled()
+                            .withReceivervSettlesFirst()
+                            .withProperty(FEDERATED_ADDRESS_SOURCE_PROPERTIES.toString(), remoteSourceProperties)
+                            .withTarget().withAddress(actualAddress).also()
+                            .withSource().withDurabilityOfNone()
+                                         .withExpiryPolicyOnLinkDetach()
+                                         .withAddress(wildcardAddress + "::federation-unique-queue-name")
+                                         .withCapabilities("topic")
+                                         .and()
+                            .withTarget().and()
+                            .now();
+
+         peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+         peer.expectTransfer().withMessage()
+                              .withHeader().also()
+                              .withMessageAnnotations().also()
+                              .withProperties().also()
+                              .withValue("test-message").and()
+                              .accept();
+         peer.remoteFlow().withLinkCredit(10).now();
+
+         Wait.assertTrue(() -> server.addressQuery(SimpleString.of(wildcardAddress)).isExists());
+
+         final ConnectionFactory factory = CFUtil.createConnectionFactory("AMQP", "tcp://localhost:" + AMQP_PORT);
+
+         try (Connection connection = factory.createConnection()) {
+            final Session session = connection.createSession(Session.AUTO_ACKNOWLEDGE);
+            final MessageProducer producer = session.createProducer(session.createTopic(actualAddress));
+
+            connection.start();
+
+            producer.send(session.createTextMessage("test-message"));
+         }
+
+         peer.expectClose();
+         peer.remoteClose().now();
+
+         peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+         peer.close();
+
+         server.stop();
       }
    }
 

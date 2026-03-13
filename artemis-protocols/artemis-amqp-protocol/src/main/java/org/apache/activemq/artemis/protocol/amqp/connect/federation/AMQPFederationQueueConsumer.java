@@ -87,7 +87,7 @@ public final class AMQPFederationQueueConsumer extends AMQPFederationConsumer {
    private String generateLinkName() {
       return "federation-" + federation.getName() +
              "-policy-" + policy.getPolicyName() +
-             "-queue-receiver-" + consumerInfo.getFqqn() +
+             "-queue-receiver-" + consumerInfo.getTargetFqqn() +
              "-" + federation.getServer().getNodeID() + ":" +
              LINK_SEQUENCE_ID.getAndIncrement();
    }
@@ -103,7 +103,6 @@ public final class AMQPFederationQueueConsumer extends AMQPFederationConsumer {
          final Receiver protonReceiver = session.getSession().receiver(generateLinkName());
          final Target target = new Target();
          final Source source = new Source();
-         final String address = consumerInfo.getFqqn();
          final Queue localQueue = federation.getServer().locateQueue(consumerInfo.getQueueName());
 
          if (RoutingType.ANYCAST.equals(consumerInfo.getRoutingType())) {
@@ -116,7 +115,7 @@ public final class AMQPFederationQueueConsumer extends AMQPFederationConsumer {
          source.setDefaultOutcome(DEFAULT_OUTCOME);
          source.setDurable(TerminusDurability.NONE);
          source.setExpiryPolicy(TerminusExpiryPolicy.LINK_DETACH);
-         source.setAddress(address);
+         source.setAddress(consumerInfo.getSourceFqqn());
 
          if (consumerInfo.getFilterString() != null && !consumerInfo.getFilterString().isEmpty()) {
             final AmqpJmsSelectorFilter jmsFilter = new AmqpJmsSelectorFilter(consumerInfo.getFilterString());
@@ -126,7 +125,7 @@ public final class AMQPFederationQueueConsumer extends AMQPFederationConsumer {
             source.setFilter(filtersMap);
          }
 
-         target.setAddress(address);
+         target.setAddress(consumerInfo.getTargetFqqn());
 
          final Map<Symbol, Object> receiverProperties = new HashMap<>();
          receiverProperties.put(FEDERATION_RECEIVER_PRIORITY, consumerInfo.getPriority());
@@ -248,7 +247,7 @@ public final class AMQPFederationQueueConsumer extends AMQPFederationConsumer {
          super(session.getSessionSPI(), session.getAMQPConnectionContext(), session, receiver);
 
          this.localQueue = localQueue;
-         this.cachedFqqn = SimpleString.of(consumerInfo.getFqqn());
+         this.cachedFqqn = SimpleString.of(consumerInfo.getTargetFqqn());
       }
 
       @Override

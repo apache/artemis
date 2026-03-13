@@ -39,6 +39,7 @@ public final class AMQPFederationAddressPolicyElement implements Serializable {
    private Long autoDeleteMessageCount;
    private int maxHops;
    private Boolean enableDivertBindings;
+   private Boolean allowWildcardGroupings;
    private TransformerConfiguration transformerConfig;
 
    public String getName() {
@@ -173,6 +174,15 @@ public final class AMQPFederationAddressPolicyElement implements Serializable {
       return transformerConfig;
    }
 
+   public Boolean isAllowWildcardGroupings() {
+      return allowWildcardGroupings;
+   }
+
+   public AMQPFederationAddressPolicyElement setAllowWildcardGroupings(Boolean allowWildcardGroupings) {
+      this.allowWildcardGroupings = allowWildcardGroupings;
+      return this;
+   }
+
    @Override
    public boolean equals(Object obj) {
       if (this == obj) {
@@ -190,14 +200,15 @@ public final class AMQPFederationAddressPolicyElement implements Serializable {
              Objects.equals(autoDeleteDelay, other.autoDeleteDelay) &&
              Objects.equals(autoDeleteMessageCount, other.autoDeleteMessageCount) &&
              Objects.equals(enableDivertBindings, other.enableDivertBindings) &&
+             Objects.equals(allowWildcardGroupings, other.allowWildcardGroupings) &&
              Objects.equals(transformerConfig, other.transformerConfig) &&
              maxHops == other.maxHops;
    }
 
    @Override
    public int hashCode() {
-      return Objects.hash(name, includes, excludes, properties, autoDelete, autoDeleteDelay,
-                          autoDeleteMessageCount, maxHops, enableDivertBindings, transformerConfig);
+      return Objects.hash(name, includes, excludes, properties, autoDelete, autoDeleteDelay, autoDeleteMessageCount,
+                          maxHops, enableDivertBindings, allowWildcardGroupings, transformerConfig);
    }
 
    // We are required to implement a named match type so that we can perform this configuration

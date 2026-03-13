@@ -45,7 +45,6 @@ import org.apache.activemq.artemis.protocol.amqp.federation.FederationReceiveFro
 import org.apache.activemq.artemis.protocol.amqp.proton.AMQPSessionContext;
 import org.apache.activemq.artemis.protocol.amqp.federation.FederationConsumerInfo.Role;
 import org.apache.activemq.artemis.protocol.amqp.logger.ActiveMQAMQPProtocolLogger;
-import org.apache.activemq.artemis.utils.CompositeAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -292,11 +291,11 @@ public final class AMQPFederationQueuePolicyManager extends AMQPFederationLocalP
       final String filterString = selectFilter(consumer);
 
       return new AMQPFederationGenericConsumerInfo(Role.QUEUE_CONSUMER,
+                                                   address, // Source and target address are the same for Queue consumers
                                                    address,
                                                    queueName,
                                                    queue.getRoutingType(),
                                                    filterString,
-                                                   CompositeAddress.toFullyQualified(address, queueName),
                                                    priority);
    }
 

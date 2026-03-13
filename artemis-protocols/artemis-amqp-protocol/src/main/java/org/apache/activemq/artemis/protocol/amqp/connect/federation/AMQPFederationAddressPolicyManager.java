@@ -48,7 +48,6 @@ import org.apache.activemq.artemis.protocol.amqp.federation.FederationConsumerIn
 import org.apache.activemq.artemis.protocol.amqp.federation.FederationReceiveFromAddressPolicy;
 import org.apache.activemq.artemis.protocol.amqp.logger.ActiveMQAMQPProtocolLogger;
 import org.apache.activemq.artemis.protocol.amqp.proton.AMQPSessionContext;
-import org.apache.activemq.artemis.utils.CompositeAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -254,21 +253,10 @@ public final class AMQPFederationAddressPolicyManager extends AMQPFederationLoca
                return;
             }
 
-            // Target brokers which have been sent remote federation policies might not have write
-            // access via the logged in user to the address with demand which we are attempting to
-            // federate messages to so instead of creating a receiver that will fail when the remote
-            // routes a message to it we can just omit creating the link in the first place.
-            if (federation.isFederationTarget()) {
-               try {
-                  session.getSessionSPI().check(addressInfo.getName(), CheckType.SEND, federation.getConnectionContext().getSecurityAuth());
-               } catch (ActiveMQSecurityException e) {
-                  ActiveMQAMQPProtocolLogger.LOGGER.federationTargetSkippedAddressFederation(
-                     addressInfo.getName().toString(), "User does not have send permission to configured address.");
-                  return;
-               } catch (Exception ex) {
-                  logger.warn("Caught unknown exception from security check on address:{} send permissions: cannot federate:", addressInfo.getName(), ex);
-                  return;
-               }
+            // If unable to write to the given address then we can stop here and not create a remote
+            // receiver that will fail once a message is routed.
+            if (isAddressSecurityBlockingWrites(addressInfo.getName())) {
+               return;
             }
 
             createOrUpdateFederatedAddressConsumerForBinding(addressInfo, queueBinding);
@@ -298,6 +286,27 @@ public final class AMQPFederationAddressPolicyManager extends AMQPFederationLoca
       return false;
    }
 
+   private boolean isAddressSecurityBlockingWrites(SimpleString address) {
+      // Target brokers which have been sent remote federation policies might not have write
+      // access via the logged in user to the address with demand which we are attempting to
+      // federate messages to so instead of creating a receiver that will fail when the remote
+      // routes a message to it we can just omit creating the link in the first place.
+      if (federation.isFederationTarget()) {
+         try {
+            session.getSessionSPI().check(address, CheckType.SEND, federation.getConnectionContext().getSecurityAuth());
+         } catch (ActiveMQSecurityException e) {
+            ActiveMQAMQPProtocolLogger.LOGGER.federationTargetSkippedAddressFederation(
+               address.toString(), "User does not have send permission to configured address.");
+            return true;
+         } catch (Exception ex) {
+            logger.warn("Caught unknown exception from security check on address:{} send permissions: cannot federate:", address, ex);
+            return true;
+         }
+      }
+
+      return false;
+   }
+
    private void reactIfAnyQueueBindingMatchesDivertTarget(DivertBinding divertBinding) {
       if (!policy.isEnableDivertBindings()) {
          return;
@@ -309,21 +318,9 @@ public final class AMQPFederationAddressPolicyManager extends AMQPFederationLoca
          return;
       }
 
-      // Target brokers which have been sent remote federation policies might not have write access
-      // via the logged in user to the address this divert is attached to which means we don't need
-      // to track this divert. Since we don't add the divert to the tracking map future demand on
-      // divert that would otherwise match the address includes won't trigger federation attempts.
-      if (federation.isFederationTarget()) {
-         try {
-            session.getSessionSPI().check(addressInfo.getName(), CheckType.SEND, federation.getConnectionContext().getSecurityAuth());
-         } catch (ActiveMQSecurityException e) {
-            ActiveMQAMQPProtocolLogger.LOGGER.federationTargetSkippedAddressFederation(
-               addressInfo.getName().toString(), "User does not have send permission to configured address.");
-            return;
-         } catch (Exception ex) {
-            logger.warn("Caught unknown exception from security check on address:{} send permissions: cannot federate:", addressInfo.getName(), ex);
-            return;
-         }
+      // Don't track the divert if we cannot write to the address with the divert
+      if (isAddressSecurityBlockingWrites(addressInfo.getName())) {
+         return;
       }
 
       // We only need to check if we've never seen the divert before, afterwards we will
@@ -486,6 +483,26 @@ public final class AMQPFederationAddressPolicyManager extends AMQPFederationLoca
       return policy.test(address, type);
    }
 
+   /**
+    * Called when demand for an address has been determined to trigger need for a remote receiver to
+    * federate messages back to this peer and wildcard subscriptions has been enabled. The value returned
+    * is the first configured match in the policy. If there are multiple matchers in the policy that
+    * could match on this address only the first one located should be returned as having more than one
+    * positive matcher is a configuration issue the user is on the hook if this result in unexpected
+    * behaviors from the federation manager. The result could be an exact match to the address name or it
+    * could be a wildcard pattern match that captures this address in its scope.
+    *
+    * @param address
+    *    The address that has triggered demand and requires a new remote consumer.
+    * @param type
+    *    The routing type that the address was created with.
+    *
+    * @return the first matcher string from the configured address policy that matches on the target address
+    */
+   private String getMatcherForAddress(String address, RoutingType type) {
+      return policy.getFirstMatchingAddressPattern(address, type);
+   }
+
    private static boolean isAddressInDivertForwards(final SimpleString targetAddress, final SimpleString forwardAddress) {
       final SimpleString[] forwardAddresses = forwardAddress.split(',');
 
@@ -572,10 +589,13 @@ public final class AMQPFederationAddressPolicyManager extends AMQPFederationLoca
          AMQPFederationAddressConsumerManager<?> consumerManager = registry.get(key);
 
          if (consumerManager == null) {
-            if (isUseConduitConsumer()) {
-               registry.put(key, consumerManager = new AMQPFederationAddressConduitConsumerManager(manager, createConsumerInfo(addressInfo, binding), addressInfo));
+            final boolean useConduitConsumer = isUseConduitConsumer();
+            final FederationConsumerInfo consumerInfo = createConsumerInfo(binding, useConduitConsumer);
+
+            if (useConduitConsumer) {
+               registry.put(key, consumerManager = new AMQPFederationAddressConduitConsumerManager(manager, consumerInfo, addressInfo));
             } else {
-               registry.put(key, consumerManager = new AMQPFederationAddressBindingsConsumerManager(manager, createConsumerInfo(addressInfo, binding), addressInfo));
+               registry.put(key, consumerManager = new AMQPFederationAddressBindingsConsumerManager(manager, consumerInfo, addressInfo));
             }
          }
 
@@ -619,37 +639,67 @@ public final class AMQPFederationAddressPolicyManager extends AMQPFederationLoca
       }
 
       /**
-       * Create a new {@link FederationConsumerInfo} based on the given {@link AddressInfo} and the configured
-       * {@link FederationReceiveFromAddressPolicy}.
+       * Create a new {@link FederationConsumerInfo} based on the given data from this address consumer
+       * registry and the binding that generated the demand that triggered creation of a consumer.
        *
-       * @param address
-       *       The {@link AddressInfo} to use as a basis for the consumer information object.
        * @param binding
        *       The {@link Binding} that is the source of demand for this consumer info object
+       * @param conduitConsumer
+       *       Is the consumer being created a conduit consumer or a direct to bindings consumer.
        *
        * @return a new {@link FederationConsumerInfo} instance based on the given address
        */
-      private FederationConsumerInfo createConsumerInfo(AddressInfo address, Binding binding) {
-         final String addressName = address.getName().toString();
-         final boolean ignoreBindingFilters = isUseConduitConsumer() || binding.getFilter() == null;
-         final String generatedQueueName = generateQueueName(address, binding, ignoreBindingFilters);
-         final String consumerFilter;
+      private FederationConsumerInfo createConsumerInfo(Binding binding, boolean conduitConsumer) {
+         final boolean allowWildcardGroupings = isAllowWildcardGroupings();
+         final String targetAddress = addressInfo.getName().toString();
+         final String sourceAddress;
+         final String sourceFilter;
 
-         if (ignoreBindingFilters) {
-            consumerFilter = baseConsumerFilter;
-         } else if (baseConsumerFilter != null) {
-            consumerFilter = "(" + binding.getFilter().getFilterString() + ") AND " + baseConsumerFilter;
+         if (allowWildcardGroupings) {
+            final String matcher = manager.getMatcherForAddress(addressInfo.getName().toString(), addressInfo.getRoutingType());
+
+            if (manager.getWildcardConfiguration().isWild(matcher)) {
+               sourceAddress = matcher;
+               sourceFilter = "AMQAddress='" + targetAddress + "'";
+            } else {
+               sourceAddress = targetAddress;
+               sourceFilter = null;
+            }
          } else {
-            consumerFilter = binding.getFilter().getFilterString().toString();
+            sourceAddress = targetAddress;
+            sourceFilter = null;
          }
 
+         final boolean ignoreBindingFilters = conduitConsumer || binding.getFilter() == null;
+         final CharSequence bindingFilter = ignoreBindingFilters ? null : binding.getFilter().getFilterString();
+         final String generatedQueueName = generateQueueName(binding, ignoreBindingFilters);
+         final StringBuilder consumerFilter = new StringBuilder();
+
+         appendFilter(consumerFilter, sourceFilter, false);       // Per address filter for wildcard groups
+         appendFilter(consumerFilter, baseConsumerFilter, false); // Base federation filter for maxHops etc
+         appendFilter(consumerFilter, bindingFilter, true);       // Bindings filter if supporting per address filters
+
          return new AMQPFederationGenericConsumerInfo(FederationConsumerInfo.Role.ADDRESS_CONSUMER,
-            addressName,
-            generatedQueueName,
-            address.getRoutingType(),
-            consumerFilter,
-            CompositeAddress.toFullyQualified(addressName, generatedQueueName),
-            ActiveMQDefaultConfiguration.getDefaultConsumerPriority());
+                                                      sourceAddress,
+                                                      targetAddress,
+                                                      generatedQueueName,
+                                                      addressInfo.getRoutingType(),
+                                                      consumerFilter.isEmpty() ? null : consumerFilter.toString(),
+                                                      ActiveMQDefaultConfiguration.getDefaultConsumerPriority());
+      }
+
+      private static void appendFilter(StringBuilder builder, CharSequence filter, boolean parenthesesIfNeeded) {
+         if (filter != null) {
+            if (!builder.isEmpty()) {
+               builder.append(" AND ");
+            }
+
+            if (parenthesesIfNeeded && !builder.isEmpty()) {
+               builder.append("(").append(filter).append(")");
+            } else {
+               builder.append(filter);
+            }
+         }
       }
 
       private boolean isUseConduitConsumer() {
@@ -671,16 +721,33 @@ public final class AMQPFederationAddressPolicyManager extends AMQPFederationLoca
          }
       }
 
-      private String generateQueueName(AddressInfo address, Binding binding, boolean ignoreFilters) {
+      /*
+       * Should we allow the existing remote receivers to be bound to a wildcard address instead of an address
+       * that matches the target? We cannot if no FQQN but otherwise we can so long as we create a filter to
+       * account for the messages that will arrive at the wildcard root address that don't match the local target
+       * via a filter for the AMQAddress value matching the receiver target address..
+       */
+      private boolean isAllowWildcardGroupings() {
+         if (!manager.getCapabilities().isUseFQQNAddressSubscriptions()) {
+            // prior to FQQN subscription support we used a simple link name that would not be unique amongst
+            // multiple consumers on the same address so for most features or behaviors that come later we cannot
+            // action them properly and we must fallback to a conduit consumer strategy.
+            return false;
+         } else {
+            return manager.getPolicy().isAllowWildcardGroupings();
+         }
+      }
+
+      private String generateQueueName(Binding binding, boolean ignoreFilters) {
          if (ignoreFilters) {
             return "federation." + manager.getFederation().getName() +
                    ".policy." + manager.getPolicyName() +
-                   ".address." + address.getName() +
+                   ".address." + addressInfo.getName() +
                    ".node." + manager.server.getNodeID();
          } else {
             return "federation." + manager.getFederation().getName() +
                    ".policy." + manager.getPolicyName() +
-                   ".address." + address.getName() +
+                   ".address." + addressInfo.getName() +
                    ".filterId." + generateFilterId(binding.getFilter().getFilterString().toString()) +
                    ".node." + manager.server.getNodeID();
          }

@@ -501,7 +501,7 @@
                   <property key="amqpCredits" value="2"/>
                   <property key="amqpLowCredits" value="1"/>
                </remote-queue-policy>
-               <local-address-policy name="lap1" auto-delete="false" auto-delete-delay="1" auto-delete-message-count="12" max-hops="2" enable-divert-bindings="true">
+               <local-address-policy name="lap1" auto-delete="false" auto-delete-delay="1" auto-delete-message-count="12" max-hops="2" enable-divert-bindings="true" allow-wildcard-groupings="true">
                   <include address-match="orders" />
                   <exclude address-match="all.#" />
                   <transformer-class-name>class-name</transformer-class-name>
@@ -510,7 +510,7 @@
                   <include address-match="address" queue-match="theQueue" />
                   <transformer-class-name>class-another</transformer-class-name>
                </local-queue-policy>
-               <remote-address-policy name="rap1" auto-delete="true" auto-delete-delay="2" auto-delete-message-count="42" max-hops="1" enable-divert-bindings="false">
+               <remote-address-policy name="rap1" auto-delete="true" auto-delete-delay="2" auto-delete-message-count="42" max-hops="1" enable-divert-bindings="false" allow-wildcard-groupings="false">
                   <include address-match="support" />
                   <property key="amqpCredits" value="2"/>
                   <property key="amqpLowCredits" value="1"/>

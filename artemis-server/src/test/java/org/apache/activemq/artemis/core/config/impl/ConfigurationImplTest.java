@@ -469,6 +469,7 @@ public class ConfigurationImplTest extends AbstractConfigurationTestBase {
       insertionOrderedProperties.put("AMQPConnections.target.federations.abc." + policyType + ".policy2.includes.m4.addressMatch", "y");
       insertionOrderedProperties.put("AMQPConnections.target.federations.abc." + policyType + ".policy2.excludes.m5.addressMatch", "z");
       insertionOrderedProperties.put("AMQPConnections.target.federations.abc." + policyType + ".policy2.enableDivertBindings", "true");
+      insertionOrderedProperties.put("AMQPConnections.target.federations.abc." + policyType + ".policy2.allowWildcardGroupings", "true");
       insertionOrderedProperties.put("AMQPConnections.target.federations.abc." + policyType + ".policy2.properties.a", "b");
 
       configuration.parsePrefixedProperties(insertionOrderedProperties, null);
@@ -517,6 +518,7 @@ public class ConfigurationImplTest extends AbstractConfigurationTestBase {
       assertEquals(42L, addressPolicy1.getAutoDeleteMessageCount().longValue());
       assertEquals(10000L, addressPolicy1.getAutoDeleteDelay().longValue());
       assertNull(addressPolicy1.isEnableDivertBindings());
+      assertNull(addressPolicy1.isAllowWildcardGroupings());
       assertTrue(addressPolicy1.getProperties().isEmpty());
 
       addressPolicy1.getIncludes().forEach(match -> {
@@ -536,6 +538,7 @@ public class ConfigurationImplTest extends AbstractConfigurationTestBase {
       assertNull(addressPolicy2.getAutoDeleteMessageCount());
       assertNull(addressPolicy2.getAutoDeleteDelay());
       assertTrue(addressPolicy2.isEnableDivertBindings());
+      assertTrue(addressPolicy2.isAllowWildcardGroupings());
       assertFalse(addressPolicy2.getProperties().isEmpty());
       assertEquals("b", addressPolicy2.getProperties().get("a"));
 

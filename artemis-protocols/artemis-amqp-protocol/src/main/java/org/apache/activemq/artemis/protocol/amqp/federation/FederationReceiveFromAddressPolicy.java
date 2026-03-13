@@ -52,11 +52,12 @@ public class FederationReceiveFromAddressPolicy implements FederationReceiveFrom
    private final long autoDeleteMessageCount;
    private final int maxHops;
    private final boolean enableDivertBindings;
+   private final boolean allowWildcardGroupings;
    private final Map<String, Object> properties;
    private final TransformerConfiguration transformerConfig;
 
-   public FederationReceiveFromAddressPolicy(String name, boolean autoDelete, long autoDeleteDelay,
-                                             long autoDeleteMessageCount, int maxHops, boolean enableDivertBindings,
+   public FederationReceiveFromAddressPolicy(String name, boolean autoDelete, long autoDeleteDelay, long autoDeleteMessageCount,
+                                             int maxHops, boolean enableDivertBindings, boolean allowWildcardGroupings,
                                              Collection<String> includeAddresses, Collection<String> excludeAddresses,
                                              Map<String, Object> properties, TransformerConfiguration transformerConfig,
                                              WildcardConfiguration wildcardConfig) {
@@ -69,6 +70,7 @@ public class FederationReceiveFromAddressPolicy implements FederationReceiveFrom
       this.autoDeleteMessageCount = autoDeleteMessageCount;
       this.maxHops = maxHops;
       this.enableDivertBindings = enableDivertBindings;
+      this.allowWildcardGroupings = allowWildcardGroupings;
       this.transformerConfig = transformerConfig;
       this.includes = Collections.unmodifiableCollection(Objects.requireNonNullElse(includeAddresses, Collections.emptyList()));
       this.excludes = Collections.unmodifiableCollection(Objects.requireNonNullElse(excludeAddresses, Collections.emptyList()));
@@ -114,6 +116,10 @@ public class FederationReceiveFromAddressPolicy implements FederationReceiveFrom
       return enableDivertBindings;
    }
 
+   public boolean isAllowWildcardGroupings() {
+      return allowWildcardGroupings;
+   }
+
    public Collection<String> getIncludes() {
       return includes;
    }
@@ -137,6 +143,7 @@ public class FederationReceiveFromAddressPolicy implements FederationReceiveFrom
     * {@link SimpleString} object or any null checks.
     *
     * @param addressInfo The address info to check which if null will result in a negative result.
+    *
     * @return {@code true} if the address value matches this configured policy
     */
    public boolean test(AddressInfo addressInfo) {
@@ -147,6 +154,18 @@ public class FederationReceiveFromAddressPolicy implements FederationReceiveFrom
       }
    }
 
+   /**
+    * Test method that accepts the raw address name and its routing type and checks the set of
+    * includes and excludes to determine if the address matches any configured matchers in this
+    * policy.
+    *
+    * @param address
+    *       The address being tested for a match against this policy.
+    * @param type
+    *       The routing type associated with the address under test.
+    *
+    * @return <code>true</code> if the address matches this policies configuration.
+    */
    @Override
    public boolean test(String address, RoutingType type) {
       if (RoutingType.MULTICAST.equals(type)) {
@@ -166,16 +185,54 @@ public class FederationReceiveFromAddressPolicy implements FederationReceiveFrom
       return false;
    }
 
+   /**
+    * Returns the first matcher string that returns a positive match with the given address.
+    * Excludes are checked in order to prevent an inconsistency between what the test methods
+    * return and what this method returns. If test would have failed this method will also fail
+    * to match and will return a <code>null</code> string.
+    *
+    * @param address
+    *       The address being tested for a match against this policy.
+    * @param type
+    *       The routing type associated with the address under test.
+    *
+    * @return the resulting first matcher to match on the given address.
+    */
+   public String getFirstMatchingAddressPattern(String address, RoutingType type) {
+      if (RoutingType.MULTICAST.equals(type)) {
+         for (AddressMatcher matcher : excludesMatchers) {
+            if (matcher.test(address)) {
+               return null;
+            }
+         }
+
+         for (AddressMatcher matcher : includesMatchers) {
+            if (matcher.test(address)) {
+               return matcher.getMatcherPattern();
+            }
+         }
+      }
+
+      return null;
+   }
+
    private static class AddressMatcher implements Predicate<String> {
 
+      private String matchPattern;
       private final Predicate<String> matcher;
 
       AddressMatcher(String address, WildcardConfiguration wildcardConfig) {
          if (address == null || address.isEmpty()) {
+            matchPattern = wildcardConfig.getAnyWordsString();
             matcher = (target) -> true;
          } else {
+            matchPattern = address;
             matcher = new Match<>(address, null, wildcardConfig).getPattern().asPredicate();
          }
+      }
+
+      public String getMatcherPattern() {
+         return matchPattern;
       }
 
       @Override

@@ -2349,6 +2349,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
             config.setAutoDeleteMessageCount(MINUS_ONE_OR_GE_ZERO.validate("auto-delete-message-count", Long.parseLong(item.getNodeValue())).longValue());
          } else if (item.getNodeName().equals("enable-divert-bindings")) {
             config.setEnableDivertBindings(Boolean.parseBoolean(item.getNodeValue()));
+         } else if (item.getNodeName().equals("allow-wildcard-groupings")) {
+            config.setAllowWildcardGroupings(Boolean.parseBoolean(item.getNodeValue()));
          }
       }
 

@@ -120,5 +120,13 @@ public class AMQPFederationAddressPolicyElementTest {
       config2.setMaxHops(10);
       assertEquals(config1, config2);
       assertEquals(config1.hashCode(), config2.hashCode());
+
+      // Allow receivers to nest under remote wildcard addresses
+      config1.setAllowWildcardGroupings(true);
+      assertNotEquals(config1, config2);
+      assertNotEquals(config1.hashCode(), config2.hashCode());
+      config2.setAllowWildcardGroupings(true);
+      assertEquals(config1, config2);
+      assertEquals(config1.hashCode(), config2.hashCode());
    }
 }

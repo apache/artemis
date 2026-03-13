@@ -24,6 +24,7 @@ import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPF
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.RECEIVER_CREDITS;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -2158,6 +2159,295 @@ public class AMQPFederationServerToServerTest extends AmqpClientTestSupport {
          Wait.assertEquals(1L, () -> remoteServer.queueQuery(SimpleString.of(getDeadLetterAddress())).getMessageCount(), 5_000, 10);
 
          assertNotNull(consumer.receiveNoWait());
+      }
+   }
+
+   @Test
+   @Timeout(20)
+   public void testAddressFederationOccursUsingWildcardSubscriptionsIfEnabledCore() throws Exception {
+      doTestAddressFederationOccursUsingWildcardSubscriptionsIfEnabled("CORE");
+   }
+
+   @Test
+   @Timeout(20)
+   public void testAddressFederationOccursUsingWildcardSubscriptionsIfEnabledAMQP() throws Exception {
+      doTestAddressFederationOccursUsingWildcardSubscriptionsIfEnabled("AMQP");
+   }
+
+   private void doTestAddressFederationOccursUsingWildcardSubscriptionsIfEnabled(String protocol) throws Exception {
+      logger.info("Test started: {}", getTestName());
+
+      final SimpleString wildcardAddress = SimpleString.of(getTestName() + ".#");
+      final SimpleString fullAddressA = SimpleString.of(getTestName() + ".A");
+      final SimpleString fullAddressB = SimpleString.of(getTestName() + ".B");
+      final SimpleString unmatchedAddress = SimpleString.of(getTestName() + "NoMatch");
+
+      final AMQPFederationAddressPolicyElement localAddressPolicy = new AMQPFederationAddressPolicyElement();
+      localAddressPolicy.setName("local-test-policy");
+      localAddressPolicy.addToIncludes(wildcardAddress.toString());
+      localAddressPolicy.setAutoDelete(false);
+      localAddressPolicy.setAutoDeleteDelay(-1L);
+      localAddressPolicy.setAutoDeleteMessageCount(-1L);
+      localAddressPolicy.addProperty(ADDRESS_RECEIVER_IDLE_TIMEOUT, 0);
+      localAddressPolicy.setAllowWildcardGroupings(true);
+
+      final AMQPFederatedBrokerConnectionElement element = new AMQPFederatedBrokerConnectionElement();
+      element.setName(getTestName() + ":Wildcards");
+      element.addLocalAddressPolicy(localAddressPolicy);
+
+      final AMQPBrokerConnectConfiguration amqpConnection1 =
+         new AMQPBrokerConnectConfiguration(getTestName(), "tcp://localhost:" + SERVER_PORT_REMOTE);
+      amqpConnection1.setReconnectAttempts(10);// Limit reconnects
+      amqpConnection1.addElement(element);
+
+      server.getConfiguration().addAMQPConnection(amqpConnection1);
+      remoteServer.start();
+      server.start();
+
+      final ConnectionFactory factoryLocal = CFUtil.createConnectionFactory(protocol, "tcp://localhost:" + SERVER_PORT);
+      final ConnectionFactory factoryRemote = CFUtil.createConnectionFactory(protocol, "tcp://localhost:" + SERVER_PORT_REMOTE);
+
+      try (Connection connectionL = factoryLocal.createConnection();
+           Connection connectionR = factoryRemote.createConnection()) {
+
+         final Session sessionL = connectionL.createSession(Session.AUTO_ACKNOWLEDGE);
+         final Session sessionR = connectionR.createSession(Session.AUTO_ACKNOWLEDGE);
+
+         final Topic topicA = sessionL.createTopic(fullAddressA.toString());
+         final Topic topicB = sessionL.createTopic(fullAddressB.toString());
+         final Topic topicUnmatched = sessionL.createTopic(unmatchedAddress.toString());
+
+         final MessageConsumer consumerL = sessionL.createConsumer(topicUnmatched);
+         final MessageConsumer consumerL_A = sessionL.createConsumer(topicA);
+         final MessageConsumer consumerL_B = sessionL.createConsumer(topicB);
+         final MessageProducer producerR = sessionR.createProducer(null);
+
+         connectionL.start();
+         connectionR.start();
+
+         // Local broker should see the full address but the remote should only have a wildcard subscription
+         // The wildcard subscription should have two bindings since we have two matching consumers
+         Wait.assertTrue(() -> server.bindingQuery(fullAddressA, false).getQueueNames().size() == 1, 10_000, 50);
+         Wait.assertTrue(() -> server.bindingQuery(fullAddressB, false).getQueueNames().size() == 1, 10_000, 50);
+         Wait.assertTrue(() -> remoteServer.addressQuery(wildcardAddress).isExists());
+         Wait.assertTrue(() -> remoteServer.bindingQuery(wildcardAddress, false).getQueueNames().size() == 2, 10_000, 50);
+
+         assertFalse(remoteServer.addressQuery(fullAddressA).isExists());
+         assertFalse(remoteServer.addressQuery(fullAddressA).isExists());
+
+         final TextMessage remoteMessage = sessionR.createTextMessage(getTestName());
+
+         producerR.send(topicA, remoteMessage);
+
+         final TextMessage localMessageA = (TextMessage) consumerL_A.receive(1_000);
+
+         assertNotNull(localMessageA);
+         assertNull(consumerL_B.receiveNoWait());
+
+         producerR.send(topicB, remoteMessage);
+
+         final TextMessage localMessageB = (TextMessage) consumerL_B.receive(1_000);
+
+         assertNotNull(localMessageB);
+         assertNull(consumerL_A.receiveNoWait());
+
+         consumerL_A.close();
+         consumerL_B.close();
+
+         Wait.assertTrue(() -> remoteServer.bindingQuery(wildcardAddress, false).getQueueNames().size() == 0, 10_000, 50);
+
+         assertNull(consumerL.receiveNoWait());
+      }
+   }
+
+   @Test
+   @Timeout(20)
+   public void testAddressFederationOccursUsingWildcardSubscriptionsIfEnabledUsingSingleWordMatcher() throws Exception {
+      logger.info("Test started: {}", getTestName());
+
+      final SimpleString wildcardAddress = SimpleString.of(getTestName() + ".*.region");
+      final SimpleString fullAddressA = SimpleString.of(getTestName() + ".A.region");
+      final SimpleString fullAddressB = SimpleString.of(getTestName() + ".B.region");
+      final SimpleString unmatchedAddress = SimpleString.of(getTestName() + ".C.regions");
+
+      final AMQPFederationAddressPolicyElement localAddressPolicy = new AMQPFederationAddressPolicyElement();
+      localAddressPolicy.setName("local-test-policy");
+      localAddressPolicy.addToIncludes(wildcardAddress.toString());
+      localAddressPolicy.setAutoDelete(false);
+      localAddressPolicy.setAutoDeleteDelay(-1L);
+      localAddressPolicy.setAutoDeleteMessageCount(-1L);
+      localAddressPolicy.addProperty(ADDRESS_RECEIVER_IDLE_TIMEOUT, 0);
+      localAddressPolicy.setAllowWildcardGroupings(true);
+
+      final AMQPFederatedBrokerConnectionElement element = new AMQPFederatedBrokerConnectionElement();
+      element.setName(getTestName() + ":Wildcards");
+      element.addLocalAddressPolicy(localAddressPolicy);
+
+      final AMQPBrokerConnectConfiguration amqpConnection1 =
+         new AMQPBrokerConnectConfiguration(getTestName(), "tcp://localhost:" + SERVER_PORT_REMOTE);
+      amqpConnection1.setReconnectAttempts(10);// Limit reconnects
+      amqpConnection1.addElement(element);
+
+      server.getConfiguration().addAMQPConnection(amqpConnection1);
+      remoteServer.start();
+      server.start();
+
+      final ConnectionFactory factoryLocal = CFUtil.createConnectionFactory("AMQP", "tcp://localhost:" + SERVER_PORT);
+      final ConnectionFactory factoryRemote = CFUtil.createConnectionFactory("AMQP", "tcp://localhost:" + SERVER_PORT_REMOTE);
+
+      try (Connection connectionL = factoryLocal.createConnection();
+           Connection connectionR = factoryRemote.createConnection()) {
+
+         final Session sessionL = connectionL.createSession(Session.AUTO_ACKNOWLEDGE);
+         final Session sessionR = connectionR.createSession(Session.AUTO_ACKNOWLEDGE);
+
+         final Topic topicA = sessionL.createTopic(fullAddressA.toString());
+         final Topic topicB = sessionL.createTopic(fullAddressB.toString());
+         final Topic topicUnmatched = sessionL.createTopic(unmatchedAddress.toString());
+
+         final MessageConsumer consumerL = sessionL.createConsumer(topicUnmatched);
+         final MessageConsumer consumerL_A = sessionL.createConsumer(topicA);
+         final MessageConsumer consumerL_B = sessionL.createConsumer(topicB);
+         final MessageProducer producerR = sessionR.createProducer(null);
+
+         connectionL.start();
+         connectionR.start();
+
+         // Local broker should see the full address but the remote should only have a wildcard subscription
+         // The wildcard subscription should have two bindings since we have two matching consumers
+         Wait.assertTrue(() -> server.bindingQuery(fullAddressA, false).getQueueNames().size() == 1, 10_000, 50);
+         Wait.assertTrue(() -> server.bindingQuery(fullAddressB, false).getQueueNames().size() == 1, 10_000, 50);
+         Wait.assertTrue(() -> remoteServer.addressQuery(wildcardAddress).isExists());
+         Wait.assertTrue(() -> remoteServer.bindingQuery(wildcardAddress, false).getQueueNames().size() == 2, 10_000, 50);
+
+         assertFalse(remoteServer.addressQuery(fullAddressA).isExists());
+         assertFalse(remoteServer.addressQuery(fullAddressA).isExists());
+
+         final TextMessage remoteMessage = sessionR.createTextMessage(getTestName());
+
+         producerR.send(topicA, remoteMessage);
+
+         final TextMessage localMessageA = (TextMessage) consumerL_A.receive(1_000);
+
+         assertNotNull(localMessageA);
+         assertNull(consumerL_B.receiveNoWait());
+
+         producerR.send(topicB, remoteMessage);
+
+         final TextMessage localMessageB = (TextMessage) consumerL_B.receive(1_000);
+
+         assertNotNull(localMessageB);
+         assertNull(consumerL_A.receiveNoWait());
+
+         consumerL_A.close();
+         consumerL_B.close();
+
+         Wait.assertTrue(() -> remoteServer.bindingQuery(wildcardAddress, false).getQueueNames().size() == 0, 10_000, 50);
+
+         assertNull(consumerL.receiveNoWait());
+      }
+   }
+
+   @Test
+   @Timeout(20)
+   public void testRemoteAddressFederationAppliesConsumerFiltersIfEnabledEvenWithWildcardSubscriptions() throws Exception {
+      logger.info("Test started: {}", getTestName());
+
+      final SimpleString wildcardAddress = SimpleString.of(getTestName() + ".#");
+      final SimpleString fullAddressA = SimpleString.of(getTestName() + ".A");
+
+      final AMQPFederationAddressPolicyElement remoteAddressPolicy = new AMQPFederationAddressPolicyElement();
+      remoteAddressPolicy.setName("test-policy");
+      remoteAddressPolicy.addToIncludes(wildcardAddress.toString());
+      remoteAddressPolicy.setAutoDelete(false);
+      remoteAddressPolicy.setAutoDeleteDelay(-1L);
+      remoteAddressPolicy.setAutoDeleteMessageCount(-1L);
+      remoteAddressPolicy.setAllowWildcardGroupings(true);
+      remoteAddressPolicy.addProperty(IGNORE_ADDRESS_BINDING_FILTERS, String.valueOf(false));
+
+      final AMQPFederatedBrokerConnectionElement element = new AMQPFederatedBrokerConnectionElement();
+      element.setName(getTestName());
+      element.addRemoteAddressPolicy(remoteAddressPolicy);
+
+      final AMQPBrokerConnectConfiguration amqpConnection =
+         new AMQPBrokerConnectConfiguration(getTestName(), "tcp://localhost:" + SERVER_PORT_REMOTE);
+      amqpConnection.setReconnectAttempts(10);// Limit reconnects
+      amqpConnection.addElement(element);
+
+      server.getConfiguration().addAMQPConnection(amqpConnection);
+      remoteServer.start();
+      server.start();
+
+      final ConnectionFactory factoryLocal = CFUtil.createConnectionFactory("AMQP", "tcp://localhost:" + SERVER_PORT);
+      final ConnectionFactory factoryRemote = CFUtil.createConnectionFactory("AMQP", "failover:(amqp://localhost:" + SERVER_PORT_REMOTE + ")");
+
+      final Connection connectionL = factoryLocal.createConnection();
+      final Connection connectionR = factoryRemote.createConnection();
+
+      final Session sessionL = connectionL.createSession(Session.AUTO_ACKNOWLEDGE);
+      final Session sessionR = connectionR.createSession(Session.AUTO_ACKNOWLEDGE);
+
+      final Topic topic = sessionR.createTopic(fullAddressA.toString());
+
+      final MessageConsumer consumerR = sessionR.createConsumer(topic, "color='red'");
+
+      connectionL.start();
+      connectionR.start();
+
+      Wait.assertTrue(() -> server.addressQuery(wildcardAddress).isExists());
+      Wait.assertTrue(() -> server.bindingQuery(wildcardAddress, false).getQueueNames().size() == 1);
+
+      Wait.assertTrue(() -> remoteServer.addressQuery(fullAddressA).isExists());
+      Wait.assertTrue(() -> remoteServer.bindingQuery(fullAddressA, false).getQueueNames().size() == 1);
+
+      try {
+         final MessageProducer producerL = sessionL.createProducer(topic);
+         final TextMessage message = sessionL.createTextMessage();
+
+         message.setText("First Red Message");
+         message.setStringProperty("color", "red");
+         producerL.send(message);
+
+         // Message that matched consumer filter should federate
+         final Message received1 = consumerR.receive(5_000);
+
+         assertNotNull(received1);
+         assertInstanceOf(TextMessage.class, received1);
+         assertEquals("First Red Message", ((TextMessage) received1).getText());
+         assertTrue(received1.propertyExists("color"));
+         assertEquals("red", received1.getStringProperty("color"));
+
+         // should be filtered and not sent over the federation link from the remote server.
+         message.setText("Hello World Blue");
+         message.setStringProperty("color", "blue");
+         producerL.send(message);
+
+         message.setText("Second Red Message");
+         message.setStringProperty("color", "red");
+         producerL.send(message);
+
+         final Message received2 = consumerR.receive(5_000);
+
+         assertNotNull(received2);
+         assertInstanceOf(TextMessage.class, received2);
+         assertEquals("Second Red Message", ((TextMessage) received2).getText());
+         assertTrue(received2.propertyExists("color"));
+         assertEquals("red", received2.getStringProperty("color"));
+
+         // Should be no more messages
+         assertNull(consumerR.receiveNoWait());
+
+         final org.apache.activemq.artemis.core.server.Queue localQueue =
+            server.locateQueue(server.bindingQuery(wildcardAddress, false).getQueueNames().get(0));
+
+         // Filtered message should not be federated so not added on the local server widlcard subscription binding.
+         assertEquals(2, localQueue.getMessagesAdded());
+      } finally {
+         connectionL.close();
+         connectionR.close();
+
+         server.stop();
+         remoteServer.stop();
       }
    }
 }

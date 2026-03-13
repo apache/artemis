@@ -92,6 +92,7 @@ In this case the policy is sent across the connection to the remote broker and f
                              auto-delete-delay="30000"
                              auto-delete-message-count="0"
                              max-hops="1"
+                             allow-wildcard-groupings="false"
                              enable-divert-bindings="true">
          <include address-match="local-address.#" />
          <exclude address-match="local-address.excluded" />
@@ -127,6 +128,11 @@ enable-divert-bindings::
 Setting to `true` enables divert bindings to be listened-to for demand.
 If a divert binding with an address matches the included addresses for the address policy, any queue bindings that match the forwarding address of the divert creates demand.
 The default value is `false`.
+allow-wildcard-groupings::
+Setting to 'true' enables the address federation policy matches to define if a remote wildcard address will be used to host the address receiver bindings for the matching addresses if the match value is itself a wildcard.
+This can be useful if federating large numbers of addresses that have low traffic as it reduces the number of addresses that need to exist on the remote federation target at the expense of higher CPU load on the target in order to route messages to the appropriate wildcard bindings for the matched addresses.
+The default value is `false` and the federation receiver address bindings will be attached to the matching addresses on the remote.
+When enabled the remote broker must have wildcard routing enabled for this feature to work correctly.
 
 The following set of elements can be configured within the address policy to control the behavior of the deployed policy.
 For the policy to actually match any addresses on the target broker an include must be provided at a minimum.

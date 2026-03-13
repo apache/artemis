@@ -146,7 +146,7 @@ public final class AMQPFederationAddressBindingsConsumer extends AMQPFederationA
 
          delivery.setContext(message);
 
-         message.setAddress(consumerInfo.getAddress());
+         message.setAddress(consumerInfo.getTargetAddress());
          message.setConnectionID(receiver.getSession().getConnection().getRemoteContainer());
          if (message.getMessageID() <= 0) {
             message.setMessageID(storageManager.generateID());

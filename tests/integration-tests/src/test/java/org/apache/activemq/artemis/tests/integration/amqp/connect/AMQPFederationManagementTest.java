@@ -73,6 +73,7 @@ import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPF
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_AUTO_DELETE_DELAY;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_AUTO_DELETE_MSG_COUNT;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_ENABLE_DIVERT_BINDINGS;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_ALLOW_WILDCARD_GROUPINGS;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_INCLUDES;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_MAX_HOPS;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_RECEIVER_IDLE_TIMEOUT;
@@ -1080,6 +1081,7 @@ class AMQPFederationManagementTest extends AmqpClientTestSupport {
       policyMap.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
       policyMap.put(ADDRESS_MAX_HOPS, 5);
       policyMap.put(ADDRESS_ENABLE_DIVERT_BINDINGS, false);
+      policyMap.put(ADDRESS_ALLOW_WILDCARD_GROUPINGS, false);
       policyMap.put(ADDRESS_INCLUDES, includes);
 
       final EncodedAmqpValueMatcher bodyMatcher = new EncodedAmqpValueMatcher(policyMap);
@@ -1282,6 +1284,7 @@ class AMQPFederationManagementTest extends AmqpClientTestSupport {
       policyMap.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
       policyMap.put(ADDRESS_MAX_HOPS, 5);
       policyMap.put(ADDRESS_ENABLE_DIVERT_BINDINGS, false);
+      policyMap.put(ADDRESS_ALLOW_WILDCARD_GROUPINGS, false);
       policyMap.put(ADDRESS_INCLUDES, includes);
 
       final EncodedAmqpValueMatcher bodyMatcher = new EncodedAmqpValueMatcher(policyMap);
