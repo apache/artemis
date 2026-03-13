@@ -168,6 +168,8 @@ jobs:
         run: |
           cd artemis
           mvn -s .github/maven-settings.xml clean verify -Prelease -Denforcer.skip -pl "artemis-unit-test-support,org.apache.artemis:artemis-junit-5"
+          CURRENT_ERRORPRONE_VERSION=$(grep -m 1 -Po '(?<=errorprone.version>)[^<]+' pom.xml)
+          mvn -s .github/maven-settings.xml dependency:get -Dartifact="com.google.errorprone:error_prone_core:${CURRENT_ERRORPRONE_VERSION}" -pl "."
 
       - name: Clean Up Before Caching
         run: |
