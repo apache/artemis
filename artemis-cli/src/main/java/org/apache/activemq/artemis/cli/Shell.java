@@ -17,14 +17,26 @@
 
 package org.apache.activemq.artemis.cli;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 import org.apache.activemq.artemis.cli.commands.ActionContext;
 import org.apache.activemq.artemis.cli.commands.Connect;
 import org.apache.activemq.artemis.cli.commands.messages.ConnectionAbstract;
+import org.apache.activemq.artemis.cli.commands.util.input.SystemInputReader;
 import org.jline.console.SystemRegistry;
 import org.jline.console.impl.SystemRegistryImpl;
 import org.jline.reader.EndOfFileException;
@@ -36,6 +48,7 @@ import org.jline.reader.UserInterruptException;
 import org.jline.reader.impl.DefaultParser;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
+import org.jspecify.annotations.Nullable;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.shell.jline3.PicocliCommands;
@@ -52,6 +65,11 @@ public class Shell implements Runnable {
    @CommandLine.Option(names = "--password", description = "It will be used for an initial connection if set.")
    protected String password;
 
+   @CommandLine.Option(names = "--history", description = "File where shell history is being stored.")
+   protected File historyFile;
+
+   private static final String DEFAULT_HISTORY_FILE = "history-file";
+
    public Shell(CommandLine commandLine) {
    }
 
@@ -64,7 +82,7 @@ public class Shell implements Runnable {
          connect.setUser(user).setPassword(password).setBrokerURL(brokerURL);
          connect.run();
       }
-      runShell(false);
+      runShell(false, historyFile);
    }
 
    private static ThreadLocal<AtomicBoolean> IN_SHELL = ThreadLocal.withInitial(() -> new AtomicBoolean(false));
@@ -88,10 +106,20 @@ public class Shell implements Runnable {
    }
 
    public static void runShell(boolean printBanner) {
+      runShell(printBanner, null);
+   }
+
+   public static void runShell(boolean printBanner, File historyFile) {
       try {
          setInShell();
 
-         boolean isInstance = System.getProperty("artemis.instance") != null;
+         String artemisInstance = System.getProperty("artemis.instance");
+
+         boolean isInstance = artemisInstance != null;
+
+         if (isInstance && historyFile == null) {
+            historyFile = inquiryDefaultHistory(historyFile, artemisInstance);
+         }
 
          Supplier<Path> workDir = () -> Paths.get(System.getProperty("user.dir"));
 
@@ -117,12 +145,18 @@ public class Shell implements Runnable {
             systemRegistry.setCommandRegistries(picocliCommands);
             systemRegistry.register("help", picocliCommands);
 
-            LineReader reader = LineReaderBuilder.builder()
+            LineReaderBuilder readerBuilder = LineReaderBuilder.builder()
                .terminal(terminal)
                .completer(systemRegistry.completer())
                .parser(parser)
-               .variable(LineReader.LIST_MAX, 50)   // max tab completion candidates
-               .build();
+               .variable(LineReader.LIST_MAX, 50);   // max tab completion candidates
+
+            if (historyFile != null) {
+               readerBuilder.variable(LineReader.HISTORY_FILE, historyFile.toPath());
+            }
+
+            LineReader reader = readerBuilder.build();
+
             factory.setTerminal(terminal);
             if (ActionContext.system() != null) {
                ActionContext.system().lineReader = reader;
@@ -134,6 +168,11 @@ public class Shell implements Runnable {
                printBanner();
             }
 
+            if (historyFile != null) {
+               System.out.println(org.apache.activemq.artemis.cli.Terminal.WARNING_COLOR_UNICODE + "Shell history being saved at " + historyFile.getAbsolutePath() + org.apache.activemq.artemis.cli.Terminal.CLEAR_UNICODE);
+               System.out.println();
+            }
+
             System.out.println("For a list of commands, type " + org.apache.activemq.artemis.cli.Terminal.WARNING_COLOR_UNICODE + "help" + org.apache.activemq.artemis.cli.Terminal.CLEAR_UNICODE + " or press " + org.apache.activemq.artemis.cli.Terminal.WARNING_COLOR_UNICODE + "<TAB>" + org.apache.activemq.artemis.cli.Terminal.CLEAR_UNICODE + ":");
             System.out.println("Type " + org.apache.activemq.artemis.cli.Terminal.WARNING_COLOR_UNICODE + "exit" + org.apache.activemq.artemis.cli.Terminal.CLEAR_UNICODE + " or press " + org.apache.activemq.artemis.cli.Terminal.WARNING_COLOR_UNICODE + "<CTRL-D>" + org.apache.activemq.artemis.cli.Terminal.CLEAR_UNICODE + " to leave the session:");
 
@@ -141,11 +180,14 @@ public class Shell implements Runnable {
             String line;
             while (true) {
                try {
+                  // load the history on each loop because other instances may be changing it as well
+                  loadHistory(historyFile, reader);
                   // We build a new command every time, as they could have state from previous executions
                   systemRegistry.setCommandRegistries(new PicocliCommands(Artemis.buildCommand(isInstance, !isInstance, false)));
                   systemRegistry.cleanUp();
                   line = reader.readLine(getPrompt(), rightPrompt, (MaskingCallback) null, null);
                   systemRegistry.execute(line);
+                  saveHistory(reader, historyFile);
                } catch (InterruptedException e) {
                   e.printStackTrace();
                   // Ignore
@@ -169,6 +211,67 @@ public class Shell implements Runnable {
          IN_SHELL.get().set(false);
       }
 
+   }
+
+   private static void saveHistory(LineReader reader, File historyFile) {
+      try {
+         setHistoryFilePermissions(historyFile);
+         reader.getHistory().save();
+      } catch (Throwable e) {
+         System.err.println("Error saving history of shell : " + e.getMessage());
+      }
+   }
+
+   private static void loadHistory(File historyFile, LineReader reader) {
+      if (historyFile != null) {
+         try {
+            if (historyFile.length() > 0) {
+               reader.getHistory().load();
+            }
+         } catch (IOException e) {
+            System.err.println("Could not load history from " + historyFile + ": " + e.getMessage());
+         }
+      }
+   }
+
+   private static @Nullable File inquiryDefaultHistory(File historyFile, String artemisInstance) {
+      final String NO_HISTORY = "NO_HISTORY";
+      SystemInputReader inputReader = new SystemInputReader();
+      File defaultHistoryFile = new File(artemisInstance + "/etc/" + DEFAULT_HISTORY_FILE);
+      try {
+         if (!defaultHistoryFile.exists()) {
+            defaultHistoryFile.createNewFile();
+         }
+
+         if (defaultHistoryFile.exists()) {
+            if (defaultHistoryFile.length() == 0) {
+               String input = inputReader.inputLoop(null, "Allow shell history? (Y/N)", s -> s != null && (s.toUpperCase().equals("Y") || s.toUpperCase().equals("N"))).toUpperCase();
+               if (input.equals("N")) {
+                  historyFile = null;
+                  try (PrintStream fileOutputStream = new PrintStream(new FileOutputStream(defaultHistoryFile))) {
+                     fileOutputStream.println(NO_HISTORY);
+                  }
+               } else {
+                  defaultHistoryFile.createNewFile();
+               }
+            }
+
+            if (historyFile == null) {
+               try (BufferedReader fileReader = new BufferedReader(new InputStreamReader(new FileInputStream(defaultHistoryFile)))) {
+                  String line = fileReader.readLine();
+                  if (line != null && line.equals(NO_HISTORY)) {
+                     // the user selected no history in the past
+                     historyFile = null;
+                  } else {
+                     historyFile = defaultHistoryFile;
+                  }
+               }
+            }
+         }
+      } catch (IOException e) {
+         // no history on this case then
+      }
+      return historyFile;
    }
 
    private static void printBanner() {
@@ -203,6 +306,22 @@ public class Shell implements Runnable {
 
    public static void setPrompt(String prompt) {
       PROMPT.set(org.apache.activemq.artemis.cli.Terminal.INPUT_COLOR_UNICODE + prompt + " > " + org.apache.activemq.artemis.cli.Terminal.CLEAR_UNICODE);
+   }
+
+   private static void setHistoryFilePermissions(File historyFile) {
+      try {
+         Path path = historyFile.toPath();
+         if (!Files.exists(path)) {
+            historyFile.createNewFile();
+         }
+         if (Files.exists(path)) {
+            Set<PosixFilePermission> perms = new HashSet<>();
+            perms.add(PosixFilePermission.OWNER_READ);
+            perms.add(PosixFilePermission.OWNER_WRITE);
+            Files.setPosixFilePermissions(path, perms);
+         }
+      } catch (Exception e) {
+      }
    }
 
 }

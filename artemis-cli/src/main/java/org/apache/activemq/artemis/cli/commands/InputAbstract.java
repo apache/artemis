@@ -17,67 +17,12 @@
 
 package org.apache.activemq.artemis.cli.commands;
 
-import java.io.InputStream;
-import java.io.PrintStream;
-import java.util.Scanner;
-
-import org.apache.activemq.artemis.cli.Terminal;
-import org.jline.reader.LineReader;
+import org.apache.activemq.artemis.cli.commands.util.input.InputReader;
+import org.apache.activemq.artemis.cli.commands.util.input.JLineInputReader;
+import org.apache.activemq.artemis.cli.commands.util.input.SystemInputReader;
 import picocli.CommandLine.Option;
 
 public class InputAbstract extends ActionAbstract {
-
-   public interface InputReader {
-      String readLine(String prompt);
-      String readPassword(String prompt);
-   }
-
-   private class ScanReader implements InputReader {
-      ScanReader(InputStream inputStream, PrintStream promptStream) {
-         this.scanner = new Scanner(inputStream);
-         this.promptStream = promptStream;
-      }
-
-      Scanner scanner;
-      PrintStream promptStream;
-
-
-      @Override
-      public String readLine(String prompt) {
-         promptStream.println(prompt);
-         return scanner.nextLine();
-      }
-
-      @Override
-      public String readPassword(String prompt) {
-         promptStream.println(prompt);
-         char[] typedPassword = System.console().readPassword();
-         if (typedPassword == null) {
-            return null;
-         } else {
-            return new String(typedPassword);
-         }
-      }
-   }
-
-
-   private class JLineReader implements InputReader {
-      JLineReader(LineReader reader) {
-         this.reader = reader;
-      }
-
-      public LineReader reader;
-
-      @Override
-      public String readLine(String prompt) {
-         return reader.readLine(Terminal.INPUT_COLOR_UNICODE + prompt + ":" + Terminal.CLEAR_UNICODE);
-      }
-
-      @Override
-      public String readPassword(String prompt) {
-         return reader.readLine(Terminal.INPUT_COLOR_UNICODE + prompt + ":" + Terminal.CLEAR_UNICODE, '*');
-      }
-   }
 
 
    InputReader lineReader;
@@ -154,20 +99,7 @@ public class InputAbstract extends ActionAbstract {
          return silentDefault;
       }
 
-      String inputStr;
-      boolean valid = false;
-      getActionContext().out.println();
-      do {
-         getActionContext().out.println(propertyName + ":");
-         inputStr = lineReader.readLine(prompt);
-
-         if (!acceptNull && inputStr.trim().isEmpty()) {
-            getActionContext().out.println("Invalid Entry!");
-         } else {
-            valid = true;
-         }
-      }
-      while (!valid);
+      String inputStr = lineReader.inputLoop(propertyName, prompt, s -> s != null && !s.isEmpty());
 
       return inputStr.trim();
    }
@@ -206,9 +138,9 @@ public class InputAbstract extends ActionAbstract {
       super.execute(context);
 
       if (context.lineReader != null) {
-         this.lineReader = new JLineReader(context.lineReader);
+         this.lineReader = new JLineInputReader(context.lineReader);
       } else {
-         this.lineReader = new ScanReader(context.in, context.out);
+         this.lineReader = new SystemInputReader(context.in, context.out);
       }
 
       return null;
