@@ -17,11 +17,7 @@
 
 package org.apache.activemq.artemis.cli.commands.tools.config;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
-import java.io.PrintStream;
 
 import org.apache.activemq.artemis.cli.commands.ActionContext;
 import org.apache.activemq.artemis.cli.commands.Configurable;
@@ -38,20 +34,10 @@ public class ExportProperties extends Configurable {
    public Object execute(ActionContext context) throws Exception {
       super.execute(context);
 
-      PrintStream out = context.out;
-      OutputStream outputStream = null;
-
       System.out.println("Exporting configuration as " + output);
 
       if (output == null) {
          throw new RuntimeException("output is a required property");
-      }
-
-
-      if (output != null) {
-         outputStream = new BufferedOutputStream(new FileOutputStream(output));
-         PrintStream printStream = new PrintStream(outputStream);
-         context.out = printStream;
       }
 
       FileConfiguration configuration = readConfiguration();
