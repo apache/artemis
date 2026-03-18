@@ -169,8 +169,9 @@ public class StompSoakTest extends SoakTestBase {
       Assertions.assertTrue(done.await(10, TimeUnit.MINUTES));
 
       try {
-         if (c != null)
+         if (c != null) {
             c.close();
+         }
          if (cc != null) {
             cc.closeTransport();
             cc.disconnect();

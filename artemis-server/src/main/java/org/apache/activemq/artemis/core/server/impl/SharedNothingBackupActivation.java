@@ -327,9 +327,10 @@ public final class SharedNothingBackupActivation extends Activation implements R
          if (logger.isTraceEnabled()) {
             logger.trace("{}, serverStarted={}", e.getMessage(), activeMQServer.isStarted(), e);
          }
-         if ((e instanceof InterruptedException || e instanceof IllegalStateException) && !activeMQServer.isStarted())
+         if ((e instanceof InterruptedException || e instanceof IllegalStateException) && !activeMQServer.isStarted()) {
             // do not log these errors if the server is being stopped.
             return;
+         }
          ActiveMQServerLogger.LOGGER.initializationError(e);
       }
    }
@@ -350,8 +351,9 @@ public final class SharedNothingBackupActivation extends Activation implements R
    @Override
    public void close(final boolean permanently, boolean restarting) throws Exception {
       synchronized (this) {
-         if (backupQuorum != null)
+         if (backupQuorum != null) {
             backupQuorum.causeExit(STOP);
+         }
          replicationEndpoint = null;
          closed = true;
       }
@@ -485,8 +487,9 @@ public final class SharedNothingBackupActivation extends Activation implements R
       }
 
       private synchronized ReplicationEndpoint connectToReplicationEndpoint(final ClusterControl control) throws Exception {
-         if (!activeMQServer.isStarted())
+         if (!activeMQServer.isStarted()) {
             return null;
+         }
          if (!activeMQServer.getHAPolicy().isBackup()) {
             throw ActiveMQMessageBundle.BUNDLE.serverNotBackupServer();
          }

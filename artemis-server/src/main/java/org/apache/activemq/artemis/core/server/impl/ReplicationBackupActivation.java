@@ -201,8 +201,9 @@ public final class ReplicationBackupActivation extends Activation implements Dis
             return;
          }
          synchronized (this) {
-            if (closed)
+            if (closed) {
                return;
+            }
          }
 
 

@@ -685,8 +685,9 @@ public abstract class LargeMessageTestBase extends ActiveMQTestBase {
 
       @Override
       public int read() throws IOException {
-         if (pos == size)
+         if (pos == size) {
             return -1;
+         }
          pos++;
 
          return getChar(pos - 1);

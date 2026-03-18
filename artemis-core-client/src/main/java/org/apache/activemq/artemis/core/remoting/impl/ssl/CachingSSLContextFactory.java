@@ -65,8 +65,9 @@ public class CachingSSLContextFactory extends DefaultSSLContextFactory {
     */
    protected Object getCacheKey(final SSLContextConfig config, final Map<String, Object> additionalOpts) {
       final Object cacheKey = ConfigurationHelper.getStringProperty(TransportConstants.SSL_CONTEXT_PROP_NAME, null, additionalOpts);
-      if (cacheKey != null)
+      if (cacheKey != null) {
          return cacheKey;
+      }
 
       return config;
    }

@@ -59,7 +59,9 @@ public class JournalFileRepositoryOrderTest extends ActiveMQTestBase {
                   Wait.waitFor(() -> !running.get() || dataFiles.size() > 10, 1000, 1);
                   while (running.get()) {
                      JournalFile file = dataFiles.poll();
-                     if (file == null) break;
+                     if (file == null) {
+                        break;
+                     }
                      repository.addFreeFile(file, false);
                   }
                } catch (Throwable e) {

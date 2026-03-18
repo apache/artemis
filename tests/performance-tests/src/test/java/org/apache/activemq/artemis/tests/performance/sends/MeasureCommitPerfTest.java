@@ -48,8 +48,9 @@ public class MeasureCommitPerfTest extends AbstractSendReceivePerfTest {
 
          s.commit();
          commits++;
-         if (start > 0 && commits % 1000 == 0)
+         if (start > 0 && commits % 1000 == 0) {
             printCommitsSecond(start, commits);
+         }
       }
       printCommitsSecond(start, commits);
 

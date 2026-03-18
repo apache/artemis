@@ -149,8 +149,9 @@ public class PredicateFilterPart<T> {
    }
    public boolean matchAny(Collection objects) {
       for (Object o : objects) {
-         if (matches(o))
+         if (matches(o)) {
             return true;
+         }
       }
       return false;
    }

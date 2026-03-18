@@ -655,12 +655,15 @@ public class BridgeReconnectTest extends BridgeTestBase {
    }
 
    private void closeServers() throws Exception {
-      if (session0 != null)
+      if (session0 != null) {
          session0.close();
-      if (session1 != null)
+      }
+      if (session1 != null) {
          session1.close();
-      if (session2 != null)
+      }
+      if (session2 != null) {
          session2.close();
+      }
 
       if (locator != null) {
          locator.close();
@@ -668,15 +671,17 @@ public class BridgeReconnectTest extends BridgeTestBase {
 
       server0.stop();
       server1.stop();
-      if (server2 != null)
+      if (server2 != null) {
          server2.stop();
+      }
    }
 
    private void assertNoMoreConnections() {
       assertEquals(0, server0.getRemotingService().getConnections().size());
       assertEquals(0, server1.getRemotingService().getConnections().size());
-      if (server2 != null)
+      if (server2 != null) {
          assertEquals(0, server2.getRemotingService().getConnections().size());
+      }
    }
 
    @TestTemplate
@@ -849,8 +854,9 @@ public class BridgeReconnectTest extends BridgeTestBase {
    }
 
    private void startServers() throws Exception {
-      if (server2 != null)
+      if (server2 != null) {
          server2.start();
+      }
       server1.start();
       server0.start();
    }

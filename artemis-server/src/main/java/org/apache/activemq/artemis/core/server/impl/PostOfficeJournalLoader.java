@@ -147,8 +147,9 @@ public class PostOfficeJournalLoader implements JournalLoader {
 
          if (queueBindingInfo.getQueueStatusEncodings() != null) {
             for (QueueStatusEncoding encoding : queueBindingInfo.getQueueStatusEncodings()) {
-               if (encoding.getStatus() == AddressQueueStatus.PAUSED)
+               if (encoding.getStatus() == AddressQueueStatus.PAUSED) {
                   queue.reloadPause(encoding.getId());
+               }
             }
          }
 

@@ -163,7 +163,9 @@ public class PageCleanupWhileReplicaCatchupTest extends FailoverTestBase {
                   startFlag.await(1, TimeUnit.SECONDS);
                } catch (Throwable ignored) {
                }
-               if (!running) break;
+               if (!running) {
+                  break;
+               }
                try (Connection connection = factory.createConnection()) {
                   Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
                   connection.start();

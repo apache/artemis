@@ -44,8 +44,9 @@ public class ClientStompFrameV11 extends ClientStompFrameV10 {
 
    @Override
    public boolean needsReply() {
-      if (forceOneway)
+      if (forceOneway) {
          return false;
+      }
 
       if (Stomp.Commands.STOMP.equals(command)) {
          return true;

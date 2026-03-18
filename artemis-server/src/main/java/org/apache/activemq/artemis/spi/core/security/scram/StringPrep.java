@@ -48,16 +48,18 @@ public class StringPrep {
 
       static CharClass fromList(int[] charMap) {
          SortedMap<Integer, Integer> mapping = new TreeMap<>();
-         for (int element : charMap)
+         for (int element : charMap) {
             mapping.put(element, 1);
+         }
 
          return new CharClass(mapping);
       }
 
       static CharClass fromRanges(int[] charMap) {
          // There must be an even number of tuples in RANGES tables.
-         if ((charMap.length % 2) != 0)
+         if ((charMap.length % 2) != 0) {
             throw new IllegalArgumentException("Invalid character list size");
+         }
 
          SortedMap<Integer, Integer> mapping = new TreeMap<>();
          for (int i = 0; i < charMap.length; i += 2) {
@@ -124,8 +126,9 @@ public class StringPrep {
          // -pos - 1 is the lowest index where tupleStart[pos] > c. If this is the
          // first entry, then c is below all entries in the class.
          pos = -pos - 1;
-         if (pos == 0)
+         if (pos == 0) {
             return false;
+         }
          --pos;
 
          // tupleStart[pos] is <= c.
@@ -2063,10 +2066,11 @@ public class StringPrep {
       for (int i = 0; i < s.length();) {
          int c = Character.codePointAt(s, i);
          int charCount = Character.charCount(c);
-         if (mapFrom.isCharInClass(c))
+         if (mapFrom.isCharInClass(c)) {
             result.append(mapTo);
-         else
+         } else {
             result.append(s, i, i + charCount);
+         }
          i += charCount;
       }
 
@@ -2080,8 +2084,9 @@ public class StringPrep {
    static int containsCharacterInClass(String s, CharClass charClass) {
       for (int i = 0; i < s.length();) {
          int c = Character.codePointAt(s, i);
-         if (charClass.isCharInClass(c))
+         if (charClass.isCharInClass(c)) {
             return i;
+         }
 
          i += Character.charCount(c);
       }
@@ -2098,16 +2103,19 @@ public class StringPrep {
          // 2) If a string contains any RandALCat character, the string MUST NOT
          // contain any LCat character.
          int containsL = containsCharacterInClass(s, D2);
-         if (containsL != -1)
+         if (containsL != -1) {
             throw new StringPrepRTLErrorBothRALandL();
+         }
          // 3) If a string contains any RandALCat character, a RandALCat
          // character MUST be the first character of the string
-         if (containsRAL != 0)
+         if (containsRAL != 0) {
             throw new StringPrepRTLErrorRALWithoutPrefix();
+         }
 
          // ... and a RandALCat character MUST be the last character of the string.
-         if (!D1.isCharInClass(s.charAt(s.length() - 1)))
+         if (!D1.isCharInClass(s.charAt(s.length() - 1))) {
             throw new StringPrepRTLErrorRALWithoutSuffix();
+         }
       }
    }
 
@@ -2123,8 +2131,9 @@ public class StringPrep {
       // This profile specifies the [StringPrep, A.1] table as its list of unassigned
       // code points.
       int containsUnassignedCodepoint = containsCharacterInClass(s, A1);
-      if (containsUnassignedCodepoint != -1)
+      if (containsUnassignedCodepoint != -1) {
          throw new StringPrepUnassignedCodepoint();
+      }
       return s;
    }
 
@@ -2147,8 +2156,9 @@ public class StringPrep {
 
       // 3) Prohibit
       int idx = containsCharacterInClass(s, saslProhibited);
-      if (idx != -1)
+      if (idx != -1) {
          throw new StringPrepProhibitedCharacter();
+      }
 
       // 4) Check bidi
       verifyRTL(s);

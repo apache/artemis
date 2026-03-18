@@ -158,11 +158,9 @@ public class JmsQueueBrowserTest extends BasicOpenWireTest {
       connection.start();
 
       TextMessage[] outbound = new TextMessage[10];
-      for (int i = 0; i < 10; i++)
-      {
+      for (int i = 0; i < 10; i++) {
          outbound[i] = session.createTextMessage(i + " Message");
       }
-      ;
 
       // lets consume any outstanding messages from previous test runs
       while (consumer.receive(1000) != null)
@@ -190,18 +188,15 @@ public class JmsQueueBrowserTest extends BasicOpenWireTest {
 
       // lets browse
       CompositeData[] compdatalist = proxy.browse();
-      if (compdatalist.length == 0)
-      {
+      if (compdatalist.length == 0) {
          fail("There is no message in the queue:");
       }
       String[] messageIDs = new String[compdatalist.length];
 
-      for (int i = 0; i < compdatalist.length; i++)
-      {
+      for (int i = 0; i < compdatalist.length; i++) {
          CompositeData cdata = compdatalist[i];
 
-         if (i == 0)
-         {
+         if (i == 0) {
             System.out.println("Columns: " + cdata.getCompositeType().keySet());
          }
          messageIDs[i] = (String) cdata.get("JMSMessageID");

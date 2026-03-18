@@ -51,10 +51,14 @@ public class XMLMessageSerializer implements MessageSerializer {
       reader.getRawXMLReader().nextTag();
 
       // End of document.
-      if (reader.getRawXMLReader().getLocalName().equals("messages")) return null;
+      if (reader.getRawXMLReader().getLocalName().equals("messages")) {
+         return null;
+      }
 
       XMLMessageImporter.MessageInfo messageInfo = reader.readMessage(true);
-      if (messageInfo == null) return null;
+      if (messageInfo == null) {
+         return null;
+      }
 
       // This is a large message
       ActiveMQMessage jmsMessage = new ActiveMQMessage((ClientMessage) messageInfo.message, clientSession);

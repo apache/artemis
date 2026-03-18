@@ -70,8 +70,9 @@ public class ActiveMQThreadPoolExecutor extends ThreadPoolExecutor {
             retval = super.offer(runnable);
 
             // Only decrement the delta if the task has actually been added to the queue
-            if (retval)
+            if (retval) {
                DELTA_UPDATER.decrementAndGet(this);
+            }
          }
 
          return retval;

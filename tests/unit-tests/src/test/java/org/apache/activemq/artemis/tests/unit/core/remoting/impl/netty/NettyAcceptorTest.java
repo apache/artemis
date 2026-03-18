@@ -60,11 +60,13 @@ public class NettyAcceptorTest extends ActiveMQTestBase {
    @Override
    @AfterEach
    public void tearDown() throws Exception {
-      if (pool3 != null)
+      if (pool3 != null) {
          pool3.shutdown();
+      }
 
-      if (pool2 != null)
+      if (pool2 != null) {
          pool2.shutdownNow();
+      }
 
       super.tearDown();
    }

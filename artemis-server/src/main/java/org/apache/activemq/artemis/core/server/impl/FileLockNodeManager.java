@@ -239,8 +239,9 @@ public class FileLockNodeManager extends FileBasedNodeManager {
          throw new NodeManagerException(e);
       }
       ActiveMQServerLogger.LOGGER.gotBackupLock();
-      if (getUUID() == null)
+      if (getUUID() == null) {
          readNodeId();
+      }
    }
 
    @Override

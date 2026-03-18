@@ -51,9 +51,9 @@ public final class ClassloadingUtil {
             System.out.println(INSTANTIATION_EXCEPTION_MESSAGE);
          }
          loader = Thread.currentThread().getContextClassLoader();
-         if (loader == null)
+         if (loader == null) {
             throw new RuntimeException("No local context classloader", t);
-
+         }
          try {
             return getInstanceWithTypeCheck(className, expectedType, loader);
          } catch (InstantiationException e) {
@@ -97,14 +97,16 @@ public final class ClassloadingUtil {
    public static URL findResource(ClassLoader loader, final String resourceName) {
       try {
          URL resource = loader.getResource(resourceName);
-         if (resource != null)
+         if (resource != null) {
             return resource;
+         }
       } catch (Throwable t) {
       }
 
       loader = Thread.currentThread().getContextClassLoader();
-      if (loader == null)
+      if (loader == null) {
          return null;
+      }
 
       return loader.getResource(resourceName);
    }

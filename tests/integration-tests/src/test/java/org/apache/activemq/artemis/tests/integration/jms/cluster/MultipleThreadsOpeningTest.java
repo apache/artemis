@@ -82,8 +82,9 @@ public class MultipleThreadsOpeningTest extends JMSClusteredTestBase {
                flagStartRace.await();
 
                for (int i = 0; i < numberOfOpens; i++) {
-                  if (i > 0 && i % 100 == 0)
+                  if (i > 0 && i % 100 == 0) {
                      logger.debug("connections created on Thread {} {}", Thread.currentThread(), i);
+                  }
                   Connection conn = cf1.createConnection();
                   Session sess = conn.createSession(true, Session.AUTO_ACKNOWLEDGE);
                   sess.close();

@@ -376,11 +376,13 @@ public class DiscoveryTest extends DiscoveryBaseTest {
          }
       } finally {
          try {
-            if (broadcaster != null)
+            if (broadcaster != null) {
                broadcaster.close(true);
+            }
 
-            if (client != null)
+            if (client != null) {
                client.close(false);
+            }
          } catch (Exception ignored) {
             ignored.printStackTrace();
          }

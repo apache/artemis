@@ -171,8 +171,9 @@ public class JMSTestBase extends ActiveMQTestBase {
          contextSet.clear();
       }
       try {
-         if (conn != null)
+         if (conn != null) {
             conn.close();
+         }
       } catch (Exception e) {
          // no-op
       }
@@ -272,8 +273,9 @@ public class JMSTestBase extends ActiveMQTestBase {
             assertNotNull(message, "Expecting a message " + i);
             final int actual = message.getIntProperty("counter");
             assertEquals(i, actual, "expected=" + i + ". Got: property['counter']=" + actual);
-            if (ack)
+            if (ack) {
                message.acknowledge();
+            }
          }
       } catch (JMSException cause) {
          throw new JMSRuntimeException(cause.getMessage(), cause.getErrorCode(), cause);

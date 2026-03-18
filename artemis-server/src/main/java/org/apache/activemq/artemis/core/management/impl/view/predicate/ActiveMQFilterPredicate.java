@@ -33,8 +33,9 @@ public abstract class ActiveMQFilterPredicate<T, V extends PredicateFilterPart<T
 
    @Override
    public boolean test(T input) {
-      if (filterParts.isEmpty())
+      if (filterParts.isEmpty()) {
          return true;
+      }
       try {
          boolean matches = true;
          for (V filterPart : filterParts) {

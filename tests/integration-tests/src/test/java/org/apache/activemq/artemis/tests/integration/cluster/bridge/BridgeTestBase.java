@@ -105,7 +105,8 @@ public abstract class BridgeTestBase extends ActiveMQTestBase {
    }
 
    protected void waitForServerStart(ActiveMQServer server) throws Exception {
-      if (!server.waitForActivation(5000L, TimeUnit.MILLISECONDS))
+      if (!server.waitForActivation(5000L, TimeUnit.MILLISECONDS)) {
          throw new IllegalStateException("Timed out waiting for server starting = " + server);
+      }
    }
 }

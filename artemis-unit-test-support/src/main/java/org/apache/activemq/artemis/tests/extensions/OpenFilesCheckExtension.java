@@ -84,8 +84,9 @@ public class OpenFilesCheckExtension implements Extension, AfterAllCallback {
          try (BufferedReader processInput = new BufferedReader(new InputStreamReader(child.getInputStream()))) {
             processInput.readLine();
             while ((outputLine = processInput.readLine()) != null) {
-               if (!filtered || (!outputLine.endsWith(".jar") && !outputLine.endsWith(".so") && !outputLine.contains("type=STREAM")))
+               if (!filtered || (!outputLine.endsWith(".jar") && !outputLine.endsWith(".so") && !outputLine.contains("type=STREAM"))) {
                   openFiles.add(outputLine);
+               }
             }
          }
       } catch (Exception ignore) {
@@ -110,7 +111,9 @@ public class OpenFilesCheckExtension implements Extension, AfterAllCallback {
       PrintWriter printWriter = new PrintWriter(stringWriter);
       boolean first = true;
       for (String str : openFiles) {
-         if (!first) printWriter.print("\n");
+         if (!first) {
+            printWriter.print("\n");
+         }
          first = false;
          printWriter.print(str);
       }

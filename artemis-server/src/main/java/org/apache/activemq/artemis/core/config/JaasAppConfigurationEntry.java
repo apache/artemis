@@ -88,7 +88,9 @@ public class JaasAppConfigurationEntry implements Serializable {
 
    @Override
    public boolean equals(Object o) {
-      if (o == null || getClass() != o.getClass()) return false;
+      if (o == null || getClass() != o.getClass()) {
+         return false;
+      }
       JaasAppConfigurationEntry that = (JaasAppConfigurationEntry) o;
       return Objects.equals(name, that.name) && Objects.equals(loginModuleClass, that.loginModuleClass) && Objects.equals(controlFlag, that.controlFlag) && Objects.equals(params, that.params);
    }

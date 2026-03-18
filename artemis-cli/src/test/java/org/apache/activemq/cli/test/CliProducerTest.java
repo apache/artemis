@@ -80,7 +80,9 @@ public class CliProducerTest extends CliTestBase {
 
       List<Message> received = consumeMessages(session, address, TEST_MESSAGE_COUNT, CompositeAddress.isFullyQualified(address));
       for (int i = 0; i < TEST_MESSAGE_COUNT; i++) {
-         if (!isCustomMessageBody) messageBody = "test message: " + String.valueOf(i);
+         if (!isCustomMessageBody) {
+            messageBody = "test message: " + String.valueOf(i);
+         }
          assertEquals(messageBody, ((TextMessage) received.get(i)).getText());
       }
    }

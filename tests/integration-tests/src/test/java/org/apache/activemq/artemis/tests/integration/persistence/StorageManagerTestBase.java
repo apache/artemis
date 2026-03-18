@@ -80,8 +80,9 @@ public abstract class StorageManagerTestBase extends ActiveMQTestBase {
       scheduledExecutorService.shutdown();
 
       super.tearDown();
-      if (exception != null)
+      if (exception != null) {
          throw exception;
+      }
    }
 
    protected void createStorage() throws Exception {

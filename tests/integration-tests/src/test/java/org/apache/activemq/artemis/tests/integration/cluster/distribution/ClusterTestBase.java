@@ -688,8 +688,9 @@ public abstract class ClusterTestBase extends ActiveMQTestBase {
    }
 
    protected void closeAllConsumers() {
-      if (consumers == null)
+      if (consumers == null) {
          return;
+      }
       for (int i = 0; i < consumers.length; i++) {
          ConsumerHolder holder = consumers[i];
 
@@ -1964,8 +1965,9 @@ public abstract class ClusterTestBase extends ActiveMQTestBase {
             }
          }
       }
-      if (exception != null)
+      if (exception != null) {
          throw exception;
+      }
    }
 
    protected boolean isFileStorage() {

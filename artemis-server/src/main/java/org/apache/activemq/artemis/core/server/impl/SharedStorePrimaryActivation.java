@@ -63,8 +63,9 @@ public final class SharedStorePrimaryActivation extends PrimaryActivation {
 
          logger.debug("First part initialization on {}", this);
 
-         if (!activeMQServer.initialisePart1(false))
+         if (!activeMQServer.initialisePart1(false)) {
             return;
+         }
 
          if (activeMQServer.getNodeManager().isBackupActive()) {
             /*
@@ -75,8 +76,9 @@ public final class SharedStorePrimaryActivation extends PrimaryActivation {
 
             activeMQServer.getBackupManager().start();
 
-            if (!sharedStorePrimaryPolicy.isWaitForActivation())
+            if (!sharedStorePrimaryPolicy.isWaitForActivation()) {
                activeMQServer.setState(ActiveMQServerImpl.SERVER_STATE.STARTED);
+            }
 
             activeMQServer.getBackupManager().announceBackup();
          }

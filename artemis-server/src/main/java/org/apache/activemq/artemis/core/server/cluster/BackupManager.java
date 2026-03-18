@@ -90,8 +90,9 @@ public class BackupManager implements ActiveMQComponent {
     */
    @Override
    public synchronized void start() throws Exception {
-      if (started)
+      if (started) {
          return;
+      }
       //deploy the backup connectors using the cluster configuration
       for (ClusterConnectionConfiguration config : configuration.getClusterConfigurations()) {
          logger.debug("deploy backup config {}", config);
@@ -116,8 +117,9 @@ public class BackupManager implements ActiveMQComponent {
     */
    @Override
    public synchronized void stop() {
-      if (!started)
+      if (!started) {
          return;
+      }
       for (BackupConnector backupConnector : backupConnectors) {
          backupConnector.close();
       }
@@ -143,14 +145,16 @@ public class BackupManager implements ActiveMQComponent {
 
       TransportConfiguration connector = config.getTransportConfiguration(configuration);
 
-      if (connector == null)
+      if (connector == null) {
          return;
+      }
 
       if (config.getDiscoveryGroupName() != null) {
          DiscoveryGroupConfiguration dg = config.getDiscoveryGroupConfiguration(configuration);
 
-         if (dg == null)
+         if (dg == null) {
             return;
+         }
 
          DiscoveryBackupConnector backupConnector = new DiscoveryBackupConnector(dg, config, connector, clusterManager);
 
@@ -265,8 +269,9 @@ public class BackupManager implements ActiveMQComponent {
                //make a copy to avoid npe if we are nulled on close
                ServerLocatorInternal localBackupLocator = backupServerLocator;
                if (localBackupLocator == null) {
-                  if (!stopping)
+                  if (!stopping) {
                      ActiveMQServerLogger.LOGGER.errorAnnouncingBackup(this.toString());
+                  }
                   return;
                }
                if (logger.isDebugEnabled()) {
@@ -287,10 +292,12 @@ public class BackupManager implements ActiveMQComponent {
             } catch (RejectedExecutionException e) {
                // assumption is that the whole server is being stopped. So the exception is ignored.
             } catch (Exception e) {
-               if (scheduledExecutor.isShutdown())
+               if (scheduledExecutor.isShutdown()) {
                   return;
-               if (stopping)
+               }
+               if (stopping) {
                   return;
+               }
                ActiveMQServerLogger.LOGGER.errorAnnouncingBackup(e);
 
                retryConnection();

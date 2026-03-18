@@ -37,15 +37,17 @@ public class StandaloneHAManager implements HAManager {
 
    @Override
    public void start() throws Exception {
-      if (isStarted)
+      if (isStarted) {
          return;
+      }
       isStarted = true;
    }
 
    @Override
    public void stop() throws Exception {
-      if (!isStarted)
+      if (!isStarted) {
          return;
+      }
       isStarted = false;
    }
 

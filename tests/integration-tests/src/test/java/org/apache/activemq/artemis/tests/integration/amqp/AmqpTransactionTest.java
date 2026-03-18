@@ -903,7 +903,9 @@ public class AmqpTransactionTest extends AmqpClientTestSupport {
                   }
 
                   if (i % 100 == 0) {
-                     if (i % 1000 == 0) logger.debug("Read message {}", i);
+                     if (i % 1000 == 0) {
+                        logger.debug("Read message {}", i);
+                     }
                      consumerSession.commit();
                   }
                }
@@ -927,7 +929,9 @@ public class AmqpTransactionTest extends AmqpClientTestSupport {
          for (int i = 0; i < MESSAGE_COUNT; i++) {
             producer.send(sendingSession.createTextMessage("message " + i), DeliveryMode.PERSISTENT, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
             if (i % 100 == 0) {
-               if (i % 1000 == 0) logger.debug("Sending {}", i);
+               if (i % 1000 == 0) {
+                  logger.debug("Sending {}", i);
+               }
                sendingSession.commit();
             }
          }

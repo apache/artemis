@@ -350,8 +350,9 @@ final class MappedSequentialFile implements SequentialFile {
    @Override
    public void close(boolean waitOnSync, boolean block) {
       if (this.mappedFile != null) {
-         if (waitOnSync && factory.isDatasync())
+         if (waitOnSync && factory.isDatasync()) {
             this.mappedFile.force();
+         }
          this.mappedFile.close();
          this.mappedFile = null;
       }

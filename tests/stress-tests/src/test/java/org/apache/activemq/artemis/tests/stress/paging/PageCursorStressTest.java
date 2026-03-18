@@ -385,8 +385,9 @@ public class PageCursorStressTest extends ActiveMQTestBase {
       iterator = cursor.iterator();
 
       for (int i = 0; i < NUM_MESSAGES * 2; i++) {
-         if (i % 100 == 0)
+         if (i % 100 == 0) {
             System.out.println("Paged " + i);
+         }
 
          if (i >= NUM_MESSAGES) {
 
@@ -415,8 +416,9 @@ public class PageCursorStressTest extends ActiveMQTestBase {
       iterator = cursor.iterator();
 
       for (int i = 0; i < NUM_MESSAGES * 3; i++) {
-         if (i % 100 == 0)
+         if (i % 100 == 0) {
             System.out.println("Paged " + i);
+         }
 
          if (i >= NUM_MESSAGES * 2 - 1) {
 
@@ -714,8 +716,9 @@ public class PageCursorStressTest extends ActiveMQTestBase {
       RoutingContext ctx = generateCTX();
 
       for (int i = start; i < start + numMessages; i++) {
-         if (i % 100 == 0)
+         if (i % 100 == 0) {
             System.out.println("Paged " + i);
+         }
          ActiveMQBuffer buffer = RandomUtil.randomBuffer(messageSize, i + 1L);
 
          Message msg = new CoreMessage(i, buffer.writerIndex());

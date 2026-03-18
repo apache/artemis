@@ -58,8 +58,9 @@ public final class SimpleWaitIOCallback extends SyncIOCompletion {
    @Override
    public void waitCompletion() throws InterruptedException, ActiveMQException {
       while (true) {
-         if (latch.await(2, TimeUnit.SECONDS))
+         if (latch.await(2, TimeUnit.SECONDS)) {
             break;
+         }
       }
 
       if (errorMessage != null) {

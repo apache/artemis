@@ -145,10 +145,11 @@ public class QuorumVoteServerConnect extends QuorumVote<ServerConnectVote, Boole
 
    public void await(int latchTimeout, TimeUnit unit) throws InterruptedException {
       ActiveMQServerLogger.LOGGER.waitingForQuorumVoteResults(latchTimeout, unit.toString().toLowerCase());
-      if (voteCompleted.await(latchTimeout, unit))
+      if (voteCompleted.await(latchTimeout, unit)) {
          ActiveMQServerLogger.LOGGER.receivedAllQuorumVotes();
-      else
+      } else {
          ActiveMQServerLogger.LOGGER.timeoutWaitingForQuorumVoteResponses();
+      }
    }
 
    public boolean isRequestToStayActive() {

@@ -101,8 +101,9 @@ public final class QuorumManager implements ClusterTopologyListener, ActiveMQCom
     */
    @Override
    public void start() throws Exception {
-      if (started)
+      if (started) {
          return;
+      }
       started = true;
    }
 
@@ -111,8 +112,9 @@ public final class QuorumManager implements ClusterTopologyListener, ActiveMQCom
     */
    @Override
    public void stop() throws Exception {
-      if (!started)
+      if (!started) {
          return;
+      }
       synchronized (voteRunnables) {
          started = false;
          for (VoteRunnableHolder voteRunnableHolder : voteRunnables.values()) {
@@ -241,8 +243,9 @@ public final class QuorumManager implements ClusterTopologyListener, ActiveMQCom
    public void vote(final QuorumVote quorumVote) {
       List<VoteRunnable> runnables = new ArrayList<>();
       synchronized (voteRunnables) {
-         if (!started)
+         if (!started) {
             return;
+         }
          //send a vote to each node
          ActiveMQServerLogger.LOGGER.initiatingQuorumVote(quorumVote.getName());
          for (TopologyMemberImpl tm : clusterController.getDefaultClusterTopology().getMembers()) {
@@ -434,8 +437,9 @@ public final class QuorumManager implements ClusterTopologyListener, ActiveMQCom
       public void run() {
          try {
             Vote vote;
-            if (!started)
+            if (!started) {
                return;
+            }
             //try to connect to the node i want to send a vote to
             clusterControl = clusterController.connectToNode(serverTC);
             clusterControl.authorize();

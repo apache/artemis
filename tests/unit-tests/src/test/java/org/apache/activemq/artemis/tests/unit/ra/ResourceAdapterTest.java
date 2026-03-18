@@ -648,10 +648,12 @@ public class ResourceAdapterTest extends ActiveMQTestBase {
 
          assertEquals(0, server.getRemotingService().getConnections().size());
       } finally {
-         if (activation != null)
+         if (activation != null) {
             activation.stop();
-         if (ra != null)
+         }
+         if (ra != null) {
             ra.stop();
+         }
          server.stop();
       }
    }

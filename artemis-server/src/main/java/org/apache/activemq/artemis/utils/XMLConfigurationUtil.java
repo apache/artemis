@@ -37,8 +37,9 @@ public class XMLConfigurationUtil {
 
    public static final String getTrimmedTextContent(Node element) {
       String content = element.getTextContent();
-      if (content == null)
+      if (content == null) {
          return null;
+      }
       return content.trim();
    }
 

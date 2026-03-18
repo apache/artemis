@@ -2254,8 +2254,9 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
        * This can be invoked from Netty (via channelInactive) when the connection has already been closed causing
        * spurious logging about clearing up resources for failed client connections.
        */
-      if (closing)
+      if (closing) {
          return;
+      }
 
       try {
          ActiveMQServerLogger.LOGGER.clientConnectionFailed(name);

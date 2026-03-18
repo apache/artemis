@@ -430,8 +430,9 @@ public class HangConsumerTest extends ActiveMQTestBase {
 
             logger.debug("Bindings: {}", bindings);
             messagesJournal.stop();
-            if (i < 4)
+            if (i < 4) {
                server.start();
+            }
          }
       } finally {
          try {

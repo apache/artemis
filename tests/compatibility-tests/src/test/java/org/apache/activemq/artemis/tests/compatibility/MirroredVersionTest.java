@@ -155,7 +155,9 @@ public class MirroredVersionTest extends ClasspathBase {
          connection.start();
          for (int i = 0; i < 10; i++) {
             TextMessage message = (TextMessage) consumer.receive(5000);
-            if (message == null) break;
+            if (message == null) {
+               break;
+            }
          }
          session.rollback();
       }

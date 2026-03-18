@@ -64,8 +64,9 @@ public final class ReplicationSyncFileMessage extends PacketImpl {
        */
       public static FileType getFileType(byte readByte) {
          for (FileType type : ALL_OF) {
-            if (type.code == readByte)
+            if (type.code == readByte) {
                return type;
+            }
          }
          throw new InternalError("Unsupported byte value for " + FileType.class);
       }
@@ -104,8 +105,9 @@ public final class ReplicationSyncFileMessage extends PacketImpl {
       int size = PACKET_HEADERS_SIZE +
                  DataConstants.SIZE_LONG; // buffer.writeLong(fileId);
 
-      if (fileId == -1)
+      if (fileId == -1) {
          return size;
+      }
 
       size += DataConstants.SIZE_BYTE; // buffer.writeByte(fileType.code);
       switch (fileType) {
@@ -134,8 +136,9 @@ public final class ReplicationSyncFileMessage extends PacketImpl {
    @Override
    public void encodeRest(final ActiveMQBuffer buffer) {
       buffer.writeLong(fileId);
-      if (fileId == -1)
+      if (fileId == -1) {
          return;
+      }
       buffer.writeByte(fileType.code);
       switch (fileType) {
          case JOURNAL: {

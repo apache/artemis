@@ -169,8 +169,9 @@ public class RescheduleJDBCDeliveryTest extends ActiveMQTestBase {
             for (int i = 1; i <= columnCount; i++) {
                Object value = result.getObject(i);
                line.append(metaData.getColumnLabel(i) + " = " + value);
-               if (i + 1 <= columnCount)
+               if (i + 1 <= columnCount) {
                   line.append(", ");
+               }
             }
             logger.info(line.toString());
          }

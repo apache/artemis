@@ -64,10 +64,12 @@ public class OperationContextUnitTest extends ServerTestBase {
 
          assertTrue(latch1.await(10, TimeUnit.SECONDS));
 
-         for (int i = 0; i < 10; i++)
+         for (int i = 0; i < 10; i++) {
             impl.storeLineUp();
-         for (int i = 0; i < 3; i++)
+         }
+         for (int i = 0; i < 3; i++) {
             impl.pageSyncLineUp();
+         }
 
          impl.executeOnCompletion(new IOCallback() {
 
@@ -83,10 +85,12 @@ public class OperationContextUnitTest extends ServerTestBase {
 
          assertFalse(latch2.await(1, TimeUnit.MILLISECONDS));
 
-         for (int i = 0; i < 9; i++)
+         for (int i = 0; i < 9; i++) {
             impl.done();
-         for (int i = 0; i < 2; i++)
+         }
+         for (int i = 0; i < 2; i++) {
             impl.pageSyncDone();
+         }
 
          assertFalse(latch2.await(1, TimeUnit.MILLISECONDS));
 
@@ -146,10 +150,12 @@ public class OperationContextUnitTest extends ServerTestBase {
          impl.done();
          assertTrue(latch3.await(10, TimeUnit.SECONDS));
 
-         for (int i = 0; i < 10; i++)
+         for (int i = 0; i < 10; i++) {
             impl.storeLineUp();
-         for (int i = 0; i < 3; i++)
+         }
+         for (int i = 0; i < 3; i++) {
             impl.pageSyncLineUp();
+         }
 
          impl.executeOnCompletion(new IOCallback() {
 
@@ -165,8 +171,9 @@ public class OperationContextUnitTest extends ServerTestBase {
 
          assertFalse(latch2.await(1, TimeUnit.MILLISECONDS));
 
-         for (int i = 0; i < 9; i++)
+         for (int i = 0; i < 9; i++) {
             impl.done();
+         }
 
          assertFalse(latch2.await(1, TimeUnit.MILLISECONDS));
 

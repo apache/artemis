@@ -277,8 +277,9 @@ public final class LocalGroupingHandler extends GroupHandlingAbstract {
 
    @Override
    public void onNotification(final Notification notification) {
-      if (!(notification.getType() instanceof CoreNotificationType))
+      if (!(notification.getType() instanceof CoreNotificationType)) {
          return;
+      }
 
       if (notification.getType() == CoreNotificationType.BINDING_REMOVED) {
          SimpleString clusterName = notification.getProperties().getSimpleStringProperty(ManagementHelper.HDR_CLUSTER_NAME);
@@ -318,8 +319,9 @@ public final class LocalGroupingHandler extends GroupHandlingAbstract {
 
    @Override
    public synchronized void start() throws Exception {
-      if (started)
+      if (started) {
          return;
+      }
 
       lock.lock();
 

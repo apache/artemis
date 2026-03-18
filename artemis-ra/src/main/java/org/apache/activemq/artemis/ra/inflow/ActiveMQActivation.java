@@ -623,8 +623,9 @@ public class ActiveMQActivation {
       long setupInterval = spec.getSetupInterval();
 
       // Only enter the reconnect loop once
-      if (inReconnect.getAndSet(true))
+      if (inReconnect.getAndSet(true)) {
          return;
+      }
       try {
          Throwable lastException = failure;
          while (deliveryActive.get() && (setupAttempts == -1 || reconnectCount < setupAttempts)) {

@@ -136,8 +136,9 @@ public class LargeMessageControllerImpl implements LargeMessageController {
    @Override
    public void discardUnusedPackets() {
       if (outStream == null) {
-         if (originallyRegular)
+         if (originallyRegular) {
             return;
+         }
          try {
             checkForPacket(totalSize - 1);
          } catch (Throwable ignored) {

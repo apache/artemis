@@ -128,8 +128,9 @@ public class ActiveMQJMSContext implements JMSContext {
    private void checkSession() {
       if (session == null) {
          synchronized (this) {
-            if (closed)
+            if (closed) {
                throw new IllegalStateRuntimeException("Context is closed");
+            }
             if (session == null) {
                try {
                   if (xa) {
@@ -225,8 +226,9 @@ public class ActiveMQJMSContext implements JMSContext {
       threadAwareContext.assertNotMessageListenerThreadRuntime();
       try {
          synchronized (this) {
-            if (session != null)
+            if (session != null) {
                session.close();
+            }
             connection.closeFromContext();
             closed = true;
          }
@@ -547,8 +549,9 @@ public class ActiveMQJMSContext implements JMSContext {
    @Override
    public void acknowledge() {
       checkSession();
-      if (closed)
+      if (closed) {
          throw new IllegalStateRuntimeException("Context is closed");
+      }
       try {
          if (lastMessagesWaitingAck != null) {
             lastMessagesWaitingAck.acknowledge();
@@ -567,8 +570,9 @@ public class ActiveMQJMSContext implements JMSContext {
    }
 
    private synchronized void checkAutoStart() throws JMSException {
-      if (closed)
+      if (closed) {
          throw new IllegalStateRuntimeException("Context is closed");
+      }
       if (autoStart) {
          connection.start();
       }

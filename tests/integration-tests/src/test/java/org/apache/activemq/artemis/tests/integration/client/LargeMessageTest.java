@@ -2170,10 +2170,11 @@ public class LargeMessageTest extends LargeMessageTestBase {
                assertEquals(getSamplebyte(bi), body[bi]);
             }
 
-            if (i < 4)
+            if (i < 4) {
                session.rollback();
-            else
+            } else {
                session.commit();
+            }
          }
 
          for (int i = 0; i < 5; i++) {

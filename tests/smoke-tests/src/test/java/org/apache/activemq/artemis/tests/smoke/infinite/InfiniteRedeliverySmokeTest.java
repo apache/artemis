@@ -95,7 +95,9 @@ public class InfiniteRedeliverySmokeTest extends SmokeTestBase {
       SequentialFileFactory fileFactory = new NIOSequentialFileFactory(journalLocation, 1);
 
       for (int i = 0; i < 500; i++) {
-         if (i % 10 == 0) logger.debug("Redelivery {}", i);
+         if (i % 10 == 0) {
+            logger.debug("Redelivery {}", i);
+         }
          for (int j = 0; j < 5000; j++) {
             assertNotNull(consumer.receive(5000));
          }
@@ -142,7 +144,9 @@ public class InfiniteRedeliverySmokeTest extends SmokeTestBase {
       connection.start();
       MessageConsumer consumer = session.createConsumer(queue);
       for (int i = 0; i < 500; i++) {
-         if (i % 10 == 0) logger.debug("Rollback send {}", i);
+         if (i % 10 == 0) {
+            logger.debug("Rollback send {}", i);
+         }
          for (int j = 0; j < 5000; j++) {
             producer.send(message);
          }

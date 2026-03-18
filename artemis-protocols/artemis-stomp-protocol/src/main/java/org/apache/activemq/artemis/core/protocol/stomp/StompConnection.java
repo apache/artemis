@@ -118,8 +118,9 @@ public final class StompConnection extends AbstractRemotingConnection {
       } catch (ActiveMQStompException e) {
          switch (e.getCode()) {
             case ActiveMQStompException.INVALID_EOL_V10:
-               if (version != null)
+               if (version != null) {
                   throw e;
+               }
                frameHandler = new StompFrameHandlerV12(this, scheduledExecutorService, executorFactory);
                buffer.resetReaderIndex();
                frame = decode(buffer);

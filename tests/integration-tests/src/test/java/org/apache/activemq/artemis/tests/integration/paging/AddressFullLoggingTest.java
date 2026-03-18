@@ -139,8 +139,9 @@ public class AddressFullLoggingTest extends ActiveMQTestBase {
          ClientConsumer consumer = session.createConsumer(MY_QUEUE);
          for (int i = 0; i < sendCount; i++) {
             ClientMessage msg = consumer.receive(250);
-            if (msg == null)
+            if (msg == null) {
                break;
+            }
             msg.acknowledge();
          }
 

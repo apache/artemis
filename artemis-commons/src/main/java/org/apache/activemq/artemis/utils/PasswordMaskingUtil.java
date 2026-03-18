@@ -170,8 +170,9 @@ public final class PasswordMaskingUtil {
 
       // semi colons
       String[] parts = codecDesc.split(";");
-      if (parts.length < 1)
+      if (parts.length < 1) {
          throw new ActiveMQException(ActiveMQExceptionType.ILLEGAL_STATE, "Invalid PasswordCodec value: " + codecDesc);
+      }
 
       final String codecClassName = parts[0];
 
@@ -205,8 +206,9 @@ public final class PasswordMaskingUtil {
       if (parts.length > 1) {
          for (int i = 1; i < parts.length; i++) {
             String[] keyVal = parts[i].split("=");
-            if (keyVal.length != 2)
+            if (keyVal.length != 2) {
                throw ActiveMQUtilBundle.BUNDLE.invalidProperty(parts[i]);
+            }
             props.put(keyVal[0], keyVal[1]);
          }
       }

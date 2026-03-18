@@ -222,8 +222,9 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
    }
 
    private static void cleanUpSessionFactory(ClientSessionFactoryInternal factory) {
-      if (factory != null)
+      if (factory != null) {
          factory.cleanup();
+      }
    }
 
    @Override
@@ -1067,8 +1068,9 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
             try {
                if (csf == null || csf.isClosed()) {
-                  if (state == State.STOPPING || state == State.PAUSING)
+                  if (state == State.STOPPING || state == State.PAUSING) {
                      return;
+                  }
                   if (csf != null && csf.isClosed()) {
                      // ensure we release any references to the existing ClientSessionFactory before creating a new one otherwise we will leak
                      serverLocator.factoryClosed(csf);

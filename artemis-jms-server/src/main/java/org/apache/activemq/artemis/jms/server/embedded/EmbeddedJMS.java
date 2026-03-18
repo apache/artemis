@@ -114,10 +114,11 @@ public class EmbeddedJMS extends EmbeddedActiveMQ {
       }
 
       if (registry == null) {
-         if (context != null)
+         if (context != null) {
             registry = new JndiBindingRegistry(context);
-         else
+         } else {
             registry = new MapBindingRegistry();
+         }
       }
       serverManager.setRegistry(registry);
       serverManager.start();

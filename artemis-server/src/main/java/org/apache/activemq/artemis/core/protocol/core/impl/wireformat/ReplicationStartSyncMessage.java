@@ -58,14 +58,18 @@ public class ReplicationStartSyncMessage extends PacketImpl {
       }
 
       public static SyncDataType getDataType(byte code) {
-         if (code == JournalBindings.code)
+         if (code == JournalBindings.code) {
             return JournalBindings;
-         if (code == JournalMessages.code)
+         }
+         if (code == JournalMessages.code) {
             return JournalMessages;
-         if (code == LargeMessages.code)
+         }
+         if (code == LargeMessages.code) {
             return LargeMessages;
-         if (code == ActivationSequence.code)
+         }
+         if (code == ActivationSequence.code) {
             return ActivationSequence;
+         }
 
          throw new InvalidParameterException("invalid byte: " + code);
       }

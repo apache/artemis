@@ -47,8 +47,9 @@ final class BackupTopologyListener implements ClusterTopologyListener {
 
       final String nodeID = topologyMember.getNodeId();
 
-      if (ownId.equals(nodeID) && topologyMember.getBackup() != null)
+      if (ownId.equals(nodeID) && topologyMember.getBackup() != null) {
          latch.countDown();
+      }
    }
 
    @Override

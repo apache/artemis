@@ -84,8 +84,9 @@ public final class SharedStoreBackupActivation extends Activation {
 
          boolean scalingDown = scaleDownPolicy != null && scaleDownPolicy.isEnabled();
 
-         if (!activeMQServer.initialisePart1(scalingDown))
+         if (!activeMQServer.initialisePart1(scalingDown)) {
             return;
+         }
 
          activeMQServer.getBackupManager().start();
 
@@ -297,8 +298,9 @@ public final class SharedStoreBackupActivation extends Activation {
                      }
 
                      synchronized (failbackCheckerGuard) {
-                        if (cancelFailBackChecker || !sharedStoreBackupPolicy.isRestartBackup())
+                        if (cancelFailBackChecker || !sharedStoreBackupPolicy.isRestartBackup()) {
                            return;
+                        }
 
                         activeMQServer.setHAPolicy(sharedStoreBackupPolicy);
                         logger.debug("{}::Starting backup node now after failback", activeMQServer);

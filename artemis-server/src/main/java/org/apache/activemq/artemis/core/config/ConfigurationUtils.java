@@ -55,11 +55,13 @@ public final class ConfigurationUtils {
 
    public static ClusterConnectionConfiguration getReplicationClusterConfiguration(Configuration conf,
                                                                                    String replicationCluster) throws ActiveMQIllegalStateException {
-      if (replicationCluster == null || replicationCluster.isEmpty())
+      if (replicationCluster == null || replicationCluster.isEmpty()) {
          return conf.getClusterConfigurations().get(0);
+      }
       for (ClusterConnectionConfiguration clusterConf : conf.getClusterConfigurations()) {
-         if (replicationCluster.equals(clusterConf.getName()))
+         if (replicationCluster.equals(clusterConf.getName())) {
             return clusterConf;
+         }
       }
       throw new ActiveMQIllegalStateException("Missing cluster-configuration for replication-clustername '" + replicationCluster + "'.");
    }
@@ -206,21 +208,25 @@ public final class ConfigurationUtils {
    }
 
    private static void compareTTLWithCheckPeriod(Configuration configuration) {
-      for (ClusterConnectionConfiguration c : configuration.getClusterConfigurations())
+      for (ClusterConnectionConfiguration c : configuration.getClusterConfigurations()) {
          compareTTLWithCheckPeriod(c.getName(), c.getConnectionTTL(), configuration.getConnectionTTLOverride(), c.getClientFailureCheckPeriod());
+      }
 
-      for (BridgeConfiguration c : configuration.getBridgeConfigurations())
+      for (BridgeConfiguration c : configuration.getBridgeConfigurations()) {
          compareTTLWithCheckPeriod(c.getName(), c.getConnectionTTL(), configuration.getConnectionTTLOverride(), c.getClientFailureCheckPeriod());
+      }
    }
 
    private static void compareTTLWithCheckPeriod(String name,
                                                  long connectionTTL,
                                                  long connectionTTLOverride,
                                                  long checkPeriod) {
-      if (connectionTTLOverride == checkPeriod)
+      if (connectionTTLOverride == checkPeriod) {
          ActiveMQServerLogger.LOGGER.connectionTTLEqualsCheckPeriod(name, "connection-ttl-override", "check-period");
+      }
 
-      if (connectionTTL == checkPeriod)
+      if (connectionTTL == checkPeriod) {
          ActiveMQServerLogger.LOGGER.connectionTTLEqualsCheckPeriod(name, "connection-ttl", "check-period");
+      }
    }
 }

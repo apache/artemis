@@ -567,12 +567,15 @@ public class AMQPLargeMessage extends AMQPMessage implements LargeServerMessage 
 
       if (bufferNewHeader != null) {
          TLSEncode.getEncoder().setByteBuffer(new NettyWritable(bufferNewHeader));
-         if (headerCopy != null)
+         if (headerCopy != null) {
             TLSEncode.getEncoder().writeObject(headerCopy);
-         if (messageAnnotationsRef != null)
+         }
+         if (messageAnnotationsRef != null) {
             TLSEncode.getEncoder().writeObject(messageAnnotationsRef);
-         if (propertiesCopy != null)
+         }
+         if (propertiesCopy != null) {
             TLSEncode.getEncoder().writeObject(propertiesCopy);
+         }
       }
       return bufferNewHeader;
    }

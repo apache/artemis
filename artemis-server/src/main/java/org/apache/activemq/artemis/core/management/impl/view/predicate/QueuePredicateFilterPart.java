@@ -48,8 +48,9 @@ public class QueuePredicateFilterPart extends PredicateFilterPart<QueueControl> 
          case CONSUMER_ID -> {
             Queue q = server.locateQueue(SimpleString.of(queue.getName()));
             for (Consumer consumer : q.getConsumers()) {
-               if (matchesLong(consumer.sequentialID()))
+               if (matchesLong(consumer.sequentialID())) {
                   yield true;
+               }
             }
             yield false;
          }

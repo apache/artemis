@@ -223,10 +223,12 @@ public class TransportConfiguration implements Serializable {
    }
 
    public boolean isSameParams(TransportConfiguration that) {
-      if (!factoryClassName.equals(that.factoryClassName))
+      if (!factoryClassName.equals(that.factoryClassName)) {
          return false;
-      if (!Objects.equals(params, that.params))
+      }
+      if (!Objects.equals(params, that.params)) {
          return false;
+      }
 
       return true;
    }

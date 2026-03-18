@@ -138,12 +138,13 @@ public class PriorityCollection<E extends PriorityAware> extends AbstractCollect
          int mid = (low + high) >>> 1;
          PriorityHolder<E> midVal = current[mid];
 
-         if (midVal.getPriority() > priority)
+         if (midVal.getPriority() > priority) {
             low = mid + 1;
-         else if (midVal.getPriority() < priority)
+         } else if (midVal.getPriority() < priority) {
             high = mid - 1;
-         else
+         } else {
             return midVal.getValues(); //key found
+         }
       }
 
       if (createIfMissing) {
@@ -163,14 +164,18 @@ public class PriorityCollection<E extends PriorityAware> extends AbstractCollect
 
    @Override
    public synchronized boolean add(E e) {
-      if (size() == Integer.MAX_VALUE) return false;
+      if (size() == Integer.MAX_VALUE) {
+         return false;
+      }
       boolean result = addInternal(e);
       calcSize();
       return result;
    }
 
    private boolean addInternal(E e) {
-      if (e == null) return false;
+      if (e == null) {
+         return false;
+      }
       Collection<E> priority = getCollection(e.getPriority(), true);
       return priority.add(e);
    }
@@ -205,11 +210,11 @@ public class PriorityCollection<E extends PriorityAware> extends AbstractCollect
          int mid = (low + high) >>> 1;
          PriorityHolder<E> midVal = current[mid];
 
-         if (midVal.getPriority() > priority)
+         if (midVal.getPriority() > priority) {
             low = mid + 1;
-         else if (midVal.getPriority() < priority)
+         } else if (midVal.getPriority() < priority) {
             high = mid - 1;
-         else {
+         } else {
             PriorityHolder<E>[] newArray = newPrioritySetArrayInstance(len - 1);
             System.arraycopy(current, 0, newArray, 0, mid);
             System.arraycopy(current, mid + 1, newArray, mid, len - mid - 1);
@@ -223,20 +228,26 @@ public class PriorityCollection<E extends PriorityAware> extends AbstractCollect
    @Override
    public boolean containsAll(Collection<?> c) {
       Objects.requireNonNull(c);
-      for (Object e : c)
-         if (!contains(e))
+      for (Object e : c) {
+         if (!contains(e)) {
             return false;
+         }
+      }
       return true;
    }
 
    @Override
    public synchronized boolean addAll(Collection<? extends E> c) {
       Objects.requireNonNull(c);
-      if (size() >= Integer.MAX_VALUE - c.size()) return false;
+      if (size() >= Integer.MAX_VALUE - c.size()) {
+         return false;
+      }
       boolean modified = false;
-      for (E e : c)
-         if (addInternal(e))
+      for (E e : c) {
+         if (addInternal(e)) {
             modified = true;
+         }
+      }
       calcSize();
       return modified;
    }
@@ -286,7 +297,9 @@ public class PriorityCollection<E extends PriorityAware> extends AbstractCollect
    }
 
    public boolean contains(PriorityAware priorityAware) {
-      if (priorityAware == null) return false;
+      if (priorityAware == null) {
+         return false;
+      }
       Collection<E> prioritySet = getCollection(priorityAware.getPriority(), false);
       return prioritySet != null && prioritySet.contains(priorityAware);
    }

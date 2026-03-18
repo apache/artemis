@@ -110,8 +110,9 @@ public class HttpAcceptorHandler extends ChannelDuplexHandler {
             try {
                response = responses.take();
             } catch (InterruptedException e) {
-               if (executor.isShutdown())
+               if (executor.isShutdown()) {
                   return;
+               }
                // otherwise ignore, we'll just try again
             }
          }

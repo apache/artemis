@@ -172,8 +172,9 @@ public class PrimaryOnlyActivation extends Activation {
          while (clientSessionFactory == null) {
             Pair<TransportConfiguration, TransportConfiguration> possiblePrimary = null;
             possiblePrimary = nodeLocator.getPrimaryConfiguration();
-            if (possiblePrimary == null)  // we've tried every connector
+            if (possiblePrimary == null) {  // we've tried every connector
                break;
+            }
             try {
                clientSessionFactory = (ClientSessionFactoryInternal) scaleDownServerLocator.createSessionFactory(possiblePrimary.getA(), 0, false);
             } catch (Exception e) {

@@ -178,8 +178,9 @@ public class ManualReconnectionToSingleServerTest extends ActiveMQTestBase {
                cf = new ActiveMQConnectionFactory(BROKER_URL);
                break;
             } catch (Exception e) {
-               if (retries++ > retryLimit)
+               if (retries++ > retryLimit) {
                   throw e;
+               }
                // retry until server is up
                Thread.sleep(100);
             }

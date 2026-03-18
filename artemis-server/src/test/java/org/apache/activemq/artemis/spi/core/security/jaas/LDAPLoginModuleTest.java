@@ -457,8 +457,9 @@ public class LDAPLoginModuleTest extends AbstractLdapTestUnit {
 
    private boolean presentIn(Set<LDAPLoginProperty> ldapProps, String propertyName) {
       for (LDAPLoginProperty conf : ldapProps) {
-         if (conf.getPropertyName().equals(propertyName) && (conf.getPropertyValue() != null && !"".equals(conf.getPropertyValue())))
+         if (conf.getPropertyName().equals(propertyName) && (conf.getPropertyValue() != null && !"".equals(conf.getPropertyValue()))) {
             return true;
+         }
       }
       return false;
    }

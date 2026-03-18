@@ -681,8 +681,9 @@ public final class ReplicationManager implements ActiveMQComponent {
          ActiveMQServerLogger.LOGGER.replicaSyncFile(file, file.size(), "journal");
          sendLargeFile(content, null, jf.getFileID(), file, Long.MAX_VALUE);
       } finally {
-         if (file.isOpen())
+         if (file.isOpen()) {
             file.close();
+         }
       }
    }
 
@@ -693,8 +694,9 @@ public final class ReplicationManager implements ActiveMQComponent {
    }
 
    public void syncPages(SequentialFile file, long id, SimpleString queueName) throws Exception {
-      if (started)
+      if (started) {
          sendLargeFile(null, queueName, id, file, Long.MAX_VALUE);
+      }
    }
 
    /**
@@ -710,8 +712,9 @@ public final class ReplicationManager implements ActiveMQComponent {
                               final long id,
                               SequentialFile file,
                               long maxBytesToSend) throws Exception {
-      if (!started)
+      if (!started) {
          return;
+      }
       if (!file.isOpen()) {
          file.open();
       }
@@ -758,13 +761,15 @@ public final class ReplicationManager implements ActiveMQComponent {
                }
                packetsSent++;
 
-               if (lastPacket)
+               if (lastPacket) {
                   break;
+               }
             }
          }
       } finally {
-         if (file.isOpen())
+         if (file.isOpen()) {
             file.close();
+         }
          if (pageStore != null) {
             sendReplicatePacket(new ReplicationPageEventMessage(pageStore, id, false, remotingConnection.isVersionUsingLongOnPageReplication()));
          }
@@ -784,8 +789,9 @@ public final class ReplicationManager implements ActiveMQComponent {
                                     AbstractJournalStorageManager.JournalContent contentType,
                                     String nodeID,
                                     boolean allowsAutoFailBack) throws ActiveMQException {
-      if (started)
+      if (started) {
          sendReplicatePacket(new ReplicationStartSyncMessage(datafiles, contentType, nodeID, allowsAutoFailBack));
+      }
    }
 
    /**
@@ -843,8 +849,9 @@ public final class ReplicationManager implements ActiveMQComponent {
       List<Long> idsToSend;
       idsToSend = new ArrayList<>(largeMessages.keySet());
 
-      if (started)
+      if (started) {
          sendReplicatePacket(new ReplicationStartSyncMessage(idsToSend));
+      }
    }
 
    /**

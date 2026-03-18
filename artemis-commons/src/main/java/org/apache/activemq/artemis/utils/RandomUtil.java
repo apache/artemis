@@ -123,7 +123,9 @@ public class RandomUtil {
    }
 
    public static int randomInterval(final int min, final int max) {
-      if (min == max) return max;
+      if (min == max) {
+         return max;
+      }
       return min + random.nextInt(max - min);
    }
 

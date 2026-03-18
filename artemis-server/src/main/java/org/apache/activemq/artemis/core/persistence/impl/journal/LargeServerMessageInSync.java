@@ -47,8 +47,9 @@ public final class LargeServerMessageInSync implements ReplicatedLargeMessage {
    }
 
    public synchronized void joinSyncedData(ByteBuffer buffer) throws Exception {
-      if (deleted)
+      if (deleted) {
          return;
+      }
       SequentialFile mainSeqFile = mainLM.getAppendFile();
       if (!mainSeqFile.isOpen()) {
          mainSeqFile.open();
@@ -124,16 +125,18 @@ public final class LargeServerMessageInSync implements ReplicatedLargeMessage {
 
    private void deleteAppendFile() throws Exception {
       if (appendFile != null) {
-         if (appendFile.isOpen())
+         if (appendFile.isOpen()) {
             appendFile.close();
+         }
          appendFile.delete();
       }
    }
 
    @Override
    public synchronized void addBytes(byte[] bytes) throws Exception {
-      if (deleted)
+      if (deleted) {
          return;
+      }
 
       if (syncDone) {
          if (logger.isTraceEnabled()) {

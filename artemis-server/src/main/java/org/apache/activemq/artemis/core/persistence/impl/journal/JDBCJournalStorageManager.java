@@ -143,8 +143,9 @@ public class JDBCJournalStorageManager extends JournalStorageManager {
       if (!ioCriticalError) {
          performCachedLargeMessageDeletes();
          // Must call close to make sure last id is persisted
-         if (journalLoaded && idGenerator != null)
+         if (journalLoaded && idGenerator != null) {
             idGenerator.persistCurrentID();
+         }
       }
 
       final CountDownLatch latch = new CountDownLatch(1);

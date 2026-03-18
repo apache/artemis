@@ -52,8 +52,9 @@ public class ColocatedHAManager implements HAManager {
 
    @Override
    public void start() {
-      if (started)
+      if (started) {
          return;
+      }
 
       server.getActivation().haStarted();
 

@@ -273,8 +273,9 @@ public class PageCursorProviderImpl implements PageCursorProvider {
             if (pagingStore.writeLock(1_000)) {
                break;
             }
-            if (!pagingStore.isStarted())
+            if (!pagingStore.isStarted()) {
                return;
+            }
          }
 
          logger.trace(">>>> Cleanup {}", this.pagingStore.getAddress());

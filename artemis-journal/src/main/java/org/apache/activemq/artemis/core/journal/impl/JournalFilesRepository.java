@@ -201,11 +201,13 @@ public class JournalFilesRepository {
    public void setNextFileID(final long targetUpdate) {
       while (true) {
          final long current = nextFileID.get();
-         if (current >= targetUpdate)
+         if (current >= targetUpdate) {
             return;
+         }
 
-         if (nextFileID.compareAndSet(current, targetUpdate))
+         if (nextFileID.compareAndSet(current, targetUpdate)) {
             return;
+         }
       }
    }
 

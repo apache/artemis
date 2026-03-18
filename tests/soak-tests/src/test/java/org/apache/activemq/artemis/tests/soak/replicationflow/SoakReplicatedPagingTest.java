@@ -353,7 +353,9 @@ public class SoakReplicatedPagingTest extends SoakTestBase {
             messageConsumer = session.createConsumer(address);
          }
 
-         if (LAG_CONSUMER_TIME > 0) Thread.sleep(LAG_CONSUMER_TIME);
+         if (LAG_CONSUMER_TIME > 0) {
+            Thread.sleep(LAG_CONSUMER_TIME);
+         }
 
          latch.countDown();
          connection.start();
@@ -363,8 +365,9 @@ public class SoakReplicatedPagingTest extends SoakTestBase {
          while (true) {
             Message m = messageConsumer.receive(1000);
             consumed.incrementAndGet();
-            if (m == null)
+            if (m == null) {
                logger.debug("Consumer{} received null", index);
+            }
             i++;
             if (i % 100 == 0) {
                logger.debug("Consumer{} received {} messages", index, i);

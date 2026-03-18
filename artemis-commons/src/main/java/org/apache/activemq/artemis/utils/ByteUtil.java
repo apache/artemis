@@ -342,12 +342,15 @@ public class ByteUtil {
                                 final byte[] right,
                                 final int rightOffset,
                                 final int rightLength) {
-      if (left == right)
+      if (left == right) {
          return true;
-      if (left == null || right == null)
+      }
+      if (left == null || right == null) {
          return false;
-      if (left.length != rightLength)
+      }
+      if (left.length != rightLength) {
          return false;
+      }
       if (PlatformDependent.isUnaligned() && PlatformDependent.hasUnsafe()) {
          return equalsUnsafe(left, right, rightOffset, rightLength);
       } else {
@@ -356,9 +359,11 @@ public class ByteUtil {
    }
 
    private static boolean equalsSafe(byte[] left, byte[] right, int rightOffset, int rightLength) {
-      for (int i = 0; i < rightLength; i++)
-         if (left[i] != right[rightOffset + i])
+      for (int i = 0; i < rightLength; i++) {
+         if (left[i] != right[rightOffset + i]) {
             return false;
+         }
+      }
       return true;
    }
 
@@ -410,8 +415,9 @@ public class ByteUtil {
     * starting right after the length field.}
     */
    public static boolean equals(final byte[] bytes, final ByteBuf byteBuf, final int offset, final int length) {
-      if (bytes.length != length)
+      if (bytes.length != length) {
          return false;
+      }
       if (PlatformDependent.isUnaligned() && PlatformDependent.hasUnsafe()) {
          if ((offset + length) > byteBuf.writerIndex()) {
             throw new IndexOutOfBoundsException();
@@ -426,11 +432,14 @@ public class ByteUtil {
    }
 
    private static boolean equalsOnHeap(final byte[] bytes, final ByteBuf byteBuf, final int offset, final int length) {
-      if (bytes.length != length)
+      if (bytes.length != length) {
          return false;
-      for (int i = 0; i < length; i++)
-         if (bytes[i] != byteBuf.getByte(offset + i))
+      }
+      for (int i = 0; i < length; i++) {
+         if (bytes[i] != byteBuf.getByte(offset + i)) {
             return false;
+         }
+      }
       return true;
    }
 

@@ -102,8 +102,9 @@ public class DecodeJournal extends LockAbstract {
       File journalDir = new File(directory);
 
       if (!journalDir.exists()) {
-         if (!journalDir.mkdirs())
+         if (!journalDir.mkdirs()) {
             System.err.println("Could not create directory " + directory);
+         }
       }
 
       NIOSequentialFileFactory nio = new NIOSequentialFileFactory(new File(directory), null, 1);

@@ -65,8 +65,9 @@ public class ProtonTransactionImpl extends TransactionImpl {
          connection.runNow(() -> {
             // Settle all unsettled deliveries if commit is successful
             for (Pair<Delivery, ProtonServerSenderContext> p : protonTransaction.deliveries.values()) {
-               if (!p.getA().isSettled())
+               if (!p.getA().isSettled()) {
                   p.getB().settle(p.getA());
+               }
             }
             connection.flush();
             protonTransaction.deliveries.forEach((a, b) -> b.getA().setContext(null));

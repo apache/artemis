@@ -891,8 +891,9 @@ public class ActiveMQConnectionFactory extends JNDIStorable implements Connectio
    @Override
    public void close() {
       ServerLocator locator0 = serverLocator;
-      if (locator0 != null)
+      if (locator0 != null) {
          locator0.close();
+      }
    }
 
    public ServerLocator getServerLocator() {

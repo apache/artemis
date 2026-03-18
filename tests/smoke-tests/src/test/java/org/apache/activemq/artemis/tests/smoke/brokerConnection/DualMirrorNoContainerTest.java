@@ -375,14 +375,18 @@ public class DualMirrorNoContainerTest extends SmokeTestBase {
          assertNotNull(message);
          assertEquals("message " + i, message.getText());
       }
-      if (tx) session.commit();
+      if (tx) {
+         session.commit();
+      }
    }
 
    private void sendMessages(boolean tx, Session session, MessageProducer producer, int start, int end) throws JMSException {
       for (int i = start; i <= end; i++) {
          producer.send(session.createTextMessage("message " + i));
       }
-      if (tx) session.commit();
+      if (tx) {
+         session.commit();
+      }
    }
 
 }

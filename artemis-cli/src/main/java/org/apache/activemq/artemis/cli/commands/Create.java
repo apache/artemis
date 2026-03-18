@@ -1020,7 +1020,9 @@ public class Create extends InstallAbstract {
       int count = 0;
 
       for (boolean itemB : b) {
-         if (itemB) count++;
+         if (itemB) {
+            count++;
+         }
       }
 
       return count;

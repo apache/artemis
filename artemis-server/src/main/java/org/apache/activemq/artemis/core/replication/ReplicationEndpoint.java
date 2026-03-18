@@ -312,8 +312,9 @@ public final class ReplicationEndpoint implements ChannelHandler, ActiveMQCompon
 
          started = true;
       } catch (Exception e) {
-         if (server.isStarted())
+         if (server.isStarted()) {
             throw e;
+         }
       }
    }
 
@@ -348,8 +349,9 @@ public final class ReplicationEndpoint implements ChannelHandler, ActiveMQCompon
       filesReservedForSync.clear();
       if (journals != null) {
          for (Journal j : journals) {
-            if (j instanceof FileWrapperJournal)
+            if (j instanceof FileWrapperJournal) {
                j.stop();
+            }
          }
       }
 
@@ -543,8 +545,9 @@ public final class ReplicationEndpoint implements ChannelHandler, ActiveMQCompon
       logger.trace("handleStartReplicationSynchronization:: nodeID = {}", packet);
 
       ReplicationResponseMessageV2 replicationResponseMessage = new ReplicationResponseMessageV2();
-      if (!started)
+      if (!started) {
          return replicationResponseMessage;
+      }
 
       if (packet.isSynchronizationFinished()) {
          long activationSequence = 0;
@@ -857,10 +860,12 @@ public final class ReplicationEndpoint implements ChannelHandler, ActiveMQCompon
       }
 
       synchronized void close() throws IOException {
-         if (fos != null)
+         if (fos != null) {
             fos.close();
-         if (channel != null)
+         }
+         if (channel != null) {
             channel.close();
+         }
       }
 
       @Override

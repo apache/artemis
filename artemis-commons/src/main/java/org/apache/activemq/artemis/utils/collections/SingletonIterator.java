@@ -55,7 +55,8 @@ public class SingletonIterator<E> implements Iterator<E> {
 
    @Override
    public void forEachRemaining(Consumer<? super E> action) {
-      if (value != null)
+      if (value != null) {
          action.accept(value);
+      }
    }
 }

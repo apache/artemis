@@ -499,26 +499,30 @@ public class ScaleDownHandler {
          final int AFTER = 1;
          int result = 0;
 
-         if (queue1 == queue2)
+         if (queue1 == queue2) {
             return EQUAL;
+         }
 
          if (queue1.getMessageCount() == queue2.getMessageCount()) {
             // if it's the same count we will use the ID as a tie breaker:
 
             long tieBreak = queue2.getID() - queue1.getID();
 
-            if (tieBreak > 0)
+            if (tieBreak > 0) {
                return AFTER;
-            else if (tieBreak < 0)
+            } else if (tieBreak < 0) {
                return BEFORE;
-            else
+            } else {
                return EQUAL; // EQUAL here shouldn't really happen... but lets do the check anyways
+            }
 
          }
-         if (queue1.getMessageCount() > queue2.getMessageCount())
+         if (queue1.getMessageCount() > queue2.getMessageCount()) {
             return BEFORE;
-         if (queue1.getMessageCount() < queue2.getMessageCount())
+         }
+         if (queue1.getMessageCount() < queue2.getMessageCount()) {
             return AFTER;
+         }
 
          return result;
       }

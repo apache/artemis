@@ -72,8 +72,11 @@ public class PageCounterOnBridgeFailoverTest extends FailoverTestBase {
             ClientProducer producerServer1 = session1.createProducer(queueName0);
             for (int i = 0; i < messageSent; i++) {
                ClientMessage msg = session1.createMessage(true);
-               if (i % 2 == 0) setLargeMessageBody(0, msg);
-               else setBody(i, msg);
+               if (i % 2 == 0) {
+                  setLargeMessageBody(0, msg);
+               } else {
+                  setBody(i, msg);
+               }
                producerServer1.send(msg);
             }
             session1.commit();

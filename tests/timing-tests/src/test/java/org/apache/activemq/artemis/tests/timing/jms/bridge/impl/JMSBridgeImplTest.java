@@ -654,8 +654,9 @@ public class JMSBridgeImplTest extends ActiveMQTestBase {
          assertFalse(bridge.isStarted());
          assertTrue(tcclClassFound.get());
       } finally {
-         if (mockTccl != null)
+         if (mockTccl != null) {
             unsetMockTCCL(mockTccl);
+         }
       }
    }
 

@@ -70,8 +70,9 @@ public class BackupSyncDelay implements Interceptor {
 
    public void deliverUpToDateMsg() {
       live.getRemotingService().removeIncomingInterceptor(this);
-      if (backup.isStarted())
+      if (backup.isStarted()) {
          handler.deliver();
+      }
    }
 
    /**
@@ -133,10 +134,12 @@ public class BackupSyncDelay implements Interceptor {
 
       public synchronized void deliver() {
          deliver = true;
-         if (!receivedUpToDate)
+         if (!receivedUpToDate) {
             return;
-         if (delivered)
+         }
+         if (delivered) {
             return;
+         }
 
          Objects.requireNonNull(onHold, "Don't have the 'sync is done' packet to deliver");
          // Use wrapper to avoid sending a response

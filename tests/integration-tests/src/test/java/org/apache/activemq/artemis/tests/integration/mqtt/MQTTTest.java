@@ -125,7 +125,9 @@ public class MQTTTest extends MQTTTestSupport {
             BlockingConnection finalConnection = connection;
             assertTrue(Wait.waitFor(() -> finalConnection.isConnected(), 5000, 100), "Should be connected");
          } finally {
-            if (connection != null && connection.isConnected()) connection.disconnect();
+            if (connection != null && connection.isConnected()) {
+               connection.disconnect();
+            }
          }
       }
    }
@@ -2233,10 +2235,12 @@ public class MQTTTest extends MQTTTestSupport {
       } catch (Exception e) {
          fail("Connections should have worked.");
       } finally {
-         if (connection1.isConnected())
+         if (connection1.isConnected()) {
             connection1.disconnect();
-         if (connection2.isConnected())
+         }
+         if (connection2.isConnected()) {
             connection2.disconnect();
+         }
       }
    }
 

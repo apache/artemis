@@ -91,8 +91,9 @@ public final class RemoteGroupingHandler extends GroupHandlingAbstract {
 
    @Override
    public void start() throws Exception {
-      if (started)
+      if (started) {
          return;
+      }
       started = true;
    }
 
@@ -277,8 +278,9 @@ public final class RemoteGroupingHandler extends GroupHandlingAbstract {
 
    @Override
    public void onNotification(final Notification notification) {
-      if (!(notification.getType() instanceof CoreNotificationType))
+      if (!(notification.getType() instanceof CoreNotificationType)) {
          return;
+      }
       // removing the groupid if the binding has been removed
       if (notification.getType() == CoreNotificationType.BINDING_REMOVED) {
          SimpleString clusterName = notification.getProperties().getSimpleStringProperty(ManagementHelper.HDR_CLUSTER_NAME);

@@ -166,11 +166,13 @@ public final class AIOSequentialFileFactory extends AbstractSequentialFileFactor
          // plain Java but not using AIO
          try {
             if (!aioTestFile.exists()) {
-               if (!aioTestFile.createNewFile())
+               if (!aioTestFile.createNewFile()) {
                   return true;
+               }
             }
-            if (!aioTestFile.delete())
+            if (!aioTestFile.delete()) {
                return true;
+            }
          } catch (Exception ie) {
             // we can not even create the test file using plain java
             return true;

@@ -397,8 +397,9 @@ public class ActiveMQActivationSpec extends ConnectionFactoryProperties implemen
       if (value < 1) {
          maxSession = 1;
          ActiveMQRALogger.LOGGER.invalidNumberOfMaxSession(value, maxSession);
-      } else
+      } else {
          maxSession = value;
+      }
    }
 
    public Boolean isSingleConnection() {

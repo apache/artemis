@@ -941,8 +941,9 @@ public class ActiveMQSession implements QueueSession, TopicSession {
             SimpleString queueName;
 
             if (subscriptionName == null) {
-               if (durability != ConsumerDurability.NON_DURABLE)
+               if (durability != ConsumerDurability.NON_DURABLE) {
                   throw new RuntimeException("Subscription name cannot be null for durable topic consumer");
+               }
                // Non durable sub
 
 
@@ -957,8 +958,9 @@ public class ActiveMQSession implements QueueSession, TopicSession {
                autoDeleteQueueName = queueName;
             } else {
                // Durable sub
-               if (durability != ConsumerDurability.DURABLE)
+               if (durability != ConsumerDurability.DURABLE) {
                   throw new RuntimeException("Subscription name must be null for non-durable topic consumer");
+               }
                if (connection.getClientID() == null) {
                   throw new IllegalStateException("Cannot create durable subscription - client ID has not been set");
                }

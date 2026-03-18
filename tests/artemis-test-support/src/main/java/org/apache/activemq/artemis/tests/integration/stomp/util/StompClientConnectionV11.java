@@ -58,8 +58,9 @@ public class StompClientConnectionV11 extends StompClientConnectionV10 {
 
       if (Stomp.Responses.CONNECTED.equals(response.getCommand())) {
          String version = response.getHeader(Stomp.Headers.Connected.VERSION);
-         if (!version.equals(getVersion()))
+         if (!version.equals(getVersion())) {
             throw new IllegalStateException("incorrect version!");
+         }
 
          this.username = username;
          this.passcode = passcode;
@@ -83,8 +84,9 @@ public class StompClientConnectionV11 extends StompClientConnectionV10 {
 
       if (Stomp.Responses.CONNECTED.equals(response.getCommand())) {
          String version = response.getHeader(Stomp.Headers.Connected.VERSION);
-         if (!version.equals(getVersion()))
+         if (!version.equals(getVersion())) {
             throw new IllegalStateException("incorrect version!");
+         }
 
          this.username = username;
          this.passcode = passcode;

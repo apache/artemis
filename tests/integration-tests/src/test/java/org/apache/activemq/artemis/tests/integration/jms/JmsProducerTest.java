@@ -210,8 +210,9 @@ public class JmsProducerTest extends JMSTestBase {
                fail("non existent byte property expects exception, but got value: " + value1);
             }
          } catch (Throwable t) {
-            if (expected == null)
+            if (expected == null) {
                throw t;
+            }
             if (!t.getClass().equals(expected.getClass())) {
                throw new Exception("Expected exception: " + expected.getClass().getName() +
                                       " but got: " + t.getClass(), t);
@@ -238,8 +239,9 @@ public class JmsProducerTest extends JMSTestBase {
                fail("non existent boolean property expects exception, but got value: " + value1);
             }
          } catch (Throwable t) {
-            if (expected == null)
+            if (expected == null) {
                throw t;
+            }
             if (!t.getClass().equals(expected.getClass())) {
                throw new Exception("Expected exception: " + expected.getClass().getName() +
                                       " but got: " + t.getClass(), t);
@@ -266,8 +268,9 @@ public class JmsProducerTest extends JMSTestBase {
                fail("non existent double property expects exception, but got value: " + value1);
             }
          } catch (Throwable t) {
-            if (expected == null)
+            if (expected == null) {
                throw t;
+            }
             if (!t.getClass().equals(expected.getClass())) {
                throw new Exception("Expected exception: " + expected.getClass().getName() +
                                       " but got: " + t.getClass(), t);
@@ -294,8 +297,9 @@ public class JmsProducerTest extends JMSTestBase {
                fail("non existent double property expects exception, but got value: " + value1);
             }
          } catch (Throwable t) {
-            if (expected == null)
+            if (expected == null) {
                throw t;
+            }
             if (!t.getClass().equals(expected.getClass())) {
                throw new Exception("Expected exception: " + expected.getClass().getName() +
                                       " but got: " + t.getClass(), t);
@@ -322,8 +326,9 @@ public class JmsProducerTest extends JMSTestBase {
                fail("non existent double property expects exception, but got value: " + value1);
             }
          } catch (Throwable t) {
-            if (expected == null)
+            if (expected == null) {
                throw t;
+            }
             if (!t.getClass().equals(expected.getClass())) {
                throw new Exception("Expected exception: " + expected.getClass().getName() +
                                       " but got: " + t.getClass(), t);
@@ -350,8 +355,9 @@ public class JmsProducerTest extends JMSTestBase {
                fail("non existent double property expects exception, but got value: " + value1);
             }
          } catch (Throwable t) {
-            if (expected == null)
+            if (expected == null) {
                throw t;
+            }
             if (!t.getClass().equals(expected.getClass())) {
                throw new Exception("Expected exception: " + expected.getClass().getName() +
                                       " but got: " + t.getClass(), t);
@@ -378,8 +384,9 @@ public class JmsProducerTest extends JMSTestBase {
                fail("non existent double property expects exception, but got value: " + value1);
             }
          } catch (Throwable t) {
-            if (expected == null)
+            if (expected == null) {
                throw t;
+            }
             if (!t.getClass().equals(expected.getClass())) {
                throw new Exception("Expected exception: " + expected.getClass().getName() +
                                       " but got: " + t.getClass(), t);

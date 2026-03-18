@@ -742,10 +742,11 @@ public class ScaleDownTest extends ClusterTestBase {
 
       for (int i = 0; i < TEST_SIZE; i++) {
          Message message = session.createMessage(false);
-         if (i % 2 == 0)
+         if (i % 2 == 0) {
             message.putStringProperty(ClusterTestBase.FILTER_PROP, SimpleString.of("0"));
-         else
+         } else {
             message.putStringProperty(ClusterTestBase.FILTER_PROP, SimpleString.of("1"));
+         }
          producer.send(message);
       }
       session.commit();

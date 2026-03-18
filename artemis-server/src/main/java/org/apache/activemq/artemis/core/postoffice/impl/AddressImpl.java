@@ -70,11 +70,13 @@ public class AddressImpl implements Address {
     */
    @Override
    public boolean matches(final Address otherAddr) {
-      if (otherAddr == null)
+      if (otherAddr == null) {
          return false;
+      }
 
-      if (address.equals(otherAddr.getAddress()))
+      if (address.equals(otherAddr.getAddress())) {
          return true;
+      }
 
       final char sepAnyWords = wildcardConfiguration.getAnyWords();
       final char sepSingleWord = wildcardConfiguration.getSingleWord();
@@ -117,8 +119,9 @@ public class AddressImpl implements Address {
          if (otherCurrPartIsSingleChar && otherCurr.charAt(0) == sepAnyWords) {
 
             // if last part of otherAddr is any-words wildcard report a match
-            if (otherIdx == otherAddrPartsLastIdx)
+            if (otherIdx == otherAddrPartsLastIdx) {
                return true;
+            }
 
             SimpleString thisNext;
             // check if this address has more parts to check
@@ -140,15 +143,17 @@ public class AddressImpl implements Address {
                thisNext = thisAddrPartsLastIdx > thisIdx ? addressParts[thisIdx + 1] : null;
             }
             // if no further part in this address matched the next part in otherAddr report a mismatch
-            if (thisCurr == null)
+            if (thisCurr == null) {
                return false;
+            }
             otherIdx++;
             continue;
          }
 
          // compare current parts of bothaddresses and report mismatch if they differ
-         if (!thisCurr.equals(otherCurr))
+         if (!thisCurr.equals(otherCurr)) {
             return false;
+         }
 
          thisIdx++;
          otherIdx++;

@@ -203,8 +203,9 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
    @Override
    public synchronized void start() throws Exception {
-      if (started)
+      if (started) {
          return;
+      }
 
       managementService.addNotificationListener(this);
 
@@ -223,11 +224,13 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
       managementService.removeNotificationListener(this);
 
-      if (expiryReaperRunnable != null)
+      if (expiryReaperRunnable != null) {
          expiryReaperRunnable.stop();
+      }
 
-      if (addressQueueReaperRunnable != null)
+      if (addressQueueReaperRunnable != null) {
          addressQueueReaperRunnable.stop();
+      }
 
       addressManager.clear();
 
@@ -283,8 +286,9 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
    @Override
    public void onNotification(final Notification notification) {
-      if (!(notification.getType() instanceof CoreNotificationType))
+      if (!(notification.getType() instanceof CoreNotificationType)) {
          return;
+      }
 
       logger.trace("Receiving notification : {} on server {}", notification, server);
 
@@ -1938,8 +1942,9 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
    @Override
    public synchronized void startExpiryScanner() {
       if (expiryReaperPeriod > 0) {
-         if (expiryReaperRunnable != null)
+         if (expiryReaperRunnable != null) {
             expiryReaperRunnable.stop();
+         }
          expiryReaperRunnable = new ExpiryReaper(server.getScheduledPool(), server.getExecutorFactory().getExecutor(), expiryReaperPeriod, TimeUnit.MILLISECONDS, false);
 
          expiryReaperRunnable.start();
@@ -1951,8 +1956,9 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       reapAddresses(true); // we need to check for empty auto-created queues before the acceptors are on
                                       // empty auto-created queues and addresses should be removed right away
       if (addressQueueReaperPeriod > 0) {
-         if (addressQueueReaperRunnable != null)
+         if (addressQueueReaperRunnable != null) {
             addressQueueReaperRunnable.stop();
+         }
          addressQueueReaperRunnable = new AddressQueueReaper(server.getScheduledPool(), server.getExecutorFactory().getExecutor(), addressQueueReaperPeriod, TimeUnit.MILLISECONDS, false);
 
          addressQueueReaperRunnable.start();

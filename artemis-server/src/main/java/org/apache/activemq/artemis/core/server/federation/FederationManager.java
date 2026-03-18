@@ -56,7 +56,9 @@ public class FederationManager implements ActiveMQComponent {
 
    @Override
    public synchronized void start() throws ActiveMQException {
-      if (state == State.STARTED) return;
+      if (state == State.STARTED) {
+         return;
+      }
       deploy();
       for (Federation federation : federations.values()) {
          federation.start();
@@ -66,7 +68,9 @@ public class FederationManager implements ActiveMQComponent {
 
    @Override
    public synchronized void stop() {
-      if (state == State.STOPPED) return;
+      if (state == State.STOPPED) {
+         return;
+      }
       state = State.STOPPING;
 
 

@@ -179,8 +179,9 @@ public class JDBCJournalImpl extends AbstractJDBCDriver implements Journal {
 
    public synchronized void stop(boolean sync) throws SQLException {
       if (started) {
-         if (sync)
+         if (sync) {
             sync();
+         }
          started = false;
          super.stop();
       }
@@ -347,12 +348,16 @@ public class JDBCJournalImpl extends AbstractJDBCDriver implements Journal {
 
    private void checkStatus(IOCompletion callback) throws Exception {
       if (!started) {
-         if (callback != null) callback.onError(-1, "JDBC Journal is not loaded");
+         if (callback != null) {
+            callback.onError(-1, "JDBC Journal is not loaded");
+         }
          throw new ActiveMQShutdownException("JDBCJournal is not loaded");
       }
 
       if (failed.get()) {
-         if (callback != null) callback.onError(-1, "JDBC Journal failed");
+         if (callback != null) {
+            callback.onError(-1, "JDBC Journal failed");
+         }
          throw new ActiveMQException("JDBCJournal Failed");
       }
    }
@@ -390,7 +395,9 @@ public class JDBCJournalImpl extends AbstractJDBCDriver implements Journal {
       }
 
       syncTimer.delay();
-      if (callback != null) callback.waitCompletion();
+      if (callback != null) {
+         callback.waitCompletion();
+      }
    }
 
    private synchronized void addTxRecord(JDBCJournalRecord record) throws Exception {

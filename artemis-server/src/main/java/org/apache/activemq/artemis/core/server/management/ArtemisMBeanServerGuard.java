@@ -49,11 +49,13 @@ public class ArtemisMBeanServerGuard implements GuardInvocationHandler {
 
    @Override
    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-      if (method.getParameterTypes().length == 0)
+      if (method.getParameterTypes().length == 0) {
          return null;
+      }
 
-      if (!ObjectName.class.isAssignableFrom(method.getParameterTypes()[0]))
+      if (!ObjectName.class.isAssignableFrom(method.getParameterTypes()[0])) {
          return null;
+      }
 
       ObjectName objectName = (ObjectName) args[0];
       if ("getAttribute".equals(method.getName())) {
@@ -106,8 +108,9 @@ public class ArtemisMBeanServerGuard implements GuardInvocationHandler {
          }
       }
 
-      if (dataType == null)
+      if (dataType == null) {
          throw new IllegalStateException("Attribute data type can not be found");
+      }
 
       handleInvoke(objectName, "set" + attribute.getName());
    }
@@ -165,8 +168,9 @@ public class ArtemisMBeanServerGuard implements GuardInvocationHandler {
       }
       List<String> requiredRoles = getRequiredRoles(objectName, operationName);
       for (String role : requiredRoles) {
-         if (currentUserHasRole(role))
+         if (currentUserHasRole(role)) {
             return;
+         }
       }
       if (AuditLogger.isResourceLoggingEnabled()) {
          AuditLogger.objectInvokedFailure(objectName, operationName);

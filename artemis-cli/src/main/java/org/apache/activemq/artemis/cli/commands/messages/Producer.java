@@ -237,7 +237,9 @@ public class Producer extends DestAbstract {
                return messagesProduced;
             } catch (InterruptedException e) {
                // Interrupt any sub threads if an interrupt is captured
-               for (Thread t : threadsArray) t.interrupt();
+               for (Thread t : threadsArray) {
+                  t.interrupt();
+               }
                throw e;
             }
          }

@@ -85,15 +85,17 @@ public class ClusteredGroupingTest extends ClusterTestBase {
       final CountDownLatch latch = new CountDownLatch(4);
 
       getServer(1).getManagementService().addNotificationListener(notification -> {
-         if (!(notification.getType() instanceof CoreNotificationType))
+         if (!(notification.getType() instanceof CoreNotificationType)) {
             return;
+         }
          if (notification.getType() == CoreNotificationType.UNPROPOSAL) {
             latch.countDown();
          }
       });
       getServer(2).getManagementService().addNotificationListener(notification -> {
-         if (!(notification.getType() instanceof CoreNotificationType))
+         if (!(notification.getType() instanceof CoreNotificationType)) {
             return;
+         }
          if (notification.getType() == CoreNotificationType.UNPROPOSAL) {
             latch.countDown();
          }
@@ -175,15 +177,17 @@ public class ClusteredGroupingTest extends ClusterTestBase {
       final CountDownLatch latch = new CountDownLatch(4);
 
       getServer(1).getManagementService().addNotificationListener(notification -> {
-         if (!(notification.getType() instanceof CoreNotificationType))
+         if (!(notification.getType() instanceof CoreNotificationType)) {
             return;
+         }
          if (notification.getType() == CoreNotificationType.UNPROPOSAL) {
             latch.countDown();
          }
       });
       getServer(2).getManagementService().addNotificationListener(notification -> {
-         if (!(notification.getType() instanceof CoreNotificationType))
+         if (!(notification.getType() instanceof CoreNotificationType)) {
             return;
+         }
          if (notification.getType() == CoreNotificationType.UNPROPOSAL) {
             latch.countDown();
          }

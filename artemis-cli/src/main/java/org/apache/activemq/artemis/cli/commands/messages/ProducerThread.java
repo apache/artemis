@@ -256,8 +256,9 @@ public class ProducerThread extends Thread {
          StringBuilder builder = new StringBuilder();
          while ((count = reader.read(buffer)) != -1) {
             builder.append(buffer, 0, count);
-            if (size > 0)
+            if (size > 0) {
                break;
+            }
          }
          return builder.toString();
       } catch (IOException ioe) {

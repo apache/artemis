@@ -51,8 +51,9 @@ public final class InVMNodeManager extends FileBasedNodeManager {
 
    public InVMNodeManager(boolean replicatedBackup) {
       this(replicatedBackup, null);
-      if (replicatedBackup)
+      if (replicatedBackup) {
          throw new RuntimeException("if replicated-backup, we need its journal directory");
+      }
    }
 
    public InVMNodeManager(boolean replicatedBackup, File directory) {

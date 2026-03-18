@@ -104,8 +104,9 @@ public final class ChannelImpl implements Channel {
 
       protected static String idToString(long code) {
          for (CHANNEL_ID channel : EnumSet.allOf(CHANNEL_ID.class)) {
-            if (channel.id == code)
+            if (channel.id == code) {
                return channel.toString();
+            }
          }
          return Long.toString(code);
       }

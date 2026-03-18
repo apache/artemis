@@ -67,12 +67,15 @@ public class BroadcastGroupImplTest extends ServerTestBase {
 
       @Override
       public void broadcast(byte[] data) throws Exception {
-         if (data == null)
+         if (data == null) {
             fail("Attempted to send datagram with null content");
-         if (data.length == 0)
+         }
+         if (data.length == 0) {
             fail("Attempted to send datagram with blank content");
-         if (data.length > 1500) // Common MTU size, not specification!
+         }
+         if (data.length > 1500) { // Common MTU size, not specification!
             fail("Attempted to send a datagram with " + data.length + " bytes");
+         }
          factory.sent++;
       }
 

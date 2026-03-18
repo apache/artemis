@@ -125,8 +125,11 @@ public class ConcurrentCreateDeleteProduceTest extends ActiveMQTestBase {
                while (running) {
                   ClientMessage msg = consumer.receive(500);
                   if (msg == null) {
-                     if (running) continue;
-                     else break;
+                     if (running) {
+                        continue;
+                     } else {
+                        break;
+                     }
                   }
                   if (msgcount++ == 500) {
                      msgcount = 0;

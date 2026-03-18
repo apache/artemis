@@ -298,8 +298,9 @@ public class TypedProperties {
 
    public Float getFloatProperty(final SimpleString key) throws ActiveMQPropertyConversionException {
       Object value = doGetProperty(key);
-      if (value == null)
+      if (value == null) {
          return Float.valueOf(null);
+      }
       if (value instanceof Float floatValue) {
          return floatValue;
       }

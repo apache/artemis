@@ -295,8 +295,9 @@ public class SharedNothingPrimaryActivation extends PrimaryActivation {
     * This can happen in case of a successful fail-over followed by the primary's restart (attempting a fail-back).
     */
    private boolean isNodeIdUsed() throws Exception {
-      if (activeMQServer.getConfiguration().getClusterConfigurations().isEmpty())
+      if (activeMQServer.getConfiguration().getClusterConfigurations().isEmpty()) {
          return false;
+      }
       SimpleString nodeId0;
       try {
          nodeId0 = activeMQServer.getNodeManager().readNodeId();

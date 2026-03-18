@@ -130,8 +130,9 @@ public class EmbeddedActiveMQ {
          return;
       }
       if (configuration == null) {
-         if (configResourcePath == null)
+         if (configResourcePath == null) {
             configResourcePath = "broker.xml";
+         }
          FileDeploymentManager deploymentManager = new FileDeploymentManager(configResourcePath);
          FileConfiguration config = new FileConfiguration();
          LegacyJMSConfiguration legacyJMSConfiguration = new LegacyJMSConfiguration(config);

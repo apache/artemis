@@ -2247,8 +2247,9 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    @Override
    public void deleteQueue(boolean removeConsumers) throws Exception {
       synchronized (this) {
-         if (this.queueDestroyed)
+         if (this.queueDestroyed) {
             return;
+         }
          this.queueDestroyed = true;
       }
 
@@ -3987,8 +3988,9 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
             message = null;
          }
 
-         if (message == null || (queueConfiguration.isNonDestructive() && reason == AckReason.NORMAL))
+         if (message == null || (queueConfiguration.isNonDestructive() && reason == AckReason.NORMAL)) {
             return;
+         }
 
          queue.refDown(ref);
 

@@ -119,8 +119,9 @@ public class MultipleProducersPagingTest extends ActiveMQTestBase {
             barrierLatch.await();
             while (true) {
                Message msg = consumer.receive(CONSUMER_WAIT_TIME_MS);
-               if (msg == null)
+               if (msg == null) {
                   break;
+               }
                msgReceived.incrementAndGet();
             }
          } catch (Exception e) {
@@ -161,8 +162,9 @@ public class MultipleProducersPagingTest extends ActiveMQTestBase {
          conn.close();
       }
       connections.clear();
-      if (server != null)
+      if (server != null) {
          server.stop();
+      }
       super.tearDown();
    }
 }

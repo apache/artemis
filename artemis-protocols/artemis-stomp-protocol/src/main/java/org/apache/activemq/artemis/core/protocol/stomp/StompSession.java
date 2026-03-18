@@ -163,8 +163,9 @@ public class StompSession implements SessionCallback {
       try {
          StompSubscription subscription = subscriptions.get(consumer.getID());
          // subscription might be null if the consumer was closed
-         if (subscription == null)
+         if (subscription == null) {
             return 0;
+         }
          StompFrame frame;
 
          frame = connection.createStompMessage(message, subscription, consumer, deliveryCount);
@@ -246,8 +247,9 @@ public class StompSession implements SessionCallback {
 
    private static Pair<Long, Long> splitAndParse(String stompMessageID) {
       int separatorPosition = stompMessageID.indexOf(MESSAGE_ID_SEPARATOR);
-      if (separatorPosition == -1)
+      if (separatorPosition == -1) {
          return null;
+      }
       long consumerID = Long.parseLong(stompMessageID, 0, separatorPosition, 10);
       long messageID = Long.parseLong(stompMessageID, separatorPosition + 1, stompMessageID.length(), 10);
       return new Pair<>(consumerID, messageID);

@@ -243,7 +243,9 @@ public class PagingStoreFactoryDatabase implements PagingStoreFactory {
       SimpleString simpleString = SimpleString.of(directoryName);
       ActiveMQBuffer buffer = ActiveMQBuffers.fixedBuffer(simpleString.sizeof());
       buffer.writeSimpleString(simpleString);
-      if (writeToDirectory) directoryList.write(buffer, true);
+      if (writeToDirectory) {
+         directoryList.write(buffer, true);
+      }
       directoryList.close();
 
       final SQLProvider sqlProvider;

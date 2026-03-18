@@ -900,8 +900,9 @@ public abstract class ActiveMQTestBase extends ArtemisTestCase {
    }
 
    private static String directoryNameSuffix(int index, boolean backup) {
-      if (index == -1)
+      if (index == -1) {
          return "";
+      }
       return index + "-" + (backup ? "B" : "L");
    }
 
@@ -1215,8 +1216,9 @@ public abstract class ActiveMQTestBase extends ArtemisTestCase {
             className = INVM_CONNECTOR_FACTORY;
          }
       }
-      if (params == null)
+      if (params == null) {
          params = new HashMap<>();
+      }
       return new TransportConfiguration(className, params, name, new HashMap<String, Object>());
    }
 
@@ -1225,8 +1227,9 @@ public abstract class ActiveMQTestBase extends ArtemisTestCase {
    }
 
    protected void waitForServerToStart(ActiveMQServer server, boolean activation) throws InterruptedException {
-      if (server == null)
+      if (server == null) {
          return;
+      }
       final long wait = 5000;
       long timetowait = System.currentTimeMillis() + wait;
       while (!server.isStarted() && System.currentTimeMillis() < timetowait) {
@@ -1240,15 +1243,17 @@ public abstract class ActiveMQTestBase extends ArtemisTestCase {
 
       if (activation) {
          if (!server.getHAPolicy().isBackup()) {
-            if (!server.waitForActivation(wait, TimeUnit.MILLISECONDS))
+            if (!server.waitForActivation(wait, TimeUnit.MILLISECONDS)) {
                fail("Server didn't initialize: " + server);
+            }
          }
       }
    }
 
    protected void waitForServerToStop(ActiveMQServer server) throws InterruptedException {
-      if (server == null)
+      if (server == null) {
          return;
+      }
       final long wait = 5000;
       long timetowait = System.currentTimeMillis() + wait;
       while (server.isStarted() && System.currentTimeMillis() < timetowait) {
@@ -1713,13 +1718,15 @@ public abstract class ActiveMQTestBase extends ArtemisTestCase {
          assertNotNull(message, "Expecting a message " + i);
          // sendCallNumber is just a debugging measure.
          Object prop = message.getObjectProperty(SEND_CALL_NUMBER);
-         if (prop == null)
+         if (prop == null) {
             prop = -1;
+         }
          final int actual = message.getIntProperty("counter");
          assertEquals(i, actual, "expected=" + i + ". Got: property['counter']=" + actual + " sendNumber=" + prop);
          assertMessageBody(i, message);
-         if (ack)
+         if (ack) {
             message.acknowledge();
+         }
       }
    }
 
@@ -2233,8 +2240,9 @@ public abstract class ActiveMQTestBase extends ArtemisTestCase {
    }
 
    protected static final void stopComponent(ActiveMQComponent component) {
-      if (component == null)
+      if (component == null) {
          return;
+      }
       try {
          component.stop();
       } catch (Exception e) {
@@ -2243,8 +2251,9 @@ public abstract class ActiveMQTestBase extends ArtemisTestCase {
    }
 
    protected static final void stopComponentOutputExceptions(ActiveMQComponent component) {
-      if (component == null)
+      if (component == null) {
          return;
+      }
       try {
          component.stop();
       } catch (Exception e) {
@@ -2324,8 +2333,9 @@ public abstract class ActiveMQTestBase extends ArtemisTestCase {
    private void assertAllClientConsumersAreClosed() {
       synchronized (clientConsumers) {
          for (ClientConsumer cc : clientConsumers) {
-            if (cc == null)
+            if (cc == null) {
                continue;
+            }
             assertTrue(cc.isClosed());
          }
          clientConsumers.clear();
@@ -2335,8 +2345,9 @@ public abstract class ActiveMQTestBase extends ArtemisTestCase {
    private void assertAllClientSessionsAreClosed() {
       synchronized (clientSessions) {
          for (final ClientSession cs : clientSessions) {
-            if (cs == null)
+            if (cs == null) {
                continue;
+            }
             assertTrue(cs.isClosed());
          }
          clientSessions.clear();
@@ -2365,8 +2376,9 @@ public abstract class ActiveMQTestBase extends ArtemisTestCase {
    }
 
    public static final void closeServerLocator(ServerLocator locator) {
-      if (locator == null)
+      if (locator == null) {
          return;
+      }
       try {
          locator.close();
       } catch (Exception e) {
@@ -2375,8 +2387,9 @@ public abstract class ActiveMQTestBase extends ArtemisTestCase {
    }
 
    public static final void closeSessionFactory(final ClientSessionFactory sf) {
-      if (sf == null)
+      if (sf == null) {
          return;
+      }
       try {
          sf.close();
       } catch (Exception e) {

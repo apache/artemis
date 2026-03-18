@@ -75,10 +75,12 @@ public class ActiveMQXAResourceWrapperTest extends ActiveMQTestBase {
          cs = (ClientSession) res;
          assertEquals(60000L, cs.getSessionFactory().getServerLocator().getConnectionTTL());
       } finally {
-         if (cs != null)
+         if (cs != null) {
             cs.close();
-         if (ra != null)
+         }
+         if (ra != null) {
             ra.stop();
+         }
          server.stop();
       }
    }

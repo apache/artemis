@@ -244,8 +244,9 @@ public class NettyReplicatedFailoverTest extends NettyFailoverInVMTest {
             } catch (Exception e) {
                // this is our retry
                try {
-                  if (!producer.isClosed())
+                  if (!producer.isClosed()) {
                      producer.send(message);
+                  }
                } catch (ActiveMQException e1) {
                   e1.printStackTrace();
                }
@@ -833,8 +834,9 @@ public class NettyReplicatedFailoverTest extends NettyFailoverInVMTest {
       ClientConsumer consumer2 = session2.createConsumer(FailoverTestBase.ADDRESS);
       final boolean replication = primaryServer.getServer().getHAPolicy() instanceof ReplicatedPolicy ||
          primaryServer.getServer().getHAPolicy() instanceof ReplicationPrimaryPolicy;
-      if (replication)
+      if (replication) {
          receiveMessages(consumer2, 0, NUM_MESSAGES, true);
+      }
       assertNoMoreMessages(consumer2);
       session2.commit();
    }

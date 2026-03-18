@@ -128,7 +128,9 @@ public interface AuditLogger {
    }
 
    static String parametersList(Object value) {
-      if (value == null) return "";
+      if (value == null) {
+         return "";
+      }
 
       final String prefix = "with parameters: ";
 

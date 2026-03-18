@@ -1771,8 +1771,9 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
 
             dataFilesToProcess = getDataListToCompact();
 
-            if (dataFilesToProcess == null)
+            if (dataFilesToProcess == null) {
                return;
+            }
 
             Collections.sort(dataFilesToProcess, JOURNAL_FILE_COMPARATOR);
 
@@ -3395,8 +3396,9 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
 
       currentFile = filesRepository.pollLastDataFile();
       if (currentFile != null) {
-         if (!currentFile.getFile().isOpen())
+         if (!currentFile.getFile().isOpen()) {
             currentFile.getFile().open();
+         }
          currentFile.getFile().position(currentFile.getFile().calculateBlockStart(lastDataPos));
       } else {
          currentFile = filesRepository.getFreeFile();

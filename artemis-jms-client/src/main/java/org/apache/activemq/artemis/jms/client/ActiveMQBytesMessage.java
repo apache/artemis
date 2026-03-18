@@ -365,8 +365,9 @@ public class ActiveMQBytesMessage extends ActiveMQMessage implements BytesMessag
 
    @Override
    protected <T> T getBodyInternal(Class<T> c) {
-      if (bodyLength == 0)
+      if (bodyLength == 0) {
          return null;
+      }
       byte[] dst = new byte[bodyLength];
       message.getBodyBuffer().getBytes(CoreMessage.BODY_OFFSET, dst);
       return (T) dst;

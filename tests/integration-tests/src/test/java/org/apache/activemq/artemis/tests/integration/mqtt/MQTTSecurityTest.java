@@ -106,7 +106,9 @@ public class MQTTSecurityTest extends MQTTTestSupport {
             BlockingConnection finalConnection = connection;
             assertTrue(Wait.waitFor(() -> finalConnection.isConnected(), 5000, 100), "Should be connected");
          } finally {
-            if (connection != null && connection.isConnected()) connection.disconnect();
+            if (connection != null && connection.isConnected()) {
+               connection.disconnect();
+            }
          }
       }
    }
@@ -131,8 +133,9 @@ public class MQTTSecurityTest extends MQTTTestSupport {
          } catch (Exception e) {
             fail("Should have caught an MQTTException");
          } finally {
-            if (connection != null && connection.isConnected())
+            if (connection != null && connection.isConnected()) {
                connection.disconnect();
+            }
          }
       }
    }
@@ -160,8 +163,9 @@ public class MQTTSecurityTest extends MQTTTestSupport {
             e.printStackTrace();
             fail("Should not have caught an Exception");
          } finally {
-            if (connection != null && connection.isConnected())
+            if (connection != null && connection.isConnected()) {
                connection.disconnect();
+            }
          }
 
          assertFalse(loggerHandler.findTrace("does not have permission"));
@@ -189,8 +193,9 @@ public class MQTTSecurityTest extends MQTTTestSupport {
          e.printStackTrace();
          fail("Should not have caught an Exception");
       } finally {
-         if (connection != null && connection.isConnected())
+         if (connection != null && connection.isConnected()) {
             connection.disconnect();
+         }
       }
    }
 
@@ -214,8 +219,9 @@ public class MQTTSecurityTest extends MQTTTestSupport {
          e.printStackTrace();
          fail("Should not have caught an Exception");
       } finally {
-         if (connection != null && connection.isConnected())
+         if (connection != null && connection.isConnected()) {
             connection.disconnect();
+         }
       }
    }
 
@@ -238,8 +244,9 @@ public class MQTTSecurityTest extends MQTTTestSupport {
             e.printStackTrace();
             fail("Should not have caught an Exception");
          } finally {
-            if (connection != null && connection.isConnected())
+            if (connection != null && connection.isConnected()) {
                connection.disconnect();
+            }
          }
       }
    }

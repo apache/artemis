@@ -274,8 +274,9 @@ public class JournalStorageManager extends AbstractJournalStorageManager {
    public void stop(boolean ioCriticalError, boolean sendFailover) throws Exception {
       try (ArtemisCloseable critical = measureCritical(CRITICAL_STOP)) {
          synchronized (this) {
-            if (internalStop(ioCriticalError, sendFailover))
+            if (internalStop(ioCriticalError, sendFailover)) {
                return;
+            }
          }
       }
    }
@@ -288,8 +289,9 @@ public class JournalStorageManager extends AbstractJournalStorageManager {
       if (!ioCriticalError) {
          performCachedLargeMessageDeletes();
          // Must call stop to make sure last id is persisted
-         if (journalLoaded && idGenerator != null)
+         if (journalLoaded && idGenerator != null) {
             idGenerator.stop();
+         }
       }
 
       final CountDownLatch latch = new CountDownLatch(1);
@@ -394,8 +396,9 @@ public class JournalStorageManager extends AbstractJournalStorageManager {
    public void pageClosed(final SimpleString storeName, final long pageNumber) {
       if (isReplicated()) {
          try (ArtemisCloseable lock = closeableReadLock()) {
-            if (isReplicated())
+            if (isReplicated()) {
                replicator.pageClosed(storeName, pageNumber);
+            }
          }
       }
    }
@@ -404,8 +407,9 @@ public class JournalStorageManager extends AbstractJournalStorageManager {
    public void pageDeleted(final SimpleString storeName, final long pageNumber) {
       if (isReplicated()) {
          try (ArtemisCloseable lock = closeableReadLock()) {
-            if (isReplicated())
+            if (isReplicated()) {
                replicator.pageDeleted(storeName, pageNumber);
+            }
          }
       }
    }
@@ -575,8 +579,9 @@ public class JournalStorageManager extends AbstractJournalStorageManager {
     */
    private void sendJournalFile(JournalFile[] journalFiles, JournalContent type) throws Exception {
       for (JournalFile jf : journalFiles) {
-         if (!started)
+         if (!started) {
             return;
+         }
 
          ReplicationManager replicatorInUse = replicator;
          if (replicatorInUse == null) {
@@ -707,8 +712,9 @@ public class JournalStorageManager extends AbstractJournalStorageManager {
          final long id = entry.getKey();
          long size = entry.getValue().getB();
          SequentialFile seqFile = largeMessagesFactory.createSequentialFile(fileName);
-         if (!seqFile.exists())
+         if (!seqFile.exists()) {
             continue;
+         }
 
          ReplicationManager replicatorInUse = replicator;
          if (replicatorInUse == null) {
@@ -781,8 +787,9 @@ public class JournalStorageManager extends AbstractJournalStorageManager {
    private void sendPagesToBackup(Map<SimpleString, Collection<Integer>> pageFilesToSync,
                                   PagingManager manager) throws Exception {
       for (Map.Entry<SimpleString, Collection<Integer>> entry : pageFilesToSync.entrySet()) {
-         if (!started)
+         if (!started) {
             return;
+         }
 
          ReplicationManager replicatorInUse = replicator;
          if (replicatorInUse == null) {
@@ -806,8 +813,9 @@ public class JournalStorageManager extends AbstractJournalStorageManager {
       logger.trace("stopReplication()");
       storageManagerLock.writeLock().lock();
       try {
-         if (replicator == null)
+         if (replicator == null) {
             return;
+         }
          bindingsJournal = originalBindingsJournal;
          messageJournal = originalMessageJournal;
          try {

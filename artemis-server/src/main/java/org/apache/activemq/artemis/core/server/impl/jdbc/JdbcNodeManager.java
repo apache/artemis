@@ -437,8 +437,9 @@ public final class JdbcNodeManager extends NodeManager {
          lock(scheduledBackupLock.lock());
          scheduledBackupLock.start();
          ActiveMQServerLogger.LOGGER.gotBackupLock();
-         if (getUUID() == null)
+         if (getUUID() == null) {
             readNodeId();
+         }
       } catch (InterruptedException ie) {
          throw ie;
       } catch (ActiveMQLockAcquisitionTimeoutException | IllegalStateException e) {

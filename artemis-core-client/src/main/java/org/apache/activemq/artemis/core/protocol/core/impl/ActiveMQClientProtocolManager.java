@@ -204,8 +204,9 @@ public class ActiveMQClientProtocolManager implements ClientProtocolManager {
       alive = false;
 
       synchronized (inCreateSessionGuard) {
-         if (inCreateSessionLatch != null)
+         if (inCreateSessionLatch != null) {
             inCreateSessionLatch.countDown();
+         }
       }
 
       Channel channel1 = getChannel1();
@@ -273,8 +274,9 @@ public class ActiveMQClientProtocolManager implements ClientProtocolManager {
                                               int minLargeMessageSize,
                                               int confirmationWindowSize,
                                               String clientID) throws ActiveMQException {
-      if (!isAlive())
+      if (!isAlive()) {
          throw ActiveMQClientMessageBundle.BUNDLE.clientSessionClosed();
+      }
 
       Channel sessionChannel = null;
       CreateSessionResponseMessage response = null;
@@ -291,8 +293,9 @@ public class ActiveMQClientProtocolManager implements ClientProtocolManager {
 
             // We now set a flag saying createSession is executing
             synchronized (inCreateSessionGuard) {
-               if (!isAlive())
+               if (!isAlive()) {
                   throw ActiveMQClientMessageBundle.BUNDLE.clientSessionClosed();
+               }
                inCreateSession = true;
                inCreateSessionLatch = new CountDownLatch(1);
             }
@@ -305,8 +308,9 @@ public class ActiveMQClientProtocolManager implements ClientProtocolManager {
                // channel1 reference here has to go away
                response = (CreateSessionResponseMessage) getChannel1().sendBlocking(request, PacketImpl.CREATESESSION_RESP);
             } catch (ActiveMQException cause) {
-               if (!isAlive())
+               if (!isAlive()) {
                   throw cause;
+               }
 
                if (cause.getType() == ActiveMQExceptionType.UNBLOCKED ||
                        cause.getType() == ActiveMQExceptionType.ROUTING_EXCEPTION) {

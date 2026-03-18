@@ -214,8 +214,9 @@ public class NIOSequentialFile extends AbstractSequentialFile {
       try {
          try {
             if (channel != null) {
-               if (waitSync && factory.isDatasync())
+               if (waitSync && factory.isDatasync()) {
                   channel.force(false);
+               }
                channel.close();
             }
          } finally {

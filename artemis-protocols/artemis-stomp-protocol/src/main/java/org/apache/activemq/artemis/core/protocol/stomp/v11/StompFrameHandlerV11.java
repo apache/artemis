@@ -399,15 +399,17 @@ public class StompFrameHandlerV11 extends VersionedStompFrameHandler implements 
                //client ping
                nextChar = false;
             } else if (workingBuffer[offset] == CR) {
-               if (nextChar)
+               if (nextChar) {
                   throw BUNDLE.invalidTwoCRs().setHandler(handler);
+               }
                nextChar = true;
             } else {
                break;
             }
             offset++;
-            if (offset == data)
+            if (offset == data) {
                return false; //no more bytes
+            }
          }
 
          if (nextChar) {
@@ -734,12 +736,14 @@ public class StompFrameHandlerV11 extends VersionedStompFrameHandler implements 
 
          if (content != null) {
             if (data > pos) {
-               if (workingBuffer[pos] == NEW_LINE)
+               if (workingBuffer[pos] == NEW_LINE) {
                   pos++;
+               }
 
-               if (data > pos)
+               if (data > pos) {
                   // More data still in the buffer from the next packet
                   System.arraycopy(workingBuffer, pos, workingBuffer, 0, data - pos);
+               }
             }
 
             data = data - pos;

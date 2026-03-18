@@ -225,8 +225,9 @@ public abstract class FileBasedNodeManager extends NodeManager {
    public synchronized void stop() throws Exception {
       FileChannel channelCopy = channel;
       try {
-         if (channelCopy != null)
+         if (channelCopy != null) {
             channelCopy.close();
+         }
       } finally {
          try {
             setNodeActivationSequence(NULL_NODE_ACTIVATION_SEQUENCE);

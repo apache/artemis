@@ -48,8 +48,9 @@ public final class SSLContextConfig {
       }
 
       public Builder from(final SSLContextConfig config) {
-         if (config == null)
+         if (config == null) {
             return this;
+         }
 
          keystorePath = config.getKeystorePath();
          keystoreType = config.getKeystoreType();

@@ -64,7 +64,9 @@ public class XMLMessageImporter {
    }
 
    public MessageInfo readMessage(boolean decodeUTF8) throws Exception {
-      if (!reader.hasNext()) return null;
+      if (!reader.hasNext()) {
+         return null;
+      }
 
       Byte type = 0;
       Byte priority = 0;

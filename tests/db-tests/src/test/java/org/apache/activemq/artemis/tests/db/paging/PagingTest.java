@@ -5120,8 +5120,9 @@ public class PagingTest extends ParameterDBTestBase {
          ClientMessage message = null;
 
          for (int i = 0; i < numberOfMessages; i++) {
-            if (i % 10 == 0)
+            if (i % 10 == 0) {
                logger.debug("send message #{}", i);
+            }
             message = session.createMessage(true);
 
             message.putStringProperty("id", "str" + i);

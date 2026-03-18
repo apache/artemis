@@ -201,13 +201,15 @@ public class JDBCSequentialFile implements SequentialFile {
             if (logger.isTraceEnabled()) {
                logger.trace("Write: ID: {} FileName: {}{}", getId(), getFileName(), size());
             }
-            if (callback != null)
+            if (callback != null) {
                callback.done();
+            }
             return noBytes;
          }
       } catch (Exception e) {
-         if (callback != null)
+         if (callback != null) {
             callback.onError(ActiveMQExceptionType.IO_ERROR.getCode(), e.getClass() + " during JDBC write:" + e.getMessage());
+         }
          fileFactory.onIOError(e, "Error writing to JDBC file.", this);
       }
       return 0;
@@ -367,12 +369,14 @@ public class JDBCSequentialFile implements SequentialFile {
          try {
             int read = dbDriver.readFromFile(this, bytes);
             readPosition += read;
-            if (callback != null)
+            if (callback != null) {
                callback.done();
+            }
             return read;
          } catch (SQLException e) {
-            if (callback != null)
+            if (callback != null) {
                callback.onError(ActiveMQExceptionType.IO_ERROR.getCode(), e.getClass() + " during JDBC read:" + e.getMessage());
+            }
             fileFactory.onIOError(e, "Error reading from JDBC file.", this);
          }
          return 0;

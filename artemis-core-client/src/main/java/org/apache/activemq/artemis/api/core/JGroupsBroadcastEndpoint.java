@@ -107,8 +107,9 @@ public abstract class JGroupsBroadcastEndpoint implements BroadcastEndpoint {
 
    @Override
    public synchronized void openBroadcaster() throws Exception {
-      if (broadcastOpened)
+      if (broadcastOpened) {
          return;
+      }
       internalOpen();
       broadcastOpened = true;
    }

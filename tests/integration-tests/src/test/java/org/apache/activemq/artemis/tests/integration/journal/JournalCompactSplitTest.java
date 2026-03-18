@@ -118,7 +118,9 @@ public class JournalCompactSplitTest extends ActiveMQTestBase {
          JournalAddRecord record = new JournalAddRecord(true, i, JournalImpl.ADD_RECORD, EncoderPersister.getInstance(), new ByteArrayEncoding(z));
          record.setFileID(1);
          compactCount--;
-         if (compactCount < 0) compactCount = 10;
+         if (compactCount < 0) {
+            compactCount = 10;
+         }
 
          // this test is playing with the order of compact count
          record.setCompactCount(compactCount);

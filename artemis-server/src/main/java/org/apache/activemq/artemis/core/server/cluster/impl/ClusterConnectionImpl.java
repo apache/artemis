@@ -513,8 +513,9 @@ public final class ClusterConnectionImpl implements ClusterConnection, AfterConn
    }
 
    private void closeLocator(final ServerLocatorInternal locator) {
-      if (locator != null)
+      if (locator != null) {
          locator.close();
+      }
    }
 
    private TopologyMember getLocalMember() {

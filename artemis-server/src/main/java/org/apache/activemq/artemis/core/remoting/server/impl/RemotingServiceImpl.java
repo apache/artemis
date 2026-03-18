@@ -369,8 +369,9 @@ public class RemotingServiceImpl implements RemotingService, ServerConnectionLif
 
    @Override
    public synchronized void pauseAcceptors() {
-      if (!started)
+      if (!started) {
          return;
+      }
       paused = true;
 
       for (Acceptor acceptor : acceptors.values()) {
@@ -389,8 +390,9 @@ public class RemotingServiceImpl implements RemotingService, ServerConnectionLif
 
    @Override
    public synchronized void freeze(final String scaleDownNodeID, final CoreRemotingConnection connectionToKeepOpen) {
-      if (!started)
+      if (!started) {
          return;
+      }
       failureCheckAndFlushThread.close(false);
       Map<Object, ConnectionEntry> connectionEntries = new HashMap<>(connections);
 
@@ -992,8 +994,9 @@ public class RemotingServiceImpl implements RemotingService, ServerConnectionLif
                   }
                }
 
-               if (latch.await(pauseInterval, TimeUnit.MILLISECONDS))
+               if (latch.await(pauseInterval, TimeUnit.MILLISECONDS)) {
                   return;
+               }
             } catch (Throwable e) {
                ActiveMQServerLogger.LOGGER.errorOnFailureCheck(e);
             }

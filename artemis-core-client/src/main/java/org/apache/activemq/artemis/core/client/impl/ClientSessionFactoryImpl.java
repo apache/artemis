@@ -493,10 +493,11 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       // called
       for (ClientSessionInternal session : sessionsToClose) {
          try {
-            if (close)
+            if (close) {
                session.close();
-            else
+            } else {
                session.cleanUp(false);
+            }
          } catch (Exception e1) {
             ActiveMQClientLogger.LOGGER.unableToCloseSession(e1);
          }
@@ -590,8 +591,9 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       }
 
       Set<ClientSessionInternal> sessionsToClose = null;
-      if (!clientProtocolManager.isAlive())
+      if (!clientProtocolManager.isAlive()) {
          return;
+      }
       Lock localFailoverLock = lockFailover();
       try {
          if (connection == null || !connection.getID().equals(connectionID) || !clientProtocolManager.isAlive()) {
@@ -891,9 +893,9 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                                      final RemotingConnection oldConnection,
                                      final ActiveMQException cause) {
       if (connection == null) {
-         if (!clientProtocolManager.isAlive())
+         if (!clientProtocolManager.isAlive()) {
             ActiveMQClientLogger.LOGGER.failedToConnectToServer();
-
+         }
          return false;
       }
 
@@ -931,8 +933,9 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
    }
 
    private int getConnectionWithRetry(final int reconnectAttempts, RemotingConnection oldConnection) {
-      if (!clientProtocolManager.isAlive())
+      if (!clientProtocolManager.isAlive()) {
          return 0;
+      }
       if (logger.isTraceEnabled()) {
          logger.trace("getConnectionWithRetry::{} with retryInterval = {} multiplier = {}",
                       reconnectAttempts, retryInterval, retryIntervalMultiplier, new Exception("trace"));
@@ -972,8 +975,9 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                   logger.trace("Waiting {} milliseconds before next retry. RetryInterval={} and multiplier={}", interval, retryInterval, retryIntervalMultiplier);
                }
 
-               if (waitForRetry(interval))
+               if (waitForRetry(interval)) {
                   return count;
+               }
 
                interval = serverLocator.getNextRetryInterval(interval, retryIntervalMultiplier, maxRetryInterval);
             } else {
@@ -1042,10 +1046,12 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
    //updated properly.
    @Override
    public RemotingConnection getConnection() {
-      if (closed)
+      if (closed) {
          throw new IllegalStateException("ClientSessionFactory is closed!");
-      if (!clientProtocolManager.isAlive())
+      }
+      if (!clientProtocolManager.isAlive()) {
          return null;
+      }
       synchronized (connectionLock) {
          if (connection != null) {
             // a connection already exists, so returning the same one

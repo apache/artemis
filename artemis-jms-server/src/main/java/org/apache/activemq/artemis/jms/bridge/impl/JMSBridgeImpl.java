@@ -493,8 +493,9 @@ public final class JMSBridgeImpl implements JMSBridge {
 
    private void stop(boolean isFailureHandler) throws Exception {
       synchronized (stoppingGuard) {
-         if (stopping)
+         if (stopping) {
             return;
+         }
          stopping = true;
       }
 

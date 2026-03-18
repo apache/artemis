@@ -165,10 +165,12 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
       }
 
       public static JournalContent getType(byte type) {
-         if (MESSAGES.typeByte == type)
+         if (MESSAGES.typeByte == type) {
             return MESSAGES;
-         if (BINDINGS.typeByte == type)
+         }
+         if (BINDINGS.typeByte == type) {
             return BINDINGS;
+         }
          throw new InvalidParameterException("invalid byte: " + type);
       }
    }
@@ -1783,8 +1785,9 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
       if (!ioCriticalError) {
          performCachedLargeMessageDeletes();
          // Must call close to make sure last id is persisted
-         if (journalLoaded && idGenerator != null)
+         if (journalLoaded && idGenerator != null) {
             idGenerator.persistCurrentID();
+         }
       }
 
       final CountDownLatch latch = new CountDownLatch(1);

@@ -178,8 +178,9 @@ public class ActiveMQRAProperties extends ConnectionFactoryProperties implements
    }
 
    public synchronized void init() throws ActiveMQException {
-      if (initialized)
+      if (initialized) {
          return;
+      }
 
       if (password != null) {
          try {

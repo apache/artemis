@@ -124,8 +124,9 @@ public final class VersionLoader {
          }
       } finally {
          try {
-            if (in != null)
+            if (in != null) {
                in.close();
+            }
          } catch (Throwable ignored) {
          }
       }

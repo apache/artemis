@@ -237,21 +237,24 @@ public class BasicXaRecoveryTest extends ActiveMQTestBase {
 
    @TestTemplate
    public void testPagingServerRestarted() throws Exception {
-      if (storeType == StoreConfiguration.StoreType.DATABASE)
+      if (storeType == StoreConfiguration.StoreType.DATABASE) {
          return;
+      }
       verifyPaging(true);
    }
 
    @TestTemplate
    public void testPaging() throws Exception {
-      if (storeType == StoreConfiguration.StoreType.DATABASE)
+      if (storeType == StoreConfiguration.StoreType.DATABASE) {
          return;
+      }
       verifyPaging(false);
    }
 
    public void verifyPaging(final boolean restartServer) throws Exception {
-      if (storeType == StoreConfiguration.StoreType.DATABASE)
+      if (storeType == StoreConfiguration.StoreType.DATABASE) {
          return;
+      }
       Xid xid = new XidImpl("xa1".getBytes(), 1, UUIDGenerator.getInstance().generateStringUUID().getBytes());
 
       SimpleString pageQueue = SimpleString.of("pagequeue");
@@ -316,15 +319,17 @@ public class BasicXaRecoveryTest extends ActiveMQTestBase {
 
    @TestTemplate
    public void testRollbackPaging() throws Exception {
-      if (storeType == StoreConfiguration.StoreType.DATABASE)
+      if (storeType == StoreConfiguration.StoreType.DATABASE) {
          return;
+      }
       testRollbackPaging(false);
    }
 
    @TestTemplate
    public void testRollbackPagingServerRestarted() throws Exception {
-      if (storeType == StoreConfiguration.StoreType.DATABASE)
+      if (storeType == StoreConfiguration.StoreType.DATABASE) {
          return;
+      }
       testRollbackPaging(true);
    }
 

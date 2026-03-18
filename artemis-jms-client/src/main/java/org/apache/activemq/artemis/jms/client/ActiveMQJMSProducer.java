@@ -479,8 +479,9 @@ public final class ActiveMQJMSProducer implements JMSProducer {
    public String getStringProperty(String name) {
       try {
          SimpleString prop = properties.getSimpleStringProperty(SimpleString.of(name));
-         if (prop == null)
+         if (prop == null) {
             return null;
+         }
          return prop.toString();
       } catch (ActiveMQPropertyConversionException ce) {
          throw new MessageFormatRuntimeException(ce.getMessage());

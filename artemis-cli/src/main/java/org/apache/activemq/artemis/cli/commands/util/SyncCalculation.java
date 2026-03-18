@@ -151,7 +151,9 @@ public class SyncCalculation {
                }
             }
 
-            if (!syncWrites) flushLatch(latch);
+            if (!syncWrites) {
+               flushLatch(latch);
+            }
 
             long end = System.currentTimeMillis();
 

@@ -1444,8 +1444,9 @@ public class JMSServerManagerImpl extends CleaningActivateCallback implements JM
          return true;
       } else {
          ActiveMQJMSServerLogger.LOGGER.serverCachingCommand(runnable);
-         if (!cachedCommands.contains(runnable))
+         if (!cachedCommands.contains(runnable)) {
             cachedCommands.add(runnable);
+         }
          return false;
       }
    }

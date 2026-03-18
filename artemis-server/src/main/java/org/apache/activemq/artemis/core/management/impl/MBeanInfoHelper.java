@@ -166,10 +166,11 @@ public class MBeanInfoHelper {
    private static String getAttributeName(Method operation) {
       String name = operation.getName();
 
-      if (isGetterMethod(operation) || isSetterMethod(operation))
+      if (isGetterMethod(operation) || isSetterMethod(operation)) {
          name = operation.getName().substring(3);
-      else if (isIsBooleanMethod(operation))
+      } else if (isIsBooleanMethod(operation)) {
          name = operation.getName().substring(2);
+      }
 
       return name;
    }

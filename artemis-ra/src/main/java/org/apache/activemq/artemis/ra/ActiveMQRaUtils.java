@@ -215,8 +215,9 @@ public final class ActiveMQRaUtils {
             } catch (Throwable t) {
                try {
                   loader = Thread.currentThread().getContextClassLoader();
-                  if (loader != null)
+                  if (loader != null) {
                      return loader.loadClass(className).getDeclaredConstructor().newInstance();
+                  }
                } catch (RuntimeException e) {
                   throw e;
                } catch (Exception e) {

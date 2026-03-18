@@ -373,18 +373,21 @@ public class WebServerComponent implements ExternalComponent, WebServerComponent
 
    private File getStoreFile(String storeFilename) {
       File storeFile = new File(storeFilename);
-      if (!storeFile.exists())
+      if (!storeFile.exists()) {
          throw new IllegalArgumentException("Store file does not exist: " + storeFilename);
-      if (storeFile.isDirectory())
+      }
+      if (storeFile.isDirectory()) {
          throw new IllegalArgumentException("Expected store file not directory: " + storeFilename);
+      }
 
       return storeFile;
    }
 
    private File getParentStoreFile(File storeFile) {
       File parentFile = storeFile.getParentFile();
-      if (!parentFile.exists() || !parentFile.isDirectory())
+      if (!parentFile.exists() || !parentFile.isDirectory()) {
          throw new IllegalArgumentException("Error obtaining store dir for " + storeFile);
+      }
 
       return parentFile;
    }

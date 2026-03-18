@@ -172,8 +172,9 @@ public class ActiveMQObjectMessage extends ActiveMQMessage implements ObjectMess
 
    @Override
    public boolean isBodyAssignableTo(Class c) {
-      if (data == null) // we have no body
+      if (data == null) { // we have no body
          return true;
+      }
       try {
          return Serializable.class == c || Object.class == c || c.isInstance(getObject());
       } catch (JMSException e) {

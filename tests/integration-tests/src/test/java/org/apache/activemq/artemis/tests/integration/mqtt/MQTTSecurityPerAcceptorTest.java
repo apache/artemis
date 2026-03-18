@@ -90,7 +90,9 @@ public class MQTTSecurityPerAcceptorTest extends MQTTTestSupport {
                assertTrue(Wait.waitFor(() -> finalConnection.isConnected(), 2000, 100), "Should be connected");
             }
          } finally {
-            if (connection != null && connection.isConnected()) connection.disconnect();
+            if (connection != null && connection.isConnected()) {
+               connection.disconnect();
+            }
          }
       }
    }

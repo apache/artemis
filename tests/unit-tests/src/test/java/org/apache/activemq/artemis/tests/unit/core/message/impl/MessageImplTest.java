@@ -248,8 +248,9 @@ public class MessageImplTest extends ActiveMQTestBase {
    @Test
    public void testMessageCopyIssue() throws Exception {
       for (long i = 0; i < 300; i++) {
-         if (i % 10 == 0)
+         if (i % 10 == 0) {
             logger.debug("#test {}", i);
+         }
          internalMessageCopy();
       }
    }

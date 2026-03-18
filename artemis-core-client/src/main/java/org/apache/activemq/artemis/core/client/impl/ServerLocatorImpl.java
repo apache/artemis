@@ -237,8 +237,9 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
    @Override
    public synchronized boolean setThreadPools(Executor threadPool, ScheduledExecutorService scheduledThreadPool, Executor flowControlThreadPool) {
 
-      if (threadPool == null || scheduledThreadPool == null)
+      if (threadPool == null || scheduledThreadPool == null) {
          return false;
+      }
 
       if (this.threadPool == null && this.scheduledThreadPool == null && this.flowControlThreadPool == null) {
          config.useGlobalPools = false;
@@ -264,11 +265,13 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
 
    @Override
    public synchronized void initialize() throws ActiveMQException {
-      if (state == STATE.INITIALIZED)
+      if (state == STATE.INITIALIZED) {
          return;
+      }
       synchronized (stateGuard) {
-         if (state == STATE.CLOSING)
+         if (state == STATE.CLOSING) {
             throw new ActiveMQIllegalStateException();
+         }
          try {
             state = STATE.INITIALIZED;
             latch = new CountDownLatch(1);
@@ -1245,8 +1248,9 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
 
    @Override
    public TransportConfiguration[] getStaticTransportConfigurations() {
-      if (initialConnectors == null)
-         return new TransportConfiguration[]{};
+      if (initialConnectors == null) {
+         return new TransportConfiguration[] {};
+      }
       return Arrays.copyOf(initialConnectors, initialConnectors.length);
    }
 
@@ -1344,8 +1348,9 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
    }
 
    private int getNumInitialConnectors() {
-      if (initialConnectors == null)
+      if (initialConnectors == null) {
          return 0;
+      }
       return initialConnectors.length;
    }
 
@@ -1407,8 +1412,9 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
 
          state = STATE.CLOSING;
       }
-      if (latch != null)
+      if (latch != null) {
          latch.countDown();
+      }
 
       synchronized (connectingFactories) {
          for (ClientSessionFactoryInternal csf : connectingFactories) {
@@ -1807,18 +1813,21 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
                   break;
                }
 
-               if (latch.await(config.retryInterval, TimeUnit.MILLISECONDS))
+               if (latch.await(config.retryInterval, TimeUnit.MILLISECONDS)) {
                   return null;
+               }
             }
 
          } catch (RejectedExecutionException e) {
-            if (isClosed() || skipWarnings)
+            if (isClosed() || skipWarnings) {
                return null;
+            }
             logger.trace("Rejected execution", e);
             throw e;
          } catch (Exception e) {
-            if (isClosed() || skipWarnings)
+            if (isClosed() || skipWarnings) {
                return null;
+            }
             ActiveMQClientLogger.LOGGER.errorConnectingToNodes(e);
             throw ActiveMQClientMessageBundle.BUNDLE.cannotConnectToStaticConnectors(e);
          }

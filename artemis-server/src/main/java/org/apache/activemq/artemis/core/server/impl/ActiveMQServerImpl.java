@@ -1110,7 +1110,9 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       try {
          stop(false, isShutdown);
       } finally {
-         if (isShutdown) networkHealthCheck.stop();
+         if (isShutdown) {
+            networkHealthCheck.stop();
+         }
       }
    }
 
@@ -1394,8 +1396,9 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       // *************************************************************************************************************
 
       final StorageManager storageManager = this.storageManager;
-      if (storageManager != null)
+      if (storageManager != null) {
          storageManager.clearContext();
+      }
 
       //before we stop any components deactivate any callbacks
       callDeActiveCallbacks();
@@ -1501,8 +1504,9 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          shutdownPool(pageExecutorPool);
       }
 
-      if (!scheduledPoolSupplied)
+      if (!scheduledPoolSupplied) {
          scheduledPool = null;
+      }
 
       if (securityStore != null) {
          try {
@@ -3328,8 +3332,9 @@ public class ActiveMQServerImpl implements ActiveMQServer {
     * After optional intermediary steps, this is meant to be followed by {@link #initialisePart2(boolean)}.
     */
    synchronized boolean initialisePart1(boolean scalingDown) throws Exception {
-      if (state == SERVER_STATE.STOPPED)
+      if (state == SERVER_STATE.STOPPED) {
          return false;
+      }
 
 
       ServerStatus.starting(this);

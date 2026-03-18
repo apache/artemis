@@ -95,8 +95,9 @@ public class JChannelWrapper {
    }
 
    public void removeReceiver(JGroupsReceiver receiver) {
-      if (logger.isTraceEnabled())
+      if (logger.isTraceEnabled()) {
          logger.trace("{}::removeReceiver: {} on {}", this, receiver, channelName, new Exception("Trace"));
+      }
       synchronized (receivers) {
          receivers.remove(receiver);
       }

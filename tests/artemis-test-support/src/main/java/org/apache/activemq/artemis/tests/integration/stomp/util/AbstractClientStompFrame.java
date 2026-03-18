@@ -58,8 +58,9 @@ public abstract class AbstractClientStompFrame implements ClientStompFrame {
    }
 
    public AbstractClientStompFrame(String command, boolean validate) {
-      if (validate && (!validate(command)))
+      if (validate && (!validate(command))) {
          throw new IllegalArgumentException("Invalid command " + command);
+      }
       this.command = command;
    }
 

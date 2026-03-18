@@ -455,8 +455,9 @@ public abstract class ServerTestBase extends ArtemisTestCase {
    }
 
    private static String directoryNameSuffix(int index, boolean backup) {
-      if (index == -1)
+      if (index == -1) {
          return "";
+      }
       return index + "-" + (backup ? "B" : "L");
    }
 
@@ -629,8 +630,9 @@ public abstract class ServerTestBase extends ArtemisTestCase {
    }
 
    protected static final void stopComponent(ActiveMQComponent component) {
-      if (component == null)
+      if (component == null) {
          return;
+      }
       try {
          component.stop();
       } catch (Exception e) {
@@ -639,8 +641,9 @@ public abstract class ServerTestBase extends ArtemisTestCase {
    }
 
    protected static final void stopComponentOutputExceptions(ActiveMQComponent component) {
-      if (component == null)
+      if (component == null) {
          return;
+      }
       try {
          component.stop();
       } catch (Exception e) {

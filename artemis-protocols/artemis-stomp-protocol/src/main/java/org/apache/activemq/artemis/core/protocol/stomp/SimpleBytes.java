@@ -31,8 +31,9 @@ public class SimpleBytes {
    }
 
    public String getString() {
-      if (index == 0)
+      if (index == 0) {
          return "";
+      }
 
       return new String(contents, 0, index, StandardCharsets.UTF_8);
    }

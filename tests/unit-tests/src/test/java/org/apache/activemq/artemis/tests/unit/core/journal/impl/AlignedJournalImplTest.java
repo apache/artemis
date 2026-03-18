@@ -1279,8 +1279,9 @@ public class AlignedJournalImplTest extends ActiveMQTestBase {
    @AfterEach
    public void tearDown() throws Exception {
       stopComponent(journalImpl);
-      if (factory != null)
+      if (factory != null) {
          factory.stop();
+      }
       records = null;
 
       transactions = null;

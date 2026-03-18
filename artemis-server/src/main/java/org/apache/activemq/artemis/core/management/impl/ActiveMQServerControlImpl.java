@@ -4450,8 +4450,9 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
       if (broadcaster == null) {
          return;
       }
-      if (!(notification.getType() instanceof CoreNotificationType type))
+      if (!(notification.getType() instanceof CoreNotificationType type)) {
          return;
+      }
       if (type == CoreNotificationType.SESSION_CREATED) {
          TypedProperties props = notification.getProperties();
          /*

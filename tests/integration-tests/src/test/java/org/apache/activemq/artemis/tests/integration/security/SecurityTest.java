@@ -2526,15 +2526,17 @@ public class SecurityTest extends ActiveMQTestBase {
                if (username.equals("all")) {
                   return username;
                } else if (username.equals("foo")) {
-                  if (address.equals("test.queue") && checkType == CheckType.CONSUME)
+                  if (address.equals("test.queue") && checkType == CheckType.CONSUME) {
                      return username;
-                  else
+                  } else {
                      return null;
+                  }
                } else if (username.equals("bar")) {
-                  if (address.equals("test.queue") && checkType == CheckType.SEND)
+                  if (address.equals("test.queue") && checkType == CheckType.SEND) {
                      return username;
-                  else
+                  } else {
                      return null;
+                  }
                } else {
                   return null;
                }
@@ -2662,15 +2664,17 @@ public class SecurityTest extends ActiveMQTestBase {
                if (username.equals("all")) {
                   return username;
                } else if (username.equals("foo")) {
-                  if (address.equals("test.queue") && checkType == CheckType.CONSUME)
+                  if (address.equals("test.queue") && checkType == CheckType.CONSUME) {
                      return username;
-                  else
+                  } else {
                      return null;
+                  }
                } else if (username.equals("bar")) {
-                  if (address.equals("test.queue") && checkType == CheckType.SEND)
+                  if (address.equals("test.queue") && checkType == CheckType.SEND) {
                      return username;
-                  else
+                  } else {
                      return null;
+                  }
                } else {
                   return null;
                }

@@ -83,8 +83,9 @@ public class ScheduledDeliveryHandlerTest {
 
       for (int i = 0; i < NUMBER_OF_SEQUENCES; i++) {
          int numberOfMessages = RandomUtil.randomInt() % 10;
-         if (numberOfMessages == 0)
+         if (numberOfMessages == 0) {
             numberOfMessages = 1;
+         }
 
          long nextScheduledTime = RandomUtil.randomPositiveLong();
 

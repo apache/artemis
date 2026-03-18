@@ -115,10 +115,12 @@ public class LDAPModuleRoleExpansionTest extends AbstractLdapTestUnit {
       boolean isUser = false;
       for (Principal principal : subject.getPrincipals()) {
          if (principal instanceof RolePrincipal rolePrincipal) {
-            if (rolePrincipal.getName().equalsIgnoreCase("admins"))
+            if (rolePrincipal.getName().equalsIgnoreCase("admins")) {
                isAdmin = true;
-            if (rolePrincipal.getName().equalsIgnoreCase("users"))
+            }
+            if (rolePrincipal.getName().equalsIgnoreCase("users")) {
                isUser = true;
+            }
          }
       }
       // Should be in users by virtue of being in admins

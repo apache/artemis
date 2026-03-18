@@ -300,8 +300,9 @@ public class ActiveMQXAResourceWrapper implements XAResource, SessionFailureList
             logger.debug(e.getMessage(), e);
 
             try {
-               if (serverLocator != null)
+               if (serverLocator != null) {
                   serverLocator.close();
+               }
             } catch (Throwable ignored) {
                logger.trace(e.getMessage(), ignored);
             }

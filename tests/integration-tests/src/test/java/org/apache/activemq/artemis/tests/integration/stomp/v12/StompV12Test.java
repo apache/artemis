@@ -758,8 +758,9 @@ public class StompV12Test extends StompTestBase {
          // unsub
          unsubscribe(newConn, "a-sub");
       } finally {
-         if (newConn != null)
+         if (newConn != null) {
             newConn.disconnect();
+         }
          conn.disconnect();
       }
    }
@@ -861,8 +862,9 @@ public class StompV12Test extends StompTestBase {
          // unsub
          unsubscribe(newConn, "a-sub");
       } finally {
-         if (newConn != null)
+         if (newConn != null) {
             newConn.disconnect();
+         }
          conn.disconnect();
       }
    }

@@ -760,10 +760,11 @@ public class LDAPLoginModule implements AuditLoginModule {
    }
 
    private String getLDAPPropertyValue(ConfigKey key) {
-      for (LDAPLoginProperty conf : config)
+      for (LDAPLoginProperty conf : config) {
          if (conf.getPropertyName().equals(key.getName())) {
             return conf.getPropertyValue();
          }
+      }
       return null;
    }
 

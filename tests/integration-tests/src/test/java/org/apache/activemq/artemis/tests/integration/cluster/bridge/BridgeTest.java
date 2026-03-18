@@ -1572,8 +1572,9 @@ public class BridgeTest extends ActiveMQTestBase {
 
             msgCount.incrementAndGet();
 
-            if (i % 500 == 0)
+            if (i % 500 == 0) {
                logger.debug("received {}", i);
+            }
          }
 
          boolean failed = false;

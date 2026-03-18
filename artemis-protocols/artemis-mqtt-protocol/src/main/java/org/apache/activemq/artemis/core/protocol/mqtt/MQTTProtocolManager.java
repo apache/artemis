@@ -166,19 +166,22 @@ public class MQTTProtocolManager extends AbstractProtocolManager<MqttMessage, MQ
 
    @Override
    public void onNotification(Notification notification) {
-      if (!(notification.getType() instanceof CoreNotificationType type))
+      if (!(notification.getType() instanceof CoreNotificationType type)) {
          return;
+      }
 
-      if (type != CoreNotificationType.SESSION_CREATED)
+      if (type != CoreNotificationType.SESSION_CREATED) {
          return;
+      }
 
       TypedProperties props = notification.getProperties();
 
       SimpleString protocolName = props.getSimpleStringProperty(ManagementHelper.HDR_PROTOCOL_NAME);
 
       //Only process SESSION_CREATED notifications for the MQTT protocol
-      if (protocolName == null || !protocolName.toString().startsWith(MQTTProtocolManagerFactory.MQTT_PROTOCOL_NAME))
+      if (protocolName == null || !protocolName.toString().startsWith(MQTTProtocolManagerFactory.MQTT_PROTOCOL_NAME)) {
          return;
+      }
 
       int distance = props.getIntProperty(ManagementHelper.HDR_DISTANCE);
 
@@ -303,8 +306,9 @@ public class MQTTProtocolManager extends AbstractProtocolManager<MqttMessage, MQ
    private boolean validateRemainingLength(ByteBuf buffer) {
       byte msb = (byte) 0b10000000;
       for (byte i = 0; i < 4; i++) {
-         if ((readByte(buffer) & msb) != msb)
+         if ((readByte(buffer) & msb) != msb) {
             return true;
+         }
       }
       return false;
    }

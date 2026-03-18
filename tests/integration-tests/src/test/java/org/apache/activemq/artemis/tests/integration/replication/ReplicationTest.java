@@ -206,8 +206,9 @@ public final class ReplicationTest extends ActiveMQTestBase {
    }
 
    private void waitForReplication(int count) throws InterruptedException {
-      if (liveServer == null)
+      if (liveServer == null) {
          return;
+      }
 
       while (liveServer.getReplicationManager() == null && count < 10) {
          Thread.sleep(50);
@@ -357,10 +358,12 @@ public final class ReplicationTest extends ActiveMQTestBase {
          }
       } finally {
          TestInterceptor.value.set(false);
-         if (!session.isClosed())
+         if (!session.isClosed()) {
             session.close();
-         if (!session2.isClosed())
+         }
+         if (!session2.isClosed()) {
             session2.close();
+         }
       }
    }
 

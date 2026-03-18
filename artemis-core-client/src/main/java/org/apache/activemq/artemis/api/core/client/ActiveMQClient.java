@@ -232,8 +232,9 @@ public final class ActiveMQClient {
    public static synchronized void injectPools(ExecutorService globalThreadPool,
                                                ScheduledExecutorService scheduledThreadPool,
                                                ExecutorService flowControlThreadPool) {
-      if (globalThreadPool == null || scheduledThreadPool == null || flowControlThreadPool == null)
+      if (globalThreadPool == null || scheduledThreadPool == null || flowControlThreadPool == null) {
          throw new IllegalArgumentException("thread pools must not be null");
+      }
 
       // We call clearThreadPools as that will shutdown any previously used executor
       clearThreadPools();
@@ -317,8 +318,9 @@ public final class ActiveMQClient {
     */
    public static void setGlobalThreadPoolProperties(int globalThreadMaxPoolSize, int globalScheduledThreadPoolSize, int globalFlowControlThreadPoolSize) {
 
-      if (globalThreadMaxPoolSize < 2 && globalThreadMaxPoolSize != -1)
+      if (globalThreadMaxPoolSize < 2 && globalThreadMaxPoolSize != -1) {
          globalThreadMaxPoolSize = 2;
+      }
 
       ActiveMQClient.globalScheduledThreadPoolSize = globalScheduledThreadPoolSize;
       ActiveMQClient.globalThreadPoolSize = globalThreadMaxPoolSize;

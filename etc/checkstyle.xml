@@ -119,6 +119,11 @@ under the License.
 
       <module name="UnnecessarySemicolonInTryWithResources"/>
 
+      <module name="NeedBraces">
+         <property name="tokens" value="LITERAL_IF, LITERAL_ELSE, LITERAL_FOR, LITERAL_WHILE, LITERAL_DO"/>
+         <property name="allowSingleLineStatement" value="false"/>
+      </module>
+
       <!-- begin Sevntu checks, http://sevntu-checkstyle.github.io/sevntu.checkstyle/ -->
       <module name="DiamondOperatorForVariableDefinition"/>
       <module name="RequiredParameterForAnnotation">

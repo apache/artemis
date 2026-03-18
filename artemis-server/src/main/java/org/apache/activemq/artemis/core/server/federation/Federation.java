@@ -61,7 +61,9 @@ public class Federation {
    }
 
    public synchronized void start() throws ActiveMQException {
-      if (state == FederationManager.State.STARTED) return;
+      if (state == FederationManager.State.STARTED) {
+         return;
+      }
       deploy();
       for (FederationUpstream connection : upstreams.values()) {
          connection.start();
@@ -73,7 +75,9 @@ public class Federation {
    }
 
    public synchronized void stop() {
-      if (state == FederationManager.State.STOPPED) return;
+      if (state == FederationManager.State.STOPPED) {
+         return;
+      }
       state = FederationManager.State.STOPPING;
 
       for (FederationUpstream connection : upstreams.values()) {

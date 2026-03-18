@@ -118,7 +118,9 @@ public class MQTTSecurityManagerTest extends MQTTTestSupport {
             assertEquals(clientID, state.getClientId());
          }
       } finally {
-         if (connection != null && connection.isConnected()) connection.disconnect();
+         if (connection != null && connection.isConnected()) {
+            connection.disconnect();
+         }
       }
    }
 
@@ -162,7 +164,9 @@ public class MQTTSecurityManagerTest extends MQTTTestSupport {
             assertEquals(clientID, state.getClientId());
          }
       } finally {
-         if (connection1 != null && connection1.isConnected()) connection1.disconnect();
+         if (connection1 != null && connection1.isConnected()) {
+            connection1.disconnect();
+         }
       }
    }
 
@@ -184,7 +188,9 @@ public class MQTTSecurityManagerTest extends MQTTTestSupport {
             assertEquals(CONNACK.Code.CONNECTION_REFUSED_IDENTIFIER_REJECTED, e.connack.code());
          }
       } finally {
-         if (connection != null && connection.isConnected()) connection.disconnect();
+         if (connection != null && connection.isConnected()) {
+            connection.disconnect();
+         }
       }
    }
 }

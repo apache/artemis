@@ -1109,8 +1109,9 @@ public class WebServerComponentTest extends ArtemisTestCase {
          byte[] buffer = new byte[1024];
          while (true) {
             int count = input.read(buffer);
-            if (count == -1)
+            if (count == -1) {
                break;
+            }
             target.write(buffer, 0, count);
          }
          target.closeEntry();
