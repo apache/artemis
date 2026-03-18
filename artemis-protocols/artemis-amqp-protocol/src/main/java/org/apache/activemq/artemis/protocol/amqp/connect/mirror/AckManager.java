@@ -640,7 +640,7 @@ public class AckManager implements ActiveMQComponent {
       }
 
       @Override
-      public void deleteQueue(SimpleString addressName, SimpleString queueName) throws Exception {
+      public void deleteQueue(SimpleString addressName, SimpleString queueName, QueueConfiguration configuration) throws Exception {
 
       }
 

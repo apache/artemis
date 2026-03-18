@@ -105,9 +105,9 @@ public class AMQPMirrorControllerAggregation implements MirrorController, Active
    }
 
    @Override
-   public void deleteQueue(SimpleString addressName, SimpleString queueName) throws Exception {
+   public void deleteQueue(SimpleString addressName, SimpleString queueName, QueueConfiguration queueConfiguration) throws Exception {
       for (MirrorController partition : partitions) {
-         partition.deleteQueue(addressName, queueName);
+         partition.deleteQueue(addressName, queueName, queueConfiguration);
       }
    }
 

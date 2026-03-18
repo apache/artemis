@@ -949,28 +949,28 @@ public class RoutingContextTest {
    @Test
    public void testValidateInternal() {
       RoutingContext context = new RoutingContextImpl(new TransactionImpl(new NullStorageManager()));
-      assertFalse(context.isInternal());
+      assertFalse(context.isMirrorIgnore());
 
       context.addQueue(SimpleString.of("t1"), new FakeQueueForRoutingContextTest("t1", true, true));
-      assertTrue(context.isInternal());
+      assertTrue(context.isMirrorIgnore());
 
       context.addQueue(SimpleString.of("t2"), new FakeQueueForRoutingContextTest("t2", false, true));
-      assertFalse(context.isInternal());
+      assertFalse(context.isMirrorIgnore());
 
       context.addQueue(SimpleString.of("t3"), new FakeQueueForRoutingContextTest("t3", true, true));
-      assertFalse(context.isInternal());
+      assertFalse(context.isMirrorIgnore());
 
       context.clear();
-      assertFalse(context.isInternal());
+      assertFalse(context.isMirrorIgnore());
 
       context.addQueue(SimpleString.of("t1"), new FakeQueueForRoutingContextTest("t1", true, true));
-      assertTrue(context.isInternal());
+      assertTrue(context.isMirrorIgnore());
 
       context.addQueue(SimpleString.of("t2"), new FakeQueueForRoutingContextTest("t2", true, true));
-      assertTrue(context.isInternal());
+      assertTrue(context.isMirrorIgnore());
 
       context.addQueue(SimpleString.of("t3"), new FakeQueueForRoutingContextTest("t3", true, true));
-      assertTrue(context.isInternal());
+      assertTrue(context.isMirrorIgnore());
    }
 
 }

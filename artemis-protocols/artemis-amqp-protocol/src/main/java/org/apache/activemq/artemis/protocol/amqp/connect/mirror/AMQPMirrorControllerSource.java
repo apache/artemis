@@ -238,10 +238,14 @@ public class AMQPMirrorControllerSource extends BasicMirrorController<Sender> im
       }
       logger.trace("{} deleteAddress {}", server, addressInfo);
 
-      if (invalidTarget(getControllerInUse()) || addressInfo.isInternal()) {
+      if (invalidTarget(getControllerInUse()) || addressInfo.isInternal() || addressInfo.isTemporary()) {
+         if (logger.isTraceEnabled()) {
+            logger.trace("ignoring deleteAddress for invalidTarget = {}, isInternal = {}, isTemporary = {}", invalidTarget(getControllerInUse()), addressInfo.isInternal(), addressInfo.isTemporary());
+         }
          return;
       }
       if (ignoreAddress(addressInfo.getName())) {
+         logger.trace("ignoring deleteAddress {} for ignoreAddress condition", addressInfo.getName());
          return;
       }
       if (deleteQueues) {
@@ -282,7 +286,7 @@ public class AMQPMirrorControllerSource extends BasicMirrorController<Sender> im
    }
 
    @Override
-   public void deleteQueue(SimpleString address, SimpleString queue) throws Exception {
+   public void deleteQueue(SimpleString address, SimpleString queue, QueueConfiguration queueConfiguration) throws Exception {
       if (!brokerConnection.isEnabled()) {
          return;
       }
@@ -296,6 +300,15 @@ public class AMQPMirrorControllerSource extends BasicMirrorController<Sender> im
 
       if (ignoreAddress(address)) {
          return;
+      }
+
+      if (queueConfiguration != null) {
+         if (queueConfiguration.isTemporary() || queueConfiguration.isInternal()) {
+            if (logger.isTraceEnabled()) {
+               logger.trace("deleteQueue {}/{} ignored for isTemporary = {} or isInternal = {}", address, queue, queueConfiguration.isTemporary(), queueConfiguration.isInternal());
+            }
+            return;
+         }
       }
 
       if (deleteQueues) {
@@ -355,8 +368,8 @@ public class AMQPMirrorControllerSource extends BasicMirrorController<Sender> im
       }
       SimpleString address = context.getAddress(message);
 
-      if (context.isInternal()) {
-         logger.trace("sendMessage::server {} is discarding send to avoid sending to internal queue", server);
+      if (context.isMirrorIgnore()) {
+         logger.trace("sendMessage::server {} is discarding send to avoid sending to internal or temporary queue", server);
          return;
       }
 
@@ -587,9 +600,9 @@ public class AMQPMirrorControllerSource extends BasicMirrorController<Sender> im
          return;
       }
 
-      if ((ref.getQueue() != null && (ref.getQueue().isInternalQueue() || ref.getQueue().isMirrorController()))) {
-         if (logger.isDebugEnabled()) {
-            logger.debug("preAcknowledge::{} rejecting preAcknowledge queue={}, ref={} to avoid infinite loop with the mirror (reflection)", server, ref.getQueue().getName(), ref);
+      if ((ref.getQueue() != null && (ref.getQueue().isInternalQueue() || ref.getQueue().isTemporary() || ref.getQueue().isMirrorController()))) {
+         if (logger.isTraceEnabled()) {
+            logger.trace("ignoring preAcknowledge on ref {} for either internalQueue = {}, temporary = {}, isMirrorController = {}", ref, ref.getQueue().isInternalQueue(), ref.getQueue().isTemporary(), ref.getQueue().isMirrorController());
          }
          return;
       }

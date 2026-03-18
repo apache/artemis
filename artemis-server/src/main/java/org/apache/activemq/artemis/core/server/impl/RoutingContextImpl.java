@@ -59,7 +59,7 @@ public class RoutingContextImpl implements RoutingContext {
 
    Boolean reusable = null;
 
-   Boolean internalOnly = null;
+   Boolean mirrorIgnore = null;
 
    boolean divertDisabled = false;
 
@@ -130,9 +130,10 @@ public class RoutingContextImpl implements RoutingContext {
    }
 
    @Override
-   public boolean isInternal() {
-      return internalOnly != null && internalOnly;
+   public boolean isMirrorIgnore() {
+      return mirrorIgnore != null && mirrorIgnore;
    }
+
 
    @Override
    public int getPreviousBindingsVersion() {
@@ -177,7 +178,7 @@ public class RoutingContextImpl implements RoutingContext {
 
       this.reusable = null;
 
-      this.internalOnly = null;
+      this.mirrorIgnore = null;
 
       // once we set to disabled, we keep it always disabled.
       // This is because the routing object used to route commands will disable this
@@ -211,11 +212,11 @@ public class RoutingContextImpl implements RoutingContext {
          listing.getNonDurableQueues().add(queue);
       }
 
-      if (internalOnly == null) {
-         internalOnly = queue.isInternalQueue();
+      if (mirrorIgnore == null) {
+         mirrorIgnore = queue.isInternalQueue() || queue.isTemporary();
       } else {
-         // every queue added has to be internal only
-         internalOnly = internalOnly && queue.isInternalQueue();
+         // making sure that every queue added matches the mirrorIgnore
+         mirrorIgnore = mirrorIgnore && (queue.isInternalQueue() || queue.isTemporary());
       }
 
       queueCount++;

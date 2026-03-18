@@ -181,8 +181,8 @@ public class StopDuringMirrorTest extends ActiveMQTestBase {
       }
 
       @Override
-      public void deleteQueue(SimpleString addressName, SimpleString queueName) throws Exception {
-         target.deleteQueue(addressName, queueName);
+      public void deleteQueue(SimpleString addressName, SimpleString queueName, QueueConfiguration configuration) throws Exception {
+         target.deleteQueue(addressName, queueName, configuration);
       }
 
       @Override

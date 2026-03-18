@@ -2616,7 +2616,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          }
 
          if (mirrorControllerService != null) {
-            mirrorControllerService.deleteQueue(queue.getAddress(), queue.getName());
+            mirrorControllerService.deleteQueue(queue.getAddress(), queue.getName(), queue.getQueueConfiguration());
          }
 
          queue.deleteQueue(removeConsumers);

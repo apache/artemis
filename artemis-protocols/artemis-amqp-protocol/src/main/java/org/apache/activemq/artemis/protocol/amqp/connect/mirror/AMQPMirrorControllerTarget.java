@@ -318,7 +318,7 @@ public class AMQPMirrorControllerTarget extends ProtonAbstractReceiver implement
                   String address = (String) AMQPMessageBrokerAccessor.getMessageAnnotationProperty(amqpMessage, ADDRESS);
                   String queueName = (String) AMQPMessageBrokerAccessor.getMessageAnnotationProperty(amqpMessage, QUEUE);
 
-                  deleteQueue(SimpleString.of(address), SimpleString.of(queueName));
+                  deleteQueue(SimpleString.of(address), SimpleString.of(queueName), null);
                } else if (eventType.equals(POST_ACK)) {
                   String nodeID = (String) AMQPMessageBrokerAccessor.getMessageAnnotationProperty(amqpMessage, BROKER_ID);
 
@@ -440,7 +440,7 @@ public class AMQPMirrorControllerTarget extends ProtonAbstractReceiver implement
    }
 
    @Override
-   public void deleteQueue(SimpleString addressName, SimpleString queueName) throws Exception {
+   public void deleteQueue(SimpleString addressName, SimpleString queueName, QueueConfiguration configuration) throws Exception {
       if (logger.isDebugEnabled()) {
          logger.debug("{} destroy queue {} on address = {} server {}", server, queueName, addressName, server.getIdentity());
       }

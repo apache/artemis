@@ -54,9 +54,9 @@ public interface RoutingContext {
    boolean isMirrorIndividualRoute();
 
    /**
-    * return true if every queue routed is internal
+    * return true if every queue routed is internal or temporary
     */
-   boolean isInternal();
+   boolean isMirrorIgnore();
 
    MirrorController getMirrorSource();
 
