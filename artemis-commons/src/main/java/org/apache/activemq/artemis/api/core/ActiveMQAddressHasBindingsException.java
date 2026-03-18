@@ -14,18 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.activemq.artemis.api.core;
 
-/**
- * An operation failed because an address exists on the server.
- */
-public  class ActiveMQDeleteAddressException extends ActiveMQException {
+public class ActiveMQAddressHasBindingsException extends ActiveMQDeleteAddressException {
 
-   public ActiveMQDeleteAddressException() {
-      super(ActiveMQExceptionType.DELETE_ADDRESS_ERROR);
+   public ActiveMQAddressHasBindingsException() {
+      super();
    }
 
-   public ActiveMQDeleteAddressException(String msg) {
-      super(ActiveMQExceptionType.DELETE_ADDRESS_ERROR, msg);
+   public ActiveMQAddressHasBindingsException(String msg) {
+      super(msg);
    }
 }

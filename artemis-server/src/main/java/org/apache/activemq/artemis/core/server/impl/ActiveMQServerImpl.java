@@ -290,6 +290,8 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
    protected volatile ExecutorFactory executorFactory;
 
+   protected volatile Executor transientQueueExecutor;
+
    private volatile ExecutorService ioExecutorPool;
 
    private ReplayManager replayManager;
@@ -1774,6 +1776,11 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    @Override
    public StorageManager getStorageManager() {
       return storageManager;
+   }
+
+   @Override
+   public Executor getTransientQueueExecutor() {
+      return transientQueueExecutor;
    }
 
    @Override
@@ -3270,6 +3277,8 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          this.threadPoolSupplied = true;
       }
       this.executorFactory = new OrderedExecutorFactory(threadPool);
+
+      this.transientQueueExecutor = executorFactory.getExecutor();
 
       if (serviceRegistry.getIOExecutorService() == null) {
          this.ioExecutorPool = new ActiveMQThreadPoolExecutor(0, maxIoThreads, THREAD_POOL_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS, getThreadFactory("io"));

@@ -21,9 +21,9 @@ import java.util.Set;
 import org.apache.activemq.artemis.api.core.ActiveMQAddressDoesNotExistException;
 import org.apache.activemq.artemis.api.core.ActiveMQAddressExistsException;
 import org.apache.activemq.artemis.api.core.ActiveMQAddressFullException;
+import org.apache.activemq.artemis.api.core.ActiveMQAddressHasBindingsException;
 import org.apache.activemq.artemis.api.core.ActiveMQClusterSecurityException;
 import org.apache.activemq.artemis.api.core.ActiveMQConnectionTimedOutException;
-import org.apache.activemq.artemis.api.core.ActiveMQDeleteAddressException;
 import org.apache.activemq.artemis.api.core.ActiveMQDisconnectedException;
 import org.apache.activemq.artemis.api.core.ActiveMQDivertDoesNotExistException;
 import org.apache.activemq.artemis.api.core.ActiveMQDuplicateMetaDataException;
@@ -375,7 +375,7 @@ public interface ActiveMQMessageBundle {
    ActiveMQAddressExistsException addressAlreadyExists(SimpleString address);
 
    @Message(id = 229205, value = "Address {} has bindings")
-   ActiveMQDeleteAddressException addressHasBindings(SimpleString address);
+   ActiveMQAddressHasBindingsException addressHasBindings(SimpleString address);
 
    @Message(id = 229206, value = "Queue {} has invalid max consumer setting: {}")
    IllegalArgumentException invalidMaxConsumers(String queueName, int value);

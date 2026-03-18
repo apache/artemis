@@ -37,6 +37,7 @@ import org.apache.activemq.artemis.Closeable;
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
 import org.apache.activemq.artemis.api.core.ActiveMQAddressDoesNotExistException;
 import org.apache.activemq.artemis.api.core.ActiveMQAddressExistsException;
+import org.apache.activemq.artemis.api.core.ActiveMQAddressHasBindingsException;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.ActiveMQIOErrorException;
 import org.apache.activemq.artemis.api.core.ActiveMQIllegalStateException;
@@ -814,7 +815,7 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
       // not mean it will get deleted automatically when the session is closed. It is up to the user to delete the
       // resource when finished with it
 
-      TempResourceCleanerUpper cleaner = new TempResourceCleanerUpper(server, name);
+      TempResourceCleanerUpper cleaner = new TempResourceCleanerUpper(server, name, sessionExecutor);
       if (remotingConnection instanceof TempResourceObserver observer) {
          cleaner.setObserver(observer);
       }
@@ -1163,15 +1164,22 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
 
    public static class TempResourceCleanerUpper implements CloseListener, FailureListener {
 
+      private int retry = 0;
+
+      private final int MAX_RETRY = 5;
+
       private final SimpleString resourceName;
 
       private final ActiveMQServer server;
 
       private TempResourceObserver observer;
 
-      public TempResourceCleanerUpper(final ActiveMQServer server, final SimpleString resourceName) {
+      private Executor sessionExecutor;
+
+      public TempResourceCleanerUpper(final ActiveMQServer server, final SimpleString resourceName, Executor sessionExecutor) {
          this.server = server;
          this.resourceName = resourceName;
+         this.sessionExecutor = sessionExecutor;
       }
 
       public void setObserver(TempResourceObserver observer) {
@@ -1179,10 +1187,20 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
       }
 
       private void run() {
+         sessionExecutor.execute(() -> {
+            // this needs to use the same executor as TransientQueueManagerImpl
+            // even though we retry failed executions
+            // we still use the same executor as the TransientQueueManagerImpl to minimize the number of retries
+            server.getTransientQueueExecutor().execute(this::done);
+         });
+      }
+
+      private void done() {
          try {
             logger.debug("deleting temporary resource {}", resourceName);
             try {
                Queue q = server.locateQueue(resourceName);
+               logger.debug("deleting queue {}", resourceName);
                if (q != null && q.isTemporary()) {
                   AddressInfo a = server.getAddressInfo(q.getAddress());
                   server.destroyQueue(resourceName, null, false, false, a == null || a.isTemporary());
@@ -1196,11 +1214,25 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
             }
             try {
                AddressInfo a = server.getAddressInfo(resourceName);
+               logger.debug("deleting address with resource={}, address={}", resourceName, a);
                if (a != null && a.isTemporary()) {
                   server.removeAddressInfo(resourceName, null);
                   if (observer != null) {
                      observer.tempAddressDeleted(resourceName);
                   }
+               }
+            } catch (ActiveMQAddressHasBindingsException e) {
+               // in a scenario where the consumer on a temporary and connection is being closed as part of the same event
+               // we could get on a situation where the remove of the queue is already scheduled in the executors
+               // but have not yet reached.
+               // It is not possible to serialize the calls on  org.apache.activemq.artemis.core.server.impl.TransientQueueManagerImpl
+               // as that could lead to starvations and deadlocks.
+               // for that reason we can only retry in the executor's line
+               if (retry++ < MAX_RETRY) {
+                  logger.debug("retrying deleteResource {}, retry={}", resourceName, retry);
+                  TempResourceCleanerUpper.this.run();
+               } else {
+                  logger.warn(e.getMessage(), e);
                }
             } catch (ActiveMQException e) {
                // that's fine.. it can happen due to resource already been deleted

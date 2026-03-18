@@ -16,6 +16,7 @@
  */
 package org.apache.activemq.artemis.tests.integration.amqp;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -24,6 +25,7 @@ import java.lang.invoke.MethodHandles;
 import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
+import javax.jms.Destination;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
@@ -137,4 +139,69 @@ public class JMSTemporaryDestinationTest extends JMSClientTestSupport {
          connection.close();
       }
    }
+
+   @Test
+   @Timeout(20)
+   public void testTemporaryTopicDeletedOnConnectionClosed() throws Exception {
+      doTestTemporaryDestinationIsDeletedOnConnectionClosed(true, true);
+   }
+
+   @Test
+   @Timeout(20)
+   public void testTemporaryQueueDeletedOnConnectionClosed() throws Exception {
+      doTestTemporaryDestinationIsDeletedOnConnectionClosed(false, true);
+   }
+
+   @Test
+   @Timeout(20)
+   public void testTemporaryTopicDeletedOnConnectionClosedWithoutExplicitConsumerClose() throws Exception {
+      doTestTemporaryDestinationIsDeletedOnConnectionClosed(true, false);
+   }
+
+   @Test
+   @Timeout(20)
+   public void testTemporaryQueueDeletedOnConnectionClosedWithoutExplicitConsumerClose() throws Exception {
+      doTestTemporaryDestinationIsDeletedOnConnectionClosed(false, false);
+   }
+
+   private void doTestTemporaryDestinationIsDeletedOnConnectionClosed(boolean topic, boolean closeConsumer) throws Exception {
+      final String addressName;
+      try (Connection connection = createConnection()) {
+         final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+         final Destination destination;
+
+         if (topic) {
+            destination = session.createTemporaryTopic();
+
+            assertNotNull(destination);
+            assertTrue(destination instanceof TemporaryTopic);
+
+            addressName = ((TemporaryTopic) destination).getTopicName();
+         } else {
+            destination = session.createTemporaryQueue();
+
+            assertNotNull(destination);
+            assertTrue(destination instanceof TemporaryQueue);
+
+            addressName = ((TemporaryQueue) destination).getQueueName();
+         }
+
+         logger.debug("Address being used is {}", addressName);
+
+         final MessageConsumer consumer = session.createConsumer(destination);
+
+         final AddressInfo addressView = getProxyToAddress(addressName);
+         assertNotNull(addressView);
+
+         assertEquals(1, server.bindingQuery(addressView.getName()).getQueueNames().size());
+
+         if (closeConsumer) {
+            consumer.close();
+         }
+
+      }
+      Wait.assertNull(() -> getProxyToAddress(addressName), TimeUnit.SECONDS.toMillis(5), TimeUnit.MILLISECONDS.toMillis(50));
+   }
+
+
 }

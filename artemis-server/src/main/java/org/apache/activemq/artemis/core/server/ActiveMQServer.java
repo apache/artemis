@@ -162,6 +162,11 @@ public interface ActiveMQServer extends ServiceComponent {
 
    StorageManager getStorageManager();
 
+   /**
+    * The executor responsible to remove temporary destinations.
+    * */
+   Executor getTransientQueueExecutor();
+
    PagingManager getPagingManager();
 
    PagingManager createPagingManager() throws Exception;
