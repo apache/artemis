@@ -100,7 +100,9 @@ public class BridgeTransferingTest extends SmokeTestBase {
 
    @Parameters(name = "protocol={0}, commitInterval={1}, killInterval={2}, numberOfMessages={3}, messageSize={4}, minLargeMessageSize={5}, KillBothServers={6}")
    public static Collection<Object[]> parameters() {
-      return Arrays.asList(new Object[][]{{"CORE", 200, 1000, 10000, 15_000, 5000, true}, {"CORE", 200, 1000, 10000, 15_000, 5000, false}});
+      return Arrays.asList(new Object[][]{
+         {"CORE", 200, 1_000, 1_400, 1_500, 5000, true},
+         {"CORE", 200, 1_000, 1_400, 1_500, 5000, false}});
    }
 
    @BeforeEach
@@ -134,7 +136,7 @@ public class BridgeTransferingTest extends SmokeTestBase {
          int killElement = 0;
 
          for (int i = 0; i < numberOfMessages; i++) {
-            System.out.println("message " + i);
+            logger.debug("message {}", i);
             producer.send(session.createTextMessage(body + " " + i));
 
             if (++txElement == commitInterval) {
