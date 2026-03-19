@@ -297,22 +297,42 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
    }
 
    @Override
-   public void check(final SimpleString address,
-                     final SimpleString queue,
-                     final CheckType checkType,
-                     final SecurityAuth session) throws Exception {
-      if (securityEnabled) {
+   public boolean hasPermission(final SimpleString address,
+                                final SimpleString queue,
+                                final CheckType checkType,
+                                final SecurityAuth session) throws Exception {
+      if (!securityEnabled) {
+         return true;
+      }
+
+      // bypass permission checks for management cluster user
+      String user = session.getUsername();
+      if (managementClusterUser.equals(user) && session.getPassword().equals(managementClusterPassword)) {
+         return true;
+      }
+
+      // Special case: detect authentication failure for ActiveMQSecurityManager5
+      // This must throw an authentication exception, not an authorization exception
+      Subject subjectForManager5 = null;
+      if (securityManager instanceof ActiveMQSecurityManager5 manager5) {
+         subjectForManager5 = getSubjectForAuthorization(session, manager5);
+         /*
+          * A user may authenticate successfully at first, but then later when their Subject is evicted from the
+          * local cache re-authentication may fail. This could happen, for example, if the user was removed from LDAP
+          * or the user's token expired.
+          *
+          * If the subject is null then authorization will *always* fail.
+          */
+         if (subjectForManager5 == null) {
+            authenticationFailed(session.getUsername(), session.getRemotingConnection());
+         }
+      }
+      try {
          SimpleString bareAddress = CompositeAddress.extractAddressName(address);
          SimpleString bareQueue = CompositeAddress.extractQueueName(queue);
 
          logger.trace("checking access permissions to {}", bareAddress);
 
-         // bypass permission checks for management cluster user
-         String user = session.getUsername();
-         if (managementClusterUser.equals(user) && session.getPassword().equals(managementClusterPassword)) {
-            AUTHORIZATION_SUCCESS_COUNT_UPDATER.incrementAndGet(this);
-            return;
-         }
 
          Set<Role> roles = securityRepository.getMatch(bareAddress.toString());
 
@@ -325,27 +345,14 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
             }
          }
 
-         if (checkAuthorizationCache(fqqn != null  ? fqqn : bareAddress, user, checkType)) {
-            AUTHORIZATION_SUCCESS_COUNT_UPDATER.incrementAndGet(this);
-            return;
+         if (checkAuthorizationCache(fqqn != null ? fqqn : bareAddress, user, checkType)) {
+            return true;
          }
 
          final Boolean validated;
          if (securityManager instanceof ActiveMQSecurityManager5 manager5) {
-            Subject subject = getSubjectForAuthorization(session, manager5);
-
-            /*
-             * A user may authenticate successfully at first, but then later when their Subject is evicted from the
-             * local cache re-authentication may fail. This could happen, for example, if the user was removed from LDAP
-             * or the user's token expired.
-             *
-             * If the subject is null then authorization will *always* fail.
-             */
-            if (subject == null) {
-               authenticationFailed(user, session.getRemotingConnection());
-            }
-
-            validated = manager5.authorize(subject, roles, checkType, fqqn != null ? fqqn.toString() : bareAddress.toString());
+            // Reuse subject from earlier authentication check
+            validated = manager5.authorize(subjectForManager5, roles, checkType, fqqn != null ? fqqn.toString() : bareAddress.toString());
          } else if (securityManager instanceof ActiveMQSecurityManager4 manager4) {
             validated = manager4.validateUserAndRole(user, session.getPassword(), roles, checkType, bareAddress.toString(), session.getRemotingConnection(), session.getSecurityDomain()) != null;
          } else if (securityManager instanceof ActiveMQSecurityManager3 manager3) {
@@ -356,52 +363,67 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
             validated = securityManager.validateUserAndRole(user, session.getPassword(), roles, checkType);
          }
 
-         if (!validated) {
-            if (notificationService != null) {
-               TypedProperties props = new TypedProperties();
-
-               props.putSimpleStringProperty(ManagementHelper.HDR_ADDRESS, bareAddress);
-               props.putSimpleStringProperty(ManagementHelper.HDR_CHECK_TYPE, SimpleString.of(checkType.toString()));
-               props.putSimpleStringProperty(ManagementHelper.HDR_USER, SimpleString.of(getCaller(user, session.getRemotingConnection().getSubject())));
-
-               Notification notification = new Notification(null, CoreNotificationType.SECURITY_PERMISSION_VIOLATION, props);
-
-               notificationService.sendNotification(notification);
-            }
-
-            Exception ex;
-            if (bareQueue == null) {
-               ex = ActiveMQMessageBundle.BUNDLE.userNoPermissions(getCaller(user, session.getRemotingConnection().getSubject()), checkType, bareAddress);
+         if (validated && user != null) {
+            // if we get here we're granted, add to the cache
+            ConcurrentHashSet<SimpleString> set;
+            String key = createAuthorizationCacheKey(user, checkType);
+            ConcurrentHashSet<SimpleString> act = getAuthorizationCacheEntry(key);
+            if (act != null) {
+               set = act;
             } else {
-               ex = ActiveMQMessageBundle.BUNDLE.userNoPermissionsQueue(getCaller(user, session.getRemotingConnection().getSubject()), checkType, bareQueue, bareAddress);
+               set = new ConcurrentHashSet<>();
+               putAuthorizationCacheEntry(set, key);
             }
-            AuditLogger.securityFailure(session.getRemotingConnection().getSubject(), session.getRemotingConnection().getRemoteAddress(), ex.getMessage(), ex);
-            AUTHORIZATION_FAILURE_COUNT_UPDATER.incrementAndGet(this);
-            throw ex;
+            set.add(Objects.requireNonNullElse(fqqn, bareAddress));
          }
 
-         // if we get here we're granted, add to the cache
-
-         AUTHORIZATION_SUCCESS_COUNT_UPDATER.incrementAndGet(this);
-
-         if (user == null) {
-            // should get all user/pass into a subject and only cache subjects
-            // till then when subject is in play, the user may be null and
-            // we cannot cache as we don't have a unique key
-            return;
-         }
-
-         ConcurrentHashSet<SimpleString> set;
-         String key = createAuthorizationCacheKey(user, checkType);
-         ConcurrentHashSet<SimpleString> act = getAuthorizationCacheEntry(key);
-         if (act != null) {
-            set = act;
-         } else {
-            set = new ConcurrentHashSet<>();
-            putAuthorizationCacheEntry(set, key);
-         }
-         set.add(Objects.requireNonNullElse(fqqn, bareAddress));
+         return validated;
+      } catch (Exception e) {
+         logger.debug("Permission check failed", e);
+         return false;
       }
+   }
+
+   @Override
+   public void check(final SimpleString address,
+                     final SimpleString queue,
+                     final CheckType checkType,
+                     final SecurityAuth session) throws Exception {
+      if (!securityEnabled) {
+         return;
+      }
+
+      if (hasPermission(address, queue, checkType, session)) {
+         AUTHORIZATION_SUCCESS_COUNT_UPDATER.incrementAndGet(this);
+         return;
+      }
+
+      // Permission denied - handle side effects
+      SimpleString bareAddress = CompositeAddress.extractAddressName(address);
+      SimpleString bareQueue = CompositeAddress.extractQueueName(queue);
+      String user = session.getUsername();
+
+      if (notificationService != null) {
+         TypedProperties props = new TypedProperties();
+
+         props.putSimpleStringProperty(ManagementHelper.HDR_ADDRESS, bareAddress);
+         props.putSimpleStringProperty(ManagementHelper.HDR_CHECK_TYPE, SimpleString.of(checkType.toString()));
+         props.putSimpleStringProperty(ManagementHelper.HDR_USER, SimpleString.of(getCaller(user, session.getRemotingConnection().getSubject())));
+
+         Notification notification = new Notification(null, CoreNotificationType.SECURITY_PERMISSION_VIOLATION, props);
+
+         notificationService.sendNotification(notification);
+      }
+
+      Exception ex;
+      if (bareQueue == null) {
+         ex = ActiveMQMessageBundle.BUNDLE.userNoPermissions(getCaller(user, session.getRemotingConnection().getSubject()), checkType, bareAddress);
+      } else {
+         ex = ActiveMQMessageBundle.BUNDLE.userNoPermissionsQueue(getCaller(user, session.getRemotingConnection().getSubject()), checkType, bareQueue, bareAddress);
+      }
+      AuditLogger.securityFailure(session.getRemotingConnection().getSubject(), session.getRemotingConnection().getRemoteAddress(), ex.getMessage(), ex);
+      AUTHORIZATION_FAILURE_COUNT_UPDATER.incrementAndGet(this);
+      throw ex;
    }
 
    @Override

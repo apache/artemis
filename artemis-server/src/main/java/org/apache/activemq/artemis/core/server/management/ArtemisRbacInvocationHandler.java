@@ -329,22 +329,26 @@ public class ArtemisRbacInvocationHandler implements GuardInvocationHandler {
    }
 
    private boolean viewPermissionCheckFails(Object candidate) {
-      boolean failed = false;
       ObjectName objectName = candidate instanceof ObjectInstance oi ? oi.getObjectName() : (ObjectName) candidate;
-      if (!isUncheckedDomain(objectName)) {
-         try {
-            final SimpleString rbacAddress = addressFrom(objectName);
-            securityStoreCheck(rbacAddress, CheckType.VIEW);
-         } catch (Exception checkFailed) {
-            failed = true;
-         }
+      if (isUncheckedDomain(objectName)) {
+         return false;
       }
-      return failed;
+      final SimpleString rbacAddress = addressFrom(objectName);
+      return !hasPermission(rbacAddress, CheckType.VIEW);
    }
 
    private void securityStoreCheck(SimpleString rbacAddress, CheckType checkType) throws Exception {
       // use accessor as security store can be updated on config reload
       activeMQServer.getSecurityStore().check(rbacAddress, checkType, delegateToAccessController);
+   }
+
+   private boolean hasPermission(SimpleString rbacAddress, CheckType checkType) {
+      // use accessor as security store can be updated on config reload
+      try {
+         return activeMQServer.getSecurityStore().hasPermission(rbacAddress, null, checkType, delegateToAccessController);
+      } catch (Exception notAuthenticated) {
+         return false;
+      }
    }
 
    // sufficiently empty to delegate to use of AccessController

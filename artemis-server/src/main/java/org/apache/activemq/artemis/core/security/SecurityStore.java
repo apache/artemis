@@ -30,6 +30,8 @@ public interface SecurityStore {
 
    void check(SimpleString address, SimpleString queue, CheckType checkType, SecurityAuth session) throws Exception;
 
+   boolean hasPermission(SimpleString address, SimpleString queue, CheckType checkType, SecurityAuth session) throws Exception;
+
    boolean isSecurityEnabled();
 
    void setSecurityEnabled(boolean securityEnabled);
