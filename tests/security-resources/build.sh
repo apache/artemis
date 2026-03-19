@@ -179,6 +179,9 @@ keytool -storetype pkcs12 -keystore client-ca-keystore.p12 -storepass $STORE_PAS
 ## Combined ca-certs pem to verify loading of multiple certs
 cat client-ca-cert.pem server-ca-cert.pem > client-and-server-ca-certs.pem
 
+## a cert for the ExternalCertificateLoginModule
+keytool -storetype pkcs12 -keystore san-keystore.p12 -storepass $STORE_PASS -keypass $KEY_PASS -alias san-roles -genkey -keyalg "RSA" -keysize 2048 -dname "CN=ok" -validity $VALIDITY -ext "SAN=uri:urn:jaas:role:admin,uri:urn:jaas:role:view"
+
 # Clean up working files
 # -----------------------
 rm -f *.crt *.csr openssl-*

@@ -1125,6 +1125,12 @@ This Principal can then be used for <<role-mapping,role mapping>>.
 
 The external certificate login module is used to propagate a validated TLS client certificate's subjectDN into a JAAS UserPrincipal.
 This allows subsequent login modules to do role mapping for the TLS client certificate.
+It is possible to populate RolePrincipals with values from the certificate Subject Alternative Name(SAN) URIs that match a configured prefix.
+
+sanUriRolePrefix::
+when non-null, this value is used as a prefix to extract role information from a certificate SAN URIs.
+If keytool was used with -ext "SAN=uri:urn:jaas:role:admin,uri:urn:jaas:role:view" to populate the certificate SAN.
+Then a sanUriRolePrefix value of `urn:jaas:role:` would extract them into subject RolePrincipals
 
 ----
 org.apache.activemq.artemis.spi.core.security.jaas.ExternalCertificateLoginModule required
