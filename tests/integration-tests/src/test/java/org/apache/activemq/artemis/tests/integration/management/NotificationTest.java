@@ -184,6 +184,7 @@ public class NotificationTest extends ActiveMQTestBase {
       assertEquals(SimpleString.of("invm:0"), notifications[0].getSimpleStringProperty(ManagementHelper.HDR_REMOTE_ADDRESS));
       assertEquals(consumerName, notifications[0].getSimpleStringProperty(ManagementHelper.HDR_SESSION_NAME));
       assertEquals(SimpleString.of("unavailable"), notifications[0].getSimpleStringProperty(ManagementHelper.HDR_CERT_SUBJECT_DN));
+      assertEquals(SimpleString.of("unavailable"), notifications[0].getSimpleStringProperty(ManagementHelper.HDR_CERT_UPN));
       assertTrue(notifications[0].getTimestamp() >= start);
       assertTrue((long) notifications[0].getObjectProperty(ManagementHelper.HDR_NOTIFICATION_TIMESTAMP) >= start);
       assertEquals(notifications[0].getTimestamp(), (long) notifications[0].getObjectProperty(ManagementHelper.HDR_NOTIFICATION_TIMESTAMP));

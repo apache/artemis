@@ -22,16 +22,16 @@ import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
-import java.security.cert.X509Certificate;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.security.Principal;
+import java.security.cert.X509Certificate;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.lang.invoke.MethodHandles;
 
 /**
  * A LoginModule that allows for authentication based on SSL certificates. Allows for subclasses to define methods used
@@ -81,7 +81,7 @@ public abstract class CertificateLoginModule extends PropertiesLoader implements
 
       username = getUserNameForCertificates(certificates);
       if (username == null) {
-         throw new FailedLoginException("No user for client certificate: " + getDistinguishedName(certificates));
+         throw new FailedLoginException("Failed to lookup user with client certificate using: " + getCertificateInfo(certificates));
       }
 
       if (debug) {
@@ -151,7 +151,6 @@ public abstract class CertificateLoginModule extends PropertiesLoader implements
     * Should return a unique name corresponding to the certificates given. The name returned will be used to look up
     * access levels as well as role associations.
     *
-    * @param certs The distinguished name.
     * @return The unique name if the certificate is recognized, null otherwise
     */
    protected abstract String getUserNameForCertificates(X509Certificate[] certs) throws LoginException;
@@ -160,18 +159,17 @@ public abstract class CertificateLoginModule extends PropertiesLoader implements
     * Should return a set of the roles this user belongs to. The roles returned will be added to the user's
     * credentials.
     *
-    * @param username The username of the client. This is the same name that getUserNameForDn returned for the user's
-    *                 DN.
+    * @param username The username of the client. This is the same name that
+    *                 {@link #getUserNameForCertificates(X509Certificate[])} returned.
     * @return A Set of the names of the roles this user belongs to
     */
    protected abstract Set<String> getUserRoles(String username) throws LoginException;
 
-   protected String getDistinguishedName(final X509Certificate[] certs) {
-      if (certs != null && certs.length > 0 && certs[0] != null) {
-         return certs[0].getSubjectDN().getName();
-      } else {
-         return null;
-      }
-   }
-
+   /**
+    * Should return the information from the certs that is used to authenticate the user
+    *
+    * @param certificates The certificates of the client. This is the same data that
+    *                 {@link #getUserNameForCertificates(X509Certificate[])} returned.
+    */
+   protected abstract String getCertificateInfo(X509Certificate[] certificates);
 }

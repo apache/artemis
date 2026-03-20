@@ -19,6 +19,7 @@ package org.apache.activemq.artemis.core.config;
 import java.io.File;
 import java.net.URL;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -43,6 +44,7 @@ import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerMessagePlugi
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerQueuePlugin;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerResourcePlugin;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerSessionPlugin;
+import org.apache.activemq.artemis.core.settings.impl.AuthenticationCacheKeyConfig;
 import org.apache.activemq.artemis.utils.critical.CriticalAnalyzerPolicy;
 import org.apache.activemq.artemis.api.core.BroadcastGroupConfiguration;
 import org.apache.activemq.artemis.api.core.DiscoveryGroupConfiguration;
@@ -1565,4 +1567,8 @@ public interface Configuration {
    void setFederationDownstreamAuthorization(List<String> roles);
 
    Configuration addFederationDownstreamAuthorization(String role);
+
+   Configuration setAuthenticationCacheKey(EnumSet<AuthenticationCacheKeyConfig> authenticationCacheKey);
+
+   EnumSet<AuthenticationCacheKeyConfig> getAuthenticationCacheKey();
 }

@@ -154,6 +154,36 @@ keytool -storetype pkcs12 -keystore unknown-client-keystore.p12 -storepass $STOR
 keytool -importkeystore -srckeystore unknown-client-keystore.p12 -destkeystore unknown-client-keystore.jceks -srcstoretype pkcs12 -deststoretype jceks -srcstorepass securepass -deststorepass securepass
 keytool -importkeystore -srckeystore unknown-client-keystore.p12 -destkeystore unknown-client-keystore.jks -srcstoretype pkcs12 -deststoretype jks -srcstorepass securepass -deststorepass securepass
 
+# Create a key pair for a client using UPN for authentication, and sign it with the CA.
+# Use OpenSSL to create the cert since keytool has trouble with setting the UPN.
+# ----------------------------------------------------------
+openssl req -new -x509 -newkey rsa:2048 -nodes -keyout upn-client-keystore.key -out upn-client-keystore.crt -days $VALIDITY -subj "/C=AA/ST=AMQ/L=AMQ/O=ActiveMQ/OU=Artemis/CN=ActiveMQ Artemis UPN Client"
+openssl pkcs12 -export -in upn-client-keystore.crt -inkey upn-client-keystore.key -out upn-client-keystore.p12 -name "upn-client" -passout pass:$STORE_PASS
+
+keytool -storetype pkcs12 -keystore upn-client-keystore.p12 -storepass $STORE_PASS -alias upn-client -certreq -file upn-client.csr
+openssl x509 -req -in upn-client.csr -CA client-ca.crt -CAkey client-ca.pem -CAcreateserial -out upn-client.crt -days $VALIDITY -sha256 -extfile <(printf "basicConstraints=CA:FALSE\nextendedKeyUsage=clientAuth\nsubjectAltName=otherName:1.3.6.1.4.1.311.20.2.3;UTF8:user@domain.com,DNS:upn-client.artemis.activemq,DNS:localhost,IP:127.0.0.1")
+
+keytool -storetype pkcs12 -keystore upn-client-keystore.p12 -storepass $STORE_PASS -keypass $KEY_PASS -importcert -alias client-ca -file client-ca.crt -noprompt
+keytool -storetype pkcs12 -keystore upn-client-keystore.p12 -storepass $STORE_PASS -keypass $KEY_PASS -importcert -alias upn-client -file upn-client.crt
+
+keytool -importkeystore -srckeystore upn-client-keystore.p12 -destkeystore upn-client-keystore.jceks -srcstoretype pkcs12 -deststoretype jceks -srcstorepass $STORE_PASS -deststorepass $STORE_PASS
+keytool -importkeystore -srckeystore upn-client-keystore.p12 -destkeystore upn-client-keystore.jks -srcstoretype pkcs12 -deststoretype jks -srcstorepass $STORE_PASS -deststorepass $STORE_PASS
+
+# Create a key pair for an unknown client using UPN for authentication, and sign it with the CA.
+# Use OpenSSL to create the cert since keytool has trouble with setting the UPN.
+# ----------------------------------------------------------
+openssl req -new -x509 -newkey rsa:2048 -nodes -keyout unknown-upn-client-keystore.key -out unknown-upn-client-keystore.crt -days $VALIDITY -subj "/C=AA/ST=AMQ/L=AMQ/O=ActiveMQ/OU=Artemis/CN=ActiveMQ Artemis Unknown UPN Client"
+openssl pkcs12 -export -in unknown-upn-client-keystore.crt -inkey unknown-upn-client-keystore.key -out unknown-upn-client-keystore.p12 -name "unknown-upn-client" -passout pass:$STORE_PASS
+
+keytool -storetype pkcs12 -keystore unknown-upn-client-keystore.p12 -storepass $STORE_PASS -alias unknown-upn-client -certreq -file unknown-upn-client.csr
+openssl x509 -req -in unknown-upn-client.csr -CA client-ca.crt -CAkey client-ca.pem -CAcreateserial -out unknown-upn-client.crt -days $VALIDITY -sha256 -extfile <(printf "basicConstraints=CA:FALSE\nextendedKeyUsage=clientAuth\nsubjectAltName=otherName:1.3.6.1.4.1.311.20.2.3;UTF8:unknown@domain.com,DNS:unknown-upn-client.artemis.activemq,DNS:localhost,IP:127.0.0.1")
+
+keytool -storetype pkcs12 -keystore unknown-upn-client-keystore.p12 -storepass $STORE_PASS -keypass $KEY_PASS -importcert -alias client-ca -file client-ca.crt -noprompt
+keytool -storetype pkcs12 -keystore unknown-upn-client-keystore.p12 -storepass $STORE_PASS -keypass $KEY_PASS -importcert -alias unknown-upn-client -file unknown-upn-client.crt
+
+keytool -importkeystore -srckeystore unknown-upn-client-keystore.p12 -destkeystore unknown-upn-client-keystore.jceks -srcstoretype pkcs12 -deststoretype jceks -srcstorepass $STORE_PASS -deststorepass $STORE_PASS
+keytool -importkeystore -srckeystore unknown-upn-client-keystore.p12 -destkeystore unknown-upn-client-keystore.jks -srcstoretype pkcs12 -deststoretype jks -srcstorepass $STORE_PASS -deststorepass $STORE_PASS
+
 # PEM versions
 ## separate private and public cred pem files combined for the keystore via prop
 openssl pkcs12 -in server-keystore.p12 -out server-cert.pem -clcerts -nokeys -password pass:$STORE_PASS
@@ -192,4 +222,4 @@ keytool -keypasswd -keystore server-keystore-keypass.jceks -storepass $STORE_PAS
 
 # Clean up working files
 # -----------------------
-rm -f *.crt *.csr openssl-*
+rm -f *.crt *.csr openssl-* *.key *.srl
