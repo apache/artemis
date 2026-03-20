@@ -49,6 +49,7 @@ import org.apache.activemq.artemis.core.paging.cursor.PagedReference;
 import org.apache.activemq.artemis.core.paging.cursor.PagedReferenceImpl;
 import org.apache.activemq.artemis.core.paging.cursor.impl.PageCursorProviderImpl;
 import org.apache.activemq.artemis.core.paging.cursor.impl.PageCursorProviderTestAccessor;
+import org.apache.activemq.artemis.core.paging.impl.FilePage;
 import org.apache.activemq.artemis.core.paging.impl.Page;
 import org.apache.activemq.artemis.core.paging.impl.PageReadWriter;
 import org.apache.activemq.artemis.core.paging.impl.PageTransactionInfoImpl;
@@ -820,15 +821,16 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
          writePageMessage(storeImpl, i);
       }
       // simulate uncompleted page
-      long position = page.getFile().position();
+      FilePage filePage = (FilePage) page;
+      long position = filePage.getFile().position();
       writePageMessage(storeImpl, 30);
-      page.getFile().position(position);
+      filePage.getFile().position(position);
       ByteBuffer buffer = ByteBuffer.allocate(10);
       for (int i = 0; i < buffer.capacity(); i++) {
          buffer.put((byte) 'Z');
       }
       buffer.rewind();
-      page.getFile().writeDirect(buffer, true);
+      filePage.getFile().writeDirect(buffer, true);
       storeImpl.stop();
 
       // write uncompleted page

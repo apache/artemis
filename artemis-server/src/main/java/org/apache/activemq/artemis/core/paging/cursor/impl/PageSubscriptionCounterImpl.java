@@ -244,13 +244,13 @@ public class PageSubscriptionCounterImpl extends BasePagingCounter {
                if (logger.isTraceEnabled()) {
                   logger.trace("Deleting page counter with recordID={}, using TX={}", this.recordID, tx.getID());
                }
-               storage.deletePageCounter(tx.getID(), this.recordID);
+               storage.deletePageCounter(tx, this.recordID);
                tx.setContainsPersistent();
             }
 
             if (keepZero) {
                tx.setContainsPersistent();
-               recordID = storage.storePageCounter(tx.getID(), subscriptionID, 0L, 0L);
+               recordID = storage.storePageCounter(tx, subscriptionID, 0L, 0L);
             } else {
                recordID = -1;
             }
@@ -274,16 +274,16 @@ public class PageSubscriptionCounterImpl extends BasePagingCounter {
    public void processReload() {
       if (loadList != null) {
          try {
-            long tx = -1L;
+            Transaction tx = null;
             logger.debug("Removing increment records on cursor {}", subscriptionID);
             for (PendingCounter incElement : loadList) {
-               if (tx < 0) {
-                  tx = storage.generateID();
+               if (tx == null) {
+                  tx = new TransactionImpl(storage);
                }
                storage.deletePageCounter(tx, incElement.id);
             }
-            if (tx >= 0) {
-               storage.commit(tx);
+            if (tx != null) {
+               storage.asyncCommit(tx);
             }
          } catch (Exception e) {
             logger.warn(e.getMessage(), e);
@@ -315,20 +315,20 @@ public class PageSubscriptionCounterImpl extends BasePagingCounter {
 
       long newRecordID = -1;
 
-      long txCleanup = -1;
+      Transaction txCleanup = null;
 
       try {
          if (recordID >= 0) {
-            if (txCleanup < 0) {
-               txCleanup = storage.generateID();
+            if (txCleanup == null) {
+               txCleanup = new TransactionImpl(storage);
             }
             storage.deletePageCounter(txCleanup, recordID);
             recordID = -1;
          }
 
          if (valueReplace > 0) {
-            if (txCleanup < 0) {
-               txCleanup = storage.generateID();
+            if (txCleanup == null) {
+               txCleanup = new TransactionImpl(storage);
             }
             newRecordID = storage.storePageCounter(txCleanup, subscriptionID, valueReplace, sizeReplace);
          }
@@ -338,14 +338,14 @@ public class PageSubscriptionCounterImpl extends BasePagingCounter {
                          recordID, newRecordID, subscriptionID, subscription.getQueue().getName(), valueReplace, sizeReplace);
          }
 
-         if (txCleanup >= 0) {
-            storage.commit(txCleanup);
+         if (txCleanup != null) {
+            storage.asyncCommit(txCleanup);
          }
       } catch (Exception e) {
          newRecordID = recordID;
 
          ActiveMQServerLogger.LOGGER.problemCleaningPagesubscriptionCounter(e);
-         if (txCleanup >= 0) {
+         if (txCleanup != null) {
             try {
                storage.rollback(txCleanup);
             } catch (Exception ignored) {

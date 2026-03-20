@@ -39,6 +39,10 @@ public interface MessageReference {
       }
    }
 
+   default long getQueueID() {
+      return getQueue().getID();
+   }
+
    default boolean skipDelivery() {
       return false;
    }

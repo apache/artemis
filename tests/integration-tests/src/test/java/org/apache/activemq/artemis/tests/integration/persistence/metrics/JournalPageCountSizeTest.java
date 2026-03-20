@@ -31,6 +31,7 @@ import org.apache.activemq.artemis.core.persistence.impl.journal.JournalStorageM
 import org.apache.activemq.artemis.core.persistence.impl.journal.codec.PageCountRecord;
 import org.apache.activemq.artemis.core.persistence.impl.journal.codec.PageCountRecordInc;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
+import org.apache.activemq.artemis.core.transaction.impl.TransactionImpl;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,7 +61,7 @@ public class JournalPageCountSizeTest extends ActiveMQTestBase {
    @Test
    public void testPageCountRecordSize() throws Exception {
 
-      long tx = server.getStorageManager().generateID();
+      TransactionImpl tx = new TransactionImpl(server.getStorageManager());
       server.getStorageManager().storePageCounter(tx, 1, 1, 100);
       server.getStorageManager().commit(tx);
       server.getStorageManager().stop();
@@ -112,7 +113,7 @@ public class JournalPageCountSizeTest extends ActiveMQTestBase {
    @Test
    public void testPageCursorCounterRecordSizeTX() throws Exception {
 
-      long tx = server.getStorageManager().generateID();
+      TransactionImpl tx = new TransactionImpl(server.getStorageManager());
       server.getStorageManager().storePageCounterInc(tx, 1, 1, 1000);
       server.getStorageManager().commit(tx);
       server.getStorageManager().stop();

@@ -1,4 +1,4 @@
-<!--
+<!--;
   Licensed to the Apache Software Foundation (ASF) under one or more
   contributor license agreements.  See the NOTICE file distributed with
   this work for additional information regarding copyright ownership.
@@ -188,6 +188,18 @@
          <scope>test</scope>
       </dependency>
 
+      <dependency>
+         <groupId>org.mockito</groupId>
+         <artifactId>mockito-core</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-ra</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+      </dependency>
 
    </dependencies>
 
@@ -257,6 +269,44 @@
                         <arg>org.hsqldb:hsqldb:${hsqldb.version}</arg>
                      </libList>
                      <targetFolder>${basedir}/target/hsql/jdbc-jars</targetFolder>
+                  </configuration>
+               </execution>
+
+               <execution>
+                  <phase>test-compile</phase>
+                  <id>create-new-hsql</id>
+                  <goals>
+                     <goal>create</goal>
+                  </goals>
+                  <configuration>
+                     <!-- this makes it easier in certain envs -->
+                     <javaOptions>-Djava.net.preferIPv4Stack=true</javaOptions>
+                     <instance>${basedir}/target/new-hsql</instance>
+                     <configuration>${basedir}/target/classes/servers/hsql</configuration>
+                     <noWeb>true</noWeb>
+                     <args>
+                        <arg>--jdbc</arg>
+                        <arg>--global-max-messages</arg>
+                        <arg>100</arg>
+                        <arg>--java-options</arg>
+                        <arg>-Dartemis.extra.libs=${basedir}/target/new-hsql/jdbc-jars</arg>
+                        <arg>--java-options</arg>
+                        <arg>-ea</arg>
+                        <arg>--database-storage</arg>
+                     </args>
+                  </configuration>
+               </execution>
+               <execution>
+                  <phase>test-compile</phase>
+                  <id>create-new-hsql-jdbc</id>
+                  <goals>
+                     <goal>dependency-scan</goal>
+                  </goals>
+                  <configuration>
+                     <libList>
+                        <arg>org.hsqldb:hsqldb:${hsqldb.version}</arg>
+                     </libList>
+                     <targetFolder>${basedir}/target/new-hsql/jdbc-jars</targetFolder>
                   </configuration>
                </execution>
 
@@ -397,6 +447,151 @@
                         <arg>100</arg>
                         <arg>--java-options</arg>
                         <arg>-ea</arg>
+                     </args>
+                  </configuration>
+               </execution>
+               <execution>
+                  <phase>test-compile</phase>
+                  <id>create-new-mysql</id>
+                  <goals>
+                     <goal>create</goal>
+                  </goals>
+                  <configuration>
+                     <!-- this makes it easier in certain envs -->
+                     <javaOptions>-Djava.net.preferIPv4Stack=true</javaOptions>
+                     <instance>${basedir}/target/new-mysql</instance>
+                     <configuration>${basedir}/target/classes/servers/mysql</configuration>
+                     <noWeb>true</noWeb>
+                     <libListWithDeps>
+                        <arg>com.mysql:mysql-connector-j:8.0.33</arg>
+                     </libListWithDeps>
+                     <args>
+                        <arg>--jdbc</arg>
+                        <arg>--jdbc-connection-url</arg>
+                        <arg>${mysql.uri}</arg>
+                        <arg>--jdbc-driver-class-name</arg>
+                        <arg>${mysql.class}</arg>
+                        <arg>--global-max-messages</arg>
+                        <arg>1000000</arg>
+                        <arg>--java-options</arg>
+                        <arg>-ea</arg>
+                        <arg>--database-storage</arg>
+                     </args>
+                  </configuration>
+               </execution>
+               <execution>
+                  <phase>test-compile</phase>
+                  <id>create-new-postgres</id>
+                  <goals>
+                     <goal>create</goal>
+                  </goals>
+                  <configuration>
+                     <!-- this makes it easier in certain envs -->
+                     <javaOptions>-Djava.net.preferIPv4Stack=true</javaOptions>
+                     <instance>${basedir}/target/new-postgres</instance>
+                     <configuration>${basedir}/target/classes/servers/postgres</configuration>
+                     <noWeb>false</noWeb>
+                     <libListWithDeps>
+                        <arg>org.postgresql:postgresql:42.6.0</arg>
+                     </libListWithDeps>
+                     <args>
+                        <arg>--jdbc</arg>
+                        <arg>--jdbc-connection-url</arg>
+                        <arg>${postgres.uri}</arg>
+                        <arg>--jdbc-driver-class-name</arg>
+                        <arg>${postgres.class}</arg>
+                        <arg>--global-max-messages</arg>
+                        <arg>100</arg>
+                        <arg>--java-options</arg>
+                        <arg>-ea</arg>
+                        <arg>--database-storage</arg>
+                     </args>
+                  </configuration>
+               </execution>
+               <execution>
+                  <phase>test-compile</phase>
+                  <id>create-new-oracle</id>
+                  <goals>
+                     <goal>create</goal>
+                  </goals>
+                  <configuration>
+                     <!-- this makes it easier in certain envs -->
+                     <javaOptions>-Djava.net.preferIPv4Stack=true</javaOptions>
+                     <instance>${basedir}/target/new-oracle</instance>
+                     <noWeb>true</noWeb>
+                     <libListWithDeps>
+                        <arg>com.oracle.database.jdbc:ojdbc10:19.21.0.0</arg>
+                     </libListWithDeps>
+                     <args>
+                        <arg>--jdbc</arg>
+                        <arg>--jdbc-connection-url</arg>
+                        <arg>${oracle.uri}</arg>
+                        <arg>--jdbc-driver-class-name</arg>
+                        <arg>${oracle.class}</arg>
+                        <arg>--global-max-messages</arg>
+                        <arg>1000000</arg>
+                        <arg>--java-options</arg>
+                        <arg>-ea</arg>
+                        <arg>--database-storage</arg>
+                     </args>
+                  </configuration>
+               </execution>
+               <execution>
+                  <phase>test-compile</phase>
+                  <id>create-new-mssql</id>
+                  <goals>
+                     <goal>create</goal>
+                  </goals>
+                  <configuration>
+                     <libList>
+                        <arg>com.microsoft.sqlserver:mssql-jdbc:8.4.1.jre11</arg>
+                     </libList>
+                     <!-- this makes it easier in certain envs -->
+                     <javaOptions>-Djava.net.preferIPv4Stack=true</javaOptions>
+                     <instance>${basedir}/target/new-mssql</instance>
+                     <noWeb>true</noWeb>
+                     <args>
+                        <arg>--jdbc</arg>
+                        <arg>--jdbc-connection-url</arg>
+                        <arg>${mssql.uri}</arg>
+                        <arg>--jdbc-driver-class-name</arg>
+                        <arg>${mssql.class}</arg>
+                        <arg>--global-max-messages</arg>
+                        <arg>100</arg>
+                        <arg>--java-options</arg>
+                        <arg>-ea</arg>
+                        <arg>--database-storage</arg>
+                     </args>
+                  </configuration>
+               </execution>
+               <execution>
+                  <phase>test-compile</phase>
+                  <id>create-new-DB2</id>
+                  <goals>
+                     <goal>create</goal>
+                  </goals>
+                  <configuration>
+                     <libList>
+                        <arg>com.ibm.db2:jcc:11.5.8.0</arg>
+                     </libList>
+                     <!-- <libFolders>
+                        <arg>${project.basedir}/jdbc-drivers/db2</arg>
+                     </libFolders> -->
+                     <!-- this makes it easier in certain envs -->
+                     <javaOptions>-Djava.net.preferIPv4Stack=true</javaOptions>
+                     <instance>${basedir}/target/new-db2</instance>
+                     <noWeb>true</noWeb>
+                     <args>
+                        <arg>--jdbc</arg>
+                        <arg>--jdbc-connection-url</arg>
+                        <arg>${db2.uri}</arg>
+                        <arg>--jdbc-driver-class-name</arg>
+                        <arg>${db2.class}</arg>
+                        <arg>--global-max-messages</arg>
+                        <arg>100</arg>
+                        <arg>--java-options</arg>
+                        <arg>-ea</arg>
+                        <arg>--database-storage</arg>
                      </args>
                   </configuration>
                </execution>

@@ -72,7 +72,7 @@ public class DeleteMessagesOnStartupTest extends StorageManagerTestBase {
          journal.storeMessage(new CoreMessage(i, 100));
       }
 
-      journal.storeReference(100, 1, true);
+      journal.storeReference(100, 1, false, true);
 
       journal.stop();
 

@@ -127,7 +127,7 @@ public class NullStorageManager implements StorageManager {
    }
 
    @Override
-   public void updateQueueBinding(long tx, Binding binding) throws Exception {
+   public void updateQueueBinding(final Transaction tx, Binding binding, AddressInfo info) throws Exception {
    }
 
    @Override
@@ -201,23 +201,23 @@ public class NullStorageManager implements StorageManager {
    };
 
    @Override
-   public void deleteQueueBinding(long tx, final long queueBindingID) throws Exception {
+   public void deleteQueueBinding(Transaction tx, final long queueBindingID) throws Exception {
    }
 
    @Override
-   public void addAddressBinding(long tx, AddressInfo addressInfo) throws Exception {
+   public void addAddressBinding(Transaction tx, AddressInfo addressInfo) throws Exception {
    }
 
    @Override
-   public void deleteAddressBinding(long tx, long addressBindingID) throws Exception {
+   public void deleteAddressBinding(Transaction tx, long addressBindingID) throws Exception {
    }
 
    @Override
-   public void commit(final long txID) throws Exception {
+   public void commit(final Transaction tx) throws Exception {
    }
 
    @Override
-   public void asyncCommit(final long txID) {
+   public void asyncCommit(Transaction tx) {
    }
 
    @Override
@@ -228,27 +228,27 @@ public class NullStorageManager implements StorageManager {
    }
 
    @Override
-   public void prepare(final long txID, final Xid xid) throws Exception {
+   public void prepare(final Transaction tx, final Xid xid) throws Exception {
    }
 
    @Override
-   public void rollback(final long txID) throws Exception {
+   public void rollback(final Transaction tx) throws Exception {
    }
 
    @Override
-   public void rollbackBindings(final long txID) throws Exception {
+   public void rollbackBindings(final Transaction tx) throws Exception {
    }
 
    @Override
-   public void commitBindings(final long txID) throws Exception {
+   public void commitBindings(final Transaction tx) throws Exception {
    }
 
    @Override
-   public void storeReference(final long queueID, final long messageID, final boolean last) throws Exception {
+   public void storeReference(final long queueID, final long messageID, final boolean pendingDelivery, final boolean last) throws Exception {
    }
 
    @Override
-   public void storeReferenceTransactional(final long txID, final long queueID, final long messageID) throws Exception {
+   public void storeReferenceTransactional(final Transaction tx, final long queueID, final long messageID, final boolean pendingDelivery) throws Exception {
    }
 
    @Override
@@ -256,7 +256,7 @@ public class NullStorageManager implements StorageManager {
    }
 
    @Override
-   public void storeAcknowledgeTransactional(final long txID,
+   public void storeAcknowledgeTransactional(final Transaction tx,
                                              final long queueID,
                                              final long messageiD) throws Exception {
    }
@@ -270,7 +270,7 @@ public class NullStorageManager implements StorageManager {
    }
 
    @Override
-   public void storeMessageTransactional(final long txID, final Message message) throws Exception {
+   public void storeMessageTransactional(final Transaction tx, final Message message) throws Exception {
    }
 
    @Override
@@ -278,11 +278,11 @@ public class NullStorageManager implements StorageManager {
    }
 
    @Override
-   public void updateScheduledDeliveryTimeTransactional(final long txID, final MessageReference ref) throws Exception {
+   public void updateScheduledDeliveryTimeTransactional(final Transaction tx, final MessageReference ref) throws Exception {
    }
 
    @Override
-   public void storePageTransaction(final long txID, final PageTransactionInfo pageTransaction) throws Exception {
+   public void storePageTransaction(final Transaction tx, final PageTransactionInfo pageTransaction) throws Exception {
    }
 
    @Override
@@ -294,14 +294,14 @@ public class NullStorageManager implements StorageManager {
    }
 
    @Override
-   public void storeDuplicateIDTransactional(final long txID,
+   public void storeDuplicateIDTransactional(final Transaction tx,
                                              final SimpleString address,
                                              final byte[] duplID,
                                              final long recordID) throws Exception {
    }
 
    @Override
-   public void updateDuplicateIDTransactional(final long txID,
+   public void updateDuplicateIDTransactional(final Transaction tx,
                                               final SimpleString address,
                                               final byte[] duplID,
                                               final long recordID) throws Exception {
@@ -317,7 +317,7 @@ public class NullStorageManager implements StorageManager {
    }
 
    @Override
-   public void addQueueBinding(final long tx, final Binding binding) throws Exception {
+   public void addQueueBinding(final Transaction tx, final Binding binding, AddressInfo addressInfo) throws Exception {
    }
 
    @Override
@@ -393,7 +393,7 @@ public class NullStorageManager implements StorageManager {
    }
 
    @Override
-   public void deleteDuplicateIDTransactional(final long txID, final long recordID) throws Exception {
+   public void deleteDuplicateIDTransactional(final Transaction tx, final long recordID) throws Exception {
    }
 
    @Override
@@ -417,7 +417,7 @@ public class NullStorageManager implements StorageManager {
    }
 
    @Override
-   public void deleteGrouping(final long tx, final GroupBinding groupBinding) throws Exception {
+   public void deleteGrouping(final Transaction tx, final GroupBinding groupBinding) throws Exception {
    }
 
    @Override
@@ -588,7 +588,7 @@ public class NullStorageManager implements StorageManager {
    }
 
    @Override
-   public void updatePageTransaction(final long txID,
+   public void updatePageTransaction(final Transaction tx,
                                      final PageTransactionInfo pageTransaction,
                                      final int depage) throws Exception {
    }
@@ -598,11 +598,11 @@ public class NullStorageManager implements StorageManager {
    }
 
    @Override
-   public void storeCursorAcknowledgeTransactional(final long txID, final long queueID, final PagePosition position) {
+   public void storeCursorAcknowledgeTransactional(final Transaction tx, final long queueID, final PagePosition position) {
    }
 
    @Override
-   public void deleteCursorAcknowledgeTransactional(final long txID, final long ackID) throws Exception {
+   public void deleteCursorAcknowledgeTransactional(final Transaction tx, final long ackID) throws Exception {
    }
 
    @Override
@@ -610,7 +610,7 @@ public class NullStorageManager implements StorageManager {
    }
 
    @Override
-   public void storePageCompleteTransactional(long txID, long queueID, PagePosition position) throws Exception {
+   public void storePageCompleteTransactional(final Transaction tx, long queueID, PagePosition position) throws Exception {
    }
 
    @Override
@@ -618,7 +618,7 @@ public class NullStorageManager implements StorageManager {
    }
 
    @Override
-   public long storePageCounter(final long txID, final long queueID, final long value, final long size) throws Exception {
+   public long storePageCounter(final Transaction tx, final long queueID, final long value, final long size) throws Exception {
       return 0;
    }
 
@@ -628,19 +628,19 @@ public class NullStorageManager implements StorageManager {
    }
 
    @Override
-   public void deleteIncrementRecord(final long txID, final long recordID) throws Exception {
+   public void deleteIncrementRecord(final Transaction tx, final long recordID) throws Exception {
    }
 
    @Override
-   public void deletePageCounter(final long txID, final long recordID) throws Exception {
+   public void deletePageCounter(final Transaction tx, final long recordID) throws Exception {
    }
 
    @Override
-   public void deletePendingPageCounter(long txID, long recordID) throws Exception {
+   public void deletePendingPageCounter(final Transaction tx, long recordID) throws Exception {
    }
 
    @Override
-   public long storePageCounterInc(final long txID, final long queueID, final int add, final long size) throws Exception {
+   public long storePageCounterInc(final Transaction tx, final long queueID, final int add, final long size) throws Exception {
       return 0;
    }
 
@@ -650,7 +650,7 @@ public class NullStorageManager implements StorageManager {
    }
 
    @Override
-   public void commit(final long txID, final boolean lineUpContext) throws Exception {
+   public void commit(final Transaction tx, final boolean lineUpContext) throws Exception {
    }
 
    @Override

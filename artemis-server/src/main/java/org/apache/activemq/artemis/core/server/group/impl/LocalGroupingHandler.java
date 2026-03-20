@@ -34,6 +34,8 @@ import org.apache.activemq.artemis.api.core.management.CoreNotificationType;
 import org.apache.activemq.artemis.api.core.management.ManagementHelper;
 import org.apache.activemq.artemis.core.persistence.OperationContext;
 import org.apache.activemq.artemis.core.persistence.StorageManager;
+import org.apache.activemq.artemis.core.transaction.Transaction;
+import org.apache.activemq.artemis.core.transaction.impl.BindingsTransactionImpl;
 import org.apache.activemq.artemis.core.postoffice.BindingType;
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.management.ManagementService;
@@ -226,9 +228,9 @@ public final class LocalGroupingHandler extends GroupHandlingAbstract {
       if (groupBindings != null && groupBinding != null) {
          groupBindings.remove(groupBinding);
          try {
-            long tx = storageManager.generateID();
-            storageManager.deleteGrouping(tx, groupBinding);
-            storageManager.commitBindings(tx);
+            Transaction transaction = new BindingsTransactionImpl(storageManager);
+            storageManager.deleteGrouping(transaction, groupBinding);
+            storageManager.commitBindings(transaction);
          } catch (Exception e) {
             // nothing we can do being log
             logger.warn(e.getMessage(), e);
@@ -363,7 +365,7 @@ public final class LocalGroupingHandler extends GroupHandlingAbstract {
       final List<GroupBinding> list = groupMap.remove(clusterName);
       if (list != null) {
          executor.execute(() -> {
-            long txID = -1;
+            Transaction transaction = null;
 
             for (GroupBinding val : list) {
                if (val != null) {
@@ -373,21 +375,21 @@ public final class LocalGroupingHandler extends GroupHandlingAbstract {
                   sendUnproposal(val.getGroupId(), clusterName, 0);
 
                   try {
-                     if (txID < 0) {
-                        txID = storageManager.generateID();
+                     if (transaction == null) {
+                        transaction = new BindingsTransactionImpl(storageManager);
                      }
-                     storageManager.deleteGrouping(txID, val);
+                     storageManager.deleteGrouping(transaction, val);
                   } catch (Exception e) {
                      ActiveMQServerLogger.LOGGER.unableToDeleteGroupBindings(val.getGroupId(), e);
                   }
                }
             }
 
-            if (txID >= 0) {
+            if (transaction != null) {
                try {
-                  storageManager.commitBindings(txID);
+                  storageManager.commitBindings(transaction);
                } catch (Exception e) {
-                  ActiveMQServerLogger.LOGGER.unableToDeleteGroupBindings(SimpleString.of("TX:" + txID), e);
+                  ActiveMQServerLogger.LOGGER.unableToDeleteGroupBindings(SimpleString.of("TX:" + transaction.getID()), e);
                }
             }
          });
@@ -413,7 +415,7 @@ public final class LocalGroupingHandler extends GroupHandlingAbstract {
          // The reaper thread should be finished case the PostOffice is gone
          // This is to avoid leaks on PostOffice between stops and starts
          if (isStarted()) {
-            long txID = -1;
+            Transaction transaction = null;
 
             int expiredGroups = 0;
 
@@ -430,15 +432,15 @@ public final class LocalGroupingHandler extends GroupHandlingAbstract {
 
                   expiredGroups++;
                   try {
-                     if (txID < 0) {
-                        txID = storageManager.generateID();
+                     if (transaction == null) {
+                        transaction = new BindingsTransactionImpl(storageManager);
                      }
-                     storageManager.deleteGrouping(txID, groupBinding);
+                     storageManager.deleteGrouping(transaction, groupBinding);
 
-                     if (expiredGroups >= 1000 && txID >= 0) {
-                        storageManager.commitBindings(txID);
+                     if (expiredGroups >= 1000 && transaction != null) {
+                        storageManager.commitBindings(transaction);
                         expiredGroups = 0;
-                        txID = -1;
+                        transaction = null;
                      }
                   } catch (Exception e) {
                      ActiveMQServerLogger.LOGGER.unableToDeleteGroupBindings(groupBinding.getGroupId(), e);
@@ -446,11 +448,11 @@ public final class LocalGroupingHandler extends GroupHandlingAbstract {
                }
             }
 
-            if (txID >= 0) {
+            if (transaction != null) {
                try {
-                  storageManager.commitBindings(txID);
+                  storageManager.commitBindings(transaction);
                } catch (Exception e) {
-                  ActiveMQServerLogger.LOGGER.unableToDeleteGroupBindings(SimpleString.of("TX:" + txID), e);
+                  ActiveMQServerLogger.LOGGER.unableToDeleteGroupBindings(SimpleString.of("TX:" + transaction.getID()), e);
                }
             }
          }

@@ -78,11 +78,12 @@ public class QueueFactoryImpl implements QueueFactory {
    public Queue createQueueWith(final QueueConfiguration config, PagingManager pagingManager, Filter filter) {
       validateState(config);
       final Queue queue;
-      PageSubscription pageSubscription = getPageSubscription(config, pagingManager, filter);
+      PagingStore pagingStore = getPagingStore(pagingManager, config.getAddress());
+      PageSubscription pageSubscription = getPageSubscription(config, pagingStore, filter);
       if (lastValueKey(config) != null) {
-         queue = new LastValueQueue(config.setLastValueKey(lastValueKey(config)), filter, pageSubscription != null ? pageSubscription.getPagingStore() : null, pageSubscription, scheduledExecutor, postOffice, storageManager, addressSettingsRepository, executorFactory.getExecutor(), server, this);
+         queue = new LastValueQueue(config.setLastValueKey(lastValueKey(config)), filter, pagingStore, pageSubscription, scheduledExecutor, postOffice, storageManager, addressSettingsRepository, executorFactory.getExecutor(), server, this);
       } else {
-         queue = new QueueImpl(config, filter, pageSubscription != null ? pageSubscription.getPagingStore() : null, pageSubscription, scheduledExecutor, postOffice, storageManager, addressSettingsRepository, executorFactory.getExecutor(), server, this);
+         queue = new QueueImpl(config, filter, pagingStore, pageSubscription, scheduledExecutor, postOffice, storageManager, addressSettingsRepository, executorFactory.getExecutor(), server, this);
       }
       server.getCriticalAnalyzer().add(queue);
       return queue;
@@ -93,13 +94,28 @@ public class QueueFactoryImpl implements QueueFactory {
       server.getCriticalAnalyzer().remove(queue);
    }
 
-   public static PageSubscription getPageSubscription(QueueConfiguration queueConfiguration, PagingManager pagingManager, Filter filter) {
+
+   public static PagingStore getPagingStore(PagingManager pagingManager, SimpleString address) {
+      if (pagingManager == null) {
+         return null;
+      }
+
+      try {
+         return pagingManager.getPageStore(address);
+      } catch (Exception e) {
+         throw new IllegalStateException(e);
+      }
+   }
+
+   public static PageSubscription getPageSubscription(QueueConfiguration queueConfiguration, PagingStore pagingStore, Filter filter) {
+      if (pagingStore == null) {
+         return null;
+      }
       PageSubscription pageSubscription;
 
       try {
-         PagingStore pageStore = pagingManager.getPageStore(queueConfiguration.getAddress());
-         if (pageStore != null) {
-            pageSubscription = pageStore.getCursorProvider().createSubscription(queueConfiguration.getId(), filter, queueConfiguration.isDurable());
+         if (pagingStore != null && pagingStore.getCursorProvider() != null) {
+            pageSubscription = pagingStore.getCursorProvider().createSubscription(queueConfiguration.getId(), filter, queueConfiguration.isDurable());
          } else {
             pageSubscription = null;
          }
@@ -113,7 +129,7 @@ public class QueueFactoryImpl implements QueueFactory {
    private static SimpleString lastValueKey(final QueueConfiguration config) {
       if (config.getLastValueKey() != null && !config.getLastValueKey().isEmpty()) {
          return config.getLastValueKey();
-      } else if (config.isLastValue()) {
+      } else if (config.isLastValue() != null && config.isLastValue().booleanValue()) {
          return Message.HDR_LAST_VALUE_NAME;
       } else {
          return null;

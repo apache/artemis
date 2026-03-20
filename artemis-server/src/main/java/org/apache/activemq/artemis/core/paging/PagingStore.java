@@ -32,6 +32,8 @@ import org.apache.activemq.artemis.core.persistence.StorageManager;
 import org.apache.activemq.artemis.core.replication.ReplicationManager;
 import org.apache.activemq.artemis.core.server.ActiveMQComponent;
 import org.apache.activemq.artemis.core.server.RouteContextList;
+import org.apache.activemq.artemis.core.server.StorageMessageReader;
+import org.apache.activemq.artemis.core.server.impl.QueueImpl;
 import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.settings.impl.PageFullMessagePolicy;
@@ -68,8 +70,7 @@ public interface PagingStore extends ActiveMQComponent, RefCountMessageListener 
 
    AddressFullMessagePolicy getAddressFullMessagePolicy();
 
-   default PagingStore enforceAddressFullMessagePolicy(AddressFullMessagePolicy enforcedAddressFullMessagePolicy) {
-      return this;
+   default void enforceAddressFullMessagePolicy(AddressFullMessagePolicy enforcedAddressFullMessagePolicy) {
    }
 
    PageFullMessagePolicy getPageFullMessagePolicy();
@@ -122,6 +123,15 @@ public interface PagingStore extends ActiveMQComponent, RefCountMessageListener 
    boolean isStorePaging();
 
    /**
+    *  Returns true when message delivery should be deferred to the StorageMessageReader
+    *  rather than being added to the queue immediately during routing.
+    *  The journal implementation always returns false (delivery is never frozen).
+    *  The database implementation returns true when store paging is active. */
+   default boolean isDeliveryFrozen() {
+      return false;
+   }
+
+   /**
     * Performs a real sync on the current IO file.
     */
    void ioSync() throws Exception;
@@ -135,7 +145,7 @@ public interface PagingStore extends ActiveMQComponent, RefCountMessageListener 
     */
    boolean page(Message message, Transaction tx, RouteContextList listCtx) throws Exception;
 
-   int page(Message message, Transaction tx, RouteContextList listCtx, Function<Message, Message> pageDecorator, boolean useFlowControl) throws Exception;
+   int page(Message message, Transaction tx, RouteContextList listCtx, Function<Message, Message> pageDecorator) throws Exception;
 
    Page usePage(long page);
 
@@ -199,7 +209,7 @@ public interface PagingStore extends ActiveMQComponent, RefCountMessageListener 
     *
     * @param sizeOnly if {@code false} we won't increment the number of messages. (add references for example)
     */
-   void addSize(int size, boolean sizeOnly, boolean affectGlobal);
+   long addSize(int size, boolean sizeOnly, boolean affectGlobal);
 
    default void addSize(int size, boolean sizeOnly) {
       addSize(size, sizeOnly, true);
@@ -294,6 +304,9 @@ public interface PagingStore extends ActiveMQComponent, RefCountMessageListener 
       return null;
    }
 
-   default void writeFlowControl(int credits) {
+   default boolean flowControl(Runnable block, Runnable release) {
+      return false;
    }
+
+   StorageMessageReader createStorageMessageReader(QueueImpl queue);
 }
