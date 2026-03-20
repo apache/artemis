@@ -273,6 +273,8 @@ public class DBOption extends OptionalLocking {
          storageConfiguration.setJdbcUser(getJdbcUser());
          storageConfiguration.setJdbcPassword(getJdbcPassword());
          configuration.setStoreConfiguration(storageConfiguration);
+      } else if (configuration.isUsingDatabaseStorage()) {
+         // new database storage - store config is already set from the parsed configuration
       } else {
          configuration.setBindingsDirectory(getBinding());
          configuration.setJournalDirectory(getJournal());

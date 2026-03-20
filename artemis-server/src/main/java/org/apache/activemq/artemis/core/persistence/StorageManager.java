@@ -34,8 +34,8 @@ import org.apache.activemq.artemis.core.config.DivertConfiguration;
 import org.apache.activemq.artemis.core.io.IOCallback;
 import org.apache.activemq.artemis.core.io.OperationConsistencyLevel;
 import org.apache.activemq.artemis.core.io.SequentialFile;
-import org.apache.activemq.artemis.core.io.SequentialFileFactory;
 import org.apache.activemq.artemis.core.journal.Journal;
+import org.apache.activemq.artemis.core.journal.StorageTX;
 import org.apache.activemq.artemis.core.journal.JournalLoadInformation;
 import org.apache.activemq.artemis.core.journal.RecordInfo;
 import org.apache.activemq.artemis.core.journal.collections.MapStorageManager;
@@ -43,6 +43,8 @@ import org.apache.activemq.artemis.core.paging.PageTransactionInfo;
 import org.apache.activemq.artemis.core.paging.PagedMessage;
 import org.apache.activemq.artemis.core.paging.PagingManager;
 import org.apache.activemq.artemis.core.paging.PagingStore;
+import org.apache.activemq.artemis.core.paging.PagingStoreFactory;
+import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.paging.cursor.PagePosition;
 import org.apache.activemq.artemis.core.persistence.config.AbstractPersistedAddressSetting;
 import org.apache.activemq.artemis.core.persistence.config.PersistedAddressSettingJSON;
@@ -60,6 +62,7 @@ import org.apache.activemq.artemis.core.replication.ReplicationManager;
 import org.apache.activemq.artemis.core.server.ActiveMQComponent;
 import org.apache.activemq.artemis.core.server.LargeServerMessage;
 import org.apache.activemq.artemis.core.server.MessageReference;
+import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.RouteContextList;
 import org.apache.activemq.artemis.core.server.files.FileStoreMonitor;
 import org.apache.activemq.artemis.core.server.group.impl.GroupBinding;
@@ -70,6 +73,7 @@ import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
 import org.apache.activemq.artemis.utils.ArtemisCloseable;
 import org.apache.activemq.artemis.utils.IDGenerator;
+import org.apache.activemq.artemis.utils.collections.CloseableIterator;
 
 /**
  * A StorageManager
@@ -82,6 +86,25 @@ import org.apache.activemq.artemis.utils.IDGenerator;
  */
 public interface StorageManager extends MapStorageManager, IDGenerator, ActiveMQComponent {
 
+   default boolean flowControl(PagingStore store, Runnable block, Runnable release) {
+      return false;
+   }
+
+   default void setMirrorSNFPagingStore(PagingStore snfPagingStore) {
+   }
+
+   default PagingManager createPagingManager(ActiveMQServer server) throws Exception {
+      return null;
+   }
+
+   default PagingStoreFactory createPagingStoreFactory(ActiveMQServer server) throws Exception {
+      return null;
+   }
+
+   default boolean supportsDirectDeliver() {
+      return true;
+   }
+
    default long getMaxRecordSize() {
       // Null journal is pretty much memory
       return Long.MAX_VALUE;
@@ -89,6 +112,10 @@ public interface StorageManager extends MapStorageManager, IDGenerator, ActiveMQ
 
    default boolean isReplicated() {
       return false;
+   }
+
+   default boolean fileBased() {
+      return true;
    }
 
    default long getWarningRecordSize() {
@@ -107,7 +134,11 @@ public interface StorageManager extends MapStorageManager, IDGenerator, ActiveMQ
 
    }
 
-   default SequentialFileFactory getJournalSequentialFileFactory() {
+   default <T extends CloseableIterator<MessageReference>> T pendingMessagesIterator(Queue queue, int prefetch) {
+      return null;
+   }
+
+   default StorageTX generateTX(long id) {
       return null;
    }
 
@@ -188,7 +219,7 @@ public interface StorageManager extends MapStorageManager, IDGenerator, ActiveMQ
 
    void storeMessage(Message message) throws Exception;
 
-   void storeReference(long queueID, long messageID, boolean last) throws Exception;
+   void storeReference(long queueID, long messageID, boolean pendingDelivery, boolean last) throws Exception;
 
    void deleteMessage(long messageID) throws Exception;
 
@@ -204,29 +235,29 @@ public interface StorageManager extends MapStorageManager, IDGenerator, ActiveMQ
 
    void deleteDuplicateID(long recordID) throws Exception;
 
-   void storeMessageTransactional(long txID, Message message) throws Exception;
+   void storeMessageTransactional(Transaction tx, Message message) throws Exception;
 
-   void storeReferenceTransactional(long txID, long queueID, long messageID) throws Exception;
+   void storeReferenceTransactional(Transaction tx, long queueID, long messageID, boolean pendingDelivery) throws Exception;
 
-   void storeAcknowledgeTransactional(long txID, long queueID, long messageID) throws Exception;
+   void storeAcknowledgeTransactional(Transaction tx, long queueID, long messageID) throws Exception;
 
-   void storeCursorAcknowledgeTransactional(long txID, long queueID, PagePosition position) throws Exception;
+   void storeCursorAcknowledgeTransactional(Transaction tx, long queueID, PagePosition position) throws Exception;
 
-   void deleteCursorAcknowledgeTransactional(long txID, long ackID) throws Exception;
+   void deleteCursorAcknowledgeTransactional(Transaction tx, long ackID) throws Exception;
 
    void deleteCursorAcknowledge(long ackID) throws Exception;
 
-   void storePageCompleteTransactional(long txID, long queueID, PagePosition position) throws Exception;
+   void storePageCompleteTransactional(Transaction tx, long queueID, PagePosition position) throws Exception;
 
    void deletePageComplete(long ackID) throws Exception;
 
-   void updateScheduledDeliveryTimeTransactional(long txID, MessageReference ref) throws Exception;
+   void updateScheduledDeliveryTimeTransactional(Transaction tx, MessageReference ref) throws Exception;
 
-   void storeDuplicateIDTransactional(long txID, SimpleString address, byte[] duplID, long recordID) throws Exception;
+   void storeDuplicateIDTransactional(Transaction tx, SimpleString address, byte[] duplID, long recordID) throws Exception;
 
-   void updateDuplicateIDTransactional(long txID, SimpleString address, byte[] duplID, long recordID) throws Exception;
+   void updateDuplicateIDTransactional(Transaction tx, SimpleString address, byte[] duplID, long recordID) throws Exception;
 
-   void deleteDuplicateIDTransactional(long txID, long recordID) throws Exception;
+   void deleteDuplicateIDTransactional(Transaction tx, long recordID) throws Exception;
 
    LargeServerMessage createCoreLargeMessage();
 
@@ -278,23 +309,23 @@ public interface StorageManager extends MapStorageManager, IDGenerator, ActiveMQ
    }
 
 
-   void prepare(long txID, Xid xid) throws Exception;
+   void prepare(Transaction tx, Xid xid) throws Exception;
 
-   void commit(long txID) throws Exception;
+   void commit(Transaction tx) throws Exception;
 
-   void commit(long txID, boolean lineUpContext) throws Exception;
+   void commit(Transaction tx, boolean lineUpContext) throws Exception;
 
-   void asyncCommit(long txID) throws Exception;
+   void asyncCommit(Transaction tx) throws Exception;
 
-   void rollback(long txID) throws Exception;
+   void rollback(Transaction tx) throws Exception;
 
-   void rollbackBindings(long txID) throws Exception;
+   void rollbackBindings(Transaction tx) throws Exception;
 
-   void commitBindings(long txID) throws Exception;
+   void commitBindings(Transaction tx) throws Exception;
 
-   void storePageTransaction(long txID, PageTransactionInfo pageTransaction) throws Exception;
+   void storePageTransaction(Transaction tx, PageTransactionInfo pageTransaction) throws Exception;
 
-   void updatePageTransaction(long txID, PageTransactionInfo pageTransaction, int depage) throws Exception;
+   void updatePageTransaction(Transaction tx, PageTransactionInfo pageTransaction, int depage) throws Exception;
 
    void deletePageTransactional(long recordID) throws Exception;
 
@@ -339,11 +370,11 @@ public interface StorageManager extends MapStorageManager, IDGenerator, ActiveMQ
 
    // BindingsImpl related operations
 
-   void addQueueBinding(long tx, Binding binding) throws Exception;
+   void addQueueBinding(Transaction tx, Binding binding, AddressInfo addressInfo) throws Exception;
 
-   void updateQueueBinding(long tx, Binding binding) throws Exception;
+   void updateQueueBinding(Transaction tx, Binding binding, AddressInfo addressInfo) throws Exception;
 
-   void deleteQueueBinding(long tx, long queueBindingID) throws Exception;
+   void deleteQueueBinding(Transaction tx, long queueBindingID) throws Exception;
 
    /**
     * Store a queue's status.
@@ -359,9 +390,9 @@ public interface StorageManager extends MapStorageManager, IDGenerator, ActiveMQ
 
    void deleteAddressStatus(long recordID) throws Exception;
 
-   void addAddressBinding(long tx, AddressInfo addressInfo) throws Exception;
+   void addAddressBinding(Transaction tx, AddressInfo addressInfo) throws Exception;
 
-   void deleteAddressBinding(long tx, long addressBindingID) throws Exception;
+   void deleteAddressBinding(Transaction tx, long addressBindingID) throws Exception;
 
    JournalLoadInformation loadBindingJournal(List<QueueBindingInfo> queueBindingInfos,
                                              List<GroupingInfo> groupingInfos,
@@ -370,7 +401,7 @@ public interface StorageManager extends MapStorageManager, IDGenerator, ActiveMQ
    // grouping related operations
    void addGrouping(GroupBinding groupBinding) throws Exception;
 
-   void deleteGrouping(long tx, GroupBinding groupBinding) throws Exception;
+   void deleteGrouping(Transaction tx, GroupBinding groupBinding) throws Exception;
 
    void storeAddressSetting(PersistedAddressSettingJSON addressSetting) throws Exception;
 
@@ -429,22 +460,22 @@ public interface StorageManager extends MapStorageManager, IDGenerator, ActiveMQ
     *
     * @return The ID with the stored counter
     */
-   long storePageCounter(long txID, long queueID, long value, long persistentSize) throws Exception;
+   long storePageCounter(Transaction tx, long queueID, long value, long persistentSize) throws Exception;
 
    long storePendingCounter(long queueID, long pageID) throws Exception;
 
-   void deleteIncrementRecord(long txID, long recordID) throws Exception;
+   void deleteIncrementRecord(Transaction tx, long recordID) throws Exception;
 
-   void deletePageCounter(long txID, long recordID) throws Exception;
+   void deletePageCounter(Transaction tx, long recordID) throws Exception;
 
-   void deletePendingPageCounter(long txID, long recordID) throws Exception;
+   void deletePendingPageCounter(Transaction tx, long recordID) throws Exception;
 
    /**
     * Store the specificed page counter increment.
     *
     * @return the ID with the increment record
     */
-   long storePageCounterInc(long txID, long queueID, int add, long persistentSize) throws Exception;
+   long storePageCounterInc(Transaction tx, long queueID, int add, long persistentSize) throws Exception;
 
    /**
     * Store the specificed page counter increment.

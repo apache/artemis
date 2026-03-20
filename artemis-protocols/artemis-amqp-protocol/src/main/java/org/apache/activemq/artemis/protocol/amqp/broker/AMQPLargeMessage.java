@@ -627,7 +627,8 @@ public class AMQPLargeMessage extends AMQPMessage implements LargeServerMessage 
    public synchronized int getMemoryEstimate() {
       if (memoryEstimate == VALUE_NOT_PRESENT) {
          // This estimation was tested and validated through AMQPGlobalMaxTest on soak-tests
-         memoryEstimate = BASE_MEMORY_OVERHEAD + (extraProperties != null ? extraProperties.getEncodeSize() : 0) + applicationPropertiesSize * 2 + applicationPropertiesCount * DataConstants.SIZE_INT;
+         memoryEstimate = BASE_MEMORY_OVERHEAD + (extraProperties != null ? extraProperties.getEncodeSize() : 0) + applicationPropertiesSize * 2 + applicationPropertiesCount * DataConstants.SIZE_INT +
+             largeBody.getMemoryEstimate();
       }
       return memoryEstimate;
    }

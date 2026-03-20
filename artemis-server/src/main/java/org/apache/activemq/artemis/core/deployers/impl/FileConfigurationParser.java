@@ -2077,6 +2077,14 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
    private DatabaseStorageConfiguration createDatabaseStoreConfig(Element storeNode, Configuration mainConfig) throws Exception {
       DatabaseStorageConfiguration conf = new DatabaseStorageConfiguration();
+
+      // Check if this is a database-storage configuration
+      boolean databaseStorage = getBoolean(storeNode, "database-storage", false);
+      if (databaseStorage) {
+         conf.setStoreType(org.apache.activemq.artemis.core.config.StoreConfiguration.StoreType.NEW_DATABASE);
+         mainConfig.setDatabaseStorage(true);
+      }
+
       conf.setBindingsTableName(getString(storeNode, "bindings-table-name", conf.getBindingsTableName(), NO_CHECK));
       conf.setMessageTableName(getString(storeNode, "message-table-name", conf.getMessageTableName(), NO_CHECK));
       conf.setLargeMessageTableName(getString(storeNode, "large-message-table-name", conf.getLargeMessageTableName(), NO_CHECK));
@@ -2094,6 +2102,14 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
       conf.setJdbcJournalSyncPeriodMillis(getLong(storeNode, "jdbc-journal-sync-period", conf.getJdbcJournalSyncPeriodMillis(), NO_CHECK));
       conf.setJdbcAllowedTimeDiff(getLong(storeNode, "jdbc-allowed-time-diff", conf.getJdbcAllowedTimeDiff(), NO_CHECK));
       conf.setMaxPageSizeBytes(getTextBytesAsIntBytes(storeNode, "jdbc-max-page-size-bytes", conf.getMaxPageSizeBytes(), NO_CHECK));
+      conf.setDatabaseConnections(getInteger(storeNode, "database-connections", conf.getDatabaseConnections(), NO_CHECK));
+      conf.setDatabaseMaxReadConnections(getInteger(storeNode, "database-max-read-connections", conf.getDatabaseMaxReadConnections(), NO_CHECK));
+      conf.setDatabaseReadIdleTimeout(getLong(storeNode, "database-read-idle-timeout", conf.getDatabaseReadIdleTimeout(), NO_CHECK));
+      conf.setDatabaseMaxRetries(getInteger(storeNode, "database-max-retries", conf.getDatabaseMaxRetries(), NO_CHECK));
+      conf.setDatabaseRetryIntervalMillis(getLong(storeNode, "database-retry-interval-millis", conf.getDatabaseRetryIntervalMillis(), NO_CHECK));
+      conf.setDatabaseFlushPeriodNanos(getLong(storeNode, "database-flush-period-nanos", conf.getDatabaseFlushPeriodNanos(), NO_CHECK));
+      conf.setMaxPendingWrites(getInteger(storeNode, "max-pending-writes", conf.getMaxPendingWrites(), NO_CHECK));
+      conf.setPageJoinFetch(getBoolean(storeNode, "database-page-join-fetch", conf.isPageJoinFetch()));
       String jdbcUser = getString(storeNode, "jdbc-user", conf.getJdbcUser(), NO_CHECK);
       if (jdbcUser != null) {
          jdbcUser = PasswordMaskingUtil.resolveMask(mainConfig.isMaskPassword(), jdbcUser, mainConfig.getPasswordCodec());

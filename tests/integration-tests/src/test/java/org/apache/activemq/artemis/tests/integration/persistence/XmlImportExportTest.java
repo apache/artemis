@@ -70,6 +70,7 @@ import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.Divert;
 import org.apache.activemq.artemis.core.server.impl.AddressInfo;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
+import org.apache.activemq.artemis.core.transaction.impl.BindingsTransactionImpl;
 import org.apache.activemq.artemis.jms.server.JMSServerManager;
 import org.apache.activemq.artemis.jms.server.impl.JMSServerManagerImpl;
 import org.apache.activemq.artemis.tests.unit.util.InVMContext;
@@ -1488,7 +1489,7 @@ public class XmlImportExportTest extends ActiveMQTestBase {
 
    private void removeAddressAndQueue(org.apache.activemq.artemis.core.server.Queue serverQueue) throws Exception {
       AddressInfo addressInfo = server.getAddressInfo(serverQueue.getAddress());
-      long tx = server.getStorageManager().generateID();
+      BindingsTransactionImpl tx = new BindingsTransactionImpl(server.getStorageManager());
       server.getStorageManager().deleteAddressBinding(tx, addressInfo.getId());
       server.getStorageManager().deleteQueueBinding(tx, serverQueue.getID());
       server.getStorageManager().commitBindings(tx);

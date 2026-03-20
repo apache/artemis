@@ -84,6 +84,7 @@ public final class BatchingIDGenerator implements IDGenerator {
 
    public void persistCurrentID() {
       final long recordID = counter.incrementAndGet();
+      logger.debug("Persisting current ID at {}", recordID);
       storeID(recordID, recordID);
    }
 
@@ -106,15 +107,18 @@ public final class BatchingIDGenerator implements IDGenerator {
    }
 
    public void loadState(final long journalID, final ActiveMQBuffer buffer) {
+      IDCounterEncoding encoding = new IDCounterEncoding();
+      encoding.decode(buffer);
+      loadState(journalID, encoding.id);
+   }
+
+   public void loadState(final long journalID, final long idValue) {
       lock.writeLock().lock();
       try {
          addCleanupRecord(journalID);
-         IDCounterEncoding encoding = new IDCounterEncoding();
-
-         encoding.decode(buffer);
 
          // Keep nextID and counter the same, the next generateID will update the checkpoint
-         nextID = encoding.id + 1;
+         nextID = idValue + 1;
 
          counter.set(nextID);
 
@@ -161,8 +165,9 @@ public final class BatchingIDGenerator implements IDGenerator {
 
    private synchronized void saveCheckPoint(final long id) {
       if (id >= nextID) {
+         long journalID = counter.incrementAndGet();
          nextID += checkpointSize;
-
+         logger.debug("Saving checkpoint nextID={} with journalID={}", nextID, journalID);
          if (!storageManager.isStarted()) {
             // This could happen after the server is stopped
             // while notifications are being sent and ID generated.
@@ -170,7 +175,7 @@ public final class BatchingIDGenerator implements IDGenerator {
             // so we just ignore this for now
             logger.debug("The journalStorageManager is not loaded. This is probably ok as long as it's a notification being sent after shutdown");
          } else {
-            storeID(counter.getAndIncrement(), nextID);
+            storeID(journalID, nextID);
          }
       }
    }
@@ -184,6 +189,7 @@ public final class BatchingIDGenerator implements IDGenerator {
    }
 
    private void storeID(final long journalID, final long id) {
+      logger.debug("Storing ID {}, {}", journalID, id);
       try {
          storageManager.storeID(journalID, id);
       } catch (Exception e) {
@@ -204,9 +210,9 @@ public final class BatchingIDGenerator implements IDGenerator {
    }
 
 
-   protected static final class IDCounterEncoding implements EncodingSupport {
+   public static final class IDCounterEncoding implements EncodingSupport {
 
-      private long id;
+      public long id;
 
       @Override
       public String toString() {
@@ -217,7 +223,7 @@ public final class BatchingIDGenerator implements IDGenerator {
          this.id = id;
       }
 
-      IDCounterEncoding() {
+      public IDCounterEncoding() {
       }
 
       @Override

@@ -29,6 +29,10 @@ public class SizeAwareMetric {
       void add(int delta, boolean sizeOnly);
    }
 
+   public interface SimpleAddCallback {
+      void simpleAdd(long deltaElements, long deltaSize);
+   }
+
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private static final int PENDING_FREE = 0, FREE = 1, PENDING_OVER_SIZE = 2, OVER_SIZE = 3, PENDING_OVER_ELEMENTS = 4, OVER_ELEMENTS = 5, NOT_USED = -1;
@@ -51,6 +55,8 @@ public class SizeAwareMetric {
    private long lowerMarkSize;
 
    private AddCallback onSizeCallback;
+
+   private SimpleAddCallback onSimpleAddCallback;
 
    private Runnable overCallback;
 
@@ -104,8 +110,13 @@ public class SizeAwareMetric {
       return maxSize >= 0;
    }
 
-   public SizeAwareMetric setOnSizeCallback(AddCallback onSize) {
+   public SizeAwareMetric setOnSizeCallback(SizeAwareMetric parentMetric) {
+      return setOnSizeCallback(parentMetric::addSize, parentMetric::simpleAdd);
+   }
+
+   public SizeAwareMetric setOnSizeCallback(AddCallback onSize, SimpleAddCallback onSimpleAdd) {
       this.onSizeCallback = onSize;
+      this.onSimpleAddCallback = onSimpleAdd;
       return this;
    }
 
@@ -141,6 +152,46 @@ public class SizeAwareMetric {
 
    private boolean changeFlag(int expected, int newValue) {
       return flagUpdater.compareAndSet(this, expected, newValue);
+   }
+
+   public void simpleAdd(SizeAwareMetric input) {
+      simpleAdd(input.getElements(), input.getSize());
+   }
+
+   public void simpleAdd(final long deltaElements, final long deltaSize) {
+      simpleAdd(deltaElements, deltaSize, true);
+   }
+
+   public void simpleAdd(final long deltaElements, final long deltaSize, final boolean affectCallbacks) {
+      if (deltaElements == 0 && deltaSize == 0) {
+         return;
+      }
+
+      changeFlag(NOT_USED, FREE);
+
+      if (onSimpleAddCallback != null && affectCallbacks) {
+         try {
+            onSimpleAddCallback.simpleAdd(deltaElements, deltaSize);
+         } catch (Throwable e) {
+            logger.warn(e.getMessage(), e);
+         }
+      }
+
+      long currentSize = deltaSize != 0 ? sizeUpdater.addAndGet(this, deltaSize) : sizeUpdater.get(this);
+
+      long currentElements;
+      if (deltaElements != 0) {
+         currentElements = elementsUpdater.addAndGet(this, deltaElements);
+      } else {
+         currentElements = elementsUpdater.get(this);
+      }
+
+      boolean adding = deltaElements > 0 || (deltaElements == 0 && deltaSize >= 0);
+      if (adding) {
+         checkOver(currentElements, currentSize);
+      } else {
+         checkUnder(currentElements, currentSize);
+      }
    }
 
    public final long addSize(final int delta) {

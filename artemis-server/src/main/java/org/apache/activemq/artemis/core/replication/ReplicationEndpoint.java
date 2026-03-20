@@ -47,6 +47,7 @@ import org.apache.activemq.artemis.core.journal.impl.JournalFile;
 import org.apache.activemq.artemis.core.journal.impl.dataformat.ByteArrayEncoding;
 import org.apache.activemq.artemis.core.paging.PagedMessage;
 import org.apache.activemq.artemis.core.paging.PagingManager;
+import org.apache.activemq.artemis.core.paging.impl.FilePage;
 import org.apache.activemq.artemis.core.paging.impl.Page;
 import org.apache.activemq.artemis.core.persistence.StorageManager;
 import org.apache.activemq.artemis.core.persistence.impl.journal.AbstractJournalStorageManager.JournalContent;
@@ -503,7 +504,7 @@ public final class ReplicationEndpoint implements ChannelHandler, ActiveMQCompon
          }
          case PAGE: {
             Page page = getPage(msg.getPageStore(), (int) msg.getId());
-            channel1 = page.getFile();
+            channel1 = ((FilePage) page).getFile();
             break;
          }
          case JOURNAL: {
