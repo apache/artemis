@@ -30,6 +30,7 @@ import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.io.IOCallback;
+import org.apache.activemq.artemis.core.paging.PagingStore;
 import org.apache.activemq.artemis.core.paging.cursor.PageIterator;
 import org.apache.activemq.artemis.core.paging.cursor.PageSubscription;
 import org.apache.activemq.artemis.core.paging.cursor.PagedReferenceImpl;
@@ -84,7 +85,12 @@ public class QueueImplTest {
       // Mock server
       Mockito.doReturn(executorFactory).when(server).getExecutorFactory();
 
-      QueueImpl queue = new QueueImpl(QueueConfiguration.of(address).setId(0L).setDurable(false), null, null,
+      // Mock pagingStore to provide a StorageMessageReader for paged message iteration
+      PagingStore pagingStore = Mockito.mock(PagingStore.class);
+      Mockito.doAnswer(invocationOnMock -> new PageStorageMessageReader((QueueImpl) invocationOnMock.getArgument(0)))
+         .when(pagingStore).createStorageMessageReader(Mockito.any(QueueImpl.class));
+
+      QueueImpl queue = new QueueImpl(QueueConfiguration.of(address).setId(0L).setDurable(false), null, pagingStore,
                                       pageSubscription, Mockito.mock(ScheduledExecutorService.class), Mockito.mock(PostOffice.class),
                                       storageManager, null, Mockito.mock(ArtemisExecutor.class),
                                       server, Mockito.mock(QueueFactory.class));

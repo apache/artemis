@@ -54,12 +54,16 @@ import org.apache.activemq.artemis.core.journal.impl.JournalImpl;
 import org.apache.activemq.artemis.core.paging.PagedMessage;
 import org.apache.activemq.artemis.core.paging.PagingManager;
 import org.apache.activemq.artemis.core.paging.PagingStore;
+import org.apache.activemq.artemis.core.paging.PagingStoreFactory;
+import org.apache.activemq.artemis.core.paging.impl.PagingManagerImpl;
+import org.apache.activemq.artemis.core.paging.impl.PagingStoreFactoryNIO;
 import org.apache.activemq.artemis.core.persistence.OperationContext;
 import org.apache.activemq.artemis.core.persistence.impl.journal.codec.LargeMessagePersister;
 import org.apache.activemq.artemis.core.persistence.impl.journal.codec.RefEncoding;
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.ReplicationPrimaryIsStoppingMessage;
 import org.apache.activemq.artemis.core.replication.ReplicatedJournal;
 import org.apache.activemq.artemis.core.replication.ReplicationManager;
+import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ActiveMQMessageBundle;
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.JournalType;
@@ -123,6 +127,16 @@ public class JournalStorageManager extends AbstractJournalStorageManager {
    }
 
    @Override
+   public PagingManager createPagingManager(ActiveMQServer server) throws Exception {
+      return new PagingManagerImpl(createPagingStoreFactory(server), server.getAddressSettingsRepository(), server.getConfiguration().getGlobalMaxSize(), server.getConfiguration().getGlobalMaxMessages(), server.getConfiguration().getManagementAddress(), server);
+   }
+
+   @Override
+   public PagingStoreFactory createPagingStoreFactory(ActiveMQServer server) throws Exception {
+      return new PagingStoreFactoryNIO(this, config.getPagingLocation(), config.getPageSyncTimeout(), scheduledExecutorService, executorFactory, config.isJournalSyncNonTransactional(), ioCriticalErrorListener, config::isPurgePageFolders);
+   }
+
+   @Override
    public Set<RemotingConnection> getUsedConnections() {
       if (replicator == null) {
          return Collections.emptySet();
@@ -131,11 +145,6 @@ public class JournalStorageManager extends AbstractJournalStorageManager {
          usedConnections.add(replicator.getBackupTransportConnection());
          return usedConnections;
       }
-   }
-
-   @Override
-   public SequentialFileFactory getJournalSequentialFileFactory() {
-      return journalFF;
    }
 
    @Override
@@ -236,7 +245,7 @@ public class JournalStorageManager extends AbstractJournalStorageManager {
    }
 
    protected void createDirectories() {
-      if (!config.isUsingDatabasePersistence()) {
+      if (!config.isUsingFileOverDB()) {
          checkAndCreateDir(config.getBindingsLocation(), config.isCreateBindingsDir());
          checkAndCreateDir(config.getJournalLocation(), config.isCreateJournalDir());
          checkAndCreateDir(config.getLargeMessagesLocation(), config.isCreateJournalDir());

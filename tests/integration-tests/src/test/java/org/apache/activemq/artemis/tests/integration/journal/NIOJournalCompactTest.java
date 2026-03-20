@@ -51,6 +51,7 @@ import org.apache.activemq.artemis.core.journal.impl.dataformat.ByteArrayEncodin
 import org.apache.activemq.artemis.core.message.impl.CoreMessage;
 import org.apache.activemq.artemis.core.persistence.impl.journal.JournalStorageManager;
 import org.apache.activemq.artemis.core.persistence.impl.journal.OperationContextImpl;
+import org.apache.activemq.artemis.core.transaction.impl.TransactionImpl;
 import org.apache.activemq.artemis.tests.unit.core.journal.impl.JournalImplTestBase;
 import org.apache.activemq.artemis.tests.unit.core.journal.impl.fakes.SimpleEncoding;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
@@ -2056,7 +2057,7 @@ public class NIOJournalCompactTest extends JournalImplTestBase {
                while (running.get()) {
                   limiter.limit();
                   final long[] values = new long[100];
-                  long tx = seqGenerator.incrementAndGet();
+                  TransactionImpl tx = new TransactionImpl(storage);
 
                   OperationContextImpl ctx = new OperationContextImpl(executor);
                   storage.setContext(ctx);

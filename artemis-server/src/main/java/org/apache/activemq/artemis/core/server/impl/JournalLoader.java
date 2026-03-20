@@ -29,6 +29,7 @@ import org.apache.activemq.artemis.core.persistence.GroupingInfo;
 import org.apache.activemq.artemis.core.persistence.QueueBindingInfo;
 import org.apache.activemq.artemis.core.persistence.impl.PageCountPending;
 import org.apache.activemq.artemis.core.persistence.impl.journal.AddMessageRecord;
+import org.apache.artemis.database.data.MessageReferenceData;
 import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.transaction.ResourceManager;
 import org.apache.activemq.artemis.core.transaction.Transaction;
@@ -42,7 +43,19 @@ public interface JournalLoader {
 
    void handleAddMessage(Map<Long, Map<Long, AddMessageRecord>> queueMap) throws Exception;
 
-   void handleNoMessageReferences(Map<Long, Message> messages);
+   default void handleJDBCAdd(Message message, MessageReferenceData referenceData) throws Exception {
+   }
+
+   default void handleNoMessageReferences(Map<Long, Message> messages) {
+      for (Map.Entry<Long, Message> entry : messages.entrySet()) {
+         if (entry.getValue().getRefCount() == 0 && entry.getValue().getDurableCount() == 0) {
+            handleNoMessageReference(entry.getKey(), entry.getValue());
+         }
+      }
+   }
+
+   default void handleNoMessageReference(long id, Message message) {
+   }
 
    void handleGroupingBindings(List<GroupingInfo> groupingInfos);
 

@@ -1560,9 +1560,23 @@ public interface Configuration {
 
    void exportAsProperties(File to) throws Exception;
 
-   default boolean isUsingDatabasePersistence() {
+   default boolean isUsingDatabaseStorage() {
+      return getStoreConfiguration() != null && getStoreConfiguration().getStoreType() == StoreConfiguration.StoreType.NEW_DATABASE;
+   }
+
+   default boolean isUsingFileOverDB() {
       return getStoreConfiguration() != null && getStoreConfiguration().getStoreType() == StoreConfiguration.StoreType.DATABASE;
    }
+
+   /**
+    * {@return whether the new database storage is enabled; default is false}
+    */
+   boolean isDatabaseStorage();
+
+   /**
+    * Sets whether the new database storage is enabled.
+    */
+   Configuration setDatabaseStorage(boolean databaseStorage);
 
    Map<String, JaasAppConfiguration> getJaasConfigs();
 

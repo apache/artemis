@@ -18,10 +18,10 @@ package org.apache.activemq.artemis.core.paging.impl;
 
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
@@ -54,9 +54,12 @@ public class PageTimedWriter extends ActiveMQScheduledComponent {
 
    protected final boolean syncNonTX;
 
-   private final Semaphore writeCredits;
+   private volatile int writeCredits;
+   private static final AtomicIntegerFieldUpdater<PageTimedWriter> writeCreditsUpdater = AtomicIntegerFieldUpdater.newUpdater(PageTimedWriter.class, "writeCredits");
 
    private final int maxCredits;
+
+   private final HashSet<Runnable> onRelease = new HashSet<>();
 
    private static final AtomicIntegerFieldUpdater<PageTimedWriter> pendingTasksUpdater = AtomicIntegerFieldUpdater.newUpdater(PageTimedWriter.class, "pendingTasks");
    private final ReusableLatch pendingProcessings = new ReusableLatch(0);
@@ -67,14 +70,18 @@ public class PageTimedWriter extends ActiveMQScheduledComponent {
 
    public static class PageEvent {
 
-      PageEvent(OperationContext context, PagedMessage message, Transaction tx, RouteContextList listCtx, int credits, boolean replicated, boolean useFlowControl) {
+      PageEvent(OperationContext context,
+                PagedMessage message,
+                Transaction tx,
+                RouteContextList listCtx,
+                int credits,
+                boolean replicated) {
          this.context = context;
          this.message = message;
          this.listCtx = listCtx;
          this.replicated = replicated;
          this.credits = credits;
          this.tx = tx;
-         this.useFlowControl = useFlowControl;
       }
 
       final boolean replicated;
@@ -83,15 +90,20 @@ public class PageTimedWriter extends ActiveMQScheduledComponent {
       final RouteContextList listCtx;
       final Transaction tx;
       final int credits;
-      final boolean useFlowControl;
    }
 
-   public PageTimedWriter(int writeCredits, StorageManager storageManager, PagingStoreImpl pagingStore, ScheduledExecutorService scheduledExecutor, Executor executor, boolean syncNonTX, long timeSync) {
+   public PageTimedWriter(int writeCredits,
+                          StorageManager storageManager,
+                          PagingStoreImpl pagingStore,
+                          ScheduledExecutorService scheduledExecutor,
+                          Executor executor,
+                          boolean syncNonTX,
+                          long timeSync) {
       super(scheduledExecutor, executor, timeSync, TimeUnit.NANOSECONDS, true);
       this.pagingStore = pagingStore;
       this.storageManager = storageManager;
       this.syncNonTX = syncNonTX;
-      this.writeCredits = new Semaphore(writeCredits);
+      writeCreditsUpdater.set(this, writeCredits);
       this.maxCredits = writeCredits;
    }
 
@@ -121,9 +133,9 @@ public class PageTimedWriter extends ActiveMQScheduledComponent {
    }
 
    public int addTask(OperationContext context,
-                                    PagedMessage message,
-                                    Transaction tx,
-                                    RouteContextList listCtx, boolean useFlowControl) {
+                      PagedMessage message,
+                      Transaction tx,
+                      RouteContextList listCtx) {
 
       logger.trace("Adding paged message {} to paged writer", message);
 
@@ -142,8 +154,10 @@ public class PageTimedWriter extends ActiveMQScheduledComponent {
             tx.delay();
          }
 
+         writeCreditsUpdater.addAndGet(this, -credits);
+
          final boolean replicated = storageManager.isReplicated();
-         PageEvent event = new PageEvent(context, message, tx, listCtx, credits, replicated, useFlowControl);
+         PageEvent event = new PageEvent(context, message, tx, listCtx, credits, replicated);
          context.pageSyncLineUp();
          if (replicated) {
             context.replicationLineUp();
@@ -155,9 +169,35 @@ public class PageTimedWriter extends ActiveMQScheduledComponent {
       return credits;
    }
 
-   public void flowControl(int credits) {
-      if (credits > 0) {
-         writeCredits.acquireUninterruptibly(credits);
+   public boolean flowControl(Runnable block, Runnable release) {
+      boolean blocked = false;
+      synchronized (this) {
+         if (writeCreditsUpdater.get(this) <= 0) {
+            if (logger.isDebugEnabled()) {
+               logger.debug("Flow control blocking, availablePermits={}", writeCreditsUpdater.get(this));
+            }
+            if (block != null) {
+               block.run();
+               blocked = true;
+            }
+            if (release != null) {
+               onRelease.add(release);
+            }
+         }
+      }
+
+      return blocked;
+   }
+
+   private void checkReleaseFlowControl() {
+      synchronized (this) {
+         if (!onRelease.isEmpty() && writeCreditsUpdater.get(this) > 0) {
+            if (logger.isDebugEnabled()) {
+               logger.debug("Flow control releasing {} targets, availablePermits={}", onRelease.size(), writeCreditsUpdater.get(this));
+            }
+            onRelease.forEach(Runnable::run);
+            onRelease.clear();
+         }
       }
    }
 
@@ -269,10 +309,9 @@ public class PageTimedWriter extends ActiveMQScheduledComponent {
          try {
             for (PageEvent event : pendingEvents) {
                pendingTasksUpdater.decrementAndGet(this);
-               if (event.useFlowControl) {
-                  writeCredits.release(event.credits);
-               }
+               writeCreditsUpdater.addAndGet(this, event.credits);
             }
+            checkReleaseFlowControl();
             OperationContextImpl.setContext(beforeContext);
          } catch (Throwable t) {
             logger.debug(t.getMessage(), t);
@@ -286,6 +325,6 @@ public class PageTimedWriter extends ActiveMQScheduledComponent {
    }
 
    public int getAvailablePermits() {
-      return writeCredits.availablePermits();
+      return writeCreditsUpdater.get(this);
    }
 }

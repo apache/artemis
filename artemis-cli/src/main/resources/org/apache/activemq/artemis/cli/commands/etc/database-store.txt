@@ -11,9 +11,18 @@
             <large-message-table-name>${jdbcLargeMessages}</large-message-table-name>
             <page-store-table-name>${jdbcPageStore}</page-store-table-name>
             <node-manager-store-table-name>${jdbcNodeManager}</node-manager-store-table-name>
-            <jdbc-lock-expiration>${jdbcLockExpiration}</jdbc-lock-expiration>
-            <jdbc-lock-renew-period>${jdbcLockRenewPeriod}</jdbc-lock-renew-period>
             <jdbc-network-timeout>${jdbcNetworkTimeout}</jdbc-network-timeout>
+            <jdbc-lock-renew-period>${jdbcLockRenewPeriod}</jdbc-lock-renew-period>
+            <jdbc-lock-expiration>${jdbcLockExpiration}</jdbc-lock-expiration>
             <jdbc-max-page-size-bytes>100K</jdbc-max-page-size-bytes>
+            ${databaseConnections}
+            ${databaseMaxReadConnections}
+            ${databaseReadIdleTimeout}
+            ${databaseMaxRetries}
+            ${databaseRetryIntervalMillis}
+            ${databaseFlushPeriodNanos}
+            ${maxPendingWrites}
+            ${databasePageJoinFetch}
+            ${databaseStorage}
          </database-store>
       </store>

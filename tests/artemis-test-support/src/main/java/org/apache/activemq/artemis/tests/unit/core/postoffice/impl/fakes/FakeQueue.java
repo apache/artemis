@@ -757,6 +757,11 @@ public class FakeQueue extends CriticalComponentImpl implements Queue {
    }
 
    @Override
+   public void destroy() throws Exception {
+
+   }
+
+   @Override
    public long getAutoDeleteDelay() {
       // no-op
       return -1;

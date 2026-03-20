@@ -1090,6 +1090,11 @@ public class ScheduledDeliveryHandlerTest {
       }
 
       @Override
+      public void destroy() throws Exception {
+
+      }
+
+      @Override
       public long getAutoDeleteDelay() {
          // no-op
          return -1;

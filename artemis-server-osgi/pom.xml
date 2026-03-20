@@ -54,6 +54,10 @@
       </dependency>
       <dependency>
          <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-database-storage</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-journal</artifactId>
       </dependency>
       <dependency>
@@ -136,7 +140,7 @@
                      com.nimbusds.jwt*;resolution:=optional,
                      *
                   </Import-Package>
-                  <_exportcontents>org.apache.activemq.artemis.*;-noimport:=true</_exportcontents>
+                  <_exportcontents>org.apache.activemq.artemis.*;-noimport:=true,org.apache.artemis.*;-noimport:=true</_exportcontents>
                </instructions>
             </configuration>
          </plugin>

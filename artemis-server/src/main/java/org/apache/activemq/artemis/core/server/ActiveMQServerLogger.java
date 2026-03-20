@@ -990,6 +990,15 @@ public interface ActiveMQServerLogger {
    @LogMessage(id = 222703, value = "Address \"{}\" is full. Bridge {} will disconnect", level = LogMessage.Level.WARN)
    void bridgeAddressFull(String addressName, String bridgeName);
 
+   @LogMessage(id = 222704, value = "StorageReader for queue {} has negative paged message count: {}", level = LogMessage.Level.WARN)
+   void storageReaderNegativePagedCount(String queueName, long count);
+
+   @LogMessage(id = 222705, value = "Out of memory opening prefetch query for queue {}. Consider setting database-page-join-fetch=false in the database-store configuration.", level = LogMessage.Level.WARN)
+   void storageReaderPrefetchOOM(String queueName);
+
+   @LogMessage(id = 222706, value = "Failed to execute prefetch query for queue {}: {}", level = LogMessage.Level.WARN)
+   void storageReaderPrefetchQueryFailed(String queueName, String errorMessage);
+
    @LogMessage(id = 222274, value = "Failed to deploy address {}: {}", level = LogMessage.Level.WARN)
    void problemDeployingAddress(String addressName, String message);
 
@@ -1562,4 +1571,10 @@ public interface ActiveMQServerLogger {
 
    @LogMessage(id = 224172, value = "Failed to remove binding {} from address {} during wildcard address cleanup", level = LogMessage.Level.WARN)
    void failedToRemoveBindingDuringWildcardCleanup(String binding, String address, Exception e);
+
+   @LogMessage(id = 224173, value = "Queue id={} not found on database reload. The queue may have been deleted.", level = LogMessage.Level.WARN)
+   void queueNotFoundOnDatabaseReload(long queueId);
+
+   @LogMessage(id = 224174, value = "Deleted {} orphaned messages from the database", level = LogMessage.Level.INFO)
+   void deletedOrphanedMessages(int count);
 }

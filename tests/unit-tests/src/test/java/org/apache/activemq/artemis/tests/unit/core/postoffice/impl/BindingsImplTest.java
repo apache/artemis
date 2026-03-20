@@ -31,6 +31,7 @@ import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.filter.Filter;
 import org.apache.activemq.artemis.core.message.impl.CoreMessage;
+import org.apache.activemq.artemis.core.journal.StorageTX;
 import org.apache.activemq.artemis.core.persistence.impl.nullpm.NullStorageManager;
 import org.apache.activemq.artemis.core.postoffice.Binding;
 import org.apache.activemq.artemis.core.postoffice.BindingType;
@@ -130,7 +131,12 @@ public class BindingsImplTest extends ActiveMQTestBase {
       }
    }
 
-   private final class FakeTransaction implements Transaction {
+   private static final class FakeTransaction implements Transaction {
+
+      @Override
+      public StorageTX getStorageTx() {
+         return null;
+      }
 
       @Override
       public Object getProtocolData() {
@@ -304,6 +310,31 @@ public class BindingsImplTest extends ActiveMQTestBase {
 
       @Override
       public void delayDone() {
+
+      }
+
+      @Override
+      public void setMessagesSent() {
+
+      }
+
+      @Override
+      public boolean isAckedMessages() {
+         return false;
+      }
+
+      @Override
+      public void setAckedMessages() {
+
+      }
+
+      @Override
+      public boolean isPagedMessages() {
+         return false;
+      }
+
+      @Override
+      public void setPagedMessages() {
 
       }
    }

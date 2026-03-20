@@ -185,6 +185,8 @@ public class AMQPMirrorControllerSource extends BasicMirrorController<Sender> im
       this.sync = replicaConfig.isSync();
       this.pagedRouteContext = new PagedRouteContext(snfQueue);
 
+      server.getStorageManager().setMirrorSNFPagingStore(snfQueue.getPagingStore());
+
       if (sync) {
          logger.debug("Mirror is configured to sync, so pageStore={} being enforced to BLOCK, and not page", snfQueue.getName());
          snfQueue.getPagingStore().enforceAddressFullMessagePolicy(AddressFullMessagePolicy.BLOCK);
@@ -402,11 +404,9 @@ public class AMQPMirrorControllerSource extends BasicMirrorController<Sender> im
             return;
          }
 
-         int creditsWrite = snfQueue.getPagingStore().page(message, tx, pagedRouteContext, this::copyMessageForPaging, true);
+         int creditsWrite = snfQueue.getPagingStore().page(message, tx, pagedRouteContext, this::copyMessageForPaging);
 
-         // This will store the message on paging, and the message will be copied into paging.
          if (creditsWrite >= 0) {
-            snfQueue.getPagingStore().writeFlowControl(creditsWrite);
             if (tx == null) {
                snfQueue.deliverAsync();
             } else {
@@ -447,7 +447,7 @@ public class AMQPMirrorControllerSource extends BasicMirrorController<Sender> im
          }
 
          if (message.isDurable() && snfQueue.isDurable()) {
-            PostOfficeImpl.storeDurableReference(server.getStorageManager(), message, context.getTransaction(), snfQueue, true);
+            PostOfficeImpl.storeDurableReference(server.getStorageManager(), message, context.getTransaction(), snfQueue, false, true);
          }
 
          if (tx == null) {

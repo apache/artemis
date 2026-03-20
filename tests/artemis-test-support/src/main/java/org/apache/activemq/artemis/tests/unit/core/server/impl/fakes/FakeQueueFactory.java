@@ -42,7 +42,7 @@ public final class FakeQueueFactory implements QueueFactory {
 
    @Override
    public Queue createQueueWith(QueueConfiguration config, PagingManager pagingManager, Filter filter) throws Exception {
-      PageSubscription pageSubscription = pagingManager == null ? null : QueueFactoryImpl.getPageSubscription(config, pagingManager, filter);
+      PageSubscription pageSubscription = pagingManager == null ? null : QueueFactoryImpl.getPageSubscription(config, QueueFactoryImpl.getPagingStore(pagingManager, config.getAddress()), filter);
       return new QueueImpl(config, filter, pageSubscription != null ? pageSubscription.getPagingStore() : null, pageSubscription, scheduledExecutor, postOffice, null, null, ArtemisExecutor.delegate(executor), null, this);
    }
 
