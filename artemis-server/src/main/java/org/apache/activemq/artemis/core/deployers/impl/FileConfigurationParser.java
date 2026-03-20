@@ -23,6 +23,7 @@ import java.lang.invoke.MethodHandles;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -106,6 +107,7 @@ import org.apache.activemq.artemis.core.server.routing.KeyType;
 import org.apache.activemq.artemis.core.server.routing.policies.PolicyFactoryResolver;
 import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
+import org.apache.activemq.artemis.core.settings.impl.AuthenticationCacheKeyConfig;
 import org.apache.activemq.artemis.core.settings.impl.DeletionPolicy;
 import org.apache.activemq.artemis.core.settings.impl.DiskFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.PageFullMessagePolicy;
@@ -399,6 +401,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
    private static final String MQTT_SUBSCRIPTION_PERSISTENCE_ENABLED = "mqtt-subscription-persistence-enabled";
 
+   private static final String AUTHENTICATION_CACHE_KEY = "authentication-cache-key";
+
    private boolean validateAIO = false;
 
    private boolean printPageMaxSizeUsed = false;
@@ -515,6 +519,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
       config.setMqttSessionStatePersistenceTimeout(getLong(e, "mqtt-session-state-persistence-timeout", config.getMqttSessionStatePersistenceTimeout(), GT_ZERO, MQTT_SUBSCRIPTION_PERSISTENCE_ENABLED));
 
       config.setMqttSubscriptionPersistenceEnabled(getBoolean(e, MQTT_SUBSCRIPTION_PERSISTENCE_ENABLED, config.isMqttSubscriptionPersistenceEnabled()));
+
+      parseAuthenticationCacheKey(e, config);
 
       config.setGlobalMaxSizePercentOfJvmMaxMemory(getInteger(e, GLOBAL_MAX_SIZE_PERCENT_JVM_MAX_MEM, config.getGlobalMaxSizePercentOfJvmMaxMemory(), GT_ZERO));
 
@@ -947,6 +953,26 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
       if (wildCardConfiguration.getLength() > 0) {
          parseWildcardConfiguration((Element) wildCardConfiguration.item(0), config);
       }
+   }
+
+   private static void parseAuthenticationCacheKey(Element e, Configuration config) {
+      NodeList authenticationCachKeyNodes = e.getElementsByTagName(AUTHENTICATION_CACHE_KEY);
+
+      EnumSet<AuthenticationCacheKeyConfig> authenticationCachKey = EnumSet.noneOf(AuthenticationCacheKeyConfig.class);
+
+      if (authenticationCachKeyNodes.getLength() > 0) {
+         NodeList parts = authenticationCachKeyNodes.item(0).getChildNodes();
+
+         for (int i = 0; i < parts.getLength(); i++) {
+            if ("part".equalsIgnoreCase(parts.item(i).getNodeName())) {
+               String part = getTrimmedTextContent(parts.item(i));
+               authenticationCachKey.add(AuthenticationCacheKeyConfig.valueOf(part));
+            }
+         }
+      } else {
+         authenticationCachKey = ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY;
+      }
+      config.setAuthenticationCacheKey(authenticationCachKey);
    }
 
    private void parseLockCoordinator(final Element lockCoordinatorElement, final Configuration mainConfig) throws Exception {

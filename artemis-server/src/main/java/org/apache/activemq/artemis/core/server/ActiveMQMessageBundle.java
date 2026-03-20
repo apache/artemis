@@ -142,8 +142,8 @@ public interface ActiveMQMessageBundle {
    @Message(id = 229030, value = "large-message not initialized on server")
    ActiveMQIllegalStateException largeMessageNotInitialised();
 
-   @Message(id = 229031, value = "Unable to validate user from {}. Username: {}; SSL certificate subject DN: {}")
-   ActiveMQSecurityException unableToValidateUser(String remoteAddress, String user, String certMessage);
+   @Message(id = 229031, value = "Unable to validate user from {}. Username: {}; SSL certificate subject DN: {}; UPN: {}")
+   ActiveMQSecurityException unableToValidateUser(String remoteAddress, String user, String dn, String upn);
 
    @Message(id = 229032, value = "User: {} does not have permission='{}' on address {}")
    ActiveMQSecurityException userNoPermissions(String username, CheckType checkType, SimpleString address);
@@ -540,5 +540,8 @@ public interface ActiveMQMessageBundle {
 
    @Message(id = 229259, value = "Invalid disk full message policy type {}")
    IllegalArgumentException invalidDiskFullPolicyType(String val);
+
+   @Message(id = 229260, value = "Invalid authentication cache key: {}")
+   IllegalArgumentException invalidAuthenticationCacheKey(String val);
 
 }

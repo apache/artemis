@@ -80,6 +80,7 @@ import org.apache.activemq.artemis.core.server.metrics.plugins.SimpleMetricsPlug
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerBasePlugin;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerPlugin;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
+import org.apache.activemq.artemis.core.settings.impl.AuthenticationCacheKeyConfig;
 import org.apache.activemq.artemis.core.settings.impl.DiskFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.SlowConsumerPolicy;
 import org.apache.activemq.artemis.core.settings.impl.SlowConsumerThresholdMeasurementUnit;
@@ -253,6 +254,7 @@ public class FileConfigurationTest extends AbstractConfigurationTestBase {
       assertEquals(123456, configInstance.getMqttSessionScanInterval());
       assertEquals(567890, configInstance.getMqttSessionStatePersistenceTimeout());
       assertFalse(configInstance.isMqttSubscriptionPersistenceEnabled());
+      assertEquals(Set.of(AuthenticationCacheKeyConfig.USER, AuthenticationCacheKeyConfig.PASS), configInstance.getAuthenticationCacheKey());
       assertEquals(98765, configInstance.getConnectionTtlCheckInterval());
       assertEquals(1234567, configInstance.getConfigurationFileRefreshPeriod());
       assertEquals("UUID", configInstance.getTemporaryQueueNamespace());

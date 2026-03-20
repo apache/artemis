@@ -293,7 +293,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
    public void testSecurityCacheSizes() throws Exception {
       ActiveMQServerControl serverControl = createManagementControl();
 
-      Wait.assertEquals(usingCore() ? 1 : 0, serverControl::getAuthenticationCacheSize);
+      Wait.assertEquals(0, serverControl::getAuthenticationCacheSize);
       Wait.assertEquals(0, serverControl::getAuthorizationCacheSize);
 
       ServerLocator loc = createInVMNonHALocator();
@@ -311,7 +311,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       m.putStringProperty("hello", "world");
       producer.send(m);
 
-      assertEquals(usingCore() ? 2 : 1, serverControl.getAuthenticationCacheSize());
+      assertEquals(1, serverControl.getAuthenticationCacheSize());
       Wait.assertEquals(1, () -> serverControl.getAuthorizationCacheSize());
    }
 
@@ -344,7 +344,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       serverControl.clearAuthenticationCache();
       serverControl.clearAuthorizationCache();
 
-      assertEquals(usingCore() ? 1 : 0, serverControl.getAuthenticationCacheSize());
+      assertEquals(0, serverControl.getAuthenticationCacheSize());
       assertEquals(0, serverControl.getAuthorizationCacheSize());
    }
 

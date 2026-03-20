@@ -269,25 +269,35 @@ public class SecurityTest extends ActiveMQTestBase {
 
    @Test
    public void testJAASSecurityManagerAuthenticationWithCerts() throws Exception {
-      testJAASSecurityManagerAuthenticationWithCerts("CertLogin", TransportConstants.NEED_CLIENT_AUTH_PROP_NAME);
+      testJAASSecurityManagerAuthenticationWithCerts("CertLogin", TransportConstants.NEED_CLIENT_AUTH_PROP_NAME, "client-keystore.jks");
    }
 
    @Test
    public void testJAASSecurityManagerAuthenticationWithCertsWantClientAuth() throws Exception {
-      testJAASSecurityManagerAuthenticationWithCerts("CertLogin", TransportConstants.WANT_CLIENT_AUTH_PROP_NAME);
+      testJAASSecurityManagerAuthenticationWithCerts("CertLogin", TransportConstants.WANT_CLIENT_AUTH_PROP_NAME, "client-keystore.jks");
    }
 
    @Test
    public void testJAASSecurityManagerAuthenticationWithRegexps() throws Exception {
-      testJAASSecurityManagerAuthenticationWithCerts("CertLoginWithRegexp", TransportConstants.NEED_CLIENT_AUTH_PROP_NAME);
+      testJAASSecurityManagerAuthenticationWithCerts("CertLoginWithRegexp", TransportConstants.NEED_CLIENT_AUTH_PROP_NAME, "client-keystore.jks");
    }
 
    @Test
    public void testJAASSecurityManagerAuthenticationWithRegexpsWantClientAuth() throws Exception {
-      testJAASSecurityManagerAuthenticationWithCerts("CertLoginWithRegexp", TransportConstants.WANT_CLIENT_AUTH_PROP_NAME);
+      testJAASSecurityManagerAuthenticationWithCerts("CertLoginWithRegexp", TransportConstants.WANT_CLIENT_AUTH_PROP_NAME, "client-keystore.jks");
    }
 
-   protected void testJAASSecurityManagerAuthenticationWithCerts(String secManager, String clientAuthPropName) throws Exception {
+   @Test
+   public void testJAASSecurityManagerAuthenticationWithUpnCerts() throws Exception {
+      testJAASSecurityManagerAuthenticationWithCerts("UpnCertLogin", TransportConstants.NEED_CLIENT_AUTH_PROP_NAME, "upn-client-keystore.jks");
+   }
+
+   @Test
+   public void testJAASSecurityManagerAuthenticationWithUpnCertsWantClientAuth() throws Exception {
+      testJAASSecurityManagerAuthenticationWithCerts("UpnCertLogin", TransportConstants.WANT_CLIENT_AUTH_PROP_NAME, "upn-client-keystore.jks");
+   }
+
+   protected void testJAASSecurityManagerAuthenticationWithCerts(String secManager, String clientAuthPropName, String keystore) throws Exception {
       ActiveMQJAASSecurityManager securityManager = new ActiveMQJAASSecurityManager(secManager);
       ActiveMQServer server = addServer(ActiveMQServers.newActiveMQServer(createDefaultInVMConfig().setSecurityEnabled(true), ManagementFactory.getPlatformMBeanServer(), securityManager, false));
 
@@ -307,7 +317,7 @@ public class SecurityTest extends ActiveMQTestBase {
       tc.getParams().put(TransportConstants.SSL_ENABLED_PROP_NAME, true);
       tc.getParams().put(TransportConstants.TRUSTSTORE_PATH_PROP_NAME, "server-ca-truststore.jks");
       tc.getParams().put(TransportConstants.TRUSTSTORE_PASSWORD_PROP_NAME, "securepass");
-      tc.getParams().put(TransportConstants.KEYSTORE_PATH_PROP_NAME, "client-keystore.jks");
+      tc.getParams().put(TransportConstants.KEYSTORE_PATH_PROP_NAME, keystore);
       tc.getParams().put(TransportConstants.KEYSTORE_PASSWORD_PROP_NAME, "securepass");
       ServerLocator locator = addServerLocator(ActiveMQClient.createServerLocatorWithoutHA(tc));
       ClientSessionFactory cf = createSessionFactory(locator);
@@ -495,17 +505,27 @@ public class SecurityTest extends ActiveMQTestBase {
    }
 
    /**
-    * This test requires a client-side certificate that will be trusted by the server but whose dname will be rejected
-    * by the CertLogin login module. I created this cert with the follow commands:
-    * <pre>{@code
-    * keytool -genkey -keystore bad-client-keystore.jks -storepass securepass -keypass securepass -dname "CN=Bad Client, OU=Artemis, O=ActiveMQ, L=AMQ, S=AMQ, C=AMQ" -keyalg RSA
-    * keytool -export -keystore bad-client-keystore.jks -file activemq-jks.cer -storepass securepass
-    * keytool -import -keystore client-ca-truststore.jks -file activemq-jks.cer -storepass securepass -keypass securepass -noprompt -alias bad
-    * }</pre>
+    * This test requires a client-side certificate that will be trusted by the server but whose DN will be rejected
+    * by the {@code TextFileCertificateLoginModule} login module.
     */
    @Test
-   public void testJAASSecurityManagerAuthenticationWithBadClientCert() throws Exception {
-      ActiveMQJAASSecurityManager securityManager = new ActiveMQJAASSecurityManager("CertLogin");
+   public void testJAASSecurityManagerAuthenticationWithBadDnClientCert() throws Exception {
+      testJAASSecurityManagerAuthenticationWithBadClientCert("CertLogin", "unknown-client-keystore.jks");
+   }
+
+
+   /**
+    * This test requires a client-side certificate that will be trusted by the server but whose UPN will be rejected
+    * by the {@code TextFileUpnCertificateLoginModule} login module.
+    */
+   @Test
+   public void testJAASSecurityManagerAuthenticationWithBadUpnClientCert() throws Exception {
+      testJAASSecurityManagerAuthenticationWithBadClientCert("UpnCertLogin", "unknown-upn-client-keystore.jks");
+
+   }
+
+   private void testJAASSecurityManagerAuthenticationWithBadClientCert(String configName, String keystore) throws Exception {
+      ActiveMQJAASSecurityManager securityManager = new ActiveMQJAASSecurityManager(configName);
       ActiveMQServer server = addServer(ActiveMQServers.newActiveMQServer(createDefaultInVMConfig().setSecurityEnabled(true), ManagementFactory.getPlatformMBeanServer(), securityManager, false));
 
       Map<String, Object> params = new HashMap<>();
@@ -524,7 +544,7 @@ public class SecurityTest extends ActiveMQTestBase {
       tc.getParams().put(TransportConstants.SSL_ENABLED_PROP_NAME, true);
       tc.getParams().put(TransportConstants.TRUSTSTORE_PATH_PROP_NAME, "server-ca-truststore.jks");
       tc.getParams().put(TransportConstants.TRUSTSTORE_PASSWORD_PROP_NAME, "securepass");
-      tc.getParams().put(TransportConstants.KEYSTORE_PATH_PROP_NAME, "unknown-client-keystore.jks");
+      tc.getParams().put(TransportConstants.KEYSTORE_PATH_PROP_NAME, keystore);
       tc.getParams().put(TransportConstants.KEYSTORE_PASSWORD_PROP_NAME, "securepass");
       ServerLocator locator = addServerLocator(ActiveMQClient.createServerLocatorWithoutHA(tc));
       ClientSessionFactory cf = createSessionFactory(locator);
@@ -943,12 +963,21 @@ public class SecurityTest extends ActiveMQTestBase {
    }
 
    @Test
-   public void testJAASSecurityManagerAuthorizationNegativeWithCerts() throws Exception {
+   public void testJAASSecurityManagerAuthorizationNegativeWithDnCerts() throws Exception {
+      testJAASSecurityManagerAuthorizationNegativeWithCerts("CertLogin", "client-keystore.jks");
+   }
+
+   @Test
+   public void testJAASSecurityManagerAuthorizationNegativeWithUpnCerts() throws Exception {
+      testJAASSecurityManagerAuthorizationNegativeWithCerts("UpnCertLogin", "upn-client-keystore.jks");
+   }
+
+   private void testJAASSecurityManagerAuthorizationNegativeWithCerts(String configName, String keystore) throws Exception {
       final SimpleString ADDRESS = SimpleString.of("address");
       final SimpleString DURABLE_QUEUE = SimpleString.of("durableQueue");
       final SimpleString NON_DURABLE_QUEUE = SimpleString.of("nonDurableQueue");
 
-      ActiveMQJAASSecurityManager securityManager = new ActiveMQJAASSecurityManager("CertLogin");
+      ActiveMQJAASSecurityManager securityManager = new ActiveMQJAASSecurityManager(configName);
       ActiveMQServer server = addServer(ActiveMQServers.newActiveMQServer(createDefaultInVMConfig().setSecurityEnabled(true), ManagementFactory.getPlatformMBeanServer(), securityManager, false));
 
       Map<String, Object> params = new HashMap<>();
@@ -971,7 +1000,7 @@ public class SecurityTest extends ActiveMQTestBase {
       tc.getParams().put(TransportConstants.SSL_ENABLED_PROP_NAME, true);
       tc.getParams().put(TransportConstants.TRUSTSTORE_PATH_PROP_NAME, "server-ca-truststore.jks");
       tc.getParams().put(TransportConstants.TRUSTSTORE_PASSWORD_PROP_NAME, "securepass");
-      tc.getParams().put(TransportConstants.KEYSTORE_PATH_PROP_NAME, "client-keystore.jks");
+      tc.getParams().put(TransportConstants.KEYSTORE_PATH_PROP_NAME, keystore);
       tc.getParams().put(TransportConstants.KEYSTORE_PASSWORD_PROP_NAME, "securepass");
       ServerLocator locator = addServerLocator(ActiveMQClient.createServerLocatorWithoutHA(tc));
       ClientSessionFactory cf = createSessionFactory(locator);
@@ -1148,21 +1177,31 @@ public class SecurityTest extends ActiveMQTestBase {
    }
 
    @Test
-   public void testJAASSecurityManagerAuthorizationPositiveWithCerts() throws Exception {
-      testJAASSecurityManagerAuthorizationPositiveWithCerts(TransportConstants.NEED_CLIENT_AUTH_PROP_NAME);
+   public void testJAASSecurityManagerAuthorizationPositiveWithDnCerts() throws Exception {
+      testJAASSecurityManagerAuthorizationPositiveWithCerts(TransportConstants.NEED_CLIENT_AUTH_PROP_NAME, "CertLogin", "client-keystore.jks");
    }
 
    @Test
-   public void testJAASSecurityManagerAuthorizationPositiveWithCertsWantClientAuth() throws Exception {
-      testJAASSecurityManagerAuthorizationPositiveWithCerts(TransportConstants.WANT_CLIENT_AUTH_PROP_NAME);
+   public void testJAASSecurityManagerAuthorizationPositiveWithDnCertsWantClientAuth() throws Exception {
+      testJAASSecurityManagerAuthorizationPositiveWithCerts(TransportConstants.WANT_CLIENT_AUTH_PROP_NAME, "CertLogin", "client-keystore.jks");
    }
 
-   protected void testJAASSecurityManagerAuthorizationPositiveWithCerts(String clientAuthPropName) throws Exception {
+   @Test
+   public void testJAASSecurityManagerAuthorizationPositiveWithUpnCerts() throws Exception {
+      testJAASSecurityManagerAuthorizationPositiveWithCerts(TransportConstants.NEED_CLIENT_AUTH_PROP_NAME, "UpnCertLogin", "upn-client-keystore.jks");
+   }
+
+   @Test
+   public void testJAASSecurityManagerAuthorizationPositiveWithUpnCertsWantClientAuth() throws Exception {
+      testJAASSecurityManagerAuthorizationPositiveWithCerts(TransportConstants.WANT_CLIENT_AUTH_PROP_NAME, "UpnCertLogin", "upn-client-keystore.jks");
+   }
+
+   protected void testJAASSecurityManagerAuthorizationPositiveWithCerts(String clientAuthPropName, String configName, String keystore) throws Exception {
       final SimpleString ADDRESS = SimpleString.of("address");
       final SimpleString DURABLE_QUEUE = SimpleString.of("durableQueue");
       final SimpleString NON_DURABLE_QUEUE = SimpleString.of("nonDurableQueue");
 
-      ActiveMQJAASSecurityManager securityManager = new ActiveMQJAASSecurityManager("CertLogin");
+      ActiveMQJAASSecurityManager securityManager = new ActiveMQJAASSecurityManager(configName);
       ActiveMQServer server = addServer(ActiveMQServers.newActiveMQServer(createDefaultInVMConfig().setSecurityEnabled(true), ManagementFactory.getPlatformMBeanServer(), securityManager, false));
 
       Map<String, Object> params = new HashMap<>();
@@ -1184,7 +1223,7 @@ public class SecurityTest extends ActiveMQTestBase {
       tc.getParams().put(TransportConstants.SSL_ENABLED_PROP_NAME, true);
       tc.getParams().put(TransportConstants.TRUSTSTORE_PATH_PROP_NAME, "server-ca-truststore.jks");
       tc.getParams().put(TransportConstants.TRUSTSTORE_PASSWORD_PROP_NAME, "securepass");
-      tc.getParams().put(TransportConstants.KEYSTORE_PATH_PROP_NAME, "client-keystore.jks");
+      tc.getParams().put(TransportConstants.KEYSTORE_PATH_PROP_NAME, keystore);
       tc.getParams().put(TransportConstants.KEYSTORE_PASSWORD_PROP_NAME, "securepass");
       ServerLocator locator = addServerLocator(ActiveMQClient.createServerLocatorWithoutHA(tc));
       ClientSessionFactory cf = createSessionFactory(locator);

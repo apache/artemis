@@ -19,6 +19,7 @@ package org.apache.activemq.artemis.core.server;
 import javax.naming.NamingException;
 import javax.transaction.xa.Xid;
 import java.io.File;
+import java.security.cert.CertificateParsingException;
 import java.util.concurrent.ExecutorService;
 
 import io.netty.channel.Channel;
@@ -1544,4 +1545,7 @@ public interface ActiveMQServerLogger {
 
    @LogMessage(id = 224163, value = "Failed to clone SHA256 MessageDigest, falling back to getInstance", level = LogMessage.Level.INFO)
    void sha256CloneNotSupported(CloneNotSupportedException cns);
+
+   @LogMessage(id = 224164, value = "Failed to parse certificate: {}", level = LogMessage.Level.WARN)
+   void failedToParseCertificate(String cert, CertificateParsingException cps);
 }
