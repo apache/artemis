@@ -17,39 +17,52 @@
 package org.apache.activemq.artemis.core.paging.impl;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.ClosedChannelException;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import org.apache.activemq.artemis.api.core.SimpleString;
-import org.apache.activemq.artemis.core.io.IOCallback;
-import org.apache.activemq.artemis.core.io.SequentialFile;
-import org.apache.activemq.artemis.core.io.SequentialFileFactory;
 import org.apache.activemq.artemis.core.paging.PagedMessage;
 import org.apache.activemq.artemis.core.persistence.StorageManager;
-import org.apache.activemq.artemis.core.server.ActiveMQMessageBundle;
-import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
-import org.apache.activemq.artemis.core.server.LargeServerMessage;
 import org.apache.activemq.artemis.utils.ReferenceCounterUtil;
 import org.apache.activemq.artemis.utils.collections.EmptyList;
 import org.apache.activemq.artemis.utils.collections.LinkedList;
 import org.apache.activemq.artemis.utils.collections.LinkedListImpl;
 import org.apache.activemq.artemis.utils.collections.LinkedListIterator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import java.lang.invoke.MethodHandles;
 
-public final class Page {
+public abstract class Page {
 
-   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+   private static final AtomicInteger seqFactory = new AtomicInteger(0);
 
-   private static final AtomicInteger factory = new AtomicInteger(0);
-
-   private final int seqInt = factory.incrementAndGet();
+   private final int seqInt = seqFactory.incrementAndGet();
 
    private final ReferenceCounterUtil referenceCounter = new ReferenceCounterUtil();
+
+   private final long pageId;
+
+   private boolean suspiciousRecords = false;
+
+   private volatile int numberOfMessages;
+
+   private volatile LinkedList<PagedMessage> messages;
+
+   private volatile long size;
+
+   protected final StorageManager storageManager;
+
+   protected final SimpleString storeName;
+
+   protected Page(final SimpleString storeName,
+                  final StorageManager storageManager,
+                  final long pageId) {
+      this.pageId = pageId;
+      this.storageManager = storageManager;
+      this.storeName = storeName;
+   }
+
+   // -------------------------------------------------------------------------
+   // Reference counting
+   // -------------------------------------------------------------------------
 
    public void usageExhaust() {
       referenceCounter.exhaust();
@@ -63,275 +76,16 @@ public final class Page {
       return referenceCounter.decrement();
    }
 
-   /**
-    * to be called when the page is supposed to be released
-    */
    public void releaseTask(Consumer<Page> releaseTask) {
       referenceCounter.setTask(() -> releaseTask.accept(this));
    }
 
-   private final long pageId;
-
-   private boolean suspiciousRecords = false;
-
-   private volatile int numberOfMessages;
-
-   private final SequentialFile file;
-
-   private final SequentialFileFactory fileFactory;
-
-   private volatile LinkedList<PagedMessage> messages;
-
-   private volatile long size;
-
-   private final StorageManager storageManager;
-
-   private final SimpleString storeName;
-
-   private ByteBuffer readFileBuffer;
-
-   public Page(final SimpleString storeName,
-               final StorageManager storageManager,
-               final SequentialFileFactory factory,
-               final SequentialFile file,
-               final long pageId) throws Exception {
-      this.pageId = pageId;
-      this.file = file;
-      fileFactory = factory;
-      this.storageManager = storageManager;
-      this.storeName = storeName;
-   }
+   // -------------------------------------------------------------------------
+   // Accessors
+   // -------------------------------------------------------------------------
 
    public long getPageId() {
       return pageId;
-   }
-
-   public LinkedListIterator<PagedMessage> iterator() throws Exception {
-      LinkedList<PagedMessage> messages = getMessages();
-      return messages.iterator();
-   }
-
-   public synchronized LinkedList<PagedMessage> getMessages() throws Exception {
-      if (messages == null) {
-         boolean wasOpen = file.isOpen();
-         if (!wasOpen) {
-            if (!file.exists()) {
-               return EmptyList.getEmptyList();
-            }
-            file.open();
-         }
-         messages = read(storageManager);
-         if (!wasOpen) {
-            file.close();
-         }
-      }
-
-      return messages;
-   }
-
-   private void addMessage(PagedMessage message) {
-      if (messages == null) {
-         messages = new LinkedListImpl<>();
-      }
-      message.setMessageNumber(messages.size());
-      message.setPageNumber(this.pageId);
-      messages.addTail(message);
-   }
-
-   public synchronized LinkedList<PagedMessage> read() throws Exception {
-      return read(storageManager);
-   }
-
-   public synchronized LinkedList<PagedMessage> read(StorageManager storage) throws Exception {
-      return read(storage, false);
-   }
-
-   public synchronized LinkedList<PagedMessage> read(StorageManager storage, boolean onlyLargeMessages) throws Exception {
-
-      if (!file.isOpen()) {
-         if (!file.exists()) {
-            return EmptyList.getEmptyList();
-         }
-         throw ActiveMQMessageBundle.BUNDLE.invalidPageIO();
-      }
-
-      if (logger.isTraceEnabled()) {
-         logger.trace("reading page {} on address = {} onlyLargeMessages = {}", pageId, storeName, onlyLargeMessages, new Exception("trace"));
-      } else if (logger.isDebugEnabled()) {
-         logger.debug("reading page {} on address = {} onlyLargeMessages = {}", pageId, storeName, onlyLargeMessages);
-      }
-
-      size = file.size();
-
-      final LinkedList<PagedMessage> messages = new LinkedListImpl<>();
-
-      numberOfMessages = PageReadWriter.readFromSequentialFile(storage, storeName, fileFactory, file, this.pageId, messages::addTail, onlyLargeMessages ? PageReadWriter.ONLY_LARGE : PageReadWriter.NO_SKIP, this::markFileAsSuspect, this::setSize);
-
-      return messages;
-   }
-
-   public String debugMessages() throws Exception {
-      StringBuilder sb = new StringBuilder();
-      LinkedListIterator<PagedMessage> iter = getMessages().iterator();
-      while (iter.hasNext()) {
-         PagedMessage message = iter.next();
-         sb.append(message.toString() + "\n");
-      }
-      iter.close();
-      return sb.toString();
-   }
-
-   public synchronized void write(final PagedMessage message, boolean lineUp, boolean originallyReplicated) throws Exception {
-      writeDirect(message);
-      storageManager.pageWrite(storeName, message, pageId, lineUp, originallyReplicated);
-   }
-
-   /**
-    * This write will not interact back with the storage manager. To avoid ping pongs with Journal retaining events and
-    * any other stuff.
-    */
-   public synchronized void writeDirect(PagedMessage message) throws Exception {
-      if (!file.isOpen()) {
-         throw ActiveMQMessageBundle.BUNDLE.cannotWriteToClosedFile(file);
-      }
-      addMessage(message);
-      this.size += PageReadWriter.writeMessage(message, fileFactory, file);
-      numberOfMessages++;
-   }
-
-   public void sync() throws Exception {
-      file.sync();
-   }
-
-   public void trySync() throws IOException {
-      try {
-         if (file.isOpen()) {
-            file.sync();
-         }
-      } catch (IOException e) {
-         if (e instanceof ClosedChannelException) {
-            logger.debug("file.sync on file {} thrown a ClosedChannelException that will just be ignored", file.getFileName());
-         } else {
-            throw e;
-         }
-      }
-   }
-
-   public boolean isOpen() {
-      return file != null && file.isOpen();
-   }
-
-
-   public boolean open(boolean createFile) throws Exception {
-      boolean isOpen = false;
-      if (!file.isOpen() && (createFile || file.exists())) {
-         file.open();
-         isOpen = true;
-      }
-      if (file.isOpen()) {
-         isOpen = true;
-         size = file.size();
-         file.position(0);
-      }
-      return isOpen;
-   }
-
-   public void close(boolean sendReplicaClose) throws Exception {
-      close(sendReplicaClose, true);
-   }
-
-   /**
-    * sendEvent means it's a close happening from a major event such moveNext. While reading the cache we don't need
-    * (and shouldn't inform the backup
-    */
-   public synchronized void close(boolean sendReplicaClose, boolean waitSync) throws Exception {
-      if (readFileBuffer != null) {
-         fileFactory.releaseDirectBuffer(readFileBuffer);
-         readFileBuffer = null;
-      }
-
-      if (sendReplicaClose && storageManager != null) {
-         storageManager.pageClosed(storeName, pageId);
-      }
-      file.close(waitSync, waitSync);
-   }
-
-   public boolean delete(final LinkedList<PagedMessage> messages) throws Exception {
-      if (storageManager != null) {
-         storageManager.pageDeleted(storeName, pageId);
-      }
-
-      if (logger.isTraceEnabled()) {
-         logger.trace("Deleting pageNr={} on store {}", pageId, storeName, new Exception("trace"));
-      } else if (logger.isDebugEnabled()) {
-         logger.debug("Deleting pageNr={} on store {}", pageId, storeName);
-      }
-
-      if (messages != null) {
-         try (LinkedListIterator<PagedMessage> iter = messages.iterator()) {
-            while (iter.hasNext()) {
-               PagedMessage msg = iter.next();
-               if ((msg.getMessage()).isLargeMessage()) {
-                  ((LargeServerMessage)(msg.getMessage())).deleteFile();
-                  msg.getMessage().usageDown();
-               }
-            }
-         }
-      }
-
-      storageManager.afterCompleteOperations(new IOCallback() {
-         @Override
-         public void done() {
-            try {
-               if (suspiciousRecords) {
-                  ActiveMQServerLogger.LOGGER.pageInvalid(file.getFileName(), file.getFileName());
-                  file.renameTo(file.getFileName() + ".invalidPage");
-               } else {
-                  file.delete();
-               }
-               referenceCounter.exhaust();
-            } catch (Exception e) {
-               ActiveMQServerLogger.LOGGER.pageDeleteError(e);
-            }
-         }
-
-         @Override
-         public void onError(int errorCode, String errorMessage) {
-
-         }
-      });
-
-      return true;
-   }
-
-   public int readNumberOfMessages() throws Exception {
-      boolean wasOpen = isOpen();
-
-      if (!wasOpen) {
-         if (!open(false)) {
-            return 0;
-         }
-      }
-
-      try {
-         int numberOfMessages = PageReadWriter.readFromSequentialFile(this.storageManager,
-                                                                      this.storeName,
-                                                                      this.fileFactory,
-                                                                      this.file,
-                                                                      this.pageId,
-                                                                      null,
-                                                                      PageReadWriter.SKIP_ALL,
-                                                                      null,
-                                                                      null);
-         if (logger.isDebugEnabled()) {
-            logger.debug(">>> Reading numberOfMessages page {}, returning {}", this.pageId, numberOfMessages);
-         }
-         return numberOfMessages;
-      } finally {
-         if (!wasOpen) {
-            close(false);
-         }
-      }
    }
 
    public int getNumberOfMessages() {
@@ -342,13 +96,103 @@ public final class Page {
       return size;
    }
 
-   private void setSize(long size) {
+   // -------------------------------------------------------------------------
+   // Message cache (shared, storage-independent)
+   // -------------------------------------------------------------------------
+
+   public LinkedListIterator<PagedMessage> iterator() throws Exception {
+      return getMessages().iterator();
+   }
+
+   public synchronized LinkedList<PagedMessage> getMessages() throws Exception {
+      if (messages == null) {
+         boolean wasOpen = isOpen();
+         if (!wasOpen) {
+            if (!storageExists()) {
+               return EmptyList.getEmptyList();
+            }
+            open(false);
+         }
+         messages = read(storageManager);
+         if (!wasOpen) {
+            close(false, false);
+         }
+      }
+      return messages;
+   }
+
+   public synchronized LinkedList<PagedMessage> read() throws Exception {
+      return read(storageManager);
+   }
+
+   public synchronized LinkedList<PagedMessage> read(StorageManager storage) throws Exception {
+      return read(storage, false);
+   }
+
+   public String debugMessages() throws Exception {
+      StringBuilder sb = new StringBuilder();
+      LinkedListIterator<PagedMessage> iter = getMessages().iterator();
+      while (iter.hasNext()) {
+         PagedMessage message = iter.next();
+         sb.append(message.toString()).append("\n");
+      }
+      iter.close();
+      return sb.toString();
+   }
+
+   /**
+    * Write a message to the page and notify the storage manager journal.
+    */
+   public synchronized void write(final PagedMessage message, boolean lineUp, boolean originallyReplicated) throws Exception {
+      writeDirect(message);
+      storageManager.pageWrite(storeName, message, pageId, lineUp, originallyReplicated);
+   }
+
+   // -------------------------------------------------------------------------
+   // Protected helpers for subclasses
+   // -------------------------------------------------------------------------
+
+   /**
+    * Append {@code message} to the in-memory list and increment the message counter.
+    * Subclasses call this inside their {@link #writeDirect} implementation after persisting.
+    */
+   protected synchronized void addMessageToCache(PagedMessage message) {
+      if (messages == null) {
+         messages = new LinkedListImpl<>();
+      }
+      message.setMessageNumber(messages.size());
+      message.setPageNumber(this.pageId);
+      messages.addTail(message);
+      numberOfMessages++;
+   }
+
+   /**
+    * Overwrite the numberOfMessages counter. Used by subclasses after a {@link #read} call so the
+    * value reflects what was actually read from storage.
+    */
+   protected void setNumberOfMessages(int count) {
+      this.numberOfMessages = count;
+   }
+
+   protected void setSize(long size) {
       this.size = size;
    }
 
+   protected void setSuspiciousRecords(boolean value) {
+      this.suspiciousRecords = value;
+   }
+
+   protected boolean isSuspiciousRecords() {
+      return suspiciousRecords;
+   }
+
+   // -------------------------------------------------------------------------
+   // Object overrides
+   // -------------------------------------------------------------------------
+
    @Override
    public String toString() {
-      return "Page::seqCreation=" + seqInt + ", pageNr=" + this.pageId + ", file=" + this.file;
+      return "Page::seqCreation=" + seqInt + ", pageNr=" + pageId + ", storeName=" + storeName;
    }
 
    @Override
@@ -359,7 +203,6 @@ public final class Page {
       if (!(obj instanceof Page other)) {
          return false;
       }
-
       return pageId == other.pageId;
    }
 
@@ -368,13 +211,75 @@ public final class Page {
       return Objects.hashCode(pageId);
    }
 
-   private void markFileAsSuspect(final String fileName, final int position, final int msgNumber) {
-      ActiveMQServerLogger.LOGGER.pageSuspectFile(fileName, position, msgNumber);
-      suspiciousRecords = true;
+   // -------------------------------------------------------------------------
+   // Abstract storage-specific operations
+   // -------------------------------------------------------------------------
+
+   /**
+    * Returns {@code true} if the underlying storage for this page already exists (e.g. the file is
+    * present on disk).
+    */
+   public abstract boolean storageExists() throws Exception;
+
+   /**
+    * Returns the current byte size of the underlying storage.
+    */
+   public abstract long storageSize() throws Exception;
+
+   /**
+    * Opens the page for reading/writing.
+    *
+    * @param createFile if {@code true} the storage is created when absent; if {@code false} the
+    *                   method only opens pre-existing storage
+    * @return {@code true} if the page is open after this call
+    */
+   public abstract boolean open(boolean createFile) throws Exception;
+
+   /**
+    * Closes the page.
+    *
+    * @param sendReplicaClose notify the storage manager (triggers a replica-close event)
+    * @param waitSync         wait for pending I/O to flush before closing
+    */
+   public abstract void close(boolean sendReplicaClose, boolean waitSync) throws Exception;
+
+   public void close(boolean sendReplicaClose) throws Exception {
+      close(sendReplicaClose, true);
    }
 
-   public SequentialFile getFile() {
-      return file;
-   }
+   /**
+    * Delete the page and release all associated resources (large-message files, etc.).
+    */
+   public abstract boolean delete(LinkedList<PagedMessage> messages) throws Exception;
 
+   /**
+    * Read messages from the page's storage, optionally skipping non-large messages.
+    */
+   public abstract LinkedList<PagedMessage> read(StorageManager storage,
+                                                 boolean onlyLargeMessages) throws Exception;
+
+   /**
+    * Persist {@code message} directly to the page without routing the write through the storage
+    * manager journal (avoids ping-pong with journal retaining events).
+    */
+   public abstract void writeDirect(PagedMessage message) throws Exception;
+
+   /** Flush the page to durable storage. */
+   public abstract void sync() throws Exception;
+
+   /**
+    * Flush if currently open; silently swallow {@link java.nio.channels.ClosedChannelException}.
+    */
+   public abstract void trySync() throws IOException;
+
+   /**
+    * @return true if the page is currently open for I/O
+    */
+   public abstract boolean isOpen();
+
+   /**
+    * Read and return the number of messages stored in this page without populating the in-memory
+    * cache.
+    */
+   public abstract int readNumberOfMessages() throws Exception;
 }

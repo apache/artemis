@@ -23,7 +23,7 @@ import java.util.Iterator;
  * <p>
  * This iterator allows the last element to be repeated in the next call to hasNext or next
  */
-public interface LinkedListIterator<E> extends Iterator<E>, AutoCloseable {
+public interface LinkedListIterator<E> extends CloseableIterator<E> {
 
    void repeat();
 
@@ -32,7 +32,4 @@ public interface LinkedListIterator<E> extends Iterator<E>, AutoCloseable {
     * removed.
     */
    E removeLastElement();
-
-   @Override
-   void close();
 }

@@ -88,6 +88,17 @@ public enum Database {
                break;
             default:
                jdbcURI = System.getProperty(dbname + ".uri");
+               if (jdbcURI == null) {
+                  // these are the default test values
+                  jdbcURI = switch (this) {
+                     case POSTGRES -> "jdbc:postgresql://localhost:5432/artemis?user=artemis&password=artemis";
+                     case MYSQL -> "jdbc:mysql://localhost/ARTEMIS-TEST?user=root&password=artemis";
+                     case ORACLE -> "jdbc:oracle:thin:system/artemis@localhost:1521:FREE";
+                     case MSSQL -> "jdbc:sqlserver://localhost:1433;user=sa;password=ActiveMQ*Artemis";
+                     case DB2 -> "jdbc:db2://localhost:50000/artemis:user=db2inst1;password=artemis;";
+                     default -> null;
+                  };
+               }
                if (jdbcURI != null) {
                   jdbcURI = jdbcURI.replaceAll("&#38;", "&");
                }
@@ -110,7 +121,18 @@ public enum Database {
             break;
          default:
             driverClass = System.getProperty(dbname + ".class");
+            if (driverClass == null) {
+               driverClass = switch (this) {
+                  case POSTGRES -> "org.postgresql.Driver";
+                  case MYSQL -> "com.mysql.cj.jdbc.Driver";
+                  case ORACLE -> "oracle.jdbc.driver.OracleDriver";
+                  case MSSQL -> "com.microsoft.sqlserver.jdbc.SQLServerDriver";
+                  case DB2 -> "com.ibm.db2.jcc.DB2Driver";
+                  default -> null;
+               };
+            }
       }
+
 
       return driverClass;
    }

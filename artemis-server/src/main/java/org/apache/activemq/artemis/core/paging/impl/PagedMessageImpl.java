@@ -24,6 +24,7 @@ import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.ICoreMessage;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.RefCountMessage;
+import org.apache.activemq.artemis.core.journal.StorageTX;
 import org.apache.activemq.artemis.core.paging.PagedMessage;
 import org.apache.activemq.artemis.core.paging.cursor.PagePosition;
 import org.apache.activemq.artemis.core.paging.cursor.impl.PagePositionImpl;
@@ -93,6 +94,8 @@ public class PagedMessageImpl implements PagedMessage {
 
    private int messageNumber;
 
+   private StorageTX storageTX;
+
    public PagedMessageImpl(final Message message, final long[] queueIDs, final long transactionID) {
       this(message, queueIDs);
       this.transactionID = transactionID;
@@ -134,6 +137,17 @@ public class PagedMessageImpl implements PagedMessage {
       return this;
    }
 
+
+   @Override
+   public StorageTX getStorageTX() {
+      return storageTX;
+   }
+
+   @Override
+   public PagedMessageImpl setStorageTX(StorageTX storageTX) {
+      this.storageTX = storageTX;
+      return this;
+   }
 
    @Override
    public int getStoredSize() {

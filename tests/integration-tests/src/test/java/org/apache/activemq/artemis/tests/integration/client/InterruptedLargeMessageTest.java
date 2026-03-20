@@ -558,7 +558,7 @@ public class InterruptedLargeMessageTest extends LargeMessageTestBase {
 
          @Override
          public Queue createQueueWith(QueueConfiguration config, PagingManager pagingManager, Filter filter) throws Exception {
-            PageSubscription pageSubscription = QueueFactoryImpl.getPageSubscription(config, pagingManager, filter);
+            PageSubscription pageSubscription = QueueFactoryImpl.getPageSubscription(config, QueueFactoryImpl.getPagingStore(pagingManager, config.getAddress()), filter);
             return new NoPostACKQueue(config, filter, pageSubscription != null ? pageSubscription.getPagingStore() : null, pageSubscription, scheduledExecutor, postOffice, storageManager, addressSettingsRepository, execFactory.getExecutor(), server, this);
          }
 
