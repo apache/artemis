@@ -165,7 +165,7 @@
       <weld.version>2.4.8.Final</weld.version>
       <arquillian-weld-embedded.version>2.1.0.Final</arquillian-weld-embedded.version>
       <owb.version>2.0.28</owb.version>
-      <arquillian.version>1.10.0.Final</arquillian.version>
+      <arquillian.version>1.10.1.Final</arquillian.version>
       <servicemix.json-1.1.spec.version>2.9.0</servicemix.json-1.1.spec.version>
       <version.org.jacoco>0.8.14</version.org.jacoco>
       <version.org.jacoco.plugin>0.8.14</version.org.jacoco.plugin>
