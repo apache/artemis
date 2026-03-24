@@ -2,5 +2,7 @@ org.apache.activemq.artemis.protocol.amqp.sasl.AnonymousServerSASLFactory
 org.apache.activemq.artemis.protocol.amqp.sasl.PlainServerSASLFactory
 org.apache.activemq.artemis.protocol.amqp.sasl.GSSAPIServerSASLFactory
 org.apache.activemq.artemis.protocol.amqp.sasl.ExternalServerSASLFactory
+org.apache.activemq.artemis.protocol.amqp.sasl.OAuthBearerServerSASLFactory
+org.apache.activemq.artemis.protocol.amqp.sasl.XOAuth2ServerSASLFactory
 org.apache.activemq.artemis.protocol.amqp.sasl.scram.SHA256SCRAMServerSASLFactory
 org.apache.activemq.artemis.protocol.amqp.sasl.scram.SHA512SCRAMServerSASLFactory
