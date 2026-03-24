@@ -17,6 +17,7 @@
 package org.apache.activemq.artemis.tests.integration.jms.client;
 
 import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
@@ -35,7 +36,9 @@ import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.jms.client.ActiveMQConnection;
 import org.apache.activemq.artemis.jms.client.ActiveMQDestination;
 import org.apache.activemq.artemis.spi.core.security.ActiveMQJAASSecurityManager;
+import org.apache.activemq.artemis.tests.util.CFUtil;
 import org.apache.activemq.artemis.tests.util.JMSTestBase;
+import org.apache.activemq.artemis.tests.util.Wait;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -278,11 +281,46 @@ public class TemporaryDestinationTest extends JMSTestBase {
          for (ServerSession serverSession : server.getSessions()) {
             assertFalse(((ServerSessionImpl)serverSession).cloneTargetAddresses().containsKey(SimpleString.toSimpleString(temporaryQueue.getQueueName())));
          }
+         Wait.assertTrue(() -> server.locateQueue(temporaryQueue.getQueueName()) == null, 1000, 100);
+         Wait.assertTrue(() -> server.getAddressInfo(SimpleString.toSimpleString(temporaryQueue.getQueueName())) == null, 1000, 100);
       } finally {
          if (conn != null) {
             conn.close();
          }
       }
+   }
+
+   @Test
+   public void testTemporaryQueueConnectionClosedRemovedAMQP() throws Exception {
+      testTemporaryQueueConnectionClosedRemoved("AMQP");
+   }
+
+   @Test
+   public void testTemporaryQueueConnectionClosedRemovedCORE() throws Exception {
+      testTemporaryQueueConnectionClosedRemoved("CORE");
+   }
+
+   @Test
+   public void testTemporaryQueueConnectionClosedRemovedOpenWire() throws Exception {
+      testTemporaryQueueConnectionClosedRemoved("OPENWIRE");
+   }
+
+   private void testTemporaryQueueConnectionClosedRemoved(String protocol) throws Exception {
+      ConnectionFactory factory = CFUtil.createConnectionFactory("amqp", "tcp://localhost:61616");
+      final TemporaryQueue temporaryQueue;
+      try (Connection conn = factory.createConnection()) {
+         Session s = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+         temporaryQueue = s.createTemporaryQueue();
+         MessageProducer producer = s.createProducer(temporaryQueue);
+         producer.send(s.createMessage());
+         // These next two assertions are here to validate the test itself
+         // The queue and address should be found on the server while they still exist on the connection
+         Wait.assertFalse(() -> server.locateQueue(temporaryQueue.getQueueName()) == null, 1000, 100);
+         Wait.assertFalse(() -> server.getAddressInfo(SimpleString.toSimpleString(temporaryQueue.getQueueName())) == null, 1000, 100);
+      }
+
+      Wait.assertTrue(() -> server.locateQueue(temporaryQueue.getQueueName()) == null, 1000, 100);
+      Wait.assertTrue(() -> server.getAddressInfo(SimpleString.toSimpleString(temporaryQueue.getQueueName())) == null, 1000, 100);
    }
 
    @Test

@@ -40,11 +40,6 @@ import org.junit.Test;
  */
 public class MultipleThreadFilterOneTest extends ActiveMQTestBase {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
-
-   // Static --------------------------------------------------------
 
    final String ADDRESS = "ADDRESS";
 
@@ -58,9 +53,8 @@ public class MultipleThreadFilterOneTest extends ActiveMQTestBase {
 
    private boolean isNetty = false;
 
-   // Constructors --------------------------------------------------
 
-   // Public --------------------------------------------------------
+
 
    class SomeProducer extends Thread {
 
@@ -268,13 +262,5 @@ public class MultipleThreadFilterOneTest extends ActiveMQTestBase {
          server.stop();
       }
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

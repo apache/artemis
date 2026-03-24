@@ -219,9 +219,7 @@ public class PageStressTest extends ActiveMQTestBase {
       return msgs;
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
    @Override
    protected Configuration createDefaultInVMConfig() throws Exception {
       Configuration config = super.createDefaultInVMConfig().setJournalFileSize(10 * 1024 * 1024).setJournalMinFiles(5);

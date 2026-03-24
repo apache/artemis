@@ -28,15 +28,8 @@ import org.junit.Test;
  * Non-durable subscriber tests.
  */
 public class NonDurableSubscriberTest extends JMSTestCase {
-   // Constants -----------------------------------------------------
 
-   // Static --------------------------------------------------------
 
-   // Attributes ----------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    /**
     * Test introduced as a result of a TCK failure.
@@ -87,13 +80,5 @@ public class NonDurableSubscriberTest extends JMSTestCase {
          // OK
       }
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

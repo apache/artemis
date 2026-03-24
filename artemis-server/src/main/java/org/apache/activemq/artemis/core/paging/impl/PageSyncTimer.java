@@ -32,9 +32,7 @@ import org.apache.activemq.artemis.core.server.ActiveMQScheduledComponent;
  */
 final class PageSyncTimer extends ActiveMQScheduledComponent {
 
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
    private final PagingStore store;
 
@@ -53,9 +51,6 @@ final class PageSyncTimer extends ActiveMQScheduledComponent {
 
    private final List<OperationContext> syncOperations = new LinkedList<>();
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
 
    PageSyncTimer(PagingStore store, ScheduledExecutorService scheduledExecutor, Executor executor, long timeSync) {
       super(scheduledExecutor, executor, timeSync, TimeUnit.NANOSECONDS, true);
@@ -64,7 +59,6 @@ final class PageSyncTimer extends ActiveMQScheduledComponent {
       this.timeSync = timeSync;
    }
 
-   // Public --------------------------------------------------------
 
    synchronized void addSync(OperationContext ctx) {
       ctx.pageSyncLineUp();

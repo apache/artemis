@@ -38,10 +38,12 @@
 		<bundle>mvn:io.netty/netty-codec-http/${netty.version}</bundle>
 		<bundle>mvn:io.netty/netty-handler/${netty.version}</bundle>
 		<bundle>mvn:io.netty/netty-handler-proxy/${netty.version}</bundle>
+		<bundle>mvn:io.netty/netty-tcnative-classes/${netty-tcnative-version}</bundle>
+		<bundle>mvn:io.netty/netty-transport-classes-epoll/${netty.version}</bundle>
 		<bundle>mvn:io.netty/netty-transport-native-epoll/${netty.version}</bundle>
+		<bundle>mvn:io.netty/netty-transport-classes-kqueue/${netty.version}</bundle>
 		<bundle>mvn:io.netty/netty-transport-native-kqueue/${netty.version}</bundle>
 		<bundle>mvn:io.netty/netty-transport-native-unix-common/${netty.version}</bundle>
-		<bundle>mvn:io.netty/netty-codec-http/${netty.version}</bundle>
 	</feature>
 
 	<feature name="artemis-common" version="${pom.version}" description="ActiveMQ Artemis Common libraries">

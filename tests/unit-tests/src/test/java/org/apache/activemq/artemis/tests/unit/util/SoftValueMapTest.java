@@ -23,15 +23,8 @@ import org.junit.Test;
 
 public class SoftValueMapTest extends ActiveMQTestBase {
    private static final Logger log = Logger.getLogger(SoftValueMapTest.class);
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testEvictions() {
@@ -133,13 +126,5 @@ public class SoftValueMapTest extends ActiveMQTestBase {
          this.live = live;
       }
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

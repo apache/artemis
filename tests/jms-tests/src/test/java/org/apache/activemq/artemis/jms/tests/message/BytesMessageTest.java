@@ -28,15 +28,8 @@ import org.junit.Before;
  * A test that sends/receives bytes messages to the JMS provider and verifies their integrity.
  */
 public class BytesMessageTest extends MessageTestBase {
-   // Constants -----------------------------------------------------
 
-   // Static --------------------------------------------------------
 
-   // Attributes ----------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Override
    @Before

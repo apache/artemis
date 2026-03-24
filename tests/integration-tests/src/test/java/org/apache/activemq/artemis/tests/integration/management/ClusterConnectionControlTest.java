@@ -52,9 +52,6 @@ import org.junit.Test;
 
 public class ClusterConnectionControlTest extends ManagementTestBase {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    private ActiveMQServer server_0;
 
@@ -66,9 +63,6 @@ public class ClusterConnectionControlTest extends ManagementTestBase {
 
    private MBeanServer mbeanServer_1;
 
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testAttributes1() throws Exception {
@@ -184,9 +178,7 @@ public class ClusterConnectionControlTest extends ManagementTestBase {
       return result;
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
    @Override
    @Before
@@ -233,8 +225,6 @@ public class ClusterConnectionControlTest extends ManagementTestBase {
       return ManagementControlHelper.createClusterConnectionControl(name, mbeanServer);
    }
 
-   // Private -------------------------------------------------------
 
-   // Inner classes -------------------------------------------------
 
 }

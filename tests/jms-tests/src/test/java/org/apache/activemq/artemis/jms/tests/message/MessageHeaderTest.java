@@ -63,15 +63,8 @@ import org.apache.activemq.artemis.jms.tests.util.ProxyAssertSupport;
 import org.junit.Test;
 
 public class MessageHeaderTest extends MessageHeaderTestBase {
-   // Constants -----------------------------------------------------
 
-   // Static --------------------------------------------------------
 
-   // Attributes ----------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testClearMessage() throws Exception {
@@ -741,14 +734,6 @@ public class MessageHeaderTest extends MessageHeaderTestBase {
 
       MessageHeaderTestBase.ensureEquivalent(receivedMessage, (ActiveMQMessage) message);
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
    private static class ForeignDestination implements Destination, Serializable {
 

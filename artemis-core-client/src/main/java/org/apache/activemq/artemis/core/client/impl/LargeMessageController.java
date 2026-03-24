@@ -61,4 +61,5 @@ public interface LargeMessageController extends ActiveMQBuffer {
     */
    boolean waitCompletion(long timeWait) throws ActiveMQException;
 
+   LargeMessageControllerImpl.LargeData take() throws InterruptedException;
 }

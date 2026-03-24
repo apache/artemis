@@ -170,6 +170,11 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
       return discoveryGroup;
    }
 
+   /** For tests only */
+   public Set<ClientSessionFactoryInternal> getFactories() {
+      return factories;
+   }
+
    private final Exception traceException = new Exception();
 
    private ServerLocatorConfig config = new ServerLocatorConfig();

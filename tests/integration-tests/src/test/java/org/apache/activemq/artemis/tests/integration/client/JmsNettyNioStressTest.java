@@ -70,15 +70,7 @@ import org.junit.Test;
  */
 public class JmsNettyNioStressTest extends ActiveMQTestBase {
 
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
-
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    // Remove this method to re-enable those tests
    @Test
@@ -291,12 +283,4 @@ public class JmsNettyNioStressTest extends ActiveMQTestBase {
 
       server.stop();
    }
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
-
 }

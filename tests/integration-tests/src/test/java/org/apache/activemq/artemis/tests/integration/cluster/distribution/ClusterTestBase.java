@@ -213,8 +213,6 @@ public abstract class ClusterTestBase extends ActiveMQTestBase {
 
    }
 
-   // Private -------------------------------------------------------------------------------------------------------
-
    private static final int MAX_CONSUMERS = 100;
 
    protected static class ConsumerHolder {

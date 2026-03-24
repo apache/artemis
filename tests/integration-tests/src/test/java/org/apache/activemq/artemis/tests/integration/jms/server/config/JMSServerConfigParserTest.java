@@ -27,15 +27,8 @@ import org.junit.Test;
 
 public class JMSServerConfigParserTest extends ActiveMQTestBase {
 
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testParsing() throws Exception {
@@ -60,13 +53,5 @@ public class JMSServerConfigParserTest extends ActiveMQTestBase {
       assertEquals("fullConfigurationTopic", topicConfig.getName());
 
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

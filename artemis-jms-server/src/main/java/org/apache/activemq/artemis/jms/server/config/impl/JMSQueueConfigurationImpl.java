@@ -20,9 +20,6 @@ import org.apache.activemq.artemis.jms.server.config.JMSQueueConfiguration;
 
 public class JMSQueueConfigurationImpl implements JMSQueueConfiguration {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    private String name = null;
 
@@ -32,9 +29,6 @@ public class JMSQueueConfigurationImpl implements JMSQueueConfiguration {
 
    private String[] bindings = null;
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
 
    public JMSQueueConfigurationImpl() {
    }
@@ -85,14 +79,5 @@ public class JMSQueueConfigurationImpl implements JMSQueueConfiguration {
       return this;
    }
 
-   // Public --------------------------------------------------------
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

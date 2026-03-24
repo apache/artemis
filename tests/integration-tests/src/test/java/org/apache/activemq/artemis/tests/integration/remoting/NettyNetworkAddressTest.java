@@ -42,8 +42,6 @@ public class NettyNetworkAddressTest extends NetworkAddressTestBase {
       return TransportConstants.LOCAL_PORT_PROP_NAME;
    }
 
-   // Private -------------------------------------------------------
 
-   // Inner classes -------------------------------------------------
 
 }

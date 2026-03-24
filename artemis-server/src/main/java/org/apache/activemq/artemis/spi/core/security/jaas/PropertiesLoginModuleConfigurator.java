@@ -197,7 +197,7 @@ public class PropertiesLoginModuleConfigurator implements UserManagement {
             //each roleList may be a comma separated list
             String[] items = roleList.split(",");
             for (String item : items) {
-               if (item.equals(username)) {
+               if (item.trim().equals(username)) {
                   roles.add(role);
                }
             }

@@ -52,11 +52,10 @@ public class AutoCreateExpiryResourcesTest extends ActiveMQTestBase {
    public void setUp() throws Exception {
       super.setUp();
       server = createServer(false);
-      server.getConfiguration().setAddressQueueScanPeriod(100);
+      server.getConfiguration().setAddressQueueScanPeriod(50L).setMessageExpiryScanPeriod(50L);
 
       // set common address settings needed for all tests; make sure to use getMatch instead of addMatch in invidual tests or these will be overwritten
       server.getAddressSettingsRepository().addMatch("#", new AddressSettings().setAutoCreateExpiryResources(true).setExpiryAddress(expiryAddress).setExpiryDelay(EXPIRY_DELAY));
-      server.getConfiguration().setMessageExpiryScanPeriod(50L);
 
       server.start();
    }
@@ -164,9 +163,11 @@ public class AutoCreateExpiryResourcesTest extends ActiveMQTestBase {
       ClientSessionFactory sessionFactory = createSessionFactory(locator);
       ClientSession session = addClientSession(sessionFactory.createSession(true, true));
       Wait.assertTrue(() -> server.locateQueue(expiryQueueName) != null, 2000, 100);
+      Wait.assertEquals(1, server.locateQueue(expiryQueueName) :: getMessageCount);
+
       ClientConsumer consumer = session.createConsumer(expiryQueueName);
       session.start();
-      ClientMessage message = consumer.receive();
+      ClientMessage message = consumer.receive(5_000);
       assertNotNull(message);
       message.acknowledge();
       consumer.close();
@@ -227,6 +228,7 @@ public class AutoCreateExpiryResourcesTest extends ActiveMQTestBase {
       ClientSession session = addClientSession(sessionFactory.createSession(true, false));
       ClientProducer producer = addClientProducer(session.createProducer(addressA));
       ClientMessage message = session.createMessage(true);
+      message.setExpiration(System.currentTimeMillis());
       producer.send(message);
       producer.close();
       session.close();

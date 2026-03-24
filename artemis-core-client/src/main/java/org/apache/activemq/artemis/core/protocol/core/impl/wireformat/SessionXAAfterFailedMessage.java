@@ -26,15 +26,10 @@ import org.apache.activemq.artemis.utils.XidCodecSupport;
  * to be called after a failure on an XA Session
  */
 public class SessionXAAfterFailedMessage extends PacketImpl {
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
    private Xid xid;
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
 
    public SessionXAAfterFailedMessage(final Xid xid) {
       super(SESS_XA_FAILED);
@@ -45,8 +40,6 @@ public class SessionXAAfterFailedMessage extends PacketImpl {
    public SessionXAAfterFailedMessage() {
       super(SESS_XA_FAILED);
    }
-
-   // Public --------------------------------------------------------
 
    public Xid getXid() {
       return xid;

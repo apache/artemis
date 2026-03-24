@@ -48,15 +48,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class PageTest extends ActiveMQTestBase {
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
-
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Before
    public void registerProtocols() {

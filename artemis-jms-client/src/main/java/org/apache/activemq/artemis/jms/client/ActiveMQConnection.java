@@ -66,7 +66,7 @@ import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
  */
 public class ActiveMQConnection extends ActiveMQConnectionForContextImpl implements TopicConnection, QueueConnection {
 
-   // Constants ------------------------------------------------------------------------------------
+
    public static final int TYPE_GENERIC_CONNECTION = 0;
 
    public static final int TYPE_QUEUE_CONNECTION = 1;
@@ -79,9 +79,6 @@ public class ActiveMQConnection extends ActiveMQConnectionForContextImpl impleme
 
    public static final SimpleString CONNECTION_ID_PROPERTY_NAME = MessageUtil.CONNECTION_ID_PROPERTY_NAME;
 
-   // Static ---------------------------------------------------------------------------------------
-
-   // Attributes -----------------------------------------------------------------------------------
 
    private final int connectionType;
 
@@ -137,7 +134,6 @@ public class ActiveMQConnection extends ActiveMQConnectionForContextImpl impleme
 
    private final ConnectionFactoryOptions options;
 
-   // Constructors ---------------------------------------------------------------------------------
 
    public ActiveMQConnection(final ConnectionFactoryOptions options,
                              final String username,
@@ -502,8 +498,6 @@ public class ActiveMQConnection extends ActiveMQConnectionForContextImpl impleme
       return null; // we offer RA
    }
 
-   // Public ---------------------------------------------------------------------------------------
-
    /**
     * Sets a FailureListener for the session which is notified if a failure occurs on the session.
     *
@@ -562,12 +556,6 @@ public class ActiveMQConnection extends ActiveMQConnectionForContextImpl impleme
    public ClientSession getInitialSession() {
       return initialSession;
    }
-
-   // Package protected ----------------------------------------------------------------------------
-
-   // Protected ------------------------------------------------------------------------------------
-
-   // In case the user forgets to close the connection manually
 
    @Override
    protected final void finalize() throws Throwable {
@@ -638,7 +626,6 @@ public class ActiveMQConnection extends ActiveMQConnectionForContextImpl impleme
       return sessionFactory;
    }
 
-   // Private --------------------------------------------------------------------------------------
 
    /**
     * @param transacted
@@ -713,8 +700,6 @@ public class ActiveMQConnection extends ActiveMQConnectionForContextImpl impleme
       return this.factoryReference.getDeserializationWhiteList();
    }
 
-
-   // Inner classes --------------------------------------------------------------------------------
 
    private static class JMSFailureListener implements SessionFailureListener {
 

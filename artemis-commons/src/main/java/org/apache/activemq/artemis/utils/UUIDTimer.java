@@ -66,8 +66,6 @@ import java.util.Random;
  * lock), and so has no method synchronization.
  */
 public class UUIDTimer {
-   // // // Constants
-
    /**
     * Since System.longTimeMillis() returns time from january 1st 1970, and
     * UUIDs need time from the beginning of gregorian calendar (15-oct-1582),
@@ -244,11 +242,6 @@ public class UUIDTimer {
       uuidData[UUID.INDEX_CLOCK_LO + 2] = (byte) (clockLo >>> 8);
       uuidData[UUID.INDEX_CLOCK_LO + 3] = (byte) clockLo;
    }
-
-   /*
-    * /////////////////////////////////////////////////////////// // Private
-    * methods ///////////////////////////////////////////////////////////
-    */
 
    private static final int MAX_WAIT_COUNT = 50;
 

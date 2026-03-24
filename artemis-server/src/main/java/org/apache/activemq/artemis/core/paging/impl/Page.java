@@ -43,7 +43,6 @@ import org.jboss.logging.Logger;
 
 public final class Page implements Comparable<Page> {
 
-   // Constants -----------------------------------------------------
    private static final Logger logger = Logger.getLogger(Page.class);
 
    public static final int SIZE_RECORD = DataConstants.SIZE_BYTE + DataConstants.SIZE_INT + DataConstants.SIZE_BYTE;
@@ -52,7 +51,6 @@ public final class Page implements Comparable<Page> {
 
    private static final byte END_BYTE = (byte) '}';
 
-   // Attributes ----------------------------------------------------
 
    private final int pageId;
 

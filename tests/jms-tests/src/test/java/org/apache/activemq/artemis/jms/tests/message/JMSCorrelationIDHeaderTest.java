@@ -22,15 +22,8 @@ import org.apache.activemq.artemis.jms.tests.util.ProxyAssertSupport;
 import org.junit.Test;
 
 public class JMSCorrelationIDHeaderTest extends MessageHeaderTestBase {
-   // Constants -----------------------------------------------------
 
-   // Static --------------------------------------------------------
 
-   // Attributes ----------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testJMSDestination() throws Exception {
@@ -64,11 +57,8 @@ public class JMSCorrelationIDHeaderTest extends MessageHeaderTestBase {
 
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
-   // Private -------------------------------------------------------
 
    private void assertByteArraysEqual(final byte[] bytes1, final byte[] bytes2) {
       if (bytes1 == null || bytes2 == null) {
@@ -85,6 +75,5 @@ public class JMSCorrelationIDHeaderTest extends MessageHeaderTestBase {
 
    }
 
-   // Inner classes -------------------------------------------------
 
 }

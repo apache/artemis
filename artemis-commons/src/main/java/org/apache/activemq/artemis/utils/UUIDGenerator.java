@@ -206,7 +206,6 @@ public final class UUIDGenerator {
       return null;
    }
 
-   // Private -------------------------------------------------------
 
    private static boolean isBlackList(final byte[] address) {
       for (byte[] blackList : UUIDGenerator.BLACK_LIST) {

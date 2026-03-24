@@ -43,8 +43,6 @@ public class SubscribeClusterTopologyUpdatesMessage extends PacketImpl {
       super(packetType);
    }
 
-   // Public --------------------------------------------------------
-
    public boolean isClusterConnection() {
       return clusterConnection;
    }

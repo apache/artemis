@@ -199,11 +199,5 @@ public class ManagementServiceImplTest extends ActiveMQTestBase {
    }
 
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 }

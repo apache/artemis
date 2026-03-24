@@ -28,19 +28,11 @@ import org.junit.runners.Parameterized;
 @RunWith(Parameterized.class)
 public class ActiveMQServerControlUsingCoreTest extends ActiveMQServerControlTest {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
-
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
 
    public ActiveMQServerControlUsingCoreTest(boolean legacyCreateQueue) {
       super(legacyCreateQueue);
    }
 
-   // Public --------------------------------------------------------
 
    // ActiveMQServerControlTest overrides --------------------------
 
@@ -1666,12 +1658,4 @@ public class ActiveMQServerControlUsingCoreTest extends ActiveMQServerControlTes
    public boolean usingCore() {
       return true;
    }
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
-
 }

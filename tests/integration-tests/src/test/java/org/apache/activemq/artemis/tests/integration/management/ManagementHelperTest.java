@@ -30,17 +30,9 @@ import org.junit.Test;
 
 public class ManagementHelperTest extends Assert {
 
-   // Constants -----------------------------------------------------
 
    private static final Logger log = Logger.getLogger(ManagementHelperTest.class);
 
-   // Attributes ----------------------------------------------------
-
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testArrayOfStringParameter() throws Exception {
@@ -226,13 +218,5 @@ public class ManagementHelperTest extends Assert {
       Assert.assertEquals(arr2[2], val2[2]);
 
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

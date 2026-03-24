@@ -32,7 +32,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class MessageTest extends JMSTestBase {
-   // Constants -----------------------------------------------------
+
 
    private static final long TIMEOUT = 1000;
 
@@ -42,13 +42,7 @@ public class MessageTest extends JMSTestBase {
 
    private static final String propName3 = "myprop3";
 
-   // Attributes ----------------------------------------------------
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    /**
     * @see https://jira.jboss.org/jira/browse/HORNETQ-242
@@ -208,11 +202,8 @@ public class MessageTest extends JMSTestBase {
       checkProperties(received);
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
-   // Private -------------------------------------------------------
 
    private void checkProperties(final Message message) throws Exception {
       Assert.assertNull(message.getObjectProperty(MessageTest.propName1));
@@ -310,5 +301,4 @@ public class MessageTest extends JMSTestBase {
       return received;
    }
 
-   // Inner classes -------------------------------------------------
 }

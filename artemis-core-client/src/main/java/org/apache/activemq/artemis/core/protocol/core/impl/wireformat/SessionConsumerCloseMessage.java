@@ -33,8 +33,6 @@ public class SessionConsumerCloseMessage extends PacketImpl {
       super(SESS_CONSUMER_CLOSE);
    }
 
-   // Public --------------------------------------------------------
-
    public long getConsumerID() {
       return consumerID;
    }

@@ -3702,13 +3702,7 @@ public class MessageConsumerTest extends JMSTestCase {
       }
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
    private class ConnectionCloseMessageListener implements MessageListener {
 
       private Connection conn;

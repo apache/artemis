@@ -18,17 +18,12 @@ package org.apache.activemq.artemis.utils;
 
 public class SizeFormatterUtil {
 
-   // Constants -----------------------------------------------------
 
    private static long oneKiB = 1024;
 
    private static long oneMiB = SizeFormatterUtil.oneKiB * 1024;
 
    private static long oneGiB = SizeFormatterUtil.oneMiB * 1024;
-
-   // Attributes ----------------------------------------------------
-
-   // Static --------------------------------------------------------
 
    public static String sizeof(final long size) {
       double s = Long.valueOf(size).doubleValue();
@@ -45,16 +40,4 @@ public class SizeFormatterUtil {
       }
       return String.format("%.2f %s", s, suffix);
    }
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
-
 }

@@ -24,19 +24,13 @@ import javax.jms.TemporaryQueue;
  * This class can be instantiated directly.
  */
 public class ActiveMQTemporaryQueue extends ActiveMQQueue implements TemporaryQueue {
-   // Constants -----------------------------------------------------
+
 
    private static final long serialVersionUID = -4624930377557954624L;
 
-   // Static --------------------------------------------------------
-
-   // Attributes ----------------------------------------------------
-
-   // Constructors --------------------------------------------------
 
    // TemporaryQueue implementation ------------------------------------------
 
-   // Public --------------------------------------------------------
    public ActiveMQTemporaryQueue() {
       this(null, null);
    }
@@ -74,11 +68,5 @@ public class ActiveMQTemporaryQueue extends ActiveMQQueue implements TemporaryQu
       return super.getAddress().hashCode();
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 }

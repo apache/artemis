@@ -289,7 +289,9 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          localConnector = connectorFactory.createConnector(currentConnectorConfig.getParams(), new DelegatingBufferHandler(), this, closeExecutor, threadPool, scheduledThreadPool, clientProtocolManager);
       }
 
-      if (localConnector.isEquivalent(live.getParams()) && backUp != null && !localConnector.isEquivalent(backUp.getParams())) {
+      if (localConnector.isEquivalent(live.getParams()) && backUp != null && !localConnector.isEquivalent(backUp.getParams())
+         // check if a server is trying to set its cluster connector config as backup connector config
+         && !(serverLocator.getClusterTransportConfiguration() != null && serverLocator.getClusterTransportConfiguration().isSameParams(backUp))) {
          if (logger.isDebugEnabled()) {
             logger.debug("Setting up backup config = " + backUp + " for live = " + live);
          }

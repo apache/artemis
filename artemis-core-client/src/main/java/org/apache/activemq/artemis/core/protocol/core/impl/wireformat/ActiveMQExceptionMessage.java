@@ -25,9 +25,6 @@ public class ActiveMQExceptionMessage extends PacketImpl {
 
    protected ActiveMQException exception;
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
 
    public ActiveMQExceptionMessage(final ActiveMQException exception) {
       super(EXCEPTION);
@@ -38,8 +35,6 @@ public class ActiveMQExceptionMessage extends PacketImpl {
    public ActiveMQExceptionMessage() {
       super(EXCEPTION);
    }
-
-   // Public --------------------------------------------------------
 
    @Override
    public boolean isResponse() {

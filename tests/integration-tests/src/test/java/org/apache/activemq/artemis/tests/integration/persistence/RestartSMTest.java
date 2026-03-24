@@ -36,19 +36,14 @@ import org.junit.Test;
 
 public class RestartSMTest extends ActiveMQTestBase {
 
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
    ExecutorService executor;
 
    ExecutorFactory execFactory;
 
-   // Static --------------------------------------------------------
 
-   // Constructors --------------------------------------------------
 
-   // Public --------------------------------------------------------
 
    @Override
    @Before
@@ -99,13 +94,5 @@ public class RestartSMTest extends ActiveMQTestBase {
          }
       }
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

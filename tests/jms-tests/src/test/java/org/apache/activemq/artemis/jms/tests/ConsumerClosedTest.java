@@ -25,19 +25,13 @@ import javax.naming.InitialContext;
 import org.junit.Test;
 
 public class ConsumerClosedTest extends JMSTestCase {
-   // Constants -----------------------------------------------------
+
 
    public static final int NUMBER_OF_MESSAGES = 10;
 
-   // Static --------------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    InitialContext ic;
 
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testMessagesSentDuringClose() throws Exception {
@@ -73,11 +67,5 @@ public class ConsumerClosedTest extends JMSTestCase {
       }
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 }

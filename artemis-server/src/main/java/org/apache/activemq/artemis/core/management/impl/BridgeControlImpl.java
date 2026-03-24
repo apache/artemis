@@ -31,17 +31,11 @@ import org.apache.activemq.artemis.logs.AuditLogger;
 
 public class BridgeControlImpl extends AbstractControl implements BridgeControl {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    private final Bridge bridge;
 
    private final BridgeConfiguration configuration;
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
 
    public BridgeControlImpl(final Bridge bridge,
                             final StorageManager storageManager,
@@ -333,14 +327,5 @@ public class BridgeControlImpl extends AbstractControl implements BridgeControl 
       }
    }
 
-   // Public --------------------------------------------------------
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

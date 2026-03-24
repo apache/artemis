@@ -43,22 +43,14 @@ import org.junit.Test;
 
 public class HeuristicXATest extends ActiveMQTestBase {
 
-   // Constants -----------------------------------------------------
    final SimpleString ADDRESS = new SimpleString("ADDRESS");
 
    final String body = "this is the body";
-
-   // Attributes ----------------------------------------------------
 
    private MBeanServer mbeanServer;
 
    private ServerLocator locator;
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testInvalidCall() throws Exception {
@@ -409,9 +401,7 @@ public class HeuristicXATest extends ActiveMQTestBase {
       session.close();
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
    @Override
    @Before
@@ -421,8 +411,6 @@ public class HeuristicXATest extends ActiveMQTestBase {
       locator = createInVMNonHALocator();
    }
 
-   // Private -------------------------------------------------------
 
-   // Inner classes -------------------------------------------------
 
 }

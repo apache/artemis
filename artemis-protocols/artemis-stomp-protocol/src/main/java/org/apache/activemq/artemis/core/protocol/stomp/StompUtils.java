@@ -31,12 +31,8 @@ import org.apache.activemq.artemis.reader.MessageUtil;
 
 public class StompUtils {
 
-   // Constants -----------------------------------------------------
    private static final String DEFAULT_MESSAGE_PRIORITY = "4";
 
-   // Attributes ----------------------------------------------------
-
-   // Static --------------------------------------------------------
 
    public static void copyStandardHeadersFromFrameToMessage(StompFrame frame, Message msg, String prefix) throws Exception {
       Map<String, String> headers = new HashMap<>(frame.getHeadersMap());
@@ -153,16 +149,6 @@ public class StompUtils {
          command.addHeader(name.toString(), message.getObjectProperty(name).toString());
       }
    }
-   // Constructors --------------------------------------------------
 
-   // Public --------------------------------------------------------
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

@@ -33,15 +33,7 @@ public class NIOImportExportTest extends JournalImplTestBase {
       return new NIOSequentialFileFactory(getTestDirfile(), true, 1);
    }
 
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
-
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testExportImport() throws Exception {
@@ -183,13 +175,5 @@ public class NIOImportExportTest extends JournalImplTestBase {
       loadAndCheck();
 
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

@@ -26,16 +26,6 @@ import org.junit.Test;
 
 public class TimeAndCounterIDGeneratorTest extends Assert {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
-
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
-
    @Test
    public void testCalculation() {
       TimeAndCounterIDGenerator seq = new TimeAndCounterIDGenerator();

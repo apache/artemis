@@ -38,9 +38,7 @@ import org.apache.activemq.artemis.utils.DataConstants;
 import org.jboss.logging.Logger;
 
 public final class PageTransactionInfoImpl implements PageTransactionInfo {
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
    private static final Logger logger = Logger.getLogger(PageTransactionInfoImpl.class);
 
@@ -65,10 +63,6 @@ public final class PageTransactionInfoImpl implements PageTransactionInfo {
 
    private List<LateDelivery> lateDeliveries;
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
    public PageTransactionInfoImpl(final long transactionID) {
       this();
       this.transactionID = transactionID;
@@ -77,7 +71,6 @@ public final class PageTransactionInfoImpl implements PageTransactionInfo {
    public PageTransactionInfoImpl() {
    }
 
-   // Public --------------------------------------------------------
 
    @Override
    public long getRecordID() {
@@ -300,14 +293,6 @@ public final class PageTransactionInfoImpl implements PageTransactionInfo {
          return true;
       }
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
    /**
     * a Message shouldn't be delivered until it's committed

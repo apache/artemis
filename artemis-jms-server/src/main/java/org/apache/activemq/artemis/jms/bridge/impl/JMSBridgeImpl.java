@@ -327,8 +327,6 @@ public final class JMSBridgeImpl implements JMSBridge {
       }
    }
 
-   // ActiveMQComponent overrides --------------------------------------------------
-
    @Override
    public JMSBridgeImpl setBridgeName(String name) {
       this.bridgeName = name;
@@ -939,10 +937,6 @@ public final class JMSBridgeImpl implements JMSBridge {
    public void setTransactionManager(final TransactionManager tm) {
       this.tm = tm;
    }
-
-   // Public ---------------------------------------------------------------------------
-
-   // Private -------------------------------------------------------------------
 
    private synchronized void checkParams() {
       checkNotNull(sourceCff, "sourceCff");
@@ -1747,8 +1741,6 @@ public final class JMSBridgeImpl implements JMSBridge {
       return service;
    }
 
-   // Inner classes ---------------------------------------------------------------
-
    /**
     * We use a Thread which polls the sourceDestination instead of a MessageListener
     * to ensure that message delivery does not happen concurrently with
@@ -2058,7 +2050,7 @@ public final class JMSBridgeImpl implements JMSBridge {
       if (registry == null) {
          for (String locatorClasse : RESOURCE_RECOVERY_CLASS_NAMES) {
             try {
-               ServiceLoader<ActiveMQRegistry> sl = ServiceLoader.load(ActiveMQRegistry.class);
+               ServiceLoader<ActiveMQRegistry> sl = ServiceLoader.load(ActiveMQRegistry.class, JMSBridgeImpl.class.getClassLoader());
                if (sl.iterator().hasNext()) {
                   registry = sl.iterator().next();
                }

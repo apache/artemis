@@ -37,8 +37,6 @@ public class ReattachSessionResponseMessage extends PacketImpl {
       super(REATTACH_SESSION_RESP);
    }
 
-   // Public --------------------------------------------------------
-
    public int getLastConfirmedCommandID() {
       return lastConfirmedCommandID;
    }

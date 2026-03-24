@@ -66,7 +66,6 @@ public final class MessageCounterInfo {
       return new MessageCounterInfo(name, subscription, durable, count, countDelta, depth, depthDelta, lastAddTimestamp, lastAckTimestamp, updateTimestamp);
    }
 
-   // Constructors --------------------------------------------------
 
    public MessageCounterInfo(final String name,
                              final String subscription,
@@ -89,8 +88,6 @@ public final class MessageCounterInfo {
       this.lastAckTimestamp = lastAckTimestamp;
       this.updateTimestamp = updateTimestamp;
    }
-
-   // Public --------------------------------------------------------
 
    /**
     * Returns the name of the queue.

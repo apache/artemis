@@ -123,12 +123,4 @@ public class RolesConfigurationStorageTest extends StorageManagerTestBase {
       }
    }
 
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
-
 }

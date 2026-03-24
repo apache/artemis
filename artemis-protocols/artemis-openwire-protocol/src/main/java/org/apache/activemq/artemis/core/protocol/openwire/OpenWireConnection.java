@@ -61,6 +61,7 @@ import org.apache.activemq.artemis.core.protocol.openwire.amq.AMQSession;
 import org.apache.activemq.artemis.core.protocol.openwire.amq.AMQSingleConsumerBrokerExchange;
 import org.apache.activemq.artemis.core.protocol.openwire.util.OpenWireUtil;
 import org.apache.activemq.artemis.core.remoting.FailureListener;
+import org.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants;
 import org.apache.activemq.artemis.core.security.SecurityAuth;
 import org.apache.activemq.artemis.core.server.ActiveMQMessageBundle;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
@@ -83,7 +84,7 @@ import org.apache.activemq.artemis.spi.core.protocol.AbstractRemotingConnection;
 import org.apache.activemq.artemis.spi.core.protocol.ConnectionEntry;
 import org.apache.activemq.artemis.spi.core.remoting.Connection;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
-import org.apache.activemq.artemis.utils.actors.Actor;
+import org.apache.activemq.artemis.utils.actors.ThresholdActor;
 import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.apache.activemq.command.ActiveMQDestination;
 import org.apache.activemq.command.ActiveMQMessage;
@@ -138,6 +139,9 @@ import org.jboss.logging.Logger;
  */
 public class OpenWireConnection extends AbstractRemotingConnection implements SecurityAuth, TempQueueObserver {
 
+   // to be used on the packet size estimate processing for the ThresholdActor
+   private static final int MINIMAL_SIZE_ESTIAMTE = 1024;
+
    private static final Logger logger = Logger.getLogger(OpenWireConnection.class);
 
    private static final KeepAliveInfo PING = new KeepAliveInfo();
@@ -152,6 +156,8 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
    private final OpenWireFormat outWireFormat;
 
    private AMQConnectionContext context;
+
+   private final int actorThresholdBytes;
 
    private final AtomicBoolean stopping = new AtomicBoolean(false);
 
@@ -188,10 +194,13 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
 
    private static final AtomicLongFieldUpdater<OpenWireConnection> LAST_SENT_UPDATER = AtomicLongFieldUpdater.newUpdater(OpenWireConnection.class, "lastSent");
    private volatile long lastSent = -1;
+
+   private volatile boolean autoRead = true;
+
    private ConnectionEntry connectionEntry;
    private boolean useKeepAlive;
    private long maxInactivityDuration;
-   private volatile Actor<Command> openWireActor;
+   private volatile ThresholdActor<Command> openWireActor;
 
    private final Set<SimpleString> knownDestinations = new ConcurrentHashSet<>();
 
@@ -202,6 +211,15 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
                              OpenWireProtocolManager openWireProtocolManager,
                              OpenWireFormat wf,
                              Executor executor) {
+      this(connection, server, openWireProtocolManager, wf, executor, TransportConstants.DEFAULT_TCP_RECEIVEBUFFER_SIZE);
+   }
+
+   public OpenWireConnection(Connection connection,
+                             ActiveMQServer server,
+                             OpenWireProtocolManager openWireProtocolManager,
+                             OpenWireFormat wf,
+                             Executor executor,
+                             int actorThresholdBytes) {
       super(connection, executor);
       this.server = server;
       this.operationContext = server.newOperationContext();
@@ -210,6 +228,8 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
       this.outWireFormat = wf.copy();
       this.useKeepAlive = openWireProtocolManager.isUseKeepAlive();
       this.maxInactivityDuration = openWireProtocolManager.getMaxInactivityDuration();
+      this.transportConnection.setProtocolConnection(this);
+      this.actorThresholdBytes = actorThresholdBytes;
    }
 
    // SecurityAuth implementation
@@ -282,9 +302,9 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
             traceBufferReceived(connectionID, command);
          }
 
-         final Actor<Command> localVisibleActor = openWireActor;
+         final ThresholdActor<Command> localVisibleActor = openWireActor;
          if (localVisibleActor != null) {
-            openWireActor.act(command);
+            localVisibleActor.act(command);
          } else {
             act(command);
          }
@@ -293,6 +313,30 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
          sendException(e);
       }
 
+   }
+
+   public void restoreAutoRead() {
+      if (!autoRead) {
+         autoRead = true;
+         openWireActor.flush();
+      }
+   }
+
+   public void blockConnection() {
+      autoRead = false;
+      disableAutoRead();
+   }
+
+   private void disableAutoRead() {
+      getTransportConnection().setAutoRead(false);
+      disableTtl();
+   }
+
+   protected void flushedActor() {
+      getTransportConnection().setAutoRead(autoRead);
+      if (autoRead) {
+         enableTtl();
+      }
    }
 
 
@@ -762,9 +806,17 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
       createInternalSession(info);
 
       // the actor can only be used after the WireFormat has been initialized with versioning
-      this.openWireActor = new Actor<>(executor, this::act);
+      this.openWireActor = new ThresholdActor<>(executor, this::act, actorThresholdBytes, OpenWireConnection::getSize, this::disableAutoRead, this::flushedActor);
 
       return context;
+   }
+
+   private static int getSize(Command command) {
+      if (command instanceof ActiveMQMessage) {
+         return ((ActiveMQMessage) command).getSize();
+      } else {
+         return MINIMAL_SIZE_ESTIAMTE;
+      }
    }
 
    private void createInternalSession(ConnectionInfo info) throws Exception {

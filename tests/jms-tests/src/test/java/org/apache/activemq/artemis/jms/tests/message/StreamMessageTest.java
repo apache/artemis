@@ -29,15 +29,7 @@ import org.junit.Test;
  * A test that sends/receives stream messages to the JMS provider and verifies their integrity.
  */
 public class StreamMessageTest extends MessageTestBase {
-   // Constants -----------------------------------------------------
 
-   // Static --------------------------------------------------------
-
-   // Attributes ----------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Override
    @Before

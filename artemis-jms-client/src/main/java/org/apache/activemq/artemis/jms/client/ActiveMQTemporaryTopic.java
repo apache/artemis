@@ -20,15 +20,10 @@ import javax.jms.TemporaryTopic;
 
 public class ActiveMQTemporaryTopic extends ActiveMQTopic implements TemporaryTopic {
 
-   // Constants -----------------------------------------------------
 
    private static final long serialVersionUID = 845450764835635266L;
 
-   // Attributes ----------------------------------------------------
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
    public ActiveMQTemporaryTopic() {
       this(null, null);
    }
@@ -37,7 +32,6 @@ public class ActiveMQTemporaryTopic extends ActiveMQTopic implements TemporaryTo
       super(address, true, session);
    }
 
-   // Public --------------------------------------------------------
 
    @Override
    public boolean equals(final Object o) {
@@ -58,13 +52,5 @@ public class ActiveMQTemporaryTopic extends ActiveMQTopic implements TemporaryTo
    public int hashCode() {
       return super.getAddress().hashCode();
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

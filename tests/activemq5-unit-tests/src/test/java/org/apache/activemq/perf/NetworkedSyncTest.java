@@ -40,7 +40,6 @@ import org.springframework.core.io.ClassPathResource;
 
 public class NetworkedSyncTest extends TestCase {
 
-   // constants
    public static final int MESSAGE_COUNT = 10000; //100000;
    public final static String config = "org/apache/activemq/perf/networkSync.xml";
    public final static String broker1URL = "tcp://localhost:61616";

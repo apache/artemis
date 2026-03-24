@@ -17,7 +17,6 @@
 package org.apache.activemq.artemis.utils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -54,7 +53,9 @@ public class StringUtil {
    public static List<String> splitStringList(String strList, String delimit) {
       ArrayList<String> list = new ArrayList<>();
       if (strList != null && !strList.isEmpty()) {
-         list.addAll(Arrays.asList(strList.split(delimit)));
+         for (String string : strList.split(delimit)) {
+            list.add(string.trim());
+         }
       }
       return list;
    }

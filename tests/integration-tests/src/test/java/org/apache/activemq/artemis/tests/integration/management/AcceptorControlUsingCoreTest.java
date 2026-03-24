@@ -24,13 +24,6 @@ import org.junit.Test;
 
 public class AcceptorControlUsingCoreTest extends AcceptorControlTest {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
-
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
 
    // AcceptorControlTest overrides --------------------------------
 
@@ -83,7 +76,6 @@ public class AcceptorControlUsingCoreTest extends AcceptorControlTest {
       };
    }
 
-   // Public --------------------------------------------------------
 
    @Override
    public boolean usingCore() {

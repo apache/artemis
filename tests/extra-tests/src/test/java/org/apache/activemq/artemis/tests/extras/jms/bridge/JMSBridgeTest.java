@@ -1390,7 +1390,6 @@ public class JMSBridgeTest extends BridgeTestBase {
       server0.stop();
    }
 
-   // Private -------------------------------------------------------------------------------
 
    private void testStress(final QualityOfServiceMode qosMode,
                            final boolean persistent,
@@ -1997,8 +1996,6 @@ public class JMSBridgeTest extends BridgeTestBase {
       return true;
 
    }
-
-   // Inner classes -------------------------------------------------------------------
 
    private static class StressSender implements Runnable {
 

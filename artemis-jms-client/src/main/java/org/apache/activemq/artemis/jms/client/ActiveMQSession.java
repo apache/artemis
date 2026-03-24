@@ -120,7 +120,6 @@ public class ActiveMQSession implements QueueSession, TopicSession {
 
    private final Map<String, Queue> queueCache = new ConcurrentHashMap<>();
 
-   // Constructors --------------------------------------------------
 
    protected ActiveMQSession(final ConnectionFactoryOptions options,
                              final ActiveMQConnection connection,
@@ -746,7 +745,7 @@ public class ActiveMQSession implements QueueSession, TopicSession {
 
          QueueQuery subResponse = session.queueQuery(queueName);
 
-         if ((!subResponse.isExists() || !Objects.equals(subResponse.getAddress(), dest.getSimpleAddress()) || !Objects.equals(subResponse.getFilterString(), coreFilterString)) && !subResponse.isConfigurationManaged()) {
+         if ((!subResponse.isExists() || !Objects.equals(subResponse.getAddress(), dest.getSimpleAddress()) || !Objects.equals(subResponse.getFilterString(), coreFilterString)) && !Boolean.TRUE.equals(subResponse.isConfigurationManaged())) {
             try {
                createSharedQueue(dest, RoutingType.MULTICAST, queueName, coreFilterString, durability == ConsumerDurability.DURABLE, response);
             } catch (ActiveMQQueueExistsException ignored) {
@@ -1139,7 +1138,6 @@ public class ActiveMQSession implements QueueSession, TopicSession {
       return (TopicSession) getSession();
    }
 
-   // Public --------------------------------------------------------
 
    @Override
    public String toString() {
@@ -1237,8 +1235,6 @@ public class ActiveMQSession implements QueueSession, TopicSession {
       return enable1xPrefixes;
    }
 
-   // Package protected ---------------------------------------------
-
    void deleteQueue(final SimpleString queueName) throws JMSException {
       if (!session.isClosed()) {
          try {
@@ -1252,8 +1248,6 @@ public class ActiveMQSession implements QueueSession, TopicSession {
    public ActiveMQConnection getConnection() {
       return connection;
    }
-
-   // Protected -----------------------------------------------------
 
 
    void checkClosed() throws JMSException {
@@ -1280,7 +1274,6 @@ public class ActiveMQSession implements QueueSession, TopicSession {
       session.createQueue(queueConfiguration.setName(queueName).setAddress(destination.getAddress()).setAutoCreated(autoCreated).setDurable(durable));
    }
 
-   // Private -------------------------------------------------------
 
 
    private ActiveMQQueue lookupQueue(final String queueName, boolean isTemporary) throws ActiveMQException {
@@ -1337,6 +1330,5 @@ public class ActiveMQSession implements QueueSession, TopicSession {
          return topic;
       }
    }
-   // Inner classes -------------------------------------------------
 
 }

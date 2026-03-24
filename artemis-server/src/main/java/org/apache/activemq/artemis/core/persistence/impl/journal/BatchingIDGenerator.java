@@ -162,7 +162,6 @@ public final class BatchingIDGenerator implements IDGenerator {
       return new IDCounterEncoding(id);
    }
 
-   // Inner classes -------------------------------------------------
 
    protected static final class IDCounterEncoding implements EncodingSupport {
 

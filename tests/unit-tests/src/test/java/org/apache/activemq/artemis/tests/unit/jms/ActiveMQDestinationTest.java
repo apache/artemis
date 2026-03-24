@@ -32,15 +32,8 @@ import static org.apache.activemq.artemis.jms.client.ActiveMQDestination.QUEUE_Q
 import static org.apache.activemq.artemis.jms.client.ActiveMQDestination.TOPIC_QUALIFIED_PREFIX;
 
 public class ActiveMQDestinationTest extends ActiveMQTestBase {
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testEquals() throws Exception {
@@ -103,11 +96,5 @@ public class ActiveMQDestinationTest extends ActiveMQTestBase {
       }
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 }

@@ -17,7 +17,7 @@
 
 package org.apache.activemq.artemis.tests.integration.cluster.failover.quorum;
 
-import org.apache.activemq.artemis.core.config.ha.ReplicationBackupPolicyConfiguration;;
+import org.apache.activemq.artemis.core.config.ha.ReplicationBackupPolicyConfiguration;
 import org.apache.activemq.artemis.tests.integration.cluster.failover.BackupSyncJournalTest;
 
 public class PluggableQuorumBackupSyncJournalTest extends BackupSyncJournalTest {

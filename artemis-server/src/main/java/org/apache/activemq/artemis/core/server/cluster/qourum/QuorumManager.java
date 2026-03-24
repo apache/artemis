@@ -42,6 +42,8 @@ import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.cluster.ClusterControl;
 import org.apache.activemq.artemis.core.server.cluster.ClusterController;
 
+import static org.apache.activemq.artemis.utils.Preconditions.checkNotNull;
+
 /**
  * A QourumManager can be used to register a {@link org.apache.activemq.artemis.core.server.cluster.qourum.Quorum} to receive notifications
  * about changes to the cluster. A {@link org.apache.activemq.artemis.core.server.cluster.qourum.Quorum} can then issue a vote to the
@@ -73,6 +75,9 @@ public final class QuorumManager implements ClusterTopologyListener, ActiveMQCom
    private int maxClusterSize = 0;
 
    public QuorumManager(ExecutorService threadPool, ClusterController clusterController) {
+      checkNotNull(threadPool);
+      checkNotNull(clusterController);
+
       this.clusterController = clusterController;
       this.executor = threadPool;
    }

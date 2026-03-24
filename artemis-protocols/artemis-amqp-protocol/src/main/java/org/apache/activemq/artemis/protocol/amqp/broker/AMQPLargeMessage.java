@@ -27,6 +27,7 @@ import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.ICoreMessage;
 import org.apache.activemq.artemis.api.core.Message;
+import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.buffers.impl.ChannelBufferWrapper;
 import org.apache.activemq.artemis.core.io.SequentialFile;
 import org.apache.activemq.artemis.core.message.LargeBodyReader;
@@ -70,6 +71,9 @@ public class AMQPLargeMessage extends AMQPMessage implements LargeServerMessage 
          reader.readInto(wrapbuffer);
 
          AMQPStandardMessage standardMessage = new AMQPStandardMessage(messageFormat, buffer, extraProperties, coreMessageObjectPools);
+         if (this.getExpiration() > 0) {
+            standardMessage.reloadExpiration(this.getExpiration());
+         }
          standardMessage.setMessageAnnotations(messageAnnotations);
          standardMessage.setMessageID(messageID);
          return standardMessage.toCore();
@@ -602,8 +606,13 @@ public class AMQPLargeMessage extends AMQPMessage implements LargeServerMessage 
    }
 
    @Override
-   public long getPersistentSize() throws ActiveMQException {
-      return 0;
+   public long getPersistentSize() {
+      try {
+         return largeBody.getBodySize();
+      } catch (Exception e) {
+         logger.warn(e.getMessage(), e);
+         return 0;
+      }
    }
 
    @Override
@@ -635,7 +644,7 @@ public class AMQPLargeMessage extends AMQPMessage implements LargeServerMessage 
    }
 
    @Override
-   public void referenceOriginalMessage(final Message original, String originalQueue) {
+   public void referenceOriginalMessage(final Message original, final SimpleString originalQueue) {
 
       super.referenceOriginalMessage(original, originalQueue);
 

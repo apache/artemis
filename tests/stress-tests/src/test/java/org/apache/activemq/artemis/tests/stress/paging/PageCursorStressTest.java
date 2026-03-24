@@ -59,9 +59,7 @@ import org.junit.Test;
 
 public class PageCursorStressTest extends ActiveMQTestBase {
 
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
    private final SimpleString ADDRESS = new SimpleString("test-add");
 
@@ -791,9 +789,7 @@ public class PageCursorStressTest extends ActiveMQTestBase {
       return (PagingStoreImpl) server.getPagingManager().getPageStore(address);
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
    @Override
    @Before

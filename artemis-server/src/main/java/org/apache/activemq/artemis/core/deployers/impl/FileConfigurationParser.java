@@ -321,7 +321,6 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
    private static final String ENABLE_INGRESS_TIMESTAMP = "enable-ingress-timestamp";
 
-   // Attributes ----------------------------------------------------
 
    private boolean validateAIO = false;
 
@@ -2135,9 +2134,9 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
       long retryInterval = getLong(e, "retry-interval", ActiveMQDefaultConfiguration.getDefaultClusterRetryInterval(), Validators.GT_ZERO);
 
-      long callTimeout = getLong(e, "call-timeout", ActiveMQClient.DEFAULT_CALL_TIMEOUT, Validators.GT_ZERO);
+      long callTimeout = getLong(e, "call-timeout", ActiveMQDefaultConfiguration.getDefaultClusterCallTimeout(), Validators.GT_ZERO);
 
-      long callFailoverTimeout = getLong(e, "call-failover-timeout", ActiveMQClient.DEFAULT_CALL_FAILOVER_TIMEOUT, Validators.MINUS_ONE_OR_GT_ZERO);
+      long callFailoverTimeout = getLong(e, "call-failover-timeout", ActiveMQDefaultConfiguration.getDefaultClusterCallFailoverTimeout(), Validators.MINUS_ONE_OR_GT_ZERO);
 
       double retryIntervalMultiplier = getDouble(e, "retry-interval-multiplier", ActiveMQDefaultConfiguration.getDefaultClusterRetryIntervalMultiplier(), Validators.GT_ZERO);
 

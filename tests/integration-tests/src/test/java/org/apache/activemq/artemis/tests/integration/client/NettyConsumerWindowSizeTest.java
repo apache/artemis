@@ -18,27 +18,12 @@ package org.apache.activemq.artemis.tests.integration.client;
 
 public class NettyConsumerWindowSizeTest extends ConsumerWindowSizeTest {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    @Override
    protected boolean isNetty() {
       return true;
    }
 
-   // Static --------------------------------------------------------
 
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

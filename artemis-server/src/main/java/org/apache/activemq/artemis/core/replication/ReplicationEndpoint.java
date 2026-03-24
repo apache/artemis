@@ -142,7 +142,7 @@ public final class ReplicationEndpoint implements ChannelHandler, ActiveMQCompon
    private final ArrayDeque<Packet> pendingPackets;
 
 
-   // Constructors --------------------------------------------------
+
    public ReplicationEndpoint(final ActiveMQServerImpl server,
                               boolean wantedFailBack,
                               ReplicationEndpointEventListener eventListener) {
@@ -153,7 +153,6 @@ public final class ReplicationEndpoint implements ChannelHandler, ActiveMQCompon
       this.supportResponseBatching = false;
    }
 
-   // Public --------------------------------------------------------
 
    public synchronized void registerJournal(final byte id, final Journal journal) {
       if (journals == null || id >= journals.length) {

@@ -41,7 +41,9 @@ import org.apache.activemq.artemis.api.core.client.ClusterTopologyListener;
 import org.apache.activemq.artemis.api.core.client.TopologyMember;
 import org.apache.activemq.artemis.core.persistence.CoreMessageObjectPools;
 import org.apache.activemq.artemis.core.protocol.openwire.amq.AMQConnectionContext;
+import org.apache.activemq.artemis.core.remoting.impl.netty.NettyAcceptor;
 import org.apache.activemq.artemis.core.remoting.impl.netty.NettyServerConnection;
+import org.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.cluster.ClusterConnection;
@@ -96,6 +98,8 @@ public class OpenWireProtocolManager  extends AbstractProtocolManager<Command, O
    private final OpenWireFormatFactory wireFactory;
 
    private boolean prefixPacketSize = true;
+
+   private int actorThresholdBytes = -1;
 
    private BrokerId brokerId;
    protected final ProducerId advisoryProducerId = new ProducerId();
@@ -236,6 +240,17 @@ public class OpenWireProtocolManager  extends AbstractProtocolManager<Command, O
       }
    }
 
+   /*** if set, the OpenWire connection will bypass the tcpReadBuferSize and use this value instead.
+    *   This is by default -1, and it should not be used unless in extreme situations like on a slow storage. */
+   public int getActorThresholdBytes() {
+      return actorThresholdBytes;
+   }
+
+   public OpenWireProtocolManager setActorThresholdBytes(int actorThresholdBytes) {
+      this.actorThresholdBytes = actorThresholdBytes;
+      return this;
+   }
+
    public ScheduledExecutorService getScheduledPool() {
       return scheduledPool;
    }
@@ -293,10 +308,25 @@ public class OpenWireProtocolManager  extends AbstractProtocolManager<Command, O
       return super.invokeInterceptors(this.outgoingInterceptors, command, connection);
    }
 
+   private int getActorThreadshold(Acceptor acceptorUsed) {
+      int actorThreshold = TransportConstants.DEFAULT_TCP_RECEIVEBUFFER_SIZE;
+
+      if (acceptorUsed instanceof NettyAcceptor) {
+         actorThreshold = ((NettyAcceptor) acceptorUsed).getTcpReceiveBufferSize();
+      }
+
+      if (this.actorThresholdBytes > 0) {
+         // replace any previous value
+         actorThreshold = this.actorThresholdBytes;
+      }
+
+      return actorThreshold;
+   }
+
    @Override
    public ConnectionEntry createConnectionEntry(Acceptor acceptorUsed, Connection connection) {
       OpenWireFormat wf = (OpenWireFormat) wireFactory.createWireFormat();
-      OpenWireConnection owConn = new OpenWireConnection(connection, server, this, wf, server.getExecutorFactory().getExecutor());
+      OpenWireConnection owConn = new OpenWireConnection(connection, server, this, wf, server.getExecutorFactory().getExecutor(), getActorThreadshold(acceptorUsed));
       owConn.sendHandshake();
 
       //first we setup ttl to -1

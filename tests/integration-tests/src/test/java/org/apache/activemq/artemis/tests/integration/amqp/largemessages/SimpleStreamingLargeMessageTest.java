@@ -359,7 +359,8 @@ public class SimpleStreamingLargeMessageTest extends AmqpClientTestSupport {
          assertEquals(1, browseResult.length);
 
          if ((boolean) browseResult[0].get("largeMessage")) {
-            assertTrue(browseResult[0].containsKey("BodyPreview"));
+            // The AMQPMessage will part the body as text (...Large Message...) while core will parse it differently
+            assertTrue(browseResult[0].containsKey("text") || browseResult[0].containsKey("BodyPreview"));
          }
 
          connection = client.createConnection();

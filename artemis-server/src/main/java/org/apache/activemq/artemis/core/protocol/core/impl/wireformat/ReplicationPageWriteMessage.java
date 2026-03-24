@@ -39,7 +39,6 @@ public class ReplicationPageWriteMessage extends PacketImpl implements MessagePa
       this.pagedMessage = pagedMessage;
    }
 
-   // Public --------------------------------------------------------
 
    @Override
    public int expectedEncodeSize() {

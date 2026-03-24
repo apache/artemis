@@ -24,8 +24,6 @@ public class SessionCloseMessage extends PacketImpl {
       super(SESS_CLOSE);
    }
 
-   // Public --------------------------------------------------------
-
    @Override
    public boolean equals(final Object other) {
       if (other instanceof SessionCloseMessage == false) {

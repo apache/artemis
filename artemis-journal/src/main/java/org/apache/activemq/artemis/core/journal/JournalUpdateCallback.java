@@ -17,7 +17,7 @@
 
 package org.apache.activemq.artemis.core.journal;
 
-
+@FunctionalInterface
 public interface JournalUpdateCallback {
    void onUpdate(long record, boolean result);
 }

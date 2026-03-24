@@ -90,25 +90,27 @@ var Artemis;
                     <div hawtio-editor="$ctrl.message.message" mode="codeMirrorOptions.mode.name"></div>
                 </div>
                 <div class="form-group">
-                    <select class="form-control artemis-send-message-format" ng-model="codeMirrorOptions.mode.name">
+                    <select class="form-control artemis-send-message-format" ng-model="codeMirrorOptions.mode.name"
+                        style="display:inline; width:auto">
                         <option value="javascript">JSON</option>
                         <option value="xml">XML</option>
                     </select>
                     <button class="btn btn-default" ng-click="$ctrl.message.formatMessage()"
-                       title="Automatically pretty prints the message so its easier to read">Format
+                       title="Automatically pretty prints the message so it's easier to read"
+                       style="vertical-align: initial">Format
                     </button>
                 </div>
             </form>
 
             <p>
-                <button type="button" class="btn btn-primary artemis-send-message-button" ng-click="$ctrl.message.sendMessage($ctrl.message.durable, $ctrl.message.messageID)">Send message</button>
+                <button type="button" class="btn btn-primary artemis-send-message-button" ng-click="$ctrl.message.sendMessage($ctrl.message.durable, $ctrl.message.messageID)">Send Message</button>
             </p>
             <script type="text/ng-template" id="send-message-instructions.html">
             <div>
                 <p>
                     This page allows you to send a message to the chosen address. The message will be of type <code>text</code>
                     message and it will be possible to add headers to the message. The sending of the message will be authenticated
-                    using the username and password set ion <code>preferences</code>, if this is not set then these will
+                    using the username and password set in <code>preferences</code>, if this is not set then these will
                     be null.
                 </p>
             </div>

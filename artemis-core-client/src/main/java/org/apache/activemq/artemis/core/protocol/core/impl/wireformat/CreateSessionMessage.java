@@ -108,8 +108,6 @@ public class CreateSessionMessage extends PacketImpl {
       super(type);
    }
 
-   // Public --------------------------------------------------------
-
    public String getName() {
       return name;
    }

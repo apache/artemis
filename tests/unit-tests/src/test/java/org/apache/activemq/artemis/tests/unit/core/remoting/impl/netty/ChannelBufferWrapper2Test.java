@@ -25,15 +25,7 @@ import org.apache.activemq.artemis.tests.unit.core.remoting.ActiveMQBufferTestBa
  */
 public class ChannelBufferWrapper2Test extends ActiveMQBufferTestBase {
 
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
-
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    // BufferWrapperBase overrides -----------------------------------
 
@@ -42,11 +34,5 @@ public class ChannelBufferWrapper2Test extends ActiveMQBufferTestBase {
       return ActiveMQBuffers.dynamicBuffer(512);
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 }

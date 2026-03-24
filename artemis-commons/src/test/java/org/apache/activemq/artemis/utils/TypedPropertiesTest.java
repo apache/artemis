@@ -56,9 +56,7 @@ public class TypedPropertiesTest {
       }
    }
 
-   // Constructors --------------------------------------------------
 
-   // Public --------------------------------------------------------
 
    private TypedProperties props;
 

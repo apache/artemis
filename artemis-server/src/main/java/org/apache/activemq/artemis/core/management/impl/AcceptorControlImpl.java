@@ -29,17 +29,11 @@ import org.apache.activemq.artemis.spi.core.remoting.Acceptor;
 
 public class AcceptorControlImpl extends AbstractControl implements AcceptorControl {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    private final Acceptor acceptor;
 
    private final TransportConfiguration configuration;
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
 
    public AcceptorControlImpl(final Acceptor acceptor,
                               final StorageManager storageManager,
@@ -158,14 +152,5 @@ public class AcceptorControlImpl extends AbstractControl implements AcceptorCont
       return MBeanInfoHelper.getMBeanAttributesInfo(AcceptorControl.class);
    }
 
-   // Public --------------------------------------------------------
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

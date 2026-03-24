@@ -37,7 +37,6 @@ public class ServerInfo {
       this.pagingManager = pagingManager;
    }
 
-   // Public --------------------------------------------------------
 
    public String dump() {
       long maxMemory = Runtime.getRuntime().maxMemory();

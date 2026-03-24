@@ -285,9 +285,7 @@ public class JMSReconnectTest extends ActiveMQTestBase {
       conn.close();
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
    @Override
    @Before
@@ -298,9 +296,7 @@ public class JMSReconnectTest extends ActiveMQTestBase {
       server.start();
    }
 
-   // Private -------------------------------------------------------
 
-   // Inner classes -------------------------------------------------
 
    private static class MyExceptionListener implements ExceptionListener {
 

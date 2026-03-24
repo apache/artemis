@@ -34,17 +34,10 @@ import org.junit.Test;
 
 public class TextMessageTest extends JMSTestBase {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    private Queue queue;
 
-   // Static --------------------------------------------------------
 
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testSendReceiveNullBody() throws Exception {
@@ -166,9 +159,7 @@ public class TextMessageTest extends JMSTestBase {
       assertEquals(str, received4.getText());
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
    @Override
    @Before

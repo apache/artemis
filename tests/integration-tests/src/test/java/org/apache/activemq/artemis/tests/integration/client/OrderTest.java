@@ -60,11 +60,7 @@ public class OrderTest extends ActiveMQTestBase {
       locator = createNettyNonHALocator();
    }
 
-   // Static --------------------------------------------------------
 
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testSimpleStorage() throws Exception {
@@ -242,13 +238,5 @@ public class OrderTest extends ActiveMQTestBase {
       session.commit();
       session.close();
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

@@ -325,14 +325,19 @@ public final class JsonUtil {
    private JsonUtil() {
    }
 
+   public static String truncateString(final String str, final int valueSizeLimit) {
+      if (valueSizeLimit >= 0 && str.length() > valueSizeLimit) {
+         return new StringBuilder(valueSizeLimit + 32).append(str.substring(0, valueSizeLimit)).append(", + ").append(str.length() - valueSizeLimit).append(" more").toString();
+      } else {
+         return str;
+      }
+   }
+
    public static Object truncate(final Object value, final int valueSizeLimit) {
       Object result = value;
       if (valueSizeLimit >= 0) {
          if (String.class.equals(value.getClass())) {
-            String str = (String) value;
-            if (str.length() > valueSizeLimit) {
-               result = new StringBuilder(valueSizeLimit + 32).append(str.substring(0, valueSizeLimit)).append(", + ").append(str.length() - valueSizeLimit).append(" more").toString();
-            }
+            result = truncateString((String)value, valueSizeLimit);
          } else if (value.getClass().isArray()) {
             if (byte[].class.equals(value.getClass())) {
                if (((byte[]) value).length > valueSizeLimit) {

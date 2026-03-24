@@ -24,6 +24,8 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.util.internal.PlatformDependent;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
@@ -37,7 +39,7 @@ import static org.junit.Assert.fail;
 
 public class ByteUtilTest {
 
-   private static Logger log = Logger.getLogger(ByteUtilTest.class);
+   private static final Logger log = Logger.getLogger(ByteUtilTest.class);
 
    @Test
    public void testBytesToString() {
@@ -409,5 +411,29 @@ public class ByteUtilTest {
       assertArrayEquals(assertContent, convertedContent);
    }
 
+   @Test(expected = IllegalArgumentException.class)
+   public void shouldEnsureExactWritableFailToEnlargeWrappedByteBuf() {
+      byte[] wrapped = new byte[32];
+      ByteBuf buffer = Unpooled.wrappedBuffer(wrapped);
+      buffer.writerIndex(wrapped.length);
+      ByteUtil.ensureExactWritable(buffer, 1);
+   }
+
+   @Test
+   public void shouldEnsureExactWritableNotEnlargeBufferWithEnoughSpace() {
+      byte[] wrapped = new byte[32];
+      ByteBuf buffer = Unpooled.wrappedBuffer(wrapped);
+      buffer.writerIndex(wrapped.length - 1);
+      ByteUtil.ensureExactWritable(buffer, 1);
+      Assert.assertSame(wrapped, buffer.array());
+   }
+
+   @Test
+   public void shouldEnsureExactWritableEnlargeBufferWithoutEnoughSpace() {
+      ByteBuf buffer = Unpooled.buffer(32);
+      buffer.writerIndex(32);
+      ByteUtil.ensureExactWritable(buffer, 1);
+      Assert.assertEquals(33, buffer.capacity());
+   }
 
 }

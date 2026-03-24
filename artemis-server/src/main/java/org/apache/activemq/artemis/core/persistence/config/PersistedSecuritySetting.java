@@ -25,9 +25,6 @@ import static org.apache.activemq.artemis.utils.DataConstants.SIZE_NULL;
 
 public class PersistedSecuritySetting implements EncodingSupport {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    private long storeId;
 
@@ -53,9 +50,6 @@ public class PersistedSecuritySetting implements EncodingSupport {
 
    private SimpleString deleteAddressRoles;
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
 
    public PersistedSecuritySetting() {
    }
@@ -98,7 +92,6 @@ public class PersistedSecuritySetting implements EncodingSupport {
       this.deleteAddressRoles = SimpleString.toSimpleString(deleteAddressRoles);
    }
 
-   // Public --------------------------------------------------------
 
    public long getStoreId() {
       return storeId;
@@ -358,13 +351,5 @@ public class PersistedSecuritySetting implements EncodingSupport {
          deleteAddressRoles +
          "]";
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

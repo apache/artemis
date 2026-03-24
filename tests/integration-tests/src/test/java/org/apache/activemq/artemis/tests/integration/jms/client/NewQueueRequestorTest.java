@@ -66,14 +66,6 @@ public class NewQueueRequestorTest extends JMSTestBase {
       }
    }
 
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
-
    class TestMessageListener implements MessageListener {
 
       private final QueueSession sess;

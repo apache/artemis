@@ -79,12 +79,12 @@ When prompted make sure the next is a major release. Example:
 
 ```
 [INFO] Checking dependencies and plugins for snapshots ...
-What is the release version for "ActiveMQ Artemis Parent"? (org.apache.activemq:artemis-pom) 1.4.0: :
-What is SCM release tag or label for "ActiveMQ Artemis Parent"? (org.apache.activemq:artemis-pom) artemis-pom-1.4.0: : 1.4.0
-What is the new development version for "ActiveMQ Artemis Parent"? (org.apache.activemq:artemis-pom) 1.4.1-SNAPSHOT: : 1.5.0-SNAPSHOT
+What is the release version for "ActiveMQ Artemis Parent"? (org.apache.activemq:artemis-pom) 2.19.0: :
+What is SCM release tag or label for "ActiveMQ Artemis Parent"? (org.apache.activemq:artemis-pom) artemis-pom-2.19.0: : 2.19.0
+What is the new development version for "ActiveMQ Artemis Parent"? (org.apache.activemq:artemis-pom) 2.19.1-SNAPSHOT: : 2.20.0-SNAPSHOT
 ```
 
-Otherwise snapshots will be created at 1.4.1 and forgotten. (Unless we ever release 1.4.1 on that example).
+Otherwise snapshots will be created at 2.19.1-SNAPSHOT and forgotten. (Unless we ever release 2.19.1 on that example).
 
 For more information look at the prepare plugin:
 
@@ -97,13 +97,6 @@ which are for changing the `&lt;version>` in the pom.xml files, and the second p
 git push upstream
 git push upstream <version>
 ```
-
-
-## Extra tests
-
-Note: The Apache Release plugin does not bump the version on the `extraTests` module.  Release manager should manually
-bump the version in the test/extra-tests/pom.xml to the next development version.
-
 
 ## Uploading to nexus
 
@@ -263,12 +256,13 @@ informing the list about the voting results, e.g.:
 ```
 Results of the Apache ActiveMQ Artemis <version> release vote.
 
-Vote passes with 3 votes, 2 binding and 1 non binding.
+Vote passes with 4 votes, 3 binding and 1 non-binding.
 
 The following votes were received:
 
 Binding:
 +1 John Doe
++1 Jane Doe
 +1 Bill Smith
 
 Non Binding:

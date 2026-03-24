@@ -2572,9 +2572,7 @@ public abstract class ActiveMQTestBase extends Assert {
       return null;
    }
 
-   // Private -------------------------------------------------------
 
-   // Inner classes -------------------------------------------------
 
    protected interface ActiveMQAction {
 

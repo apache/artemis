@@ -45,8 +45,11 @@ public class AuthenticationFilter implements Filter {
          int status = ((Response) servletResponse).getStatus();
          //status 200 means that the user has been authenticated, anything else must be a failure
          if (status == 200) {
-            HttpSession session = ((Request) servletRequest).getSession();
-            AuditLogger.userSuccesfullyAuthenticatedInAudit(session != null ? (Subject) session.getAttribute("subject") : null);
+            //the hawtio logout servlet cleans the session and redirects to the login servlet
+            HttpSession session = ((Request) servletRequest).getSession(false);
+            if (session != null) {
+               AuditLogger.userSuccesfullyAuthenticatedInAudit(session != null ? (Subject) session.getAttribute("subject") : null);
+            }
          } else {
             AuditLogger.userFailedAuthenticationInAudit("" + status);
          }

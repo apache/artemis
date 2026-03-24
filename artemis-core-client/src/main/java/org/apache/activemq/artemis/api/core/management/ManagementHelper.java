@@ -28,7 +28,6 @@ import org.apache.activemq.artemis.core.message.impl.CoreMessage;
  * Helper class to use ActiveMQ Artemis Core messages to manage server resources.
  */
 public final class ManagementHelper {
-   // Constants -----------------------------------------------------
 
    public static final SimpleString HDR_RESOURCE_NAME = new SimpleString("_AMQ_ResourceName");
 
@@ -88,9 +87,6 @@ public final class ManagementHelper {
 
    public static final SimpleString HDR_CLIENT_ID = new SimpleString("_AMQ_Client_ID");
 
-   // Attributes ----------------------------------------------------
-
-   // Static --------------------------------------------------------
 
    /**
     * Stores a resource attribute in a message to retrieve the value from the server resource.

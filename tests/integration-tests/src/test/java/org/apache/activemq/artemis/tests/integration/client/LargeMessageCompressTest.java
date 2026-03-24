@@ -54,7 +54,7 @@ import javax.management.openmbean.CompositeData;
  */
 public class LargeMessageCompressTest extends LargeMessageTest {
 
-   // Constructors --------------------------------------------------
+
    public LargeMessageCompressTest(StoreConfiguration.StoreType storeType) {
       super(storeType);
       isCompressedTest = true;

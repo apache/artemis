@@ -41,8 +41,6 @@ public class SessionAcknowledgeMessage extends PacketImpl {
       super(SESS_ACKNOWLEDGE);
    }
 
-   // Public --------------------------------------------------------
-
    public long getConsumerID() {
       return consumerID;
    }

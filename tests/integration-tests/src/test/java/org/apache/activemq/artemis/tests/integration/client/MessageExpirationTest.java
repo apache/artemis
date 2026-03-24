@@ -279,9 +279,7 @@ public class MessageExpirationTest extends ActiveMQTestBase {
       session.deleteQueue(expiryQueue);
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
    @Override
    @Before

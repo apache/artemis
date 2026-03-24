@@ -54,8 +54,6 @@ public class CreateSharedQueueMessage extends PacketImpl {
       super(packetType);
    }
 
-   // Public --------------------------------------------------------
-
    @Override
    protected String getPacketString() {
       StringBuffer buff = new StringBuffer(super.getPacketString());

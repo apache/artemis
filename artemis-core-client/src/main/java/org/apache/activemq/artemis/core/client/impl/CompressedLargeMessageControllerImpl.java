@@ -89,6 +89,11 @@ final class CompressedLargeMessageControllerImpl implements LargeMessageControll
    }
 
    @Override
+   public LargeMessageControllerImpl.LargeData take() throws InterruptedException {
+      return bufferDelegate.take();
+   }
+
+   @Override
    public int capacity() {
       return -1;
    }
@@ -712,8 +717,6 @@ final class CompressedLargeMessageControllerImpl implements LargeMessageControll
    public ActiveMQBuffer slice(final int index, final int length) {
       throw new UnsupportedOperationException();
    }
-
-   // Inner classes -------------------------------------------------
 
    @Override
    public ByteBuf byteBuf() {

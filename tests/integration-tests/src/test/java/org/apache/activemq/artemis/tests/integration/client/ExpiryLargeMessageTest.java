@@ -48,7 +48,7 @@ import org.junit.Test;
  */
 public class ExpiryLargeMessageTest extends ActiveMQTestBase {
 
-   // Constants -----------------------------------------------------
+
    final SimpleString EXPIRY = new SimpleString("my-expiry");
 
    final SimpleString DLQ = new SimpleString("my-DLQ");
@@ -60,13 +60,7 @@ public class ExpiryLargeMessageTest extends ActiveMQTestBase {
    // it has to be an even number
    final int numberOfMessages = 50;
 
-   // Attributes ----------------------------------------------------
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testExpiryMessagesThenDLQ() throws Exception {
@@ -462,13 +456,5 @@ public class ExpiryLargeMessageTest extends ActiveMQTestBase {
 
       session.close();
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

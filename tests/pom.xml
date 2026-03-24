@@ -131,9 +131,12 @@
          <id>release</id>
          <modules>
             <module>activemq5-unit-tests</module>
+            <module>extra-tests</module>
+            <module>performance-jmh</module>
          </modules>
          <properties>
             <skipActiveMQ5Tests>true</skipActiveMQ5Tests>
+            <skipExtraTests>true</skipExtraTests>
          </properties>
       </profile>
    </profiles>

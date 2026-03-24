@@ -34,7 +34,6 @@ public final class DayCounterInfo {
 
    private final long[] counters;
 
-   // Static --------------------------------------------------------
 
    public static String toJSON(final DayCounterInfo[] infos) {
       JsonObjectBuilder json = JsonLoader.createObjectBuilder();
@@ -73,14 +72,11 @@ public final class DayCounterInfo {
       return infos;
    }
 
-   // Constructors --------------------------------------------------
 
    public DayCounterInfo(final String date, final long[] counters) {
       this.date = date;
       this.counters = counters;
    }
-
-   // Public --------------------------------------------------------
 
    /**
     * Returns the date of the counter.

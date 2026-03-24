@@ -108,7 +108,7 @@ public class URIFactory<T, P> {
    * */
    private URI normalise(String uri) throws URISyntaxException {
       if (uri.startsWith("(")) {
-         String[] split = uri.split("\\)");
+         String[] split = uri.split("\\)", 2);
          String[] connectorURIS = split[0].substring(split[0].indexOf('(') + 1).split(",");
          String factoryQuery = split.length > 1 ? split[1] : "";
          StringBuilder builder = new StringBuilder(connectorURIS[0]);

@@ -134,12 +134,4 @@ public class ExpireTestOnRestartTest extends ActiveMQTestBase {
       locator.close();
    }
 
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
-
 }

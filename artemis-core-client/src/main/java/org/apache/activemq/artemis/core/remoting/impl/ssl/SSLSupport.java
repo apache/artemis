@@ -241,7 +241,6 @@ public class SSLSupport {
       return supportedSuites.delete(supportedSuites.length() - 2, supportedSuites.length()).toString();
    }
 
-   // Private -------------------------------------------------------
    private TrustManagerFactory loadTrustManagerFactory() throws Exception {
       if (trustManagerFactoryPlugin != null) {
          return AccessController.doPrivileged((PrivilegedAction<TrustManagerFactory>) () -> ((TrustManagerFactoryPlugin) ClassloadingUtil.newInstanceFromClassLoader(SSLSupport.class, trustManagerFactoryPlugin)).getTrustManagerFactory());

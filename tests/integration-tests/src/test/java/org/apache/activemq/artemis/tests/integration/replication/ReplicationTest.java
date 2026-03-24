@@ -654,9 +654,7 @@ public final class ReplicationTest extends ActiveMQTestBase {
       return paging;
    }
 
-   // Private -------------------------------------------------------
 
-   // Inner classes -------------------------------------------------
    public static final class TestInterceptor implements Interceptor {
 
       static AtomicBoolean value = new AtomicBoolean(true);

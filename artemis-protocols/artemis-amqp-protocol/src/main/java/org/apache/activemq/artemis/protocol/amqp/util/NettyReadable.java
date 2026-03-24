@@ -26,6 +26,8 @@ import org.apache.qpid.proton.codec.WritableBuffer;
 
 import io.netty.buffer.ByteBuf;
 
+import static org.apache.activemq.artemis.utils.Preconditions.checkNotNull;
+
 /**
  * {@link ReadableBuffer} implementation that wraps a Netty {@link ByteBuf} to
  * allow use of Netty buffers to be used when decoding AMQP messages.
@@ -37,6 +39,8 @@ public class NettyReadable implements ReadableBuffer {
    private final ByteBuf buffer;
 
    public NettyReadable(ByteBuf buffer) {
+      checkNotNull(buffer);
+
       this.buffer = buffer;
    }
 

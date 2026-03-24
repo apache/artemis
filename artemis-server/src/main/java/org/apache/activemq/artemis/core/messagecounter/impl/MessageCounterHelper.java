@@ -27,11 +27,7 @@ import org.apache.activemq.artemis.core.messagecounter.MessageCounter;
 import org.apache.activemq.artemis.core.messagecounter.MessageCounter.DayCounter;
 
 public class MessageCounterHelper {
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
-
-   // Static --------------------------------------------------------
 
    public static String listMessageCounterHistory(final MessageCounter counter) throws Exception {
       List<DayCounter> history = counter.getHistory();
@@ -177,15 +173,6 @@ public class MessageCounterHelper {
       }
    }
 
-   // Constructors --------------------------------------------------
 
-   // Public --------------------------------------------------------
 
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 }

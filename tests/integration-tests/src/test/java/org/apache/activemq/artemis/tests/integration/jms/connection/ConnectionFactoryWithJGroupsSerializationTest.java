@@ -83,7 +83,6 @@ public class ConnectionFactoryWithJGroupsSerializationTest extends JMSTestBase {
       }
    }
 
-   // Public --------------------------------------------------------
 
    //HORNETQ-1389
    //Here we deploy two Connection Factories with JGroups discovery groups.

@@ -31,15 +31,8 @@ import org.apache.activemq.artemis.tests.util.JMSTestBase;
 import org.junit.Test;
 
 public class ExpiryMessageTest extends JMSTestBase {
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Override
    protected Configuration createDefaultConfig(boolean netty) throws Exception {
@@ -80,10 +73,6 @@ public class ExpiryMessageTest extends JMSTestBase {
 
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
-   // Private -------------------------------------------------------
-   // Inner classes -------------------------------------------------
 }

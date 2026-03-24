@@ -616,7 +616,6 @@ public final class ReplicationManager implements ActiveMQComponent {
       ctx.replicationDone();
    }
 
-   // Inner classes -------------------------------------------------
 
    private final class ReplicatedSessionFailureListener implements SessionFailureListener {
 

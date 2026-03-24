@@ -34,13 +34,10 @@ import org.junit.Before;
 
 public abstract class ManagementTestBase extends ActiveMQTestBase {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    protected MBeanServer mbeanServer;
 
-   // Static --------------------------------------------------------
+
 
    protected static void consumeMessages(final int expected,
                                          final ClientSession session,
@@ -64,13 +61,10 @@ public abstract class ManagementTestBase extends ActiveMQTestBase {
       }
    }
 
-   // Constructors --------------------------------------------------
 
-   // Public --------------------------------------------------------
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
+
 
    @Override
    @Before
@@ -149,8 +143,6 @@ public abstract class ManagementTestBase extends ActiveMQTestBase {
       return control.getMessagesAdded();
    }
 
-   // Private -------------------------------------------------------
 
-   // Inner classes -------------------------------------------------
 
 }

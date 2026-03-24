@@ -499,9 +499,9 @@ public class TestConversions extends Assert {
       for (int i = 0; i < 100; i++) {
          encodedMessage.setMessageID(333L);
          if (i % 3 == 0) {
-            encodedMessage.referenceOriginalMessage(encodedMessage, "SOME-OTHER-QUEUE-DOES-NOT-MATTER-WHAT");
+            encodedMessage.referenceOriginalMessage(encodedMessage, SimpleString.toSimpleString("SOME-OTHER-QUEUE-DOES-NOT-MATTER-WHAT"));
          } else {
-            encodedMessage.referenceOriginalMessage(encodedMessage, "XXX");
+            encodedMessage.referenceOriginalMessage(encodedMessage, SimpleString.toSimpleString("XXX"));
          }
          encodedMessage.putStringProperty("another " + i, "value " + i);
          encodedMessage.messageChanged();

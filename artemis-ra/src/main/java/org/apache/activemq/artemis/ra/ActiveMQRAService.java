@@ -26,23 +26,18 @@ import java.util.Set;
  * https://jira.jboss.org/browse/HORNETQ-339
  */
 public class ActiveMQRAService {
-   // Constants -----------------------------------------------------
-   // Attributes ----------------------------------------------------
 
    private final MBeanServer mBeanServer;
 
    private final String resourceAdapterObjectName;
 
-   // Static --------------------------------------------------------
 
-   // Constructors --------------------------------------------------
 
    public ActiveMQRAService(final MBeanServer mBeanServer, final String resourceAdapterObjectName) {
       this.mBeanServer = mBeanServer;
       this.resourceAdapterObjectName = resourceAdapterObjectName;
    }
 
-   // Public --------------------------------------------------------
 
    public void stop() {
       try {
@@ -60,13 +55,5 @@ public class ActiveMQRAService {
          ActiveMQRALogger.LOGGER.errorStoppingRA(e);
       }
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

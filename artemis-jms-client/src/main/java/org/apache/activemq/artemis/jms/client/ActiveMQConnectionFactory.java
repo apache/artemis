@@ -868,10 +868,6 @@ public class ActiveMQConnectionFactory extends JNDIStorable implements Connectio
       return JMSFactoryType.CF.intValue();
    }
 
-   // Package protected ----------------------------------------------------------------------------
-
-   // Protected ------------------------------------------------------------------------------------
-
    protected synchronized ActiveMQConnection createConnectionInternal(final String username,
                                                                       final String password,
                                                                       final boolean isXA,
@@ -947,7 +943,6 @@ public class ActiveMQConnectionFactory extends JNDIStorable implements Connectio
          "]";
    }
 
-   // Private --------------------------------------------------------------------------------------
 
    private void checkWrite() {
       if (readOnly) {

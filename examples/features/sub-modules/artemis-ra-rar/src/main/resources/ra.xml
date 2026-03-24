@@ -8,8 +8,8 @@
            http://java.sun.com/xml/ns/j2ee/connector_1_5.xsd"
            version="1.5">
 
-   <display-name>ArtemisRA</display-name>
    <description>ActiveMQ Artemis Resource Adapter</description>
+   <display-name>ArtemisRA</display-name>
    <vendor-name>Apache Software Foundation</vendor-name>
    <eis-type>JMS 2.0 Server</eis-type>
    <resourceadapter-version>1.0</resourceadapter-version>

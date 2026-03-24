@@ -1055,11 +1055,5 @@ public class TransactedSessionTest extends JMSTestCase {
       ProxyAssertSupport.assertEquals(NUM_MESSAGES * NUM_TX, count);
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 }

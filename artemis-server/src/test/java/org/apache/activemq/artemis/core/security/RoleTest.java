@@ -30,15 +30,8 @@ import static org.apache.activemq.artemis.core.security.CheckType.MANAGE;
 import static org.apache.activemq.artemis.core.security.CheckType.SEND;
 
 public class RoleTest extends Assert {
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testWriteRole() throws Exception {
@@ -125,11 +118,5 @@ public class RoleTest extends Assert {
       Assert.assertFalse(role.equals(null));
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 }

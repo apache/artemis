@@ -33,8 +33,6 @@ public class SessionXASetTimeoutResponseMessage extends PacketImpl {
       super(SESS_XA_SET_TIMEOUT_RESP);
    }
 
-   // Public --------------------------------------------------------
-
    @Override
    public boolean isResponse() {
       return true;

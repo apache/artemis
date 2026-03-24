@@ -544,7 +544,7 @@ var Artemis;
                     selectedItems = [];
                     return;
                 }
-                ctrl.message = "Moved " + Core.maybePlural(selectedItems.length, "message" + " to " + ctrl.queueName);
+                ctrl.message = "Moved " + Core.maybePlural(selectedItems.length, "message") + " to " + ctrl.queueName;
                 ctrl.errorMessage = "failed to move message";
                 angular.forEach(selectedItems, function(item, idx) {
                     var id = item.messageID;

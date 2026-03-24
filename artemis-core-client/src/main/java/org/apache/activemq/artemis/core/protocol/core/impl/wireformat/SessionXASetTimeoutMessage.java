@@ -33,8 +33,6 @@ public class SessionXASetTimeoutMessage extends PacketImpl {
       super(SESS_XA_SET_TIMEOUT);
    }
 
-   // Public --------------------------------------------------------
-
    public int getTimeoutSeconds() {
       return timeoutSeconds;
    }

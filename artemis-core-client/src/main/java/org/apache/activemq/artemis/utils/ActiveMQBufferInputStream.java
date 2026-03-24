@@ -29,16 +29,9 @@ public class ActiveMQBufferInputStream extends InputStream {
    /* (non-Javadoc)
     * @see java.io.InputStream#read()
     */
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
    private ActiveMQBuffer bb;
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    public ActiveMQBufferInputStream(final ActiveMQBuffer paramByteBuffer) {
       bb = paramByteBuffer;
@@ -137,19 +130,11 @@ public class ActiveMQBufferInputStream extends InputStream {
       return false;
    }
 
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
    /**
     * @return
     */
    private int remainingBytes() {
       return bb.writerIndex() - bb.readerIndex();
    }
-
-   // Inner classes -------------------------------------------------
 
 }

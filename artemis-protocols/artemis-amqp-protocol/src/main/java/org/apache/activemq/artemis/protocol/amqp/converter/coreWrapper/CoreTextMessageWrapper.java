@@ -43,15 +43,12 @@ public class CoreTextMessageWrapper extends CoreMessageWrapper {
 
    public static final byte TYPE = Message.TEXT_TYPE;
 
-   // Attributes ----------------------------------------------------
+
 
    // We cache it locally - it's more performant to cache as a SimpleString, the AbstractChannelBuffer write
    // methods are more efficient for a SimpleString
    private SimpleString text;
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
 
    /*
     * This constructor is used to construct messages prior to sending

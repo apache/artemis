@@ -137,7 +137,6 @@ public final class AddressSettingsInfo {
 
    private final boolean enableMetrics;
 
-   // Static --------------------------------------------------------
 
    public static AddressSettingsInfo from(final String jsonString) {
       JsonObject object = JsonUtil.readJsonObject(jsonString);
@@ -200,7 +199,6 @@ public final class AddressSettingsInfo {
                                      object.getBoolean("enableMetrics"));
    }
 
-   // Constructors --------------------------------------------------
 
    public AddressSettingsInfo(String addressFullMessagePolicy,
                               long maxSizeBytes,
@@ -317,8 +315,6 @@ public final class AddressSettingsInfo {
       this.maxExpiryDelay = maxExpiryDelay;
       this.enableMetrics = enableMetrics;
    }
-
-   // Public --------------------------------------------------------
 
    public int getPageCacheMaxSize() {
       return pageCacheMaxSize;

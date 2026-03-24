@@ -36,9 +36,7 @@ public class ValidatorsTest extends Assert {
       }
    }
 
-   // Constructors --------------------------------------------------
 
-   // Public --------------------------------------------------------
 
    @Test
    public void testGE_ZERO() throws Exception {
@@ -142,13 +140,5 @@ public class ValidatorsTest extends Assert {
       ValidatorsTest.success(Validators.MINUS_ONE_OR_POSITIVE_INT, Integer.MAX_VALUE);
       ValidatorsTest.failure(Validators.MINUS_ONE_OR_POSITIVE_INT, Integer.MAX_VALUE + 1);
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

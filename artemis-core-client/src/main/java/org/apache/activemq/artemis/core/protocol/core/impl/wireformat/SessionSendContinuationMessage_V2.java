@@ -28,9 +28,7 @@ public class SessionSendContinuationMessage_V2 extends SessionSendContinuationMe
 
    private long correlationID;
 
-   // Static --------------------------------------------------------
 
-   // Constructors --------------------------------------------------
 
    public SessionSendContinuationMessage_V2() {
       super();
@@ -49,8 +47,6 @@ public class SessionSendContinuationMessage_V2 extends SessionSendContinuationMe
                                             SendAcknowledgementHandler handler) {
       super(message, body, continues, requiresResponse, messageBodySize, handler);
    }
-
-   // Public --------------------------------------------------------
 
    @Override
    public int expectedEncodeSize() {

@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.apache.activemq.artemis.api.core.RoutingType;
+import org.apache.activemq.artemis.api.core.client.ActiveMQClient;
 import org.apache.activemq.artemis.cli.commands.address.CreateAddress;
 import org.apache.activemq.artemis.cli.commands.messages.Consumer;
 import org.apache.activemq.artemis.cli.commands.messages.Producer;
@@ -86,6 +87,17 @@ public class MessageSerializerTest extends CliTestBase {
       List<Message> messages = new ArrayList<>(TEST_MESSAGE_COUNT);
       for (int i = 0; i < TEST_MESSAGE_COUNT; i++) {
          messages.add(session.createTextMessage(RandomUtil.randomString()));
+      }
+
+      sendMessages(session, destination, messages);
+
+      return messages;
+   }
+
+   private List<Message> generateLargeTextMessages(Session session, Destination destination) throws Exception {
+      List<Message> messages = new ArrayList<>(TEST_MESSAGE_COUNT);
+      for (int i = 0; i < TEST_MESSAGE_COUNT; i++) {
+         messages.add(session.createTextMessage(new String(RandomUtil.randomBytes(ActiveMQClient.DEFAULT_MIN_LARGE_MESSAGE_SIZE * 2))));
       }
 
       sendMessages(session, destination, messages);
@@ -186,6 +198,20 @@ public class MessageSerializerTest extends CliTestBase {
       importMessages(address, file);
       Wait.assertTrue(() -> verifyMessageCount(address, TEST_MESSAGE_COUNT), 2000, 100);
       checkSentMessages(session, sent, address);
+   }
+
+   @Test
+   public void testLargeMessageExport() throws Exception {
+      String address = "test";
+      File file = createMessageFile();
+
+      Session session = createSession(connection);
+
+      generateLargeTextMessages(session, getDestination(address));
+
+      exportMessages(address, file);
+
+      Wait.assertTrue(() -> verifyMessageCount(address, 0), 2000, 100);
    }
 
    @Test

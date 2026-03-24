@@ -44,7 +44,7 @@ public class ActiveMQSecurityManagerImpl implements ActiveMQSecurityManager {
       this.configuration = configuration;
    }
 
-   // Public ---------------------------------------------------------------------
+
 
    @Override
    public boolean validateUser(final String username, final String password) {

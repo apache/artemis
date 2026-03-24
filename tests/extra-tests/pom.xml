@@ -19,8 +19,7 @@
      because they use optional libraries such as LGPL or private ones.
      They are optional and will validate extra functionality available through Service Integration
      Example: Transaction Manager -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
    <modelVersion>4.0.0</modelVersion>
    <parent>
       <groupId>org.apache.activemq.tests</groupId>
@@ -256,7 +255,7 @@
                <skipTests>${skipExtraTests}</skipTests>
                <!-- ensure we don't inherit a byteman jar form any env settings -->
                <environmentVariables>
-                  <BYTEMAN_HOME></BYTEMAN_HOME>
+                  <BYTEMAN_HOME />
                </environmentVariables>
                <systemProperties>
                   <property>
@@ -300,6 +299,16 @@
                <!--<argLine>${activemq-surefire-argline} -Dorg.jboss.byteman.verbose -Dorg.jboss.byteman.contrib.bmunit.verbose</argLine>-->
                <!-- '-noverify' is needed here to fix VerifyErrors on ScaleDownFailoverTest and ScaleDownFailureTest (and their subclasses). I got the tip from https://issues.jboss.org/browse/BYTEMAN-248. -->
                <argLine>${activemq-surefire-argline} -noverify</argLine>
+            </configuration>
+         </plugin>
+
+         <!-- Don't deploy artifacts for this module. It has non-permissive
+              dependencies and is only optionally used for local testing. -->
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-deploy-plugin</artifactId>
+            <configuration>
+               <skip>true</skip>
             </configuration>
          </plugin>
       </plugins>

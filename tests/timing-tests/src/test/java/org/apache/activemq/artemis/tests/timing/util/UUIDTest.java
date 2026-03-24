@@ -20,11 +20,6 @@ import org.apache.activemq.artemis.utils.UUIDGenerator;
 
 public class UUIDTest extends org.apache.activemq.artemis.tests.unit.util.UUIDTest {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
-
-   // Static --------------------------------------------------------
 
    public static void main(String[] args) {
       long start = System.currentTimeMillis();

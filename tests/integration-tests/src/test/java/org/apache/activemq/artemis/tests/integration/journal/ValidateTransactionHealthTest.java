@@ -127,8 +127,6 @@ public class ValidateTransactionHealthTest extends SpawnedTestBase {
    }
 
 
-   // Package protected ---------------------------------------------
-
    private void internalTest(final String type,
                              final String journalDir,
                              final long numberOfRecords,
@@ -185,7 +183,6 @@ public class ValidateTransactionHealthTest extends SpawnedTestBase {
 
    }
 
-   // Inner classes -------------------------------------------------
 
    static class Loader implements LoaderCallback {
 

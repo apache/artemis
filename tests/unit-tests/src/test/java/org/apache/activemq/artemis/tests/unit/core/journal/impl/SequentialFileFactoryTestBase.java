@@ -380,8 +380,6 @@ public abstract class SequentialFileFactoryTestBase extends ActiveMQTestBase {
       sf.close();
    }
 
-   // Private ---------------------------------
-
    private ActiveMQBuffer wrapBuffer(final byte[] bytes) {
       return ActiveMQBuffers.wrappedBuffer(bytes);
    }

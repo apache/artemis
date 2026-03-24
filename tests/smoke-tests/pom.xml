@@ -1237,6 +1237,22 @@
                      </args>
                   </configuration>
                </execution>
+               <execution>
+                  <phase>test-compile</phase>
+                  <id>create-create-nettynative</id>
+                  <goals>
+                     <goal>create</goal>
+                  </goals>
+                  <configuration>
+                     <role>amq</role>
+                     <user>admin</user>
+                     <password>admin</password>
+                     <allowAnonymous>false</allowAnonymous>
+                     <noWeb>true</noWeb>
+                     <instance>${basedir}/target/nettynative</instance>
+                     <configuration>${basedir}/target/classes/servers/nettynative</configuration>
+                  </configuration>
+               </execution>
             </executions>
             <dependencies>
                <dependency>

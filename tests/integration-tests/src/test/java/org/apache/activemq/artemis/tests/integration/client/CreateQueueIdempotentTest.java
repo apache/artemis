@@ -98,14 +98,6 @@ public class CreateQueueIdempotentTest extends ActiveMQTestBase {
       Assert.assertEquals(NUM_THREADS - 1, failedAttempts.intValue());
    }
 
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
-
    class QueueCreator extends Thread {
 
       private String queueName = null;

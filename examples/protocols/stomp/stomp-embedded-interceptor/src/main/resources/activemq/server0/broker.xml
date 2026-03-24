@@ -59,7 +59,7 @@ under the License.
       <addresses>
          <address name="exampleQueue">
             <anycast>
-               <queue name="jms.queue.exampleQueue"/>
+               <queue name="exampleQueue"/>
             </anycast>
          </address>
       </addresses>

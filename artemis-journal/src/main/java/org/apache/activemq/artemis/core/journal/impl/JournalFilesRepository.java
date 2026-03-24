@@ -138,7 +138,6 @@ public class JournalFilesRepository {
       this.maxAtticFiles = maxAtticFiles;
    }
 
-   // Public --------------------------------------------------------
 
    public int getPoolSize() {
       return poolSize;

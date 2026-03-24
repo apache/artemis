@@ -105,7 +105,7 @@ public class DivertImpl implements Divert {
          copy = message.copy(id);
 
          // This will set the original MessageId, and the original address
-         copy.referenceOriginalMessage(message, this.getUniqueName().toString());
+         copy.referenceOriginalMessage(message, this.getUniqueName());
 
          copy.setAddress(forwardAddress);
 

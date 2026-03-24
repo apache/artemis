@@ -76,15 +76,8 @@ public class SSLSupportTest extends ActiveMQTestBase {
 
    private String trustStorePassword;
 
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Override
    @Before

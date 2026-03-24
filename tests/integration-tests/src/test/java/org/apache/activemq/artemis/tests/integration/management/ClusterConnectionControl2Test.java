@@ -44,9 +44,6 @@ import org.junit.Test;
 
 public class ClusterConnectionControl2Test extends ManagementTestBase {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    private ActiveMQServer server0;
 
@@ -60,9 +57,8 @@ public class ClusterConnectionControl2Test extends ManagementTestBase {
 
    private final String clusterName = "cluster";
 
-   // Constructors --------------------------------------------------
 
-   // Public --------------------------------------------------------
+
 
    @Test
    public void testNodes() throws Exception {

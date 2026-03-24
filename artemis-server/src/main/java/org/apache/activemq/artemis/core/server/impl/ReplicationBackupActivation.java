@@ -566,7 +566,7 @@ public final class ReplicationBackupActivation extends Activation implements Dis
                                                                           final ReplicationObserver liveObserver) {
       ReplicationEndpoint replicationEndpoint = null;
       try {
-         liveControl.getSessionFactory().setReconnectAttempts(1);
+         liveControl.getSessionFactory().setReconnectAttempts(0);
          liveObserver.listenConnectionFailuresOf(liveControl.getSessionFactory());
          liveControl.authorize();
          replicationEndpoint = new ReplicationEndpoint(activeMQServer, policy.isTryFailback(), liveObserver);

@@ -67,8 +67,6 @@ public class SessionSendMessage extends MessagePacket {
       this.handler = null;
    }
 
-   // Public --------------------------------------------------------
-
    @Override
    public boolean isRequiresResponse() {
       return requiresResponse;

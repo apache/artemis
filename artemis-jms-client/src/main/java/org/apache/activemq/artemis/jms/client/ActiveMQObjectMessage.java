@@ -38,20 +38,16 @@ import org.apache.activemq.artemis.utils.ObjectInputStreamWithClassLoader;
  * Serialization is slooooow!
  */
 public class ActiveMQObjectMessage extends ActiveMQMessage implements ObjectMessage {
-   // Constants -----------------------------------------------------
+
 
    public static final byte TYPE = Message.OBJECT_TYPE;
 
-   // Attributes ----------------------------------------------------
 
    // keep a snapshot of the Serializable Object as a byte[] to provide Object isolation
    private byte[] data;
 
    private final ConnectionFactoryOptions options;
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
 
    protected ActiveMQObjectMessage(final ClientSession session, ConnectionFactoryOptions options) {
       super(ActiveMQObjectMessage.TYPE, session);
@@ -77,7 +73,6 @@ public class ActiveMQObjectMessage extends ActiveMQMessage implements ObjectMess
       this.options = options;
    }
 
-   // Public --------------------------------------------------------
 
    @Override
    public byte getType() {

@@ -20,6 +20,7 @@ import javax.json.JsonObject;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import org.apache.activemq.artemis.core.client.ActiveMQClientMessageBundle;
 import org.apache.activemq.artemis.core.remoting.impl.TransportConfigurationUtil;
@@ -45,6 +46,8 @@ import org.apache.activemq.artemis.utils.UUIDGenerator;
 public class TransportConfiguration implements Serializable {
 
    private static final long serialVersionUID = -3994528421527392679L;
+
+   public static final String EXTRA_PROPERTY_PREFIX = "$.EP.";
 
    private String name;
 
@@ -215,8 +218,14 @@ public class TransportConfiguration implements Serializable {
          return false;
       }
 
-      if (name != null ? !name.equals(that.name) : that.name != null)
+      if (!Objects.equals(name, that.name)) {
          return false;
+      }
+
+      // Empty and null extraProps maps are equivalent so the condition to check if two extraProps maps are not equal is:
+      if ((extraProps != that.extraProps) && (extraProps != null || !that.extraProps.isEmpty()) && (that.extraProps != null || !extraProps.isEmpty()) && (extraProps == null || that.extraProps == null || !extraProps.equals(that.extraProps))) {
+         return false;
+      }
 
       return true;
    }
@@ -224,7 +233,7 @@ public class TransportConfiguration implements Serializable {
    public boolean isSameParams(TransportConfiguration that) {
       if (!factoryClassName.equals(that.factoryClassName))
          return false;
-      if (params != null ? !params.equals(that.params) : that.params != null)
+      if (!Objects.equals(params, that.params))
          return false;
 
       return true;
@@ -306,9 +315,9 @@ public class TransportConfiguration implements Serializable {
       return str.toString();
    }
 
-   private void encodeMap(final ActiveMQBuffer buffer, final Map<String, Object> map) {
+   private void encodeMap(final ActiveMQBuffer buffer, final Map<String, Object> map, final String prefix) {
       for (Map.Entry<String, Object> entry : map.entrySet()) {
-         buffer.writeString(entry.getKey());
+         buffer.writeString(prefix != null ? prefix + entry.getKey() : entry.getKey());
 
          Object val = entry.getValue();
 
@@ -341,13 +350,13 @@ public class TransportConfiguration implements Serializable {
       buffer.writeString(name);
       buffer.writeString(factoryClassName);
 
-      buffer.writeInt(params == null ? 0 : params.size());
+      buffer.writeInt((params == null ? 0 : params.size()) + (extraProps == null ? 0 : extraProps.size()));
 
       if (params != null) {
-         encodeMap(buffer, params);
+         encodeMap(buffer, params, null);
       }
       if (extraProps != null) {
-         encodeMap(buffer, extraProps);
+         encodeMap(buffer, extraProps, EXTRA_PROPERTY_PREFIX);
       }
    }
 
@@ -405,7 +414,14 @@ public class TransportConfiguration implements Serializable {
             }
          }
 
-         params.put(key, val);
+         if (key.startsWith(EXTRA_PROPERTY_PREFIX)) {
+            if (extraProps == null) {
+               extraProps = new HashMap<>();
+            }
+            extraProps.put(key.substring(EXTRA_PROPERTY_PREFIX.length()), val);
+         } else {
+            params.put(key, val);
+         }
       }
    }
 

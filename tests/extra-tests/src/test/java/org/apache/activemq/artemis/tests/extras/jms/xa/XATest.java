@@ -47,11 +47,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class XATest extends JMSTestBase {
-   // Constants -----------------------------------------------------
 
-   // Static --------------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    protected TransactionManager tm;
 
@@ -61,9 +57,6 @@ public class XATest extends JMSTestBase {
 
    protected Queue queue1;
 
-   // Constructors --------------------------------------------------
-
-   // TestCase overrides -------------------------------------------
 
    @Override
    @Before
@@ -114,7 +107,6 @@ public class XATest extends JMSTestBase {
 
    }
 
-   // Public --------------------------------------------------------
 
    @Test
    public void test2PCSendCommit1PCOptimization() throws Exception {

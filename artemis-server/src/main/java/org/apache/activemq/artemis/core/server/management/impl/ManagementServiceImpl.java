@@ -114,7 +114,6 @@ import org.apache.activemq.artemis.utils.collections.TypedProperties;
 import org.jboss.logging.Logger;
 
 public class ManagementServiceImpl implements ManagementService {
-   // Constants -----------------------------------------------------
 
    private static final Logger logger = Logger.getLogger(ManagementServiceImpl.class);
 
@@ -158,9 +157,6 @@ public class ManagementServiceImpl implements ManagementService {
 
    private final ObjectNameBuilder objectNameBuilder;
 
-   // Static --------------------------------------------------------
-
-   // Constructor ----------------------------------------------------
 
    public ManagementServiceImpl(final MBeanServer mbeanServer, final Configuration configuration) {
       this.mbeanServer = mbeanServer;
@@ -175,7 +171,6 @@ public class ManagementServiceImpl implements ManagementService {
       objectNameBuilder = ObjectNameBuilder.create(configuration.getJMXDomain(), configuration.getName(), configuration.isJMXUseBrokerName());
    }
 
-   // Public --------------------------------------------------------
 
    // ManagementService implementation -------------------------
 
@@ -955,5 +950,4 @@ public class ManagementServiceImpl implements ManagementService {
       return correlationId;
    }
 
-   // Inner classes -------------------------------------------------
 }

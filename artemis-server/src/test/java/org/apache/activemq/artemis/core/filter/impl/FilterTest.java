@@ -694,8 +694,6 @@ public class FilterTest extends SilentTestCase {
    //      parse.getNextToken();
    //   }
 
-   // Private -----------------------------------------------------------------------------------
-
    private void doPutStringProperty(final String key, final String value) {
       message.putStringProperty(new SimpleString(key), new SimpleString(value));
    }

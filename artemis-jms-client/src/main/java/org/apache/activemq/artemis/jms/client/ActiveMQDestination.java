@@ -37,9 +37,7 @@ import org.apache.activemq.artemis.utils.DestinationUtil;
  * ActiveMQ Artemis implementation of a JMS Destination.
  */
 public class ActiveMQDestination extends JNDIStorable implements Destination, Serializable {
-   // Constants -----------------------------------------------------
 
-   // Static --------------------------------------------------------
 
    private static final long serialVersionUID = 5027962425462382883L;
 
@@ -292,7 +290,6 @@ public class ActiveMQDestination extends JNDIStorable implements Destination, Se
       return createTemporaryTopic(address, null);
    }
 
-   // Attributes ----------------------------------------------------
 
    /**
     * The core address
@@ -318,7 +315,7 @@ public class ActiveMQDestination extends JNDIStorable implements Destination, Se
    private final transient ActiveMQSession session;
 
    private transient boolean created;
-   // Constructors --------------------------------------------------
+
 
    protected ActiveMQDestination(final String address,
                                  final TYPE type,
@@ -428,7 +425,6 @@ public class ActiveMQDestination extends JNDIStorable implements Destination, Se
       return queue;
    }
 
-   // Public --------------------------------------------------------
 
    public String getAddress() {
       return simpleAddress != null ? simpleAddress.toString() : null;
@@ -511,14 +507,6 @@ public class ActiveMQDestination extends JNDIStorable implements Destination, Se
    protected void populateProperties(Properties props) {
       props.put("address", getAddress());
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
    public enum TYPE {
       QUEUE,

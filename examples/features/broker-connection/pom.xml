@@ -58,6 +58,7 @@ under the License.
          <id>release</id>
          <modules>
             <module>amqp-sending-messages</module>
+            <module>amqp-sending-messages-multicast</module>
             <module>amqp-receiving-messages</module>
             <module>amqp-sending-overssl</module>
             <module>disaster-recovery</module>

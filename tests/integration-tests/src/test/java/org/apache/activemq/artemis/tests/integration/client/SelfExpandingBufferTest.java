@@ -120,9 +120,7 @@ public class SelfExpandingBufferTest extends ActiveMQTestBase {
       }
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
    protected void setUpService(final boolean netty, final boolean persistent) throws Exception {
       service = createServer(persistent, createDefaultConfig(netty));

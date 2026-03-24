@@ -37,9 +37,7 @@ import org.apache.activemq.artemis.utils.DataConstants;
  * Every property on this class has to be also set through encoders through EncodingSupport implementation at this class.
  */
 public class ConnectionFactoryConfigurationImpl implements ConnectionFactoryConfiguration {
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
    private String name = null;
 
@@ -129,10 +127,6 @@ public class ConnectionFactoryConfigurationImpl implements ConnectionFactoryConf
 
    private boolean useTopologyForLoadBalancing = ActiveMQClient.DEFAULT_USE_TOPOLOGY_FOR_LOADBALANCING;
 
-
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
 
    public ConnectionFactoryConfigurationImpl() {
    }
@@ -955,14 +949,5 @@ public class ConnectionFactoryConfigurationImpl implements ConnectionFactoryConf
       return useTopologyForLoadBalancing;
    }
 
-   // Public --------------------------------------------------------
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

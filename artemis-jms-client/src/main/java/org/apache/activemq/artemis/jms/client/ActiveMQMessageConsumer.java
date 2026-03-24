@@ -66,7 +66,7 @@ public final class ActiveMQMessageConsumer implements QueueReceiver, TopicSubscr
 
    private final SimpleString autoDeleteQueueName;
 
-   // Constructors --------------------------------------------------
+
 
    protected ActiveMQMessageConsumer(final ConnectionFactoryOptions options,
                                      final ActiveMQConnection connection,
@@ -180,7 +180,6 @@ public final class ActiveMQMessageConsumer implements QueueReceiver, TopicSubscr
       return noLocal;
    }
 
-   // Public --------------------------------------------------------
 
    @Override
    public String toString() {
@@ -191,11 +190,8 @@ public final class ActiveMQMessageConsumer implements QueueReceiver, TopicSubscr
       return consumer.isClosed();
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
-   // Private -------------------------------------------------------
 
    private void checkClosed() throws JMSException {
       if (consumer.isClosed() || session.getCoreSession().isClosed()) {
@@ -264,7 +260,5 @@ public final class ActiveMQMessageConsumer implements QueueReceiver, TopicSubscr
          throw JMSExceptionHelper.convertFromActiveMQException(e);
       }
    }
-
-   // Inner classes -------------------------------------------------
 
 }

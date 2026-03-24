@@ -40,19 +40,13 @@ import static org.apache.activemq.artemis.tests.util.RandomUtil.randomXid;
 
 public class SessionCloseTest extends ActiveMQTestBase {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    private ActiveMQServer server;
 
    private ClientSessionFactory sf;
 
-   // Static --------------------------------------------------------
 
-   // Constructors --------------------------------------------------
 
-   // Public --------------------------------------------------------
 
    @Test
    public void testCanNotUseAClosedSession() throws Exception {
@@ -223,9 +217,7 @@ public class SessionCloseTest extends ActiveMQTestBase {
 
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
    @Override
    @Before
@@ -237,8 +229,6 @@ public class SessionCloseTest extends ActiveMQTestBase {
       sf = createSessionFactory(locator);
    }
 
-   // Private -------------------------------------------------------
 
-   // Inner classes -------------------------------------------------
 
 }

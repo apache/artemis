@@ -55,7 +55,6 @@ public class ClientCrashTest extends ClientTestBase {
    // using short values so this test can run fast
    static final int CONNECTION_TTL = 1000;
 
-   // Constants -----------------------------------------------------
 
    public static final SimpleString QUEUE = new SimpleString("ClientCrashTestQueue");
    public static final SimpleString QUEUE2 = new SimpleString("ClientCrashTestQueue2");
@@ -64,9 +63,6 @@ public class ClientCrashTest extends ClientTestBase {
 
    public static final String MESSAGE_TEXT_FROM_CLIENT = "ClientCrashTest from client";
 
-   // Static --------------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    private ClientSessionFactory sf;
 
@@ -86,9 +82,7 @@ public class ClientCrashTest extends ClientTestBase {
       }
    }
 
-   // Constructors --------------------------------------------------
 
-   // Public --------------------------------------------------------
 
    @Test
    public void testCrashClient() throws Exception {
@@ -176,8 +170,6 @@ public class ClientCrashTest extends ClientTestBase {
       consumer.close();
       session.close();
    }
-
-   // Package protected ---------------------------------------------
 
    @Override
    @Before

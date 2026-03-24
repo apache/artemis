@@ -376,9 +376,6 @@ public class AIOSequentialFile extends AbstractSequentialFile  {
       return "AIOSequentialFile{" + getFileName() + ", opened=" + opened + ", pendingClose=" + pendingClose + ", pendingCallbacks=" + pendingCallbacks + '}';
    }
 
-   // Private methods
-   // -----------------------------------------------------------------------------------------------------
-
    private void checkOpened() {
       if (aioFile == null || !opened) {
          throw new NullPointerException("File not opened, file=null on fileName = " + getFileName());

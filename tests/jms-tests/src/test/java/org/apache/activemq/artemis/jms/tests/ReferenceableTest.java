@@ -42,15 +42,8 @@ import org.junit.Test;
  * All administered objects should be referenceable and serializable as per spec 4.2
  */
 public class ReferenceableTest extends JMSTestCase {
-   // Constants -----------------------------------------------------
 
-   // Static --------------------------------------------------------
 
-   // Attributes ----------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @SuppressWarnings("cast")
    @Test

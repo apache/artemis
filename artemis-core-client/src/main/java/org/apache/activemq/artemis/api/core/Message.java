@@ -16,6 +16,8 @@
  */
 package org.apache.activemq.artemis.api.core;
 
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.OpenDataException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
@@ -466,12 +468,13 @@ public interface Message {
       // only valid probably on AMQP
    }
 
-   default void referenceOriginalMessage(final Message original, String originalQueue) {
+   default void referenceOriginalMessage(final Message original, final SimpleString originalQueue) {
       setBrokerProperty(Message.HDR_ORIGINAL_QUEUE, originalQueue);
-      setBrokerProperty(Message.HDR_ORIGINAL_ADDRESS, original.getAddress());
+      setBrokerProperty(Message.HDR_ORIGINAL_ADDRESS, original.getAddressSimpleString());
       setBrokerProperty(Message.HDR_ORIG_MESSAGE_ID, original.getMessageID());
-      if (original.getRoutingType() != null) {
-         setBrokerProperty(Message.HDR_ORIG_ROUTING_TYPE, original.getRoutingType().getType());
+      final RoutingType routingType = original.getRoutingType();
+      if (routingType != null) {
+         setBrokerProperty(Message.HDR_ORIG_ROUTING_TYPE, routingType.getType());
       }
 
       // reset expiry
@@ -768,6 +771,10 @@ public interface Message {
 
    /** This should make you convert your message into Core format. */
    ICoreMessage toCore();
+
+   default CompositeData toCompositeData(int fieldsLimit, int deliveryCount) throws OpenDataException {
+      return null;
+   }
 
    /** This should make you convert your message into Core format. */
    ICoreMessage toCore(CoreMessageObjectPools coreMessageObjectPools);

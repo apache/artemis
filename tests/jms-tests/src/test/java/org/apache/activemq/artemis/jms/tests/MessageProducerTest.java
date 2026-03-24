@@ -739,13 +739,7 @@ public class MessageProducerTest extends JMSTestCase {
       assertNotNull(topicConsumer.receive(1000));
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
    private static class CloseCompletionListener implements CompletionListener {
 
       private MessageProducer p;

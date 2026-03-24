@@ -27,15 +27,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class DestinationObjectFactoryTest extends ActiveMQTestBase {
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testReference() throws Exception {
@@ -50,11 +43,5 @@ public class DestinationObjectFactoryTest extends ActiveMQTestBase {
       Assert.assertEquals(queue, object);
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 }

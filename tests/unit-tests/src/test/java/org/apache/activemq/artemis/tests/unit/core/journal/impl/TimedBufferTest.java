@@ -40,17 +40,11 @@ import org.junit.Test;
 
 public class TimedBufferTest extends ActiveMQTestBase {
    private static final Logger log = Logger.getLogger(TimedBufferTest.class);
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
    private static final int ONE_SECOND_IN_NANOS = 1000000000; // in nanoseconds
 
-   // Static --------------------------------------------------------
 
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    IOCallback dummyCallback = new IOCallback() {
 

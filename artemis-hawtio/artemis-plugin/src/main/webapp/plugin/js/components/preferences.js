@@ -62,7 +62,7 @@ var Artemis;
                   <div class="form-group">
                     <label class="col-md-2 control-label" for="artemisPassword">
                       Artemis password
-                      <span class="pficon pficon-info" data-toggle="tooltip" data-placement="top" title="The user name to be used when connecting to the broker"></span>
+                      <span class="pficon pficon-info" data-toggle="tooltip" data-placement="top" title="The password to be used when connecting to the broker"></span>
                     </label>
                     <div class="col-md-6">
                       <input id="artemisPassword" type="password" class="form-control" ng-model="artemisPassword"/>

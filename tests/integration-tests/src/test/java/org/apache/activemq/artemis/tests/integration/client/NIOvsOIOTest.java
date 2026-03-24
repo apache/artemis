@@ -48,15 +48,7 @@ public class NIOvsOIOTest extends ActiveMQTestBase {
 
    private static final Logger log = Logger.getLogger(NIOvsOIOTest.class);
 
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
-
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testNIOPerf() throws Exception {

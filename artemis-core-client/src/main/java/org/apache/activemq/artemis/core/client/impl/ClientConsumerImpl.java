@@ -19,7 +19,6 @@ package org.apache.activemq.artemis.core.client.impl;
 import java.io.File;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Iterator;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -42,13 +41,13 @@ import org.apache.activemq.artemis.spi.core.remoting.SessionContext;
 import org.apache.activemq.artemis.utils.FutureLatch;
 import org.apache.activemq.artemis.utils.ReusableLatch;
 import org.apache.activemq.artemis.utils.TokenBucketLimiter;
+import org.apache.activemq.artemis.utils.collections.LinkedListIterator;
 import org.apache.activemq.artemis.utils.collections.PriorityLinkedList;
 import org.apache.activemq.artemis.utils.collections.PriorityLinkedListImpl;
 import org.jboss.logging.Logger;
 
 public final class ClientConsumerImpl implements ClientConsumerInternal {
-   // Constants
-   // ------------------------------------------------------------------------------------
+
 
    private static final Logger logger = Logger.getLogger(ClientConsumerImpl.class);
 
@@ -57,9 +56,6 @@ public final class ClientConsumerImpl implements ClientConsumerInternal {
    private static final int NUM_PRIORITIES = 10;
 
    public static final SimpleString FORCED_DELIVERY_MESSAGE = new SimpleString("_hornetq.forced.delivery.seq");
-
-   // Attributes
-   // -----------------------------------------------------------------------------------
 
    private final ClientSessionInternal session;
 
@@ -134,9 +130,6 @@ public final class ClientConsumerImpl implements ClientConsumerInternal {
    private volatile boolean ackIndividually;
 
    private final ClassLoader contextClassLoader;
-
-   // Constructors
-   // ---------------------------------------------------------------------------------
 
    public ClientConsumerImpl(final ClientSessionInternal session,
                              final ConsumerContext consumerContext,
@@ -716,10 +709,8 @@ public final class ClientConsumerImpl implements ClientConsumerInternal {
       synchronized (this) {
          // Need to send credits for the messages in the buffer
 
-         Iterator<ClientMessageInternal> iter = buffer.iterator();
-
-         while (iter.hasNext()) {
-            try {
+         try (LinkedListIterator<ClientMessageInternal> iter = buffer.iterator()) {
+            while (iter.hasNext()) {
                ClientMessageInternal message = iter.next();
 
                if (message.isLargeMessage()) {
@@ -728,9 +719,9 @@ public final class ClientConsumerImpl implements ClientConsumerInternal {
                }
 
                flowControlBeforeConsumption(message);
-            } catch (Exception e) {
-               ActiveMQClientLogger.LOGGER.errorClearingMessages(e);
             }
+         } catch (Exception e) {
+            ActiveMQClientLogger.LOGGER.errorClearingMessages(e);
          }
 
          clearBuffer();
@@ -861,18 +852,6 @@ public final class ClientConsumerImpl implements ClientConsumerInternal {
          }
       }
    }
-
-   // Public
-   // ---------------------------------------------------------------------------------------
-
-   // Package protected
-   // ---------------------------------------------------------------------------------------
-
-   // Protected
-   // ---------------------------------------------------------------------------------------
-
-   // Private
-   // ---------------------------------------------------------------------------------------
 
    /**
     * Sending an initial credit for slow consumers
@@ -1141,9 +1120,6 @@ public final class ClientConsumerImpl implements ClientConsumerInternal {
          ", queueName=" + queueName +
          '}';
    }
-
-   // Inner classes
-   // --------------------------------------------------------------------------------
 
    private class Runner implements Runnable {
 

@@ -54,13 +54,11 @@ import static org.apache.activemq.artemis.api.core.FilterConstants.NATIVE_MESSAG
  */
 public class FilterImpl implements Filter {
 
-   // Constants -----------------------------------------------------
 
    private final SimpleString sfilterString;
 
    private final BooleanExpression booleanExpression;
 
-   // Static ---------------------------------------------------------
 
    /**
     * @return null if <code>filterStr</code> is null or an empty String and a valid filter else
@@ -91,8 +89,6 @@ public class FilterImpl implements Filter {
       }
       return new FilterImpl(filterStr, booleanExpression);
    }
-
-   // Constructors ---------------------------------------------------
 
    private FilterImpl(final SimpleString str, final BooleanExpression expression) {
       sfilterString = str;
@@ -159,8 +155,6 @@ public class FilterImpl implements Filter {
    public String toString() {
       return "FilterImpl [sfilterString=" + sfilterString + "]";
    }
-
-   // Private --------------------------------------------------------------------------
 
    private static Object getHeaderFieldValue(final Message msg, final SimpleString fieldName) {
       if (FilterConstants.ACTIVEMQ_USERID.equals(fieldName)) {

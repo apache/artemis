@@ -40,6 +40,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.BiConsumer;
 
 import javax.transaction.xa.Xid;
 
@@ -1205,7 +1206,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
 
          journalLoader.handleAddMessage(queueMap);
 
-         loadPreparedTransactions(postOffice, pagingManager, resourceManager, queueInfos, preparedTransactions, duplicateIDMap, pageSubscriptions, pendingLargeMessages, journalLoader);
+         loadPreparedTransactions(postOffice, pagingManager, resourceManager, queueInfos, preparedTransactions, this::failedToPrepareException, pageSubscriptions, pendingLargeMessages, journalLoader);
 
          for (PageSubscription sub : pageSubscriptions.values()) {
             sub.getCounter().processReload();
@@ -1233,6 +1234,22 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
 
          journalLoaded = true;
          return info;
+      }
+   }
+
+   private void failedToPrepareException(PreparedTransactionInfo txInfo, Throwable e) {
+      XidEncoding encodingXid = null;
+      try {
+         encodingXid = new XidEncoding(txInfo.getExtraData());
+      } catch (Throwable ignored) {
+      }
+
+      ActiveMQServerLogger.LOGGER.failedToLoadPreparedTX(e, String.valueOf(encodingXid != null ? encodingXid.xid : null));
+
+      try {
+         rollback(txInfo.getId());
+      } catch (Throwable e2) {
+         logger.warn(e.getMessage(), e2);
       }
    }
 
@@ -1668,8 +1685,6 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
       }
    }
 
-   // Public -----------------------------------------------------------------------------------
-
    @Override
    public Journal getMessageJournal() {
       return messageJournal;
@@ -1679,8 +1694,6 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
    public Journal getBindingsJournal() {
       return bindingsJournal;
    }
-
-   // Package protected ---------------------------------------------
 
    protected void confirmLargeMessage(final LargeServerMessage largeServerMessage) {
       synchronized (largeServerMessage) {
@@ -1706,195 +1719,212 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
                                          final ResourceManager resourceManager,
                                          final Map<Long, QueueBindingInfo> queueInfos,
                                          final List<PreparedTransactionInfo> preparedTransactions,
-                                         final Map<SimpleString, List<Pair<byte[], Long>>> duplicateIDMap,
+                                         final BiConsumer<PreparedTransactionInfo, Throwable> failedTransactionCallback,
                                          final Map<Long, PageSubscription> pageSubscriptions,
                                          final Set<Pair<Long, Long>> pendingLargeMessages,
                                          JournalLoader journalLoader) throws Exception {
       // recover prepared transactions
-      CoreMessageObjectPools pools = null;
+      final CoreMessageObjectPools pools = new CoreMessageObjectPools();
 
       for (PreparedTransactionInfo preparedTransaction : preparedTransactions) {
-         XidEncoding encodingXid = new XidEncoding(preparedTransaction.getExtraData());
-
-         Xid xid = encodingXid.xid;
-
-         Transaction tx = new TransactionImpl(preparedTransaction.getId(), xid, this);
-
-         List<MessageReference> referencesToAck = new ArrayList<>();
-
-         Map<Long, Message> messages = new HashMap<>();
-
-         // Use same method as load message journal to prune out acks, so they don't get added.
-         // Then have reacknowledge(tx) methods on queue, which needs to add the page size
-
-         // first get any sent messages for this tx and recreate
-         for (RecordInfo record : preparedTransaction.getRecords()) {
-            byte[] data = record.data;
-
-            ActiveMQBuffer buff = ActiveMQBuffers.wrappedBuffer(data);
-
-            byte recordType = record.getUserRecordType();
-
-            switch (recordType) {
-               case JournalRecordIds.ADD_LARGE_MESSAGE: {
-                  messages.put(record.id, parseLargeMessage(buff).toMessage());
-
-                  break;
-               }
-               case JournalRecordIds.ADD_MESSAGE: {
-
-                  break;
-               }
-               case JournalRecordIds.ADD_MESSAGE_PROTOCOL: {
-                  if (pools == null) {
-                     pools = new CoreMessageObjectPools();
-                  }
-                  Message message = decodeMessage(pools, buff);
-
-                  messages.put(record.id, message);
-
-                  break;
-               }
-               case JournalRecordIds.ADD_REF: {
-                  long messageID = record.id;
-
-                  RefEncoding encoding = new RefEncoding();
-
-                  encoding.decode(buff);
-
-                  Message message = messages.get(messageID);
-
-                  if (message == null) {
-                     throw new IllegalStateException("Cannot find message with id " + messageID);
-                  }
-
-                  journalLoader.handlePreparedSendMessage(message, tx, encoding.queueID);
-
-                  break;
-               }
-               case JournalRecordIds.ACKNOWLEDGE_REF: {
-                  long messageID = record.id;
-
-                  RefEncoding encoding = new RefEncoding();
-
-                  encoding.decode(buff);
-
-                  journalLoader.handlePreparedAcknowledge(messageID, referencesToAck, encoding.queueID);
-
-                  break;
-               }
-               case JournalRecordIds.PAGE_TRANSACTION: {
-
-                  PageTransactionInfo pageTransactionInfo = new PageTransactionInfoImpl();
-
-                  pageTransactionInfo.decode(buff);
-
-                  if (record.isUpdate) {
-                     PageTransactionInfo pgTX = pagingManager.getTransaction(pageTransactionInfo.getTransactionID());
-                     if (pgTX != null) {
-                        pgTX.reloadUpdate(this, pagingManager, tx, pageTransactionInfo.getNumberOfMessages());
-                     }
-                  } else {
-                     pageTransactionInfo.setCommitted(false);
-
-                     tx.putProperty(TransactionPropertyIndexes.PAGE_TRANSACTION, pageTransactionInfo);
-
-                     pagingManager.addTransaction(pageTransactionInfo);
-
-                     tx.addOperation(new FinishPageMessageOperation());
-                  }
-
-                  break;
-               }
-               case SET_SCHEDULED_DELIVERY_TIME: {
-                  // Do nothing - for prepared txs, the set scheduled delivery time will only occur in a send in which
-                  // case the message will already have the header for the scheduled delivery time, so no need to do
-                  // anything.
-
-                  break;
-               }
-               case DUPLICATE_ID: {
-                  // We need load the duplicate ids at prepare time too
-                  DuplicateIDEncoding encoding = new DuplicateIDEncoding();
-
-                  encoding.decode(buff);
-
-                  DuplicateIDCache cache = postOffice.getDuplicateIDCache(encoding.address);
-
-                  cache.load(tx, encoding.duplID);
-
-                  break;
-               }
-               case ACKNOWLEDGE_CURSOR: {
-                  CursorAckRecordEncoding encoding = new CursorAckRecordEncoding();
-                  encoding.decode(buff);
-
-                  encoding.position.setRecordID(record.id);
-
-                  PageSubscription sub = locateSubscription(encoding.queueID, pageSubscriptions, queueInfos, pagingManager);
-
-                  if (sub != null) {
-                     sub.reloadPreparedACK(tx, encoding.position);
-                     referencesToAck.add(new PagedReferenceImpl(encoding.position, null, sub));
-                  } else {
-                     ActiveMQServerLogger.LOGGER.journalCannotFindQueueReloadingACK(encoding.queueID);
-                  }
-                  break;
-               }
-               case PAGE_CURSOR_COUNTER_VALUE: {
-                  ActiveMQServerLogger.LOGGER.journalPAGEOnPrepared();
-
-                  break;
-               }
-
-               case PAGE_CURSOR_COUNTER_INC: {
-                  PageCountRecordInc encoding = new PageCountRecordInc();
-
-                  encoding.decode(buff);
-
-                  PageSubscription sub = locateSubscription(encoding.getQueueID(), pageSubscriptions, queueInfos, pagingManager);
-
-                  if (sub != null) {
-                     sub.getCounter().applyIncrementOnTX(tx, record.id, encoding.getValue(), encoding.getPersistentSize());
-                     sub.notEmpty();
-                  } else {
-                     ActiveMQServerLogger.LOGGER.journalCannotFindQueueReloadingACK(encoding.getQueueID());
-                  }
-
-                  break;
-               }
-
-               default: {
-                  ActiveMQServerLogger.LOGGER.journalInvalidRecordType(recordType);
-               }
+         try {
+            loadSinglePreparedTransaction(postOffice, pagingManager, resourceManager, queueInfos, pageSubscriptions, pendingLargeMessages, journalLoader, pools, preparedTransaction);
+         } catch (Throwable e) {
+            if (failedTransactionCallback != null) {
+               failedTransactionCallback.accept(preparedTransaction, e);
+            } else {
+               logger.warn(e.getMessage(), e);
             }
          }
-
-         for (RecordInfo recordDeleted : preparedTransaction.getRecordsToDelete()) {
-            byte[] data = recordDeleted.data;
-
-            if (data.length > 0) {
-               ActiveMQBuffer buff = ActiveMQBuffers.wrappedBuffer(data);
-               byte b = buff.readByte();
-
-               switch (b) {
-                  case ADD_LARGE_MESSAGE_PENDING: {
-                     long messageID = buff.readLong();
-                     if (!pendingLargeMessages.remove(new Pair<>(recordDeleted.id, messageID))) {
-                        ActiveMQServerLogger.LOGGER.largeMessageNotFound(recordDeleted.id);
-                     }
-                     installLargeMessageConfirmationOnTX(tx, recordDeleted.id);
-                     break;
-                  }
-                  default:
-                     ActiveMQServerLogger.LOGGER.journalInvalidRecordTypeOnPreparedTX(b);
-               }
-            }
-
-         }
-
-         journalLoader.handlePreparedTransaction(tx, referencesToAck, xid, resourceManager);
       }
+   }
+
+   private void loadSinglePreparedTransaction(PostOffice postOffice,
+                          PagingManager pagingManager,
+                          ResourceManager resourceManager,
+                          Map<Long, QueueBindingInfo> queueInfos,
+                          Map<Long, PageSubscription> pageSubscriptions,
+                          Set<Pair<Long, Long>> pendingLargeMessages,
+                          JournalLoader journalLoader,
+                          CoreMessageObjectPools pools,
+                          PreparedTransactionInfo preparedTransaction) throws Exception {
+      XidEncoding encodingXid = new XidEncoding(preparedTransaction.getExtraData());
+
+      Xid xid = encodingXid.xid;
+
+      Transaction tx = new TransactionImpl(preparedTransaction.getId(), xid, this);
+
+      List<MessageReference> referencesToAck = new ArrayList<>();
+
+      Map<Long, Message> messages = new HashMap<>();
+
+      // Use same method as load message journal to prune out acks, so they don't get added.
+      // Then have reacknowledge(tx) methods on queue, which needs to add the page size
+
+      // first get any sent messages for this tx and recreate
+      for (RecordInfo record : preparedTransaction.getRecords()) {
+         byte[] data = record.data;
+
+         ActiveMQBuffer buff = ActiveMQBuffers.wrappedBuffer(data);
+
+         byte recordType = record.getUserRecordType();
+
+         switch (recordType) {
+            case JournalRecordIds.ADD_LARGE_MESSAGE: {
+               messages.put(record.id, parseLargeMessage(buff).toMessage());
+
+               break;
+            }
+            case JournalRecordIds.ADD_MESSAGE: {
+
+               break;
+            }
+            case JournalRecordIds.ADD_MESSAGE_PROTOCOL: {
+               Message message = decodeMessage(pools, buff);
+
+               messages.put(record.id, message);
+
+               break;
+            }
+            case JournalRecordIds.ADD_REF: {
+               long messageID = record.id;
+
+               RefEncoding encoding = new RefEncoding();
+
+               encoding.decode(buff);
+
+               Message message = messages.get(messageID);
+
+               if (message == null) {
+                  throw new IllegalStateException("Cannot find message with id " + messageID);
+               }
+
+               journalLoader.handlePreparedSendMessage(message, tx, encoding.queueID);
+
+               break;
+            }
+            case JournalRecordIds.ACKNOWLEDGE_REF: {
+               long messageID = record.id;
+
+               RefEncoding encoding = new RefEncoding();
+
+               encoding.decode(buff);
+
+               journalLoader.handlePreparedAcknowledge(messageID, referencesToAck, encoding.queueID);
+
+               break;
+            }
+            case JournalRecordIds.PAGE_TRANSACTION: {
+
+               PageTransactionInfo pageTransactionInfo = new PageTransactionInfoImpl();
+
+               pageTransactionInfo.decode(buff);
+
+               if (record.isUpdate) {
+                  PageTransactionInfo pgTX = pagingManager.getTransaction(pageTransactionInfo.getTransactionID());
+                  if (pgTX != null) {
+                     pgTX.reloadUpdate(this, pagingManager, tx, pageTransactionInfo.getNumberOfMessages());
+                  }
+               } else {
+                  pageTransactionInfo.setCommitted(false);
+
+                  tx.putProperty(TransactionPropertyIndexes.PAGE_TRANSACTION, pageTransactionInfo);
+
+                  pagingManager.addTransaction(pageTransactionInfo);
+
+                  tx.addOperation(new FinishPageMessageOperation());
+               }
+
+               break;
+            }
+            case SET_SCHEDULED_DELIVERY_TIME: {
+               // Do nothing - for prepared txs, the set scheduled delivery time will only occur in a send in which
+               // case the message will already have the header for the scheduled delivery time, so no need to do
+               // anything.
+
+               break;
+            }
+            case DUPLICATE_ID: {
+               // We need load the duplicate ids at prepare time too
+               DuplicateIDEncoding encoding = new DuplicateIDEncoding();
+
+               encoding.decode(buff);
+
+               DuplicateIDCache cache = postOffice.getDuplicateIDCache(encoding.address);
+
+               cache.load(tx, encoding.duplID);
+
+               break;
+            }
+            case ACKNOWLEDGE_CURSOR: {
+               CursorAckRecordEncoding encoding = new CursorAckRecordEncoding();
+               encoding.decode(buff);
+
+               encoding.position.setRecordID(record.id);
+
+               PageSubscription sub = locateSubscription(encoding.queueID, pageSubscriptions, queueInfos, pagingManager);
+
+               if (sub != null) {
+                  sub.reloadPreparedACK(tx, encoding.position);
+                  referencesToAck.add(new PagedReferenceImpl(encoding.position, null, sub));
+               } else {
+                  ActiveMQServerLogger.LOGGER.journalCannotFindQueueReloadingACK(encoding.queueID);
+               }
+               break;
+            }
+            case PAGE_CURSOR_COUNTER_VALUE: {
+               ActiveMQServerLogger.LOGGER.journalPAGEOnPrepared();
+
+               break;
+            }
+
+            case PAGE_CURSOR_COUNTER_INC: {
+               PageCountRecordInc encoding = new PageCountRecordInc();
+
+               encoding.decode(buff);
+
+               PageSubscription sub = locateSubscription(encoding.getQueueID(), pageSubscriptions, queueInfos, pagingManager);
+
+               if (sub != null) {
+                  sub.getCounter().applyIncrementOnTX(tx, record.id, encoding.getValue(), encoding.getPersistentSize());
+                  sub.notEmpty();
+               } else {
+                  ActiveMQServerLogger.LOGGER.journalCannotFindQueueReloadingACK(encoding.getQueueID());
+               }
+
+               break;
+            }
+
+            default: {
+               ActiveMQServerLogger.LOGGER.journalInvalidRecordType(recordType);
+            }
+         }
+      }
+
+      for (RecordInfo recordDeleted : preparedTransaction.getRecordsToDelete()) {
+         byte[] data = recordDeleted.data;
+
+         if (data.length > 0) {
+            ActiveMQBuffer buff = ActiveMQBuffers.wrappedBuffer(data);
+            byte b = buff.readByte();
+
+            switch (b) {
+               case ADD_LARGE_MESSAGE_PENDING: {
+                  long messageID = buff.readLong();
+                  if (!pendingLargeMessages.remove(new Pair<>(recordDeleted.id, messageID))) {
+                     ActiveMQServerLogger.LOGGER.largeMessageNotFound(recordDeleted.id);
+                  }
+                  installLargeMessageConfirmationOnTX(tx, recordDeleted.id);
+                  break;
+               }
+               default:
+                  ActiveMQServerLogger.LOGGER.journalInvalidRecordTypeOnPreparedTX(b);
+            }
+         }
+
+      }
+
+      journalLoader.handlePreparedTransaction(tx, referencesToAck, xid, resourceManager);
    }
 
    OperationContext getContext(final boolean sync) {
@@ -1905,8 +1935,6 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
       }
    }
 
-   // Inner Classes
-   // ----------------------------------------------------------------------------
 
    private static final class DummyOperationContext implements OperationContext {
 

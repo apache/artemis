@@ -225,26 +225,32 @@ public class SessionTest extends ActiveMQTestBase {
       } else {
          clientSession.createQueue(new QueueConfiguration(queueName).setAddress("a1").setDurable(false));
       }
-      clientSession.createConsumer(queueName);
-      clientSession.createConsumer(queueName);
+      // I'm holding a reference here on purpose to avoid GC and unexpected closes.. etc
+      ClientConsumer consumer1 = clientSession.createConsumer(queueName);
+      ClientConsumer consumer2 = clientSession.createConsumer(queueName);
       ClientProducer cp = clientSession.createProducer("a1");
       cp.send(clientSession.createMessage(true));
       cp.send(clientSession.createMessage(true));
 
-      flushQueue();
+      Queue queue = flushQueue();
+      Wait.assertEquals(2, queue::getMessageCount);
+      Wait.assertEquals(2, queue::getConsumerCount);
 
       QueueQuery resp = clientSession.queueQuery(new SimpleString(queueName));
       Assert.assertEquals(new SimpleString("a1"), resp.getAddress());
       Assert.assertEquals(2, resp.getConsumerCount());
       Assert.assertEquals(2, resp.getMessageCount());
       Assert.assertEquals(null, resp.getFilterString());
+      consumer1.close();
+      consumer2.close();
       clientSession.close();
    }
 
-   private void flushQueue() throws Exception {
+   private Queue flushQueue() throws Exception {
       Queue queue = server.locateQueue(SimpleString.toSimpleString(queueName));
       assertNotNull(queue);
       queue.flushExecutor();
+      return queue;
    }
 
    @Test

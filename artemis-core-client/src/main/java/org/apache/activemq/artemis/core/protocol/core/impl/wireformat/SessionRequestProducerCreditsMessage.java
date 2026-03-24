@@ -38,8 +38,6 @@ public class SessionRequestProducerCreditsMessage extends PacketImpl {
       super(SESS_PRODUCER_REQUEST_CREDITS);
    }
 
-   // Public --------------------------------------------------------
-
    public int getCredits() {
       return credits;
    }

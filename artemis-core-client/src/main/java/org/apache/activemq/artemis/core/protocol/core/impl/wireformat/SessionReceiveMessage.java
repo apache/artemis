@@ -23,9 +23,6 @@ import org.apache.activemq.artemis.core.message.impl.CoreMessage;
 import org.apache.activemq.artemis.utils.DataConstants;
 
 public class SessionReceiveMessage extends MessagePacket {
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    protected long consumerID;
 
@@ -42,8 +39,6 @@ public class SessionReceiveMessage extends MessagePacket {
    public SessionReceiveMessage(final CoreMessage message) {
       super(SESS_RECEIVE_MSG, message);
    }
-
-   // Public --------------------------------------------------------
 
    public long getConsumerID() {
       return consumerID;

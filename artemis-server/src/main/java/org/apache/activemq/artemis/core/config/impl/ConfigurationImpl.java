@@ -93,7 +93,6 @@ import org.apache.activemq.artemis.utils.uri.BeanSupport;
 import org.jboss.logging.Logger;
 
 public class ConfigurationImpl implements Configuration, Serializable {
-   // Constants ------------------------------------------------------------------------------
 
    private static final Logger logger = Logger.getLogger(ConfigurationImpl.class);
 
@@ -106,8 +105,6 @@ public class ConfigurationImpl implements Configuration, Serializable {
    private static final int RANGE_SZIE_MAX = 4;
 
    private static final long serialVersionUID = 4077088945050267843L;
-
-   // Attributes -----------------------------------------------------------------------------
 
    private String name = "localhost";
 
@@ -374,8 +371,6 @@ public class ConfigurationImpl implements Configuration, Serializable {
     * Parent folder for all data folders.
     */
    private File artemisInstance;
-
-   // Public -------------------------------------------------------------------------
 
    @Override
    public String getJournalRetentionDirectory() {

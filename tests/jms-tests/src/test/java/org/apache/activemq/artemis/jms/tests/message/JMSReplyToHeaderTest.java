@@ -26,15 +26,8 @@ import org.junit.Test;
  * A JMSReplyToHeaderTest
  */
 public class JMSReplyToHeaderTest extends MessageHeaderTestBase {
-   // Constants -----------------------------------------------------
 
-   // Static --------------------------------------------------------
 
-   // Attributes ----------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testJMSDestinationSimple() throws Exception {
@@ -56,13 +49,5 @@ public class JMSReplyToHeaderTest extends MessageHeaderTestBase {
       queueConsumer.receive();
       ProxyAssertSupport.assertNull(m.getJMSReplyTo());
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

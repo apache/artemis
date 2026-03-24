@@ -39,9 +39,7 @@ public class SecurityManagementWithDefaultConfigurationTest extends SecurityMana
       doSendManagementMessage(null, null, false);
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
    @Override
    protected ActiveMQServer setupAndStartActiveMQServer() throws Exception {
@@ -52,8 +50,6 @@ public class SecurityManagementWithDefaultConfigurationTest extends SecurityMana
       return server;
    }
 
-   // Private -------------------------------------------------------
 
-   // Inner classes -------------------------------------------------
 
 }

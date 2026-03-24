@@ -1959,9 +1959,6 @@ public final class ClientSessionImpl implements ClientSessionInternal, FailureLi
       connectionFailed(me, failedOver);
    }
 
-   // Public
-   // ----------------------------------------------------------------------------
-
    @Override
    public void setForceNotSameRM(final boolean force) {
       forceNotSameRM = force;

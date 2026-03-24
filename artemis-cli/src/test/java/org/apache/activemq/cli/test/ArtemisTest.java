@@ -34,6 +34,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -702,6 +703,46 @@ public class ArtemisTest extends CliTestBase {
       contains(JsonUtil.readJsonArray(jsonResult), "admin", "amq", false);
 
       stopServer();
+   }
+
+   @Test
+   public void testListUserWithMultipleRolesWithSpaces() throws Exception {
+      try {
+         Run.setEmbedded(true);
+         File instance1 = new File(temporaryFolder.getRoot(), "instance_user");
+         System.setProperty("java.security.auth.login.config", instance1.getAbsolutePath() + "/etc/login.config");
+         Artemis.main("create", instance1.getAbsolutePath(), "--silent", "--no-autotune", "--no-web", "--no-amqp-acceptor", "--no-mqtt-acceptor", "--no-stomp-acceptor", "--no-hornetq-acceptor", "--security-manager", "jaas");
+         System.setProperty("artemis.instance", instance1.getAbsolutePath());
+         Object result = Artemis.internalExecute("run");
+         server = ((Pair<ManagementContext, ActiveMQServer>) result).getB();
+         ActiveMQServerControl activeMQServerControl = server.getActiveMQServerControl();
+
+         File userFile = new File(instance1.getAbsolutePath() + "/etc/artemis-users.properties");
+         BufferedWriter writer = Files.newBufferedWriter(Paths.get(userFile.getPath()));
+         writer.write("");
+         writer.write("user1 = pass1");
+         writer.newLine();
+         writer.write("user2 = pass2");
+         writer.flush();
+         writer.close();
+         File roleFile = new File(instance1.getAbsolutePath() + "/etc/artemis-roles.properties");
+         writer = Files.newBufferedWriter(Paths.get(roleFile.getPath()));
+         writer.write("");
+         writer.write("role1 = user1, user2"); // the space here is what breaks the parsing
+         writer.newLine();
+         writer.write("role2 = user2");
+         writer.flush();
+         writer.close();
+
+         String jsonResult = activeMQServerControl.listUser("");
+         contains(JsonUtil.readJsonArray(jsonResult), "user2", "role1");
+         contains(JsonUtil.readJsonArray(jsonResult), "user2", "role2");
+         checkRole("user2", roleFile, false, "role1", "role2");
+         assertTrue(checkPassword("user1", "pass1", userFile, false));
+         assertTrue(checkPassword("user2", "pass2", userFile, false));
+      } finally {
+         stopServer();
+      }
    }
 
    @Test

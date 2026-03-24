@@ -498,7 +498,7 @@ public final class SharedNothingBackupActivation extends Activation implements R
       public void run() {
          try {
             //we should only try once, if its not there we should move on.
-            clusterControl.getSessionFactory().setReconnectAttempts(1);
+            clusterControl.getSessionFactory().setReconnectAttempts(0);
             backupQuorum.setSessionFactory(clusterControl.getSessionFactory());
             //get the connection and request replication to live
             clusterControl.authorize();

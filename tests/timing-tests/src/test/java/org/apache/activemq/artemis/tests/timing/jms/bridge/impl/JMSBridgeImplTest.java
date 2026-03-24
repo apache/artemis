@@ -75,9 +75,6 @@ public class JMSBridgeImplTest extends ActiveMQTestBase {
 
    private static Logger log = Logger.getLogger(JMSBridgeImplTest.class);
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    private static final String SOURCE = RandomUtil.randomString();
 
@@ -90,7 +87,6 @@ public class JMSBridgeImplTest extends ActiveMQTestBase {
    @Rule
    public ExpectedException thrown = ExpectedException.none();
 
-   // Static --------------------------------------------------------
 
    protected static TransactionManager newTransactionManager() {
       return new TransactionManager() {
@@ -183,9 +179,7 @@ public class JMSBridgeImplTest extends ActiveMQTestBase {
       };
    }
 
-   // Constructors --------------------------------------------------
 
-   // Public --------------------------------------------------------
 
    @Test
    public void testStartWithRepeatedFailure() throws Exception {
@@ -680,9 +674,7 @@ public class JMSBridgeImplTest extends ActiveMQTestBase {
       }
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
    private static MockContextClassLoader setMockTCCL() {
       ClassLoader parent = JMSBridgeImpl.class.getClassLoader();
       MockContextClassLoader tccl = new MockContextClassLoader(parent);
@@ -771,9 +763,7 @@ public class JMSBridgeImplTest extends ActiveMQTestBase {
       bridge.stop();
       Assert.assertFalse(bridge.isStarted());
    }
-   // Private -------------------------------------------------------
 
-   // Inner classes -------------------------------------------------
    private static class MockContextClassLoader extends ClassLoader {
 
       private final ClassLoader original;

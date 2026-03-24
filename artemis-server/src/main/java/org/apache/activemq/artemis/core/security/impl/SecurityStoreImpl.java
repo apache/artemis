@@ -74,7 +74,6 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
 
    private final NotificationService notificationService;
 
-   // Constructors --------------------------------------------------
 
    /**
     * @param notificationService can be <code>null</code>

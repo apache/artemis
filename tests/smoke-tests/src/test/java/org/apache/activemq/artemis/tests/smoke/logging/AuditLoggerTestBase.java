@@ -17,15 +17,12 @@
 package org.apache.activemq.artemis.tests.smoke.logging;
 
 import javax.jms.ConnectionFactory;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 
 import org.apache.activemq.artemis.tests.smoke.common.SmokeTestBase;
 import org.apache.qpid.jms.JmsConnectionFactory;
-import org.junit.Assert;
 import org.junit.Before;
 
 public abstract class AuditLoggerTestBase extends SmokeTestBase {
@@ -59,33 +56,7 @@ public abstract class AuditLoggerTestBase extends SmokeTestBase {
 
    //check the audit log has a line that contains all the values
    protected void checkAuditLogRecord(boolean exist, String... values) throws Exception {
-      Assert.assertTrue(getAuditLog().exists());
-      boolean hasRecord = false;
-      try (BufferedReader reader = new BufferedReader(new FileReader(getAuditLog()))) {
-         String line = reader.readLine();
-         while (line != null) {
-            if (line.contains(values[0])) {
-               boolean hasAll = true;
-               for (int i = 1; i < values.length; i++) {
-                  if (!line.contains(values[i])) {
-                     hasAll = false;
-                     break;
-                  }
-               }
-               if (hasAll) {
-                  hasRecord = true;
-                  System.out.println("audit has it: " + line);
-                  break;
-               }
-            }
-            line = reader.readLine();
-         }
-         if (exist) {
-            Assert.assertTrue(hasRecord);
-         } else {
-            Assert.assertFalse(hasRecord);
-         }
-      }
+      checkLogRecord(getAuditLog(), exist, values);
    }
 
    public static ConnectionFactory createConnectionFactory(String protocol, String uri) {

@@ -50,13 +50,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class DuplicateDetectionUnitTest extends ActiveMQTestBase {
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
-
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
 
    ExecutorService executor;
 
@@ -77,7 +71,6 @@ public class DuplicateDetectionUnitTest extends ActiveMQTestBase {
       factory = new OrderedExecutorFactory(executor);
    }
 
-   // Public --------------------------------------------------------
 
    @Test
    public void testReloadDuplication() throws Exception {

@@ -65,6 +65,7 @@ var Artemis;
                     config="$ctrl.config"
                     columns="$ctrl.tableColumns"
                     items="$ctrl.attributes">
+                </pf-table-view>
             </div>
             <script type="text/ng-template" id="diagram-instructions.html">
             <div>

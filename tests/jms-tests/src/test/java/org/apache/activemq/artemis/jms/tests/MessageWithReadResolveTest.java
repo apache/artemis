@@ -34,17 +34,6 @@ import org.junit.Test;
  */
 public class MessageWithReadResolveTest extends JMSTestCase {
 
-   // Constants -----------------------------------------------------
-
-   // Static --------------------------------------------------------
-
-   // Attributes ----------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // TestCase overrides -------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testSendReceiveMessage() throws Exception {
@@ -80,11 +69,8 @@ public class MessageWithReadResolveTest extends JMSTestCase {
       conn.close();
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
-   // Private -------------------------------------------------------
 
    /* This class would trigger the exception when serialized with jboss serialization */
    public static class TestMessage implements Serializable {
@@ -129,5 +115,4 @@ public class MessageWithReadResolveTest extends JMSTestCase {
       }
    }
 
-   // Inner classes -------------------------------------------------
 }

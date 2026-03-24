@@ -34,9 +34,6 @@ import org.junit.Test;
 
 public class ExportFormatTest extends ActiveMQTestBase {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    // Case the format was changed, and the change was agreed, use _testCreateFormat to recreate this field
    String bindingsFile = "#File,JournalFileImpl: (activemq-bindings-1.bindings id = 1, recordID = 1)\n" +
@@ -141,13 +138,5 @@ public class ExportFormatTest extends ActiveMQTestBase {
 
       session.commit();
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

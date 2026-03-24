@@ -27,7 +27,6 @@ public class ByteArrayEncoding implements EncodingSupport {
       this.data = data;
    }
 
-   // Public --------------------------------------------------------
 
    @Override
    public void decode(final ActiveMQBuffer buffer) {

@@ -27,14 +27,9 @@ import org.apache.activemq.artemis.api.core.SimpleString;
  */
 public class ActiveMQQueue extends ActiveMQDestination implements Queue {
 
-   // Constants -----------------------------------------------------
    private static final long serialVersionUID = -1106092883162295462L;
 
-   // Static --------------------------------------------------------
 
-   // Attributes ----------------------------------------------------
-
-   // Constructors --------------------------------------------------
    public ActiveMQQueue() {
       this((SimpleString) null);
    }
@@ -68,7 +63,6 @@ public class ActiveMQQueue extends ActiveMQDestination implements Queue {
 
    // Queue implementation ------------------------------------------
 
-   // Public --------------------------------------------------------
 
    @Override
    public String getQueueName() {
@@ -100,11 +94,5 @@ public class ActiveMQQueue extends ActiveMQDestination implements Queue {
       return super.getAddress().hashCode();
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 }

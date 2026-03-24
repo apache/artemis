@@ -108,13 +108,11 @@ import static org.apache.activemq.artemis.api.core.JsonUtil.nullSafe;
  * Server side Session implementation
  */
 public class ServerSessionImpl implements ServerSession, FailureListener {
-   // Constants -----------------------------------------------------------------------------
+
 
    private static final Logger logger = Logger.getLogger(ServerSessionImpl.class);
 
-   // Static -------------------------------------------------------------------------------
 
-   // Attributes ----------------------------------------------------------------------------
 
    private boolean securityEnabled = true;
 
@@ -1129,7 +1127,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
                logger.debug("deleting temporary queue " + bindingName);
             }
             try {
-               server.destroyQueue(bindingName, null, false);
+               server.destroyQueue(bindingName, null, false, false, true);
                if (observer != null) {
                   observer.tempQueueDeleted(bindingName);
                }
@@ -1177,7 +1175,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
          throw new ActiveMQNonExistentQueueException();
       }
 
-      server.destroyQueue(unPrefixedQueueName, this, true);
+      server.destroyQueue(unPrefixedQueueName, this, true, false, true);
 
       TempQueueCleanerUpper cleaner = this.tempQueueCleannerUppers.remove(unPrefixedQueueName);
 

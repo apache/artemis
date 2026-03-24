@@ -18,6 +18,8 @@
 package org.apache.activemq.artemis.utils.critical;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
 import org.junit.Assert;
@@ -65,12 +67,41 @@ public class CriticalMeasureTest {
    public void testWithCloseable() throws Exception {
       CriticalAnalyzer analyzer = new CriticalAnalyzerImpl();
       CriticalComponent component = new CriticalComponentImpl(analyzer, 5);
-      CriticalMeasure measure = new CriticalMeasure(component, 1);
-      long time = System.nanoTime();
       try (AutoCloseable theMeasure = component.measureCritical(0)) {
          LockSupport.parkNanos(1000);
          Assert.assertTrue(component.checkExpiration(100, false));
       }
       Assert.assertFalse(component.checkExpiration(100, false));
+   }
+
+   @Test
+   public void testRace() throws Exception {
+      CriticalAnalyzer analyzer = new CriticalAnalyzerImpl();
+      CriticalComponent component = new CriticalComponentImpl(analyzer, 5);
+
+      AtomicInteger errors = new AtomicInteger(0);
+      AtomicBoolean running = new AtomicBoolean(true);
+      Thread t = new Thread(() -> {
+         long oneSecond = TimeUnit.SECONDS.toNanos(1);
+         while (running.get()) {
+            if (component.checkExpiration(oneSecond, false)) {
+               errors.incrementAndGet();
+            }
+         }
+      });
+      t.start();
+      try {
+         long timeRunning = System.currentTimeMillis() + 100;
+         while (timeRunning > System.currentTimeMillis()) {
+            try (AutoCloseable theMeasure = component.measureCritical(0)) {
+               LockSupport.parkNanos(1);
+            }
+         }
+      } finally {
+         running.set(false);
+      }
+      t.join(1000);
+      Assert.assertFalse(t.isAlive());
+      Assert.assertEquals(0, errors.get());
    }
 }

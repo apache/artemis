@@ -76,7 +76,21 @@
             <include>org.jctools:jctools-core</include>
             <include>org.apache.commons:commons-dbcp2</include>
             <include>org.apache.commons:commons-pool2</include>
-            <include>io.netty:netty-all</include>
+            <include>io.netty:netty-buffer</include>
+            <include>io.netty:netty-transport</include>
+            <include>io.netty:netty-handler</include>
+            <include>io.netty:netty-handler-proxy</include>
+            <include>io.netty:netty-codec</include>
+            <include>io.netty:netty-codec-http</include>
+            <include>io.netty:netty-codec-mqtt</include>
+            <include>io.netty:netty-codec-socks</include>
+            <include>io.netty:netty-common</include>
+            <include>io.netty:netty-resolver</include>
+            <include>io.netty:netty-transport-native-unix-common</include>
+            <include>io.netty:netty-transport-classes-epoll</include>
+            <include>io.netty:netty-transport-native-epoll</include>
+            <include>io.netty:netty-transport-classes-kqueue</include>
+            <include>io.netty:netty-transport-native-kqueue</include>
             <include>org.apache.qpid:proton-j</include>
             <include>org.apache.activemq:activemq-client</include>
             <include>org.apache.activemq:activemq-openwire-legacy</include>

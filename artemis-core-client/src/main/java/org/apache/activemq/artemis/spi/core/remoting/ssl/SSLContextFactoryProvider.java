@@ -29,7 +29,7 @@ import javax.net.ssl.SSLContext;
 public class SSLContextFactoryProvider {
    private static final SSLContextFactory factory;
    static {
-      ServiceLoader<SSLContextFactory> loader = ServiceLoader.load(SSLContextFactory.class, Thread.currentThread().getContextClassLoader());
+      ServiceLoader<SSLContextFactory> loader = ServiceLoader.load(SSLContextFactory.class, SSLContextFactoryProvider.class.getClassLoader());
       final List<SSLContextFactory> factories = new ArrayList<>();
       loader.forEach(factories::add);
       if (factories.isEmpty()) {

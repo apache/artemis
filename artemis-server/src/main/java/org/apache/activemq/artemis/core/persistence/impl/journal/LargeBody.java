@@ -37,6 +37,8 @@ import org.jboss.logging.Logger;
 
 public class LargeBody {
 
+   static final int MEMORY_OFFSET = 56;
+
    private static final Logger logger = Logger.getLogger(LargeBody.class);
 
    private long bodySize = -1;

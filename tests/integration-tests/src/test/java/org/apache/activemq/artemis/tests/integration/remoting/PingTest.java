@@ -44,21 +44,15 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class PingTest extends ActiveMQTestBase {
-   // Constants -----------------------------------------------------
 
    private static final Logger log = Logger.getLogger(PingTest.class);
 
    private static final long CLIENT_FAILURE_CHECK_PERIOD = 500;
 
-   // Attributes ----------------------------------------------------
 
    private ActiveMQServer server;
 
-   // Static --------------------------------------------------------
 
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Override
    @Before

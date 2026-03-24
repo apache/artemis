@@ -36,15 +36,7 @@ public class ConfigurationValidationTest extends ActiveMQTestBase {
       System.setProperty("ninetyTwoProp", "92");
    }
 
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
-
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    /**
     * test does not pass in eclipse (because it can not find artemis-configuration.xsd).

@@ -27,12 +27,18 @@ import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.activemq.artemis.api.core.QueueConfiguration;
+import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.core.config.DivertConfiguration;
+import org.apache.activemq.artemis.core.config.TransformerConfiguration;
 import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.server.Queue;
+import org.apache.activemq.artemis.core.server.transformer.Transformer;
 import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.tests.util.CFUtil;
+import org.apache.activemq.artemis.tests.util.RandomUtil;
 import org.apache.activemq.artemis.tests.util.Wait;
 import org.apache.activemq.artemis.utils.collections.LinkedListIterator;
 import org.apache.activemq.transport.amqp.client.AmqpClient;
@@ -539,6 +545,67 @@ public class AmqpExpiredMessageTest extends AmqpClientTestSupport {
    }
 
    @Test(timeout = 60000)
+   public void testExpirationAfterDivert() throws Throwable {
+      final String FORWARDING_ADDRESS = RandomUtil.randomString();
+      server.createQueue(new QueueConfiguration(FORWARDING_ADDRESS).setRoutingType(RoutingType.ANYCAST));
+      server.deployDivert(new DivertConfiguration()
+                             .setName(RandomUtil.randomString())
+                             .setAddress(getQueueName())
+                             .setForwardingAddress(FORWARDING_ADDRESS)
+                             .setTransformerConfiguration(new TransformerConfiguration(MyTransformer.class.getName()))
+                             .setExclusive(true));
+      AmqpClient client = createAmqpClient();
+      AmqpConnection connection = client.connect();
+
+      try {
+
+         // Normal Session which won't create an TXN itself
+         AmqpSession session = connection.createSession();
+         AmqpSender sender = session.createSender(getQueueName());
+
+         AmqpMessage message = new AmqpMessage();
+         message.setDurable(true);
+         message.setText("Test-Message");
+         message.setDeliveryAnnotation("shouldDisappear", 1);
+         message.setMessageAnnotation("x-opt-routing-type", (byte) 1);
+         sender.send(message);
+
+         Queue forward = getProxyToQueue(FORWARDING_ADDRESS);
+         assertTrue("Message not diverted", Wait.waitFor(() -> forward.getMessageCount() > 0, 7000, 500));
+
+         Queue dlq = getProxyToQueue(getDeadLetterAddress());
+         assertTrue("Message not moved to DLQ", Wait.waitFor(() -> dlq.getMessageCount() > 0, 7000, 500));
+
+         connection.close();
+
+         connection = client.connect();
+         session = connection.createSession();
+
+         // Read all messages from the Queue
+         AmqpReceiver receiver = session.createReceiver(getDeadLetterAddress());
+         receiver.flow(20);
+
+         message = receiver.receive(5, TimeUnit.SECONDS);
+         assertNotNull(message);
+         assertEquals(FORWARDING_ADDRESS, message.getMessageAnnotation("x-opt-ORIG-QUEUE"));
+         assertNull(message.getDeliveryAnnotation("shouldDisappear"));
+         assertNull(receiver.receiveNoWait());
+      } finally {
+         connection.close();
+      }
+   }
+
+   public static class MyTransformer implements Transformer {
+      public MyTransformer() {
+      }
+
+      @Override
+      public org.apache.activemq.artemis.api.core.Message transform(org.apache.activemq.artemis.api.core.Message message) {
+         return message.setExpiration(System.currentTimeMillis() + 250);
+      }
+   }
+
+   @Test(timeout = 60000)
    public void testDLQdMessageCanBeRedeliveredMultipleTimes() throws Throwable {
       AmqpClient client = createAmqpClient();
       AmqpConnection connection = client.connect();
@@ -643,6 +710,17 @@ public class AmqpExpiredMessageTest extends AmqpClientTestSupport {
          server.start();
       }
 
+      final Queue serverQueue = server.locateQueue(getQueueName());
+
+      try (LinkedListIterator<MessageReference> referenceIterator = serverQueue.iterator()) {
+         while (referenceIterator.hasNext()) {
+            MessageReference ref = referenceIterator.next();
+            Assert.assertEquals(ref.getMessage().getExpiration(), ref.getMessage().toCore().getExpiration());
+            Assert.assertTrue(ref.getMessage().getExpiration() > 0);
+            Assert.assertTrue(ref.getMessage().toCore().getExpiration() > 0);
+         }
+      }
+
       final Queue dlqView = getProxyToQueue(getDeadLetterAddress());
 
       Wait.assertEquals(2, dlqView::getMessageCount);
@@ -728,8 +806,5 @@ public class AmqpExpiredMessageTest extends AmqpClientTestSupport {
 
 
    }
-
-
-
 
 }

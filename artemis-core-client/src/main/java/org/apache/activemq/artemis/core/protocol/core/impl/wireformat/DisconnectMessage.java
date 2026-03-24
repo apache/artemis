@@ -21,15 +21,10 @@ import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.protocol.core.impl.PacketImpl;
 
 public class DisconnectMessage extends PacketImpl {
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
    protected SimpleString nodeID;
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
 
    public DisconnectMessage(final SimpleString nodeID) {
       super(DISCONNECT);
@@ -44,8 +39,6 @@ public class DisconnectMessage extends PacketImpl {
    public DisconnectMessage(byte disconnectV2) {
       super(disconnectV2);
    }
-
-   // Public --------------------------------------------------------
 
    public SimpleString getNodeID() {
       return nodeID;

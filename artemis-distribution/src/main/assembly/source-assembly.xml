@@ -37,9 +37,6 @@
          <directoryMode>0755</directoryMode>
          <fileMode>0644</fileMode>
          <excludes>
-            <exclude>tests/extra-tests/</exclude>
-            <exclude>tests/performance-jmh/</exclude>
-
             <exclude>artemis-distribution/src/main/resources/bin/artemis</exclude>
             <exclude>artemis-cli/src/main/resources/org/apache/activemq/artemis/cli/commands/bin/artemis</exclude>
             <exclude>artemis-cli/src/main/resources/org/apache/activemq/artemis/cli/commands/bin/artemis-service</exclude>

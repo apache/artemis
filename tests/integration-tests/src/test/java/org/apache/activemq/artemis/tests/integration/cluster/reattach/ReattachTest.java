@@ -1018,9 +1018,7 @@ public class ReattachTest extends ActiveMQTestBase {
       sf.close();
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
    @Override
    @Before
@@ -1042,7 +1040,5 @@ public class ReattachTest extends ActiveMQTestBase {
       super.tearDown();
    }
 
-   // Private -------------------------------------------------------
 
-   // Inner classes -------------------------------------------------
 }

@@ -75,13 +75,10 @@ import org.jboss.logging.Logger;
  * Concrete implementation of a ClientConsumer.
  */
 public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
-   // Constants ------------------------------------------------------------------------------------
+
 
    private static final Logger logger = Logger.getLogger(ServerConsumerImpl.class);
 
-   // Static ---------------------------------------------------------------------------------------
-
-   // Attributes -----------------------------------------------------------------------------------
 
    private final long id;
 
@@ -163,7 +160,6 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
 
    private boolean isClosed = false;
 
-   // Constructors ---------------------------------------------------------------------------------
 
    public ServerConsumerImpl(final long id,
                              final ServerSession session,
@@ -1136,7 +1132,6 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
       return BigDecimal.valueOf((acks - messageConsumedSnapshot.getAndSet(acks)) / timeSlice).setScale(2, BigDecimal.ROUND_UP).floatValue();
    }
 
-   // Private --------------------------------------------------------------------------------------
 
    @Override
    public void promptDelivery() {
@@ -1202,9 +1197,6 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
          }
       }
    }
-
-   // Inner classes
-   // ------------------------------------------------------------------------
 
    private final Runnable resumeLargeMessageRunnable = new Runnable() {
       @Override

@@ -38,9 +38,7 @@ import static org.apache.activemq.artemis.api.core.JsonUtil.nullSafe;
  * regular intervals - this means we are less intrusive on the queue
  */
 public class MessageCounter {
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
    // destination related information
    private final String destName;
@@ -75,9 +73,6 @@ public class MessageCounter {
 
    private long lastMessagesAcked;
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
 
    /**
     * Constructor
@@ -144,7 +139,6 @@ public class MessageCounter {
       }
    };
 
-   // Public --------------------------------------------------------
 
    /*
     * This method is called periodically to update statistics from the queue
@@ -356,11 +350,8 @@ public class MessageCounter {
          .toString();
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
-   // Private -------------------------------------------------------
 
    /**
     * Update message counter history
@@ -432,7 +423,6 @@ public class MessageCounter {
       }
    }
 
-   // Inner classes -------------------------------------------------
 
    /**
     * Internal day counter class for one day hour based counter history

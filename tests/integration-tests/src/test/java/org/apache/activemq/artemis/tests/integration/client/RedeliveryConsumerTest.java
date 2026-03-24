@@ -43,9 +43,6 @@ import org.junit.Test;
 
 public class RedeliveryConsumerTest extends ActiveMQTestBase {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    ActiveMQServer server;
 
@@ -55,11 +52,7 @@ public class RedeliveryConsumerTest extends ActiveMQTestBase {
 
    private ServerLocator locator;
 
-   // Static --------------------------------------------------------
 
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testRedeliveryMessageStrict() throws Exception {
@@ -398,9 +391,7 @@ public class RedeliveryConsumerTest extends ActiveMQTestBase {
       factory.close();
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
    /**
     * @param persistDeliveryCountBeforeDelivery

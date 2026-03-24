@@ -235,8 +235,6 @@ public class SelectorTranslatorTest extends ActiveMQTestBase {
       Assert.assertEquals("AMQExpiration=12345678", SelectorTranslator.convertHQToActiveMQFilterString(selector));
    }
 
-   // Private -------------------------------------------------------------------------------------
-
    private void checkNoSubstitute(final String fieldName) {
       String selector = "Other" + fieldName + " = 767868";
 

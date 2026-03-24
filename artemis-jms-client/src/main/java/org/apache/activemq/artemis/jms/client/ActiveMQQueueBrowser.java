@@ -34,11 +34,7 @@ import org.apache.activemq.artemis.utils.SelectorTranslator;
  * ActiveMQ Artemis implementation of a JMS QueueBrowser.
  */
 public final class ActiveMQQueueBrowser implements QueueBrowser {
-   // Constants ------------------------------------------------------------------------------------
 
-   // Static ---------------------------------------------------------------------------------------
-
-   // Attributes -----------------------------------------------------------------------------------
 
    private final ConnectionFactoryOptions options;
 
@@ -52,7 +48,7 @@ public final class ActiveMQQueueBrowser implements QueueBrowser {
 
    private final boolean enable1xPrefixes;
 
-   // Constructors ---------------------------------------------------------------------------------
+
 
    protected ActiveMQQueueBrowser(final ConnectionFactoryOptions options,
                                   final ActiveMQQueue queue,
@@ -105,20 +101,11 @@ public final class ActiveMQQueueBrowser implements QueueBrowser {
       return queue;
    }
 
-   // Public ---------------------------------------------------------------------------------------
 
    @Override
    public String toString() {
       return "ActiveMQQueueBrowser->" + consumer;
    }
-
-   // Package protected ----------------------------------------------------------------------------
-
-   // Protected ------------------------------------------------------------------------------------
-
-   // Private --------------------------------------------------------------------------------------
-
-   // Inner classes --------------------------------------------------------------------------------
 
    private final class BrowserEnumeration implements Enumeration<ActiveMQMessage> {
 

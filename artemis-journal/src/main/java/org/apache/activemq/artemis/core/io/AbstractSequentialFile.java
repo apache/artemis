@@ -80,7 +80,6 @@ public abstract class AbstractSequentialFile implements SequentialFile {
       return new LocalBufferObserver();
    }
 
-   // Public --------------------------------------------------------
 
    @Override
    public final boolean exists() {

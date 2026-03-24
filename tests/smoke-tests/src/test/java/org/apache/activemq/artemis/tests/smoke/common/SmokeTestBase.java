@@ -21,7 +21,9 @@ import javax.management.MBeanServerInvocationHandler;
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.HashSet;
@@ -170,6 +172,36 @@ public class SmokeTestBase extends ActiveMQTestBase {
       }
 
       return false;
+   }
+
+   protected void checkLogRecord(File logFile, boolean exist, String... values) throws Exception {
+      Assert.assertTrue(logFile.exists());
+      boolean hasRecord = false;
+      try (BufferedReader reader = new BufferedReader(new FileReader(logFile))) {
+         String line = reader.readLine();
+         while (line != null) {
+            if (line.contains(values[0])) {
+               boolean hasAll = true;
+               for (int i = 1; i < values.length; i++) {
+                  if (!line.contains(values[i])) {
+                     hasAll = false;
+                     break;
+                  }
+               }
+               if (hasAll) {
+                  hasRecord = true;
+                  System.out.println("audit has it: " + line);
+                  break;
+               }
+            }
+            line = reader.readLine();
+         }
+         if (exist) {
+            Assert.assertTrue(hasRecord);
+         } else {
+            Assert.assertFalse(hasRecord);
+         }
+      }
    }
 
 }

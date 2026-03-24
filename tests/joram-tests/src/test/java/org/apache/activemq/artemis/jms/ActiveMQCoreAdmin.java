@@ -122,6 +122,5 @@ public class ActiveMQCoreAdmin extends AbstractAdmin {
       return this.getClass().getName();
    }
 
-   // Inner classes -------------------------------------------------
 
 }

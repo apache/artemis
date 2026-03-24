@@ -20,17 +20,12 @@ import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.core.protocol.core.impl.PacketImpl;
 
 public class SessionExpireMessage extends PacketImpl {
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
    private long consumerID;
 
    private long messageID;
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
 
    public SessionExpireMessage(final long consumerID, final long messageID) {
       super(SESS_EXPIRED);
@@ -43,8 +38,6 @@ public class SessionExpireMessage extends PacketImpl {
    public SessionExpireMessage() {
       super(SESS_EXPIRED);
    }
-
-   // Public --------------------------------------------------------
 
    public long getConsumerID() {
       return consumerID;

@@ -604,7 +604,5 @@ public class TemporaryQueueTest extends SingleServerTestBase {
 
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 }

@@ -61,7 +61,7 @@ public class FederatedQueueTest extends FederatedTestBase {
 
    @Override
    protected void configureQueues(ActiveMQServer server) throws Exception {
-      server.getAddressSettingsRepository().addMatch("#", new AddressSettings().setAutoCreateAddresses(false).setAutoCreateQueues(false));
+      server.getAddressSettingsRepository().addMatch("#", new AddressSettings().setAutoCreateAddresses(false).setAutoCreateQueues(false).setDefaultConsumerWindowSize(-1));
       createSimpleQueue(server, getName());
    }
 
@@ -241,6 +241,33 @@ public class FederatedQueueTest extends FederatedTestBase {
          assertNotNull(consumer0.receive(1000));
       }
 
+   }
+
+   @Test
+   public void testWithLargeMessage() throws Exception {
+      String queueName = getName();
+
+      FederationConfiguration federationConfiguration = FederatedTestUtil.createQueueUpstreamFederationConfiguration("server1", queueName);
+      getServer(0).getConfiguration().getFederationConfigurations().add(federationConfiguration);
+      getServer(0).getFederationManager().deploy();
+
+      ConnectionFactory cf1 = getCF(1);
+      ConnectionFactory cf0 = getCF(0);
+      final String payload = new String(new byte[1 * 1024 * 1024]).replace('\0','+');
+      try (Connection connection1 = cf1.createConnection(); Connection connection0 = cf0.createConnection()) {
+         connection1.start();
+         Session session1 = connection1.createSession();
+         Queue queue1 = session1.createQueue(queueName);
+         MessageProducer producer = session1.createProducer(queue1);
+         producer.send(session1.createTextMessage(payload));
+
+         connection0.start();
+         Session session0 = connection0.createSession();
+         Queue queue0 = session0.createQueue(queueName);
+         MessageConsumer consumer0 = session0.createConsumer(queue0);
+
+         assertNotNull(consumer0.receive(60000));
+      }
    }
 
    @Test

@@ -30,7 +30,6 @@ import java.util.List;
 
 public class ObjectInputStreamWithClassLoader extends ObjectInputStream {
 
-   // Constants ------------------------------------------------------------------------------------
 
    /**
     * Value used to indicate that all classes should be white or black listed,
@@ -40,14 +39,10 @@ public class ObjectInputStreamWithClassLoader extends ObjectInputStream {
    public static final String WHITELIST_PROPERTY = "org.apache.activemq.artemis.jms.deserialization.whitelist";
    public static final String BLACKLIST_PROPERTY = "org.apache.activemq.artemis.jms.deserialization.blacklist";
 
-   // Attributes -----------------------------------------------------------------------------------
 
    private List<String> whiteList = new ArrayList<>();
    private List<String> blackList = new ArrayList<>();
 
-   // Static ---------------------------------------------------------------------------------------
-
-   // Constructors ---------------------------------------------------------------------------------
 
    public ObjectInputStreamWithClassLoader(final InputStream in) throws IOException {
       super(in);
@@ -57,8 +52,6 @@ public class ObjectInputStreamWithClassLoader extends ObjectInputStream {
       String blackList = System.getProperty(BLACKLIST_PROPERTY, null);
       setBlackList(blackList);
    }
-
-   // Public ---------------------------------------------------------------------------------------
 
    /**
     * @return the whiteList configured on this policy instance.
@@ -98,10 +91,6 @@ public class ObjectInputStreamWithClassLoader extends ObjectInputStream {
       this.blackList = StringUtil.splitStringList(blackList, ",");
    }
 
-   // Package protected ----------------------------------------------------------------------------
-
-   // Protected ------------------------------------------------------------------------------------
-
    @Override
    protected Class resolveClass(final ObjectStreamClass desc) throws IOException, ClassNotFoundException {
       if (System.getSecurityManager() == null) {
@@ -138,7 +127,6 @@ public class ObjectInputStreamWithClassLoader extends ObjectInputStream {
       }
    }
 
-   // Private --------------------------------------------------------------------------------------
 
    private Class resolveClass0(final ObjectStreamClass desc) throws IOException, ClassNotFoundException {
       String name = desc.getName();
@@ -272,7 +260,5 @@ public class ObjectInputStreamWithClassLoader extends ObjectInputStream {
 
       return false;
    }
-
-   // Inner classes --------------------------------------------------------------------------------
 
 }

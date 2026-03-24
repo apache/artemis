@@ -73,7 +73,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class InterruptedLargeMessageTest extends LargeMessageTestBase {
-   // Constants -----------------------------------------------------
+
 
    static final int RECEIVE_WAIT_TIME = 60000;
 

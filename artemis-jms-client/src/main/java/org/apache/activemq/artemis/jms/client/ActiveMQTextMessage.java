@@ -34,19 +34,14 @@ import static org.apache.activemq.artemis.reader.TextMessageUtil.writeBodyText;
  * This class was ported from SpyTextMessage in JBossMQ.
  */
 public class ActiveMQTextMessage extends ActiveMQMessage implements TextMessage {
-   // Constants -----------------------------------------------------
 
    public static final byte TYPE = Message.TEXT_TYPE;
 
-   // Attributes ----------------------------------------------------
 
    // We cache it locally - it's more performant to cache as a SimpleString, the AbstractChannelBuffer write
    // methods are more efficient for a SimpleString
    private SimpleString text;
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
 
    public ActiveMQTextMessage(final ClientSession session) {
       super(ActiveMQTextMessage.TYPE, session);
@@ -65,7 +60,6 @@ public class ActiveMQTextMessage extends ActiveMQMessage implements TextMessage 
       setText(foreign.getText());
    }
 
-   // Public --------------------------------------------------------
 
    @Override
    public byte getType() {

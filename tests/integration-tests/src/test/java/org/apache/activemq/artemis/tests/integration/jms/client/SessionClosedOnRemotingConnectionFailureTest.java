@@ -41,15 +41,8 @@ import org.junit.Test;
  * A SessionClosedOnRemotingConnectionFailureTest
  */
 public class SessionClosedOnRemotingConnectionFailureTest extends JMSTestBase {
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testSessionClosedOnRemotingConnectionFailure() throws Exception {
@@ -112,11 +105,5 @@ public class SessionClosedOnRemotingConnectionFailureTest extends JMSTestBase {
       }
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 }

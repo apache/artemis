@@ -1082,8 +1082,6 @@ public class QueueImplTest extends ActiveMQTestBase {
       }
    }
 
-   // Private ------------------------------------------------------------------------------
-
    private void testConsumerWithFilters(final boolean direct) throws Exception {
       QueueImpl queue = getTemporaryQueue();
 

@@ -1050,7 +1050,7 @@ public interface ActiveMQServerLogger extends BasicLogger {
    void errorFlushingExecutorsOnQueue();
 
    @LogMessage(level = Logger.Level.WARN)
-   @Message(id = 222145, value = "Error expiring reference {0} 0n queue", format = Message.Format.MESSAGE_FORMAT)
+   @Message(id = 222145, value = "Error expiring reference {0} on queue", format = Message.Format.MESSAGE_FORMAT)
    void errorExpiringReferencesOnQueue(@Cause Exception e, MessageReference ref);
 
    @LogMessage(level = Logger.Level.WARN)
@@ -1762,6 +1762,19 @@ public interface ActiveMQServerLogger extends BasicLogger {
    @LogMessage(level = Logger.Level.WARN)
    @Message(id = 222304, value = "Unable to load message from journal", format = Message.Format.MESSAGE_FORMAT)
    void unableToLoadMessageFromJournal(@Cause Throwable t);
+
+   @LogMessage(level = Logger.Level.WARN)
+   @Message(id = 222305, value = "Error federating message {0}.",
+      format = Message.Format.MESSAGE_FORMAT)
+   void federationDispatchError(@Cause Throwable e, String message);
+
+   @LogMessage(level = Logger.Level.WARN)
+   @Message(id = 222306, value = "Failed to load prepared TX and it will be rolled back: {0}",
+      format = Message.Format.MESSAGE_FORMAT)
+   void failedToLoadPreparedTX(@Cause Throwable e, String message);
+
+
+
 
    @LogMessage(level = Logger.Level.ERROR)
    @Message(id = 224000, value = "Failure in initialisation", format = Message.Format.MESSAGE_FORMAT)

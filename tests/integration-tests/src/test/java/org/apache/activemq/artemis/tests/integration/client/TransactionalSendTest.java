@@ -64,7 +64,7 @@ public class TransactionalSendTest extends ActiveMQTestBase {
       Queue q = (Queue) server.getPostOffice().getBinding(queueA).getBindable();
       Assert.assertEquals(0, getMessageCount(q));
       session.commit();
-      Assert.assertEquals(getMessageCount(q), numMessages);
+      Wait.assertEquals(numMessages, () -> getMessageCount(q));
       // now send some more
       for (int i = 0; i < numMessages; i++) {
          cp.send(session.createMessage(false));

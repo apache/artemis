@@ -49,17 +49,13 @@ public class ActiveMQConnectionMetaData implements ConnectionMetaData {
       JMS_MINOR_VERSION = Integer.valueOf(versionProps.getProperty("activemq.version.implementation.minorVersion", "0"));
    }
 
-   // Constants -----------------------------------------------------
 
    private static final String ACTIVEMQ = "ActiveMQ";
 
-   // Static --------------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    private final Version serverVersion;
 
-   // Constructors --------------------------------------------------
+
 
    /**
     * Create a new ActiveMQConnectionMetaData object.

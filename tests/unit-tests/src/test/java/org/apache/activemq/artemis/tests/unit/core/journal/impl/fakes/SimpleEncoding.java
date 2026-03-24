@@ -24,23 +24,16 @@ import org.apache.activemq.artemis.core.journal.EncodingSupport;
  */
 public class SimpleEncoding implements EncodingSupport {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
    private final int size;
 
    private final byte bytetosend;
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
 
    public SimpleEncoding(final int size, final byte bytetosend) {
       this.size = size;
       this.bytetosend = bytetosend;
    }
 
-   // Public --------------------------------------------------------
    @Override
    public void decode(final ActiveMQBuffer buffer) {
       throw new UnsupportedOperationException();
@@ -58,13 +51,5 @@ public class SimpleEncoding implements EncodingSupport {
    public int getEncodeSize() {
       return size;
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

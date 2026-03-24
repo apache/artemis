@@ -25,21 +25,12 @@ import org.junit.Test;
 
 public class TypedPropertiesConversionTest {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    private TypedProperties props;
 
    private SimpleString key;
 
    private final SimpleString unknownKey = new SimpleString("this.key.is.never.used");
-
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Before
    public void setUp() throws Exception {
@@ -297,13 +288,5 @@ public class TypedPropertiesConversionTest {
 
       Assert.assertNull(props.getBytesProperty(unknownKey));
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

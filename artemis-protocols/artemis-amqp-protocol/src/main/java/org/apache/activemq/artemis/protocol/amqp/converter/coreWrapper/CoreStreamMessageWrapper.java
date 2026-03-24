@@ -305,8 +305,6 @@ public final class CoreStreamMessageWrapper extends CoreMessageWrapper {
       getWriteBodyBuffer().resetReaderIndex();
    }
 
-   // ActiveMQRAMessage overrides ----------------------------------------
-
    @Override
    public void clearBody() {
       super.clearBody();

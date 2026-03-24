@@ -191,7 +191,6 @@ public class SSLSecurityNotificationTest extends ActiveMQTestBase {
       notifConsumer = adminSession.createConsumer(notifQueue);
    }
 
-   // Private -------------------------------------------------------
 
    private static void flush(final ClientConsumer notifConsumer) throws ActiveMQException {
       ClientMessage message = null;
@@ -218,6 +217,5 @@ public class SSLSecurityNotificationTest extends ActiveMQTestBase {
       return messages;
    }
 
-   // Inner classes -------------------------------------------------
 
 }

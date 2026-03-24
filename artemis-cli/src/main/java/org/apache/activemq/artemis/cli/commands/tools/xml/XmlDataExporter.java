@@ -456,8 +456,6 @@ public final class XmlDataExporter extends DBOption {
       return queues;
    }
 
-   // Inner classes -------------------------------------------------
-
    /**
     * Proxy to handle indenting the XML since <code>javax.xml.stream.XMLStreamWriter</code> doesn't support that.
     */

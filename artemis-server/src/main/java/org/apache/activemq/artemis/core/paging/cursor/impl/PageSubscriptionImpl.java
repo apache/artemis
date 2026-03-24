@@ -290,7 +290,6 @@ public final class PageSubscriptionImpl implements PageSubscription {
       this.counter = new PageSubscriptionCounterImpl(store, this, executor, persistent, cursorId);
    }
 
-   // Public --------------------------------------------------------
 
    @Override
    public PagingStore getPagingStore() {
@@ -1038,9 +1037,7 @@ public final class PageSubscriptionImpl implements PageSubscription {
       }
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
    private boolean match(final Message message) {
       if (filter == null) {
@@ -1050,7 +1047,6 @@ public final class PageSubscriptionImpl implements PageSubscription {
       }
    }
 
-   // Private -------------------------------------------------------
 
    // To be called only after the ACK has been processed and guaranteed to be on storage
    // The only exception is on non storage events such as not matching messages
@@ -1151,7 +1147,6 @@ public final class PageSubscriptionImpl implements PageSubscription {
       }
    }
 
-   // Inner classes -------------------------------------------------
 
    /**
     * This will hold information about the pending ACKs towards a page.

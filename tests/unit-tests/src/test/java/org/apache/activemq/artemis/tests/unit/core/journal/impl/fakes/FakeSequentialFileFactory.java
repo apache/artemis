@@ -88,7 +88,6 @@ public class FakeSequentialFileFactory implements SequentialFileFactory {
       this.writeDirectCallback = writeDirectCallback;
    }
 
-   // Public --------------------------------------------------------
 
    @Override
    public SequentialFile createSequentialFile(final String fileName) {
@@ -218,17 +217,13 @@ public class FakeSequentialFileFactory implements SequentialFileFactory {
       return this;
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
    protected FakeSequentialFile newSequentialFile(final String fileName) {
       return new FakeSequentialFile(fileName);
    }
 
-   // Private -------------------------------------------------------
 
-   // Inner classes -------------------------------------------------
 
    /**
     * This listener will return a message to the test with each callback added

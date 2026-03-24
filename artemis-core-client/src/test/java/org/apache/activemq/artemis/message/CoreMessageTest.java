@@ -38,6 +38,9 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
+
 public class CoreMessageTest {
 
    public static final SimpleString ADDRESS = new SimpleString("this.local.address");
@@ -357,6 +360,34 @@ public class CoreMessageTest {
       printVariable(SMALLER_TEXT, generate(SMALLER_TEXT));
       printVariable(BIGGER_TEXT, generate(BIGGER_TEXT));
 
+   }
+
+   @Test
+   public void testMemoryEstimateChangedAfterModifiedAlreadyEncodedCopy() {
+      final CoreMessage msg = new CoreMessage(1, 44);
+      msg.getEncodeSize();
+      final int memoryEstimate = msg.getMemoryEstimate();
+      final CoreMessage copy = (CoreMessage) msg.copy(2);
+      copy.getEncodeSize();
+      copy.putBytesProperty(Message.HDR_ROUTE_TO_IDS, new byte[Long.BYTES]);
+      final int increasedMemoryFootprint = copy.getMemoryEstimate() - memoryEstimate;
+      final int increasedPropertyFootprint = copy.getProperties().getMemoryOffset() - msg.getProperties().getMemoryOffset();
+      assertThat("memory estimation isn't accounting for the additional encoded property",
+                 increasedMemoryFootprint, greaterThan(increasedPropertyFootprint));
+   }
+
+   @Test
+   public void testMessageBufferCapacityMatchEncodedSizeAfterModifiedCopy() {
+      final CoreMessage msg = new CoreMessage(1, 4155);
+      msg.setAddress("a");
+      msg.putBytesProperty("_", new byte[4096]);
+      final CoreMessage copy = (CoreMessage) msg.copy(2);
+      Assert.assertEquals(msg.getEncodeSize(), copy.getBuffer().capacity());
+      copy.setAddress("b");
+      copy.setBrokerProperty(Message.HDR_ORIGINAL_QUEUE, "a");
+      copy.setBrokerProperty(Message.HDR_ORIGINAL_ADDRESS, msg.getAddressSimpleString());
+      copy.setBrokerProperty(Message.HDR_ORIG_MESSAGE_ID, msg.getMessageID());
+      Assert.assertEquals(copy.getEncodeSize(), copy.getBuffer().capacity());
    }
 
    private void printVariable(String body, String encode) {

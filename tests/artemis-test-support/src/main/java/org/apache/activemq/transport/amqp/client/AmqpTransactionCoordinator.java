@@ -177,8 +177,6 @@ public class AmqpTransactionCoordinator extends AmqpAbstractResource<Sender> {
       sendTxCommand(message);
    }
 
-   //----- Base class overrides ---------------------------------------------//
-
    @Override
    public void remotelyClosed(AmqpConnection connection) {
 

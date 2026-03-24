@@ -46,11 +46,6 @@ under the License.
          <groupId>org.apache.qpid</groupId>
          <artifactId>qpid-jms-client</artifactId>
       </dependency>
-
-      <dependency>
-         <groupId>io.netty</groupId>
-         <artifactId>netty-all</artifactId>
-      </dependency>
    </dependencies>
 
    <build>

@@ -28,11 +28,16 @@ import org.apache.activemq.artemis.api.core.client.ClientConsumer;
 import org.apache.activemq.artemis.api.core.client.ClientMessage;
 import org.apache.activemq.artemis.api.core.client.ClientSession;
 import org.apache.activemq.artemis.api.core.client.SessionFailureListener;
+import org.apache.activemq.artemis.core.client.impl.ClientLargeMessageInternal;
 import org.apache.activemq.artemis.core.client.impl.ClientSessionFactoryInternal;
+import org.apache.activemq.artemis.core.persistence.StorageManager;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
+import org.apache.activemq.artemis.core.server.LargeServerMessage;
 import org.apache.activemq.artemis.core.server.transformer.Transformer;
 import org.jboss.logging.Logger;
+
+import static org.apache.activemq.artemis.core.client.impl.LargeMessageControllerImpl.LargeData;
 
 public class FederatedQueueConsumerImpl implements FederatedQueueConsumer, SessionFailureListener {
 
@@ -174,6 +179,24 @@ public class FederatedQueueConsumerImpl implements FederatedQueueConsumer, Sessi
    @Override
    public void onMessage(ClientMessage clientMessage) {
       try {
+         Message message = clientMessage;
+         if (message instanceof ClientLargeMessageInternal) {
+
+            final StorageManager storageManager = server.getStorageManager();
+            LargeServerMessage lsm = storageManager.createLargeMessage(storageManager.generateID(), message);
+
+            LargeData largeData = null;
+            do {
+               // block on reading all pending chunks, ok as we are called from an executor
+               largeData = ((ClientLargeMessageInternal) clientMessage).getLargeMessageController().take();
+               lsm.addBytes(largeData.getChunk());
+            }
+            while (largeData.isContinues());
+
+            message = lsm.toMessage();
+            lsm.releaseResources(true, true);
+         }
+
          if (server.hasBrokerFederationPlugins()) {
             try {
                server.callBrokerFederationPlugins(plugin -> plugin.beforeFederatedQueueConsumerMessageHandled(this, clientMessage));
@@ -183,7 +206,7 @@ public class FederatedQueueConsumerImpl implements FederatedQueueConsumer, Sessi
             }
          }
 
-         Message message = transformer == null ? clientMessage : transformer.transform(clientMessage);
+         message = transformer == null ? message : transformer.transform(message);
          if (message != null) {
             server.getPostOffice().route(message, true);
          }
@@ -198,6 +221,7 @@ public class FederatedQueueConsumerImpl implements FederatedQueueConsumer, Sessi
             }
          }
       } catch (Exception e) {
+         ActiveMQServerLogger.LOGGER.federationDispatchError(e, clientMessage.toString());
          try {
             clientSession.rollback();
          } catch (ActiveMQException e1) {

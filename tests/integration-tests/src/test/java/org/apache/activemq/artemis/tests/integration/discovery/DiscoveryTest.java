@@ -29,7 +29,6 @@ import org.apache.activemq.artemis.api.core.BroadcastEndpointFactory;
 import org.apache.activemq.artemis.api.core.JGroupsFileBroadcastEndpointFactory;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
-import org.apache.activemq.artemis.api.core.UDPBroadcastEndpointFactory;
 import org.apache.activemq.artemis.api.core.jgroups.JChannelManager;
 import org.apache.activemq.artemis.api.core.management.CoreNotificationType;
 import org.apache.activemq.artemis.core.cluster.DiscoveryEntry;
@@ -97,7 +96,7 @@ public class DiscoveryTest extends DiscoveryBaseTest {
 
       final String nodeID = RandomUtil.randomString();
 
-      bg = new BroadcastGroupImpl(new FakeNodeManager(nodeID), RandomUtil.randomString(), 0, null, new UDPBroadcastEndpointFactory().setGroupAddress(address1).setGroupPort(groupPort));
+      bg = newBroadcast(nodeID, RandomUtil.randomString(), null, -1, groupAddress, groupPort);
 
       bg.start();
 

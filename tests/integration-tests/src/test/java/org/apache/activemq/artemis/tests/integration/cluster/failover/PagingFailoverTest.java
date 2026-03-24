@@ -45,7 +45,7 @@ import org.junit.Test;
  * <br>
  */
 public class PagingFailoverTest extends FailoverTestBase {
-   // Constants -----------------------------------------------------
+
 
    @Rule
    public RetryRule retryRule = new RetryRule(2);
@@ -58,11 +58,6 @@ public class PagingFailoverTest extends FailoverTestBase {
 
    private ClientSessionFactoryInternal sf;
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Override
    @Before
@@ -206,9 +201,7 @@ public class PagingFailoverTest extends FailoverTestBase {
 
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
    @Override
    protected TransportConfiguration getAcceptorTransportConfiguration(final boolean live) {

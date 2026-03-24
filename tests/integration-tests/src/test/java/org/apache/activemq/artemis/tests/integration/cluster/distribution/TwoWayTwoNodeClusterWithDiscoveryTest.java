@@ -20,23 +20,14 @@ import org.apache.activemq.artemis.core.server.cluster.impl.MessageLoadBalancing
 
 public class TwoWayTwoNodeClusterWithDiscoveryTest extends TwoWayTwoNodeClusterTest {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    protected static final String groupAddress = getUDPDiscoveryAddress();
 
    protected static final int groupPort = getUDPDiscoveryPort();
 
-   // Static --------------------------------------------------------
 
-   // Constructors --------------------------------------------------
 
-   // Public --------------------------------------------------------
 
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
 
    @Override
    protected void setupClusters() {
@@ -50,8 +41,6 @@ public class TwoWayTwoNodeClusterWithDiscoveryTest extends TwoWayTwoNodeClusterT
       setupLiveServerWithDiscovery(1, groupAddress, groupPort, isFileStorage(), isNetty(), false);
    }
 
-   // Private -------------------------------------------------------
 
-   // Inner classes -------------------------------------------------
 
 }

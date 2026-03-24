@@ -248,7 +248,7 @@ public class JdbcLeaseLockTest extends ActiveMQTestBase {
 
    @Test
    public void shouldRenewExpiredLockNotAcquiredByOthers() throws InterruptedException {
-      final LeaseLock lock = lock(10);
+      final LeaseLock lock = lock(500);
       Assert.assertTrue("lock is not owned by anyone", lock.tryAcquire());
       try {
          Thread.sleep(lock.expirationMillis() * 2);

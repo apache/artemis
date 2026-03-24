@@ -35,7 +35,7 @@
 
         <activemq.basedir>${project.basedir}/..</activemq.basedir>
 
-        <hawtio.version>2.14.0</hawtio.version>
+        <hawtio.version>2.14.2</hawtio.version>
         <jline.version>3.2.0</jline.version>
         <junit-version>4.11</junit-version>
         <log4j-version>1.2.17</log4j-version>

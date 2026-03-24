@@ -57,11 +57,6 @@ import org.junit.Assert;
 
 public class JMSUtil {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
-
-   // Static --------------------------------------------------------
 
    public static Connection createConnection(final String connectorFactory) throws JMSException {
       ActiveMQJMSConnectionFactory cf = (ActiveMQJMSConnectionFactory) ActiveMQJMSClient.createConnectionFactoryWithoutHA(JMSFactoryType.CF, new TransportConfiguration(connectorFactory));
@@ -264,17 +259,7 @@ public class JMSUtil {
       Assert.assertTrue(ok);
    }
 
-   // Constructors --------------------------------------------------
 
-   // Public --------------------------------------------------------
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
    public static ActiveMQConnection createConnectionAndWaitForTopology(ActiveMQConnectionFactory factory,
                                                                        int topologyMembers,

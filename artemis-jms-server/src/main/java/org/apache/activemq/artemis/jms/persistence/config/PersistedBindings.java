@@ -26,9 +26,6 @@ import org.apache.activemq.artemis.utils.DataConstants;
 
 public class PersistedBindings implements EncodingSupport {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    private long id;
 
@@ -38,9 +35,6 @@ public class PersistedBindings implements EncodingSupport {
 
    private ArrayList<String> bindings = new ArrayList<>();
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
 
    public PersistedBindings() {
    }
@@ -55,7 +49,6 @@ public class PersistedBindings implements EncodingSupport {
       this.name = name;
    }
 
-   // Public --------------------------------------------------------
    @Override
    public void decode(ActiveMQBuffer buffer) {
       type = PersistedType.getType(buffer.readByte());
@@ -137,13 +130,5 @@ public class PersistedBindings implements EncodingSupport {
    public void deleteBinding(String address) {
       bindings.remove(address);
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

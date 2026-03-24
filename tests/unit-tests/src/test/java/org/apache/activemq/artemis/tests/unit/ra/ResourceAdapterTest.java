@@ -46,15 +46,7 @@ import org.junit.Test;
 
 public class ResourceAdapterTest extends ActiveMQTestBase {
 
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
-
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testDefaultConnectionFactory() throws Exception {

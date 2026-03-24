@@ -37,7 +37,7 @@ public class VersionImpl implements Version, Serializable {
 
    private final int[] compatibleVersionList;
 
-   // Constructors --------------------------------------------------
+
 
    public VersionImpl(final String versionName,
                       final int majorVersion,

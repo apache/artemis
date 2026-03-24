@@ -56,20 +56,14 @@ public class IncompatibleVersionTest extends SpawnedTestBase {
    private static final Logger log = Logger.getLogger(IncompatibleVersionTest.class);
 
    private static final String WORD_START = "&*STARTED&*";
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
    private ActiveMQServer server;
 
    private CoreRemotingConnection connection;
    private ServerLocator locator;
 
-   // Static --------------------------------------------------------
 
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Override
    @Before

@@ -195,6 +195,12 @@ public class BackupManager implements ActiveMQComponent {
       private volatile boolean announcingBackup;
       private volatile boolean backupAnnounced = false;
 
+
+      public TransportConfiguration getConnector() {
+         return connector;
+      }
+
+
       @Override
       public String toString() {
          return "BackupConnector{" + "name='" + config.getName() + '\'' + ", connector=" + connector + '}';
@@ -363,6 +369,7 @@ public class BackupManager implements ActiveMQComponent {
             }
             ServerLocatorImpl locator = new ServerLocatorImpl(topology, true, tcConfigs);
             locator.setClusterConnection(true);
+            locator.setClusterTransportConfiguration(getConnector());
             locator.setRetryInterval(config.getRetryInterval());
             locator.setClientFailureCheckPeriod(config.getClientFailureCheckPeriod());
             locator.setConnectionTTL(config.getConnectionTTL());

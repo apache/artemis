@@ -47,7 +47,6 @@ public final class ReplicationPrepareMessage extends PacketImpl {
       this.encodingData = encodingData;
    }
 
-   // Public --------------------------------------------------------
 
    @Override
    public int expectedEncodeSize() {

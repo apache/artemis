@@ -37,19 +37,12 @@ import org.junit.Test;
 
 public class MessageRateTest extends ActiveMQTestBase {
 
-   // Constants -----------------------------------------------------
 
    private final SimpleString ADDRESS = new SimpleString("ADDRESS");
 
    private ServerLocator locator;
 
-   // Attributes ----------------------------------------------------
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testProduceRate() throws Exception {

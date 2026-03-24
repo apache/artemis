@@ -27,14 +27,12 @@ import org.apache.activemq.artemis.api.core.RoutingType;
  */
 public final class ObjectNameBuilder {
 
-   // Constants -----------------------------------------------------
 
    /**
     * Default JMX domain for ActiveMQ Artemis resources.
     */
    public static final ObjectNameBuilder DEFAULT = new ObjectNameBuilder(ActiveMQDefaultConfiguration.getDefaultJmxDomain(), "localhost", true);
 
-   // Attributes ----------------------------------------------------
 
    private final String domain;
 
@@ -42,7 +40,6 @@ public final class ObjectNameBuilder {
 
    private final boolean jmxUseBrokerName;
 
-   // Static --------------------------------------------------------
 
    public static ObjectNameBuilder create(final String domain) {
       if (domain == null) {
@@ -68,15 +65,13 @@ public final class ObjectNameBuilder {
       }
    }
 
-   // Constructors --------------------------------------------------
+
 
    private ObjectNameBuilder(final String domain, final String brokerName, boolean jmxUseBrokerName) {
       this.domain = domain;
       this.brokerName = brokerName;
       this.jmxUseBrokerName = jmxUseBrokerName;
    }
-
-   // Public --------------------------------------------------------
 
    /**
     * Returns the ObjectName used by the single {@link ActiveMQServerControl}.

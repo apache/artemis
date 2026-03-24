@@ -66,7 +66,6 @@ public class ReplicationAddTXMessage extends PacketImpl {
       this.persister = persister;
    }
 
-   // Public --------------------------------------------------------
 
    @Override
    public int expectedEncodeSize() {

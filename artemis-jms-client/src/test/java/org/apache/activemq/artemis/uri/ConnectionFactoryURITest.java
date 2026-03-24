@@ -224,6 +224,25 @@ public class ConnectionFactoryURITest {
       checkTC(props3, staticConnectors[2], 2);
    }
 
+   @Test
+   public void testTCPEncryptedNettyConnectorPropertiesMultiple() throws Exception {
+      final String trustStorePath = "truststore.jks";
+      final String trustStorePassword = "ENC(3a34fd21b82bf2a822fa49a8d8fa115d)";
+
+      ActiveMQConnectionFactory factory = parser.newObject(parser.expandURI(
+         "(tcp://localhost0:61616?,tcp://localhost1:61617?,tcp://localhost2:61618?)" +
+            "?ha=true&clientID=myID&trustStorePath=" + trustStorePath +
+            "&trustStorePassword=" + trustStorePassword), null);
+
+      TransportConfiguration[] staticConnectors = factory.getStaticConnectors();
+      Assert.assertEquals(3, staticConnectors.length);
+
+      for (int i = 0; i < 3; i++) {
+         Assert.assertEquals(trustStorePath, staticConnectors[i].getParams().get("trustStorePath"));
+         Assert.assertEquals(trustStorePassword, staticConnectors[0].getParams().get("trustStorePassword"));
+      }
+   }
+
    private void checkTC(Map<String, Object> props, TransportConfiguration staticConnector, int offfSet) {
       TransportConfiguration connector = staticConnector;
       Assert.assertEquals(connector.getParams().get("host"), "localhost" + offfSet);

@@ -26,15 +26,8 @@ import org.apache.activemq.artemis.tests.util.JMSTestBase;
 import org.junit.Test;
 
 public class CreateQueueTest extends JMSTestBase {
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testCreateQueueTempQueue() throws Exception {

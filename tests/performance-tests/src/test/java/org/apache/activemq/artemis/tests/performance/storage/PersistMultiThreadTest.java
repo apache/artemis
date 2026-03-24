@@ -410,7 +410,7 @@ public class PersistMultiThreadTest extends ActiveMQTestBase {
       }
 
       @Override
-      public boolean checkMemory(boolean runOnFailure, Runnable runnable) {
+      public boolean checkMemory(boolean runOnFailure, Runnable runnable, Runnable ignoredRunnable) {
          return false;
       }
 

@@ -30,15 +30,7 @@ import org.junit.Test;
 
 public class CleanBufferTest extends ActiveMQTestBase {
 
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
-
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testCleanOnNIO() {
@@ -96,13 +88,5 @@ public class CleanBufferTest extends ActiveMQTestBase {
          factory.stop();
       }
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

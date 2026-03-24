@@ -1314,6 +1314,112 @@ public class PagingTest extends ActiveMQTestBase {
       session.close();
    }
 
+
+   @Test
+   public void testPreparedACKRemoveAndRestart() throws Exception {
+      Assume.assumeTrue(storeType == StoreConfiguration.StoreType.FILE);
+
+      clearDataRecreateServerDirs();
+
+      Configuration config = createDefaultInVMConfig().setJournalSyncNonTransactional(false);
+
+      server = createServer(true, config, PagingTest.PAGE_SIZE, PagingTest.PAGE_MAX);
+
+      server.start();
+
+      final int numberOfMessages = 10;
+
+      locator = createInVMNonHALocator().setBlockOnNonDurableSend(true).setBlockOnDurableSend(true).setBlockOnAcknowledge(true).setAckBatchSize(0);
+
+      sf = createSessionFactory(locator);
+
+      ClientSession session = sf.createSession(false, true, true);
+
+      session.createQueue(new QueueConfiguration(PagingTest.ADDRESS));
+
+      Queue queue = server.locateQueue(PagingTest.ADDRESS);
+
+      ClientProducer producer = session.createProducer(PagingTest.ADDRESS);
+
+      byte[] body = new byte[MESSAGE_SIZE];
+
+      ByteBuffer bb = ByteBuffer.wrap(body);
+
+      for (int j = 1; j <= MESSAGE_SIZE; j++) {
+         bb.put(getSamplebyte(j));
+      }
+
+      queue.getPageSubscription().getPagingStore().startPaging();
+
+      forcePage(queue);
+
+      for (int i = 0; i < numberOfMessages; i++) {
+         ClientMessage message = session.createMessage(true);
+
+         message.putIntProperty("count", i);
+
+         ActiveMQBuffer bodyLocal = message.getBodyBuffer();
+
+         bodyLocal.writeBytes(body);
+
+         producer.send(message);
+
+         if (i == 4) {
+            session.commit();
+            queue.getPageSubscription().getPagingStore().forceAnotherPage();
+         }
+      }
+
+      session.commit();
+
+      session.close();
+
+      session = sf.createSession(true, false, false);
+
+
+      ClientConsumer cons = session.createConsumer(ADDRESS);
+
+      session.start();
+
+      for (int i = 0; i <= 4; i++) {
+         Xid xidConsumeNoCommit = newXID();
+         session.start(xidConsumeNoCommit, XAResource.TMNOFLAGS);
+         // First message is consumed, prepared, will be rolled back later
+         ClientMessage firstMessageConsumed = cons.receive(5000);
+         assertNotNull(firstMessageConsumed);
+         firstMessageConsumed.acknowledge();
+         session.end(xidConsumeNoCommit, XAResource.TMSUCCESS);
+         session.prepare(xidConsumeNoCommit);
+      }
+
+      File pagingFolder = queue.getPageSubscription().getPagingStore().getFolder();
+
+      server.stop();
+
+      // remove the very first page. a restart should not fail
+      File fileToRemove = new File(pagingFolder, "000000001.page");
+      Assert.assertTrue(fileToRemove.delete());
+
+      server.start();
+
+      sf = createSessionFactory(locator);
+
+      session = sf.createSession(false, true, true);
+
+      cons = session.createConsumer(ADDRESS);
+
+      session.start();
+
+      for (int i = 5; i < numberOfMessages; i++) {
+         ClientMessage message = cons.receive(1000);
+         assertNotNull(message);
+         assertEquals(i, message.getIntProperty("count").intValue());
+         message.acknowledge();
+      }
+      assertNull(cons.receiveImmediate());
+      session.commit();
+   }
+
    /**
     * @param queue
     * @throws InterruptedException

@@ -44,8 +44,6 @@ public class CreateSessionMessage_V2 extends CreateSessionMessage {
       super(CREATESESSION_V2);
    }
 
-   // Public --------------------------------------------------------
-
 
    public String getClientID() {
       return clientID;

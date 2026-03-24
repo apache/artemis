@@ -32,8 +32,6 @@ public class NullResponseMessage_V2 extends NullResponseMessage {
       super();
    }
 
-   // Public --------------------------------------------------------
-
    @Override
    public long getCorrelationID() {
       return correlationID;

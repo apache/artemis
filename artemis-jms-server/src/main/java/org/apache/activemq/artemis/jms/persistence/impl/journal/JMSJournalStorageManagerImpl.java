@@ -46,7 +46,7 @@ import org.apache.activemq.artemis.utils.IDGenerator;
 
 public final class JMSJournalStorageManagerImpl implements JMSStorageManager {
 
-   // Constants -----------------------------------------------------
+
 
    public static final byte CF_RECORD = 1;
 
@@ -54,7 +54,6 @@ public final class JMSJournalStorageManagerImpl implements JMSStorageManager {
 
    public static final byte BINDING_RECORD = 3;
 
-   // Attributes ----------------------------------------------------
 
    private final IDGenerator idGenerator;
 
@@ -72,9 +71,7 @@ public final class JMSJournalStorageManagerImpl implements JMSStorageManager {
 
    private final Configuration config;
 
-   // Static --------------------------------------------------------
 
-   // Constructors --------------------------------------------------
    public JMSJournalStorageManagerImpl(ExecutorFactory ioExecutors,
                                        final IDGenerator idGenerator,
                                        final Configuration config,
@@ -101,7 +98,6 @@ public final class JMSJournalStorageManagerImpl implements JMSStorageManager {
       this.idGenerator = idGenerator;
    }
 
-   // Public --------------------------------------------------------
    @Override
    public List<PersistedConnectionFactory> recoverConnectionFactories() {
       List<PersistedConnectionFactory> cfs = new ArrayList<>(mapFactories.values());
@@ -280,11 +276,8 @@ public final class JMSJournalStorageManagerImpl implements JMSStorageManager {
 
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
-   // Private -------------------------------------------------------
 
    private void checkAndCreateDir(final File dir, final boolean create) {
 
@@ -299,6 +292,5 @@ public final class JMSJournalStorageManagerImpl implements JMSStorageManager {
       }
    }
 
-   // Inner classes -------------------------------------------------
 
 }

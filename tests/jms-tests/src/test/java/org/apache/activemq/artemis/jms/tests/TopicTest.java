@@ -32,15 +32,8 @@ import org.apache.activemq.artemis.jms.tests.util.ProxyAssertSupport;
 import org.junit.Test;
 
 public class TopicTest extends JMSTestCase {
-   // Constants -----------------------------------------------------
 
-   // Static --------------------------------------------------------
 
-   // Attributes ----------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    /**
     * The simplest possible topic test.
@@ -132,14 +125,6 @@ public class TopicTest extends JMSTestCase {
       ProxyAssertSupport.assertFalse(l2.failed);
       ProxyAssertSupport.assertFalse(l3.failed);
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
    static class Wibble2 implements Serializable {
 

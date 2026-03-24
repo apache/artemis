@@ -38,6 +38,7 @@ import org.apache.activemq.artemis.utils.AbstractByteBufPool;
 import org.apache.activemq.artemis.utils.ByteUtil;
 import org.apache.activemq.artemis.utils.DataConstants;
 
+import static org.apache.activemq.artemis.utils.ByteUtil.ensureExactWritable;
 import static org.apache.activemq.artemis.utils.DataConstants.BOOLEAN;
 import static org.apache.activemq.artemis.utils.DataConstants.BYTE;
 import static org.apache.activemq.artemis.utils.DataConstants.BYTES;
@@ -546,11 +547,18 @@ public class TypedProperties {
       decode(buffer, null);
    }
 
-
-   public synchronized void encode(final ByteBuf buffer) {
+   public synchronized int encode(final ByteBuf buffer) {
+      final int encodedSize;
+      // it's a trick to not pay the cost of buffer.writeIndex without assertions enabled
+      int writerIndex = 0;
+      assert (writerIndex = buffer.writerIndex()) >= 0 : "Always true";
       if (properties == null || size == 0) {
+         encodedSize = DataConstants.SIZE_BYTE;
+         ensureExactWritable(buffer, encodedSize);
          buffer.writeByte(DataConstants.NULL);
       } else {
+         encodedSize = DataConstants.SIZE_BYTE + DataConstants.SIZE_INT + size;
+         ensureExactWritable(buffer, encodedSize);
          buffer.writeByte(DataConstants.NOT_NULL);
 
          buffer.writeInt(properties.size());
@@ -563,6 +571,8 @@ public class TypedProperties {
             value.write(buffer);
          });
       }
+      assert buffer.writerIndex() == (writerIndex + encodedSize) : "Bad encode size estimation";
+      return encodedSize;
    }
 
    public synchronized int getEncodeSize() {
@@ -630,8 +640,6 @@ public class TypedProperties {
       return sb.append("]").toString();
    }
 
-   // Private ------------------------------------------------------------------------------------
-
    private synchronized void doPutValue(final SimpleString key, final PropertyValue value) {
       if (!internalProperties && internalPropertyPredicate != null && internalPropertyPredicate.test(key)) {
          internalProperties = true;
@@ -675,8 +683,6 @@ public class TypedProperties {
          return val.getValue();
       }
    }
-
-   // Inner classes ------------------------------------------------------------------------------
 
    private abstract static class PropertyValue {
 

@@ -38,11 +38,7 @@ import org.apache.activemq.artemis.api.core.RoutingType;
 
 public class ManagementControlHelper {
 
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
-
-   // Static --------------------------------------------------------
 
    public static AcceptorControl createAcceptorControl(final String name,
                                                        final MBeanServer mbeanServer) throws Exception {
@@ -105,15 +101,7 @@ public class ManagementControlHelper {
       return (BrokerBalancerControl) ManagementControlHelper.createProxy(ObjectNameBuilder.DEFAULT.getBrokerBalancerObjectName(name), BrokerBalancerControl.class, mbeanServer);
    }
 
-   // Constructors --------------------------------------------------
 
-   // Public --------------------------------------------------------
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
 
    public static Object createProxy(final ObjectName objectName,
                                      final Class mbeanInterface,
@@ -121,6 +109,5 @@ public class ManagementControlHelper {
       return MBeanServerInvocationHandler.newProxyInstance(mbeanServer, objectName, mbeanInterface, false);
    }
 
-   // Inner classes -------------------------------------------------
 
 }

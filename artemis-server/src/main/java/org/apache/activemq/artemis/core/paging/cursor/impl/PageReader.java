@@ -24,6 +24,8 @@ import org.apache.activemq.artemis.core.paging.cursor.PagePosition;
 import org.apache.activemq.artemis.core.paging.impl.Page;
 import org.jboss.logging.Logger;
 
+import static org.apache.activemq.artemis.utils.Preconditions.checkNotNull;
+
 public class PageReader implements PageCache {
    private static final Logger logger = Logger.getLogger(PageReader.class);
 
@@ -31,6 +33,8 @@ public class PageReader implements PageCache {
    private final int numberOfMessages;
 
    public PageReader(Page page, int numberOfMessages) {
+      checkNotNull(page);
+
       this.page = page;
       this.numberOfMessages = numberOfMessages;
    }

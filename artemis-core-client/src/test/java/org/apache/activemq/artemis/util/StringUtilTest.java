@@ -53,4 +53,15 @@ public class StringUtilTest extends Assert {
       String result2 = StringUtil.joinStringList(result, ",");
       assertEquals(listStr, result2);
    }
+
+   @Test
+   public void testSplitStringListWithSpaces() throws Exception {
+      String listStr = "white, blue, yellow, green";
+      List<String> result = StringUtil.splitStringList(listStr, ",");
+      assertEquals(4, result.size());
+      assertEquals("white", result.get(0));
+      assertEquals("blue", result.get(1));
+      assertEquals("yellow", result.get(2));
+      assertEquals("green", result.get(3));
+   }
 }

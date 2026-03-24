@@ -69,7 +69,8 @@ public class JsonUtilTest {
       Assert.assertEquals(6, jsonObject.getJsonArray("byteArray").size());
    }
 
-   @Test public void testAddByteArrayToJsonArray() {
+   @Test
+   public void testAddByteArrayToJsonArray() {
       JsonArrayBuilder jsonArrayBuilder = JsonLoader.createArrayBuilder();
       byte[] bytes = {0x0a, 0x1b, 0x2c, 0x3d, 0x4e, 0x5f};
 
@@ -78,5 +79,45 @@ public class JsonUtilTest {
       JsonArray jsonArray = jsonArrayBuilder.build();
 
       Assert.assertEquals(1, jsonArray.size());
+   }
+
+   @Test
+   public void testTruncateUsingStringWithValueSizeLimit() {
+      String prefix = "12345";
+      int valueSizeLimit = prefix.length();
+      String remaining = "remaining";
+
+      String truncated = (String) JsonUtil.truncate(prefix + remaining, valueSizeLimit);
+
+      String expected = prefix + ", + " + String.valueOf(remaining.length()) + " more";
+      Assert.assertEquals(expected, truncated);
+   }
+
+   @Test
+   public void testTruncateUsingStringWithoutValueSizeLimit() {
+      String input = "testTruncateUsingStringWithoutValueSizeLimit";
+      String notTruncated = (String) JsonUtil.truncate(input, -1);
+
+      Assert.assertEquals(input, notTruncated);
+   }
+
+   @Test
+   public void testTruncateStringWithValueSizeLimit() {
+      String prefix = "12345";
+      int valueSizeLimit = prefix.length();
+      String remaining = "remaining";
+
+      String truncated = JsonUtil.truncateString(prefix + remaining, valueSizeLimit);
+
+      String expected = prefix + ", + " + String.valueOf(remaining.length()) + " more";
+      Assert.assertEquals(expected, truncated);
+   }
+
+   @Test
+   public void testTruncateStringWithoutValueSizeLimit() {
+      String input = "testTruncateStringWithoutValueSizeLimit";
+      String notTruncated = JsonUtil.truncateString(input, -1);
+
+      Assert.assertEquals(input, notTruncated);
    }
 }

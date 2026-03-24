@@ -908,14 +908,6 @@ public class AcknowledgementTest extends JMSTestCase {
       ProxyAssertSupport.assertFalse(listener.failed);
    }
 
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
-
    private abstract class LatchListener implements MessageListener {
 
       protected CountDownLatch latch = new CountDownLatch(1);

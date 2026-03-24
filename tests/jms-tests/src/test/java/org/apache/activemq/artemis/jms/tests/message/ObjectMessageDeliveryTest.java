@@ -32,15 +32,8 @@ import org.junit.Test;
  * ObjectMessageDeliveryTest
  */
 public class ObjectMessageDeliveryTest extends ActiveMQServerTestCase {
-   // Constants -----------------------------------------------------
 
-   // Static --------------------------------------------------------
 
-   // Attributes ----------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    static class TestObject implements Serializable {
 
@@ -117,13 +110,5 @@ public class ObjectMessageDeliveryTest extends ActiveMQServerTestCase {
          }
       }
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

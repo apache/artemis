@@ -33,8 +33,6 @@ public class PacketsConfirmedMessage extends PacketImpl {
       super(PACKETS_CONFIRMED);
    }
 
-   // Public --------------------------------------------------------
-
    public int getCommandID() {
       return commandID;
    }

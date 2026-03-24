@@ -30,9 +30,7 @@ import java.io.EOFException;
 import java.io.IOException;
 
 public class SimpleJMSBytesMessage extends SimpleJMSMessage implements BytesMessage {
-   // Static -------------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
    protected byte[] internalArray;
 
@@ -46,7 +44,6 @@ public class SimpleJMSBytesMessage extends SimpleJMSMessage implements BytesMess
 
    private transient DataInputStream m;
 
-   // Constructor ---------------------------------------------------
 
    public SimpleJMSBytesMessage() {
       ostream = new ByteArrayOutputStream();
@@ -399,13 +396,9 @@ public class SimpleJMSBytesMessage extends SimpleJMSMessage implements BytesMess
       return internalArray.length;
    }
 
-   // Public --------------------------------------------------------
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
-   // Private -------------------------------------------------------
 
    /**
     * Check the message is readable
@@ -425,5 +418,4 @@ public class SimpleJMSBytesMessage extends SimpleJMSMessage implements BytesMess
       }
    }
 
-   // Inner classes -------------------------------------------------
 }

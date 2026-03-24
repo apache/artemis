@@ -55,7 +55,6 @@ public class BufferSplitter {
          this.length = length;
       }
 
-      // Public --------------------------------------------------------
 
       @Override
       public void decode(final ActiveMQBuffer buffer) {

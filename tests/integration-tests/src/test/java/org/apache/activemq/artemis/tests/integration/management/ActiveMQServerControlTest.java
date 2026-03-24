@@ -81,6 +81,7 @@ import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.ServerConsumer;
 import org.apache.activemq.artemis.core.server.ServerSession;
 import org.apache.activemq.artemis.core.server.impl.AddressInfo;
+import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.settings.impl.DeletionPolicy;
 import org.apache.activemq.artemis.core.settings.impl.SlowConsumerPolicy;
 import org.apache.activemq.artemis.core.transaction.impl.XidImpl;
@@ -113,9 +114,6 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
    @Rule
    public RetryRule retryRule = new RetryRule(0);
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    protected boolean legacyCreateQueue;
 
@@ -134,7 +132,6 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       this.legacyCreateQueue = legacyCreateQueue;
    }
 
-   // Static --------------------------------------------------------
 
    private static boolean contains(final String name, final String[] strings) {
       boolean found = false;
@@ -147,9 +144,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       return found;
    }
 
-   // Constructors --------------------------------------------------
 
-   // Public --------------------------------------------------------
 
    public boolean usingCore() {
       return false;
@@ -501,6 +496,35 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       Assert.assertEquals(address.toString(), addressControl.getAddress());
 
       serverControl.destroyQueue(name.toString(), true, true);
+
+      checkNoResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name, RoutingType.ANYCAST));
+      checkNoResource(ObjectNameBuilder.DEFAULT.getAddressObjectName(address));
+   }
+
+   @Test
+   public void testCreateAndDestroyQueueWithAutoDeleteAddress() throws Exception {
+      server.getAddressSettingsRepository().addMatch("#", new AddressSettings().setAutoDeleteAddresses(false));
+      SimpleString address = RandomUtil.randomSimpleString();
+      SimpleString name = RandomUtil.randomSimpleString();
+
+      ActiveMQServerControl serverControl = createManagementControl();
+
+      checkNoResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name, RoutingType.ANYCAST));
+      if (legacyCreateQueue) {
+         serverControl.createQueue(address.toString(), "ANYCAST", name.toString(), null, true, -1, false, true);
+      } else {
+         serverControl.createQueue(new QueueConfiguration(name).setAddress(address).setRoutingType(RoutingType.ANYCAST).setAutoCreateAddress(true).toJSON());
+      }
+
+      checkResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name, RoutingType.ANYCAST));
+      QueueControl queueControl = ManagementControlHelper.createQueueControl(address, name, RoutingType.ANYCAST, mbeanServer);
+      Assert.assertEquals(address.toString(), queueControl.getAddress());
+      Assert.assertEquals(name.toString(), queueControl.getName());
+      Assert.assertNull(queueControl.getFilter());
+      Assert.assertEquals(true, queueControl.isDurable());
+      Assert.assertEquals(false, queueControl.isTemporary());
+
+      serverControl.destroyQueue(name.toString(), false, true);
 
       checkNoResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name, RoutingType.ANYCAST));
       checkNoResource(ObjectNameBuilder.DEFAULT.getAddressObjectName(address));
@@ -4283,12 +4307,10 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       }
    }
 
-   // Package protected ---------------------------------------------
    interface ScaleDownHandler {
 
       void scaleDown(ActiveMQServerControl control) throws Exception;
    }
-   // Protected -----------------------------------------------------
 
    @Override
    @Before
@@ -4320,7 +4342,6 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       return ManagementControlHelper.createActiveMQServerControl(mbeanServer);
    }
 
-   // Private -------------------------------------------------------
 
    private String createJsonFilter(String fieldName, String operationName, String value) {
       HashMap<String, Object> filterMap = new HashMap<>();
@@ -4365,7 +4386,6 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       }
       session.commit();
    }
-   // Inner classes -------------------------------------------------
 
 }
 

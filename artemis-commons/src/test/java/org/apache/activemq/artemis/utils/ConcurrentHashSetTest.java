@@ -25,19 +25,12 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class ConcurrentHashSetTest extends Assert {
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
    private ConcurrentSet<String> set;
 
    private String element;
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testAdd() throws Exception {
@@ -112,19 +105,9 @@ public class ConcurrentHashSetTest extends Assert {
       }
    }
 
-   // TestCase overrides --------------------------------------------
-
    @Before
    public void setUp() throws Exception {
       set = new ConcurrentHashSet<>();
       element = RandomUtil.randomString();
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 }

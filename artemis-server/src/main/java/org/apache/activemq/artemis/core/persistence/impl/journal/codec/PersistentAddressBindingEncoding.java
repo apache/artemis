@@ -25,6 +25,8 @@ import org.apache.activemq.artemis.core.persistence.AddressBindingInfo;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.utils.DataConstants;
 
+import static org.apache.activemq.artemis.utils.Preconditions.checkNotNull;
+
 public class PersistentAddressBindingEncoding implements EncodingSupport, AddressBindingInfo {
 
    public long id;
@@ -59,6 +61,9 @@ public class PersistentAddressBindingEncoding implements EncodingSupport, Addres
    public PersistentAddressBindingEncoding(final SimpleString name,
                                            final EnumSet<RoutingType> routingTypes,
                                            final boolean autoCreated) {
+      checkNotNull(name);
+      checkNotNull(routingTypes);
+
       this.name = name;
       this.routingTypes = routingTypes;
       this.autoCreated = autoCreated;

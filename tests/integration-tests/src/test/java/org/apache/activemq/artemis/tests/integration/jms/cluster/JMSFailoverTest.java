@@ -85,9 +85,7 @@ public class JMSFailoverTest extends ActiveMQTestBase {
 
    private static final Logger log = Logger.getLogger(JMSFailoverTest.class);
 
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
    protected InVMNamingContext ctx1 = new InVMNamingContext();
 
@@ -115,11 +113,6 @@ public class JMSFailoverTest extends ActiveMQTestBase {
 
    private TransportConfiguration backupAcceptortc;
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testCreateQueue() throws Exception {
@@ -512,9 +505,7 @@ public class JMSFailoverTest extends ActiveMQTestBase {
       f.set(locator, value);
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
    @Override
    @Before
@@ -569,9 +560,7 @@ public class JMSFailoverTest extends ActiveMQTestBase {
       JMSUtil.waitForServer(backupServer);
    }
 
-   // Private -------------------------------------------------------
 
-   // Inner classes -------------------------------------------------
 
    private static class MyExceptionListener implements ExceptionListener {
 

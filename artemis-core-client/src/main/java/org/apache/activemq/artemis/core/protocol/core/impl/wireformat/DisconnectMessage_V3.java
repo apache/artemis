@@ -46,8 +46,6 @@ public class DisconnectMessage_V3 extends DisconnectMessage {
       super(DISCONNECT_V3);
    }
 
-   // Public --------------------------------------------------------
-
    public DisconnectReason getReason() {
       return reason;
    }

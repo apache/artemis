@@ -20,27 +20,15 @@ import org.apache.activemq.artemis.tests.integration.cluster.reattach.RandomReat
 
 public class RandomReattachStressTest extends RandomReattachTest {
 
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
-   // Static --------------------------------------------------------
 
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
 
    @Override
    protected int getNumIterations() {
       return 100;
    }
 
-   // Private -------------------------------------------------------
 
-   // Inner classes -------------------------------------------------
 
 }

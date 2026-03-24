@@ -145,11 +145,8 @@ public class MeasurePagingMultiThreadTest extends ActiveMQTestBase {
 
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
-   // Private -------------------------------------------------------
 
    /**
     * @param adr
@@ -198,6 +195,5 @@ public class MeasurePagingMultiThreadTest extends ActiveMQTestBase {
       }
    }
 
-   // Inner classes -------------------------------------------------
 
 }

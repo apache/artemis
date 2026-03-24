@@ -49,8 +49,6 @@ public class CreateAddressMessage extends PacketImpl {
       super(CREATE_ADDRESS);
    }
 
-   // Public --------------------------------------------------------
-
    @Override
    protected String getPacketString() {
       StringBuffer buff = new StringBuffer(super.getPacketString());

@@ -46,12 +46,14 @@ import org.apache.activemq.artemis.api.core.client.ClientMessage;
 import org.apache.activemq.artemis.api.core.client.ClientProducer;
 import org.apache.activemq.artemis.api.core.client.ClientSession;
 import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
+import org.apache.activemq.artemis.api.core.client.FailoverEventType;
 import org.apache.activemq.artemis.api.core.client.MessageHandler;
 import org.apache.activemq.artemis.api.core.client.ServerLocator;
 import org.apache.activemq.artemis.api.core.client.SessionFailureListener;
 import org.apache.activemq.artemis.core.client.impl.ClientSessionFactoryImpl;
 import org.apache.activemq.artemis.core.client.impl.ClientSessionFactoryInternal;
 import org.apache.activemq.artemis.core.client.impl.ClientSessionInternal;
+import org.apache.activemq.artemis.core.client.impl.ServerLocatorImpl;
 import org.apache.activemq.artemis.core.protocol.core.Channel;
 import org.apache.activemq.artemis.core.protocol.core.Packet;
 import org.apache.activemq.artemis.core.protocol.core.impl.ActiveMQSessionContext;
@@ -59,6 +61,8 @@ import org.apache.activemq.artemis.core.protocol.core.impl.ChannelImpl;
 import org.apache.activemq.artemis.core.protocol.core.impl.PacketImpl;
 import org.apache.activemq.artemis.core.protocol.core.impl.RemotingConnectionImpl;
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.ActiveMQExceptionMessage;
+import org.apache.activemq.artemis.core.server.cluster.BackupManager;
+import org.apache.activemq.artemis.core.server.cluster.ClusterController;
 import org.apache.activemq.artemis.core.server.cluster.ha.BackupPolicy;
 import org.apache.activemq.artemis.core.server.cluster.ha.HAPolicy;
 import org.apache.activemq.artemis.core.server.cluster.ha.ReplicaPolicy;
@@ -67,7 +71,9 @@ import org.apache.activemq.artemis.core.server.cluster.ha.ReplicationBackupPolic
 import org.apache.activemq.artemis.core.server.cluster.ha.ReplicationPrimaryPolicy;
 import org.apache.activemq.artemis.core.server.cluster.ha.SharedStoreMasterPolicy;
 import org.apache.activemq.artemis.core.server.cluster.ha.SharedStoreSlavePolicy;
+import org.apache.activemq.artemis.core.server.cluster.impl.ClusterConnectionImpl;
 import org.apache.activemq.artemis.core.server.files.FileMoveManager;
+import org.apache.activemq.artemis.core.server.impl.ActiveMQServerImpl;
 import org.apache.activemq.artemis.core.server.impl.InVMNodeManager;
 import org.apache.activemq.artemis.core.transaction.impl.XidImpl;
 import org.apache.activemq.artemis.jms.client.ActiveMQTextMessage;
@@ -80,6 +86,7 @@ import org.apache.activemq.artemis.utils.RetryRule;
 import org.apache.activemq.artemis.utils.Wait;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -2459,9 +2466,57 @@ public class FailoverTest extends FailoverTestBase {
       Assert.assertEquals("message0", cm.getBodyBuffer().readString());
    }
 
-   // Package protected ---------------------------------------------
+   @Test(timeout = 120000)
+   public void testBackupConnections() throws Exception {
+      Assume.assumeTrue(backupServer.getServer().getHAPolicy().isBackup());
 
-   // Protected -----------------------------------------------------
+      createSessionFactory();
+
+      CountDownLatch latch = new CountDownLatch(1);
+      sf.addFailoverListener(eventType -> {
+         if (eventType == FailoverEventType.FAILOVER_COMPLETED) {
+            latch.countDown();
+         }
+      });
+
+      BackupManager backupManager = ((ActiveMQServerImpl)backupServer.getServer()).getBackupManager();
+      ClusterController backupClusterController = backupServer.getServer().getClusterManager().getClusterController();
+      ClusterConnectionImpl backupClusterConnection = (ClusterConnectionImpl)backupServer.getServer().getClusterManager().getClusterConnections().stream().findFirst().get();
+
+      for (BackupManager.BackupConnector backupConnector : backupManager.getBackupConnectors()) {
+         for (ClientSessionFactoryInternal factory : ((ServerLocatorImpl)backupConnector.getBackupServerLocator()).getFactories()) {
+            Assert.assertNotNull(factory.getConnection());
+         }
+      }
+
+      for (ClientSessionFactoryInternal factory : ((ServerLocatorImpl)backupClusterController.getDefaultLocator()).getFactories()) {
+         Assert.assertNotNull(factory.getConnection());
+      }
+
+      Assert.assertNull(backupClusterConnection.getServerLocator());
+
+      Assert.assertNotNull(sf.getConnection());
+
+      crash();
+
+      latch.await();
+
+      for (BackupManager.BackupConnector backupConnector : backupManager.getBackupConnectors()) {
+         Assert.assertNull(backupConnector.getBackupServerLocator());
+      }
+
+      for (ClientSessionFactoryInternal factory : ((ServerLocatorImpl)backupServer.getServer().getClusterManager().getClusterController().getDefaultLocator()).getFactories()) {
+         Assert.assertNull(factory.getConnection());
+      }
+
+      for (ClientSessionFactoryInternal factory : ((ServerLocatorImpl)backupClusterConnection.getServerLocator()).getFactories()) {
+         Assert.assertNull(factory.getConnection());
+      }
+
+      Assert.assertNotNull(sf.getConnection());
+   }
+
+
 
    @Override
    protected TransportConfiguration getAcceptorTransportConfiguration(final boolean live) {
@@ -2518,6 +2573,5 @@ public class FailoverTest extends FailoverTestBase {
       return session;
    }
 
-   // Inner classes -------------------------------------------------
 
 }

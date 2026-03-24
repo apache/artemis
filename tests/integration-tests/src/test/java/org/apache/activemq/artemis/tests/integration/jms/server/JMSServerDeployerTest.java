@@ -37,15 +37,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class JMSServerDeployerTest extends ActiveMQTestBase {
-   // Constants -----------------------------------------------------
+
 
    private static final Logger log = org.jboss.logging.Logger.getLogger(JMSServerDeployerTest.class);
 
-   // Attributes ----------------------------------------------------
-
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
 
    private JMSServerManager jmsServer;
 
@@ -53,7 +48,6 @@ public class JMSServerDeployerTest extends ActiveMQTestBase {
 
    private Configuration config;
 
-   // Public --------------------------------------------------------
 
    @Test
    public void testDeployUnusualQueueNames() throws Exception {
@@ -107,9 +101,7 @@ public class JMSServerDeployerTest extends ActiveMQTestBase {
       Assert.assertEquals(jmsTopicName, topic.getTopicName());
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
    @Override
    @Before
@@ -128,8 +120,6 @@ public class JMSServerDeployerTest extends ActiveMQTestBase {
       jmsServer.start();
    }
 
-   // Private -------------------------------------------------------
 
-   // Inner classes -------------------------------------------------
 
 }

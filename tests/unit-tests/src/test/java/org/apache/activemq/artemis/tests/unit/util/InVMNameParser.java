@@ -24,11 +24,10 @@ import java.io.Serializable;
 import java.util.Properties;
 
 public class InVMNameParser implements NameParser, Serializable {
-   // Constants -----------------------------------------------------
 
    private static final long serialVersionUID = 2925203703371001031L;
 
-   // Static --------------------------------------------------------
+
 
    static Properties syntax;
 
@@ -39,11 +38,8 @@ public class InVMNameParser implements NameParser, Serializable {
       InVMNameParser.syntax.put("jndi.syntax.separator", "/");
    }
 
-   // Attributes ----------------------------------------------------
 
-   // Constructors --------------------------------------------------
 
-   // Public --------------------------------------------------------
 
    public static Properties getSyntax() {
       return InVMNameParser.syntax;
@@ -53,13 +49,5 @@ public class InVMNameParser implements NameParser, Serializable {
    public Name parse(final String name) throws NamingException {
       return new CompoundName(name, InVMNameParser.syntax);
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

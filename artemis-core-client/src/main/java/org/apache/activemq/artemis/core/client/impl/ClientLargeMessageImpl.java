@@ -55,8 +55,6 @@ public final class ClientLargeMessageImpl extends ClientMessageImpl implements C
       super();
    }
 
-   // Public --------------------------------------------------------
-
    @Override
    public int getEncodeSize() {
       if (writableBuffer != null) {
@@ -159,8 +157,6 @@ public final class ClientLargeMessageImpl extends ClientMessageImpl implements C
          largeMessageController.saveBuffer(new ActiveMQOutputStream(writableBuffer));
       }
    }
-
-   // Inner classes -------------------------------------------------
 
    private static class ActiveMQOutputStream extends OutputStream {
 

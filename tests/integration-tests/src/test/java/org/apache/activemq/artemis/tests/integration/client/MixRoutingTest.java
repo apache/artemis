@@ -37,19 +37,14 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class MixRoutingTest extends SingleServerTestBase {
-   // Constants -----------------------------------------------------
+
 
    private static final Logger log = Logger.getLogger(MixRoutingTest.class);
 
    private static final long CONNECTION_TTL = 2000;
 
-   // Attributes ----------------------------------------------------
 
-   // Static --------------------------------------------------------
 
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Override
    protected ActiveMQServer createServer() throws Exception {

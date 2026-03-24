@@ -53,17 +53,9 @@ import org.junit.Test;
 
 public class LargeMessageBufferTest extends ActiveMQTestBase {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    static int tmpFileCounter = 0;
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Override
    @Before
@@ -476,6 +468,33 @@ public class LargeMessageBufferTest extends ActiveMQTestBase {
    }
 
    @Test
+   public void testStreamDataWaitCompletionOnException() throws Exception {
+      final LargeMessageControllerImpl outBuffer = new LargeMessageControllerImpl(new FakeConsumerInternal(), 5, 5000);
+
+      class FakeOutputStream extends OutputStream {
+
+         @Override
+         public void write(int b) throws IOException {
+            throw new IOException();
+         }
+      }
+
+      outBuffer.setOutputStream(new FakeOutputStream());
+
+      CountDownLatch latch = new CountDownLatch(1);
+      new Thread(() -> {
+         try {
+            outBuffer.waitCompletion(0);
+            fail("supposed to throw an exception");
+         } catch (ActiveMQException e) {
+            latch.countDown();
+         }
+      }).start();
+      outBuffer.addPacket(RandomUtil.randomBytes(), 1, true);
+      assertTrue("The IOException should trigger an immediate failure", latch.await(3, TimeUnit.SECONDS));
+   }
+
+   @Test
    public void testStreamDataWaitCompletionOnSlowComingBuffer() throws Exception {
       final LargeMessageControllerImpl outBuffer = new LargeMessageControllerImpl(new FakeConsumerInternal(), 5, 1000);
 
@@ -635,14 +654,6 @@ public class LargeMessageBufferTest extends ActiveMQTestBase {
          Assert.assertEquals(i, bytes[i - 1]);
       }
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
    static class FakeConsumerInternal implements ClientConsumerInternal {
 

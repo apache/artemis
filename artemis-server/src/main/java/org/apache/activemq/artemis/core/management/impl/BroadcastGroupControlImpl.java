@@ -25,15 +25,10 @@ import org.apache.activemq.artemis.logs.AuditLogger;
 
 public class BroadcastGroupControlImpl extends BaseBroadcastGroupControlImpl implements BroadcastGroupControl {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    private UDPBroadcastEndpointFactory endpointFactory;
 
-   // Static --------------------------------------------------------
 
-   // Constructors --------------------------------------------------
 
    public BroadcastGroupControlImpl(final BroadcastGroup broadcastGroup,
                                     final StorageManager storageManager,
@@ -88,14 +83,5 @@ public class BroadcastGroupControlImpl extends BaseBroadcastGroupControlImpl imp
    // MessagingComponentControlMBean implementation -----------------
 
 
-   // Public --------------------------------------------------------
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

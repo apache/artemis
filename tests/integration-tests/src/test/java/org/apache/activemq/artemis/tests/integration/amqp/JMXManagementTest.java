@@ -80,12 +80,22 @@ public class JMXManagementTest extends JMSClientTestSupport {
       }
 
       //before commit
-      assertEquals(num, queueControl.getDeliveringCount());
+      Wait.assertEquals(num, () -> queueControl.getDeliveringCount());
 
-      Map<String, Map<String, Object>[]> result = queueControl.listDeliveringMessages();
-      assertEquals(1, result.size());
+      Map<String, Map<String, Object>[]> result = null;
+      Map<String, Object>[] msgMaps = null;
+      // we might need some retry, and Wait.assert won't be as efficient on this case
+      for (int i = 0; i < 10; i++) {
+         result = queueControl.listDeliveringMessages();
+         assertEquals(1, result.size());
 
-      Map<String, Object>[] msgMaps = result.entrySet().iterator().next().getValue();
+         msgMaps = result.entrySet().iterator().next().getValue();
+         if (msgMaps.length == num) {
+            break;
+         } else {
+            Thread.sleep(100);
+         }
+      }
 
       assertEquals(num, msgMaps.length);
 

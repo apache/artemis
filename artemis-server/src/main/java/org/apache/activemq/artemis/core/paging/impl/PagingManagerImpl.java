@@ -91,11 +91,7 @@ public final class PagingManagerImpl implements PagingManager {
 
    private final SimpleString managementAddress;
 
-   // Static
-   // --------------------------------------------------------------------------------------------------------------------------
 
-   // Constructors
-   // --------------------------------------------------------------------------------------------------------------------
 
 
    // for tests.. not part of the API

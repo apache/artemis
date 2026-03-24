@@ -35,19 +35,9 @@ import org.junit.Test;
  * which go to ConnectionClosedTest.
  */
 public class ConnectionTest extends JMSTestCase {
-   // Constants -----------------------------------------------------
 
    private static final JmsTestLogger log = JmsTestLogger.LOGGER;
 
-   // Static --------------------------------------------------------
-
-   // Attributes ----------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // TestCase overrides -------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testManyConnections() throws Exception {
@@ -292,14 +282,6 @@ public class ConnectionTest extends JMSTestCase {
          queueConnection.close();
       }
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
    static class MyExceptionListener implements ExceptionListener {
 

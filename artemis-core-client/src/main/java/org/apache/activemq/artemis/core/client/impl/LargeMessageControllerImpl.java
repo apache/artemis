@@ -50,11 +50,9 @@ import org.apache.activemq.artemis.utils.UTF8Util;
  * saveStream are called.
  */
 public class LargeMessageControllerImpl implements LargeMessageController {
-   // Constants -----------------------------------------------------
 
    private static final String READ_ONLY_ERROR_MESSAGE = "This is a read-only buffer, setOperations are not supported";
 
-   // Attributes ----------------------------------------------------
 
    private final ClientConsumerInternal consumerInternal;
 
@@ -94,9 +92,6 @@ public class LargeMessageControllerImpl implements LargeMessageController {
    private final FileCache fileCache;
 
    private boolean local = false;
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
 
    public LargeMessageControllerImpl(final ClientConsumerInternal consumerInternal,
                                      final long totalSize,
@@ -126,8 +121,6 @@ public class LargeMessageControllerImpl implements LargeMessageController {
       }
       this.bufferSize = bufferSize;
    }
-
-   // Public --------------------------------------------------------
 
    public void setLocal(boolean local) {
       this.local = local;
@@ -169,14 +162,14 @@ public class LargeMessageControllerImpl implements LargeMessageController {
 
                flowControlCredit = flowControlSize;
 
-               notifyAll();
-
                if (streamEnded) {
                   outStream.close();
                }
             } catch (Exception e) {
                ActiveMQClientLogger.LOGGER.errorAddingPacket(e);
                handledException = e;
+            } finally {
+               notifyAll();
             }
          } else {
             if (fileCache != null) {
@@ -316,6 +309,11 @@ public class LargeMessageControllerImpl implements LargeMessageController {
 
       return streamEnded;
 
+   }
+
+   @Override
+   public LargeData take() throws InterruptedException {
+      return largeMessageData.take();
    }
 
    /**
@@ -1328,7 +1326,7 @@ public class LargeMessageControllerImpl implements LargeMessageController {
       throw new IllegalAccessError(LargeMessageControllerImpl.READ_ONLY_ERROR_MESSAGE);
    }
 
-   private static class LargeData {
+   public static class LargeData {
 
       final byte[] chunk;
       final int flowControlSize;

@@ -38,8 +38,6 @@ public final class SimpleString implements CharSequence, Serializable, Comparabl
    private static final SimpleString EMPTY = new SimpleString("");
    private static final long serialVersionUID = 4204223851422244307L;
 
-   // Attributes
-   // ------------------------------------------------------------------------
    private final byte[] data;
 
    private transient int hash;
@@ -49,8 +47,6 @@ public final class SimpleString implements CharSequence, Serializable, Comparabl
 
    private transient String[] paths;
 
-   // Static
-   // ----------------------------------------------------------------------
 
    /**
     * Returns a SimpleString constructed from the {@code string} parameter.
@@ -74,8 +70,6 @@ public final class SimpleString implements CharSequence, Serializable, Comparabl
       return pool.getOrCreate(string);
    }
 
-   // Constructors
-   // ----------------------------------------------------------------------
 
    /**
     * creates a SimpleString from a conventional String
@@ -225,9 +219,6 @@ public final class SimpleString implements CharSequence, Serializable, Comparabl
    public int compareTo(final SimpleString o) {
       return toString().compareTo(o.toString());
    }
-
-   // Public
-   // ---------------------------------------------------------------------------
 
    /**
     * returns the underlying byte array of this SimpleString

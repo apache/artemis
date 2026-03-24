@@ -34,21 +34,15 @@ import javax.jms.TextMessage;
  */
 public class TextReverserService implements MessageListener {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    private final Session session;
 
    private final Connection connection;
 
-   // Static --------------------------------------------------------
-
    private static String reverse(final String text) {
       return new StringBuffer(text).reverse().toString();
    }
 
-   // Constructors --------------------------------------------------
 
    public TextReverserService(final ConnectionFactory cf, final Destination destination) throws JMSException {
       // create a JMS connection
@@ -87,7 +81,6 @@ public class TextReverserService implements MessageListener {
       }
    }
 
-   // Public --------------------------------------------------------
 
    public void close() {
       if (connection != null) {
@@ -99,13 +92,5 @@ public class TextReverserService implements MessageListener {
          }
       }
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

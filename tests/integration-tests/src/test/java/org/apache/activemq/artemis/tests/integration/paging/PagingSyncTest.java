@@ -46,9 +46,7 @@ public class PagingSyncTest extends ActiveMQTestBase {
 
    private static final int PAGE_SIZE = 10 * 1024;
 
-   // Attributes ----------------------------------------------------
 
-   // Static --------------------------------------------------------
 
    static final SimpleString ADDRESS = new SimpleString("SimpleAddress");
 
@@ -101,13 +99,5 @@ public class PagingSyncTest extends ActiveMQTestBase {
 
       session.close();
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

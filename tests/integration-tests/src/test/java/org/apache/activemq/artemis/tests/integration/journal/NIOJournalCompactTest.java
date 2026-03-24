@@ -49,6 +49,7 @@ import org.apache.activemq.artemis.core.journal.impl.dataformat.ByteArrayEncodin
 import org.apache.activemq.artemis.core.message.impl.CoreMessage;
 import org.apache.activemq.artemis.core.persistence.impl.journal.JournalStorageManager;
 import org.apache.activemq.artemis.core.persistence.impl.journal.OperationContextImpl;
+import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
 import org.apache.activemq.artemis.tests.unit.core.journal.impl.JournalImplTestBase;
 import org.apache.activemq.artemis.tests.unit.core.journal.impl.fakes.SimpleEncoding;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
@@ -240,6 +241,54 @@ public class NIOJournalCompactTest extends JournalImplTestBase {
       assertEquals(1, records1.size());
 
    }
+
+   @Test
+   public void testInvalidDataCompact() throws Exception {
+
+      setup(2, 60 * 1024, false);
+
+      final byte recordType = (byte) 0;
+
+      journal = new JournalImpl(fileSize, minFiles, minFiles, 0, 0, fileFactory, filePrefix, fileExtension, maxAIO);
+
+      AtomicBoolean failed = new AtomicBoolean(false);
+      journal.setCriticalErrorListener((a, b, c) -> {
+         new Exception("failed").printStackTrace();
+         failed.set(true);
+      });
+
+      journal.start();
+
+      journal.loadInternalOnly();
+
+      journal.appendAddRecord(1, recordType, "test".getBytes(), true);
+
+      journal.appendUpdateRecord(1, recordType, "update".getBytes(), true);
+
+      // this is simulating a bug on the journal usage
+      // compacting should just ignore the record
+      journal.appendUpdateRecordTransactional(3, -1, recordType, "upd".getBytes());
+      journal.appendPrepareRecord(3, "data".getBytes(), true);
+
+      journal.appendUpdateRecordTransactional(4, -1, recordType, "upd".getBytes());
+      journal.appendCommitRecord(3, true);
+
+
+      try {
+         AssertionLoggerHandler.startCapture();
+         journal.testCompact();
+         Assert.assertTrue(AssertionLoggerHandler.findText("must be"));
+         Assert.assertFalse(failed.get());
+         AssertionLoggerHandler.clear();
+         journal.testCompact();
+         Assert.assertFalse(AssertionLoggerHandler.findText("must be")); // the invalid records should be cleared during a compact
+      } finally {
+         AssertionLoggerHandler.stopCapture();
+      }
+
+   }
+
+
 
    @Test
    public void testCompactPrepareRestart() throws Exception {

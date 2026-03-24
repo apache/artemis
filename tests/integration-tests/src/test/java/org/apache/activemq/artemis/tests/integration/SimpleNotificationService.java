@@ -25,15 +25,9 @@ import org.apache.activemq.artemis.core.server.management.NotificationService;
 
 public class SimpleNotificationService implements NotificationService {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    private final List<NotificationListener> listeners = new ArrayList<>();
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
 
    // NotificationService implementation ----------------------------
 
@@ -58,15 +52,6 @@ public class SimpleNotificationService implements NotificationService {
       }
    }
 
-   // Public --------------------------------------------------------
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
    public static class Listener implements NotificationListener {
 

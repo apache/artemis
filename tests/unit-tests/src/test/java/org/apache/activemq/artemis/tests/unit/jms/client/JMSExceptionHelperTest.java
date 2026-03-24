@@ -34,15 +34,8 @@ import static org.apache.activemq.artemis.api.core.ActiveMQExceptionType.GENERIC
 import static org.apache.activemq.artemis.api.core.ActiveMQExceptionType.INVALID_FILTER_EXPRESSION;
 
 public class JMSExceptionHelperTest extends ActiveMQTestBase {
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testCONNECTION_TIMEDOUT() throws Exception {

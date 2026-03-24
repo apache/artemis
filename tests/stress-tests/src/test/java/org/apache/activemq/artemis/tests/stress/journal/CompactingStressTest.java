@@ -38,9 +38,7 @@ import org.junit.Test;
 
 public class CompactingStressTest extends ActiveMQTestBase {
 
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
    private static final String AD1 = "ad1";
 
@@ -60,11 +58,8 @@ public class CompactingStressTest extends ActiveMQTestBase {
 
    private ClientSessionFactory sf;
 
-   // Static --------------------------------------------------------
 
-   // Constructors --------------------------------------------------
 
-   // Public --------------------------------------------------------
 
    @Test
    public void testCleanupAIO() throws Throwable {

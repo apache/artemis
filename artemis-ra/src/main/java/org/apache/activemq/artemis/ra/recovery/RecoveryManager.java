@@ -79,7 +79,7 @@ public final class RecoveryManager {
 
       for (String locatorClasse : locatorClasses) {
          try {
-            ServiceLoader<ActiveMQRegistry> sl = ServiceLoader.load(ActiveMQRegistry.class);
+            ServiceLoader<ActiveMQRegistry> sl = ServiceLoader.load(ActiveMQRegistry.class, RecoveryManager.class.getClassLoader());
             if (sl.iterator().hasNext()) {
                registry = sl.iterator().next();
             } else {

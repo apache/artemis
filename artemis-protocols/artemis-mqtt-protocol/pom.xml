@@ -52,12 +52,6 @@
          <groupId>org.apache.activemq</groupId>
          <artifactId>artemis-server</artifactId>
          <version>${project.version}</version>
-         <exclusions>
-            <exclusion>
-               <groupId>io.netty</groupId>
-               <artifactId>netty-all</artifactId>
-            </exclusion>
-         </exclusions>
       </dependency>
       <dependency>
          <groupId>org.apache.activemq</groupId>
@@ -93,7 +87,6 @@
       <dependency>
          <groupId>io.netty</groupId>
          <artifactId>netty-codec-mqtt</artifactId>
-         <version>${netty.version}</version>
       </dependency>
       <dependency>
          <groupId>org.osgi</groupId>

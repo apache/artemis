@@ -22,15 +22,8 @@ import org.apache.activemq.artemis.jms.tests.util.ProxyAssertSupport;
 import org.junit.Test;
 
 public class JMSTypeHeaderTest extends MessageHeaderTestBase {
-   // Constants -----------------------------------------------------
 
-   // Static --------------------------------------------------------
 
-   // Attributes ----------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testJMSType() throws Exception {
@@ -48,13 +41,5 @@ public class JMSTypeHeaderTest extends MessageHeaderTestBase {
       queueProducer.send(m);
       ProxyAssertSupport.assertEquals(null, queueConsumer.receive(1000).getJMSType());
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

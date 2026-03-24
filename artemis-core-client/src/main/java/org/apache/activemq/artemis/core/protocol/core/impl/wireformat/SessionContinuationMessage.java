@@ -41,8 +41,6 @@ public abstract class SessionContinuationMessage extends PacketImpl {
       super(type);
    }
 
-   // Public --------------------------------------------------------
-
    /**
     * @return the body
     */

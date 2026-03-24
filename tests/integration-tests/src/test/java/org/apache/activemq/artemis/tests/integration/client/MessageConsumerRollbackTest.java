@@ -73,15 +73,7 @@ public class MessageConsumerRollbackTest extends ActiveMQTestBase {
       session.close();
    }
 
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
-
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testRollbackMultipleConsumers() throws Exception {

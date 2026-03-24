@@ -25,6 +25,7 @@ import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.ICoreMessage;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.core.client.impl.ClientLargeMessageImpl;
 import org.apache.activemq.artemis.core.message.LargeBodyReader;
 import org.apache.activemq.artemis.core.server.LargeServerMessage;
 import org.apache.activemq.artemis.reader.TextMessageUtil;
@@ -58,7 +59,7 @@ public class XMLMessageExporter {
       xmlWriter.writeStartElement(XmlDataConstants.MESSAGE_BODY);
 
       if (message.isLargeMessage()) {
-         printLargeMessageBody((LargeServerMessage) message);
+         printLargeMessageBody(message);
       } else {
          if (encodeTextMessageUTF8 && message.toCore().getType() == Message.TEXT_TYPE) {
             xmlWriter.writeCData(TextMessageUtil.readBodyText(message.toCore().getReadOnlyBodyBuffer()).toString());
@@ -78,12 +79,18 @@ public class XMLMessageExporter {
       return chunkBytes;
    }
 
-   public void printLargeMessageBody(LargeServerMessage message) throws XMLStreamException {
+   public void printLargeMessageBody(Message message) throws XMLStreamException {
       xmlWriter.writeAttribute(XmlDataConstants.MESSAGE_IS_LARGE, Boolean.TRUE.toString());
       LargeBodyReader encoder = null;
 
       try {
-         encoder = message.toMessage().toCore().getLargeBodyReader();
+         if (message instanceof LargeServerMessage) {
+            encoder = ((LargeServerMessage)message).toMessage().toCore().getLargeBodyReader();
+         } else if (message instanceof ClientLargeMessageImpl) {
+            encoder = ((ClientLargeMessageImpl)message).getLargeBodyReader();
+         } else {
+            throw new RuntimeException("Unrecognized message implementation: " + message.getClass().getName());
+         }
          encoder.open();
          long totalBytesWritten = 0;
          int bufferSize;

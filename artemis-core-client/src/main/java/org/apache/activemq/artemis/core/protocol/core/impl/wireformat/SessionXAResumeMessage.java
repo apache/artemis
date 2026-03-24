@@ -36,8 +36,6 @@ public class SessionXAResumeMessage extends PacketImpl {
       super(SESS_XA_RESUME);
    }
 
-   // Public --------------------------------------------------------
-
    public Xid getXid() {
       return xid;
    }

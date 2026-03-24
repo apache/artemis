@@ -44,24 +44,18 @@ public class SoftValueLongObjectHashMap<V extends SoftValueLongObjectHashMap.Val
 
    private int maxElements;
 
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
-
-   // Static --------------------------------------------------------
 
    public interface ValueCache {
 
       boolean isLive();
    }
 
-   // Constructors --------------------------------------------------
+
 
    public SoftValueLongObjectHashMap(final int maxElements) {
       this.maxElements = maxElements;
    }
-
-   // Public --------------------------------------------------------
 
    public void setMaxElements(final int maxElements) {
       this.maxElements = maxElements;
@@ -336,12 +330,6 @@ public class SoftValueLongObjectHashMap<V extends SoftValueLongObjectHashMap.Val
       return mapDelegate.hashCode();
    }
 
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
    @SuppressWarnings("unchecked")
    private void processQueue() {
       AggregatedSoftReference ref;
@@ -354,8 +342,6 @@ public class SoftValueLongObjectHashMap<V extends SoftValueLongObjectHashMap.Val
    private AggregatedSoftReference createReference(final long key, final V value) {
       return new AggregatedSoftReference(key, value, refQueue);
    }
-
-   // Inner classes -------------------------------------------------
 
    static final class AggregatedSoftReference<V> extends SoftReference<V> {
 

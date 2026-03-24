@@ -53,9 +53,6 @@ import static org.apache.activemq.artemis.api.core.management.CoreNotificationTy
 
 public class NotificationTest extends ActiveMQTestBase {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    private ActiveMQServer server;
 
@@ -66,11 +63,8 @@ public class NotificationTest extends ActiveMQTestBase {
    private SimpleString notifQueue;
    private ServerLocator locator;
 
-   // Static --------------------------------------------------------
 
-   // Constructors --------------------------------------------------
 
-   // Public --------------------------------------------------------
 
    @Test
    public void testBINDING_ADDED() throws Exception {
@@ -430,9 +424,7 @@ public class NotificationTest extends ActiveMQTestBase {
       Assert.assertEquals(notifications[0].getTimestamp(), (long) notifications[0].getObjectProperty(ManagementHelper.HDR_NOTIFICATION_TIMESTAMP));
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
    @Override
    @Before
@@ -462,7 +454,6 @@ public class NotificationTest extends ActiveMQTestBase {
       notifConsumer = session.createConsumer(notifQueue);
    }
 
-   // Private -------------------------------------------------------
 
    private static void flush(final ClientConsumer notifConsumer) throws ActiveMQException {
       ClientMessage message = null;
@@ -495,6 +486,5 @@ public class NotificationTest extends ActiveMQTestBase {
       return messages;
    }
 
-   // Inner classes -------------------------------------------------
 
 }

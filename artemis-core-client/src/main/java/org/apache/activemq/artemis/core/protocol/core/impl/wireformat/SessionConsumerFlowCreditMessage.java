@@ -34,8 +34,6 @@ public class SessionConsumerFlowCreditMessage extends PacketImpl {
       super(SESS_FLOWTOKEN);
    }
 
-   // Public --------------------------------------------------------
-
    public long getConsumerID() {
       return consumerID;
    }

@@ -35,17 +35,12 @@ import org.junit.Test;
 
 public class DivertControlTest extends ManagementTestBase {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    private ActiveMQServer server;
 
    private DivertConfiguration divertConfig;
 
-   // Constructors --------------------------------------------------
 
-   // Public --------------------------------------------------------
 
    @Test
    public void testAttributes() throws Exception {
@@ -92,9 +87,7 @@ public class DivertControlTest extends ManagementTestBase {
       Assert.assertTrue(divertControl.isRetroactiveResource());
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
    @Override
    @Before

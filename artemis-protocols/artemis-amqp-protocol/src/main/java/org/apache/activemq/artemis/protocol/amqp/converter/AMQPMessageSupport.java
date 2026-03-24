@@ -66,6 +66,8 @@ public final class AMQPMessageSupport {
    public static SimpleString HDR_ORIGINAL_ADDRESS_ANNOTATION = SimpleString.toSimpleString("x-opt-ORIG-ADDRESS");
 
    public static final String JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME = "x-opt-jms-reply-to";
+   public static final String X_OPT_DELIVERY_TIME = "x-opt-delivery-time";
+   public static final String X_OPT_DELIVERY_DELAY = "x-opt-delivery-delay";
 
    // Message Properties used to map AMQP to JMS and back
    /**
@@ -85,12 +87,12 @@ public final class AMQPMessageSupport {
    /**
     * Attribute used to mark the Application defined delivery time assigned to the message
     */
-   public static final Symbol SCHEDULED_DELIVERY_TIME = Symbol.getSymbol("x-opt-delivery-time");
+   public static final Symbol SCHEDULED_DELIVERY_TIME = Symbol.getSymbol(X_OPT_DELIVERY_TIME);
 
    /**
     * Attribute used to mark the Application defined delivery time assigned to the message
     */
-   public static final Symbol SCHEDULED_DELIVERY_DELAY = Symbol.getSymbol("x-opt-delivery-delay");
+   public static final Symbol SCHEDULED_DELIVERY_DELAY = Symbol.getSymbol(X_OPT_DELIVERY_DELAY);
 
    /**
     * Attribute used to mark the Application defined delivery time assigned to the message
@@ -204,10 +206,12 @@ public final class AMQPMessageSupport {
    public static final byte TEMP_QUEUE_TYPE = 0x02;
    public static final byte TEMP_TOPIC_TYPE = 0x03;
 
+   public static final String OCTET_STREAM_CONTENT_TYPE = "application/octet-stream";
+
    /**
     * Content type used to mark Data sections as containing arbitrary bytes.
     */
-   public static final String OCTET_STREAM_CONTENT_TYPE = "application/octet-stream";
+   public static final Symbol OCTET_STREAM_CONTENT_TYPE_SYMBOL = Symbol.valueOf(OCTET_STREAM_CONTENT_TYPE);
 
    /**
     * Lookup and return the correct Proton Symbol instance based on the given key.

@@ -34,9 +34,6 @@ import org.junit.Test;
 
 public class DurableQueueTest extends ActiveMQTestBase {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    private ActiveMQServer server;
 
@@ -46,11 +43,7 @@ public class DurableQueueTest extends ActiveMQTestBase {
 
    private ServerLocator locator;
 
-   // Static --------------------------------------------------------
 
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testConsumeFromDurableQueue() throws Exception {
@@ -148,9 +141,7 @@ public class DurableQueueTest extends ActiveMQTestBase {
       session.deleteQueue(queue);
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
    @Override
    @Before

@@ -26,6 +26,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.locks.StampedLock;
 
+import org.jboss.logging.Logger;
+
 import static org.apache.activemq.artemis.utils.Preconditions.checkArgument;
 
 /**
@@ -37,6 +39,8 @@ import static org.apache.activemq.artemis.utils.Preconditions.checkArgument;
  * Items <strong>MUST</strong> be &gt;= 0.
  */
 public class ConcurrentLongHashSet {
+
+   private static final Logger logger = Logger.getLogger(ConcurrentLongHashSet.class);
 
    private static final long EmptyItem = -1L;
    private static final long DeletedItem = -2L;
@@ -116,13 +120,17 @@ public class ConcurrentLongHashSet {
    }
 
    public boolean contains(long item) {
-      checkBiggerEqualZero(item);
+      if (!moreThanZero(item)) {
+         return false;
+      }
       long h = hash(item);
       return getSection(h).contains(item, (int) h);
    }
 
    public boolean add(long item) {
-      checkBiggerEqualZero(item);
+      if (!moreThanZero(item)) {
+         return false;
+      }
       long h = hash(item);
       return getSection(h).add(item, (int) h);
    }
@@ -134,7 +142,9 @@ public class ConcurrentLongHashSet {
     * @return true if removed or false if item was not present
     */
    public boolean remove(long item) {
-      checkBiggerEqualZero(item);
+      if (!moreThanZero(item)) {
+         return false;
+      }
       long h = hash(item);
       return getSection(h).remove(item, (int) h);
    }
@@ -423,9 +433,12 @@ public class ConcurrentLongHashSet {
       return (int) Math.pow(2, 32 - Integer.numberOfLeadingZeros(n - 1));
    }
 
-   static void checkBiggerEqualZero(long n) {
+   static boolean moreThanZero(long n) {
       if (n < 0L) {
-         throw new IllegalArgumentException("Keys and values must be >= 0");
+         logger.warn("Keys and values must be >= 0, while it was " + n + ", entry will be ignored", new Exception("invalid record " + n));
+         return false;
+      } else {
+         return true;
       }
    }
 }

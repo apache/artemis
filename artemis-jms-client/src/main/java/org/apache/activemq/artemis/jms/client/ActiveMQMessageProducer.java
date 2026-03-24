@@ -72,7 +72,6 @@ public class ActiveMQMessageProducer implements MessageProducer, QueueSender, To
    private long defaultDeliveryDelay = Message.DEFAULT_DELIVERY_DELAY;
 
    private final ActiveMQDestination defaultDestination;
-   // Constructors --------------------------------------------------
 
    protected ActiveMQMessageProducer(final ActiveMQConnection connection,
                                      final ClientProducer producer,
@@ -326,7 +325,6 @@ public class ActiveMQMessageProducer implements MessageProducer, QueueSender, To
       return (Queue) getDestination();
    }
 
-   // Public --------------------------------------------------------
 
    @Override
    public String toString() {

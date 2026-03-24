@@ -85,8 +85,6 @@ public class RemotingConnectionImpl extends AbstractRemotingConnection implement
       flush();
    }
 
-   // Constructors
-   // ---------------------------------------------------------------------------------
 
    /*
     * Create a client side connection

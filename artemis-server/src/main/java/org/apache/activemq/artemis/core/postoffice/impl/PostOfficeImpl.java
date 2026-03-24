@@ -1452,8 +1452,6 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       return "PostOfficeImpl [server=" + server + "]";
    }
 
-   // Private -----------------------------------------------------------------
-
    private void routeQueueInfo(final Message message, final Queue queue, final boolean applyFilters) throws Exception {
       if (!applyFilters || queue.getFilter() == null || queue.getFilter().match(message)) {
          RoutingContext context = new RoutingContextImpl(null);

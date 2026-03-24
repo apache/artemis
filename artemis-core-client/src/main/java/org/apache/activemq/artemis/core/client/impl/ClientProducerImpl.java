@@ -64,9 +64,6 @@ public class ClientProducerImpl implements ClientProducerInternal {
 
    private final ClientProducerCredits producerCredits;
 
-   // Static ---------------------------------------------------------------------------------------
-
-   // Constructors ---------------------------------------------------------------------------------
 
    public ClientProducerImpl(final ClientSessionInternal session,
                              final SimpleString address,
@@ -194,8 +191,6 @@ public class ClientProducerImpl implements ClientProducerInternal {
    public int getMaxRate() {
       return rateLimiter == null ? -1 : rateLimiter.getRate();
    }
-
-   // Public ---------------------------------------------------------------------------------------
 
    @Override
    public ClientProducerCredits getProducerCredits() {

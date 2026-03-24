@@ -26,9 +26,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class ActiveMQMapMessageTest extends ActiveMQTestBase {
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
    private String itemName;
 
@@ -40,11 +38,7 @@ public class ActiveMQMapMessageTest extends ActiveMQTestBase {
       itemName = RandomUtil.randomString();
    }
 
-   // Static --------------------------------------------------------
 
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testClearBody() throws Exception {

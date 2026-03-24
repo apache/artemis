@@ -56,6 +56,7 @@ import org.apache.activemq.artemis.api.core.ActiveMQBuffers;
 import org.apache.activemq.artemis.api.core.ActiveMQExceptionType;
 import org.apache.activemq.artemis.api.core.ActiveMQShutdownException;
 import org.apache.activemq.artemis.api.core.Pair;
+import org.apache.activemq.artemis.core.io.DummyCallback;
 import org.apache.activemq.artemis.core.io.IOCallback;
 import org.apache.activemq.artemis.core.io.IOCriticalErrorListener;
 import org.apache.activemq.artemis.core.io.SequentialFile;
@@ -202,7 +203,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
 
    protected static final byte FILL_CHARACTER = (byte) 'J';
 
-   // Attributes ----------------------------------------------------
+
 
    private volatile boolean autoReclaim = true;
 
@@ -355,7 +356,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
    public JournalFilesRepository getFilesRepository() {
       return filesRepository;
    }
-   // Constructors --------------------------------------------------
+
 
    public JournalImpl(final int fileSize,
                       final int minFiles,
@@ -1052,11 +1053,21 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
                          recordType);
       }
 
-      SimpleFuture<Boolean> future = new SimpleFutureImpl<>();
+      final SimpleFuture<Boolean> onFoundAddInfo;
 
-      internalAppendUpdateRecord(id, recordType, persister, record, sync, false, (t, v) -> future.set(v), callback);
+      if (!sync && (callback == null || callback == DummyCallback.getInstance())) {
+         onFoundAddInfo = null;
+      } else {
+         onFoundAddInfo = new SimpleFutureImpl<>();
+      }
 
-      if (!future.get()) {
+      if (onFoundAddInfo == null) {
+         internalAppendUpdateRecord(id, recordType, persister, record, false, false, null, callback);
+      } else {
+         internalAppendUpdateRecord(id, recordType, persister, record, sync, false, (t, v) -> onFoundAddInfo.set(v), callback);
+      }
+
+      if (onFoundAddInfo != null && !onFoundAddInfo.get()) {
          throw new IllegalStateException("Cannot find add info " + id);
       }
    }
@@ -1161,20 +1172,30 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
 
    @Override
    public void appendDeleteRecord(final long id, final boolean sync, final IOCompletion callback) throws Exception {
-
       if (logger.isTraceEnabled()) {
          logger.trace("scheduling appendDeleteRecord::id=" + id);
       }
 
-
       checkJournalIsLoaded();
       lineUpContext(callback);
-      SimpleFuture<Boolean> future = new SimpleFutureImpl<>();
-      internalAppendDeleteRecord(id, sync, (t, v) -> future.set(v), callback);
-      if (!future.get()) {
+
+      final SimpleFuture<Boolean> onFoundAddInfo;
+
+      if (!sync && (callback == null || callback == DummyCallback.getInstance())) {
+         onFoundAddInfo = null;
+      } else {
+         onFoundAddInfo = new SimpleFutureImpl<>();
+      }
+
+      if (onFoundAddInfo == null) {
+         internalAppendDeleteRecord(id, false, null, callback);
+      } else {
+         internalAppendDeleteRecord(id, sync, (record, result) -> onFoundAddInfo.set(result), callback);
+      }
+
+      if (onFoundAddInfo != null && !onFoundAddInfo.get()) {
          throw new IllegalStateException("Cannot find add info " + id);
       }
-      return;
    }
 
 
@@ -3452,9 +3473,6 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
 
       }
    }
-
-   // Inner classes
-   // ---------------------------------------------------------------------------
 
    // Used on Load
    private static final class TransactionHolder {

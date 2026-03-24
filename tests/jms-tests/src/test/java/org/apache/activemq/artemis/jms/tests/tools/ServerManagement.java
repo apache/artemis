@@ -30,7 +30,7 @@ import org.apache.activemq.artemis.jms.tests.tools.container.Server;
  * is also use to start/stop a remote server.
  */
 public class ServerManagement {
-   // Constants -----------------------------------------------------
+
 
    // logging levels used by the remote client to forward log output on a remote server
    public static int FATAL = 0;
@@ -49,7 +49,6 @@ public class ServerManagement {
 
    public static final String DEFAULT_TOPIC_CONTEXT = "/topic";
 
-   // Static --------------------------------------------------------
 
    private static JmsTestLogger log = JmsTestLogger.LOGGER;
 

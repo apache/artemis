@@ -24,7 +24,7 @@ import org.apache.activemq.artemis.api.core.ActiveMQBuffers;
 import org.apache.activemq.artemis.api.core.SimpleString;
 
 public class RandomUtil {
-   // Constants -----------------------------------------------------
+
 
    protected static final Random random = new Random();
 
@@ -32,9 +32,6 @@ public class RandomUtil {
       return random;
    }
 
-   // Attributes ----------------------------------------------------
-
-   // Static --------------------------------------------------------
 
    public static String randomString() {
       return java.util.UUID.randomUUID().toString();
@@ -131,15 +128,4 @@ public class RandomUtil {
       return RandomUtil.random.nextFloat();
    }
 
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 }

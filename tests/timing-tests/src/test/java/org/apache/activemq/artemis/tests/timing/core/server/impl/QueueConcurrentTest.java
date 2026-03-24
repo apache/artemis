@@ -105,8 +105,6 @@ public class QueueConcurrentTest extends ActiveMQTestBase {
 
    }
 
-   // Inner classes ---------------------------------------------------------------
-
    class Sender extends Thread {
 
       private volatile Exception e;

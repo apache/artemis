@@ -29,15 +29,7 @@ import org.junit.Test;
 
 public class TransportConfigurationTest extends ActiveMQTestBase {
 
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
-
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testSplitNullAddress() throws Exception {
@@ -135,12 +127,4 @@ public class TransportConfigurationTest extends ActiveMQTestBase {
       TransportConfiguration tc2 = new TransportConfiguration(NettyConnectorFactory.class.getName(), params2);
       Assert.assertTrue(TransportConfigurationUtil.isSameHost(tc1, tc2));
    }
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
-
 }

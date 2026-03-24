@@ -16,11 +16,14 @@
  */
 package org.apache.activemq.artemis.tests.integration.cluster.distribution;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.postoffice.Binding;
 import org.apache.activemq.artemis.core.server.cluster.ClusterConnection;
+import org.apache.activemq.artemis.core.server.cluster.MessageFlowRecord;
 import org.apache.activemq.artemis.core.server.cluster.RemoteQueueBinding;
 import org.apache.activemq.artemis.core.server.cluster.impl.ClusterConnectionImpl;
 import org.apache.activemq.artemis.core.server.cluster.impl.MessageLoadBalancingType;
@@ -33,15 +36,8 @@ import org.junit.Test;
 public class SimpleSymmetricClusterTest extends ClusterTestBase {
 
    private static final Logger log = Logger.getLogger(SimpleSymmetricClusterTest.class);
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    public boolean isNetty() {
       return false;
@@ -149,9 +145,15 @@ public class SimpleSymmetricClusterTest extends ClusterTestBase {
       ClusterConnection clusterConnection1 = getServer(1).getClusterManager().getClusterConnection("cluster1");
       ClusterConnection clusterConnection2 = getServer(2).getClusterManager().getClusterConnection("cluster2");
 
+
       Wait.assertEquals(2, () -> ((ClusterConnectionImpl)clusterConnection0).getRecords().size());
       Wait.assertEquals(2, () -> ((ClusterConnectionImpl)clusterConnection1).getRecords().size());
       Wait.assertEquals(2, () -> ((ClusterConnectionImpl)clusterConnection2).getRecords().size());
+
+
+      List<MessageFlowRecord> clusterConnectionRecords0 = new ArrayList<>(((ClusterConnectionImpl) clusterConnection0).getRecords().values());
+      List<MessageFlowRecord> clusterConnectionRecords1 = new ArrayList<>(((ClusterConnectionImpl) clusterConnection1).getRecords().values());
+      List<MessageFlowRecord> clusterConnectionRecords2 = new ArrayList<>(((ClusterConnectionImpl) clusterConnection2).getRecords().values());
 
       clusterConnection0.stop();
       clusterConnection1.stop();
@@ -160,6 +162,10 @@ public class SimpleSymmetricClusterTest extends ClusterTestBase {
       Assert.assertEquals(0, ((ClusterConnectionImpl)clusterConnection0).getRecords().size());
       Assert.assertEquals(0, ((ClusterConnectionImpl)clusterConnection1).getRecords().size());
       Assert.assertEquals(0, ((ClusterConnectionImpl)clusterConnection2).getRecords().size());
+
+      Wait.assertTrue(() -> clusterConnectionRecords0.stream().noneMatch(messageFlowRecord -> messageFlowRecord.getBridge().isConnected()), 1000);
+      Wait.assertTrue(() -> clusterConnectionRecords1.stream().noneMatch(messageFlowRecord -> messageFlowRecord.getBridge().isConnected()), 1000);
+      Wait.assertTrue(() -> clusterConnectionRecords2.stream().noneMatch(messageFlowRecord -> messageFlowRecord.getBridge().isConnected()), 1000);
 
       clusterConnection0.start();
       clusterConnection1.start();
@@ -468,13 +474,5 @@ public class SimpleSymmetricClusterTest extends ClusterTestBase {
       verifyReceiveRoundRobin(100, -1, -1, 2);
 
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

@@ -32,8 +32,6 @@ public class SessionXAResponseMessage_V2 extends SessionXAResponseMessage {
       super();
    }
 
-   // Public --------------------------------------------------------
-
    @Override
    public long getCorrelationID() {
       return correlationID;

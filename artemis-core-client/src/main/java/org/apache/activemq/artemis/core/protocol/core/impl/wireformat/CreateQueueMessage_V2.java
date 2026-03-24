@@ -188,8 +188,6 @@ public class CreateQueueMessage_V2 extends CreateQueueMessage {
       super(CREATE_QUEUE_V2);
    }
 
-   // Public --------------------------------------------------------
-
    public QueueConfiguration toQueueConfiguration() {
       return new QueueConfiguration(queueName)
          .setAddress(address)

@@ -25,15 +25,8 @@ import org.apache.activemq.artemis.logs.AuditLogger;
 
 public class JGroupsChannelBroadcastGroupControlImpl extends BaseBroadcastGroupControlImpl implements JGroupsChannelBroadcastGroupControl {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    private ChannelBroadcastEndpointFactory endpointFactory;
-
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
 
    public JGroupsChannelBroadcastGroupControlImpl(final BroadcastGroup broadcastGroup,
                                                   final StorageManager storageManager,
@@ -53,14 +46,5 @@ public class JGroupsChannelBroadcastGroupControlImpl extends BaseBroadcastGroupC
       return endpointFactory.getChannelName();
    }
 
-   // Public --------------------------------------------------------
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

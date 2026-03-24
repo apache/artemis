@@ -35,8 +35,6 @@ public class DisconnectMessage_V2 extends DisconnectMessage {
       super(DISCONNECT_V2);
    }
 
-   // Public --------------------------------------------------------
-
    public SimpleString getScaleDownNodeID() {
       return scaleDownNodeID;
    }

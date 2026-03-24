@@ -34,7 +34,6 @@ public class DummyXid implements Xid {
 
    private boolean hashCalculated;
 
-   // Static --------------------------------------------------------
 
    public static String toBase64String(final Xid xid) {
       return Base64.encodeBytes(DummyXid.toByteArray(xid));
@@ -56,7 +55,7 @@ public class DummyXid implements Xid {
       return hashBytes;
    }
 
-   // Constructors --------------------------------------------------
+
 
    /**
     * Standard constructor
@@ -98,8 +97,6 @@ public class DummyXid implements Xid {
    public byte[] getGlobalTransactionId() {
       return globalTransactionId;
    }
-
-   // Public -------------------------------------------------------------------------------
 
    @Override
    public int hashCode() {
@@ -153,7 +150,6 @@ public class DummyXid implements Xid {
          stringRep(globalTransactionId);
    }
 
-   // Private -------------------------------------------------------------------------------
 
    private String stringRep(final byte[] bytes) {
       StringBuilder buff = new StringBuilder();

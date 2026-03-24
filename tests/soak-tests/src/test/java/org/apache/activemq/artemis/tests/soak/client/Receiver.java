@@ -27,9 +27,6 @@ import org.apache.activemq.artemis.utils.ReusableLatch;
 
 public class Receiver extends ClientAbstract {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    // We should leave some messages on paging. We don't want to consume all for this test
    private final Semaphore minConsume = new Semaphore(0);
@@ -51,16 +48,11 @@ public class Receiver extends ClientAbstract {
 
    protected ClientConsumer cons;
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
    public Receiver(ClientSessionFactory sf, String queue) {
       super(sf);
       this.queue = queue;
    }
 
-   // Public --------------------------------------------------------
 
    @Override
    public void run() {
@@ -149,13 +141,5 @@ public class Receiver extends ClientAbstract {
          }
       }
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

@@ -30,15 +30,10 @@ import java.nio.file.Paths;
 
 public class JGroupsFileBroadcastGroupControlImpl extends BaseBroadcastGroupControlImpl implements JGroupsFileBroadcastGroupControl {
 
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
    private JGroupsFileBroadcastEndpointFactory endpointFactory;
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
 
    public JGroupsFileBroadcastGroupControlImpl(final BroadcastGroup broadcastGroup,
                                                final StorageManager storageManager,
@@ -76,14 +71,5 @@ public class JGroupsFileBroadcastGroupControlImpl extends BaseBroadcastGroupCont
       return endpointFactory.getFile();
    }
 
-   // Public --------------------------------------------------------
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

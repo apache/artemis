@@ -80,6 +80,11 @@ public class ClusterController implements ActiveMQComponent {
    private boolean started;
    private SimpleString replicatedClusterName;
 
+   /** For tests only */
+   public ServerLocator getDefaultLocator() {
+      return defaultLocator;
+   }
+
    public ClusterController(ActiveMQServer server,
                             ScheduledExecutorService scheduledExecutor,
                             boolean useQuorumManager) {
@@ -207,9 +212,10 @@ public class ClusterController implements ActiveMQComponent {
     */
    public void addClusterConnection(SimpleString name,
                                     TransportConfiguration[] tcConfigs,
-                                    ClusterConnectionConfiguration config) {
+                                    ClusterConnectionConfiguration config,
+                                    TransportConfiguration connector) {
       ServerLocatorImpl serverLocator = (ServerLocatorImpl) ActiveMQClient.createServerLocatorWithHA(tcConfigs);
-      configAndAdd(name, serverLocator, config, null);
+      configAndAdd(name, serverLocator, config, connector);
    }
 
    private void configAndAdd(SimpleString name,

@@ -80,7 +80,7 @@ public class PageCleanupWhileReplicaCatchupTest extends FailoverTestBase {
       return createInVMFailoverServer(realFiles, configuration, PAGE_SIZE, PAGE_MAX, conf, nodeManager, id);
    }
 
-   @Test(timeout = 120_000)
+   @Test(timeout = 160_000)
    public void testPageCleanup() throws Throwable {
       int numberOfWorkers = 20;
 

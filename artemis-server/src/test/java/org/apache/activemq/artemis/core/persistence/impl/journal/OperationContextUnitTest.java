@@ -422,12 +422,4 @@ public class OperationContextUnitTest extends ActiveMQTestBase {
       Assert.assertEquals(0, operations.get());
    }
 
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
-
 }

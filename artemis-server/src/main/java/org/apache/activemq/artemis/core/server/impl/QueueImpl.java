@@ -2649,7 +2649,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       return iterQueue(DEFAULT_FLUSH_LIMIT, null, new QueueIterateAction() {
          @Override
          public boolean actMessage(Transaction tx, MessageReference ref) throws Exception {
-            return moveBetweenSnFQueues(queueSuffix, tx, ref);
+            return moveBetweenSnFQueues(queueSuffix, tx, ref, null);
          }
       });
    }
@@ -2709,11 +2709,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
                   }
                }
 
-               if (targetQueue != null) {
-                  move(SimpleString.toSimpleString(originalMessageAddress), tx, ref, false, false, targetQueue.longValue());
-               } else {
-                  move(SimpleString.toSimpleString(originalMessageAddress), tx, ref, false, false);
-               }
+               move(SimpleString.toSimpleString(originalMessageAddress), tx, ref, false, false, targetQueue);
 
                return true;
             }
@@ -3386,21 +3382,19 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
                      final MessageReference ref,
                      final boolean expiry,
                      final boolean rejectDuplicate,
-                     final long... queueIDs) throws Exception {
-      Message copyMessage = makeCopy(ref, expiry);
+                     final Long queueID) throws Exception {
+      Message copyMessage = makeCopy(ref, expiry, toAddress);
 
-      copyMessage.setAddress(toAddress);
-
-      if (ref.getMessage().getAnnotationString(Message.HDR_ORIG_ROUTING_TYPE) != null) {
-         copyMessage.setRoutingType(RoutingType.getType(ref.getMessage().getByteProperty(Message.HDR_ORIG_ROUTING_TYPE)));
+      Object originalRoutingType = ref.getMessage().getBrokerProperty(Message.HDR_ORIG_ROUTING_TYPE);
+      if (originalRoutingType != null && originalRoutingType instanceof Byte) {
+         copyMessage.setRoutingType(RoutingType.getType((Byte) originalRoutingType));
       }
 
-      if (queueIDs != null && queueIDs.length > 0) {
-         ByteBuffer buffer = ByteBuffer.allocate(8 * queueIDs.length);
-         for (long id : queueIDs) {
-            buffer.putLong(id);
-         }
-         copyMessage.putBytesProperty(Message.HDR_ROUTE_TO_IDS.toString(), buffer.array());
+      if (queueID != null) {
+         final byte[] encodedBuffer = new byte[Long.BYTES];
+         ByteBuffer buffer = ByteBuffer.wrap(encodedBuffer);
+         buffer.putLong(0, queueID);
+         copyMessage.putBytesProperty(Message.HDR_ROUTE_TO_IDS.toString(), encodedBuffer);
       }
 
       postOffice.route(copyMessage, tx, false, rejectDuplicate);
@@ -3416,8 +3410,9 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    @SuppressWarnings({"ArrayToString", "ArrayToStringConcatenation"})
    private boolean moveBetweenSnFQueues(final SimpleString queueSuffix,
                                      final Transaction tx,
-                                     final MessageReference ref) throws Exception {
-      Message copyMessage = makeCopy(ref, false, false);
+                                     final MessageReference ref,
+                                     final SimpleString newAddress) throws Exception {
+      Message copyMessage = makeCopy(ref, false, false, newAddress);
 
       byte[] oldRouteToIDs = null;
       String targetNodeID;
@@ -3520,13 +3515,14 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       return new Pair<>(targetNodeID, targetBinding);
    }
 
-   private Message makeCopy(final MessageReference ref, final boolean expiry) throws Exception {
-      return makeCopy(ref, expiry, true);
+   private Message makeCopy(final MessageReference ref, final boolean expiry, final SimpleString newAddress) throws Exception {
+      return makeCopy(ref, expiry, true, newAddress);
    }
 
    private Message makeCopy(final MessageReference ref,
                             final boolean expiry,
-                            final boolean copyOriginalHeaders) throws Exception {
+                            final boolean copyOriginalHeaders,
+                            final SimpleString newAddress) throws Exception {
       if (ref == null) {
          ActiveMQServerLogger.LOGGER.nullRefMessage();
          throw new ActiveMQNullRefException("Reference to message is null");
@@ -3546,8 +3542,15 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
       Message copy = message.copy(newID, true);
 
+      if (newAddress != null) {
+         // setting it before checkLargeMessage:
+         // checkLargeMessage can cause msg encoding and setting it later invalidate it,
+         // forcing to be re-encoded later
+         copy.setAddress(newAddress);
+      }
+
       if (copyOriginalHeaders) {
-         copy.referenceOriginalMessage(message, ref.getQueue().getName().toString());
+         copy.referenceOriginalMessage(message, ref.getQueue().getName());
       }
 
       copy.setExpiration(0);
@@ -3576,7 +3579,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
             ActiveMQServerLogger.LOGGER.errorExpiringReferencesNoBindings(expiryAddress);
             acknowledge(tx, ref, AckReason.EXPIRED, null);
          } else {
-            move(expiryAddress, tx, ref, true, true);
+            move(expiryAddress, tx, ref, true, false, null);
          }
       } else {
          if (!printErrorExpiring) {
@@ -3705,9 +3708,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
          tx = new TransactionImpl(storageManager);
       }
 
-      Message copyMessage = makeCopy(ref, reason == AckReason.EXPIRED);
-
-      copyMessage.setAddress(address);
+      Message copyMessage = makeCopy(ref, reason == AckReason.EXPIRED, address);
 
       RoutingStatus routingStatus = postOffice.route(copyMessage, tx, false, rejectDuplicate, binding);
 
@@ -4123,9 +4124,6 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
          .setTransient(refCountForConsumers instanceof TransientQueueManagerImpl)
          .setAutoCreated(autoCreated);
    }
-
-   // Inner classes
-   // --------------------------------------------------------------------------
 
    protected static class ConsumerHolder<T extends Consumer> implements PriorityAware {
 

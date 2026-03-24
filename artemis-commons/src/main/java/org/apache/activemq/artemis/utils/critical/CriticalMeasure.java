@@ -129,7 +129,7 @@ public class CriticalMeasure {
       final long thisTimeEnter = this.timeEnter;
       if (thisTimeEnter != 0L) {
          long time = System.nanoTime();
-         boolean expired = time - timeEnter > timeout;
+         boolean expired = time - thisTimeEnter > timeout;
 
          if (expired) {
             Exception lastTraceEnter = this.traceEnter;

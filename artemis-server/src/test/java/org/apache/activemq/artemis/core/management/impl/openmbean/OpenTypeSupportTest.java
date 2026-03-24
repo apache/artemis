@@ -20,7 +20,6 @@ package org.apache.activemq.artemis.core.management.impl.openmbean;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.message.impl.CoreMessage;
-import org.apache.activemq.artemis.core.server.impl.MessageReferenceImpl;
 import org.apache.activemq.artemis.reader.TextMessageUtil;
 import org.junit.Assert;
 import org.junit.Test;
@@ -39,7 +38,7 @@ public class OpenTypeSupportTest {
 
       TextMessageUtil.writeBodyText(coreMessage.getBodyBuffer(), SimpleString.toSimpleString(bodyText));
 
-      CompositeData cd = OpenTypeSupport.convert(new MessageReferenceImpl(coreMessage, null), 256);
+      CompositeData cd = coreMessage.toCompositeData(256, 1);
 
       Assert.assertEquals(bodyText, cd.get("text"));
    }

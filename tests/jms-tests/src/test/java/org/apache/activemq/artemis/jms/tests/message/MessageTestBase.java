@@ -31,11 +31,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 public abstract class MessageTestBase extends ActiveMQServerTestCase {
-   // Constants -----------------------------------------------------
 
-   // Static --------------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    protected Message message;
 
@@ -47,9 +43,6 @@ public abstract class MessageTestBase extends ActiveMQServerTestCase {
 
    protected MessageConsumer queueCons;
 
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Override
    @Before
@@ -171,9 +164,7 @@ public abstract class MessageTestBase extends ActiveMQServerTestCase {
 
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
    protected void prepareMessage(final Message m) throws JMSException {
       m.setBooleanProperty("booleanProperty", true);
@@ -213,7 +204,5 @@ public abstract class MessageTestBase extends ActiveMQServerTestCase {
       ProxyAssertSupport.assertEquals(mode, m.getJMSDeliveryMode());
    }
 
-   // Private -------------------------------------------------------
 
-   // Inner classes -------------------------------------------------
 }

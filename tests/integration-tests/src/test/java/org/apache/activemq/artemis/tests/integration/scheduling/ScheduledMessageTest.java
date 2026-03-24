@@ -795,7 +795,6 @@ public class ScheduledMessageTest extends ActiveMQTestBase {
       assertEquals(100, count.get());
    }
 
-   // Private -------------------------------------------------------
 
    private void scheduledDelivery(final boolean tx) throws Exception {
       ActiveMQTestBase.forceGC();

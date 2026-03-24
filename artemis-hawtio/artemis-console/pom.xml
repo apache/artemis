@@ -34,7 +34,7 @@
   <properties>
     <activemq.basedir>${project.basedir}/../..</activemq.basedir>
   </properties>
-  
+
   <dependencies>
     <dependency>
       <groupId>org.apache.geronimo.specs</groupId>
@@ -82,7 +82,10 @@
         <artifactId>maven-war-plugin</artifactId>
         <configuration>
           <useCache>true</useCache>
-          <packagingExcludes>**/lib/slf4j*.jar</packagingExcludes>
+          <packagingExcludes>
+            **/lib/slf4j*.jar,
+            **/lib/log4j*.jar
+          </packagingExcludes>
           <failOnMissingWebXml>false</failOnMissingWebXml>
           <webResources>
             <resource>

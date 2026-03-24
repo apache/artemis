@@ -24,17 +24,10 @@ import org.junit.Test;
 
 public class SecurityManagementWithModifiedConfigurationTest extends SecurityManagementTestBase {
 
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
    private final String configuredClusterPassword = "this is not the default password";
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testSendManagementMessageWithModifiedClusterAdminUser() throws Exception {
@@ -56,9 +49,7 @@ public class SecurityManagementWithModifiedConfigurationTest extends SecurityMan
       doSendManagementMessage(null, null, false);
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
    @Override
    protected ActiveMQServer setupAndStartActiveMQServer() throws Exception {
@@ -69,8 +60,6 @@ public class SecurityManagementWithModifiedConfigurationTest extends SecurityMan
       return server;
    }
 
-   // Private -------------------------------------------------------
 
-   // Inner classes -------------------------------------------------
 
 }

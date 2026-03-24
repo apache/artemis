@@ -82,13 +82,11 @@ public class MessageReferenceImpl extends LinkedListImpl.Node<MessageReferenceIm
 
    private Consumer<? super MessageReference> onDelivery;
 
-   // Static --------------------------------------------------------
 
    // This value has been computed by using https://github.com/openjdk/jol
    // on HotSpot 64-bit VM COOPS, 8-byte alignment
    private static final int memoryOffset = 72;
 
-   // Constructors --------------------------------------------------
 
    public MessageReferenceImpl() {
       queue = null;
@@ -321,11 +319,16 @@ public class MessageReferenceImpl extends LinkedListImpl.Node<MessageReferenceIm
 
    @Override
    public String toString() {
-      return "Reference[" + getMessage().getMessageID() +
-         "]:" +
-         (getMessage().isDurable() ? "RELIABLE" : "NON-RELIABLE") +
-         ":" +
-         getMessage();
+      Message message = getMessage();
+      if (message != null) {
+         return "Reference[" + message.getMessageID() +
+            "]:" +
+            (message.isDurable() ? "RELIABLE" : "NON-RELIABLE") +
+            ":" +
+            message;
+      } else {
+         return "Reference[]";
+      }
    }
 
    @Override

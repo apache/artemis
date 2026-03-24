@@ -389,6 +389,16 @@ public class ByteUtil {
       return true;
    }
 
+   /**
+    * This ensure a more exact resizing then {@link ByteBuf#ensureWritable(int)}, if needed.<br>
+    * It won't try to trim a large enough buffer.
+    */
+   public static void ensureExactWritable(ByteBuf buffer, int minWritableBytes) {
+      if (buffer.maxFastWritableBytes() < minWritableBytes) {
+         buffer.capacity(buffer.writerIndex() + minWritableBytes);
+      }
+   }
+
 
    /**
     * Returns {@code true} if  the {@link SimpleString} encoded content into {@code bytes} is equals to {@code s},

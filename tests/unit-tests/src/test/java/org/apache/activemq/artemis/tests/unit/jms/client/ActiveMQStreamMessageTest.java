@@ -27,15 +27,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class ActiveMQStreamMessageTest extends ActiveMQTestBase {
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testGetType() throws Exception {
@@ -877,7 +870,6 @@ public class ActiveMQStreamMessageTest extends ActiveMQTestBase {
       Assert.assertEquals(value, message.readObject());
    }
 
-   // Private -------------------------------------------------------
 
    private void doReadTypeFromEmptyMessage(final TypeReader reader) throws Exception {
       ActiveMQStreamMessage message = new ActiveMQStreamMessage();
@@ -917,7 +909,6 @@ public class ActiveMQStreamMessageTest extends ActiveMQTestBase {
       }
    }
 
-   // Inner classes -------------------------------------------------
 
    private interface TypeReader {
 

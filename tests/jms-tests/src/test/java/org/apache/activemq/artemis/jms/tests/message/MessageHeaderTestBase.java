@@ -44,9 +44,6 @@ import org.apache.activemq.artemis.jms.tests.util.ProxyAssertSupport;
 import org.junit.Before;
 
 public abstract class MessageHeaderTestBase extends ActiveMQServerTestCase {
-   // Constants -----------------------------------------------------
-
-   // Static --------------------------------------------------------
 
    /**
     * Loads the message header fields with significant values.
@@ -343,7 +340,6 @@ public abstract class MessageHeaderTestBase extends ActiveMQServerTestCase {
       ProxyAssertSupport.assertEquals(m1.getText(), m2.getText());
    }
 
-   // Attributes ----------------------------------------------------
 
    protected Connection producerConnection, consumerConnection;
 

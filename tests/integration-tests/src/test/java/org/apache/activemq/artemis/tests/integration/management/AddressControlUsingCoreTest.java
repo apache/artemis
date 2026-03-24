@@ -24,13 +24,6 @@ import org.apache.activemq.artemis.api.core.management.ResourceNames;
 
 public class AddressControlUsingCoreTest extends AddressControlTest {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
-
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
 
 
    @Override
@@ -201,15 +194,12 @@ public class AddressControlUsingCoreTest extends AddressControlTest {
       };
    }
 
-   // Public --------------------------------------------------------
 
    @Override
    public boolean usingCore() {
       return true;
    }
 
-   // Private -------------------------------------------------------
 
-   // Inner classes -------------------------------------------------
 
 }

@@ -22,9 +22,6 @@ import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
 
 public class Sender extends ClientAbstract {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    protected ClientProducer producer;
 
@@ -36,11 +33,6 @@ public class Sender extends ClientAbstract {
 
    protected final Receiver[] receivers;
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    public Sender(final ClientSessionFactory sf, String queue, final Receiver[] receivers) {
       super(sf);
@@ -99,13 +91,5 @@ public class Sender extends ClientAbstract {
       return "Sender, msgs=" + msgs + ", pending=" + pendingMsgs;
 
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

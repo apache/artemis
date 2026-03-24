@@ -485,5 +485,4 @@ public abstract class BridgeTestBase extends ActiveMQTestBase {
       return new TransactionManagerImple();
    }
 
-   // Inner classes -------------------------------------------------------------------
 }

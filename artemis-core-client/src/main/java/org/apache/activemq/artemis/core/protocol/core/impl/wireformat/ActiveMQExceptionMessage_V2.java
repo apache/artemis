@@ -24,9 +24,7 @@ public class ActiveMQExceptionMessage_V2 extends ActiveMQExceptionMessage {
 
    private long correlationID;
 
-   // Static --------------------------------------------------------
 
-   // Constructors --------------------------------------------------
 
    public ActiveMQExceptionMessage_V2(final long correlationID, final ActiveMQException exception) {
       super(exception);
@@ -36,8 +34,6 @@ public class ActiveMQExceptionMessage_V2 extends ActiveMQExceptionMessage {
    public ActiveMQExceptionMessage_V2() {
       super();
    }
-
-   // Public --------------------------------------------------------
 
    @Override
    public boolean isResponse() {

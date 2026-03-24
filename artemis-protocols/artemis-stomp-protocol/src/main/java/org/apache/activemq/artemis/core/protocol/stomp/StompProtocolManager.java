@@ -71,9 +71,7 @@ public class StompProtocolManager extends AbstractProtocolManager<StompFrame, St
    private final List<StompFrameInterceptor> incomingInterceptors;
    private final List<StompFrameInterceptor> outgoingInterceptors;
 
-   // Static --------------------------------------------------------
 
-   // Constructors --------------------------------------------------
 
    StompProtocolManager(final StompProtocolManagerFactory factory,
                         final ActiveMQServer server,
@@ -196,7 +194,6 @@ public class StompProtocolManager extends AbstractProtocolManager<StompFrame, St
       return null;
    }
 
-   // Public --------------------------------------------------------
 
    public boolean send(final StompConnection connection, final StompFrame frame) {
       if (invokeInterceptors(this.outgoingInterceptors, frame, connection) != null) {
@@ -344,7 +341,6 @@ public class StompProtocolManager extends AbstractProtocolManager<StompFrame, St
       transactedSessions.remove(txID);
       session.getCoreSession().rollback(false);
    }
-   // Inner classes -------------------------------------------------
 
    public StompPostReceiptFunction subscribe(StompConnection connection,
                                              String subscriptionID,

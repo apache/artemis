@@ -56,11 +56,10 @@ import org.jboss.logging.Logger;
  * However I want to keep this isolated as much as possible during development
  */
 public class PageCursorProviderImpl implements PageCursorProvider {
-   // Constants -----------------------------------------------------
+
 
    private static final Logger logger = Logger.getLogger(PageCursorProviderImpl.class);
 
-   // Attributes ----------------------------------------------------
 
    /**
     * As an optimization, avoid subsequent schedules as they are unnecessary
@@ -93,9 +92,7 @@ public class PageCursorProviderImpl implements PageCursorProvider {
    //storageManager.beforePageRead will be attempted in a loop, printing at intervals a warn message
    private static final long PAGE_READ_PERMISSION_TIMEOUT_NS = TimeUnit.SECONDS.toNanos(10);
 
-   // Static --------------------------------------------------------
 
-   // Constructors --------------------------------------------------
    public PageCursorProviderImpl(final PagingStore pagingStore,
                                  final StorageManager storageManager,
                                  final ArtemisExecutor executor,
@@ -118,7 +115,6 @@ public class PageCursorProviderImpl implements PageCursorProvider {
       this.inProgressReadPages = new LongObjectHashMap<>();
    }
 
-   // Public --------------------------------------------------------
 
    @Override
    public synchronized PageSubscription createSubscription(long cursorID, Filter filter, boolean persistent) {
@@ -702,6 +698,5 @@ public class PageCursorProviderImpl implements PageCursorProvider {
       }
    }
 
-   // Inner classes -------------------------------------------------
 
 }

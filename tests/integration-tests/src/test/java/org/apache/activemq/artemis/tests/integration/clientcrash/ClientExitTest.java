@@ -37,25 +37,17 @@ import org.junit.Test;
  * (local server, remote VM client).
  */
 public class ClientExitTest extends ClientTestBase {
-   // Constants ------------------------------------------------------------------------------------
+
 
    private static final String MESSAGE_TEXT = RandomUtil.randomString();
 
    private static final SimpleString QUEUE = new SimpleString("ClientExitTestQueue");
 
-   // Static ---------------------------------------------------------------------------------------
-
    private static final Logger log = Logger.getLogger(ClientExitTest.class);
-
-   // Attributes -----------------------------------------------------------------------------------
 
    private ClientSession session;
 
    private ClientConsumer consumer;
-
-   // Constructors ---------------------------------------------------------------------------------
-
-   // Public ---------------------------------------------------------------------------------------
 
    @Test
    public void testGracefulClientExit() throws Exception {
@@ -90,8 +82,6 @@ public class ClientExitTest extends ClientTestBase {
       // assertActiveConnections(0);
       // // assertActiveSession(0);
    }
-
-   // Package protected ----------------------------------------------------------------------------
 
    @Override
    @Before

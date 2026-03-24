@@ -941,8 +941,6 @@ public class CoreClientOverOneWaySSLTest extends ActiveMQTestBase {
       }
    }
 
-   // Package protected ---------------------------------------------
-
    @Override
    @Before
    public void setUp() throws Exception {

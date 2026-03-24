@@ -47,7 +47,6 @@ public abstract class MultiThreadRandomReattachTestBase extends MultiThreadReatt
 
    private static final Logger log = Logger.getLogger(MultiThreadRandomReattachTestBase.class);
 
-   // Constants -----------------------------------------------------
 
    private static final int RECEIVE_TIMEOUT = 30000;
 
@@ -55,16 +54,11 @@ public abstract class MultiThreadRandomReattachTestBase extends MultiThreadReatt
 
    private final int NUM_THREADS = getNumThreads();
 
-   // Attributes ----------------------------------------------------
    protected static final SimpleString ADDRESS = new SimpleString("FailoverTestAddress");
 
    protected ActiveMQServer server;
 
-   // Static --------------------------------------------------------
 
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testA() throws Exception {
@@ -219,9 +213,7 @@ public abstract class MultiThreadRandomReattachTestBase extends MultiThreadReatt
       }, NUM_THREADS, false);
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
    @Override
    protected abstract void start() throws Exception;
@@ -1109,7 +1101,6 @@ public abstract class MultiThreadRandomReattachTestBase extends MultiThreadReatt
       return 10;
    }
 
-   // Private -------------------------------------------------------
 
    private void runTestMultipleThreads(final RunnableT runnable,
                                        final int numThreads,
@@ -1201,7 +1192,6 @@ public abstract class MultiThreadRandomReattachTestBase extends MultiThreadReatt
       }
    }
 
-   // Inner classes -------------------------------------------------
 
    private class MyHandler implements MessageHandler {
 

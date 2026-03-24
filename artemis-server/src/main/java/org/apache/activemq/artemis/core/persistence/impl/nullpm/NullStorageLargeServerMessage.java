@@ -125,7 +125,7 @@ class NullStorageLargeServerMessage extends CoreMessage implements CoreLargeServ
 
    @Override
    public String toString() {
-      return "NullStorageLargeServerMessage[messageID=" + messageID + ", durable=" + durable + ", address=" + getAddress() + ",properties=" + properties.toString() + "]";
+      return "NullStorageLargeServerMessage[messageID=" + messageID + ", durable=" + durable + ", address=" + getAddress() + ",properties=" + properties + "]";
    }
 
    @Override

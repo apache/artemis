@@ -32,8 +32,6 @@ public class SubscribeClusterTopologyUpdatesMessageV2 extends SubscribeClusterTo
       super(SUBSCRIBE_TOPOLOGY_V2);
    }
 
-   // Public --------------------------------------------------------
-
    @Override
    public void encodeRest(final ActiveMQBuffer buffer) {
       super.encodeRest(buffer);

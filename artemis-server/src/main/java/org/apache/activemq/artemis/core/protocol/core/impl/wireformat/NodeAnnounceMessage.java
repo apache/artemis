@@ -36,9 +36,7 @@ public class NodeAnnounceMessage extends PacketImpl {
 
    private String scaleDownGroupName;
 
-   // Static --------------------------------------------------------
 
-   // Constructors --------------------------------------------------
 
    public NodeAnnounceMessage(final long currentEventID,
                               final String nodeID,
@@ -72,7 +70,6 @@ public class NodeAnnounceMessage extends PacketImpl {
       super(nodeAnnounceMessage_V2);
    }
 
-   // Public --------------------------------------------------------
 
    public String getNodeID() {
       return nodeID;

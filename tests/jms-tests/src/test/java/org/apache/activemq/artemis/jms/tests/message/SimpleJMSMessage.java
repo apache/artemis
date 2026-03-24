@@ -32,7 +32,7 @@ public class SimpleJMSMessage implements Message {
 
    private boolean ignoreSetDestination;
 
-   // Constructors --------------------------------------------------
+
 
    public SimpleJMSMessage() {
       properties.put("JMSXDeliveryCount", Integer.valueOf(0));
@@ -365,13 +365,6 @@ public class SimpleJMSMessage implements Message {
       throw new UnsupportedOperationException("JMS 2.0 / not implemented");
    }
 
-   // Public --------------------------------------------------------
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 }

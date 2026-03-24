@@ -34,15 +34,6 @@ import org.junit.Test;
 
 public class TransportConfigurationEncodingSupportTest extends Assert {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
-
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testTransportConfiguration() throws Exception {
@@ -110,12 +101,4 @@ public class TransportConfigurationEncodingSupportTest extends Assert {
          assertEquals(expected.getParams().get(key).toString(), actual.getParams().get(key).toString());
       }
    }
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
-
 }

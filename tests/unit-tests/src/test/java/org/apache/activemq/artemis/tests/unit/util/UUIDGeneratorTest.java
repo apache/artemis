@@ -26,15 +26,8 @@ import java.util.Set;
 import java.util.UUID;
 
 public class UUIDGeneratorTest extends ActiveMQTestBase {
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testFromJavaUUID() throws Exception {
@@ -84,11 +77,5 @@ public class UUIDGeneratorTest extends ActiveMQTestBase {
       ActiveMQTestBase.assertEqualsByteArrays(new byte[]{1, 2, 3, 0, 0, 0}, zeroPaddedThreeBytes);
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 }

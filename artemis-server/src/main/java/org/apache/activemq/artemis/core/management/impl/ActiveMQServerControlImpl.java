@@ -139,10 +139,9 @@ import org.apache.activemq.artemis.utils.collections.TypedProperties;
 import org.jboss.logging.Logger;
 
 public class ActiveMQServerControlImpl extends AbstractControl implements ActiveMQServerControl, NotificationEmitter, org.apache.activemq.artemis.core.server.management.NotificationListener {
-   // Constants -----------------------------------------------------
+
    private static final Logger logger = Logger.getLogger(ActiveMQServerControlImpl.class);
 
-   // Attributes ----------------------------------------------------
 
    private final PostOffice postOffice;
 
@@ -1563,9 +1562,9 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
    }
 
    @Override
-   public void destroyQueue(final String name, final boolean removeConsumers, final boolean autoDeleteAddress) throws Exception {
+   public void destroyQueue(final String name, final boolean removeConsumers, final boolean forceAutoDeleteAddress) throws Exception {
       if (AuditLogger.isBaseLoggingEnabled()) {
-         AuditLogger.destroyQueue(this.server, null, null, name, removeConsumers, autoDeleteAddress);
+         AuditLogger.destroyQueue(this.server, null, null, name, removeConsumers, forceAutoDeleteAddress);
       }
       checkStarted();
 
@@ -1573,7 +1572,7 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
       try {
          SimpleString queueName = new SimpleString(name);
          try {
-            server.destroyQueue(queueName, null, !removeConsumers, removeConsumers, autoDeleteAddress);
+            server.destroyQueue(queueName, null, !removeConsumers, removeConsumers, forceAutoDeleteAddress);
          } catch (Exception e) {
             if (AuditLogger.isResourceLoggingEnabled()) {
                AuditLogger.destroyQueueFailure(name);
@@ -4137,11 +4136,8 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
       return new MBeanNotificationInfo[]{new MBeanNotificationInfo(names, this.getClass().getName(), "Notifications emitted by a Core Server")};
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
-   // Private -------------------------------------------------------
 
    private synchronized void setMessageCounterEnabled(final boolean enable) {
       if (isStarted()) {

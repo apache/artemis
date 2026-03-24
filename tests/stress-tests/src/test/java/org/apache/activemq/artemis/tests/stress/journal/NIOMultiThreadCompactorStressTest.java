@@ -48,9 +48,6 @@ import org.junit.Test;
 
 public class NIOMultiThreadCompactorStressTest extends ActiveMQTestBase {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    final SimpleString ADDRESS = new SimpleString("SomeAddress");
 
@@ -322,11 +319,8 @@ public class NIOMultiThreadCompactorStressTest extends ActiveMQTestBase {
       sess.close();
    }
 
-   // Static --------------------------------------------------------
 
-   // Constructors --------------------------------------------------
 
-   // Public --------------------------------------------------------
 
    class BaseThread extends Thread {
 
@@ -460,13 +454,5 @@ public class NIOMultiThreadCompactorStressTest extends ActiveMQTestBase {
          }
       }
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

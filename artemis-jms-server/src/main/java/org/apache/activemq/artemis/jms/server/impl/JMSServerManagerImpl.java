@@ -817,7 +817,7 @@ public class JMSServerManagerImpl extends CleaningActivateCallback implements JM
 
             // We can't remove the remote binding. As this would be the bridge associated with the topic on this case
             if (binding.getType() != BindingType.REMOTE_QUEUE) {
-               server.destroyQueue(SimpleString.toSimpleString(queueName), null, !removeConsumers, removeConsumers, true);
+               server.destroyQueue(SimpleString.toSimpleString(queueName), null, !removeConsumers, removeConsumers, false);
             }
          }
 
@@ -1329,9 +1329,7 @@ public class JMSServerManagerImpl extends CleaningActivateCallback implements JM
       return server.getActiveMQServerControl().listPreparedTransactionDetailsAsHTML((xid, tx, creation) -> new JMSTransactionDetail(xid, tx, creation));
    }
 
-   // Public --------------------------------------------------------
 
-   // Private -------------------------------------------------------
 
    private synchronized void checkInitialised() {
       if (!active) {

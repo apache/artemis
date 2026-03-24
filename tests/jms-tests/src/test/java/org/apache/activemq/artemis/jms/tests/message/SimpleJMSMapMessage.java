@@ -26,17 +26,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class SimpleJMSMapMessage extends SimpleJMSMessage implements MapMessage {
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
 
    protected Map<String, Object> content;
 
    protected boolean bodyReadOnly = false;
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
 
    public SimpleJMSMapMessage() {
       content = new HashMap<>();
@@ -438,11 +433,8 @@ public class SimpleJMSMapMessage extends SimpleJMSMessage implements MapMessage 
 
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
-   // Private -------------------------------------------------------
 
    /**
     * Check the name
@@ -459,6 +451,5 @@ public class SimpleJMSMapMessage extends SimpleJMSMessage implements MapMessage 
       }
    }
 
-   // Inner classes -------------------------------------------------
 
 }

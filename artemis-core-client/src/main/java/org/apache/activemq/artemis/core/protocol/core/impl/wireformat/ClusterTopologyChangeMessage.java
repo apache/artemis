@@ -31,9 +31,6 @@ public class ClusterTopologyChangeMessage extends PacketImpl {
 
    protected boolean last;
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
 
    public ClusterTopologyChangeMessage(final String nodeID,
                                        final Pair<TransportConfiguration, TransportConfiguration> pair,
@@ -60,8 +57,6 @@ public class ClusterTopologyChangeMessage extends PacketImpl {
    public ClusterTopologyChangeMessage() {
       super(CLUSTER_TOPOLOGY);
    }
-
-   // Public --------------------------------------------------------
 
    /**
     * @param clusterTopologyV2

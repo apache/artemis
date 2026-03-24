@@ -53,11 +53,8 @@ public class ConsumerCloseTest extends ActiveMQTestBase {
    private SimpleString address;
    private ServerLocator locator;
 
-   // Static --------------------------------------------------------
 
-   // Constructors --------------------------------------------------
 
-   // Public --------------------------------------------------------
 
    @Test
    public void testCanNotUseAClosedConsumer() throws Exception {
@@ -263,9 +260,7 @@ public class ConsumerCloseTest extends ActiveMQTestBase {
 
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
    @Override
    @Before

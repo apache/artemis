@@ -114,7 +114,6 @@ public class MultipliedDelayedMessageTest extends ActiveMQTestBase {
       session.close();
    }
 
-   // Private -------------------------------------------------------
 
    private ClientMessage createDurableMessage(final ClientSession session, final String body) {
       ClientMessage message = session.createMessage(ActiveMQTextMessage.TYPE, true, 0, System.currentTimeMillis(), (byte) 1);

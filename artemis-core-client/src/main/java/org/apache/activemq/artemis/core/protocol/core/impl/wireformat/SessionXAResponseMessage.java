@@ -41,8 +41,6 @@ public class SessionXAResponseMessage extends PacketImpl {
       super(SESS_XA_RESP);
    }
 
-   // Public --------------------------------------------------------
-
    @Override
    public boolean isResponse() {
       return true;

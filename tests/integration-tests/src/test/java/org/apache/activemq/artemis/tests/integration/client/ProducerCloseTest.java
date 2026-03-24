@@ -55,9 +55,7 @@ public class ProducerCloseTest extends ActiveMQTestBase {
       });
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
    @Override
    @Before

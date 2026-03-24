@@ -58,7 +58,6 @@ import org.junit.Assert;
 import org.junit.Before;
 
 public abstract class FailoverTestBase extends ActiveMQTestBase {
-   // Constants -----------------------------------------------------
 
    protected static final SimpleString ADDRESS = new SimpleString("FailoverTestAddress");
 
@@ -71,7 +70,6 @@ public abstract class FailoverTestBase extends ActiveMQTestBase {
    protected static final int PAGE_MAX = 2 * 1024;
    protected static final int PAGE_SIZE = 1024;
 
-   // Attributes ----------------------------------------------------
 
    protected TestableServer liveServer;
 
@@ -362,9 +360,7 @@ public abstract class FailoverTestBase extends ActiveMQTestBase {
                         final ClientSession... sessions) throws Exception {
       liveServer.crash(failover, waitFailure, sessions);
    }
-   // Private -------------------------------------------------------
 
-   // Inner classes -------------------------------------------------
 
    public static final class LatchClusterTopologyListener implements ClusterTopologyListener {
 

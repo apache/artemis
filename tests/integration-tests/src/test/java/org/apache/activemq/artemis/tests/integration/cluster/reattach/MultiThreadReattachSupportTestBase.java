@@ -159,7 +159,6 @@ public abstract class MultiThreadReattachSupportTestBase extends ActiveMQTestBas
       }
    }
 
-   // Private -------------------------------------------------------
 
    private Failer startFailer(final long time, final ClientSession session, final boolean failOnCreateConnection) {
       Failer failer = new Failer(session, failOnCreateConnection);
@@ -172,7 +171,6 @@ public abstract class MultiThreadReattachSupportTestBase extends ActiveMQTestBas
       return failer;
    }
 
-   // Inner classes -------------------------------------------------
 
    protected abstract class RunnableT extends Thread {
 

@@ -20,6 +20,7 @@ import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.ICoreMessage;
 import org.apache.activemq.artemis.api.core.Message;
+import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.io.SequentialFile;
 import org.apache.activemq.artemis.core.message.LargeBodyReader;
 import org.apache.activemq.artemis.core.message.impl.CoreMessage;
@@ -32,6 +33,11 @@ import org.apache.activemq.artemis.utils.collections.TypedProperties;
 import org.jboss.logging.Logger;
 
 public final class LargeServerMessageImpl extends CoreMessage implements CoreLargeServerMessage {
+
+   // Given that LargeBody is never null it needs to be accounted on this instance footprint.
+   // This value has been computed using https://github.com/openjdk/jol
+   // with HotSpot 64-bit COOPS 8-byte align
+   private static final int MEMORY_OFFSET = 112 + LargeBody.MEMORY_OFFSET;
 
    @Override
    public Message toMessage() {
@@ -68,15 +74,10 @@ public final class LargeServerMessageImpl extends CoreMessage implements CoreLar
       return lsm.toMessage();
    }
 
-   // Constants -----------------------------------------------------
    private static final Logger logger = Logger.getLogger(LargeServerMessageImpl.class);
 
-   // Attributes ----------------------------------------------------
 
    private final StorageManager storageManager;
-
-   // We cache this
-   private volatile int memoryEstimate = -1;
 
    public LargeServerMessageImpl(final StorageManager storageManager) {
       largeBody = new LargeBody(this, storageManager);
@@ -245,8 +246,12 @@ public final class LargeServerMessageImpl extends CoreMessage implements CoreLar
    public int getMemoryEstimate() {
       synchronized (largeBody) {
          if (memoryEstimate == -1) {
-            // The body won't be on memory (aways on-file), so we don't consider this for paging
-            memoryEstimate = getHeadersAndPropertiesEncodeSize() + DataConstants.SIZE_INT + getEncodeSize() + (16 + 4) * 2 + 1;
+            // The body won't be on memory (always on-file), so we don't consider this for paging
+            memoryEstimate = MEMORY_OFFSET +
+               getHeadersAndPropertiesEncodeSize() +
+               DataConstants.SIZE_INT +
+               getEncodeSize() +
+               (16 + 4) * 2 + 1;
          }
 
          return memoryEstimate;
@@ -261,7 +266,7 @@ public final class LargeServerMessageImpl extends CoreMessage implements CoreLar
    }
 
    @Override
-   public void referenceOriginalMessage(final Message original, String originalQueue) {
+   public void referenceOriginalMessage(final Message original, final SimpleString originalQueue) {
 
       super.referenceOriginalMessage(original, originalQueue);
 

@@ -27,9 +27,7 @@ import java.util.Map;
  * An in-VM JNDI InitialContextFactory. Lightweight JNDI implementation used for testing.
  */
 public class InVMInitialContextFactory implements InitialContextFactory {
-   // Constants -----------------------------------------------------
 
-   // Static --------------------------------------------------------
 
    private static final Map<Integer, Context> initialContexts = new HashMap<>();
 
@@ -47,11 +45,6 @@ public class InVMInitialContextFactory implements InitialContextFactory {
       return env;
    }
 
-   // Attributes ----------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Override
    public Context getInitialContext(final Hashtable<?, ?> environment) throws NamingException {
@@ -100,11 +93,5 @@ public class InVMInitialContextFactory implements InitialContextFactory {
       }
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 }

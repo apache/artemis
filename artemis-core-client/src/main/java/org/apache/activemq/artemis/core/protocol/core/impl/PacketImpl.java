@@ -26,7 +26,7 @@ import org.apache.activemq.artemis.core.protocol.core.Packet;
 import org.apache.activemq.artemis.utils.DataConstants;
 
 public class PacketImpl implements Packet {
-   // Constants -------------------------------------------------------------------------
+
 
 
    // 2.0.0
@@ -287,13 +287,11 @@ public class PacketImpl implements Packet {
 
    public static final byte DISCONNECT_V3 = -19;
 
-   // Static --------------------------------------------------------
+
 
    public PacketImpl(final byte type) {
       this.type = type;
    }
-
-   // Public --------------------------------------------------------
 
    public SimpleString convertName(SimpleString name) {
       if (name == null) {

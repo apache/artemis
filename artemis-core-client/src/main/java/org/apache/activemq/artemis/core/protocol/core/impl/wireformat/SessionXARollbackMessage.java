@@ -36,8 +36,6 @@ public class SessionXARollbackMessage extends PacketImpl {
       super(SESS_XA_ROLLBACK);
    }
 
-   // Public --------------------------------------------------------
-
    public Xid getXid() {
       return xid;
    }

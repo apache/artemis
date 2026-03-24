@@ -35,9 +35,6 @@ import org.junit.Test;
 
 public class ClientNonDivertedSoakTest extends ActiveMQTestBase {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    private static final SimpleString ADDRESS = new SimpleString("ADD");
 
@@ -49,11 +46,7 @@ public class ClientNonDivertedSoakTest extends ActiveMQTestBase {
       return false;
    }
 
-   // Static --------------------------------------------------------
 
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    private ActiveMQServer server;
 
@@ -141,13 +134,5 @@ public class ClientNonDivertedSoakTest extends ActiveMQTestBase {
       locator.close();
 
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

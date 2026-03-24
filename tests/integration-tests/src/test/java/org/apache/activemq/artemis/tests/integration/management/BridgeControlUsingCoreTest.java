@@ -41,9 +41,6 @@ import org.junit.Test;
 
 public class BridgeControlUsingCoreTest extends ManagementTestBase {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    private ActiveMQServer server_0;
 
@@ -51,9 +48,6 @@ public class BridgeControlUsingCoreTest extends ManagementTestBase {
 
    private ActiveMQServer server_1;
 
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testAttributes() throws Exception {
@@ -99,9 +93,7 @@ public class BridgeControlUsingCoreTest extends ManagementTestBase {
       Assert.assertTrue((Boolean) proxy.retrieveAttributeValue("Started"));
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
    @Override
    @Before

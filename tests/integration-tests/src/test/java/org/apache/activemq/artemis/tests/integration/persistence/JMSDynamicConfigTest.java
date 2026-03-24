@@ -32,15 +32,7 @@ public class JMSDynamicConfigTest extends JMSTestBase {
       return true;
    }
 
-   // Constants -----------------------------------------------------
 
-   // Attributes ----------------------------------------------------
-
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testStart() throws Exception {
@@ -71,13 +63,5 @@ public class JMSDynamicConfigTest extends JMSTestBase {
       } catch (NamingException excepted) {
       }
    }
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
 
 }

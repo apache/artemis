@@ -29,15 +29,7 @@ import org.junit.Test;
  * A test that sends/receives map messages to the JMS provider and verifies their integrity.
  */
 public class MapMessageTest extends MessageTestBase {
-   // Constants -----------------------------------------------------
 
-   // Static --------------------------------------------------------
-
-   // Attributes ----------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Override
    @Before

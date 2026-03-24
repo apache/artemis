@@ -44,17 +44,10 @@ import org.junit.Test;
  */
 public class ReSendMessageTest extends JMSTestBase {
 
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
 
    private Queue queue;
 
-   // Static --------------------------------------------------------
 
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testResendWithLargeMessage() throws Exception {
@@ -223,9 +216,7 @@ public class ReSendMessageTest extends JMSTestBase {
       }
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
    @Override
    protected void createCF(final List<TransportConfiguration> connectorConfigs,
                            final String... jndiBindings) throws Exception {
@@ -244,8 +235,6 @@ public class ReSendMessageTest extends JMSTestBase {
       queue = createQueue("queue1");
    }
 
-   // Private -------------------------------------------------------
 
-   // Inner classes -------------------------------------------------
 
 }

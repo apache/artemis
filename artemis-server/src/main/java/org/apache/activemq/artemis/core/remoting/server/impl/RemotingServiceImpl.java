@@ -80,13 +80,11 @@ import org.apache.activemq.artemis.utils.ReusableLatch;
 import org.jboss.logging.Logger;
 
 public class RemotingServiceImpl implements RemotingService, ServerConnectionLifeCycleListener {
-   // Constants -----------------------------------------------------
 
    private static final Logger logger = Logger.getLogger(RemotingServiceImpl.class);
 
    private static final int ACCEPTOR_STOP_TIMEOUT = 3000;
 
-   // Attributes ----------------------------------------------------
 
    private volatile boolean started = false;
 
@@ -128,9 +126,6 @@ public class RemotingServiceImpl implements RemotingService, ServerConnectionLif
 
    private long connectionTtlCheckInterval;
 
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
 
    public RemotingServiceImpl(final ClusterManager clusterManager,
                               final Configuration config,
@@ -675,7 +670,6 @@ public class RemotingServiceImpl implements RemotingService, ServerConnectionLif
       return clusterConnection;
    }
 
-   // Inner classes -------------------------------------------------
 
    private final class DelegatingBufferHandler implements BufferHandler {
 

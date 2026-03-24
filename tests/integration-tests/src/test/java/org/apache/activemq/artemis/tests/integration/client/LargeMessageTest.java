@@ -2564,9 +2564,7 @@ public class LargeMessageTest extends LargeMessageTestBase {
       session.commit();
    }
 
-   // Package protected ---------------------------------------------
 
-   // Protected -----------------------------------------------------
 
    @Override
    @Before
@@ -2795,8 +2793,6 @@ public class LargeMessageTest extends LargeMessageTestBase {
       Wait.assertTrue(() -> ((UnixOperatingSystemMXBean)os).getOpenFileDescriptorCount() - fdBefore < 3);
    }
 
-   // Private -------------------------------------------------------
 
-   // Inner classes -------------------------------------------------
 
 }

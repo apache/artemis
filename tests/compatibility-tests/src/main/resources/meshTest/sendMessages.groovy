@@ -84,7 +84,7 @@ Topic topic = session.createTopic(topicName);
 
 Destination destination = queue;
 
-if (operation.equals("sendTopic") || operation.equals("receiveNonDurableSubscription")) {
+if (operation.equals("sendTopic") || operation.equals("receiveNonDurableSubscription") || operation.equals("receiveShared")) {
     destination = topic;
 }
 
@@ -211,10 +211,14 @@ if (operation.equals("sendAckMessages") || operation.equals("sendTopic")) {
     connection.close();
 }
 
-if (operation.equals("receiveMessages") || operation.equals("receiveNonDurableSubscription")) {
+if (operation.equals("receiveMessages") || operation.equals("receiveNonDurableSubscription") || operation.equals("receiveShared")) {
     MessageConsumer consumer;
 
-    consumer = session.createConsumer(destination);
+    if (operation.equals("receiveShared")) {
+        consumer = session.createSharedConsumer(destination, "someSub");
+    } else {
+        consumer = session.createConsumer(destination);
+    }
     connection.start();
 
     if (latch != null) {

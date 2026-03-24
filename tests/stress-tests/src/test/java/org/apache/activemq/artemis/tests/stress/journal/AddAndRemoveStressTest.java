@@ -32,7 +32,7 @@ import org.junit.Test;
 
 public class AddAndRemoveStressTest extends ActiveMQTestBase {
 
-   // Constants -----------------------------------------------------
+
 
    private static final LoaderCallback dummyLoader = new LoaderCallback() {
 
@@ -63,13 +63,8 @@ public class AddAndRemoveStressTest extends ActiveMQTestBase {
 
    private static final int NUMBER_OF_FILES_ON_JOURNAL = 6;
 
-   // Attributes ----------------------------------------------------
 
-   // Static --------------------------------------------------------
 
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    @Test
    public void testInsertAndLoad() throws Exception {
