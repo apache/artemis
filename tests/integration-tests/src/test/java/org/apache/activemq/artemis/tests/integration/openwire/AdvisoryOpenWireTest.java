@@ -17,11 +17,16 @@
 package org.apache.activemq.artemis.tests.integration.openwire;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.activemq.advisory.AdvisorySupport;
+import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.management.AddressControl;
+import org.apache.activemq.artemis.core.paging.PagingStore;
+import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
+import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
 import org.apache.activemq.artemis.tests.util.Wait;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -74,6 +79,27 @@ public class AdvisoryOpenWireTest extends BasicOpenWireTest {
          Wait.assertEquals(0, advisoryAddress::getMessageCount);
          Wait.assertEquals(2, advisoryAddress::getUnRoutedMessageCount);
 
+      }
+   }
+
+   @Test
+   public void testAdvisoryEnforcedToDrop() throws Exception {
+
+      try (AssertionLoggerHandler handler = new AssertionLoggerHandler()) {
+         handler.start();
+         try (Connection connection = factory.createConnection()) {
+            connection.start();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            TemporaryTopic temporaryTopic = session.createTemporaryTopic();
+            assertNotNull(temporaryTopic);
+
+            PagingStore store = server.getPagingManager().getPageStore(SimpleString.of("ActiveMQ.Advisory.TempTopic"));
+            assertNotNull(store);
+            assertEquals(AddressFullMessagePolicy.DROP, store.getAddressFullMessagePolicy());
+         }
+         assertFalse(handler.hasLevel(AssertionLoggerHandler.LogLevel.WARN));
       }
    }
 

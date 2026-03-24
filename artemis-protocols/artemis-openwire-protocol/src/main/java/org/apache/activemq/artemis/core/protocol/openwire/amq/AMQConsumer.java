@@ -39,15 +39,18 @@ import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.client.impl.ClientConsumerImpl;
 import org.apache.activemq.artemis.core.io.IOCallback;
+import org.apache.activemq.artemis.core.paging.PagingStore;
 import org.apache.activemq.artemis.core.protocol.openwire.OpenWireConnection;
 import org.apache.activemq.artemis.core.protocol.openwire.OpenWireConstants;
 import org.apache.activemq.artemis.core.protocol.openwire.OpenWireMessageConverter;
 import org.apache.activemq.artemis.core.server.MessageReference;
+import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.QueueQueryResult;
 import org.apache.activemq.artemis.core.server.ServerConsumer;
 import org.apache.activemq.artemis.core.server.SlowConsumerDetectionListener;
 import org.apache.activemq.artemis.core.server.impl.QueueImpl;
 import org.apache.activemq.artemis.core.server.impl.ServerConsumerImpl;
+import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.core.transaction.TransactionOperationAbstract;
@@ -256,7 +259,16 @@ public class AMQConsumer {
             queueName = SimpleString.of(UUID.randomUUID().toString());
          }
 
-         session.getCoreSession().createQueue(QueueConfiguration.of(queueName).setAddress(address).setRoutingType(RoutingType.MULTICAST).setFilterString(selector).setDurable(false).setTemporary(true).setInternal(internalAddress));
+         Queue queue = session.getCoreSession().createQueue(QueueConfiguration.of(queueName).setAddress(address).setRoutingType(RoutingType.MULTICAST).setFilterString(selector).setDurable(false).setTemporary(true).setInternal(internalAddress));
+
+         // Check if this is an advisory queue
+         if (String.valueOf(address).startsWith(AdvisorySupport.ADVISORY_TOPIC_PREFIX)) {
+            PagingStore store = queue.getPagingStore();
+            if (store != null) { // could be null on tests perhaps
+               // Advisory queues cannot be paged, we must enforce DROP
+               store.enforceAddressFullMessagePolicy(AddressFullMessagePolicy.DROP);
+            }
+         }
       }
 
       return queueName;
