@@ -264,6 +264,8 @@ STOMP over WebSockets is supported via the normal STOMP acceptor:
 
 With this configuration, the broker will accept STOMP connections over WebSockets on the port `61614`.
 Web browsers can then connect to `ws://<server>:61614` using a Web Socket to send and receive STOMP messages.
+WebSockets per-message deflate is supported but not enabled by default, to enable it add the `webSocketCompressionSupported=true` option to the acceptor URI.
+The client must also support per-message deflate and request it via the standard WebSockets extension.
 
 A companion JavaScript library to ease client-side development is available from https://github.com/jmesnil/stomp-websocket[GitHub] (please see its http://jmesnil.net/stomp-websocket/doc/[documentation] for a complete description).
 

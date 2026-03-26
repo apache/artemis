@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
 
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
 import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.core.config.BridgeConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.config.FederationConfiguration;
@@ -1346,5 +1347,39 @@ public class FileConfigurationParserTest extends ServerTestBase {
       Configuration configuration = parser.parseMainConfig(input);
       AddressSettings settings = configuration.getAddressSettings().get("foo");
       assertEquals(DiskFullMessagePolicy.FAIL, settings.getDiskFullMessagePolicy());
+   }
+
+   @Test
+   public void testWebSocketCompressionOptionInAcceptorURI() throws Exception {
+      final String FIRST_PART = """
+         <core xmlns="urn:activemq:core">
+            <name>ActiveMQ.main.config</name>
+            <log-delegate-factory-class-name>org.apache.activemq.artemis.integration.logging.Log4jLogDelegateFactory</log-delegate-factory-class-name>
+            <bindings-directory>${jboss.server.data.dir}/activemq/bindings</bindings-directory>
+            <journal-directory>${jboss.server.data.dir}/activemq/journal</journal-directory>
+            <journal-min-files>10</journal-min-files>
+            <large-messages-directory>${jboss.server.data.dir}/activemq/largemessages</large-messages-directory>
+            <paging-directory>${jboss.server.data.dir}/activemq/paging</paging-directory>
+            <acceptors>
+               <acceptor name="ws-mqtt-test"> tcp://0.0.0.0:2994?protocols=MQTT;webSocketCompressionSupported=true</acceptor>
+            </acceptors>
+         """;
+
+      String configStr = FIRST_PART + LAST_PART;
+      FileConfigurationParser parser = new FileConfigurationParser();
+      ByteArrayInputStream input = new ByteArrayInputStream(configStr.getBytes(StandardCharsets.UTF_8));
+
+      Configuration configuration = parser.parseMainConfig(input);
+
+      Set<TransportConfiguration> acceptors = configuration.getAcceptorConfigurations();
+
+      assertEquals(1, acceptors.size());
+
+      TransportConfiguration acceptor = acceptors.iterator().next();
+
+      assertNotNull(acceptor);
+
+      assertTrue(acceptor.getParams().containsKey("webSocketCompressionSupported"));
+      assertFalse(acceptor.getExtraParams().containsKey("webSocketCompressionSupported"));
    }
 }

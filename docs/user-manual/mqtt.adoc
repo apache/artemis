@@ -189,6 +189,8 @@ SSL/TLS is also available, e.g.:
 ----
 
 Web browsers can then connect to `wss://<server>:8883` using a Web Socket to send and receive MQTT messages.
+WebSockets per-message deflate is supported but not enabled by default, to enable it add the `webSocketCompressionSupported=true` option to the acceptor URI.
+The client must also support per-message deflate and request it via the standard WebSockets extension.
 
 == Link Stealing
 

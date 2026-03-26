@@ -207,3 +207,5 @@ AMQP over WebSockets is supported via a normal AMQP acceptor:
 
 With this configuration, the broker will accept AMQP connections over WebSockets on the port `5672`.
 Web browsers can then connect to `ws://<server>:5672` using a Web Socket to send and receive AMQP messages.
+WebSockets per-message deflate is supported but not enabled by default, to enable it add the `webSocketCompressionSupported=true` option to the acceptor URI.
+The client must also support per-message deflate and request it via the standard WebSockets extension.
