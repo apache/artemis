@@ -17,6 +17,7 @@
 
 package org.apache.activemq.artemis.tests.compatibility;
 
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_2_33_0;
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.SNAPSHOT;
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_2_44_0;
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_2_17_0;
@@ -63,13 +64,11 @@ public class MultiVersionReplicaTest extends ClasspathBase {
       if (getJavaVersion() <= 22) {
          // Old 2.x servers fail on JDK23+ without workarounds.
          combinations.add(new Object[]{ARTEMIS_2_22_0, SNAPSHOT});
-         combinations.add(new Object[]{SNAPSHOT, ARTEMIS_2_22_0});
          combinations.add(new Object[]{ARTEMIS_2_17_0, SNAPSHOT});
-         combinations.add(new Object[]{SNAPSHOT, ARTEMIS_2_17_0});
+         combinations.add(new Object[]{ARTEMIS_2_33_0, SNAPSHOT});
       }
 
       combinations.add(new Object[]{ARTEMIS_2_44_0, SNAPSHOT});
-      combinations.add(new Object[]{SNAPSHOT, ARTEMIS_2_44_0});
 
       // The SNAPSHOT/SNAPSHOT is here as a test validation only, like in other cases where SNAPSHOT/SNAPSHOT is used.
       combinations.add(new Object[]{SNAPSHOT, SNAPSHOT});

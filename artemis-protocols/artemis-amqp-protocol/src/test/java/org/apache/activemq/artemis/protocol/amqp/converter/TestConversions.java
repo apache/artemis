@@ -443,7 +443,6 @@ public class TestConversions {
 
       Map<String, Object> mapprop = createPropertiesMap();
       ApplicationProperties properties = new ApplicationProperties(mapprop);
-      properties.getValue().put("hello", "hello");
       MessageImpl message = (MessageImpl) Message.Factory.create();
       MessageAnnotations annotations = new MessageAnnotations(new HashMap<>());
       message.setMessageAnnotations(annotations);
@@ -457,7 +456,9 @@ public class TestConversions {
       encodedMessage.setAddress(SimpleString.of("xxxx.v1.queue"));
 
       for (int i = 0; i < 100; i++) {
-         encodedMessage.putStringProperty("another" + i, "value" + i);
+         if (i > 5) { // first 5 without application properties, to make it more challenging
+            encodedMessage.putStringProperty("another" + i, "value" + i);
+         }
          encodedMessage.messageChanged();
          encodedMessage.reencode();
          AmqpValue value = (AmqpValue) encodedMessage.getProtonMessage().getBody();
@@ -465,7 +466,7 @@ public class TestConversions {
          ICoreMessage coreMessage = encodedMessage.toCore();
          logger.debug("Converted message: {}", coreMessage);
 
-         // I'm going to replace the message every 10 messages by a re-encoded version to check if the wiring still acturate.
+         // I'm going to replace the message every 10 messages by a re-encoded version to check if the wiring is still accurate.
          // I want to mix replacing and not replacing to make sure the re-encoding is not giving me any surprises
          if (i > 0 && i % 10 == 0) {
             ByteBuf buf = Unpooled.buffer(15 * 1024, 150 * 1024);

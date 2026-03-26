@@ -775,7 +775,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
          if (isMirrorController() && owner != null && pagingStore != owner) {
             // When using mirror in this situation, it means the address belong to another queue
             // it's acting as if the message is being copied
-            pagingStore.addSize(messageReference.getMessage().getOriginalEstimate(), false, false);
+            pagingStore.addSize(messageReference.getMessage().getMemoryEstimate(), false, false);
          }
 
          pagingStore.refUp(messageReference.getMessage(), count);
@@ -793,7 +793,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
          if (isMirrorController() && owner != null && pagingStore != owner) {
             // When using mirror in this situation, it means the address belong to another queue
             // it's acting as if the message is being copied
-            pagingStore.addSize(-messageReference.getMessage().getOriginalEstimate(), false, false);
+            pagingStore.addSize(-messageReference.getMessage().getMemoryEstimate(), false, false);
          }
          pagingStore.refDown(messageReference.getMessage(), count);
       }

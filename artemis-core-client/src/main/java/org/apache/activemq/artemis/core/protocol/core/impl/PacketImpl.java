@@ -58,6 +58,8 @@ public class PacketImpl implements Packet {
    // 2.37.0
    public static final int ARTEMIS_2_37_0_VERSION = 136;
 
+   public static final int ARTEMIS_2_54_0_VERSION = 137;
+
    public static final SimpleString OLD_QUEUE_PREFIX = SimpleString.of("jms.queue.");
    public static final SimpleString OLD_TEMP_QUEUE_PREFIX = SimpleString.of("jms.tempqueue.");
    public static final SimpleString OLD_TOPIC_PREFIX = SimpleString.of("jms.topic.");
