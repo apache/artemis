@@ -423,6 +423,18 @@ public interface Message {
     */
    Message setDurable(boolean durable);
 
+   /**
+    * Returns a wire-compatible persister for embedding this message during clustering operations.
+    * <p>
+    * EmbedMessageUtil will contain the definitions for WIRE Version.
+    *
+    * @param wireVersion the wire protocol version to match
+    * @return the persister compatible with the specified wire version
+    */
+   default Persister<Message> getWireCompatiblePersister(int wireVersion) {
+      return getPersister();
+   }
+
    Persister<Message> getPersister();
 
    String getAddress();
@@ -875,14 +887,6 @@ public interface Message {
    ICoreMessage toCore(CoreMessageObjectPools coreMessageObjectPools);
 
    int getMemoryEstimate();
-
-   /**
-    * The first estimate that's been calculated without any updates.
-    */
-   default int getOriginalEstimate() {
-      // For Core Protocol we always use the same estimate
-      return getMemoryEstimate();
-   }
 
    /**
     * This is the size of the message when persisted on disk which is used for metrics tracking Note that even if the

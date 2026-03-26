@@ -40,6 +40,8 @@ import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.protocol.amqp.util.NettyReadable;
 import org.apache.activemq.artemis.protocol.amqp.util.NettyWritable;
 import org.apache.activemq.artemis.protocol.amqp.util.TLSEncode;
+import org.apache.activemq.artemis.spi.core.protocol.EmbedMessageUtil;
+import org.apache.activemq.artemis.utils.DataConstants;
 import org.apache.activemq.artemis.utils.collections.TypedProperties;
 import org.apache.qpid.proton.amqp.messaging.ApplicationProperties;
 import org.apache.qpid.proton.amqp.messaging.DeliveryAnnotations;
@@ -79,6 +81,8 @@ public class AMQPLargeMessage extends AMQPMessage implements LargeServerMessage 
    }
 
    private boolean reencoded = false;
+
+   private int applicationPropertiesSize;
 
    /**
     * AMQPLargeMessagePersister will save the buffer here.
@@ -201,7 +205,8 @@ public class AMQPLargeMessage extends AMQPMessage implements LargeServerMessage 
             temporaryBuffer = PooledByteBufAllocator.DEFAULT.buffer(getEstimateSavedEncode());
             saveEncoding(temporaryBuffer);
          }
-         return temporaryBuffer.retain(1);
+         temporaryBuffer.retain(1);
+         return temporaryBuffer;
       }
    }
 
@@ -264,7 +269,9 @@ public class AMQPLargeMessage extends AMQPMessage implements LargeServerMessage 
          applicationPropertiesPosition = buf.readInt();
          remainingBodyPosition = buf.readInt();
 
+         int applicationPropertiesInitialPosition = buf.readerIndex();
          applicationProperties = (ApplicationProperties)TLSEncode.getDecoder().readObject();
+         this.applicationPropertiesSize = buf.readerIndex() - applicationPropertiesInitialPosition;
 
          if (properties != null && properties.getAbsoluteExpiryTime() != null && properties.getAbsoluteExpiryTime().getTime() > 0) {
             if (!expirationReload) {
@@ -400,6 +407,12 @@ public class AMQPLargeMessage extends AMQPMessage implements LargeServerMessage 
       }
    }
 
+   @Override
+   protected synchronized void resetMessageData() {
+      super.resetMessageData();
+      applicationPropertiesSize = 0;
+   }
+
    private void genericParseLargeMessage() {
       try {
          parsingBuffer.position(0);
@@ -410,6 +423,16 @@ public class AMQPLargeMessage extends AMQPMessage implements LargeServerMessage 
          // this would mean the buffer is not complete yet, so we keep parsing it, until we can get enough bytes
          logger.debug("The buffer for AMQP Large Message was probably not complete, so an exception eventually would be expected", expected);
       }
+   }
+
+   @Override
+   protected ApplicationProperties readApplicationProperties(ReadableBuffer data, int position) {
+      ApplicationProperties localAP = super.readApplicationProperties(data, position);
+      if (localAP != null) {
+         this.applicationPropertiesSize = data.position() - position;
+         this.applicationPropertiesCount = localAP.getValue().size();
+      }
+      return localAP;
    }
 
    protected void parseLargeMessage(ReadableBuffer data) {
@@ -596,16 +619,16 @@ public class AMQPLargeMessage extends AMQPMessage implements LargeServerMessage 
          return largeBody.getBodySize();
       } catch (Exception e) {
          logger.warn(e.getMessage());
-         return -1;
+         return VALUE_NOT_PRESENT;
       }
    }
 
 
    @Override
    public synchronized int getMemoryEstimate() {
-      if (memoryEstimate == -1) {
-         memoryEstimate = memoryOffset * 2 + (extraProperties != null ? extraProperties.getEncodeSize() : 0);
-         originalEstimate = memoryEstimate;
+      if (memoryEstimate == VALUE_NOT_PRESENT) {
+         // This estimation was tested and validated through AMQPGlobalMaxTest on soak-tests
+         memoryEstimate = MINIMUM_ESTIMATE + (extraProperties != null ? extraProperties.getEncodeSize() : 0) + applicationPropertiesSize * 2 + applicationPropertiesCount * DataConstants.SIZE_INT;
       }
       return memoryEstimate;
    }
@@ -637,7 +660,16 @@ public class AMQPLargeMessage extends AMQPMessage implements LargeServerMessage 
 
    @Override
    public Persister<Message> getPersister() {
-      return AMQPLargeMessagePersister.getInstance();
+      return AMQPLargeMessagePersisterV2.getInstance();
+   }
+
+   @Override
+   public Persister<Message> getWireCompatiblePersister(int wireVersion) {
+      if (wireVersion == EmbedMessageUtil.NO_MAP_WIRE_VERSION) {
+         return AMQPLargeMessagePersister.getInstance();
+      } else {
+         return AMQPLargeMessagePersisterV2.getInstance();
+      }
    }
 
    @Override

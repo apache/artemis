@@ -38,6 +38,7 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
@@ -152,13 +153,21 @@ public class RealServerTestBase extends ActiveMQTestBase {
    }
 
    public Process startServer(String serverName, int portID, int timeout, File brokerProperties) throws Exception {
-      Process process = ServerUtil.startServer(getServerLocation(serverName), serverName, portID, timeout, brokerProperties);
+      return startServer(serverName, portID, timeout, brokerProperties, null);
+   }
+
+   public Process startServer(String serverName, int portID, int timeout, File brokerProperties, Consumer<String> logCallback) throws Exception {
+      Process process = ServerUtil.startServer(getServerLocation(serverName), serverName, portID, timeout, brokerProperties, logCallback);
       addProcess(process);
       return process;
    }
 
    public Process startServer(String serverName, String uri, int timeout) throws Exception {
-      Process process = ServerUtil.startServer(getServerLocation(serverName), serverName, uri, timeout);
+      return startServer(serverName, uri, timeout, null);
+   }
+
+   public Process startServer(String serverName, String uri, int timeout, Consumer<String> logCallback) throws Exception {
+      Process process = ServerUtil.startServer(getServerLocation(serverName), serverName, uri, timeout, null, logCallback);
       addProcess(process);
       return process;
    }

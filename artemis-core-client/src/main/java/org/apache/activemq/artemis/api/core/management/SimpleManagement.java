@@ -109,6 +109,18 @@ public class SimpleManagement implements AutoCloseable {
       simpleManagementVoid("broker", "rebuildPageCounters");
    }
 
+   public long getAddressSize(String address) throws Exception {
+      return simpleManagementLong(ResourceNames.ADDRESS + address, "getAddressSize");
+   }
+
+   public long getMessageCountOnAddress(String address) throws Exception {
+      return simpleManagementLong(ResourceNames.ADDRESS + address, "getMessageCount");
+   }
+
+   public int removeMessagesOnQueue(String queue, String filter) throws Exception {
+      return simpleManagementInt(ResourceNames.QUEUE + queue, "removeMessages", filter);
+   }
+
    /**
     * Simple helper for management returning a string.
     */

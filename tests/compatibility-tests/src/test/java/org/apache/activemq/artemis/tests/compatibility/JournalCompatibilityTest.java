@@ -17,6 +17,7 @@
 
 package org.apache.activemq.artemis.tests.compatibility;
 
+import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_2_33_0;
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.SNAPSHOT;
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_2_4_0;
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_2_1_0;
@@ -47,6 +48,7 @@ public class JournalCompatibilityTest extends VersionedBase {
 
       combinations.add(new Object[]{ARTEMIS_2_1_0, SNAPSHOT});
       combinations.add(new Object[]{ARTEMIS_2_4_0, SNAPSHOT});
+      combinations.add(new Object[]{ARTEMIS_2_33_0, SNAPSHOT});
       // the purpose on this one is just to validate the test itself.
       /// if it can't run against itself it won't work at all
       combinations.add(new Object[]{SNAPSHOT, SNAPSHOT});
@@ -90,38 +92,44 @@ public class JournalCompatibilityTest extends VersionedBase {
    }
 
    @TestTemplate
+   public void testSendReceiveAMQP() throws Throwable {
+      internalSendReceiveAMQP("AMQP", 100, false);
+   }
+
+   @TestTemplate
    public void testSendReceivePaging() throws Throwable {
-      setVariable(senderClassloader, "persistent", true);
-      startServer(serverFolder, sender, senderClassloader, "journalTest", null, true);
-      evaluate(senderClassloader, "journalcompatibility/forcepaging.groovy");
-      evaluate(senderClassloader, "meshTest/sendMessages.groovy", sender, sender, "sendAckMessages");
-      evaluate(senderClassloader, "journalcompatibility/ispaging.groovy");
-      stopServer(senderClassloader);
-
-      setVariable(receiverClassloader, "persistent", true);
-      startServer(serverFolder, receiver, receiverClassloader, "journalTest", null, false);
-      evaluate(receiverClassloader, "journalcompatibility/ispaging.groovy");
-
-      setVariable(receiverClassloader, "latch", null);
-      evaluate(receiverClassloader, "meshTest/sendMessages.groovy", receiver, receiver, "receiveMessages");
+      internalSendReceiveAMQP("CORE", 100, false);
    }
 
    @TestTemplate
    public void testSendReceiveAMQPPaging() throws Throwable {
+      internalSendReceiveAMQP("AMQP", 100, false);
+   }
+
+   @TestTemplate
+   public void testSendReceiveLargeAMQPPaging() throws Throwable {
+      internalSendReceiveAMQP("AMQP", 200 * 1024, true);
+   }
+
+
+   private void internalSendReceiveAMQP(String protocol, int size, boolean paging) throws Throwable {
+
       setVariable(senderClassloader, "persistent", true);
       startServer(serverFolder, sender, senderClassloader, "journalTest", null, true);
-      evaluate(senderClassloader, "journalcompatibility/forcepaging.groovy");
-      evaluate(senderClassloader, "meshTest/sendMessages.groovy", sender, sender, "sendAckMessages", "AMQP");
-      evaluate(senderClassloader, "journalcompatibility/ispaging.groovy");
+      if (paging) {
+         evaluate(senderClassloader, "journalcompatibility/forcepaging.groovy");
+      }
+      evaluate(senderClassloader, "meshTest/sendMessages.groovy", sender, sender, "sendAckMessages", "AMQP", String.valueOf(size));
       stopServer(senderClassloader);
 
       setVariable(receiverClassloader, "persistent", true);
       startServer(serverFolder, receiver, receiverClassloader, "journalTest", null, false);
-      evaluate(receiverClassloader, "journalcompatibility/ispaging.groovy");
 
       setVariable(receiverClassloader, "latch", null);
-      evaluate(receiverClassloader, "meshTest/sendMessages.groovy", receiver, receiver, "receiveMessages", "AMQP");
+      evaluate(receiverClassloader, "meshTest/sendMessages.groovy", receiver, receiver, "receiveMessages", "AMQP", String.valueOf(size));
    }
+
+
 
    /**
     * Test that the server starts properly using an old journal even though persistent size metrics were not originaly

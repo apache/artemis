@@ -303,10 +303,14 @@ public class AmqpClientTestSupport extends AmqpTestSupport {
    }
 
    protected void sendMessages(String destinationName, int count, boolean durable) throws Exception {
-      sendMessages(destinationName, count, durable, null);
+      sendMessages(destinationName, count, durable, null, null);
    }
 
    protected void sendMessages(String destinationName, int count, boolean durable, byte[] payload) throws Exception {
+      sendMessages(destinationName, count, durable, payload, null);
+   }
+
+   protected void sendMessages(String destinationName, int count, boolean durable, byte[] payload, Map<String, Object> properties) throws Exception {
       AmqpClient client = createAmqpClient();
       AmqpConnection connection = addConnection(client.connect());
       try {
@@ -319,6 +323,9 @@ public class AmqpClientTestSupport extends AmqpTestSupport {
             message.setDurable(durable);
             if (payload != null) {
                message.setBytes(payload);
+            }
+            if (properties != null) {
+               properties.forEach((a, b) -> message.setApplicationProperty(a, b));
             }
             sender.send(message);
          }

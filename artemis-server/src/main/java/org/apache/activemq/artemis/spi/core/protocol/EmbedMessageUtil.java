@@ -40,7 +40,11 @@ public class EmbedMessageUtil {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-   public static ICoreMessage embedAsCoreMessage(Message source) {
+   // AMQP introduced Map Encoding on this version
+   public static final int LATEST_WIRE_VERSION = 2;
+   public static final int NO_MAP_WIRE_VERSION = 1;
+
+   public static ICoreMessage embedAsCoreMessage(Message source, int wireVersion) {
 
       if (source instanceof ICoreMessage message) {
          return message;
@@ -51,16 +55,19 @@ public class EmbedMessageUtil {
 
             LargeServerMessageImpl largeServerMessage = new LargeServerMessageImpl(Message.LARGE_EMBEDDED_TYPE, source.getMessageID(), largeSource.getStorageManager(), largeSource.getLargeBody().createFile());
             largeServerMessage.setDurable(source.isDurable());
-            int size = source.getPersister().getEncodeSize(source);
+
+            Persister<Message> messagePersister = source.getWireCompatiblePersister(wireVersion);
+
+            int size = messagePersister.getEncodeSize(source);
             byte[] arrayByte = new byte[size];
             ActiveMQBuffer buffer = ActiveMQBuffers.wrappedBuffer(arrayByte);
             buffer.resetWriterIndex();
-            source.getPersister().encode(buffer, source);
+            messagePersister.encode(buffer, source);
             largeServerMessage.toMessage().putBytesProperty(AMQP_ENCODE_PROPERTY, arrayByte);
             largeServerMessage.setParentRef((RefCountMessage)source);
             return (ICoreMessage) largeServerMessage.toMessage();
          } else {
-            Persister persister = source.getPersister();
+            Persister persister = source.getWireCompatiblePersister(wireVersion);
 
             CoreMessage message = new CoreMessage(source.getMessageID(), persister.getEncodeSize(source) + signature.length + CoreMessage.BODY_OFFSET).setType(Message.EMBEDDED_TYPE);
             message.setDurable(source.isDurable());
@@ -71,6 +78,10 @@ public class EmbedMessageUtil {
             return message;
          }
       }
+   }
+
+   public static ICoreMessage embedAsCoreMessage(Message source) {
+      return embedAsCoreMessage(source, LATEST_WIRE_VERSION);
    }
 
    public static Message extractEmbedded(ICoreMessage message, StorageManager storageManager) {
