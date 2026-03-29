@@ -31,11 +31,10 @@ import org.apache.activemq.artemis.dto.MatchDTO;
 import org.apache.activemq.artemis.core.server.management.JMXAccessControlList;
 import org.apache.activemq.artemis.dto.WhiteListDTO;
 import org.apache.activemq.artemis.spi.core.security.ActiveMQSecurityManager;
-import org.apache.activemq.artemis.utils.FactoryFinder;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.List;
+import java.util.ServiceLoader;
 
 public class ManagementFactory {
 
@@ -47,11 +46,15 @@ public class ManagementFactory {
          throw new ConfigurationException("Invalid configuration URI, no scheme specified: " + configURI);
       }
 
+      ServiceLoader<JmxAclHandler> loader = ServiceLoader.load(JmxAclHandler.class, ManagementFactory.class.getClassLoader());
       JmxAclHandler factory = null;
-      try {
-         FactoryFinder finder = new FactoryFinder("META-INF/services/org/apache/activemq/artemis/broker/jmx/");
-         factory = (JmxAclHandler) finder.newInstance(configURI.getScheme());
-      } catch (IOException ioe) {
+      for (JmxAclHandler handler : loader) {
+         if (handler.getName().equals(configURI.getScheme())) {
+            factory = handler;
+            break;
+         }
+      }
+      if (factory == null) {
          throw new ConfigurationException("Invalid configuration URI, can't find configuration scheme: " + configURI.getScheme());
       }
       return factory.createJmxAcl(configURI, artemisHome, artemisInstance, artemisURIInstance);

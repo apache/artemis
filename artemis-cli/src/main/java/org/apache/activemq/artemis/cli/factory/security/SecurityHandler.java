@@ -21,5 +21,7 @@ import org.apache.activemq.artemis.spi.core.security.ActiveMQSecurityManager;
 
 public interface SecurityHandler {
 
+   String getName();
+
    ActiveMQSecurityManager createSecurityManager(SecurityDTO securityDTO) throws Exception;
 }

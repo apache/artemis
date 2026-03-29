@@ -27,6 +27,11 @@ import org.apache.activemq.artemis.dto.XmlUtil;
 public class XmlBrokerFactoryHandler implements BrokerFactoryHandler {
 
    @Override
+   public String getName() {
+      return "xml";
+   }
+
+   @Override
    public BrokerDTO createBroker(URI brokerURI, String artemisHome, String artemisInstance, URI artemisURIInstance) throws Exception {
       File file = new File(brokerURI.getSchemeSpecificPart());
       if (!file.exists()) {

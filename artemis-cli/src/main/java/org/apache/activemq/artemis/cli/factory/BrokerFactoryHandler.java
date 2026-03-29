@@ -22,5 +22,7 @@ import org.apache.activemq.artemis.dto.BrokerDTO;
 
 public interface BrokerFactoryHandler {
 
+   String getName();
+
    BrokerDTO createBroker(URI brokerURI, String artemisHome, String artemisInstance, URI artemisURIInstance) throws Exception;
 }

@@ -23,5 +23,7 @@ import org.apache.activemq.artemis.spi.core.security.ActiveMQSecurityManager;
 
 public interface BrokerHandler {
 
+   String getName();
+
    Broker createServer(ServerDTO brokerDTO, ActiveMQSecurityManager security, ActivateCallback activateCallback);
 }

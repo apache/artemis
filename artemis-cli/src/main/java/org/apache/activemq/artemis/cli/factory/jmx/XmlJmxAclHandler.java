@@ -25,6 +25,12 @@ import java.io.File;
 import java.net.URI;
 
 public class XmlJmxAclHandler implements JmxAclHandler {
+
+   @Override
+   public String getName() {
+      return "xml";
+   }
+
    @Override
    public ManagementContextDTO createJmxAcl(URI configURI, String artemisHome, String artemisInstance, URI artemisURIInstance) throws Exception {
       File file = new File(configURI.getSchemeSpecificPart());

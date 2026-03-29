@@ -16,11 +16,11 @@
  */
 package org.apache.activemq.artemis.cli.factory.security;
 
+import java.util.ServiceLoader;
 import javax.xml.bind.annotation.XmlRootElement;
 
 import org.apache.activemq.artemis.dto.SecurityDTO;
 import org.apache.activemq.artemis.spi.core.security.ActiveMQSecurityManager;
-import org.apache.activemq.artemis.utils.FactoryFinder;
 
 public class SecurityManagerFactory {
 
@@ -28,8 +28,18 @@ public class SecurityManagerFactory {
       if (config == null) {
          throw new Exception("No security manager configured!");
       }
-      FactoryFinder finder = new FactoryFinder("META-INF/services/org/apache/activemq/artemis/broker/security/");
-      SecurityHandler securityHandler = (SecurityHandler) finder.newInstance(config.getClass().getAnnotation(XmlRootElement.class).name());
+      String name = config.getClass().getAnnotation(XmlRootElement.class).name();
+      ServiceLoader<SecurityHandler> loader = ServiceLoader.load(SecurityHandler.class, SecurityManagerFactory.class.getClassLoader());
+      SecurityHandler securityHandler = null;
+      for (SecurityHandler handler : loader) {
+         if (handler.getName().equals(name)) {
+            securityHandler = handler;
+            break;
+         }
+      }
+      if (securityHandler == null) {
+         throw new Exception("Invalid security configuration, can't find security handler: " + name);
+      }
       return securityHandler.createSecurityManager(config);
    }
 }

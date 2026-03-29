@@ -30,6 +30,11 @@ import org.apache.activemq.artemis.utils.sm.SecurityManagerShim;
 public class SecurityManagerHandler implements SecurityHandler {
 
    @Override
+   public String getName() {
+      return "security-manager";
+   }
+
+   @Override
    public ActiveMQSecurityManager createSecurityManager(SecurityDTO security) {
       SecurityManagerDTO customSecurity = (SecurityManagerDTO) security;
       String clazz = customSecurity.className;

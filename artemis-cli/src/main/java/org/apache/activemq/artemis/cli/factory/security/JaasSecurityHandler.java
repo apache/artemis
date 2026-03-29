@@ -24,6 +24,11 @@ import org.apache.activemq.artemis.spi.core.security.ActiveMQSecurityManager;
 public class JaasSecurityHandler implements SecurityHandler {
 
    @Override
+   public String getName() {
+      return "jaas-security";
+   }
+
+   @Override
    public ActiveMQSecurityManager createSecurityManager(SecurityDTO security) throws Exception {
       JaasSecurityDTO jaasSecurity = (JaasSecurityDTO) security;
       return new ActiveMQJAASSecurityManager(jaasSecurity.domain, jaasSecurity.certificateDomain);

@@ -21,5 +21,8 @@ import org.apache.activemq.artemis.dto.ManagementContextDTO;
 import java.net.URI;
 
 public interface JmxAclHandler {
+
+   String getName();
+
    ManagementContextDTO createJmxAcl(URI configURI, String artemisHome, String artemisInstance, URI artemisURIInstance) throws Exception;
 }

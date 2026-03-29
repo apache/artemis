@@ -77,6 +77,11 @@ public class TestBrokerFactoryHandler implements BrokerFactoryHandler {
    }
 
    @Override
+   public String getName() {
+      return "test";
+   }
+
+   @Override
    public BrokerDTO createBroker(URI brokerURI, String artemisHome, String artemisInstance, URI artemisURIInstance) throws Exception {
       TestBrokerFactoryHandler.brokerURI = brokerURI;
       TestBrokerFactoryHandler.artemisHome = artemisHome;

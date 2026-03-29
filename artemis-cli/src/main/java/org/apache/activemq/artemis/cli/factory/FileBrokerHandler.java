@@ -25,6 +25,11 @@ import org.apache.activemq.artemis.spi.core.security.ActiveMQSecurityManager;
 public class FileBrokerHandler implements BrokerHandler {
 
    @Override
+   public String getName() {
+      return "file";
+   }
+
+   @Override
    public Broker createServer(ServerDTO brokerDTO, ActiveMQSecurityManager security, ActivateCallback activateCallback) {
       return new FileBroker(brokerDTO, security, activateCallback);
    }
