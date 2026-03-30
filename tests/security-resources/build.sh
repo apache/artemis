@@ -182,6 +182,14 @@ cat client-ca-cert.pem server-ca-cert.pem > client-and-server-ca-certs.pem
 ## a cert for the ExternalCertificateLoginModule
 keytool -storetype pkcs12 -keystore san-keystore.p12 -storepass $STORE_PASS -keypass $KEY_PASS -alias san-roles -genkey -keyalg "RSA" -keysize 2048 -dname "CN=ok" -validity $VALIDITY -ext "SAN=uri:urn:jaas:role:admin,uri:urn:jaas:role:view"
 
+# Create JKS and JCEKS keystores with a different key password (for testing keyPassword parameter):
+# -------------------------------------------------------------------------------------------------
+DIFFERENT_KEY_PASS=keypass123
+keytool -importkeystore -srckeystore server-keystore.p12 -destkeystore server-keystore-keypass.jks -srcstoretype pkcs12 -deststoretype jks -srcstorepass $STORE_PASS -deststorepass $STORE_PASS
+keytool -keypasswd -keystore server-keystore-keypass.jks -storepass $STORE_PASS -alias server -keypass $STORE_PASS -new $DIFFERENT_KEY_PASS
+keytool -importkeystore -srckeystore server-keystore.p12 -destkeystore server-keystore-keypass.jceks -srcstoretype pkcs12 -deststoretype jceks -srcstorepass $STORE_PASS -deststorepass $STORE_PASS
+keytool -keypasswd -keystore server-keystore-keypass.jceks -storepass $STORE_PASS -alias server -keypass $STORE_PASS -new $DIFFERENT_KEY_PASS
+
 # Clean up working files
 # -----------------------
 rm -f *.crt *.csr openssl-*

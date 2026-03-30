@@ -173,6 +173,8 @@ public class NettyAcceptor extends AbstractAcceptor {
 
    private final String keyStorePassword;
 
+   private final String keyPassword;
+
    private final String keystoreAlias;
 
    private final String trustStoreProvider;
@@ -332,6 +334,8 @@ public class NettyAcceptor extends AbstractAcceptor {
 
          keyStorePassword = ConfigurationHelper.getPasswordProperty(TransportConstants.KEYSTORE_PASSWORD_PROP_NAME, TransportConstants.DEFAULT_KEYSTORE_PASSWORD, configuration, ActiveMQDefaultConfiguration.getPropMaskPassword(), ActiveMQDefaultConfiguration.getPropPasswordCodec());
 
+         keyPassword = ConfigurationHelper.getPasswordProperty(TransportConstants.KEY_PASSWORD_PROP_NAME, TransportConstants.DEFAULT_KEY_PASSWORD, configuration, ActiveMQDefaultConfiguration.getPropMaskPassword(), ActiveMQDefaultConfiguration.getPropPasswordCodec());
+
          Pair<String, String> trustStoreCompat = SSLSupport.getValidProviderAndType(ConfigurationHelper.getStringProperty(TransportConstants.TRUSTSTORE_PROVIDER_PROP_NAME, TransportConstants.DEFAULT_TRUSTSTORE_PROVIDER, configuration),
                                                                                     ConfigurationHelper.getStringProperty(TransportConstants.TRUSTSTORE_TYPE_PROP_NAME, TransportConstants.DEFAULT_TRUSTSTORE_TYPE, configuration));
 
@@ -372,6 +376,7 @@ public class NettyAcceptor extends AbstractAcceptor {
             .keystorePath(keyStorePath)
             .keystoreType(keyStoreType)
             .keystorePassword(keyStorePassword)
+            .keyPassword(keyPassword)
             .keystoreAlias(keystoreAlias)
             .truststoreProvider(trustStoreProvider)
             .truststorePath(trustStorePath)
@@ -388,6 +393,7 @@ public class NettyAcceptor extends AbstractAcceptor {
          keyStoreType = TransportConstants.DEFAULT_KEYSTORE_TYPE;
          keyStorePath = TransportConstants.DEFAULT_KEYSTORE_PATH;
          keyStorePassword = TransportConstants.DEFAULT_KEYSTORE_PASSWORD;
+         keyPassword = TransportConstants.DEFAULT_KEY_PASSWORD;
          keystoreAlias = TransportConstants.DEFAULT_KEYSTORE_ALIAS;
          trustStoreProvider = TransportConstants.DEFAULT_TRUSTSTORE_PROVIDER;
          trustStoreType = TransportConstants.DEFAULT_TRUSTSTORE_TYPE;

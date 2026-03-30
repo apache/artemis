@@ -321,6 +321,15 @@ Although this value can be configured on the server, it is downloaded and used b
 If the client needs to use a different password from that set on the server then it can override the server-side setting by either using the customary "javax.net.ssl.keyStorePassword" system property or the Artemis-specific "org.apache.activemq.ssl.keyStorePassword" system property.
 The Artemis-specific system property is useful if another component on the client is already making use of the standard Java system property.
 
+keyPassword::
+The password used to access the private key within the keystore.
+When not set (the default), `keyStorePassword` is used for both opening the keystore and accessing the private key.
+This is useful when the keystore and its private key have different passwords, which is supported by JKS and JCEKS keystore types.
++
+NOTE: PKCS12 keystores do not support separate key and store passwords.
++
+Default is `null`.
+
 keyStoreType::
 The type of keystore being used.
 For example, `JKS`, `JCEKS`, `PKCS12`, `PEM` etc.

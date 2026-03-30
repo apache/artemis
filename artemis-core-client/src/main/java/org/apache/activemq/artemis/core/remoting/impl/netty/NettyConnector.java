@@ -241,6 +241,8 @@ public class NettyConnector extends AbstractConnector {
 
    private String keyStorePassword;
 
+   private String keyPassword;
+
    private String keyStoreAlias;
 
    private String trustStoreProvider;
@@ -418,6 +420,8 @@ public class NettyConnector extends AbstractConnector {
 
          keyStorePassword = ConfigurationHelper.getPasswordProperty(TransportConstants.KEYSTORE_PASSWORD_PROP_NAME, TransportConstants.DEFAULT_KEYSTORE_PASSWORD, configuration, ActiveMQDefaultConfiguration.getPropMaskPassword(), ActiveMQDefaultConfiguration.getPropPasswordCodec());
 
+         keyPassword = ConfigurationHelper.getPasswordProperty(TransportConstants.KEY_PASSWORD_PROP_NAME, TransportConstants.DEFAULT_KEY_PASSWORD, configuration, ActiveMQDefaultConfiguration.getPropMaskPassword(), ActiveMQDefaultConfiguration.getPropPasswordCodec());
+
          keyStoreAlias = ConfigurationHelper.getStringProperty(TransportConstants.KEYSTORE_ALIAS_PROP_NAME, TransportConstants.DEFAULT_KEYSTORE_ALIAS, configuration);
 
          trustStoreProvider = ConfigurationHelper.getStringProperty(TransportConstants.TRUSTSTORE_PROVIDER_PROP_NAME, TransportConstants.DEFAULT_TRUSTSTORE_PROVIDER, configuration);
@@ -456,6 +460,7 @@ public class NettyConnector extends AbstractConnector {
          keyStoreType = TransportConstants.DEFAULT_KEYSTORE_TYPE;
          keyStorePath = TransportConstants.DEFAULT_KEYSTORE_PATH;
          keyStorePassword = TransportConstants.DEFAULT_KEYSTORE_PASSWORD;
+         keyPassword = TransportConstants.DEFAULT_KEY_PASSWORD;
          keyStoreAlias = TransportConstants.DEFAULT_KEYSTORE_ALIAS;
          crcOptions = TransportConstants.DEFAULT_CRC_OPTIONS;
          ocspResponderURL = TransportConstants.DEFAULT_OCSP_RESPONDER_URL;
@@ -604,6 +609,7 @@ public class NettyConnector extends AbstractConnector {
       final String realKeyStoreProvider;
       final String realKeyStoreType;
       final String realKeyStorePassword;
+      final String realKeyPassword;
       final String realKeyStoreAlias;
       final String realTrustStorePath;
       final String realTrustStoreProvider;
@@ -616,6 +622,7 @@ public class NettyConnector extends AbstractConnector {
             realKeyStoreProvider = keyStoreProvider;
             realKeyStoreType = keyStoreType;
             realKeyStorePassword = keyStorePassword;
+            realKeyPassword = keyPassword;
             realKeyStoreAlias = keyStoreAlias;
             realTrustStorePath = trustStorePath;
             realTrustStoreProvider = trustStoreProvider;
@@ -630,6 +637,7 @@ public class NettyConnector extends AbstractConnector {
                tempKeyStorePassword = processSslPasswordProperty(tempKeyStorePassword, tempPasswordCodecClass);
             }
             realKeyStorePassword = tempKeyStorePassword;
+            realKeyPassword = keyPassword;
             realKeyStoreAlias = keyStoreAlias;
 
             Pair<String, String> keyStoreCompat = SSLSupport.getValidProviderAndType(Stream.of(System.getProperty(ACTIVEMQ_KEYSTORE_PROVIDER_PROP_NAME), System.getProperty(JAVAX_KEYSTORE_PROVIDER_PROP_NAME), keyStoreProvider).map(v -> useDefaultSslContext ? keyStoreProvider : v).filter(Objects::nonNull).findFirst().orElse(null),
@@ -654,6 +662,7 @@ public class NettyConnector extends AbstractConnector {
          realKeyStoreProvider = null;
          realKeyStoreType = null;
          realKeyStorePassword = null;
+         realKeyPassword = null;
          realKeyStoreAlias = null;
          realTrustStorePath = null;
          realTrustStoreProvider = null;
@@ -690,6 +699,7 @@ public class NettyConnector extends AbstractConnector {
                   .keystorePath(realKeyStorePath)
                   .keystoreType(realKeyStoreType)
                   .keystorePassword(realKeyStorePassword)
+                  .keyPassword(realKeyPassword)
                   .keystoreAlias(realKeyStoreAlias)
                   .truststoreProvider(realTrustStoreProvider)
                   .truststorePath(realTrustStorePath)

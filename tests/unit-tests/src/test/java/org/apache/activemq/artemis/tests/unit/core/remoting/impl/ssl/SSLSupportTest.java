@@ -272,6 +272,65 @@ public class SSLSupportTest extends ActiveMQTestBase {
    }
 
    @TestTemplate
+   public void testContextWithDifferentKeyPassword() throws Exception {
+      // JKS and JCEKS keystores support a private key password different from the store password
+      if (!"JKS".equals(storeType) && !"JCEKS".equals(storeType)) {
+         return;
+      }
+      String suffix = storeType.toLowerCase();
+      new SSLSupport()
+         .setKeystoreProvider(storeProvider)
+         .setKeystoreType(storeType)
+         .setKeystorePath("server-keystore-keypass." + suffix)
+         .setKeystorePassword(keyStorePassword)
+         .setKeyPassword("keypass123")
+         .setTruststoreProvider(storeProvider)
+         .setTruststoreType(storeType)
+         .setTruststorePath(trustStorePath)
+         .setTruststorePassword(trustStorePassword)
+         .createContext();
+   }
+
+   @TestTemplate
+   public void testContextWithWrongKeyPassword() throws Exception {
+      // Verify that a wrong key password fails
+      if (!"JKS".equals(storeType) && !"JCEKS".equals(storeType)) {
+         return;
+      }
+      String suffix = storeType.toLowerCase();
+      try {
+         new SSLSupport()
+            .setKeystoreProvider(storeProvider)
+            .setKeystoreType(storeType)
+            .setKeystorePath("server-keystore-keypass." + suffix)
+            .setKeystorePassword(keyStorePassword)
+            .setKeyPassword("wrongpassword")
+            .setTruststoreProvider(storeProvider)
+            .setTruststoreType(storeType)
+            .setTruststorePath(trustStorePath)
+            .setTruststorePassword(trustStorePassword)
+            .createContext();
+         fail();
+      } catch (Exception e) {
+      }
+   }
+
+   @TestTemplate
+   public void testContextWithKeyPasswordFallback() throws Exception {
+      // When keyPassword is not set, keystorePassword is used (existing behavior)
+      new SSLSupport()
+         .setKeystoreProvider(storeProvider)
+         .setKeystoreType(storeType)
+         .setKeystorePath(keyStorePath)
+         .setKeystorePassword(keyStorePassword)
+         .setTruststoreProvider(storeProvider)
+         .setTruststoreType(storeType)
+         .setTruststorePath(trustStorePath)
+         .setTruststorePassword(trustStorePassword)
+         .createContext();
+   }
+
+   @TestTemplate
    public void testContextWithTrustAll() throws Exception {
       //This is using a bad password but should not fail because the trust store should be ignored with
       //the trustAll flag set to true

@@ -80,6 +80,7 @@ public class SSLSupport {
    private String keystoreType = TransportConstants.DEFAULT_KEYSTORE_TYPE;
    private String keystorePath = TransportConstants.DEFAULT_KEYSTORE_PATH;
    private String keystorePassword = TransportConstants.DEFAULT_KEYSTORE_PASSWORD;
+   private String keyPassword = TransportConstants.DEFAULT_KEY_PASSWORD;
    private String truststoreProvider = TransportConstants.DEFAULT_TRUSTSTORE_PROVIDER;
    private String truststoreType = TransportConstants.DEFAULT_TRUSTSTORE_TYPE;
    private String truststorePath = TransportConstants.DEFAULT_TRUSTSTORE_PATH;
@@ -100,6 +101,7 @@ public class SSLSupport {
       keystorePath = config.getKeystorePath();
       keystoreType = config.getKeystoreType();
       keystorePassword = config.getKeystorePassword();
+      keyPassword = config.getKeyPassword();
       truststoreProvider = config.getTruststoreProvider();
       truststorePath = config.getTruststorePath();
       truststoreType = config.getTruststoreType();
@@ -145,6 +147,15 @@ public class SSLSupport {
 
    public SSLSupport setKeystorePassword(String keystorePassword) {
       this.keystorePassword = keystorePassword;
+      return this;
+   }
+
+   public String getKeyPassword() {
+      return keyPassword;
+   }
+
+   public SSLSupport setKeyPassword(String keyPassword) {
+      this.keyPassword = keyPassword;
       return this;
    }
 
@@ -262,7 +273,7 @@ public class SSLSupport {
          Pair<PrivateKey, X509Certificate[]> privateKeyAndCertChain = getPrivateKeyAndCertChain(keyStore);
          sslContextBuilder = SslContextBuilder.forServer(privateKeyAndCertChain.getA(), privateKeyAndCertChain.getB());
       } else {
-         sslContextBuilder = SslContextBuilder.forServer(getKeyManagerFactory(keyStore, keystorePassword == null ? null : keystorePassword.toCharArray()));
+         sslContextBuilder = SslContextBuilder.forServer(getKeyManagerFactory(keyStore, getKeyPasswordOrDefault()));
       }
       return sslContextBuilder
          .sslProvider(SslProvider.valueOf(sslProvider))
@@ -280,7 +291,7 @@ public class SSLSupport {
          Pair<PrivateKey, X509Certificate[]> privateKeyAndCertChain = getPrivateKeyAndCertChain(keyStore);
          sslContextBuilder.keyManager(privateKeyAndCertChain.getA(), privateKeyAndCertChain.getB());
       } else {
-         sslContextBuilder.keyManager(getKeyManagerFactory(keyStore, keystorePassword == null ? null : keystorePassword.toCharArray()));
+         sslContextBuilder.keyManager(getKeyManagerFactory(keyStore, getKeyPasswordOrDefault()));
       }
 
       return sslContextBuilder.build();
@@ -509,7 +520,7 @@ public class SSLSupport {
       } else {
          KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
          KeyStore ks = SSLSupport.loadKeystore(keystoreProvider, keystoreType, keystorePath, keystorePassword);
-         kmf.init(ks, keystorePassword == null ? null : keystorePassword.toCharArray());
+         kmf.init(ks, getKeyPasswordOrDefault());
          return kmf;
       }
    }
@@ -545,7 +556,7 @@ public class SSLSupport {
    }
 
    private Pair<PrivateKey, X509Certificate[]> getPrivateKeyAndCertChain(KeyStore keyStore) throws KeyStoreException, UnrecoverableKeyException, NoSuchAlgorithmException {
-      PrivateKey key = (PrivateKey) keyStore.getKey(keystoreAlias, keystorePassword.toCharArray());
+      PrivateKey key = (PrivateKey) keyStore.getKey(keystoreAlias, getKeyPasswordOrDefault());
       if (key == null) {
          throw ActiveMQClientMessageBundle.BUNDLE.keystoreAliasNotFound(keystoreAlias, keystorePath);
       }
@@ -560,6 +571,13 @@ public class SSLSupport {
       KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
       keyManagerFactory.init(keyStore, keystorePassword);
       return keyManagerFactory;
+   }
+
+   private char[] getKeyPasswordOrDefault() {
+      if (keyPassword != null) {
+         return keyPassword.toCharArray();
+      }
+      return keystorePassword != null ? keystorePassword.toCharArray() : null;
    }
 
    /**

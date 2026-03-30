@@ -17,8 +17,10 @@
 package org.apache.activemq.artemis.tests.unit.core.remoting.impl.ssl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.activemq.artemis.spi.core.remoting.ssl.SSLContextConfig;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
@@ -183,5 +185,78 @@ public class SSLContextConfigTest extends ActiveMQTestBase {
 
       assertEquals(originalConfig.getOcspResponderURL(), copiedConfig.getOcspResponderURL());
       assertEquals(ocspURL, copiedConfig.getOcspResponderURL());
+   }
+
+   @Test
+   public void testKeyPasswordInBuilder() {
+      final String keyPassword = "keypass123";
+
+      SSLContextConfig config = SSLContextConfig.builder()
+         .keyPassword(keyPassword)
+         .build();
+
+      assertEquals(keyPassword, config.getKeyPassword());
+   }
+
+   @Test
+   public void testDefaultKeyPassword() {
+      SSLContextConfig config = SSLContextConfig.builder()
+         .build();
+
+      assertNull(config.getKeyPassword());
+   }
+
+   @Test
+   public void testEqualsExcludesKeyPassword() {
+      SSLContextConfig config1 = SSLContextConfig.builder()
+         .keyPassword("password1")
+         .build();
+
+      SSLContextConfig config2 = SSLContextConfig.builder()
+         .keyPassword("password2")
+         .build();
+
+      SSLContextConfig config3 = SSLContextConfig.builder()
+         .build();
+
+      // Passwords are intentionally excluded from equals/hashCode
+      assertEquals(config1, config2);
+      assertEquals(config1, config3);
+   }
+
+   @Test
+   public void testToStringMasksKeyPassword() {
+      SSLContextConfig config = SSLContextConfig.builder()
+         .keyPassword("secretKeyPass")
+         .build();
+
+      String toString = config.toString();
+      assertTrue(toString.contains("keyPassword=******"));
+      assertFalse(toString.contains("secretKeyPass"));
+   }
+
+   @Test
+   public void testToStringKeyPasswordNull() {
+      SSLContextConfig config = SSLContextConfig.builder()
+         .build();
+
+      String toString = config.toString();
+      assertTrue(toString.contains("keyPassword=null"));
+   }
+
+   @Test
+   public void testBuilderFromExistingConfigWithKeyPassword() {
+      final String keyPassword = "keypass123";
+
+      SSLContextConfig originalConfig = SSLContextConfig.builder()
+         .keyPassword(keyPassword)
+         .build();
+
+      SSLContextConfig copiedConfig = SSLContextConfig.builder()
+         .from(originalConfig)
+         .build();
+
+      assertEquals(originalConfig.getKeyPassword(), copiedConfig.getKeyPassword());
+      assertEquals(keyPassword, copiedConfig.getKeyPassword());
    }
 }
