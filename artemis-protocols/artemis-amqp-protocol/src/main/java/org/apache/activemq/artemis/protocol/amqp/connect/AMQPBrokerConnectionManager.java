@@ -93,7 +93,7 @@ public class AMQPBrokerConnectionManager implements ActiveMQComponent, ClientCon
       if (configuration.getLockCoordinator() != null) {
          LockCoordinator lockCoordinator = server.getLockCoordinator(configuration.getLockCoordinator());
          if (lockCoordinator == null) {
-            throw new IllegalStateException("lock coordinator " + configuration.getName() + " not found");
+            throw new IllegalStateException("lock coordinator " + configuration.getLockCoordinator() + " not found");
          }
          amqpBrokerConnection.setLockCoordinator(lockCoordinator);
       }

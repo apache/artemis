@@ -468,14 +468,16 @@ public class NettyAcceptor extends AbstractAcceptor {
       if (lockCoordinator == null) {
          internalStart();
       } else {
-         // The Acceptor needs to start before anything else, so low priority to start
-         lockCoordinator.onLockAcquired(this::internalStart, LockCoordinator.LOW_PRIORITY);
-         // And the Acceptor needs to stop after everything else, so high priority to stop
-         lockCoordinator.onLockReleased(this::internalStop, LockCoordinator.HIGH_PRIORITY);
+         // The acceptor needs to be the last to start
+         // Mirroring and other components that may be capturing events need to be started before the acceptor
+         lockCoordinator.onLockAcquired(this::internalStart, LockCoordinator.HIGH_PRIORITY);
+         // And the Acceptor needs to stop before everything else, so low priority to stop
+         // This is because we need to stop capturing events to avoid missing events
+         lockCoordinator.onLockReleased(this::internalStop, LockCoordinator.LOW_PRIORITY);
       }
    }
 
-   private void internalStart() throws Exception {
+   protected void internalStart() throws Exception {
       if (channelClazz != null) {
          // Already started
          return;
