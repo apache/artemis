@@ -148,8 +148,9 @@ public class OIDCLoginModule implements AuditLoginModule {
    private String[] rolesPaths;
 
    /**
-    * <p>Flag which turns on OAuth 2.0 Mutual-TLS Client Authentication and Certificate-Bound Access Tokens
-    * (RFC 8705).</p>
+    * <p>Flag which enforces OAuth 2.0 Mutual-TLS Client Authentication and Certificate-Bound Access Tokens
+    * (RFC 8705). If a token contains {@code cnf/x5t#256} claim, it is always verified and mTLS is required.</p>
+    *
     * <p>{@code cnf} claim itself comes from RFC 7800 (Proof-of-Possession Key Semantics for JSON Web Tokens (JWTs))
     * and represents a proof that the token was issued for the actual sender (and was not stolen). {@code x5t#256}
     * is a specific type of proof from RFC 7515 (JSON Web Signature (JWS)) and represents an SHA-256 digest
@@ -245,14 +246,10 @@ public class OIDCLoginModule implements AuditLoginModule {
       JWT jwt;
       JWTClaimsSet claims = null;
       try {
-         CertificateCallback x509Callback = null;
+         CertificateCallback x509Callback = new CertificateCallback();
          JwtCallback jwtCallback = new JwtCallback();
-         if (requireOAuth2MTLS) {
-            x509Callback = new CertificateCallback();
-            handler.handle(new Callback[] {x509Callback, jwtCallback});
-         } else {
-            handler.handle(new Callback[] {jwtCallback});
-         }
+         // attempt to get the certificate in all the cases - to use it if JWT contains the cnf claim
+         handler.handle(new Callback[] {x509Callback, jwtCallback});
 
          String token = jwtCallback.getJwtToken();
 
@@ -278,7 +275,7 @@ public class OIDCLoginModule implements AuditLoginModule {
          // we may want to verify the proof of possession even if it's not required, but the claim is
          // present in the token
          String thumbprint = OIDCSupport.getThumbprint(claims);
-         X509Certificate[] certificates = x509Callback == null ? new X509Certificate[0] : x509Callback.getCertificates();
+         X509Certificate[] certificates = x509Callback.getCertificates();
 
          if (requireOAuth2MTLS || thumbprint != null) {
             String msg = null;
@@ -303,10 +300,12 @@ public class OIDCLoginModule implements AuditLoginModule {
          }
 
          if (debug) {
-            if (requireOAuth2MTLS) {
+            if (requireOAuth2MTLS || thumbprint != null) {
+               // if there's no LoginException, the cnf claim is ensured to be in the token
+               String digest = OIDCSupport.stringArrayForPath(claims, "cnf.x5t#256").value()[0];
                logger.debug("JAAS login successful for JWT token with {} and X.509 thumbprint {}",
                      OIDCSupport.getTokenSummary(claims),
-                     OIDCSupport.stringArrayForPath(claims, "cnf.x5t#256").value()[0]);
+                     digest);
             } else {
                logger.debug("JAAS login successful for JWT token with {}", OIDCSupport.getTokenSummary(claims));
             }

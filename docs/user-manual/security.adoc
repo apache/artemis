@@ -1309,9 +1309,14 @@ arrays or whitespace-separated strings) used as _user roles_ (translated into `o
 There's no default value. For Keycloak OpenID Connect provider it could be for example `realm_access.roles`.
 
 requireOAuth2MTLS::
-This option adds extra layer of security and enables https://datatracker.ietf.org/doc/html/rfc8705[OAuth 2.0 Mutual-TLS Client Authentication and Certificate-Bound Access Tokens]. With this option enabled, JWT tokens must include `cnf/x5t#256` claim which contains
-a SHA256 digest of client's X.509 certificate. This certificate should match a certificate from TLS layer and requires enabled mTLS at the broker level. +
-Defaults to `false`. But when the token is sent with `cnf/x5t#256`, the option is ignored and treated as enabled.
+This option adds extra layer of security and enforces https://datatracker.ietf.org/doc/html/rfc8705[OAuth 2.0 Mutual-TLS Client Authentication and Certificate-Bound Access Tokens]. +
+With this option enabled, JWT tokens must include `cnf/x5t#256` claim which contains
+a SHA256 digest of client's X.509 certificate. This certificate should match a certificate from TLS layer and requires mTLS
+being enabled at the broker level. +
+This mechanism protects against token stealing, making the tokens valid only in the
+context of mTLS connection with a matching certificate. +
+Defaults to `false`. But when the JWT token is sent with `cnf/x5t#256` claim, the validation is performed regardless of this
+option's value.
 
 === SCRAM-SHA SASL Mechanism
 

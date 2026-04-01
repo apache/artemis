@@ -789,6 +789,65 @@ public class OIDCLoginModuleTest {
    }
 
    @Test
+   public void correctProofOfPossessionWithoutExplicitConfiguration() throws NoSuchAlgorithmException, JOSEException, LoginException {
+      KeyPairGenerator kpgRSA = KeyPairGenerator.getInstance("RSA");
+      KeyPair pairRSA = kpgRSA.generateKeyPair();
+
+      List<JWK> keys = new ArrayList<>();
+      // directly from the public key
+      keys.add(new RSAKey.Builder((RSAPublicKey) pairRSA.getPublic()).keyID("k1").build());
+
+      Map<String, String> config = configMap(
+            OIDCSupport.ConfigKey.DEBUG.getName(), "true",
+            // set to false (the default), but should be enforced for tokens with cnf/x5t#256 claim
+            OIDCSupport.ConfigKey.REQUIRE_OAUTH_MTLS.getName(), "false"
+      );
+
+      OIDCLoginModule lm = new OIDCLoginModule();
+      lm.setOidcSupport(new OIDCSupport(config, true) {
+         @Override
+         public JWKSecurityContext currentContext() {
+            return new JWKSecurityContext(keys);
+         }
+      });
+
+      StubX509Certificate cert = new StubX509Certificate(new UserPrincipal("Alice")) {
+         @Override
+         public byte[] getEncoded() {
+            // see for example org.keycloak.crypto.elytron.ElytronPEMUtilsProvider#encode()
+            return new byte[] {0x42, 0x2a};
+         }
+      };
+
+      byte[] digest = MessageDigest.getInstance("SHA256").digest(cert.getEncoded());
+      String x5t = Base64.getUrlEncoder().withoutPadding().encodeToString(digest);
+
+      JWTClaimsSet claims = new JWTClaimsSet.Builder()
+            .issuer("http://localhost")
+            .subject("Alice")
+            .jwtID(UUID.randomUUID().toString())
+            .audience(List.of("me-the-broker", "some-other-api"))
+            .claim("azp", "artemis-oidc-client")
+            .claim("cnf", Map.of("x5t#256", x5t))
+            .expirationTime(new Date(new Date().getTime() + 3_600_000))
+            .build();
+      SignedJWT signedJWT = new SignedJWT(new JWSHeader.Builder(JWSAlgorithm.RS256).keyID("k1").build(), claims);
+      JWSSigner signer = new RSASSASigner(pairRSA.getPrivate());
+      signedJWT.sign(signer);
+      String token = signedJWT.serialize();
+
+      RemotingConnection remotingConnection = mock(RemotingConnection.class);
+      NettyServerConnection nettyConnection = mock(NettyServerConnection.class);
+      when(remotingConnection.getTransportConnection()).thenReturn(nettyConnection);
+      when(nettyConnection.getPeerCertificates()).thenReturn(new X509Certificate[] {cert});
+
+      Subject subject = new Subject();
+      lm.initialize(subject, new JaasCallbackHandler(null, token, remotingConnection), null, config);
+
+      assertTrue(lm.login());
+   }
+
+   @Test
    public void correctProofOfPossessionButNotConfiguredAndWithoutMTLS() throws NoSuchAlgorithmException, JOSEException {
       KeyPairGenerator kpgRSA = KeyPairGenerator.getInstance("RSA");
       KeyPair pairRSA = kpgRSA.generateKeyPair();

@@ -430,9 +430,9 @@ public class OIDCSupport {
       // When enabled, the field contains a base64url(sha256(der(client certificate))) value which SHOULD
       // match the certificate from actual mTLS (as handled by
       // org.apache.activemq.artemis.spi.core.security.jaas.CertificateLoginModule - but this module is not
-      // required as a prerequisite of OIDCLoginModule, as it doesn't put the certificate as "public credential")
-      // this flag defaults to false, but when cnf/x5t#256 is present in the token, it's used - and the
-      // validation fails if there's no underlying mTLS
+      // required as a prerequisite of OIDCLoginModule, as it doesn't put the certificate into "public credentials").
+      // This flag defaults to false, but when cnf/x5t#256 is present in the token, the proof-of-possession
+      // validation is performed regardless.
       REQUIRE_OAUTH_MTLS("requireOAuth2MTLS", "false");
 
       private final String name;
