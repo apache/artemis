@@ -1203,6 +1203,116 @@ admins=system:serviceaccounts:example-ns:admin-sa
 users=system:serviceaccounts:other-ns:test-sa
 ----
 
+==== OIDCLoginModule
+
+OpenID Connect JAAS Login Module performs authentication based on credentials sent in the form of https://datatracker.ietf.org/doc/html/rfc7519[Json Web Token (JWT)].
+
+This login module doesn't require connection to OpenID Connect provider (like https://www.keycloak.org[Keycloak] or https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id[Microsoft Entra ID]) to perform the authentication. The connection is required only to retrieve a list of public keys used to verify signed JWT tokens.
+
+OIDCLoginModule doesn't enforce any particular method of obtaining the tokens in the first place. The only requirement is mutual
+trust for the OpenID Connect provider.
+
+JWT tokens can be used in various scenarios involving distributed environments where credentials are more sophisticated than plain username and passwords. Generally, JWT token include:
+
+* a set of _claims_ which include standard information (like "issuer", "authorized party", "subject" or "expiration time") or custom information specific to particular OpenID Connect provider (like "set of associated roles" or "preferred username").
+* a signature (created using asymmetric or symmetric algorithms) which can be used to validate the issuer of the token
+
+OIDCLoginModule has two responsibilities:
+
+1. Periodically (with configured interval) fetching a set of current public keys which can be used to verify signed JWT tokens
+2. Validate the JWT token during actual JAAS login process without any access to external services and APIs. Entire validation is performed
+offline and involves:
+** validation of JWT signature
+** validation of "not before" and "expires at" claims
+** checking for required claims (with any value)
+** checking for values of configured claims (like "audience")
+** extracting _user identities_ from configurable "JSON paths" which are then used as "user principals" of the JAAS subject
+** extracting _user roles_ from configurable "JSON paths" which are then used as "role principals" of the JAAS subject
+
+The simplest configuration of OIDC Login Module is:
+
+----
+activemq {
+    org.apache.activemq.artemis.spi.core.security.jaas.OIDCLoginModule required
+        provider="https://openid-provider-host"
+        audience="artemis-broker"
+        ;
+};
+----
+
+Here's the full list of supported options.
+
+debug::
+Enable verbose logging. Details about authentication process will be logged. +
+Defaults to `false`.
+
+userPrincipalClass::
+Implementation of `java.security.Principal` that will be used to collect "user principals" for the JAAS subject being authenticated. +
+Defaults to `org.apache.activemq.artemis.spi.core.security.jaas.UserPrincipal`.
+
+rolePrincipalClass::
+Implementation of `java.security.Principal` that will be used to collect "role principals" for the JAAS subject being authenticated. +
+Defaults to `org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal`.
+
+provider::
+URL of the OpenID Connect provider (like Keycloak or Entra ID). This URL is a _base_ URL. It should be the part of the address which
+can be appended with `/.well-known/openid-configuration`. +
+There's no default provider URL and this parameter is mandatory.
+
+cacheKeysSeconds::
+Public keys are fetched from `jwks_uri` endpoint as specified by https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata[OpenID Provider Metadata]. This information doesn't change very often, so public keys may be safely
+cached for quite a long time. This option specifies the time for which the key information may be cached (in seconds). +
+Defaults to `3600` (seconds).
+
+metadataRetrySeconds::
+When the OIDC Login Module is initialized for the first time, OpenID Connect provider must be contacted to get information from two endpoints:
+
+* Main metadata from `<provider-url>/.well-known/openid-configuration` - only to get the `jwks_uri` endpoint
+* Public key information from `jwks_uri`
+
++
+When a problem occurs during first initialization, `metadataRetrySeconds` specifies the delay before the information is fetched again. +
+Defaults to `30` (seconds).
+
+tlsVersion::
+TLS version to use when the provider uses `https` protocol. The value is passed to `javax.net.ssl.SSLContext.getInstance()`. +
+Defaults to `TLSv1.3`.
+
+caCertificate::
+Path to a certificate for OpenID Connect provider certificate validation (trust). Can be both PEM and DER format.
+There's no default and if the CA is already available in JDK truststore, it can be omitted.
+
+httpTimeout::
+Timeout in milliseconds used when connecting to OpenID Connect provider (combined connection and read/request timeout). +
+Defaults to `5000` (milliseconds).
+
+allowPlainJWT::
+Option that can be used for test scenarios which allows unsigned JWT tokens to be processed (with `{"alg":"none"}` in JWT header). +
+Defaults to `false`.
+
+maxClockSkew::
+Time skew to use when validation expiration time and not-before time for the JWT token. +
+Defaults to `60` (seconds).
+
+audience::
+Comma-separated list of values which must be present in the `aud` (_audience_) claim of the JWT token. +
+There's no default value.
+
+identityPaths::
+Comma-separated _JSON paths_ that point to the fields (direct or nested) in the JWT token which contain values (strings, JSON string
+arrays or whitespace-separated strings) used as _user identities_ (translated into `org.apache.activemq.artemis.spi.core.security.jaas.UserPrincipal` principals). +
+Defaults to `sub`.
+
+rolesPaths::
+Comma-separated _JSON paths_ that point to the fields (direct or nested) in the JWT token which contain values (strings, JSON string
+arrays or whitespace-separated strings) used as _user roles_ (translated into `org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal` principals). +
+There's no default value. For Keycloak OpenID Connect provider it could be for example `realm_access.roles`.
+
+requireOAuth2MTLS::
+This option adds extra layer of security and enables https://datatracker.ietf.org/doc/html/rfc8705[OAuth 2.0 Mutual-TLS Client Authentication and Certificate-Bound Access Tokens]. With this option enabled, JWT tokens must include `cnf/x5t#256` claim which contains
+a SHA256 digest of client's X.509 certificate. This certificate should match a certificate from TLS layer and requires enabled mTLS at the broker level. +
+Defaults to `false`. But when the token is sent with `cnf/x5t#256`, the option is ignored and treated as enabled.
+
 === SCRAM-SHA SASL Mechanism
 
 SCRAM (Salted Challenge Response Authentication Mechanism) is an authentication mechanism that can establish mutual authentication using passwords.
