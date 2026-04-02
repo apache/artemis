@@ -24,7 +24,7 @@ under the License.
    <parent>
       <groupId>org.apache.activemq.examples.failover</groupId>
       <artifactId>broker-failover</artifactId>
-      <version>2.19.2_r3-SNAPSHOT</version>
+      <version>2.19.2-SNAPSHOT</version>
    </parent>
 
    <artifactId>client-side-failoverlistener</artifactId>

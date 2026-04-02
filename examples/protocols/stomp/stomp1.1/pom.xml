@@ -24,7 +24,7 @@ under the License.
    <parent>
       <groupId>org.apache.activemq.examples.stomp</groupId>
       <artifactId>stomp-examples</artifactId>
-      <version>2.19.2_r3-SNAPSHOT</version>
+      <version>2.19.2-SNAPSHOT</version>
    </parent>
 
    <artifactId>stomp1.1</artifactId>
