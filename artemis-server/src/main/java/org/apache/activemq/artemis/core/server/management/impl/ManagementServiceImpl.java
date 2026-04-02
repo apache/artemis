@@ -783,7 +783,7 @@ public class ManagementServiceImpl implements ManagementService {
       getResources(resourceType, getClusterConnectionControls(), resources);
       getResources(resourceType, getConnectionRouterControls(), resources);
       getResources(resourceType, getDivertControls(), resources);
-      if (resourceType.isAssignableFrom(getHawtioSecurity().getClass())) {
+      if (getHawtioSecurity() != null && resourceType.isAssignableFrom(getHawtioSecurity().getClass())) {
          resources.add(getHawtioSecurity());
       }
       resources.addAll(getUntypedControls(resourceType));
