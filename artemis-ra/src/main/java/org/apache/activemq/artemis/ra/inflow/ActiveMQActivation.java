@@ -259,16 +259,21 @@ public class ActiveMQActivation {
             handler.setup();
             handlers.add(handler);
          } catch (Exception e) {
+            logger.trace("Failed to setup session {} for activation {}", i, spec, e);
             if (cf != null) {
-               if (!spec.isSingleConnection()) {
-                  cf.close();
-               }
+               cf.close();
             }
             if (session != null) {
                session.close();
             }
             if (firstException == null) {
                firstException = e;
+            }
+            if (spec.isSingleConnection()) {
+               // The shared ClientSessionFactory is in a broken state; stop the loop
+               // all remaining sessions would fail with "ClientSession closed while
+               // creating session", masking the real error.
+               break;
             }
          }
       }
