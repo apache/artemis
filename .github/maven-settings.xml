@@ -50,11 +50,4 @@
   <activeProfiles>
     <activeProfile>google-mirror</activeProfile>
   </activeProfiles>
-  <servers>
-    <server>
-      <id>credentals</id>
-      <username>${env.CORDA_ARTIFACTORY_USERNAME}</username>
-      <password>${env.CORDA_ARTIFACTORY_PASSWORD}</password>
-    </server>
-  </servers>
 </settings>
