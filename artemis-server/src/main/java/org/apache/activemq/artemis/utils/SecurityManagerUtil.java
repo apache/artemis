@@ -48,6 +48,15 @@ public class SecurityManagerUtil {
       return principals;
    }
 
+   public static String getUserFromSubject(Subject subject, Class<? extends Principal> principalClass) {
+      if (subject != null) {
+         for (Principal candidate : subject.getPrincipals(principalClass)) {
+            return candidate.getName();
+         }
+      }
+      return null;
+   }
+
    public static Object createGroupPrincipal(String name, String groupClass) throws Exception {
       if (WILDCARD.equals(name)) {
          // simple match all group principal - match any name and class

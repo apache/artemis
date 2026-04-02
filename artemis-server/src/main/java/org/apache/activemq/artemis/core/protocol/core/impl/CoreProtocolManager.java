@@ -65,6 +65,7 @@ import org.apache.activemq.artemis.core.remoting.FailureListener;
 import org.apache.activemq.artemis.core.remoting.impl.netty.ActiveMQFrameDecoder2;
 import org.apache.activemq.artemis.core.remoting.impl.netty.NettyServerConnection;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
+import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.spi.core.protocol.ConnectionEntry;
 import org.apache.activemq.artemis.spi.core.protocol.ProtocolManager;
 import org.apache.activemq.artemis.spi.core.protocol.ProtocolManagerFactory;
@@ -72,6 +73,8 @@ import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
 import org.apache.activemq.artemis.spi.core.remoting.Acceptor;
 import org.apache.activemq.artemis.spi.core.remoting.Connection;
 import org.jboss.logging.Logger;
+import org.apache.activemq.artemis.spi.core.security.jaas.UserPrincipal;
+import org.apache.activemq.artemis.utils.SecurityManagerUtil;
 
 public class CoreProtocolManager implements ProtocolManager<Interceptor, ActiveMQRedirectHandler> {
 
@@ -161,8 +164,7 @@ public class CoreProtocolManager implements ProtocolManager<Interceptor, ActiveM
          .addClusterChannelHandler(rc.getChannel(CHANNEL_ID.CLUSTER.id, -1), acceptorUsed, rc,
                                    server.getActivation());
 
-      final Channel federationChannel =  rc.getChannel(CHANNEL_ID.FEDERATION.id, -1);
-      federationChannel.setHandler(new LocalChannelHandler(config, entry, channel0, acceptorUsed, rc));
+      rc.getChannel(CHANNEL_ID.FEDERATION.id, -1).setHandler(new FederationChannelHandler(acceptorUsed, rc));
 
       return entry;
    }
@@ -410,7 +412,44 @@ public class CoreProtocolManager implements ProtocolManager<Interceptor, ActiveM
                   }
                });
             }
-         } else if (packet.getType() == PacketImpl.FEDERATION_DOWNSTREAM_CONNECT) {
+         }
+      }
+
+      private Pair<TransportConfiguration, TransportConfiguration> getPair(
+         TransportConfiguration conn,
+         boolean isBackup) {
+         if (isBackup) {
+            return new Pair<>(null, conn);
+         }
+         return new Pair<>(conn, null);
+      }
+   }
+
+   private class FederationChannelHandler implements ChannelHandler {
+
+      private final Acceptor acceptorUsed;
+      private final CoreRemotingConnection rc;
+
+      private FederationChannelHandler(final Acceptor acceptorUsed, final CoreRemotingConnection rc) {
+         this.acceptorUsed = acceptorUsed;
+         this.rc = rc;
+      }
+
+      @Override
+      public void handlePacket(final Packet packet) {
+         if (packet.getType() == PacketImpl.FEDERATION_DOWNSTREAM_CONNECT) {
+            if (server.getSecurityStore().isSecurityEnabled()) {
+               if (rc.getAuditSubject() == null) {
+                  ActiveMQServerLogger.LOGGER.federationDownstreamUnauthenticated(rc.getRemoteAddress());
+                  rc.destroy();
+                  return;
+               }
+               if (!server.getFederationManager().authorizeDownstreamDeployment(rc.getAuditSubject())) {
+                  ActiveMQServerLogger.LOGGER.federationDownstreamUnauthorized(rc.getRemoteAddress(), SecurityManagerUtil.getUserFromSubject(rc.getAuditSubject(), UserPrincipal.class));
+                  rc.destroy();
+                  return;
+               }
+            }
             //If we receive this packet then a remote broker is requesting us to create federated upstream connection
             //back to it which simulates a downstream connection
             final FederationDownstreamConnectMessage message = (FederationDownstreamConnectMessage) packet;
@@ -484,37 +523,35 @@ public class CoreProtocolManager implements ProtocolManager<Interceptor, ActiveM
             //Register close and failure listeners, if the initial downstream connection goes down then we
             //want to terminate the upstream connection
             rc.addCloseListener(() -> {
-               server.getFederationManager().undeploy(config.getName());
+               handleClose(config.getName(), rc.getRemoteAddress());
             });
 
             rc.addFailureListener(new FailureListener() {
                @Override
                public void connectionFailed(ActiveMQException exception, boolean failedOver) {
-                  server.getFederationManager().undeploy(config.getName());
+                  handleClose(config.getName(), rc.getRemoteAddress());
                }
 
                @Override
-               public void connectionFailed(ActiveMQException exception, boolean failedOver,
-                                            String scaleDownTargetNodeID) {
-                  server.getFederationManager().undeploy(config.getName());
+               public void connectionFailed(ActiveMQException exception, boolean failedOver, String scaleDownTargetNodeID) {
+                  handleClose(config.getName(), rc.getRemoteAddress());
                }
             });
 
             try {
                server.getFederationManager().deploy(config);
+               String user = rc.getAuditSubject() != null ? SecurityManagerUtil.getUserFromSubject(rc.getAuditSubject(), UserPrincipal.class) : "anonymous";
+               ActiveMQServerLogger.LOGGER.federationDownstreamDeployedFromRemoteUser(config.getName(), user, rc.getRemoteAddress());
             } catch (Exception e) {
                logger.error("Error deploying federation: " + e.getMessage(), e);
             }
          }
       }
 
-      private Pair<TransportConfiguration, TransportConfiguration> getPair(
-         TransportConfiguration conn,
-         boolean isBackup) {
-         if (isBackup) {
-            return new Pair<>(null, conn);
+      private void handleClose(String configName, String remoteAddress) {
+         if (server.getFederationManager().undeploy(configName)) {
+            ActiveMQServerLogger.LOGGER.federationDownstreamConnectionClosed(remoteAddress, configName);
          }
-         return new Pair<>(conn, null);
       }
    }
 }

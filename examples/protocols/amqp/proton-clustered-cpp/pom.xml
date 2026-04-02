@@ -24,7 +24,7 @@ under the License.
    <parent>
       <groupId>org.apache.activemq.examples.amqp</groupId>
       <artifactId>amqp</artifactId>
-      <version>2.19.2-SNAPSHOT</version>
+      <version>2.19.2_r3-SNAPSHOT</version>
    </parent>
 
    <artifactId>proton-clustered-cpp</artifactId>

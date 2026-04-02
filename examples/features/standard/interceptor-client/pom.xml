@@ -24,7 +24,7 @@ under the License.
    <parent>
       <groupId>org.apache.activemq.examples.broker</groupId>
       <artifactId>jms-examples</artifactId>
-      <version>2.19.2-SNAPSHOT</version>
+      <version>2.19.2_r3-SNAPSHOT</version>
    </parent>
 
    <artifactId>interceptor-client</artifactId>

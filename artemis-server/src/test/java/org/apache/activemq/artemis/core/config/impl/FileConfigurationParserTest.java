@@ -520,7 +520,19 @@ public class FileConfigurationParserTest extends ActiveMQTestBase {
 
    }
 
+   @Test
+   public void testParseFederationDownstreamAuthorization() throws Exception {
+      String middlePart = "<federations downstream-authorization=\"a, b,c\"/>";
+      String configStr = firstPart + middlePart + lastPart;
 
+      final FileConfigurationParser parser = new FileConfigurationParser();
+      final ByteArrayInputStream input = new ByteArrayInputStream(configStr.getBytes(StandardCharsets.UTF_8));
+
+      final Configuration configuration = parser.parseMainConfig(input);
+      assertTrue(configuration.getFederationDownstreamAuthorization().contains("a"));
+      assertTrue(configuration.getFederationDownstreamAuthorization().contains("b"));
+      assertTrue(configuration.getFederationDownstreamAuthorization().contains("c"));
+   }
 
    private static String firstPart = "<core xmlns=\"urn:activemq:core\">" + "\n" +
       "<name>ActiveMQ.main.config</name>" + "\n" +

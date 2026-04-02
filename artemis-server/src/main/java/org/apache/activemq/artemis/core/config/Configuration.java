@@ -1383,4 +1383,9 @@ public interface Configuration {
 
    Configuration setTemporaryQueueNamespace(String temporaryQueueNamespace);
 
+   List<String> getFederationDownstreamAuthorization();
+
+   void setFederationDownstreamAuthorization(List<String> roles);
+
+   Configuration addFederationDownstreamAuthorization(String role);
 }

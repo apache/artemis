@@ -590,6 +590,7 @@
                <xsd:sequence>
                   <xsd:element name="federation" type="federationType" maxOccurs="unbounded" minOccurs="0"/>
                </xsd:sequence>
+               <xsd:attribute name="downstream-authorization" type="xsd:string" use="optional" />
                <xsd:attributeGroup ref="xml:specialAttrs"/>
             </xsd:complexType>
          </xsd:element>

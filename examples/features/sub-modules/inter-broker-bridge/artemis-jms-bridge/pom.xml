@@ -25,7 +25,7 @@ under the License.
    <parent>
       <groupId>org.apache.activemq.examples.modules</groupId>
       <artifactId>inter-broker-bridge-pom</artifactId>
-      <version>2.19.2-SNAPSHOT</version>
+      <version>2.19.2_r3-SNAPSHOT</version>
    </parent>
 
    <artifactId>artemis-jms-bridge</artifactId>
