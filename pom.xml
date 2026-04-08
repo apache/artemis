@@ -919,7 +919,6 @@
                      <exclude>docs/user-manual/02-27-00-scripts-profiles.diff</exclude>
                      <exclude>docs/user-manual/02-27-00-scripts-profiles-windows.diff</exclude>
                      <exclude>**/target/</exclude>
-                     <exclude>**/META-INF/services/*</exclude>
                      <exclude>**/META-INF/MANIFEST.MF</exclude>
                      <exclude>**/META-INF/detectors</exclude>
                      <exclude>**/*.iml</exclude>
