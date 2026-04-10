@@ -75,17 +75,12 @@ public class SimpleAddressManager implements AddressManager {
 
    protected final WildcardConfiguration wildcardConfiguration;
 
-   public SimpleAddressManager(final BindingsFactory bindingsFactory, final StorageManager storageManager,
-                               final MetricsManager metricsManager) {
-      this(bindingsFactory, new WildcardConfiguration(), storageManager, metricsManager);
-   }
-
    public SimpleAddressManager(final BindingsFactory bindingsFactory,
                                final WildcardConfiguration wildcardConfiguration,
                                final StorageManager storageManager,
                                final MetricsManager metricsManager) {
-      this.wildcardConfiguration = wildcardConfiguration;
       this.bindingsFactory = bindingsFactory;
+      this.wildcardConfiguration = wildcardConfiguration;
       this.storageManager = storageManager;
       this.metricsManager = metricsManager;
    }
@@ -190,37 +185,49 @@ public class SimpleAddressManager implements AddressManager {
       return Collections.unmodifiableCollection(outputList);
    }
 
+   /**
+    * This method looks at the local queue bindings of an address to find one with a matching routing type that also is
+    * not wild. A match with the same name as the input address is preferred.
+    * <p>
+    * If a match is found, the unique name of the corresponding binding is returned. If no match is found, the method
+    * returns {@code null}.
+    *
+    * @param address     the address to match against
+    * @param routingType the routing type to use for matching the binding
+    * @return the unique name of the matching binding, or {@code null} if no match is found
+    * @throws Exception if an error occurs while attempting to find a matching binding
+    */
    @Override
    public SimpleString getMatchingQueue(final SimpleString address, RoutingType routingType) throws Exception {
       SimpleString realAddress = CompositeAddress.extractAddressName(address);
-      Binding binding = getBinding(realAddress);
 
-      if (binding == null || !(binding instanceof LocalQueueBinding) || !binding.getAddress().equals(realAddress)) {
-         Bindings bindings = mappings.get(realAddress);
-         if (bindings != null) {
-            for (Binding theBinding : bindings.getBindings()) {
-               if (theBinding instanceof LocalQueueBinding && !wildcardConfiguration.isWild(theBinding.getUniqueName())) {
-                  binding = theBinding;
-                  break;
-               }
+      Binding potentialMatch = getBinding(realAddress);
+      if (checkBindingForMatch(potentialMatch, realAddress, routingType)) {
+         // a local queue binding with the same name as the input address is preferred
+         return potentialMatch.getUniqueName();
+      }
+
+      Bindings bindings = mappings.get(realAddress);
+      if (bindings != null) {
+         for (Binding b : bindings.getBindings()) {
+            if (checkBindingForMatch(b, realAddress, routingType)) {
+               return b.getUniqueName();
             }
          }
       }
 
-      return binding != null ? binding.getUniqueName() : null;
+      return null;
    }
 
-   @Override
-   public SimpleString getMatchingQueue(final SimpleString address,
-                                        final SimpleString queueName,
-                                        RoutingType routingType) throws Exception {
-      SimpleString realAddress = CompositeAddress.extractAddressName(address);
-      Binding binding = getBinding(queueName);
-
-      if (binding != null && !binding.getAddress().equals(realAddress) && !realAddress.toString().isEmpty()) {
-         throw new IllegalStateException("queue belongs to address" + binding.getAddress());
+   private boolean checkBindingForMatch(Binding binding, SimpleString address, RoutingType routingType) {
+      if (binding != null &&
+         binding instanceof LocalQueueBinding lqb &&
+         lqb.getAddress().equals(address) &&
+         lqb.getQueue().getRoutingType() == routingType &&
+         !wildcardConfiguration.isWild(binding.getUniqueName())) {
+         return true;
       }
-      return binding != null ? binding.getUniqueName() : null;
+      return false;
    }
 
    @Override

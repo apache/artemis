@@ -117,11 +117,6 @@ public class FakePostOffice implements PostOffice {
    }
 
    @Override
-   public SimpleString getMatchingQueue(SimpleString address, SimpleString queueName, RoutingType routingType) {
-      return null;
-   }
-
-   @Override
    public void start() throws Exception {
 
    }

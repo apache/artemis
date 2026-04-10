@@ -832,12 +832,6 @@ public class AMQPSessionCallback implements SessionCallback {
       return serverSession.getMatchingQueue(address, routingType);
    }
 
-   public SimpleString getMatchingQueue(SimpleString address,
-                                        SimpleString queueName,
-                                        RoutingType routingType) throws Exception {
-      return serverSession.getMatchingQueue(address, queueName, routingType);
-   }
-
    public AddressInfo getAddress(SimpleString address) {
       return serverSession.getAddress(address);
    }

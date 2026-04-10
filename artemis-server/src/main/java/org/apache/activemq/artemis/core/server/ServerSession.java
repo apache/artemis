@@ -497,10 +497,6 @@ public interface ServerSession extends SecurityAuth {
 
    SimpleString getMatchingQueue(SimpleString address, RoutingType routingType) throws Exception;
 
-   SimpleString getMatchingQueue(SimpleString address,
-                                 SimpleString queueName,
-                                 RoutingType routingType) throws Exception;
-
    AddressInfo getAddress(SimpleString address);
 
    /**

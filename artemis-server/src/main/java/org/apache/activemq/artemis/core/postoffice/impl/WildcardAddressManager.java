@@ -41,12 +41,6 @@ public class WildcardAddressManager extends SimpleAddressManager {
       super(bindingsFactory, wildcardConfiguration, storageManager, metricsManager);
    }
 
-   public WildcardAddressManager(final BindingsFactory bindingsFactory,
-                                 final StorageManager storageManager,
-                                 final MetricsManager metricsManager) {
-      super(bindingsFactory, storageManager, metricsManager);
-   }
-
    // publish, may be a new address that needs wildcard bindings added
    // won't contain a wildcard because we don't ever route to a wildcards at this time
    @Override

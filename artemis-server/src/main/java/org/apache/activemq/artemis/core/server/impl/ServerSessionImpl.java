@@ -1935,7 +1935,7 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
          Queue q = server.locateQueue(unPrefixedQueue);
          if (q == null) {
             // The queue doesn't exist.
-            if (!queueConfig.isFqqn() && server.getPostOffice().getMatchingQueue(unPrefixedAddress, queueConfig.getRoutingType()) != null) {
+            if (!queueConfig.isFqqn() && getMatchingQueue(unPrefixedAddress, queueConfig.getRoutingType()) != null) {
                // The address has a local, non-wildcard queue with a different name, which is fine. Just ignore it.
                result = AutoCreateResult.EXISTED;
             } else if (addressSettings.isAutoCreateQueues() || queueConfig.isTemporary()) {
@@ -2224,13 +2224,6 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
    @Override
    public SimpleString getMatchingQueue(SimpleString address, RoutingType routingType) throws Exception {
       return server.getPostOffice().getMatchingQueue(address, routingType);
-   }
-
-   @Override
-   public SimpleString getMatchingQueue(SimpleString address,
-                                        SimpleString queueName,
-                                        RoutingType routingType) throws Exception {
-      return server.getPostOffice().getMatchingQueue(address, queueName, routingType);
    }
 
    @Override

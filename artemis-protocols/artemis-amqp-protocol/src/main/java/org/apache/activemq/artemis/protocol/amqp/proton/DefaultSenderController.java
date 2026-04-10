@@ -527,7 +527,7 @@ public class DefaultSenderController implements SenderController {
                throw new ActiveMQIllegalStateException("Queue: " + queueName + " filter mismatch [" + filter + "] is different than existing filter [" + result.getFilterString() + "]");
 
             }
-            return sessionSPI.getMatchingQueue(address, queueName, routingType);
+            return queueName;
          }
       }
 

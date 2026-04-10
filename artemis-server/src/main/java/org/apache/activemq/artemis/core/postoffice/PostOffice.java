@@ -149,8 +149,6 @@ public interface PostOffice extends ActiveMQComponent {
 
    SimpleString getMatchingQueue(SimpleString address, RoutingType routingType) throws Exception;
 
-   SimpleString getMatchingQueue(SimpleString address, SimpleString queueName, RoutingType routingType) throws Exception;
-
    RoutingStatus route(Message message, boolean direct) throws Exception;
 
    RoutingStatus route(Message message,

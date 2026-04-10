@@ -51,8 +51,6 @@ public interface AddressManager {
 
    SimpleString getMatchingQueue(SimpleString address, RoutingType routingType) throws Exception;
 
-   SimpleString getMatchingQueue(SimpleString address, SimpleString queueName, RoutingType routingType) throws Exception;
-
    LocalQueueBinding findLocalBinding(long id);
 
    void clear();
