@@ -23,6 +23,7 @@ import java.util.UUID;
 
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
+import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.core.protocol.stomp.Stomp;
 import org.apache.activemq.artemis.tests.integration.stomp.util.ClientStompFrame;
 import org.apache.activemq.artemis.tests.integration.stomp.util.StompClientConnection;
@@ -53,7 +54,7 @@ public class StompLVQTest extends StompTestBase {
    public void setUp() throws Exception {
       super.setUp();
 
-      server.createQueue(QueueConfiguration.of(queue).setLastValue(true).setExclusive(true));
+      server.createQueue(QueueConfiguration.of(queue).setLastValue(true).setExclusive(true).setRoutingType(RoutingType.ANYCAST));
 
       producerConn = StompClientConnectionFactory.createClientConnection(uri);
       consumerConn = StompClientConnectionFactory.createClientConnection(uri);

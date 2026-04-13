@@ -399,8 +399,9 @@ public class StompV12Test extends StompTestBase {
       String cLen = String.valueOf(body.getBytes(StandardCharsets.UTF_8).length);
 
       ClientStompFrame frame = conn.createFrame(Stomp.Commands.SEND)
-                                   .addHeader(Stomp.Headers.Subscribe.DESTINATION, getQueuePrefix() + getQueueName())
-                                   .addHeader(Stomp.Headers.Subscribe.DESTINATION, "aNonexistentQueue")
+                                   .addHeader(Stomp.Headers.Send.DESTINATION, getQueuePrefix() + getQueueName())
+                                   .addHeader(Stomp.Headers.Send.DESTINATION, "aNonexistentQueue")
+                                   .addHeader(Stomp.Headers.Send.DESTINATION_TYPE, RoutingType.ANYCAST.toString())
                                    .addHeader(Stomp.Headers.CONTENT_TYPE, "application/xml")
                                    .addHeader(Stomp.Headers.CONTENT_LENGTH, cLen)
                                    .addHeader("foo", "value1")
@@ -435,8 +436,9 @@ public class StompV12Test extends StompTestBase {
       cLen = String.valueOf(body.getBytes(StandardCharsets.UTF_8).length);
 
       frame = conn.createFrame(Stomp.Commands.SEND)
-                  .addHeader(Stomp.Headers.Subscribe.DESTINATION, "aNonexistentQueue")
-                  .addHeader(Stomp.Headers.Subscribe.DESTINATION, getQueuePrefix() + getQueueName())
+                  .addHeader(Stomp.Headers.Send.DESTINATION, "aNonexistentQueue")
+                  .addHeader(Stomp.Headers.Send.DESTINATION, getQueuePrefix() + getQueueName())
+                  .addHeader(Stomp.Headers.Send.DESTINATION_TYPE, RoutingType.ANYCAST.toString())
                   .addHeader(Stomp.Headers.CONTENT_TYPE, "application/xml")
                   .addHeader(Stomp.Headers.CONTENT_LENGTH, cLen)
                   .addHeader(Stomp.Headers.RECEIPT_REQUESTED, "1234")

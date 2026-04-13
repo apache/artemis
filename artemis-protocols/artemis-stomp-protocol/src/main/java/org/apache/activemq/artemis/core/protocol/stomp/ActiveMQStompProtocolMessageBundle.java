@@ -23,7 +23,7 @@ import org.apache.activemq.artemis.logs.BundleFactory;
 /**
  * Logger Codes 339000 - 339999
  */
-@LogBundle(projectCode = "AMQ", regexID = "339[0-9]{3}")
+@LogBundle(projectCode = "AMQ", regexID = "339[0-9]{3}", retiredIDs = {339041})
 public interface ActiveMQStompProtocolMessageBundle {
 
    ActiveMQStompProtocolMessageBundle BUNDLE = BundleFactory.newBundle(ActiveMQStompProtocolMessageBundle.class);
@@ -144,7 +144,4 @@ public interface ActiveMQStompProtocolMessageBundle {
 
    @Message(id = 339040, value = "Undefined escape sequence: {}")
    ActiveMQStompException undefinedEscapeSequence(String sequence);
-
-   @Message(id = 339041, value = "Not allowed to specify {} semantics on {} address.")
-   ActiveMQStompException illegalSemantics(String requested, String exists);
 }
