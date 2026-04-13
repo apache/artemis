@@ -193,9 +193,7 @@ public abstract class VersionedStompFrameHandler {
          connection.validate();
          String destination = getDestination(frame);
          RoutingType routingType = getRoutingType(frame.getHeader(Headers.Send.DESTINATION_TYPE), frame.getHeader(Headers.Send.DESTINATION));
-         connection.autoCreateDestinationIfPossible(destination, routingType);
-         connection.checkDestination(destination);
-         connection.checkRoutingSemantics(destination, routingType);
+         connection.checkAutoCreate(destination, routingType);
          String txID = frame.getHeader(Stomp.Headers.TRANSACTION);
 
          long timestamp = System.currentTimeMillis();
