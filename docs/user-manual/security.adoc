@@ -81,6 +81,62 @@ Using `0` will disable the corresponding cache.
 How long cache entries are valid is controlled by `security-invalidation-interval`, which is in milliseconds.
 The default is `10000` ms.
 
+=== Authentication Cache Keys
+
+Authentication cache entries are stored and fetched using a _key_ generated from data that *uniquely identifies an authentication attempt*.
+This includes username and password for the most basic use-cases.
+It also includes details from the TLS certificate like the subject distinguished name (DN) and user pricipal name (UPN) for use-cases involving mutual TLS.
+
+By default, the username, password, and TLS certificate subject DN are included.
+The TLS certificate UPN is _not_ included by default in order to maintain backwards compatiblity since it wasn't always possible to authenticate with UPN.
+To configure the authentication cache key add the `authentication-cache-key` element to `broker.xml` in the `core` element, e.g.:
+
+[,xml]
+----
+<authentication-cache-key>
+   <part>USER</part>
+   <part>PASS</part>
+   <part>TLS_SUBJECT_DN</part>
+</authentication-cache-key>
+----
+
+Valid values include:
+
+USER::
+The username provided by the remote client.
+
+PASS::
+The password provided by the remote client.
+
+TLS_SUBJECT_DN::
+The subject distinguished name of the TLS certificate provided by the remote client.
+This is technically only relevant in use-cases involving mutual TLS.
+However, it can be included even if mutual TLS is not in use as it will not impact the ultimate key value.
+Ensure this is configured when using the <<textfilecertificateloginmodule,`TextFileCertificateLoginModule`>>.
+
+TLS_SAN_UPN::
+The user principal name stored in the subject alternative name of the TLS certificate provided by the remote client.
+This is technically only relevant in use-cases involving mutual TLS.
+However, it can be included even if mutual TLS is not in use as it will not impact the ultimate key value.
+Ensure this is configured when using the <<textfileupncertificateloginmodule,`TextFileUpnCertificateLoginModule`>>.
+
+The order of the parameters does not impact the ultimate key value.
+Any combinations of parameters is possible.
+The default includes `USER`, `PASS`, & `TLS_SUBJECT_DN`.
+
+All keys are hashed with a cryptographically secure algorithm before being stored in the cache.
+This ensures sensitive data is not available in memory.
+
+[WARNING]
+====
+It is *critically* important that the authentication cache key is correctly configured to include all the data being used to authenticate users.
+
+An incorrect configuration can lead to both positive and negative invalid authentication.
+In other words, users who should not be authenticated may be, and users who should be authentication may not be.
+
+Users are strongly encouraged to verify the configuration before production deployments.
+====
+
 == Tracking the Validated User
 
 To assist in security auditing the `populate-validated-user` option exists.
@@ -960,65 +1016,38 @@ The fully qualified class name of a custom password codec for decoding masked pa
 See xref:masking-passwords.adoc#masking-passwords[password masking] for more details.
 Default is `org.apache.activemq.artemis.utils.DefaultSensitiveStringCodec`.
 
-==== CertificateLoginModule
+==== TextFileCertificateLoginModule
 
-The JAAS certificate authentication login module must be used in combination with SSL and the clients must be configured with their own certificate.
-In this scenario, authentication is actually performed during the SSL/TLS handshake, not directly by the JAAS certificate authentication plug-in.
-The role of the plug-in is as follows:
+include::_shared-cert-login-details.adoc[]
+One file associates the valid certificate DNs with usernames.
+The other file associates the usernames with roles.
 
-* To further constrain the set of acceptable users, because only the user DNs explicitly listed in the relevant properties file are eligible to be authenticated.
-* To associate a list of groups with the received user identity, facilitating integration with the authorization feature.
-* To require the presence of an incoming certificate (by default, the SSL/TLS layer is configured to treat the presence of a client certificate as optional).
-
-The JAAS certificate login module stores a collection of certificate DNs in a pair of flat files.
-The files associate a username and a list of group IDs with each DN.
-
-The certificate login module is implemented by the following class:
-
-[,java]
-----
-org.apache.activemq.artemis.spi.core.security.jaas.TextFileCertificateLoginModule
-----
-
-The following `CertLogin` login entry shows how to configure certificate login module in the login.config file:
+The following `CertLogin` login entry shows how to configure certificate login module in the `login.config` file:
 
 ----
 CertLogin {
-    org.apache.activemq.artemis.spi.core.security.jaas.TextFileCertificateLoginModule
+    org.apache.activemq.artemis.spi.core.security.jaas.TextFileCertificateLoginModule required
         debug=true
         org.apache.activemq.jaas.textfiledn.user="users.properties"
         org.apache.activemq.jaas.textfiledn.role="roles.properties";
 };
 ----
 
-In the preceding example, the JAAS realm is configured to use a single `org.apache.activemq.artemis.spi.core.security.jaas.TextFileCertificateLoginModule` login module.
-The options supported by this login module are as follows:
+===== Options
 
 debug::
 boolean flag;
-if true, enable debugging;
+if `true`, enable debugging;
 this is used only for testing or debugging;
 normally, it should be set to `false`, or omitted;
 default is `false`
 
 org.apache.activemq.jaas.textfiledn.user::
 specifies the location of the user properties file (relative to the directory containing the login configuration file).
-
-org.apache.activemq.jaas.textfiledn.role::
-specifies the location of the role properties file (relative to the directory containing the login configuration file).
-
-reload::
-boolean flag;
-whether or not to reload the properties files when a modification occurs;
-default is `false`
-
-normalise::
-boolean flag; whether the DN values should be validated and normalised into the X500Name string format used for matching; default is false.
-Using this option can avoid the ambiguity around the string form of a DN that is discussed below. When true, the DN string is validated, and then normalised into the internal X500Name format.
-
-In the context of the certificate login module, the `users.properties` file consists of a list of properties of the form, `UserName=StringifiedSubjectDN` or `UserName=/SubjectDNRegExp/`.
++
+This file consists of a list of properties of the form, `UserName=StringifiedSubjectDN` or `UserName=/SubjectDNRegExp/`.
 For example, to define the users, `system`, `user` and `guest` as well as a `hosts` user matching several DNs, you could create a file like the following:
-
++
 [,properties]
 ----
 system=CN=system,O=Progress,C=US
@@ -1026,65 +1055,101 @@ user=CN=humble user,O=Progress,C=US
 guest=CN=anon,O=Progress,C=DE
 hosts=/CN=host\\d+\\.acme\\.com,O=Acme,C=UK/
 ----
-
++
 Note that the backslash character has to be escaped because it has a special treatment in properties files.
-
++
 Each username is mapped to a subject DN, encoded as a string (where the string encoding is specified by RFC 2253).
 For example, the system username is mapped to the `CN=system,O=Progress,C=US` subject DN.
 When performing authentication, the plug-in extracts the subject DN from the received certificate, converts it to the standard string format, and compares it with the subject DNs in the `users.properties` file by testing for string equality.
 Consequently, you must be careful to ensure that the subject DNs appearing in the `users.properties` file are an exact match for the subject DNs extracted from the user certificates.
-
++
 NOTE: Technically, there is some residual ambiguity in the DN string format.
 For example, the `domainComponent` attribute could be represented in a string either as the string, `DC`, or as the OID, `0.9.2342.19200300.100.1.25`.
 Normally, you do not need to worry about this ambiguity.
 But it could potentially be a problem, if you changed the underlying implementation of the Java security layer.
 
-The easiest way to obtain the subject DNs from the user certificates is by invoking the `keytool` utility to print the certificate contents.
-To print the contents of a certificate in a keystore, perform the following steps:
-
-. Export the certificate from the keystore file into a temporary file.
-For example, to export the certificate with alias `broker-localhost` from the `broker.ks` keystore file, enter the following command:
+org.apache.activemq.jaas.textfiledn.role::
+specifies the location of the role properties file (relative to the directory containing the login configuration file).
 +
-[,sh]
-----
-keytool -export -file broker.export -alias broker-localhost -keystore broker.ks -storepass password
-----
-+
-After running this command, the exported certificate is in the file,   `broker.export`.
-
-. Print out the contents of the exported certificate.
-For example, to print out the contents of `broker.export`, enter the following command:
-+
-[,sh]
-----
-keytool -printcert -file broker.export
-----
-+
-Which should produce output similar to that shown here:
-+
-----
-Owner: CN=localhost, OU=broker, O=Unknown, L=Unknown, ST=Unknown, C=Unknown
-Issuer: CN=localhost, OU=broker, O=Unknown, L=Unknown, ST=Unknown, C=Unknown
-Serial number: 4537c82e
-Valid from: Thu Oct 19 19:47:10 BST 2006 until: Wed Jan 17 18:47:10 GMT 2007
-Certificate fingerprints:
-         MD5:  3F:6C:0C:89:A8:80:29:CC:F5:2D:DA:5C:D7:3F:AB:37
-         SHA1: F0:79:0D:04:38:5A:46:CE:86:E1:8A:20:1F:7B:AB:3A:46:E4:34:5C
-----
-+
-The string following `Owner:` gives the subject DN.
-The format used to enter   the subject DN depends on your platform.
-The `Owner:` string above could be   represented as either `CN=localhost,\ OU=broker,\ O=Unknown,\ L=Unknown,\   ST=Unknown,\ C=Unknown` or   `CN=localhost,OU=broker,O=Unknown,L=Unknown,ST=Unknown,C=Unknown`.
-
-The `roles.properties` file consists of a list of properties of the form, `Role=UserList`, where `UserList` is a comma-separated list of users.
+This file consists of a list of properties of the form, `Role=UserList`, where `UserList` is a comma-separated list of users.
 For example, to define the roles `admins`, `users`, and `guests`, you could create a file like the following:
-
++
 [,properties]
 ----
 admins=system
 users=system,user
 guests=guest
 ----
+
+reload::
+boolean flag;
+whether to reload the properties files when a modification occurs;
+default is `false`
+
+normalise::
+boolean flag; whether the DN values should be validated and normalised into the X500Name string format used for matching; default is `false`.
+Using this option can avoid the ambiguity around the string form of a DN that is discussed below. When `true`, the DN string is validated, and then normalised into the internal X500Name format.
+
+==== TextFileUpnCertificateLoginModule
+
+include::_shared-cert-login-details.adoc[]
+One file lists the valid UPNs.
+The other file associates the UPNs with roles.
+
+The following `CertLogin` login entry shows how to configure certificate login module in the `login.config` file:
+
+----
+UpnCertLogin {
+    org.apache.activemq.artemis.spi.core.security.jaas.TextFileUpnCertificateLoginModule required
+        debug=true
+        org.apache.activemq.jaas.textfileupn.user="users.properties"
+        org.apache.activemq.jaas.textfileupn.role="roles.properties";
+};
+----
+
+[WARNING]
+====
+When using the `TextFileUpnCertificateLoginModule` be sure to <<authentication-cache-keys,include the UPN in the authentication cache key>> or <<caching-security-operations,disable auth caching>>.
+====
+
+===== Options
+
+debug::
+boolean flag;
+if `true`, enable debugging;
+this is used only for testing or debugging;
+normally, it should be set to `false`, or omitted;
+default is `false`
+
+org.apache.activemq.jaas.textfileupn.user::
+specifies the location of the user file (relative to the directory containing the login configuration file).
++
+This file consists of a list of user principal names (UPNs), e.g.:
++
+[,properties]
+----
+system@domain.com
+user@domain.com
+guest@domain.com
+----
+
+org.apache.activemq.jaas.textfileupn.role::
+specifies the location of the role properties file (relative to the directory containing the login configuration file).
++
+This file consists of a list of properties of the form, `Role=UpnList`, where `UpnList` is a comma-separated list of UPNs.
+For example, to define the roles `admins`, `users`, and `guests`, you could create a file like the following:
++
+[,properties]
+----
+admins=system@domain.com
+users=system@domain.com,user@domain.com
+guests=guest@domain.com
+----
+
+reload::
+boolean flag;
+whether to reload the properties files when a modification occurs;
+default is `false`
 
 ==== SCRAMPropertiesLoginModule
 
@@ -1634,28 +1699,10 @@ The trust store's password.
 
 The web console supports authentication with client certificates, see the following steps:
 
-* Add the <<certificateloginmodule,certificate login module>> to the `login.config` file, i.e.
-+
-----
-activemq-cert {
- org.apache.activemq.artemis.spi.core.security.jaas.TextFileCertificateLoginModule required
-     debug=true
-     org.apache.activemq.jaas.textfiledn.user="cert-users.properties"
-     org.apache.activemq.jaas.textfiledn.role="cert-roles.properties";
-};
-----
-
-* Change the hawtio realm to match the realm defined in the `login.config` file for the <<certificateloginmodule,certificate login module>>.
-This is configured in the `artemis.profile` via the system property `-Dhawtio.realm=activemq-cert`.
-* Create a key pair for the client and import the public key in a truststore file.
-+
-----
-keytool -storetype pkcs12 -keystore client-keystore.p12 -storepass securepass -keypass securepass -alias client -genkey -keyalg "RSA" -keysize 2048 -dname "CN=ActiveMQ Artemis Client, OU=Artemis, O=ActiveMQ, L=AMQ, S=AMQ, C=AMQ" -ext bc=ca:false -ext eku=cA
-keytool -storetype pkcs12 -keystore client-keystore.p12 -storepass securepass -alias client -exportcert -rfc > client.crt
-keytool -storetype pkcs12 -keystore client-truststore.p12 -storepass securepass -keypass securepass -importcert -alias client-ca -file client.crt -noprompt
-----
-
-* Enable secure access using HTTPS protocol with client authentication, use the truststore file created in the previous step to set the `trustStorePath` and `trustStorePassword`:
+* Add either the <<textfilecertificateloginmodule, DN>> or <<textfileupncertificateloginmodule, UPN>> certificate login module to `login.config`.
+* Change the HawtIO realm to match the realm defined in `login.config` for the aforementioned login module.
+This is configured in the `artemis.profile` via the system property `hawtio.realm`.
+* Configure the `trustStorePath` and `trustStorePassword` for the embedded web server so that it will trust the client's certificate:
 +
 [,xml]
 ----
@@ -1671,7 +1718,7 @@ keytool -storetype pkcs12 -keystore client-truststore.p12 -storepass securepass 
 </web>
 ----
 
-* Use the private key created in the previous step to set up your client, i.e. if the client app is a browser install the private key in the browser.
+* Use your private key to set up your client (e.g., if the client app is a browser install the private key in the browser).
 
 ## Controlling JMS ObjectMessage deserialization
 

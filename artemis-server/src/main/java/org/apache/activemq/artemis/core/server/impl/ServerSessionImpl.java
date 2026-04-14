@@ -19,7 +19,6 @@ package org.apache.activemq.artemis.core.server.impl;
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.Xid;
 import java.lang.invoke.MethodHandles;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -644,13 +643,9 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
 
          props.putSimpleStringProperty(ManagementHelper.HDR_VALIDATED_USER, SimpleString.of(validatedUser));
 
-         String certSubjectDN = "unavailable";
-         X509Certificate[] certs = CertificateUtil.getCertsFromConnection(this.remotingConnection);
-         if (certs != null && certs.length > 0 && certs[0] != null) {
-            certSubjectDN = certs[0].getSubjectDN().getName();
-         }
+         props.putSimpleStringProperty(ManagementHelper.HDR_CERT_SUBJECT_DN, SimpleString.of(CertificateUtil.getDistinguishedNameForPrint(this.remotingConnection)));
 
-         props.putSimpleStringProperty(ManagementHelper.HDR_CERT_SUBJECT_DN, SimpleString.of(certSubjectDN));
+         props.putSimpleStringProperty(ManagementHelper.HDR_CERT_UPN, SimpleString.of(CertificateUtil.getUserPrincipalNameForPrint(this.remotingConnection)));
 
          props.putSimpleStringProperty(ManagementHelper.HDR_REMOTE_ADDRESS, SimpleString.of(this.remotingConnection.getRemoteAddress()));
 

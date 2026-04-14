@@ -21,6 +21,7 @@ import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.EnumSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -44,6 +45,7 @@ import org.apache.activemq.artemis.core.server.management.Notification;
 import org.apache.activemq.artemis.core.server.management.NotificationService;
 import org.apache.activemq.artemis.core.settings.HierarchicalRepository;
 import org.apache.activemq.artemis.core.settings.HierarchicalRepositoryChangeListener;
+import org.apache.activemq.artemis.core.settings.impl.AuthenticationCacheKeyConfig;
 import org.apache.activemq.artemis.logs.AuditLogger;
 import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
 import org.apache.activemq.artemis.spi.core.security.ActiveMQJAASSecurityManager;
@@ -62,8 +64,6 @@ import org.apache.activemq.artemis.utils.collections.TypedProperties;
 import org.apache.activemq.artemis.utils.sm.SecurityManagerShim;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.activemq.artemis.utils.CertificateUtil.CERT_SUBJECT_DN_UNAVAILABLE;
 
 /**
  * The Apache Artemis SecurityStore implementation
@@ -90,6 +90,8 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
 
    private final NotificationService notificationService;
 
+   private final EnumSet<AuthenticationCacheKeyConfig> authenticationCacheKeyConfigs;
+
    private static final AtomicLongFieldUpdater<SecurityStoreImpl> AUTHENTICATION_SUCCESS_COUNT_UPDATER = AtomicLongFieldUpdater.newUpdater(SecurityStoreImpl.class, "authenticationSuccessCount");
    private volatile long authenticationSuccessCount;
    private static final AtomicLongFieldUpdater<SecurityStoreImpl> AUTHENTICATION_FAILURE_COUNT_UPDATER = AtomicLongFieldUpdater.newUpdater(SecurityStoreImpl.class, "authenticationFailureCount");
@@ -113,13 +115,15 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
                             final String managementClusterPassword,
                             final NotificationService notificationService,
                             final long authenticationCacheSize,
-                            final long authorizationCacheSize) throws NoSuchAlgorithmException {
+                            final long authorizationCacheSize,
+                            final EnumSet<AuthenticationCacheKeyConfig> authenticationCacheKeyConfigs) throws NoSuchAlgorithmException {
       this.securityRepository = securityRepository;
       this.securityManager = securityManager;
       this.securityEnabled = securityEnabled;
       this.managementClusterUser = managementClusterUser;
       this.managementClusterPassword = managementClusterPassword;
       this.notificationService = notificationService;
+      this.authenticationCacheKeyConfigs = authenticationCacheKeyConfigs;
       if (securityEnabled) {
          if (authenticationCacheSize == 0) {
             authenticationCache = null;
@@ -437,12 +441,14 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
    }
 
    private void authenticationFailed(String user, RemotingConnection connection) throws Exception {
-      String certSubjectDN = CertificateUtil.getCertSubjectDN(connection);
+      String certSubjectDN = CertificateUtil.getDistinguishedNameForPrint(connection);
+      String certUpn = CertificateUtil.getUserPrincipalNameForPrint(connection);
 
       if (notificationService != null) {
          TypedProperties props = new TypedProperties();
          props.putSimpleStringProperty(ManagementHelper.HDR_USER, SimpleString.of(user));
          props.putSimpleStringProperty(ManagementHelper.HDR_CERT_SUBJECT_DN, SimpleString.of(certSubjectDN));
+         props.putSimpleStringProperty(ManagementHelper.HDR_CERT_UPN, SimpleString.of(certUpn));
          props.putSimpleStringProperty(ManagementHelper.HDR_REMOTE_ADDRESS, SimpleString.of(connection == null ? "null" : connection.getRemoteAddress()));
 
          Notification notification = new Notification(null, CoreNotificationType.SECURITY_AUTHENTICATION_VIOLATION, props);
@@ -450,7 +456,7 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
          notificationService.sendNotification(notification);
       }
 
-      Exception e = ActiveMQMessageBundle.BUNDLE.unableToValidateUser(connection == null ? "null" : connection.getRemoteAddress(), user, certSubjectDN);
+      Exception e = ActiveMQMessageBundle.BUNDLE.unableToValidateUser(connection == null ? "null" : connection.getRemoteAddress(), user, certSubjectDN, certUpn);
 
       ActiveMQServerLogger.LOGGER.securityProblemWhileAuthenticating(e.getMessage());
 
@@ -499,7 +505,7 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
    }
 
    private void putAuthenticationCacheEntry(String key, Subject subject) {
-      if (authenticationCache != null) {
+      if (authenticationCache != null && key != null) {
          Pair<Boolean, Subject> value = new Pair<>(subject != null, subject);
          authenticationCache.put(key, value);
          logger.trace("Put into authn cache; key: {}; value: {}", key, value);
@@ -507,7 +513,7 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
    }
 
    private Pair<Boolean, Subject> getAuthenticationCacheEntry(String key) {
-      if (authenticationCache == null) {
+      if (authenticationCache == null || key == null) {
          return null;
       } else {
          Pair<Boolean, Subject> value = authenticationCache.getIfPresent(key);
@@ -574,21 +580,43 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
       return granted;
    }
 
+   /**
+    * Creates a unique cache key for authentication using the provided username, password, and connection information.
+    * The key is generated by hashing the input data, and optionally includes the User Principal Name (UPN). If all
+    * input data is null, the method returns null to avoid caching.
+    *
+    * @param username   the username for authentication; can be null
+    * @param password   the password for authentication; can be null
+    * @param connection the remoting connection used to retrieve additional security attributes; cannot be null
+    * @return a hexadecimal string representing the authentication cache key, or null if all input parameters are null
+    */
    protected String createAuthenticationCacheKey(String username, String password, RemotingConnection connection) {
+      String user = authenticationCacheKeyConfigs.contains(AuthenticationCacheKeyConfig.USER) ? username : null;
+      String pass = authenticationCacheKeyConfigs.contains(AuthenticationCacheKeyConfig.PASS) ? password : null;
+      String dn = authenticationCacheKeyConfigs.contains(AuthenticationCacheKeyConfig.TLS_SUBJECT_DN) ? CertificateUtil.getDistinguishedName(connection) : null;
+      String upn = authenticationCacheKeyConfigs.contains(AuthenticationCacheKeyConfig.TLS_SAN_UPN) ? CertificateUtil.getUserPrincipalName(connection) : null;
+
+      // Return null so that we don't cache anything if all authentication data is null
+      if (user == null && pass == null && dn == null && upn == null) {
+         return null;
+      }
+
       MessageDigest md = getDigestClone();
-      if (username != null) {
-         md.update(username.getBytes(StandardCharsets.UTF_8));
-      }
+      updateDigest(md, user);
       md.update(CACHE_KEY_SEPARATOR);
-      if (password != null) {
-         md.update(password.getBytes(StandardCharsets.UTF_8));
-      }
+      updateDigest(md, pass);
       md.update(CACHE_KEY_SEPARATOR);
-      String certSubjectDN = CertificateUtil.getCertSubjectDN(connection);
-      if (!CERT_SUBJECT_DN_UNAVAILABLE.equals(certSubjectDN)) {
-         md.update(certSubjectDN.getBytes(StandardCharsets.UTF_8));
-      }
+      updateDigest(md, dn);
+      md.update(CACHE_KEY_SEPARATOR);
+      updateDigest(md, upn);
+
       return ByteUtil.bytesToHex(md.digest());
+   }
+
+   private void updateDigest(MessageDigest md, String value) {
+      if (value != null) {
+         md.update(value.getBytes(StandardCharsets.UTF_8));
+      }
    }
 
    private static MessageDigest getDigestClone() {

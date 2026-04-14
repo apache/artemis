@@ -36,8 +36,11 @@ import java.io.Serializable;
 import java.io.StringWriter;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -132,6 +135,7 @@ import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerQueuePlugin;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerResourcePlugin;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerSessionPlugin;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
+import org.apache.activemq.artemis.core.settings.impl.AuthenticationCacheKeyConfig;
 import org.apache.activemq.artemis.core.settings.impl.ResourceLimitSettings;
 import org.apache.activemq.artemis.json.JsonArrayBuilder;
 import org.apache.activemq.artemis.json.JsonObject;
@@ -171,6 +175,8 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    public static final JournalType DEFAULT_JOURNAL_TYPE = JournalType.ASYNCIO;
+
+   public static final EnumSet<AuthenticationCacheKeyConfig> DEFAULT_AUTHENTICATION_CACHE_KEY = EnumSet.of(AuthenticationCacheKeyConfig.USER, AuthenticationCacheKeyConfig.PASS, AuthenticationCacheKeyConfig.TLS_SUBJECT_DN);
 
    public static final String PROPERTY_CLASS_SUFFIX = ".class";
 
@@ -491,6 +497,8 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
 
    private Map<String, JaasAppConfiguration> jaasConfigs = new ConcurrentHashMap<>();
 
+   private EnumSet<AuthenticationCacheKeyConfig> authenticationCacheKey = EnumSet.copyOf(DEFAULT_AUTHENTICATION_CACHE_KEY);
+
    /**
     * Parent folder for all data folders.
     */
@@ -646,7 +654,7 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
 
    @Override
    public void parsePrefixedProperties(Object target, String name, Properties properties, String prefix) throws Exception {
-      Map<String, Object> beanProperties = new LinkedHashMap<>();
+      Map<String, String> beanProperties = new LinkedHashMap<>();
       final Checksum checksum = new Adler32();
       synchronized (properties) {
          String key = null;
@@ -706,7 +714,7 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
       }
    }
 
-   public void populateWithProperties(final Object target, final String propsId, Map<String, Object> beanProperties) throws InvocationTargetException, IllegalAccessException {
+   public void populateWithProperties(final Object target, final String propsId, Map<String, String> beanProperties) throws InvocationTargetException, IllegalAccessException {
       CollectionAutoFillPropertiesUtil autoFillCollections = new CollectionAutoFillPropertiesUtil(getBrokerPropertiesRemoveValue(beanProperties));
       BeanUtilsBean beanUtils = new BeanUtilsBean(new ConvertUtilsBean(), autoFillCollections) {
 
@@ -1004,15 +1012,17 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
 
       Map<String, String> errors = new LinkedHashMap<>();
       // Loop through the property name/value pairs to be set
-      for (final Map.Entry<String, ? extends Object> entry : beanProperties.entrySet()) {
+      for (final Map.Entry<String, String> entry : beanProperties.entrySet()) {
          // Identify the property name and value(s) to be assigned
          final String name = entry.getKey();
          try {
             if (logger.isDebugEnabled()) {
                logger.debug("set property target={}, name = {}, value = {}", target.getClass(), name, entry.getValue());
             }
-            // Perform the assignment for this property
-            beanUtils.setProperty(target, name, entry.getValue());
+            // Perform the assignment for this property with special handling for EnumSet
+            if (!handleEnumSet(target, name, entry.getValue())) {
+               beanUtils.setProperty(target, name, entry.getValue());
+            }
          } catch (InvocationTargetException invocationTargetException) {
             logger.trace("failed to populate property with key: {}", name, invocationTargetException);
             Throwable toLog = invocationTargetException;
@@ -1026,6 +1036,59 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
          }
       }
       updateApplyStatus(propsId, errors);
+   }
+
+   /*
+    * Since an EnumSet relies on parameterized typing BeanUtils can't handle them directly. Therefore, we need to handle
+    * them manually.
+    */
+   private boolean handleEnumSet(Object target, String name, String value) throws IllegalAccessException {
+      boolean result = false;
+      Field field = getField(target.getClass(), name);
+      if (field != null && EnumSet.class.isAssignableFrom(field.getType())) {
+         // Extract the <E> from EnumSet<E>
+         Class<? extends Enum> enumClass = getEnumClassFromField(field);
+         if (enumClass != null) {
+            EnumSet<?> enumSet = convertToEnumSet(enumClass, value);
+            field.setAccessible(true);
+            field.set(target, enumSet);
+            result = true;
+         }
+      }
+      return result;
+   }
+
+   private static Class<? extends Enum> getEnumClassFromField(Field field) {
+      if (field.getGenericType() instanceof ParameterizedType parameterizedType) {
+         Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
+         if (actualTypeArguments.length > 0 && actualTypeArguments[0] instanceof Class) {
+            return (Class<? extends Enum>) actualTypeArguments[0];
+         }
+      }
+      return null;
+   }
+
+   private static <E extends Enum<E>> EnumSet<E> convertToEnumSet(Class<E> enumClass, String csv) {
+      if (csv == null || csv.trim().isEmpty()) {
+         return EnumSet.noneOf(enumClass);
+      }
+
+      return Arrays.stream(csv.split(","))
+         .map(String::trim)
+         .filter(s -> !s.isEmpty())
+         .map(s -> Enum.valueOf(enumClass, s))
+         .collect(Collectors.toCollection(() -> EnumSet.noneOf(enumClass)));
+   }
+
+   private static Field getField(Class<?> clazz, String fieldName) {
+      while (clazz != null) {
+         try {
+            return clazz.getDeclaredField(fieldName);
+         } catch (NoSuchFieldException e) {
+            clazz = clazz.getSuperclass();
+         }
+      }
+      return null;
    }
 
    @Override
@@ -1299,17 +1362,17 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
       this.jsonStatus = JsonUtil.mergeAndUpdate(jsonStatus, jsonObjectBuilder.build());
    }
 
-   private String getBrokerPropertiesKeySurround(Map<String, Object> propertiesToApply) {
+   private String getBrokerPropertiesKeySurround(Map<String, String> propertiesToApply) {
       if (propertiesToApply.containsKey(ActiveMQDefaultConfiguration.BROKER_PROPERTIES_KEY_SURROUND_PROPERTY)) {
-         return String.valueOf(propertiesToApply.remove(ActiveMQDefaultConfiguration.BROKER_PROPERTIES_KEY_SURROUND_PROPERTY));
+         return propertiesToApply.remove(ActiveMQDefaultConfiguration.BROKER_PROPERTIES_KEY_SURROUND_PROPERTY);
       } else {
          return System.getProperty(getSystemPropertyPrefix() + ActiveMQDefaultConfiguration.BROKER_PROPERTIES_KEY_SURROUND_PROPERTY, getBrokerPropertiesKeySurround());
       }
    }
 
-   private String getBrokerPropertiesRemoveValue(Map<String, Object> propertiesToApply) {
+   private String getBrokerPropertiesRemoveValue(Map<String, String> propertiesToApply) {
       if (propertiesToApply.containsKey(ActiveMQDefaultConfiguration.BROKER_PROPERTIES_REMOVE_VALUE_PROPERTY)) {
-         return String.valueOf(propertiesToApply.remove(ActiveMQDefaultConfiguration.BROKER_PROPERTIES_REMOVE_VALUE_PROPERTY));
+         return propertiesToApply.remove(ActiveMQDefaultConfiguration.BROKER_PROPERTIES_REMOVE_VALUE_PROPERTY);
       } else {
          return System.getProperty(getSystemPropertyPrefix() + ActiveMQDefaultConfiguration.BROKER_PROPERTIES_REMOVE_VALUE_PROPERTY, getBrokerPropertiesRemoveValue());
       }
@@ -3574,6 +3637,17 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
    public Configuration addFederationDownstreamAuthorization(String role) {
       downstreamAuthorization.add(role);
       return this;
+   }
+
+   @Override
+   public Configuration setAuthenticationCacheKey(EnumSet<AuthenticationCacheKeyConfig> authenticationCacheKey) {
+      this.authenticationCacheKey = authenticationCacheKey;
+      return this;
+   }
+
+   @Override
+   public EnumSet<AuthenticationCacheKeyConfig> getAuthenticationCacheKey() {
+      return authenticationCacheKey;
    }
 
    // extend property utils with ability to auto-fill and locate from collections

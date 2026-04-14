@@ -26,6 +26,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.apache.activemq.artemis.utils.CertificateUtil;
+
 /**
  * A LoginModule allowing for SSL certificate based authentication based on Distinguished Names (DN) stored in text
  * files. The DNs are parsed using a Properties class where each line is &lt;user_name&gt;=&lt;user_DN&gt;. This class
@@ -75,7 +77,7 @@ public class TextFileCertificateLoginModule extends CertificateLoginModule {
       if (certs == null) {
          throw new LoginException("Client certificates not found. Cannot authenticate.");
       }
-      String dn = getDistinguishedName(certs);
+      String dn = getCertificateInfo(certs);
       return usersByDn.containsKey(dn) ? usersByDn.get(dn) : getUserByRegexp(dn);
    }
 
@@ -109,4 +111,8 @@ public class TextFileCertificateLoginModule extends CertificateLoginModule {
       return name;
    }
 
+   @Override
+   protected String getCertificateInfo(X509Certificate[] certificates) {
+      return CertificateUtil.getDistinguishedName(certificates);
+   }
 }

@@ -16,9 +16,6 @@
  */
 package org.apache.activemq.artemis.spi.core.security.jaas;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -35,6 +32,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.apache.activemq.artemis.utils.CertificateUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A LoginModule that propagates TLS certificates subject DN as a UserPrincipal.
@@ -79,9 +80,7 @@ public class ExternalCertificateLoginModule implements AuditLoginModule {
       }
 
       X509Certificate[] certificates = ((CertificateCallback) callbacks[0]).getCertificates();
-      if (certificates != null && certificates.length > 0 && certificates[0] != null) {
-         userName = certificates[0].getSubjectDN().getName();
-      }
+      userName = CertificateUtil.getDistinguishedName(certificates);
 
       if (userName != null && sanUriRolePrefix != null) {
          // getSubjectAlternativeNames returns a Collection of Lists

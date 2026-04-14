@@ -72,6 +72,8 @@ public final class ManagementHelper {
 
    public static final SimpleString HDR_CERT_SUBJECT_DN = SimpleString.of("_AMQ_CertSubjectDN");
 
+   public static final SimpleString HDR_CERT_UPN = SimpleString.of("_AMQ_CertUPN");
+
    public static final SimpleString HDR_CHECK_TYPE = SimpleString.of("_AMQ_CheckType");
 
    public static final SimpleString HDR_SESSION_NAME = SimpleString.of("_AMQ_SessionName");

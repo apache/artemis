@@ -744,7 +744,7 @@ Again, this only has potential impact for MQTT 3.x clients using `CleanSession=1
 . Due to https://issues.apache.org/jira/browse/ARTEMIS-3892[ARTEMIS-3892] the username assigned to queues will be based on the *validated* user rather than just the username submitted by the client application.
 This will impact use-cases like the following:
  .. When `login.config` is configured with the xref:security.adoc#guestloginmodule[`GuestLoginModule`] which causes some users to be assigned a specific username and role during the authentication process.
- .. When `login.config` is configured with the xref:security.adoc#certificateloginmodule[`CertificateLoginModule`] which causes users to be assigned a username and role corresponding to the subject DN from their SSL certificate.
+ .. When `login.config` is configured with the xref:security.adoc#textfilecertificateloginmodule[`TextFileCertificateLoginModule`] which causes users to be assigned a username and role corresponding to the subject DN from their SSL certificate.
 
 +
 In these kinds of situations the broker will use this assigned (i.e. validated) username for any queues created with the connection.
@@ -1279,7 +1279,7 @@ https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&versio
 
 === Highlights
 
-* Support xref:security.adoc#certificateloginmodule[regular expressions for matching client certificates].
+* Support xref:security.adoc#textfilecertificateloginmodule[regular expressions for matching client certificates].
 * Support `SASL_EXTERNAL` for AMQP clients.
 * New examples showing xref:examples.adoc#openwire[virtual topic mapping] and xref:examples.adoc#exclusive-queue[exclusive queue] features.
 
