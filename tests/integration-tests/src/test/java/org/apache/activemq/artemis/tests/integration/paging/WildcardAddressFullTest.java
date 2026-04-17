@@ -262,7 +262,6 @@ public class WildcardAddressFullTest extends ActiveMQTestBase {
       CountDownLatch doneConsume = new CountDownLatch(queueToReceive.length);
 
       for (String q : queueToReceive) {
-         final String consumerQueue = q;
          executorService.execute(() -> {
             ConnectionFactory factory = CFUtil.createConnectionFactory("CORE", "tcp://localhost:61616");
             try (Connection connection = factory.createConnection()) {

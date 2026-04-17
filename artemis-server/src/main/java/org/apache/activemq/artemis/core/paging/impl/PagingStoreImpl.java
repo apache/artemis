@@ -1425,71 +1425,38 @@ public class PagingStoreImpl implements PagingStore {
 
    @Override
    public boolean checkFullPolicy(Message message) throws Exception {
-
-      boolean diskFull = pagingManager.isDiskFull();
-
-      if (diskFull && (diskFullMessagePolicy == DiskFullMessagePolicy.DROP || diskFullMessagePolicy == DiskFullMessagePolicy.FAIL)) {
-         if (message.isLargeMessage()) {
-            ((LargeServerMessage) message).deleteFile();
-         }
-
-         if (diskFullMessagePolicy == DiskFullMessagePolicy.FAIL) {
-            throw ActiveMQMessageBundle.BUNDLE.addressIsFull(address.toString());
-         }
-
-         // Dist is full, just drop the data
-         if (!printedDropMessagesWarning) {
-            printedDropMessagesWarning = true;
-            ActiveMQServerLogger.LOGGER.pageStoreDropMessages(storeName, getPageInfo());
-         }
-
+      if (pagingManager.isDiskFull() && (diskFullMessagePolicy == DiskFullMessagePolicy.DROP || diskFullMessagePolicy == DiskFullMessagePolicy.FAIL)) {
+         handleDrop(message, diskFullMessagePolicy == DiskFullMessagePolicy.FAIL);
          return false;
       }
 
-      if (isFull()) {
-         if (addressFullMessagePolicy == AddressFullMessagePolicy.FAIL) {
-            if (message.isLargeMessage()) {
-               removeLargeMessage(message);
-            }
-            throw ActiveMQMessageBundle.BUNDLE.addressIsFull(address.toString());
-         } else if (addressFullMessagePolicy == AddressFullMessagePolicy.DROP) {
-            if (message.isLargeMessage()) {
-               removeLargeMessage(message);
-            }
-            // storage is full, just drop the data
-            if (!printedDropMessagesWarning) {
-               printedDropMessagesWarning = true;
-               ActiveMQServerLogger.LOGGER.pageStoreDropMessages(storeName, getPageInfo());
-            }
-            return false;
-         }
+      if (isFull() && (addressFullMessagePolicy == AddressFullMessagePolicy.DROP || addressFullMessagePolicy == AddressFullMessagePolicy.FAIL)) {
+         handleDrop(message, addressFullMessagePolicy == AddressFullMessagePolicy.FAIL);
+         return false;
       }
 
       if (pageFull) {
-         if (message.isLargeMessage()) {
-            removeLargeMessage(message);
-         }
-
-         if (pageFullMessagePolicy == PageFullMessagePolicy.FAIL) {
-            throw ActiveMQMessageBundle.BUNDLE.addressIsFull(address.toString());
-         }
-
-         if (!printedDropMessagesWarning) {
-            printedDropMessagesWarning = true;
-            ActiveMQServerLogger.LOGGER.pageStoreDropMessages(storeName, getPageInfo());
-         }
+         handleDrop(message, pageFullMessagePolicy == PageFullMessagePolicy.FAIL);
          return false;
       }
 
       return true;
    }
 
-   private static void removeLargeMessage(Message message) {
-      try {
+   // message will be dropped, we may throw an Exception if fail
+   private void handleDrop(Message message, boolean fail) throws Exception {
+      if (message.isLargeMessage()) {
          ((LargeServerMessage) message).deleteFile();
-      } catch (Exception e) {
-         // only thing to be done is log on this case
-         logger.debug("Error deleting large message file for {}", message, e);
+      }
+
+      if (fail) {
+         throw ActiveMQMessageBundle.BUNDLE.addressIsFull(address.toString());
+      }
+
+      // System is full, just drop the message
+      if (!printedDropMessagesWarning) {
+         printedDropMessagesWarning = true;
+         ActiveMQServerLogger.LOGGER.pageStoreDropMessages(storeName, getPageInfo());
       }
    }
 
