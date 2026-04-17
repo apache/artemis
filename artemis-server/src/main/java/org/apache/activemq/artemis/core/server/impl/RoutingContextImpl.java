@@ -26,6 +26,7 @@ import java.util.function.Consumer;
 
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.core.paging.PagingStore;
 import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.RouteContextList;
 import org.apache.activemq.artemis.core.server.RoutingContext;
@@ -204,7 +205,7 @@ public class RoutingContextImpl implements RoutingContext {
    @Override
    public void addQueue(final SimpleString address, final Queue queue) {
 
-      RouteContextList listing = getContextListing(address);
+      RouteContextList listing = getContextListing(address, queue.getPagingStore());
 
       if (queue.isDurable()) {
          listing.getDurableQueues().add(queue);
@@ -257,7 +258,7 @@ public class RoutingContextImpl implements RoutingContext {
    @Override
    public void addQueueWithAck(SimpleString address, Queue queue) {
       addQueue(address, queue);
-      RouteContextList listing = getContextListing(address);
+      RouteContextList listing = getContextListing(address, queue.getPagingStore());
       listing.addAckedQueue(queue);
    }
 
@@ -316,10 +317,10 @@ public class RoutingContextImpl implements RoutingContext {
    }
 
    @Override
-   public RouteContextList getContextListing(SimpleString address) {
+   public RouteContextList getContextListing(SimpleString address, PagingStore addressStore) {
       RouteContextList listing = map.get(address);
       if (listing == null) {
-         listing = new ContextListing();
+         listing = new ContextListing(addressStore);
          map.put(address, listing);
       }
       return listing;
@@ -336,13 +337,13 @@ public class RoutingContextImpl implements RoutingContext {
    }
 
    @Override
-   public List<Queue> getNonDurableQueues(SimpleString address) {
-      return getContextListing(address).getNonDurableQueues();
+   public List<Queue> getNonDurableQueues(SimpleString address, PagingStore addressStore) {
+      return getContextListing(address, addressStore).getNonDurableQueues();
    }
 
    @Override
-   public List<Queue> getDurableQueues(SimpleString address) {
-      return getContextListing(address).getDurableQueues();
+   public List<Queue> getDurableQueues(SimpleString address, PagingStore addressStore) {
+      return getContextListing(address, addressStore).getDurableQueues();
    }
 
    @Override
@@ -367,6 +368,17 @@ public class RoutingContextImpl implements RoutingContext {
    }
 
    public static class ContextListing implements RouteContextList {
+
+      public ContextListing(PagingStore addressStore) {
+         this.addressStore = addressStore;
+      }
+
+      @Override
+      public PagingStore getAddressStore() {
+         return addressStore;
+      }
+
+      private PagingStore addressStore;
 
       private final List<Queue> durableQueue = new ArrayList<>(1);
 

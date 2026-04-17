@@ -35,6 +35,7 @@ import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.core.config.WildcardConfiguration;
 import org.apache.activemq.artemis.core.paging.impl.PagingManagerImpl;
 import org.apache.activemq.artemis.core.paging.impl.PagingManagerImplAccessor;
 import org.apache.activemq.artemis.core.postoffice.impl.PostOfficeImpl;
@@ -48,6 +49,7 @@ import org.apache.activemq.artemis.core.protocol.mqtt.MQTTUtil;
 import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.ServerSession;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerSessionPlugin;
+import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
 import org.apache.activemq.artemis.utils.RandomUtil;
@@ -103,6 +105,54 @@ public class MQTT5Test extends MQTT5TestSupport {
       producer.connect();
       producer.publish(topic, "myMessage".getBytes(StandardCharsets.UTF_8), 1, false);
       assertTrue(latch.await(500, TimeUnit.MILLISECONDS));
+   }
+
+   @Test
+   @Timeout(DEFAULT_TIMEOUT_SEC)
+   public void testMaxMessagesSameAddress() throws Exception {
+      testMaxMessages("a/b", "a/b", "a.#");
+   }
+
+   @Test
+   @Timeout(DEFAULT_TIMEOUT_SEC)
+   public void testMaxMessagesDifferentAddresses() throws Exception {
+      testMaxMessages("a/b", "a/#", "a.#");
+   }
+
+   private void testMaxMessages(final String publisherTopic, final String subscriptionTopic, final String addressSettingsMatch) throws MqttException {
+      final int MAX_SIZE_MESSAGES = 1;
+
+      // ensure too many messages will trigger a failure
+      server.getAddressSettingsRepository().addMatch(addressSettingsMatch, new AddressSettings().setMaxSizeMessages(MAX_SIZE_MESSAGES).setAddressFullMessagePolicy(AddressFullMessagePolicy.FAIL));
+
+      // ensure that the subscription should get the proper max size messages
+      assertEquals(MAX_SIZE_MESSAGES, server.getAddressSettingsRepository().getMatch(MQTTUtil.getCoreAddressFromMqttTopic(subscriptionTopic, WildcardConfiguration.DEFAULT_WILDCARD_CONFIGURATION)).getMaxSizeMessages());
+
+      // create and disconnect subscriber and ensure it leaves behind a subscription queue on the address
+      MqttClient subscriber = createPahoClient("subscriber");
+      MqttConnectionOptions subscriberOptions = new MqttConnectionOptionsBuilder()
+         .cleanStart(false)
+         .sessionExpiryInterval(999L)
+         .build();
+      subscriber.connect(subscriberOptions);
+      subscriber.subscribe(subscriptionTopic, AT_LEAST_ONCE);
+      subscriber.disconnect();
+      assertNotNull(getSubscriptionQueue(subscriptionTopic, "subscriber"));
+
+      // send messages and ensure the max-size-messages is enforced
+      MqttClient producer = createPahoClient("producer");
+      producer.connect();
+      for (int i = 0; i < MAX_SIZE_MESSAGES; i++) {
+         producer.publish(publisherTopic, RandomUtil.randomBytes(), 1, false);
+      }
+      try {
+         producer.publish(publisherTopic, RandomUtil.randomBytes(), 1, false);
+         fail("Should have failed to publish");
+      } catch (MqttException e) {
+         e.printStackTrace();
+         // ignore
+      }
+      assertEquals(MAX_SIZE_MESSAGES, getSubscriptionQueue(subscriptionTopic, "subscriber").getMessageCount());
    }
 
    @Test

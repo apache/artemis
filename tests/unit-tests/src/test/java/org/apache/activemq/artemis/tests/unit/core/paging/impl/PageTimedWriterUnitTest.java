@@ -311,7 +311,7 @@ public class PageTimedWriterUnitTest extends ArtemisTestCase {
       pageStore.start();
       pageStore.startPaging();
 
-      routeContextList = new RoutingContextImpl.ContextListing();
+      routeContextList = new RoutingContextImpl.ContextListing(Mockito.mock(PagingStoreImpl.class));
       Queue mockQueue = Mockito.mock(Queue.class);
       Mockito.when(mockQueue.getID()).thenReturn(1L);
       routeContextList.addAckedQueue(mockQueue);

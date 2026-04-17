@@ -139,6 +139,8 @@ public interface PagingStore extends ActiveMQComponent, RefCountMessageListener 
 
    Page usePage(long page);
 
+   boolean checkFullPolicy(Message message) throws Exception;
+
    /**
     * Use this method when you want to use the cache of used pages. If you are just using offline (e.g. print-data), use
     * the newPageObject method.

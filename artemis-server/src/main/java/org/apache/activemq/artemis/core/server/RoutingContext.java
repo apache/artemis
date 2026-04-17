@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.core.paging.PagingStore;
 import org.apache.activemq.artemis.core.server.cluster.impl.MessageLoadBalancingType;
 import org.apache.activemq.artemis.core.server.mirror.MirrorController;
 import org.apache.activemq.artemis.core.transaction.Transaction;
@@ -78,11 +79,11 @@ public interface RoutingContext {
 
    Map<SimpleString, RouteContextList> getContexListing();
 
-   RouteContextList getContextListing(SimpleString address);
+   RouteContextList getContextListing(SimpleString address, PagingStore addressStore);
 
-   List<Queue> getNonDurableQueues(SimpleString address);
+   List<Queue> getNonDurableQueues(SimpleString address, PagingStore addressStore);
 
-   List<Queue> getDurableQueues(SimpleString address);
+   List<Queue> getDurableQueues(SimpleString address, PagingStore addressStore);
 
    int getQueueCount();
 

@@ -272,6 +272,11 @@ public class PersistMultiThreadTest extends ActiveMQTestBase {
       }
 
       @Override
+      public boolean checkFullPolicy(Message message) throws Exception {
+         return true;
+      }
+
+      @Override
       public Page usePage(long page, boolean createEntry, boolean createFile) {
          return null;
       }
