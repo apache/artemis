@@ -278,7 +278,7 @@
 
       <directory-version>2.0.0.AM25</directory-version>
       <directory-jdbm2-version>2.0.0-M3</directory-jdbm2-version>
-      <bc-java-version>1.83</bc-java-version>
+      <bc-java-version>1.84</bc-java-version>
 
       <netty-transport-native-epoll-classifier>linux-x86_64</netty-transport-native-epoll-classifier>
       <netty-transport-native-kqueue-classifier>osx-x86_64</netty-transport-native-kqueue-classifier>
