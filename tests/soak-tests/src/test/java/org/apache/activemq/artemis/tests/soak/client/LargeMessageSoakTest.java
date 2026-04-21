@@ -35,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
+import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.tests.util.CFUtil;
 import org.apache.activemq.artemis.utils.RandomUtil;
@@ -149,5 +150,72 @@ public class LargeMessageSoakTest extends ActiveMQTestBase {
       assertEquals(0, errors.get());
    }
 
+   @Test
+   public void testReceiveLargeMessagesPerformance() throws Exception {
+      final int THREADS = 5;
+      final int MESSAGE_COUNT = 10000;
+      final int MESSAGE_SIZE = 1024 * 1024;
+
+      ExecutorService executorService = Executors.newFixedThreadPool(THREADS);
+      runAfter(executorService::shutdownNow);
+
+      ConnectionFactory factory = new ActiveMQConnectionFactory("tcp://localhost:61616");
+
+      try (Connection connection = factory.createConnection();
+           Session session = connection.createSession(Session.SESSION_TRANSACTED);
+           MessageProducer producer = session.createProducer(session.createQueue("TEST"))) {
+
+         TextMessage textMessage = session.createTextMessage(RandomUtil.randomAlphaNumericString(MESSAGE_SIZE));
+
+         for (int i = 0; i < MESSAGE_COUNT; i++) {
+
+            producer.send(textMessage);
+
+            if (i % 100 == 0) {
+               session.commit();
+            }
+
+         }
+
+         session.commit();
+      }
+
+      CountDownLatch done = new CountDownLatch(THREADS);
+      long start = System.currentTimeMillis();
+
+      for (int t = 0; t < THREADS; t++) {
+         executorService.execute(() -> {
+
+            try (Connection connection = factory.createConnection();
+                 Session session = connection.createSession(Session.SESSION_TRANSACTED);
+                 MessageConsumer consumer = session.createConsumer(session.createQueue("TEST"))) {
+
+               connection.start();
+
+               int count = 0;
+               while (consumer.receive(100) != null) {
+                  if (++count >= 100) {
+                     session.commit();
+                     count = 0;
+                  }
+               }
+
+               session.commit();
+
+            } catch (Exception e) {
+               logger.warn(e.getMessage(), e);
+            } finally {
+               done.countDown();
+            }
+
+         });
+      }
+
+      assertTrue(done.await(5, TimeUnit.MINUTES));
+      assertEquals(0, server.locateQueue("TEST").getMessageCount());
+
+      logger.info("All messages received in {} ms", System.currentTimeMillis() - start);
+
+   }
 
 }
