@@ -172,6 +172,12 @@ public final class ClientLargeMessageImpl extends ClientMessageImpl implements C
       public void write(int b) throws IOException {
          bufferOut.writeByte((byte) (b & 0xff));
       }
+
+      @Override
+      public void write(byte[] b, int off, int len) throws IOException {
+         bufferOut.writeBytes(b, off, len);
+      }
+
    }
 
    @Override
