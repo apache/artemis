@@ -25,7 +25,7 @@ import java.util.Set;
 
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 
-public abstract class FederationStreamConfiguration <T extends FederationStreamConfiguration<T>> implements Serializable {
+public abstract class FederationStreamConfiguration<T extends FederationStreamConfiguration<T>> implements Serializable {
 
    private String name;
 

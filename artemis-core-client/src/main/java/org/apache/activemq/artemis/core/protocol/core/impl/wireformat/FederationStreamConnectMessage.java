@@ -28,7 +28,7 @@ import org.apache.activemq.artemis.core.config.federation.FederationTransformerC
 import org.apache.activemq.artemis.core.protocol.core.impl.PacketImpl;
 import org.apache.activemq.artemis.utils.ClassloadingUtil;
 
-public abstract class FederationStreamConnectMessage <T extends FederationStreamConfiguration> extends PacketImpl {
+public abstract class FederationStreamConnectMessage<T extends FederationStreamConfiguration> extends PacketImpl {
 
    private String name;
    private Credentials credentials;

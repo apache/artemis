@@ -93,6 +93,7 @@ under the License.
       <module name="WhitespaceAfter">
          <property name="tokens" value="COMMA"/>
       </module>
+      <module name="GenericWhitespace"/>
       <module name="ParenPad">
          <property name="option" value="nospace"/>
       </module>

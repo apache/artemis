@@ -400,7 +400,7 @@ public class LDAPLoginModule implements AuditLoginModule {
 
          NamingEnumeration<SearchResult> results = null;
          try {
-            results = SecurityManagerShim.callAs(brokerGssapiIdentity, (Callable< NamingEnumeration<SearchResult>>) () -> context.search(getLDAPPropertyValue(ConfigKey.USER_BASE), filter, constraints));
+            results = SecurityManagerShim.callAs(brokerGssapiIdentity, (Callable<NamingEnumeration<SearchResult>>) () -> context.search(getLDAPPropertyValue(ConfigKey.USER_BASE), filter, constraints));
          } catch (CompletionException e) {
             Throwable cause = e.getCause();
             FailedLoginException ex = new FailedLoginException("Error executing search query to resolve DN");
@@ -526,7 +526,7 @@ public class LDAPLoginModule implements AuditLoginModule {
       Queue<String> pendingNameExpansion = new LinkedList<>();
       NamingEnumeration<SearchResult> results = null;
       try {
-         results = SecurityManagerShim.callAs(brokerGssapiIdentity, (Callable< NamingEnumeration<SearchResult>>) () -> context.search(getLDAPPropertyValue(ConfigKey.ROLE_BASE), filter, constraints));
+         results = SecurityManagerShim.callAs(brokerGssapiIdentity, (Callable<NamingEnumeration<SearchResult>>) () -> context.search(getLDAPPropertyValue(ConfigKey.ROLE_BASE), filter, constraints));
       } catch (CompletionException e) {
          Throwable cause = e.getCause();
          NamingException ex = new NamingException("Error executing search query to resolve roles");
@@ -563,7 +563,7 @@ public class LDAPLoginModule implements AuditLoginModule {
                logger.debug("  filter: {}", expandFilter);
             }
             try {
-               results = SecurityManagerShim.callAs(brokerGssapiIdentity, (Callable< NamingEnumeration<SearchResult>>) () -> context.search(getLDAPPropertyValue(ConfigKey.ROLE_BASE), expandFilter, constraints));
+               results = SecurityManagerShim.callAs(brokerGssapiIdentity, (Callable<NamingEnumeration<SearchResult>>) () -> context.search(getLDAPPropertyValue(ConfigKey.ROLE_BASE), expandFilter, constraints));
             } catch (CompletionException e) {
                Throwable cause = e.getCause();
                NamingException ex = new NamingException("Error executing search query to expand roles");

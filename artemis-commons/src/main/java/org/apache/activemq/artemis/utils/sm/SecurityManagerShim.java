@@ -138,7 +138,7 @@ public class SecurityManagerShim {
     * @return the value returned by the {@code action}.
     * @throws NullPointerException  if {@code action} is {@code null}.
     */
-   public static<T> T doPrivileged(final PrivilegedAction<T> action) {
+   public static <T> T doPrivileged(final PrivilegedAction<T> action) {
       Objects.requireNonNull(action, "action must be provided");
 
       return AccessController.doPrivileged(action);
@@ -163,7 +163,7 @@ public class SecurityManagerShim {
     * @return the value returned by the {@code action}.
     * @throws NullPointerException  if {@code action} is {@code null}.
     */
-   public static<T> T doPrivileged(final PrivilegedAction<T> action, final Object accessControlContext) {
+   public static <T> T doPrivileged(final PrivilegedAction<T> action, final Object accessControlContext) {
       // AccessControlContext may be null
       Objects.requireNonNull(action, "action must be provided");
 
