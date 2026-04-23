@@ -1882,6 +1882,16 @@ public class ActiveMQServerControlUsingCoreTest extends ActiveMQServerControlTes
          public void exportConfigAsProperties() throws Exception {
             proxy.invokeOperation("exportConfigAsProperties");
          }
+
+         @Override
+         public String listLockCoordinatorsAsJSON() {
+            try {
+               return (String) proxy.invokeOperation("listLockCoordinatorsAsJSON");
+            } catch (Throwable throwable) {
+               throwable.printStackTrace();
+               return null;
+            }
+         }
       };
    }
 

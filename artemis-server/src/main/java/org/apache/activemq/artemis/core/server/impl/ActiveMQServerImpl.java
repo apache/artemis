@@ -565,6 +565,11 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    }
 
    @Override
+   public List<LockCoordinator> getLockCoordinators() {
+      return new ArrayList<>(lockCoordinators.values());
+   }
+
+   @Override
    public void replay(Date start, Date end, String address, String target, String filter) throws Exception {
       if (replayManager == null) {
          throw ActiveMQMessageBundle.BUNDLE.noRetention();

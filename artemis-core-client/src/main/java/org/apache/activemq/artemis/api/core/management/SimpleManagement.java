@@ -169,6 +169,9 @@ public class SimpleManagement implements AutoCloseable {
       return consumersAsJSON.size();
    }
 
+   public JsonArray listLockCoordinators() throws Exception {
+      return JsonUtil.readJsonArray(simpleManagement("broker", "listLockCoordinatorsAsJSON"));
+   }
 
    public long getMessagesAddedOnQueue(String queueName) throws Exception {
       return simpleManagementLong(ResourceNames.QUEUE + queueName, "getMessagesAdded");

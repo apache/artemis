@@ -72,7 +72,6 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
 
    private final ArrayList<PrioritizedCallback> lockAcquiredCallback = new ArrayList<>();
    private final ArrayList<PrioritizedCallback> lockReleasedCallback = new ArrayList<>();
-   private final long checkPeriod;
    private final String name;
    private final String lockID;
 
@@ -82,6 +81,14 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
 
    public DistributedLockManager getLockManager() {
       return lockManager;
+   }
+
+   public String getName() {
+      return name;
+   }
+
+   public String getLockId() {
+      return lockID;
    }
 
    /**
@@ -205,7 +212,6 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
       super(scheduledExecutor, executor, checkPeriod, checkPeriod, TimeUnit.MILLISECONDS, false);
       assert executor != null;
       this.lockManager = lockManager;
-      this.checkPeriod = checkPeriod;
       this.lockID = lockID;
       this.name = name;
    }

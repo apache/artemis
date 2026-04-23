@@ -183,6 +183,8 @@ public interface ActiveMQServer extends ServiceComponent {
 
    CriticalAnalyzer getCriticalAnalyzer();
 
+   List<LockCoordinator> getLockCoordinators();
+
    LockCoordinator getLockCoordinator(String name);
 
    void updateStatus(String component, String statusJson);
