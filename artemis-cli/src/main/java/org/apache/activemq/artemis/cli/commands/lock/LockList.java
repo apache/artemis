@@ -18,6 +18,7 @@
 package org.apache.activemq.artemis.cli.commands.lock;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.activemq.artemis.api.core.management.SimpleManagement;
@@ -32,14 +33,27 @@ import picocli.CommandLine;
 @CommandLine.Command(name = "list", description = "List the lock coordinators and their status on the server.")
 public class LockList extends ConnectionAbstract {
 
+   @CommandLine.Option(names = "--sleep", description = "Monitor locks continuously by repeating the command at the specified interval in milliseconds. Use -1 to disable (default).", defaultValue = "-1")
+   private long sleep = -1;
+
    @Override
    public Object execute(ActionContext context) throws Exception {
       super.execute(context);
-      stat(context);
+
+      do {
+         context.out.println(new Date() + ">> Lock list results for " + getBrokerInstance());
+         list(context);
+         if (sleep > 0) {
+            context.out.println("Waiting " + sleep + " before another lock list iteration");
+            Thread.sleep(sleep);
+         }
+      }
+      while (sleep > 0);
+
       return null;
    }
 
-   private void stat(final ActionContext context) throws Exception {
+   private void list(final ActionContext context) throws Exception {
       try (SimpleManagement simpleManagement = new SimpleManagement(brokerURL, user, password).open()) {
          JsonArray lockList = simpleManagement.listLockCoordinators();
          printStats(context, lockList);
@@ -53,7 +67,7 @@ public class LockList extends ConnectionAbstract {
          return;
       }
 
-      String[] fieldNames = {"NAME", "CLASS_NAME", "LOCK_ID", "LOCKED", "STARTED"};
+      String[] fieldNames = {"NAME", "ID", "STATUS"};
       int[] columnSizes = new int[fieldNames.length];
       boolean[] centralize = new boolean[fieldNames.length];
       List<String>[] fieldTitles = new ArrayList[fieldNames.length];
@@ -75,10 +89,8 @@ public class LockList extends ConnectionAbstract {
       for (int i = 0; i < array.size(); i++) {
          JsonObject lock = array.getJsonObject(i);
          columnSizes[0] = Math.max(columnSizes[0], lock.getString("name", "").length());
-         columnSizes[1] = Math.max(columnSizes[1], lock.getString("simpleName", "").length());
-         columnSizes[2] = Math.max(columnSizes[2], lock.getString("lockId", "").length());
-         columnSizes[3] = Math.max(columnSizes[3], String.valueOf(lock.getBoolean("locked")).length());
-         columnSizes[4] = Math.max(columnSizes[4], String.valueOf(lock.getBoolean("started")).length());
+         columnSizes[1] = Math.max(columnSizes[1], lock.getString("lockId", "").length());
+         columnSizes[2] = Math.max(columnSizes[2], lock.getString("status", "").length());
       }
 
       TableOut tableOut = new TableOut("|", 2, columnSizes);
@@ -91,10 +103,8 @@ public class LockList extends ConnectionAbstract {
          JsonObject lock = array.getJsonObject(i);
          String[] columns = {
             lock.getString("name", ""),
-            lock.getString("simpleName", ""),
             lock.getString("lockId", ""),
-            String.valueOf(lock.getBoolean("locked")),
-            String.valueOf(lock.getBoolean("started"))
+            lock.getString("status")
          };
          tableOut.print(context.out, columns, centralize);
       }

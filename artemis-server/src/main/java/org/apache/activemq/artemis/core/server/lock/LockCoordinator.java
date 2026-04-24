@@ -87,6 +87,19 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
       return name;
    }
 
+   // Returns a string representation of the current status of this Lock Coordinator.
+   public String getStatus() {
+      if (!isStarted()) {
+         return "Stopped";
+      } else {
+         if (isLocked()) {
+            return "Locked";
+         } else {
+            return "Unlocked";
+         }
+      }
+   }
+
    public String getLockId() {
       return lockID;
    }
@@ -170,7 +183,6 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
             } catch (Exception e) {
                logger.debug("Error closing lock during stop", e);
             }
-            distributedLock = null;
          }
          if (lockManager != null) {
             try {
@@ -178,7 +190,6 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
             } catch (Exception e) {
                logger.debug("Error stopping lock manager during stop", e);
             }
-            lockManager = null;
          }
          simpleFuture.set(null);
       });

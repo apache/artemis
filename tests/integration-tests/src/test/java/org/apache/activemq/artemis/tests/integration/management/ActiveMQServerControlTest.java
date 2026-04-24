@@ -6577,46 +6577,81 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
    public void testListLockCoordinators() throws Exception {
       server.stop();
 
-      // Add two lock coordinator configurations using File implementation
-      LockCoordinatorConfiguration lock1 = new LockCoordinatorConfiguration();
-      lock1.setName("coordinator1");
-      lock1.setLockId("lock-id-1");
-      lock1.setClassName(MyFakeLockManager.class.getName());
-      lock1.setCheckPeriod(5000);
+      {
+         // Add two lock coordinator configurations using File implementation
+         LockCoordinatorConfiguration lock = new LockCoordinatorConfiguration();
+         lock.setName("coordinator1");
+         lock.setLockId("lock-id-1");
+         lock.setClassName(MyFakeLockManager.class.getName());
+         lock.setCheckPeriod(10);
+         conf.addLockCoordinatorConfiguration(lock);
+      }
 
-      LockCoordinatorConfiguration lock2 = new LockCoordinatorConfiguration();
-      lock2.setName("coordinator2");
-      lock2.setLockId("lock-id-2");
-      lock2.setClassName(MyFakeLockManager.class.getName());
-      lock2.setCheckPeriod(10000);
+      {
+         LockCoordinatorConfiguration lock = new LockCoordinatorConfiguration();
+         lock.setName("coordinator2");
+         lock.setLockId("lock-id-2");
+         lock.setClassName(MyFakeLockManager.class.getName());
+         lock.setCheckPeriod(10);
+         conf.addLockCoordinatorConfiguration(lock);
+      }
 
-      conf.addLockCoordinatorConfiguration(lock1);
-      conf.addLockCoordinatorConfiguration(lock2);
-
-      server.start();
+      {
+         LockCoordinatorConfiguration lock = new LockCoordinatorConfiguration();
+         lock.setName("coordinator3");
+         lock.setLockId("lock-id-3");
+         lock.setClassName(MyFakeLockManager.class.getName());
+         lock.setCheckPeriod(10);
+         conf.addLockCoordinatorConfiguration(lock);
+      }
 
       ActiveMQServerControl serverControl = createManagementControl();
+      server.start();
+
+      Wait.assertTrue(server.getLockCoordinator("coordinator1")::isLocked);
+      LockCoordinator lockCoordinator3 = server.getLockCoordinator("coordinator3");
+      lockCoordinator3.stop();
+
       String jsonString = serverControl.listLockCoordinatorsAsJSON();
       assertNotNull(jsonString);
 
       JsonArray array = JsonUtil.readJsonArray(jsonString);
-      assertEquals(2, array.size());
+      assertEquals(3, array.size());
 
-      // Check first coordinator
-      JsonObject coord1 = array.getJsonObject(0);
-      assertEquals("coordinator1", coord1.getString("name"));
-      assertEquals(MyFakeLockManager.class.getName(), coord1.getString("className"));
-      assertEquals(MyFakeLockManager.class.getSimpleName(), coord1.getString("simpleName"));
-      assertTrue(coord1.containsKey("locked"));
-      assertTrue(coord1.containsKey("started"));
 
-      // Check second coordinator
-      JsonObject coord2 = array.getJsonObject(1);
-      assertEquals("coordinator2", coord2.getString("name"));
-      assertEquals(MyFakeLockManager.class.getName(), coord2.getString("className"));
-      assertEquals(MyFakeLockManager.class.getSimpleName(), coord2.getString("simpleName"));
-      assertTrue(coord2.containsKey("locked"));
-      assertTrue(coord2.containsKey("started"));
+      {
+         // Check first coordinator
+         JsonObject coordinator = array.getJsonObject(0);
+         assertEquals("coordinator1", coordinator.getString("name"));
+         assertEquals(MyFakeLockManager.class.getName(), coordinator.getString("className"));
+         assertEquals(MyFakeLockManager.class.getSimpleName(), coordinator.getString("simpleName"));
+         assertTrue(coordinator.getBoolean("locked"));
+         assertTrue(coordinator.getBoolean("started"));
+         assertEquals("Locked", coordinator.getString("status"));
+      }
+
+      {
+         // Check second coordinator
+         JsonObject coordinator = array.getJsonObject(1);
+         assertEquals("coordinator2", coordinator.getString("name"));
+         assertEquals(MyFakeLockManager.class.getName(), coordinator.getString("className"));
+         assertEquals(MyFakeLockManager.class.getSimpleName(), coordinator.getString("simpleName"));
+         assertTrue(coordinator.getBoolean("locked"));
+         assertTrue(coordinator.getBoolean("started"));
+         assertEquals("Locked", coordinator.getString("status"));
+      }
+
+      {
+         // Check third coordinator
+         JsonObject coordinator = array.getJsonObject(2);
+         assertEquals("coordinator3", coordinator.getString("name"));
+         assertEquals(MyFakeLockManager.class.getName(), coordinator.getString("className"));
+         assertEquals(MyFakeLockManager.class.getSimpleName(), coordinator.getString("simpleName"));
+         assertFalse(coordinator.getBoolean("locked"));
+         assertFalse(coordinator.getBoolean("started"));
+         assertEquals("Stopped", coordinator.getString("status"));
+      }
+
    }
 
 

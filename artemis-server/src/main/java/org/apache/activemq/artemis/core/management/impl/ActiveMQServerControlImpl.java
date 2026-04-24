@@ -4777,6 +4777,7 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
             objectBuilder.add("simpleName", l.getLockManager().getClass().getSimpleName());
             objectBuilder.add("locked", l.isLocked());
             objectBuilder.add("started", l.isStarted());
+            objectBuilder.add("status", l.getStatus());
             array.add(objectBuilder);
          });
 
