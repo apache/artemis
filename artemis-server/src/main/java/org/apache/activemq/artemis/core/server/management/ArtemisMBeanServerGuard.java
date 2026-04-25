@@ -63,13 +63,6 @@ public class ArtemisMBeanServerGuard extends AbstractGuardInvocationHandler {
 
    @Override
    public boolean canInvoke(String object, String operationName) {
-      ObjectName objectName = null;
-      try {
-         objectName = ObjectName.getInstance(object);
-      } catch (MalformedObjectNameException e) {
-         logger.debug("can't check invoke rights as object name invalid: {}", object, e);
-         return false;
-      }
       /*
        * HawtIO calls this with a null operationName as a coarse grained way of authenticating against all the
        * operations on an mbean. Until this addition this was throwing a null pointer on operationName later in this
@@ -78,7 +71,19 @@ public class ArtemisMBeanServerGuard extends AbstractGuardInvocationHandler {
        * it. Since it is just an optimisation it is fine to always return true. Note that the alternative
        * ArtemisRbacInvocationHandler does allow the ability to restrict a whole mbean.
        */
-      if (operationName == null || canBypassRBAC(objectName)) {
+      if (operationName == null) {
+         return true;
+      }
+
+      ObjectName objectName = null;
+      try {
+         objectName = ObjectName.getInstance(object);
+      } catch (MalformedObjectNameException e) {
+         logger.debug("can't check invoke rights as object name invalid: {}", object, e);
+         return false;
+      }
+
+      if (canBypassRBAC(objectName)) {
          return true;
       }
 
