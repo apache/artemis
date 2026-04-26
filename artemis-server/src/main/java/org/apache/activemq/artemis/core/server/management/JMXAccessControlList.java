@@ -18,11 +18,13 @@ package org.apache.activemq.artemis.core.server.management;
 
 import javax.management.ObjectName;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -58,7 +60,6 @@ public class JMXAccessControlList {
       domainMap.putIfAbsent(access.getKey(), access);
    }
 
-
    public List<String> getRolesForObject(ObjectName objectName, String methodName) {
       TreeMap<String, Access> domainMap = domainAccess.get(objectName.getDomain());
       if (domainMap != null) {
@@ -79,6 +80,31 @@ public class JMXAccessControlList {
       }
 
       return defaultAccess.getMatchingRolesForMethod(methodName);
+   }
+
+   public boolean authorizeUserForMethod(ObjectName objectName, String methodName, Set<String> userRoles) {
+      TreeMap<String, Access> domainMap = domainAccess.get(objectName.getDomain());
+
+      if (domainMap != null) {
+         Map<String, String> keyPropertyList = objectName.getKeyPropertyList();
+         for (Map.Entry<String, String> keyEntry : keyPropertyList.entrySet()) {
+            String key = normalizeKey(keyEntry.getKey() + "=" + keyEntry.getValue());
+            for (Access accessEntry : domainMap.values()) {
+               boolean matches = accessEntry.getKeyPattern().matcher(key).matches();
+               if (matches) {
+                  boolean authorized = accessEntry.authorizeUserForMethod(methodName, userRoles);
+                  return authorized;
+               }
+            }
+         }
+
+         Access access = domainMap.get("");
+         if (access != null) {
+            return access.authorizeUserForMethod(methodName, userRoles);
+         }
+      }
+
+      return defaultAccess.authorizeUserForMethod(methodName, userRoles);
    }
 
    public boolean isInAllowList(ObjectName objectName) {
@@ -222,6 +248,20 @@ public class JMXAccessControlList {
             }
          }
          return catchAllRoles;
+      }
+
+      public boolean authorizeUserForMethod(String methodName, Set<String> userRoles) {
+         List<String> roles = methodRoles.get(methodName);
+         if (roles != null) {
+            return !Collections.disjoint(roles, userRoles);
+
+         }
+         for (Map.Entry<String, List<String>> entry : methodPrefixRoles.entrySet()) {
+            if (methodName.startsWith(entry.getKey())) {
+               return !Collections.disjoint(entry.getValue(), userRoles);
+            }
+         }
+         return !Collections.disjoint(catchAllRoles, userRoles);
       }
    }
 
