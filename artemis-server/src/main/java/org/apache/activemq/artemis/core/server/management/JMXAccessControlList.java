@@ -33,6 +33,36 @@ import java.util.regex.Pattern;
 public class JMXAccessControlList {
    private static final String WILDCARD = "*";
 
+   private record AccessEntry(Access access, String rawPattern) {}
+   private record Bucket(
+      Map<String, AccessEntry> exactMatches, 
+      List<AccessEntry> regexPatterns
+   ) {}
+
+   private final Map<String, Map<String, String>> keyPropertyCache =
+      Collections.synchronizedMap(new LinkedHashMap<String, Map<String, String>>(128, 0.75f, true) {
+         @Override
+         protected boolean removeEldestEntry(Map.Entry<String, Map<String, String>> eldest) {
+            return size() > 5000; 
+         }
+      });
+
+   private final Map<String, TreeMap<String, Access>> domainCache =
+      Collections.synchronizedMap(new LinkedHashMap<String, TreeMap<String, Access>>(128, 0.75f, true) {
+         @Override
+         protected boolean removeEldestEntry(Map.Entry<String, TreeMap<String, Access>> eldest) {
+            return size() > 5000;
+         }
+      });
+
+   private final Map<String, Map<String, Bucket>> bucketedDomainCache =
+      Collections.synchronizedMap(new LinkedHashMap<>(128, 0.75f, true) {
+         @Override
+         protected boolean removeEldestEntry(Map.Entry<String, Map<String, Bucket>> eldest) {
+            return size() > 1000;
+         }
+      });
+
    private Access defaultAccess = new Access(WILDCARD);
    private ConcurrentMap<String, TreeMap<String, Access>> domainAccess = new ConcurrentHashMap<>();
    private ConcurrentMap<String, TreeMap<String, Access>> allowList = new ConcurrentHashMap<>();
@@ -50,13 +80,6 @@ public class JMXAccessControlList {
       return key2.length() - key1.length();
    };
 
-   private final Map<String, Map<String, String>> keyPropertyCache =
-      Collections.synchronizedMap(new LinkedHashMap<String, Map<String, String>>(128, 0.75f, true) {
-         @Override
-         protected boolean removeEldestEntry(Map.Entry<String, Map<String, String>> eldest) {
-               return size() > 5000;
-         }
-      });
 
    public void addToAllowList(String domain, String key) {
       TreeMap<String, Access> domainMap = new TreeMap<>(keyComparator);
@@ -93,9 +116,30 @@ public class JMXAccessControlList {
 
 
    public boolean authorizeUserForMethod(ObjectName objectName, String methodName, Set<String> userRoles) {
-      TreeMap<String, Access> domainMap = domainAccess.get(objectName.getDomain());
 
-      if (domainMap != null) {
+      String domainKey = objectName.getDomain();
+
+      TreeMap<String, Access> domainMap = domainCache.computeIfAbsent(objectName.getDomain(), key -> 
+         domainAccess.get(key)
+      );
+
+      Map<String, List<Access>> bucketedMap = bucketedDomainCache.computeIfAbsent(domainKey, d -> {
+         TreeMap<String, Access> rawMap = domainAccess.get(d);
+         if (rawMap == null) return null;
+
+         Map<String, List<Access>> grouped = new HashMap<>();
+         for (Access access : rawMap.values()) {
+               String pattern = access.getKeyPattern().pattern();
+               // Extract prefix (e.g., "address" from "address=QUEUE.A")
+               int eqIndex = pattern.indexOf('=');
+               String prefix = (eqIndex != -1) ? pattern.substring(0, eqIndex) : "";
+               
+               grouped.computeIfAbsent(prefix, k -> new ArrayList<>()).add(access);
+         }
+         return grouped;
+      });
+
+      if (bucketedMap != null) {
 
          String cacheKey = objectName.getCanonicalName();
          Map<String, String> keyPropertyList = keyPropertyCache.get(cacheKey);
@@ -106,10 +150,15 @@ public class JMXAccessControlList {
 
          for (Map.Entry<String, String> keyEntry : keyPropertyList.entrySet()) {
             String prefixFilter = keyEntry.getKey() + "=";
-            String key = normalizeKey(keyEntry.getKey() + "=" + keyEntry.getValue());
-            for (Access accessEntry : domainMap.values()) {
-               String rawPattern = accessEntry.getKeyPattern().pattern();
-               if (rawPattern.startsWith(prefixFilter)) {
+
+            //filter out relevant access entries based on prefix 
+            List<Access> relevantAccessEntries = bucketedMap.get(keyEntry.getKey());
+
+            if (relevantAccessEntries != null) {
+               String key = normalizeKey(prefixFilter + "=" + keyEntry.getValue());
+
+               for (Access accessEntry : relevantAccessEntries) {
+                  String rawPattern = accessEntry.getKeyPattern().pattern();
                   if (key.equals(rawPattern)) {
                      return accessEntry.authorizeUserForMethod(methodName, userRoles);
                   }
@@ -119,7 +168,6 @@ public class JMXAccessControlList {
                   }
                }
             }
-         }
 
          Access access = domainMap.get("");
          if (access != null) {
