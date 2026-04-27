@@ -90,12 +90,18 @@ public class JMXAccessControlList {
       if (domainMap != null) {
          Map<String, String> keyPropertyList = objectName.getKeyPropertyList();
          for (Map.Entry<String, String> keyEntry : keyPropertyList.entrySet()) {
+            String prefixFilter = keyEntry.getKey() + "=";
             String key = normalizeKey(keyEntry.getKey() + "=" + keyEntry.getValue());
             for (Access accessEntry : domainMap.values()) {
-               boolean matches = accessEntry.getKeyPattern().matcher(key).matches();
-               if (matches) {
-                  boolean authorized = accessEntry.authorizeUserForMethod(methodName, userRoles);
-                  return authorized;
+               String rawPattern = accessEntry.getKeyPattern().pattern();
+               if (rawPattern.startsWith(prefixFilter)) {
+                  if (key.equals(rawPattern)) {
+                     return accessEntry.authorizeUserForMethod(methodName, userRoles);
+                  }
+                  // regexp check if previous did not return true
+                  if (accessEntry.getKeyPattern().matcher(key).matches()) {
+                     return accessEntry.authorizeUserForMethod(methodName, userRoles);
+                  }
                }
             }
          }
