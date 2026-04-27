@@ -36,6 +36,7 @@ public class JMXAccessControlList {
    private static final String WILDCARD = "*";
 
    private final Cache<ObjectName, Boolean> allowListCache = Caffeine.newBuilder().maximumSize(10000).build();
+   private final Cache<String, Map<String, String>> keyPropertyCache = Caffeine.newBuilder().maximumSize(10000).build();
 
    private Access defaultAccess = new Access(WILDCARD);
    private ConcurrentMap<String, TreeMap<String, Access>> domainAccess = new ConcurrentHashMap<>();
@@ -97,7 +98,12 @@ public class JMXAccessControlList {
       TreeMap<String, Access> domainMap = domainAccess.get(objectName.getDomain());
 
       if (domainMap != null) {
-         Map<String, String> keyPropertyList = objectName.getKeyPropertyList();
+
+         String cacheKey = objectName.getCanonicalName();
+         Map<String, String> keyPropertyList = keyPropertyCache.get(cacheKey, key ->
+            objectName.getKeyPropertyList()
+         );
+
          for (Map.Entry<String, String> keyEntry : keyPropertyList.entrySet()) {
             String prefixFilter = keyEntry.getKey() + "=";
             String key = normalizeKey(keyEntry.getKey() + "=" + keyEntry.getValue());
@@ -140,7 +146,10 @@ public class JMXAccessControlList {
             return true;
          }
 
-         Map<String, String> keyPropertyList = objectName.getKeyPropertyList();
+         String cacheKey = objectName.getCanonicalName();
+         Map<String, String> keyPropertyList = keyPropertyCache.get(cacheKey, key ->
+            objectName.getKeyPropertyList()
+         );
          for (Map.Entry<String, String> keyEntry : keyPropertyList.entrySet()) {
             String key = normalizeKey(keyEntry.getKey() + "=" + keyEntry.getValue());
             for (Access accessEntry : domainMap.values()) {
