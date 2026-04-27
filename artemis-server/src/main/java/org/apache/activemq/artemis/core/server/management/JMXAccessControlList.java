@@ -16,7 +16,10 @@
  */
 package org.apache.activemq.artemis.core.server.management;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import javax.management.ObjectName;
+
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -31,6 +34,8 @@ import java.util.regex.Pattern;
 
 public class JMXAccessControlList {
    private static final String WILDCARD = "*";
+
+   private final Cache<ObjectName, Boolean> allowListCache = Caffeine.newBuilder().maximumSize(10000).build();
 
    private Access defaultAccess = new Access(WILDCARD);
    private ConcurrentMap<String, TreeMap<String, Access>> domainAccess = new ConcurrentHashMap<>();
@@ -56,7 +61,14 @@ public class JMXAccessControlList {
          domainMap = allowList.get(domain);
       }
       Access access = new Access(domain, normalizeKey(key));
-      domainMap.putIfAbsent(access.getKey(), access);
+      if (domainMap.putIfAbsent(access.getKey(), access) == null) {
+         /*
+          * A new entry can change the answer for any object name, including ones in other domains
+          * via the WILDCARD fallback in isInAllowList, so the whole cache has to be discarded. This
+          * only happens while the allow list is being built, so the cost is irrelevant.
+          */
+         allowListCache.invalidateAll();
+      }
    }
 
    public Set<String> getRolesForObject(ObjectName objectName, String methodName) {
@@ -113,6 +125,10 @@ public class JMXAccessControlList {
    }
 
    public boolean isInAllowList(ObjectName objectName) {
+      return allowListCache.get(objectName, this::computeIsInAllowList);
+   }
+
+   private boolean computeIsInAllowList(ObjectName objectName) {
       TreeMap<String, Access> domainMap = allowList.get(objectName.getDomain());
 
       if (domainMap == null) {

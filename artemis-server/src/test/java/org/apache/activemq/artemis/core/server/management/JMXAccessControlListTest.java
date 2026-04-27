@@ -90,6 +90,32 @@ public class JMXAccessControlListTest {
    }
 
    @Test
+   public void testAllowListEntryAddedAfterLookup() throws MalformedObjectNameException {
+      JMXAccessControlList controlList = new JMXAccessControlList();
+      ObjectName objectName = new ObjectName("org.myDomain:type=foo");
+
+      assertFalse(controlList.isInAllowList(objectName));
+
+      controlList.addToAllowList("org.myDomain", "type=foo");
+
+      assertTrue(controlList.isInAllowList(objectName));
+   }
+
+   @Test
+   public void testAllowListWildcardDomainEntryAddedAfterLookup() throws MalformedObjectNameException {
+      JMXAccessControlList controlList = new JMXAccessControlList();
+      ObjectName objectName = new ObjectName("org.myDomain:type=foo");
+
+      controlList.addToAllowList("org.otherDomain", "type=foo");
+      assertFalse(controlList.isInAllowList(objectName));
+
+      // a WILDCARD domain entry changes the answer for object names in every other domain
+      controlList.addToAllowList("*", "type=foo");
+
+      assertTrue(controlList.isInAllowList(objectName));
+   }
+
+   @Test
    public void testBasicRole() throws MalformedObjectNameException {
       JMXAccessControlList controlList = new JMXAccessControlList();
       controlList.addToRoleAccess("org.myDomain", null, "listSomething", "admin");
