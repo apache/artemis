@@ -73,6 +73,7 @@
 		<bundle dependency="true">mvn:org.apache.commons/commons-text/${commons.text.version}</bundle>
 		<bundle dependency="true">mvn:org.apache.commons/commons-lang3/${commons.lang.version}</bundle>
 		<bundle dependency="true">mvn:org.jctools/jctools-core/${jctools.version}</bundle>
+		<bundle dependency="true">mvn:org.jctools/jctools-core-jdk11/${jctools.version}</bundle>
 		<bundle dependency="true">mvn:org.hdrhistogram/HdrHistogram/${hdrhistogram.version}</bundle>
 		<bundle dependency="true">mvn:com.github.ben-manes.caffeine/caffeine/${caffeine.version}</bundle>
 		<bundle dependency="true">mvn:org.apache.commons/commons-dbcp2/${commons.dbcp2.version}</bundle>
