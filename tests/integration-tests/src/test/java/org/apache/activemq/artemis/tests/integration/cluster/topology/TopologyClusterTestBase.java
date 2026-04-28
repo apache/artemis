@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
 import org.apache.activemq.artemis.api.core.ActiveMQException;
@@ -41,9 +42,11 @@ import org.apache.activemq.artemis.api.core.client.ClusterTopologyListener;
 import org.apache.activemq.artemis.api.core.client.ServerLocator;
 import org.apache.activemq.artemis.api.core.client.TopologyMember;
 import org.apache.activemq.artemis.core.config.Configuration;
+import org.apache.activemq.artemis.core.security.Role;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.cluster.ClusterConnection;
 import org.apache.activemq.artemis.core.server.cluster.ClusterManager;
+import org.apache.activemq.artemis.spi.core.security.ActiveMQJAASSecurityManager;
 import org.apache.activemq.artemis.tests.integration.cluster.distribution.ClusterTestBase;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.tests.util.Wait;
@@ -348,27 +351,33 @@ public abstract class TopologyClusterTestBase extends ClusterTestBase {
 
    @Test
    public void testWrongPasswordTriggersClusterConnectionStop() throws Exception {
-      Configuration config = servers[4].getConfiguration();
+      final String user = "myUser";
+      final String password = "myPassword";
+      final String role = "myRole";
+
       for (ActiveMQServer s : servers) {
          if (s != null) {
             s.getConfiguration().setSecurityEnabled(true);
          }
       }
+      Configuration config = servers[4].getConfiguration();
       assertEquals(ActiveMQTestBase.CLUSTER_PASSWORD, config.getClusterPassword());
       config.setClusterPassword(config.getClusterPassword() + "-1-2-3-");
+      final String address = "foo1235";
+      ((ActiveMQJAASSecurityManager)servers[0].getSecurityManager()).getConfiguration().addUser(user, password);
+      ((ActiveMQJAASSecurityManager)servers[0].getSecurityManager()).getConfiguration().addRole(user, role);
+      servers[0].getSecurityRepository().addMatch(address, Set.of(new Role(role, true, true, true, false, false, false, false, false, true, false, false, false)));
       startServers(0, 4);
       assertTrue(Wait.waitFor(() -> !servers[4].getClusterManager().isStarted() || !servers[0].getClusterManager().isStarted(), 5000), "one or the other cluster managers should stop");
-      final String address = "foo1235";
       ServerLocator locator = createNonHALocator(isNetty());
       ClientSessionFactory sf = createSessionFactory(locator);
-      ClientSession session = sf.createSession(config.getClusterUser(), ActiveMQTestBase.CLUSTER_PASSWORD, false, true, true, false, 1);
+      ClientSession session = sf.createSession(user, password, false, true, true, false, 1);
       session.createQueue(QueueConfiguration.of(address));
       ClientProducer producer = session.createProducer(address);
       sendMessages(session, producer, 100);
       ClientConsumer consumer = session.createConsumer(address);
       session.start();
       receiveMessages(consumer, 0, 100, true);
-
    }
 
    @Test

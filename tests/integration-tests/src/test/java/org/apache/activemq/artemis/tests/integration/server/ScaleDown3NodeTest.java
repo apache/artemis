@@ -30,12 +30,16 @@ import org.apache.activemq.artemis.api.core.client.ClientProducer;
 import org.apache.activemq.artemis.api.core.client.ClientSession;
 import org.apache.activemq.artemis.core.config.ScaleDownConfiguration;
 import org.apache.activemq.artemis.core.config.ha.PrimaryOnlyPolicyConfiguration;
+import org.apache.activemq.artemis.core.config.impl.SecurityConfiguration;
 import org.apache.activemq.artemis.core.persistence.impl.journal.LargeServerMessageImpl;
 import org.apache.activemq.artemis.core.postoffice.impl.LocalQueueBinding;
 import org.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants;
+import org.apache.activemq.artemis.core.security.Role;
+import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.cluster.impl.MessageLoadBalancingType;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
+import org.apache.activemq.artemis.spi.core.security.ActiveMQJAASSecurityManager;
 import org.apache.activemq.artemis.tests.integration.cluster.distribution.ClusterTestBase;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.tests.util.Wait;
@@ -44,10 +48,15 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
+import java.util.Set;
 
 public class ScaleDown3NodeTest extends ClusterTestBase {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+   private final String userName = "myUser";
+   private final String password = "myPassword";
+   private final String role = "myRole";
 
    @Override
    @BeforeEach
@@ -55,10 +64,11 @@ public class ScaleDown3NodeTest extends ClusterTestBase {
       super.setUp();
       setupPrimaryServer(0, isFileStorage(), HAType.SharedNothingReplication, isNetty(), true);
       servers[0].getConfiguration().setSecurityEnabled(true);
+      configureSecurity(servers[0]);
       setupPrimaryServer(1, isFileStorage(), HAType.SharedNothingReplication, isNetty(), true);
-      servers[1].getConfiguration().setSecurityEnabled(true);
+      configureSecurity(servers[1]);
       setupPrimaryServer(2, isFileStorage(), HAType.SharedNothingReplication, isNetty(), true);
-      servers[2].getConfiguration().setSecurityEnabled(true);
+      configureSecurity(servers[2]);
       PrimaryOnlyPolicyConfiguration haPolicyConfiguration0 = (PrimaryOnlyPolicyConfiguration) servers[0].getConfiguration().getHAPolicyConfiguration();
       ScaleDownConfiguration scaleDownConfiguration0 = new ScaleDownConfiguration();
       haPolicyConfiguration0.setScaleDownConfiguration(scaleDownConfiguration0);
@@ -88,6 +98,13 @@ public class ScaleDown3NodeTest extends ClusterTestBase {
       servers[0].setIdentity("Node0");
       servers[1].setIdentity("Node1");
       servers[2].setIdentity("Node2");
+   }
+
+   private void configureSecurity(ActiveMQServer server) {
+      SecurityConfiguration securityConfiguration = ((ActiveMQJAASSecurityManager)server.getSecurityManager()).getConfiguration();
+      securityConfiguration.addUser(userName, password);
+      securityConfiguration.addRole(userName, role);
+      server.getSecurityRepository().addMatch("testAddress.#", Set.of(new Role(role, false, true, false, false, true, false, false, false, true, false, false, false)));
    }
 
    protected boolean isNetty() {
@@ -124,16 +141,16 @@ public class ScaleDown3NodeTest extends ClusterTestBase {
       final String queueName1 = "testQueue1";
 
       // create a queue on each node mapped to the same address
-      createQueue(0, addressName, queueName1, null, false, servers[0].getConfiguration().getClusterUser(), servers[0].getConfiguration().getClusterPassword());
-      createQueue(1, addressName, queueName1, null, false, servers[1].getConfiguration().getClusterUser(), servers[1].getConfiguration().getClusterPassword());
-      createQueue(2, addressName, queueName1, null, false, servers[2].getConfiguration().getClusterUser(), servers[2].getConfiguration().getClusterPassword());
+      createQueue(0, addressName, queueName1, null, false, userName, password);
+      createQueue(1, addressName, queueName1, null, false, userName, password);
+      createQueue(2, addressName, queueName1, null, false, userName, password);
 
       // pause the SnF queue so that when the server tries to redistribute a message it won't actually go across the cluster bridge
       final String snfAddress = servers[0].getInternalNamingPrefix() + "sf.cluster0." + servers[0].getNodeID().toString();
       Queue snfQueue = ((LocalQueueBinding) servers[2].getPostOffice().getBinding(SimpleString.of(snfAddress))).getQueue();
       snfQueue.pause();
 
-      ClientSession session = sfs[2].createSession(servers[2].getConfiguration().getClusterUser(), servers[2].getConfiguration().getClusterPassword(), false, true, false, false, 0);
+      ClientSession session = sfs[2].createSession(userName, password, false, true, false, false, 0);
 
       Message message;
 
@@ -166,7 +183,7 @@ public class ScaleDown3NodeTest extends ClusterTestBase {
       }
 
       // add a consumer to node 0 to trigger redistribution here
-      addConsumer(0, 0, queueName1, null, true, servers[0].getConfiguration().getClusterUser(), servers[0].getConfiguration().getClusterPassword());
+      addConsumer(0, 0, queueName1, null, true, userName, password);
 
       Wait.assertEquals(TEST_SIZE, snfQueue::getMessageCount);
 
@@ -183,7 +200,7 @@ public class ScaleDown3NodeTest extends ClusterTestBase {
       Wait.assertEquals(0, queueServer2::getMessageCount);
 
       // get the messages from queue 1 on node 1
-      addConsumer(0, 1, queueName1, null, true, servers[1].getConfiguration().getClusterUser(), servers[1].getConfiguration().getClusterPassword());
+      addConsumer(0, 1, queueName1, null, true, userName, password);
 
       // ensure the message is in queue 1 on node 1 as expected
       Queue queueServer1 = ((LocalQueueBinding) servers[1].getPostOffice().getBinding(SimpleString.of(queueName1))).getQueue();
@@ -229,26 +246,26 @@ public class ScaleDown3NodeTest extends ClusterTestBase {
       final String queueName3 = "testQueue3";
 
       // create a queue on each node mapped to the same address
-      createQueue(0, addressName, queueName1, null, false, servers[0].getConfiguration().getClusterUser(), servers[0].getConfiguration().getClusterPassword());
-      createQueue(1, addressName, queueName1, null, false, servers[1].getConfiguration().getClusterUser(), servers[1].getConfiguration().getClusterPassword());
-      createQueue(2, addressName, queueName1, null, false, servers[2].getConfiguration().getClusterUser(), servers[2].getConfiguration().getClusterPassword());
+      createQueue(0, addressName, queueName1, null, false, userName, password);
+      createQueue(1, addressName, queueName1, null, false, userName, password);
+      createQueue(2, addressName, queueName1, null, false, userName, password);
 
       // create a queue on each node mapped to the same address
-      createQueue(0, addressName, queueName2, null, false, servers[0].getConfiguration().getClusterUser(), servers[0].getConfiguration().getClusterPassword());
-      createQueue(1, addressName, queueName2, null, false, servers[1].getConfiguration().getClusterUser(), servers[1].getConfiguration().getClusterPassword());
-      createQueue(2, addressName, queueName2, null, false, servers[2].getConfiguration().getClusterUser(), servers[2].getConfiguration().getClusterPassword());
+      createQueue(0, addressName, queueName2, null, false, userName, password);
+      createQueue(1, addressName, queueName2, null, false, userName, password);
+      createQueue(2, addressName, queueName2, null, false, userName, password);
 
       // create a queue on each node mapped to the same address
-      createQueue(0, addressName, queueName3, null, false, servers[0].getConfiguration().getClusterUser(), servers[0].getConfiguration().getClusterPassword());
-      createQueue(1, addressName, queueName3, null, false, servers[1].getConfiguration().getClusterUser(), servers[1].getConfiguration().getClusterPassword());
-      createQueue(2, addressName, queueName3, null, false, servers[2].getConfiguration().getClusterUser(), servers[2].getConfiguration().getClusterPassword());
+      createQueue(0, addressName, queueName3, null, false, userName, password);
+      createQueue(1, addressName, queueName3, null, false, userName, password);
+      createQueue(2, addressName, queueName3, null, false, userName, password);
 
       // pause the SnF queue so that when the server tries to redistribute a message it won't actually go across the cluster bridge
       String snfAddress = servers[0].getInternalNamingPrefix() + "sf.cluster0." + servers[0].getNodeID().toString();
       Queue snfQueue = ((LocalQueueBinding) servers[2].getPostOffice().getBinding(SimpleString.of(snfAddress))).getQueue();
       snfQueue.pause();
 
-      ClientSession session = sfs[2].createSession(servers[2].getConfiguration().getClusterUser(), servers[2].getConfiguration().getClusterPassword(), false, true, false, false, 0);
+      ClientSession session = sfs[2].createSession(userName, password, false, true, false, false, 0);
 
       Message message;
       message = session.createMessage(false);
@@ -259,8 +276,8 @@ public class ScaleDown3NodeTest extends ClusterTestBase {
       }
 
       // add a consumer to node 0 to trigger redistribution here
-      addConsumer(0, 0, queueName1, null, true, servers[0].getConfiguration().getClusterUser(), servers[0].getConfiguration().getClusterPassword());
-      addConsumer(1, 0, queueName3, null, true, servers[0].getConfiguration().getClusterUser(), servers[0].getConfiguration().getClusterPassword());
+      addConsumer(0, 0, queueName1, null, true, userName, password);
+      addConsumer(1, 0, queueName3, null, true, userName, password);
 
       // ensure the message is in the SnF queue
       Wait.assertEquals(TEST_SIZE * 2, snfQueue::getMessageCount);
@@ -277,8 +294,8 @@ public class ScaleDown3NodeTest extends ClusterTestBase {
       assertEquals(TEST_SIZE, getMessageCount(((LocalQueueBinding) servers[2].getPostOffice().getBinding(SimpleString.of(queueName2))).getQueue()));
 
       // get the messages from queue 1 on node 1
-      addConsumer(0, 1, queueName1, null, true, servers[1].getConfiguration().getClusterUser(), servers[1].getConfiguration().getClusterPassword());
-      addConsumer(1, 1, queueName3, null, true, servers[1].getConfiguration().getClusterUser(), servers[1].getConfiguration().getClusterPassword());
+      addConsumer(0, 1, queueName1, null, true, userName, password);
+      addConsumer(1, 1, queueName3, null, true, userName, password);
 
       Wait.assertEquals(TEST_SIZE * 2, () -> getMessageCount(((LocalQueueBinding) servers[1].getPostOffice().getBinding(SimpleString.of(queueName1))).getQueue()) +
          getMessageCount(((LocalQueueBinding) servers[1].getPostOffice().getBinding(SimpleString.of(queueName3))).getQueue()));

@@ -15,6 +15,25 @@ NOTE: Follow the general upgrade procedure outlined in the xref:upgrading.adoc#u
 
 :sectnums!:
 
+== Version 2.54.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12356777[Full release notes]
+
+=== Highlights
+
+* xxx
+
+=== Upgrading from 2.53.0
+
+* To improve security we've hardened the code dealing with cluster credentials.
+In short, *any connection using the default values of `cluster-user` and `cluster-password` will be rejected*.
++
+Therefore, any broker using the default `cluster-user` and `cluster-password` will no longer cluster properly.
+To restore functionality, use a non-default value for `cluster-user` and `cluster-password`.
++
+This change similarly impacts any Core bridge connecting to a secured broker using the default `user` and `password` because those defaults are based on the default  `cluster-user` and `cluster-password` respectively.
+To restore functionality, we recommend specifying `user` and `password` values on the `bridge` that correspond to a valid user account on the target broker. The corresponding role on the target broker should have the xref:security.adoc#role-based-security-for-addresses[`send` permission] for the bridge's `forwarding-address`.
+
 == Version 2.53.0
 
 https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12356748[Full release notes]

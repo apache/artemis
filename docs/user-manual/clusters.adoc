@@ -594,7 +594,7 @@ Default is 30.
 
 === Cluster User Credentials
 
-When creating connections between nodes of a cluster to form a cluster connection, the broker uses a cluster user and cluster password which is defined in `broker.xml`:
+When creating connections between nodes of a cluster to form a cluster connection, the broker uses a cluster user and cluster password which is defined in `broker.xml` (shown with the default values):
 
 [,xml]
 ----
@@ -602,10 +602,12 @@ When creating connections between nodes of a cluster to form a cluster connectio
 <cluster-password>CHANGE ME!!</cluster-password>
 ----
 
-[WARNING]
+Every broker in the cluster must use matching values for `cluster-user` and `cluster-password`.
+
+[IMPORTANT]
 ====
-It is imperative that these values are changed from their default, or remote clients will be able to make connections to the server using the default values.
-If they are not changed from the default, the broker will detect this and pester you with a warning on every start-up.
+For safety, any connection using these credentials will be rejected.
+*In order for brokers to cluster together properly these values must be changed from their defaults.*
 ====
 
 == Client-Side Load balancing

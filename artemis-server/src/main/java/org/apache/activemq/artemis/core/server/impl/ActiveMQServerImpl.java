@@ -3401,7 +3401,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       storageManager = createStorageManager();
 
       if (!configuration.getClusterConfigurations().isEmpty() && ActiveMQDefaultConfiguration.getDefaultClusterUser().equals(configuration.getClusterUser()) && ActiveMQDefaultConfiguration.getDefaultClusterPassword().equals(configuration.getClusterPassword())) {
-         ActiveMQServerLogger.LOGGER.clusterSecurityRisk();
+         ActiveMQServerLogger.LOGGER.defaultClusterCredentialsInUse();
       }
 
       securityStore = new SecurityStoreImpl(securityRepository, securityManager, configuration.getSecurityInvalidationInterval(), configuration.isSecurityEnabled(), configuration.getClusterUser(), configuration.getClusterPassword(), managementService, configuration.getAuthenticationCacheSize(), configuration.getAuthorizationCacheSize());

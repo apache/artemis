@@ -152,6 +152,8 @@ under the License.
             <queue-name>bridgeQueue</queue-name>
             <retry-interval>100</retry-interval>
             <reconnect-attempts>-1</reconnect-attempts>
+            <user>artemis</user>
+            <password>artemis</password>
             <static-connectors>
                <connector-ref>other-side</connector-ref>
             </static-connectors>

@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import org.apache.activemq.artemis.api.core.ActiveMQSecurityException;
 import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.management.CoreNotificationType;
@@ -63,6 +64,8 @@ import org.apache.activemq.artemis.utils.sm.SecurityManagerShim;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration.getDefaultClusterPassword;
+import static org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration.getDefaultClusterUser;
 import static org.apache.activemq.artemis.utils.CertificateUtil.CERT_SUBJECT_DN_UNAVAILABLE;
 
 /**
@@ -113,7 +116,7 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
                             final String managementClusterPassword,
                             final NotificationService notificationService,
                             final long authenticationCacheSize,
-                            final long authorizationCacheSize) throws NoSuchAlgorithmException {
+                            final long authorizationCacheSize) {
       this.securityRepository = securityRepository;
       this.securityManager = securityManager;
       this.securityEnabled = securityEnabled;
@@ -178,24 +181,10 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
                               RemotingConnection connection,
                               String securityDomain) throws Exception {
       if (securityEnabled) {
-
-         if (managementClusterUser.equals(user)) {
-            logger.trace("Authenticating cluster admin user");
-
-            /*
-             * The special user cluster user is used for creating sessions that replicate management
-             * operation between nodes
-             */
-            if (!managementClusterPassword.equals(password)) {
-               AUTHENTICATION_FAILURE_COUNT_UPDATER.incrementAndGet(this);
-               throw ActiveMQMessageBundle.BUNDLE.unableToValidateClusterUser(user);
-            } else {
-               AUTHENTICATION_SUCCESS_COUNT_UPDATER.incrementAndGet(this);
-               return managementClusterUser;
-            }
+         String validatedUser = handleClusterAuthentication(user, password, connection);
+         if (validatedUser != null) {
+            return validatedUser;
          }
-
-         String validatedUser = null;
          boolean userIsValid = false;
          boolean check = true;
 
@@ -305,10 +294,12 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
          return true;
       }
 
-      // bypass permission checks for management cluster user
       String user = session.getUsername();
-      if (managementClusterUser.equals(user) && session.getPassword().equals(managementClusterPassword)) {
+      ClusterCredentialsCheckResult checkResult = checkClusterCredentials(user, session.getPassword());
+      if (checkResult == ClusterCredentialsCheckResult.VALID) {
          return true;
+      } else if (checkResult == ClusterCredentialsCheckResult.INVALID) {
+         return false;
       }
 
       // Special case: detect authentication failure for ActiveMQSecurityManager5
@@ -382,6 +373,39 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
          logger.debug("Permission check failed", e);
          return false;
       }
+   }
+
+   private String handleClusterAuthentication(String user, String password, RemotingConnection connection) throws ActiveMQSecurityException {
+      ClusterCredentialsCheckResult checkResult = checkClusterCredentials(user, password);
+
+      if (checkResult == ClusterCredentialsCheckResult.VALID) {
+         AUTHENTICATION_SUCCESS_COUNT_UPDATER.incrementAndGet(this);
+         return user;
+      } else if (checkResult == ClusterCredentialsCheckResult.INVALID) {
+         AUTHENTICATION_FAILURE_COUNT_UPDATER.incrementAndGet(this);
+         throw ActiveMQMessageBundle.BUNDLE.unableToValidateUser(connection == null ? "null" : connection.getRemoteAddress(), user, null);
+      } else {
+         return null;
+      }
+   }
+
+   private ClusterCredentialsCheckResult checkClusterCredentials(String user, String password) {
+      if ((getDefaultClusterUser().equals(user) && getDefaultClusterPassword().equals(password))) {
+         // reject default cluster credentials
+         return ClusterCredentialsCheckResult.INVALID;
+      } else if (managementClusterUser.equals(user) && !managementClusterPassword.equals(password)) {
+         // reject if username is right, but password is wrong
+         return ClusterCredentialsCheckResult.INVALID;
+      } else if (managementClusterUser.equals(user) && managementClusterPassword.equals(password)) {
+         // accept if both user & password are right
+         return ClusterCredentialsCheckResult.VALID;
+      } else {
+         return ClusterCredentialsCheckResult.IGNORE;
+      }
+   }
+
+   enum ClusterCredentialsCheckResult {
+      VALID, INVALID, IGNORE
    }
 
    @Override

@@ -506,7 +506,7 @@ public class ClusterManager implements ActiveMQComponent {
          if (packet.getType() == PacketImpl.EXCEPTION) {
             ActiveMQExceptionMessage msg = (ActiveMQExceptionMessage) packet;
             final ActiveMQException exception = msg.getException();
-            if (exception.getType() == ActiveMQExceptionType.CLUSTER_SECURITY_EXCEPTION) {
+            if (exception.getType() == ActiveMQExceptionType.CLUSTER_SECURITY_EXCEPTION || exception.getType() == ActiveMQExceptionType.SECURITY_EXCEPTION) {
                ActiveMQServerLogger.LOGGER.clusterManagerAuthenticationError(exception.getMessage());
                executor.execute(() -> {
                   try {

@@ -174,12 +174,16 @@ Supports byte notation like "K", "MB", "MiB", "GB", etc.
 Default is `1048576` (i.e. 1MiB).
 
 user::
-This optional parameter determines the user name to use when creating the bridge connection to the remote server.
-If it is not specified the default cluster user specified by `cluster-user` in `broker.xml` will be used.
+This is the user name to use when creating the bridge connection to the remote server.
+If it is not specified the xref:clusters.adoc#cluster-user-credentials[default cluster user] will be used.
+
+include::_bridge-credentials-note.adoc[]
 
 password::
-This optional parameter determines the password to use when creating the bridge connection to the remote server.
-If it is not specified the default cluster password specified by `cluster-password` in `broker.xml` will be used.
+This is the password to use when creating the bridge connection to the remote server.
+If it is not specified the xref:clusters.adoc#cluster-user-credentials[default cluster password] will be used.
+
+include::_bridge-credentials-note.adoc[]
 
 reconnect-attempts-same-node::
 This configures the number of times reconnection attempts will be made to the same node on the topology before reverting back to the initial connector(s).

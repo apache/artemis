@@ -55,14 +55,14 @@ public class ClusteredLargeMessageTest extends SmokeTestBase {
          HelperCreate cliCreateServer = helperCreate();
          cliCreateServer.setRole("amq").setUser("artemis").setPassword("artemis").setAllowAnonymous(true).setNoWeb(true).
             setArtemisInstance(server0Location).setClustered(true).
-               setStaticCluster("tcp://localhost:61716").setArgs("--name", "cluster1", "--max-hops", "1", "--queues", "testQueue");
+               setStaticCluster("tcp://localhost:61716").setArgs("--name", "cluster1", "--max-hops", "1", "--queues", "testQueue", "--cluster-user", "artemis", "--cluster-password", "artemis");
          cliCreateServer.createServer();
       }
       {
          HelperCreate cliCreateServer = helperCreate();
          cliCreateServer.setRole("amq").setUser("artemis").setPassword("artemis").setAllowAnonymous(true).setNoWeb(true).setPortOffset(100).
             setArtemisInstance(server1Location).setClustered(true).
-               setStaticCluster("tcp://localhost:61616").setArgs("--name", "cluster2", "--max-hops", "1", "--queues", "testQueue");
+               setStaticCluster("tcp://localhost:61616").setArgs("--name", "cluster2", "--max-hops", "1", "--queues", "testQueue", "--cluster-user", "artemis", "--cluster-password", "artemis");
          cliCreateServer.createServer();
       }
    }

@@ -1770,11 +1770,6 @@ public final class ClusterConnectionImpl implements ClusterConnection, AfterConn
    }
 
    @Override
-   public boolean verify(String clusterUser0, String clusterPassword0) {
-      return clusterUser.equals(clusterUser0) && clusterPassword.equals(clusterPassword0);
-   }
-
-   @Override
    public void removeRecord(String targetNodeID) {
       logger.debug("Removing record for: {}", targetNodeID);
       MessageFlowRecord record = records.remove(targetNodeID);

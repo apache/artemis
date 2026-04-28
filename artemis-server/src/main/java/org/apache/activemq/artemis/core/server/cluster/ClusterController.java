@@ -407,11 +407,20 @@ public class ClusterController implements ActiveMQComponent {
 
                ClusterConnectMessage msg = (ClusterConnectMessage) packet;
 
-               if (server.getConfiguration().isSecurityEnabled() && !clusterConnection.verify(msg.getClusterUser(), msg.getClusterPassword())) {
-                  clusterChannel.send(new ClusterConnectReplyMessage(false));
-               } else {
+               boolean userIsValid = false;
+               try {
+                  server.validateUser(msg.getClusterUser(), msg.getClusterPassword(), null, null);
+                  userIsValid = true;
+               } catch (Exception e) {
+                  // cluster user isn't valid
+                  logger.debug("Failed to validate user: {}", msg.getClusterUser(), e);
+               }
+
+               if (userIsValid) {
                   authorized = true;
                   clusterChannel.send(new ClusterConnectReplyMessage(true));
+               } else {
+                  clusterChannel.send(new ClusterConnectReplyMessage(false));
                }
             }
          } else {
