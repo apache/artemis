@@ -342,108 +342,108 @@ public class Transfer extends InputAbstract {
    }
 
    private int doTransfer(ActionContext context) throws Exception {
-      ConnectionFactoryClosable sourceConnectionFactory = createConnectionFactory("source", sourceProtocol, sourceURL, sourceUser, sourcePassword, sourceClientID);
-      Connection sourceConnection = sourceConnectionFactory.createConnection();
+      try (ConnectionFactoryClosable sourceConnectionFactory = createConnectionFactory("source", sourceProtocol, sourceURL, sourceUser, sourcePassword, sourceClientID);
+           Connection sourceConnection = sourceConnectionFactory.createConnection();
+           Session sourceSession = sourceConnection.createSession(Session.SESSION_TRANSACTED)) {
 
-      Session sourceSession = sourceConnection.createSession(Session.SESSION_TRANSACTED);
-      Destination sourceDestination = createDestination("source", sourceSession, sourceQueue, sourceTopic);
-      MessageConsumer consumer = null;
-      if (sourceDestination instanceof Queue) {
-         if (filter != null) {
-            consumer = sourceSession.createConsumer(sourceDestination, filter);
-         } else {
-            consumer = sourceSession.createConsumer(sourceDestination);
-         }
-      } else if (sourceDestination instanceof Topic topic) {
-
-         if (durableConsumer != null) {
+         Destination sourceDestination = createDestination("source", sourceSession, sourceQueue, sourceTopic);
+         MessageConsumer consumer = null;
+         if (sourceDestination instanceof Queue) {
             if (filter != null) {
-               consumer = sourceSession.createDurableConsumer(topic, durableConsumer);
+               consumer = sourceSession.createConsumer(sourceDestination, filter);
             } else {
-               consumer = sourceSession.createDurableConsumer(topic, durableConsumer, filter, noLocal);
+               consumer = sourceSession.createConsumer(sourceDestination);
             }
-         } else if (sharedDurableSubscription != null) {
-            if (filter != null) {
-               consumer = sourceSession.createSharedDurableConsumer(topic, sharedDurableSubscription, filter);
+         } else if (sourceDestination instanceof Topic topic) {
+
+            if (durableConsumer != null) {
+               if (filter != null) {
+                  consumer = sourceSession.createDurableConsumer(topic, durableConsumer);
+               } else {
+                  consumer = sourceSession.createDurableConsumer(topic, durableConsumer, filter, noLocal);
+               }
+            } else if (sharedDurableSubscription != null) {
+               if (filter != null) {
+                  consumer = sourceSession.createSharedDurableConsumer(topic, sharedDurableSubscription, filter);
+               } else {
+                  consumer = sourceSession.createSharedDurableConsumer(topic, sharedDurableSubscription);
+               }
+            } else if (sharedSubscription != null) {
+               if (filter != null) {
+                  consumer = sourceSession.createSharedConsumer(topic, sharedSubscription, filter);
+               } else {
+                  consumer = sourceSession.createSharedConsumer(topic, sharedSubscription);
+               }
             } else {
-               consumer = sourceSession.createSharedDurableConsumer(topic, sharedDurableSubscription);
-            }
-         } else if (sharedSubscription != null) {
-            if (filter != null) {
-               consumer = sourceSession.createSharedConsumer(topic, sharedSubscription, filter);
-            } else {
-               consumer = sourceSession.createSharedConsumer(topic, sharedSubscription);
-            }
-         } else {
-            throw new IllegalArgumentException("you must specify either --durable-consumer, --shared-durable-subscription or --shared-subscription with a JMS topic");
-         }
-      }
-
-      ConnectionFactoryClosable targetConnectionFactory = createConnectionFactory("target", targetProtocol, targetURL, targetUser, targetPassword, null);
-      Connection targetConnection = targetConnectionFactory.createConnection();
-      Session targetSession = targetConnection.createSession(Session.SESSION_TRANSACTED);
-      Destination targetDestination = createDestination("target", targetSession, targetQueue, targetTopic);
-      MessageProducer producer = targetSession.createProducer(targetDestination);
-
-      if (sourceURL.equals(targetURL) && sourceDestination.equals(targetDestination)) {
-         context.out.println("You cannot transfer between " + sourceURL + "/" + sourceDestination + " and " + targetURL + "/" + targetDestination + ".\n" + "That would create an infinite recursion.");
-         throw new IllegalArgumentException("cannot use " + sourceDestination + " == " + targetDestination);
-      }
-
-      sourceConnection.start();
-      int pending = 0, total = 0;
-      while (total < messageCount) {
-
-         Message receivedMessage;
-         if (receiveTimeout < 0) {
-            receivedMessage = consumer.receive();
-         } else if (receiveTimeout == 0) {
-            receivedMessage = consumer.receiveNoWait();
-         } else {
-            receivedMessage = consumer.receive(receiveTimeout);
-         }
-
-         if (receivedMessage == null) {
-            if (isVerbose()) {
-               context.out.println("could not receive any more messages");
-            }
-            break;
-         }
-         producer.send(receivedMessage);
-         pending++;
-         total++;
-
-         if (isVerbose()) {
-            context.out.println("Received message " + total + " with " + pending + " messages pending to be commited");
-         }
-         if (pending > commitInterval) {
-            context.out.println("Transferred " + pending + " messages of " + total);
-            pending = 0;
-            targetSession.commit();
-            if (!isCopy()) {
-               sourceSession.commit();
+               throw new IllegalArgumentException("you must specify either --durable-consumer, --shared-durable-subscription or --shared-subscription with a JMS topic");
             }
          }
-      }
 
-      context.out.println("Transferred a total of " + total + " messages");
+         try (MessageConsumer sourceConsumer = consumer;
+              ConnectionFactoryClosable targetConnectionFactory = createConnectionFactory("target", targetProtocol, targetURL, targetUser, targetPassword, null);
+              Connection targetConnection = targetConnectionFactory.createConnection();
+              Session targetSession = targetConnection.createSession(Session.SESSION_TRANSACTED)) {
 
-      if (pending != 0) {
-         targetSession.commit();
-         if (isCopy()) {
-            sourceSession.rollback();
-         } else {
-            sourceSession.commit();
+            Destination targetDestination = createDestination("target", targetSession, targetQueue, targetTopic);
+
+            try (MessageProducer producer = targetSession.createProducer(targetDestination)) {
+
+               if (sourceURL.equals(targetURL) && sourceDestination.equals(targetDestination)) {
+                  context.out.println("You cannot transfer between " + sourceURL + "/" + sourceDestination + " and " + targetURL + "/" + targetDestination + ".\n" + "That would create an infinite recursion.");
+                  throw new IllegalArgumentException("cannot use " + sourceDestination + " == " + targetDestination);
+               }
+
+               sourceConnection.start();
+               int pending = 0, total = 0;
+               while (total < messageCount) {
+
+                  Message receivedMessage;
+                  if (receiveTimeout < 0) {
+                     receivedMessage = sourceConsumer.receive();
+                  } else if (receiveTimeout == 0) {
+                     receivedMessage = sourceConsumer.receiveNoWait();
+                  } else {
+                     receivedMessage = sourceConsumer.receive(receiveTimeout);
+                  }
+
+                  if (receivedMessage == null) {
+                     if (isVerbose()) {
+                        context.out.println("could not receive any more messages");
+                     }
+                     break;
+                  }
+                  producer.send(receivedMessage);
+                  pending++;
+                  total++;
+
+                  if (isVerbose()) {
+                     context.out.println("Received message " + total + " with " + pending + " messages pending to be commited");
+                  }
+                  if (pending > commitInterval) {
+                     context.out.println("Transferred " + pending + " messages of " + total);
+                     pending = 0;
+                     targetSession.commit();
+                     if (!isCopy()) {
+                        sourceSession.commit();
+                     }
+                  }
+               }
+
+               context.out.println("Transferred a total of " + total + " messages");
+
+               if (pending != 0) {
+                  targetSession.commit();
+                  if (isCopy()) {
+                     sourceSession.rollback();
+                  } else {
+                     sourceSession.commit();
+                  }
+               }
+
+               return total;
+            }
          }
       }
-
-      sourceConnection.close();
-      sourceConnectionFactory.close();
-
-      targetConnection.close();
-      targetConnectionFactory.close();
-
-      return total;
    }
 
    Destination createDestination(String role, Session session, String queue, String topic) throws Exception {
