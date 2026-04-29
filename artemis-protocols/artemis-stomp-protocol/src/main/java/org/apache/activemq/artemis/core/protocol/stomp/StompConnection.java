@@ -549,11 +549,14 @@ public final class StompConnection extends AbstractRemotingConnection {
                                       String durableSubscriptionName,
                                       boolean noLocal,
                                       RoutingType subscriptionType,
-                                      Integer consumerWindowSize) throws ActiveMQStompException {
+                                      Integer consumerWindowSize,
+                                      RoutingType temporaryRoutingType) throws ActiveMQStompException {
       validateSelector(selector);
-      autoCreateDestinationIfPossible(destination, subscriptionType);
-      checkDestination(destination);
-      checkRoutingSemantics(destination, subscriptionType);
+      if (temporaryRoutingType == null) {
+         autoCreateDestinationIfPossible(destination, subscriptionType);
+         checkDestination(destination);
+         checkRoutingSemantics(destination, subscriptionType);
+      }
       if (noLocal) {
          String noLocalFilter = "(" + CONNECTION_ID_PROPERTY_NAME_STRING + " <> '" + getID().toString() + "' OR " + CONNECTION_ID_PROPERTY_NAME_STRING + " IS NULL)";
          if (selector == null) {
@@ -578,7 +581,7 @@ public final class StompConnection extends AbstractRemotingConnection {
       }
 
       try {
-         return manager.subscribe(this, subscriptionID, durableSubscriptionName, destination, selector, ack, noLocal, consumerWindowSize);
+         return manager.subscribe(this, subscriptionID, durableSubscriptionName, destination, selector, ack, noLocal, consumerWindowSize, temporaryRoutingType);
       } catch (ActiveMQStompException e) {
          throw e;
       } catch (Exception e) {

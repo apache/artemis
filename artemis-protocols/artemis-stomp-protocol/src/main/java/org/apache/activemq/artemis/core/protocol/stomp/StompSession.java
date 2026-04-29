@@ -313,7 +313,8 @@ public class StompSession implements SessionCallback {
                                                    String selector,
                                                    String ack,
                                                    boolean noLocal,
-                                                   Integer consumerWindowSize) throws Exception {
+                                                   Integer consumerWindowSize,
+                                                   RoutingType temporaryRoutingType) throws Exception {
       SimpleString address = SimpleString.of(destination);
       SimpleString queueName = SimpleString.of(destination);
       SimpleString selectorSimple = SimpleString.of(selector);
@@ -327,26 +328,42 @@ public class StompSession implements SessionCallback {
          finalConsumerWindowSize = ConfigurationHelper.getIntProperty(TransportConstants.STOMP_CONSUMER_WINDOW_SIZE, ConfigurationHelper.getIntProperty(TransportConstants.STOMP_CONSUMERS_CREDIT, TransportConstants.STOMP_DEFAULT_CONSUMER_WINDOW_SIZE, connection.getAcceptorUsed().getConfiguration()), connection.getAcceptorUsed().getConfiguration());
       }
 
-      Set<RoutingType> routingTypes = manager.getServer().getAddressInfo(getCoreSession().removePrefix(address)).getRoutingTypes();
-      boolean multicast = routingTypes.size() == 1 && routingTypes.contains(RoutingType.MULTICAST);
-      // if the destination is FQQN then the queue will have already been created
-      if (multicast && !CompositeAddress.isFullyQualified(destination)) {
-         // subscribes to a topic
-         if (durableSubscriptionName != null) {
-            if (clientID == null) {
-               throw BUNDLE.missingClientID();
-            }
-            queueName = SimpleString.of(clientID + "." + durableSubscriptionName);
-            if (manager.getServer().locateQueue(queueName) == null) {
-               try {
-                  session.createQueue(QueueConfiguration.of(queueName).setAddress(address).setFilterString(selectorSimple));
-               } catch (ActiveMQQueueExistsException e) {
-                  // ignore; can be caused by concurrent durable subscribers
-               }
-            }
-         } else {
+      boolean multicast;
+      if (temporaryRoutingType != null) {
+         multicast = temporaryRoutingType == RoutingType.MULTICAST;
+         if (multicast) {
             queueName = UUIDGenerator.getInstance().generateSimpleStringUUID();
-            session.createQueue(QueueConfiguration.of(queueName).setAddress(address).setFilterString(selectorSimple).setDurable(false).setTemporary(true));
+            session.createQueue(QueueConfiguration.of(queueName).setAddress(address).setRoutingType(RoutingType.MULTICAST).setFilterString(selectorSimple).setDurable(false).setTemporary(true));
+         } else {
+            try {
+               session.createQueue(QueueConfiguration.of(address).setAddress(address).setRoutingType(RoutingType.ANYCAST).setFilterString(selectorSimple).setDurable(false).setTemporary(true));
+            } catch (ActiveMQQueueExistsException e) {
+               // queue may already exist if a sender created it first
+            }
+            queueName = address;
+         }
+      } else {
+         Set<RoutingType> routingTypes = manager.getServer().getAddressInfo(getCoreSession().removePrefix(address)).getRoutingTypes();
+         multicast = routingTypes.size() == 1 && routingTypes.contains(RoutingType.MULTICAST);
+         // if the destination is FQQN then the queue will have already been created
+         if (multicast && !CompositeAddress.isFullyQualified(destination)) {
+            // subscribes to a topic
+            if (durableSubscriptionName != null) {
+               if (clientID == null) {
+                  throw BUNDLE.missingClientID();
+               }
+               queueName = SimpleString.of(clientID + "." + durableSubscriptionName);
+               if (manager.getServer().locateQueue(queueName) == null) {
+                  try {
+                     session.createQueue(QueueConfiguration.of(queueName).setAddress(address).setFilterString(selectorSimple));
+                  } catch (ActiveMQQueueExistsException e) {
+                     // ignore; can be caused by concurrent durable subscribers
+                  }
+               }
+            } else {
+               queueName = UUIDGenerator.getInstance().generateSimpleStringUUID();
+               session.createQueue(QueueConfiguration.of(queueName).setAddress(address).setFilterString(selectorSimple).setDurable(false).setTemporary(true));
+            }
          }
       }
       if (noLocal) {

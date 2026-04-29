@@ -18,6 +18,7 @@ package org.apache.activemq.artemis.core.protocol.stomp;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -263,6 +264,8 @@ public abstract class VersionedStompFrameHandler {
    }
 
    public StompPostReceiptFunction onSubscribe(StompFrame frame) throws Exception {
+      String rawDestination = frame.getHeader(Headers.Subscribe.DESTINATION);
+      RoutingType temporaryRoutingType = getTemporaryRoutingType(rawDestination);
       String destination = getDestination(frame);
 
       String selector = frame.getHeader(Stomp.Headers.Subscribe.SELECTOR);
@@ -288,7 +291,19 @@ public abstract class VersionedStompFrameHandler {
       } else if (frame.hasHeader(Headers.Subscribe.ACTIVEMQ_PREFETCH_SIZE)) {
          consumerWindowSize = Integer.parseInt(frame.getHeader(Stomp.Headers.Subscribe.ACTIVEMQ_PREFETCH_SIZE));
       }
-      return connection.subscribe(destination, selector, ack, id, durableSubscriptionName, noLocal, routingType, consumerWindowSize);
+      return connection.subscribe(destination, selector, ack, id, durableSubscriptionName, noLocal, routingType, consumerWindowSize, temporaryRoutingType);
+   }
+
+   private RoutingType getTemporaryRoutingType(String rawDestination) {
+      if (rawDestination != null) {
+         SimpleString dest = SimpleString.of(rawDestination);
+         for (Map.Entry<SimpleString, RoutingType> entry : connection.getManager().getTemporaryPrefixes().entrySet()) {
+            if (dest.startsWith(entry.getKey())) {
+               return entry.getValue();
+            }
+         }
+      }
+      return null;
    }
 
    public String getDestination(StompFrame request) throws Exception {

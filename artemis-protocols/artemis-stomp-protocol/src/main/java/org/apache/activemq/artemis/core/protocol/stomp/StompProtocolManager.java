@@ -29,6 +29,7 @@ import io.netty.channel.ChannelPipeline;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.ActiveMQExceptionType;
 import org.apache.activemq.artemis.api.core.BaseInterceptor;
+import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.client.ActiveMQClient;
 import org.apache.activemq.artemis.core.io.IOCallback;
@@ -358,14 +359,15 @@ public class StompProtocolManager extends AbstractProtocolManager<StompFrame, St
                                              String selector,
                                              String ack,
                                              boolean noLocal,
-                                             Integer consumerWindowSize) throws Exception {
+                                             Integer consumerWindowSize,
+                                             RoutingType temporaryRoutingType) throws Exception {
       StompSession stompSession = getSession(connection);
       if (stompSession.containsSubscription(subscriptionID)) {
          throw new ActiveMQStompException(connection, "There already is a subscription for: " + subscriptionID +
             ". Either use unique subscription IDs or do not create multiple subscriptions for the same destination");
       }
       long consumerID = server.getStorageManager().generateID();
-      return stompSession.addSubscription(consumerID, subscriptionID, connection.getClientID(), durableSubscriptionName, destination, selector, ack, noLocal, consumerWindowSize);
+      return stompSession.addSubscription(consumerID, subscriptionID, connection.getClientID(), durableSubscriptionName, destination, selector, ack, noLocal, consumerWindowSize, temporaryRoutingType);
    }
 
    public void unsubscribe(StompConnection connection,
