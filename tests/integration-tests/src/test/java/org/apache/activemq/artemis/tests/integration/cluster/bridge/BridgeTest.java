@@ -271,6 +271,100 @@ public class BridgeTest extends ActiveMQTestBase {
    }
 
    @TestTemplate
+   public void testBridgeHandlesReachingZeroCredits() throws Exception {
+      final int numMessages = 10;
+
+      final String testAddress = "testAddress";
+      final String queueName0 = "queue0";
+      final String forwardAddress = "forwardAddress";
+      final String queueName1 = "queue1";
+
+      final String bridgeName = "bridge0";
+
+      final int flowControlSize = 1024 * 10;
+      final AtomicInteger messageForwardSize = new AtomicInteger(0);
+
+      //This is used to capture the actual message size that the bridge will send
+      Transformer transformer = message -> {
+         messageForwardSize.addAndGet(message.getEncodeSize());
+         return message;
+      };
+
+      Map<String, Object> server0Params = new HashMap<>();
+      Map<String, Object> server1Params = new HashMap<>();
+
+      addTargetParameters(server1Params);
+
+      server0 = createClusteredServerWithParams(isNetty(), 0, true, server0Params);
+      server1 = createClusteredServerWithParams(isNetty(), 1, true, server1Params);
+
+      server0.getServiceRegistry().addBridgeTransformer(bridgeName, transformer);
+      TransportConfiguration server0tc = new TransportConfiguration(getConnector(), server0Params);
+      TransportConfiguration server1tc = new TransportConfiguration(getConnector(), server1Params);
+
+      server0.getConfiguration().setConnectorConfigurations(Map.of(server1tc.getName(), server1tc));
+
+      server0.start();
+      server1.start();
+
+      server0.createQueue(QueueConfiguration.of(queueName0).setAddress(testAddress));
+      server1.createQueue(QueueConfiguration.of(queueName1).setAddress(forwardAddress));
+
+      locator = addServerLocator(ActiveMQClient.createServerLocatorWithoutHA(server0tc, server1tc));
+
+      server0.deployBridge(new BridgeConfiguration()
+                              .setName(bridgeName)
+                              .setQueueName(queueName0)
+                              .setForwardingAddress(forwardAddress)
+                              .setProducerWindowSize(flowControlSize)
+                              .setStaticConnectors(List.of(server1tc.getName())));
+
+      ClientSessionFactory sf0 = addSessionFactory(locator.createSessionFactory(server0tc));
+      ClientSessionFactory sf1 = addSessionFactory(locator.createSessionFactory(server1tc));
+
+      ClientSession session0 = sf0.createSession(false, true, true);
+      ClientSession session1 = sf1.createSession(false, true, true);
+      session1.start();
+
+      ClientProducer producer0 = session0.createProducer(SimpleString.of(testAddress));
+      ClientConsumer consumer1 = session1.createConsumer(queueName1);
+
+      // send empty message to capture the size of a base message + bridge property
+      producer0.send(session0.createMessage(true));
+      Wait.assertTrue(() -> messageForwardSize.get() > 0);
+
+      // messageForwardSize is multiplied by two to account for previous and upcoming message
+      // the intention is to land on exactly 0 credits after the next message is sent
+      int sendSize = flowControlSize - (messageForwardSize.get() * 2);
+
+      for (int i = 0; i < numMessages; i++) {
+         ClientMessage message = session0.createMessage(true);
+         message.getBodyBuffer().writeBytes(new byte[sendSize]);
+         producer0.send(message);
+      }
+
+      for (int i = 0; i < numMessages + 1; i++) {
+         ClientMessage message = consumer1.receive(1000);
+         assertNotNull(message);
+         message.acknowledge();
+      }
+
+      assertNull(consumer1.receiveImmediate());
+
+      session0.close();
+      session1.close();
+      sf0.close();
+      sf1.close();
+
+      closeFields();
+
+      if (server0.getConfiguration().isPersistenceEnabled()) {
+         assertEquals(0, loadQueues(server0).size());
+      }
+
+   }
+
+   @TestTemplate
    public void testBlockedBridgeAndReconnect() throws Exception {
       long time = System.currentTimeMillis();
       Map<String, Object> server0Params = new HashMap<>();

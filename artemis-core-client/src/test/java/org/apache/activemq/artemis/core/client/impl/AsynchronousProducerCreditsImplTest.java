@@ -17,9 +17,15 @@
 
 package org.apache.activemq.artemis.core.client.impl;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.mockito.Mockito;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AsynchronousProducerCreditsImplTest {
 
@@ -30,6 +36,48 @@ public class AsynchronousProducerCreditsImplTest {
       AsynchronousProducerCreditsImpl producerCredits = new AsynchronousProducerCreditsImpl(session, null, 0, Mockito.mock(ClientProducerFlowCallback.class));
       producerCredits.receiveCredits(0);
       Mockito.verify(session).sendProducerCreditsMessage(0, null);
+   }
+
+   @Test
+   @Timeout(10)
+   public void testCreditsRequestedWhenMessageSizeExactlyEqualsBalance() throws Exception {
+      ClientSessionInternal mockClientSession = Mockito.mock(ClientSessionInternal.class);
+
+      AtomicInteger creditsRequested = new AtomicInteger(0);
+      AtomicBoolean blocked = new AtomicBoolean(false);
+
+      int producerWindowSize = 1000;
+
+      Mockito.doAnswer(inv -> {
+         creditsRequested.addAndGet(inv.getArgument(0));
+         return null;
+      }).when(mockClientSession).sendProducerCreditsMessage(Mockito.anyInt(), Mockito.any());
+
+      AsynchronousProducerCreditsImpl producerCredits = new AsynchronousProducerCreditsImpl(mockClientSession, null, producerWindowSize, new ClientProducerFlowCallback() {
+
+         @Override
+         public void onCreditsFlow(boolean isBlocked, ClientProducerCredits credits) {
+            blocked.set(isBlocked);
+         }
+
+         @Override
+         public void onCreditsFail(ClientProducerCredits credits) {
+         }
+
+      });
+
+      int internalWindowSize = producerWindowSize / 2;
+      // drain balance to just above internalWindowSize
+      producerCredits.actualAcquire(internalWindowSize - 100);
+
+      int messageSize = producerCredits.getBalance();
+      producerCredits.acquireCredits(messageSize);
+
+      assertTrue(creditsRequested.get() > 0, "credits must be requested when message size exactly equals balance");
+
+      producerCredits.receiveCredits(creditsRequested.get());
+      assertTrue(producerCredits.getBalance() > 0);
+      assertFalse(blocked.get());
    }
 
 }
