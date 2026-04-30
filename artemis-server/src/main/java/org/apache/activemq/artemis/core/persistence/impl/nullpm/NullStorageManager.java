@@ -32,6 +32,7 @@ import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.core.config.DivertConfiguration;
 import org.apache.activemq.artemis.core.io.IOCallback;
 import org.apache.activemq.artemis.core.io.IOCriticalErrorListener;
 import org.apache.activemq.artemis.core.io.OperationConsistencyLevel;
@@ -495,6 +496,11 @@ public class NullStorageManager implements StorageManager {
 
    @Override
    public List<PersistedDivertConfiguration> recoverDivertConfigurations() {
+      return null;
+   }
+
+   @Override
+   public DivertConfiguration getDivertConfiguration(String name) {
       return null;
    }
 

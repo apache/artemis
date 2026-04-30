@@ -30,6 +30,7 @@ import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.core.config.DivertConfiguration;
 import org.apache.activemq.artemis.core.io.IOCallback;
 import org.apache.activemq.artemis.core.io.OperationConsistencyLevel;
 import org.apache.activemq.artemis.core.io.SequentialFile;
@@ -390,6 +391,8 @@ public interface StorageManager extends MapStorageManager, IDGenerator, ActiveMQ
    void deleteDivertConfiguration(String divertName) throws Exception;
 
    List<PersistedDivertConfiguration> recoverDivertConfigurations();
+
+   DivertConfiguration getDivertConfiguration(String name);
 
    void storeBridgeConfiguration(PersistedBridgeConfiguration persistedBridgeConfiguration) throws Exception;
 

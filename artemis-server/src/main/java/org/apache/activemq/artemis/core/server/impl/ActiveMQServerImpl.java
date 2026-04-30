@@ -3069,38 +3069,59 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          return null;
       }
 
-      final Divert divert = divertBinding.getDivert();
+      // The divert config may be in defined in the broker config (e.g. XML) or stored in the journal. If it's in the
+      // journal we want to make sure it's updated propertly otherwise we just update what's in memory.
+      DivertConfiguration onStorageDivert = storageManager.getDivertConfiguration(config.getName());
+      final Divert inMemoryDivert = divertBinding.getDivert();
 
       Filter filter = FilterImpl.createFilter(config.getFilterString());
       if (filter == null) {
-         divert.setFilter(null);
+         inMemoryDivert.setFilter(null);
+         if (onStorageDivert != null) {
+            onStorageDivert.setFilterString(null);
+         }
       } else {
-         if (!filter.equals(divert.getFilter())) {
-            divert.setFilter(filter);
+         if (!filter.equals(inMemoryDivert.getFilter())) {
+            inMemoryDivert.setFilter(filter);
+            if (onStorageDivert != null) {
+               onStorageDivert.setFilterString(config.getFilterString());
+            }
          }
       }
 
       if (config.getTransformerConfiguration() != null) {
-         getServiceRegistry().removeDivertTransformer(divert.getUniqueName().toString());
+         getServiceRegistry().removeDivertTransformer(inMemoryDivert.getUniqueName().toString());
          Transformer transformer = getServiceRegistry().getDivertTransformer(
             config.getName(), config.getTransformerConfiguration());
-         divert.setTransformer(transformer);
+         inMemoryDivert.setTransformer(transformer);
+         if (onStorageDivert != null) {
+            onStorageDivert.setTransformerConfiguration(config.getTransformerConfiguration());
+         }
       }
 
       if (config.getForwardingAddress() != null) {
          SimpleString forwardAddress = SimpleString.of(config.getForwardingAddress());
-         if (!forwardAddress.equals(divert.getForwardAddress())) {
-            divert.setForwardAddress(forwardAddress);
+         if (!forwardAddress.equals(inMemoryDivert.getForwardAddress())) {
+            inMemoryDivert.setForwardAddress(forwardAddress);
+            if (onStorageDivert != null) {
+               onStorageDivert.setForwardingAddress(config.getForwardingAddress());
+            }
          }
       }
 
-      if (config.getRoutingType() != null && divert.getRoutingType() != config.getRoutingType()) {
-         divert.setRoutingType(config.getRoutingType());
+      if (config.getRoutingType() != null && inMemoryDivert.getRoutingType() != config.getRoutingType()) {
+         inMemoryDivert.setRoutingType(config.getRoutingType());
+         if (onStorageDivert != null) {
+            onStorageDivert.setRoutingType(config.getRoutingType());
+         }
       }
 
-      storageManager.storeDivertConfiguration(new PersistedDivertConfiguration(config));
+      if (onStorageDivert != null) {
+         // this will replace the existing divert record in the journal using delete + add
+         storageManager.storeDivertConfiguration(new PersistedDivertConfiguration(onStorageDivert));
+      }
 
-      return divert;
+      return inMemoryDivert;
    }
 
    @Override
@@ -4465,15 +4486,20 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       if (storageManager.recoverDivertConfigurations() != null) {
 
          for (PersistedDivertConfiguration persistedDivertConfiguration : storageManager.recoverDivertConfigurations()) {
-            //has it been removed from config
-            boolean deleted = configuration.getDivertConfigurations().stream().noneMatch(divertConfiguration -> divertConfiguration.getName().equals(persistedDivertConfiguration.getName()));
-            // if it has remove it if configured to do so
-            if (deleted) {
-               if (addressSettingsRepository.getMatch(persistedDivertConfiguration.getDivertConfiguration().getAddress()).getConfigDeleteDiverts() == DeletionPolicy.FORCE) {
-                  storageManager.deleteDivertConfiguration(persistedDivertConfiguration.getName());
-               } else {
-                  deployDivert(persistedDivertConfiguration.getDivertConfiguration());
+            try {
+               //has it been removed from config
+               boolean deleted = configuration.getDivertConfigurations().stream().noneMatch(divertConfiguration -> divertConfiguration.getName().equals(persistedDivertConfiguration.getName()));
+               // if it has remove it if configured to do so
+               if (deleted) {
+                  if (addressSettingsRepository.getMatch(persistedDivertConfiguration.getDivertConfiguration().getAddress()).getConfigDeleteDiverts() == DeletionPolicy.FORCE) {
+                     storageManager.deleteDivertConfiguration(persistedDivertConfiguration.getName());
+                  } else {
+                     deployDivert(persistedDivertConfiguration.getDivertConfiguration());
+                  }
                }
+            } catch (Exception e) {
+               logger.debug(e.getMessage(), e);
+               ActiveMQServerLogger.LOGGER.failedToRecoverStoredDivertConfiguration(persistedDivertConfiguration.getName(), String.valueOf(persistedDivertConfiguration.getDivertConfiguration()));
             }
          }
       }

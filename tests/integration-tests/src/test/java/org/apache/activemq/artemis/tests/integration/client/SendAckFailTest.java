@@ -44,6 +44,7 @@ import org.apache.activemq.artemis.api.core.client.ClientSession;
 import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
 import org.apache.activemq.artemis.api.core.client.ServerLocator;
 import org.apache.activemq.artemis.core.config.Configuration;
+import org.apache.activemq.artemis.core.config.DivertConfiguration;
 import org.apache.activemq.artemis.core.config.impl.SecurityConfiguration;
 import org.apache.activemq.artemis.core.io.IOCallback;
 import org.apache.activemq.artemis.core.io.OperationConsistencyLevel;
@@ -745,6 +746,11 @@ public class SendAckFailTest extends SpawnedTestBase {
 
       @Override
       public List<PersistedDivertConfiguration> recoverDivertConfigurations() {
+         return null;
+      }
+
+      @Override
+      public DivertConfiguration getDivertConfiguration(String name) {
          return null;
       }
 
