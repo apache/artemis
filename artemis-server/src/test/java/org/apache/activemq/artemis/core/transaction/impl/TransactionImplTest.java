@@ -33,6 +33,7 @@ import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.core.config.DivertConfiguration;
 import org.apache.activemq.artemis.core.io.IOCallback;
 import org.apache.activemq.artemis.core.io.OperationConsistencyLevel;
 import org.apache.activemq.artemis.core.io.SequentialFile;
@@ -743,6 +744,11 @@ public class TransactionImplTest extends ServerTestBase {
 
       @Override
       public List<PersistedDivertConfiguration> recoverDivertConfigurations() {
+         return null;
+      }
+
+      @Override
+      public DivertConfiguration getDivertConfiguration(String name) {
          return null;
       }
 

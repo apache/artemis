@@ -66,6 +66,17 @@ public class DivertConfiguration implements Serializable, EncodingSupport {
    public DivertConfiguration() {
    }
 
+   public DivertConfiguration(DivertConfiguration config) {
+      this.name = config.getName();
+      this.routingName = config.getRoutingName();
+      this.address = config.getAddress();
+      this.forwardingAddress = config.getForwardingAddress();
+      this.exclusive = config.isExclusive();
+      this.filterString = config.getFilterString();
+      this.transformerConfiguration = config.getTransformerConfiguration();
+      this.routingType = config.getRoutingType();
+   }
+
    /**
     * Set the value of a parameter based on its "key" {@code String}. Valid key names and corresponding {@code static}
     * {@code final} are:
@@ -108,7 +119,7 @@ public class DivertConfiguration implements Serializable, EncodingSupport {
                setTransformerConfiguration(transformerConfiguration);
             }
          } else if (key.equals(ROUTING_TYPE)) {
-            setRoutingType(ComponentConfigurationRoutingType.valueOf(value));
+            setRoutingType(value == null ? null : ComponentConfigurationRoutingType.valueOf(value));
          }
       }
       return this;
@@ -227,7 +238,9 @@ public class DivertConfiguration implements Serializable, EncodingSupport {
          builder.add(TRANSFORMER_CONFIGURATION, tc.createJsonObjectBuilder());
       }
 
-      if (getRoutingType() != null) {
+      if (getRoutingType() == null) {
+         builder.add(ROUTING_TYPE, JsonValue.NULL);
+      } else {
          builder.add(ROUTING_TYPE, getRoutingType().name());
       }
 

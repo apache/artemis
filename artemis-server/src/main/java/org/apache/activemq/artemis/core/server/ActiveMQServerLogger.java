@@ -1544,4 +1544,7 @@ public interface ActiveMQServerLogger {
 
    @LogMessage(id = 224163, value = "Failed to clone SHA256 MessageDigest, falling back to getInstance", level = LogMessage.Level.INFO)
    void sha256CloneNotSupported(CloneNotSupportedException cns);
+
+   @LogMessage(id = 224164, value = "Failed to recover stored configuration for divert named '{}': {}. To repair this record create a new divert with the same name via the management API.", level = LogMessage.Level.WARN)
+   void failedToRecoverStoredDivertConfiguration(String divertName, String divert);
 }
