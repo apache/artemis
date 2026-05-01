@@ -3266,7 +3266,7 @@
          <xsd:element name="check-period" type="xsd:integer" maxOccurs="1" minOccurs="0" default="5000">
             <xsd:annotation>
                <xsd:documentation>
-                  A period used to verify if the lock still valid and renew it if needed.
+                  A period in milliseconds used to verify if the lock still valid and renew it if needed.
                </xsd:documentation>
             </xsd:annotation>
          </xsd:element>

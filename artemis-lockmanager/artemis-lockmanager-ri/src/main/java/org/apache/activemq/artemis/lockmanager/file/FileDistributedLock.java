@@ -24,9 +24,9 @@ import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.StandardOpenOption;
 import java.util.function.Consumer;
 
-import org.apache.activemq.artemis.lockmanager.DistributedLock;
+import org.apache.activemq.artemis.lockmanager.AbstractDistributedLock;
 
-final class FileDistributedLock implements DistributedLock {
+final class FileDistributedLock extends AbstractDistributedLock {
 
    private final String lockId;
    private final Consumer<String> onClosedLock;

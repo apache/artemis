@@ -84,6 +84,10 @@
          <artifactId>netty-transport</artifactId>
       </dependency>
       <dependency>
+         <groupId>de.dentrassi.crypto</groupId>
+         <artifactId>pem-keystore</artifactId>
+      </dependency>
+      <dependency>
          <groupId>commons-beanutils</groupId>
          <artifactId>commons-beanutils</artifactId>
       </dependency>

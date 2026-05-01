@@ -77,7 +77,7 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
 
    DistributedLockManager lockManager;
    DistributedLock distributedLock;
-   volatile boolean locked;
+   volatile boolean lockedStatus;
 
    public DistributedLockManager getLockManager() {
       return lockManager;
@@ -102,6 +102,11 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
 
    public String getLockId() {
       return lockID;
+   }
+
+
+   public DistributedLock getDistributedLock() {
+      return distributedLock;
    }
 
    /**
@@ -169,7 +174,7 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
       super.stop();
       SimpleFutureImpl<Void> simpleFuture = new SimpleFutureImpl<>();
       executor.execute(() -> {
-         if (locked) {
+         if (lockedStatus) {
             fireLockChanged(false);
          }
          if (distributedLock != null) {
@@ -206,7 +211,7 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
     * @return true if lock is currently held, false otherwise
     */
    public boolean isLocked() {
-      return locked;
+      return lockedStatus;
    }
 
    /**
@@ -220,7 +225,7 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
     * @param name a descriptive name for this lock coordinator
     */
    public LockCoordinator(ScheduledExecutorService scheduledExecutor, Executor executor, long checkPeriod, DistributedLockManager lockManager, String lockID, String name) {
-      super(scheduledExecutor, executor, checkPeriod, checkPeriod, TimeUnit.MILLISECONDS, false);
+      super(scheduledExecutor, executor, 0, checkPeriod, TimeUnit.MILLISECONDS, false);
       assert executor != null;
       this.lockManager = lockManager;
       this.lockID = lockID;
@@ -228,21 +233,22 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
    }
 
    private void fireLockChanged(boolean locked) {
-      this.locked = locked;
       if (locked) {
-         AtomicBoolean treatErrors = new AtomicBoolean(false);
-         // Sort callbacks by priority (lowest first) and execute them
-         lockAcquiredCallback.stream()
-            .sorted(Comparator.comparingInt(pc -> pc.priority))
-            .forEach(pc -> doRunTreatingErrors(pc.runnable, treatErrors));
-         if (treatErrors.get()) {
-            retryLock();
+         if (!lockedStatus) { // checking at the previous state to avoid double calls (executing a callback twice for the same event)
+            lockedStatus = true; // Update status before executing callbacks to avoid race conditions
+            AtomicBoolean treatErrors = new AtomicBoolean(false);
+            // Sort callbacks by priority (lowest first) and execute them
+            lockAcquiredCallback.stream().sorted(Comparator.comparingInt(pc -> pc.priority)).forEach(pc -> doRunTreatingErrors(pc.runnable, treatErrors));
+            if (treatErrors.get()) {
+               retryLock();
+            }
          }
       } else {
-         // Sort callbacks by priority (lowest first) and execute them
-         lockReleasedCallback.stream()
-            .sorted(Comparator.comparingInt(pc -> pc.priority))
-            .forEach(pc -> doRunWithLogException(pc.runnable));
+         if (lockedStatus) { // checking the previous state to avoid double calls (executing a callback twice for the same event)
+            lockedStatus = false; // Update status before executing callbacks to avoid race conditions
+            // Sort callbacks by priority (lowest first) and execute them
+            lockReleasedCallback.stream().sorted(Comparator.comparingInt(pc -> pc.priority)).forEach(pc -> doRunWithLogException(pc.runnable));
+         }
       }
    }
 
@@ -254,30 +260,28 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
 
    // to be used as a runnable on the executor
    private void executeRetryLock() {
-      if (locked) {
-         logger.debug("Unlocking to retry the callback");
-         fireLockChanged(false);
-         if (distributedLock != null) {
-            try {
-               distributedLock.unlock();
-               distributedLock.close();
-            } catch (Exception e) {
-               logger.debug(e.getMessage(), e);
-            }
-            distributedLock = null;
+      logger.debug("Unlocking to retry the callback, debugInfo={}", debugInfo);
+      fireLockChanged(false);
+      if (distributedLock != null) {
+         try {
+            distributedLock.unlock();
+            distributedLock.close();
+         } catch (Exception e) {
+            logger.debug(e.getMessage(), e);
          }
-         if (lockManager != null) {
-            try {
-               lockManager.stop();
-            } catch (Exception e) {
-               logger.debug(e.getMessage(), e);
-            }
+         distributedLock = null;
+      }
+      if (lockManager != null) {
+         try {
+            lockManager.stop();
+         } catch (Exception e) {
+            logger.debug(e.getMessage(), e);
          }
       }
    }
 
    private void runIfLocked(RunnableEx checkBeingAdded) {
-      if (locked) {
+      if (lockedStatus) {
          try {
             doRun(checkBeingAdded);
          } catch (Throwable e) {
@@ -296,7 +300,7 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
       }
    }
 
-   private void doRun(RunnableEx r) throws Exception {
+   protected void doRun(RunnableEx r) throws Exception {
       r.run();
    }
 
@@ -311,26 +315,35 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
    @Override
    public void run() {
       try {
-         if (!locked) {
+         if (!lockedStatus) {
             if (!lockManager.isStarted()) {
                lockManager.start();
             }
-            DistributedLock lock = lockManager.getDistributedLock(lockID);
-            if (lock.tryLock(1, TimeUnit.SECONDS)) {
-               logger.debug("Succeeded on locking {}, lockID={}", name, lockID);
-               this.distributedLock = lock;
+            if (distributedLock == null) {
+               distributedLock = lockManager.getDistributedLock(lockID).setDebugInfoSupplier(this::getDebugInfo);
+            }
+            if (distributedLock.tryLock(1, TimeUnit.SECONDS)) {
+               logger.debug("Succeeded on locking {}, lockID={}, debugInfo={}", name, lockID, debugInfo);
                fireLockChanged(true);
             } else {
-               logger.debug("Not able to lock {}, lockID={}", name, lockID);
-               lock.close();
-               lockManager.stop();
+               logger.debug("Not able to lock {}, lockID={}, debugInfo={}", name, lockID, debugInfo);
+               if (distributedLock.requiresRecreation()) {
+                  try {
+                     distributedLock.close();
+                     lockManager.stop();
+                  } finally {
+                     distributedLock = null;
+                  }
+               }
             }
          } else {
             if (!distributedLock.isHeldByCaller()) {
                fireLockChanged(false);
-               distributedLock.close();
-               distributedLock = null;
-               lockManager.stop();
+               if (distributedLock.requiresRecreation()) {
+                  distributedLock.close();
+                  distributedLock = null;
+                  lockManager.stop();
+               }
             }
          }
       } catch (Exception e) {
@@ -339,7 +352,7 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
             try {
                distributedLock.close();
             } catch (Exception closeEx) {
-               logger.debug("Error closing lock", closeEx);
+               logger.debug("Error closing lock, debugInfo={}", closeEx, debugInfo);
             }
             distributedLock = null;
          }
@@ -347,7 +360,7 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
             try {
                lockManager.stop();
             } catch (Exception stopEx) {
-               logger.debug("Error stopping lock manager", stopEx);
+               logger.debug("Error stopping lock manager, debugInfo={}", stopEx, debugInfo);
             }
          }
          logger.warn(e.getMessage(), e);

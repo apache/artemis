@@ -38,13 +38,13 @@ import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.login.LoginException;
 
 import org.apache.activemq.artemis.spi.core.security.jaas.kubernetes.TokenCallbackHandler;
-import org.apache.activemq.artemis.spi.core.security.jaas.kubernetes.client.KubernetesClient;
+import org.apache.activemq.artemis.spi.core.security.jaas.kubernetes.client.TokenReviewKubeClient;
 import org.apache.activemq.artemis.spi.core.security.jaas.kubernetes.model.TokenReview;
 import org.junit.jupiter.api.Test;
 
 public class KubernetesLoginModuleTest {
 
-   private final KubernetesClient client = mock(KubernetesClient.class);
+   private final TokenReviewKubeClient client = mock(TokenReviewKubeClient.class);
    private final KubernetesLoginModule loginModule = new KubernetesLoginModule(client);
    private static final String TOKEN = "the_token";
 

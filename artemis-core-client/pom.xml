@@ -125,10 +125,6 @@
          <groupId>io.netty</groupId>
          <artifactId>netty-resolver</artifactId>
       </dependency>
-      <dependency>
-         <groupId>de.dentrassi.crypto</groupId>
-         <artifactId>pem-keystore</artifactId>
-      </dependency>
 
       <!-- The johnzon-core and json-api contents are repackaged in -commons,
            However maven can still need them during tests, which run against

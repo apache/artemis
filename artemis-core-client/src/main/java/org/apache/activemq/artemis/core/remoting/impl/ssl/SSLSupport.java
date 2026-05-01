@@ -24,10 +24,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509KeyManager;
-import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -66,6 +63,7 @@ import org.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants;
 import org.apache.activemq.artemis.spi.core.remoting.ssl.SSLContextConfig;
 import org.apache.activemq.artemis.utils.ClassloadingUtil;
 import org.apache.activemq.artemis.utils.sm.SecurityManagerShim;
+import org.apache.activemq.artemis.utils.ssl.KeyStoreSupport;
 
 /**
  * Please note, this class supports PKCS#11 keystores, but there are no specific tests in the Apache Artemis
@@ -75,7 +73,6 @@ import org.apache.activemq.artemis.utils.sm.SecurityManagerShim;
  */
 public class SSLSupport {
 
-   public static final String NONE = "NONE";
    private String keystoreProvider = TransportConstants.DEFAULT_KEYSTORE_PROVIDER;
    private String keystoreType = TransportConstants.DEFAULT_KEYSTORE_TYPE;
    private String keystorePath = TransportConstants.DEFAULT_KEYSTORE_PATH;
@@ -267,7 +264,7 @@ public class SSLSupport {
    }
 
    public SslContext createNettyContext() throws Exception {
-      KeyStore keyStore = SSLSupport.loadKeystore(keystoreProvider, keystoreType, keystorePath, keystorePassword);
+      KeyStore keyStore = KeyStoreSupport.loadKeystore(keystoreProvider, keystoreType, keystorePath, keystorePassword);
       SslContextBuilder sslContextBuilder;
       if (keystoreAlias != null) {
          Pair<PrivateKey, X509Certificate[]> privateKeyAndCertChain = getPrivateKeyAndCertChain(keyStore);
@@ -282,7 +279,7 @@ public class SSLSupport {
    }
 
    public SslContext createNettyClientContext() throws Exception {
-      KeyStore keyStore = SSLSupport.loadKeystore(keystoreProvider, keystoreType, keystorePath, keystorePassword);
+      KeyStore keyStore = KeyStoreSupport.loadKeystore(keystoreProvider, keystoreType, keystorePath, keystorePassword);
       SslContextBuilder sslContextBuilder = SslContextBuilder
          .forClient()
          .sslProvider(SslProvider.valueOf(sslProvider))
@@ -323,11 +320,11 @@ public class SSLSupport {
       } else if (trustAll) {
          //This is useful for testing but not should be used outside of that purpose
          return InsecureTrustManagerFactory.INSTANCE;
-      } else if ((truststorePath == null || truststorePath.isEmpty() || truststorePath.equalsIgnoreCase(NONE)) && (truststoreProvider == null || !truststoreProvider.toUpperCase().contains("PKCS11"))) {
+      } else if ((truststorePath == null || truststorePath.isEmpty() || truststorePath.equalsIgnoreCase(KeyStoreSupport.NONE)) && (truststoreProvider == null || !truststoreProvider.toUpperCase().contains(KeyStoreSupport.PKCS_11))) {
          return null;
       } else {
          TrustManagerFactory trustMgrFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-         KeyStore trustStore = SSLSupport.loadKeystore(truststoreProvider, truststoreType, truststorePath, truststorePassword);
+         KeyStore trustStore = KeyStoreSupport.loadKeystore(truststoreProvider, truststoreType, truststorePath, truststorePassword);
 
          ManagerFactoryParameters managerFactoryParameters = null;
          boolean ocsp = Boolean.parseBoolean(Security.getProperty("ocsp.enable"));
@@ -456,45 +453,9 @@ public class SSLSupport {
       if (crlPath == null) {
          return null;
       }
-      URL resource = validateStoreURL(crlPath);
+      URL resource = KeyStoreSupport.validateStoreURL(crlPath);
       try (InputStream is = resource.openStream()) {
          return CertificateFactory.getInstance("X.509").generateCRLs(is);
-      }
-   }
-
-   public static KeyStore loadKeystore(final String keystoreProvider,
-                                       final String keystoreType,
-                                       final String keystorePath,
-                                       final String keystorePassword) throws Exception {
-      checkPemProviderLoaded(keystoreType);
-      KeyStore ks = keystoreProvider == null ? KeyStore.getInstance(keystoreType) : KeyStore.getInstance(keystoreType, keystoreProvider);
-      InputStream in = null;
-      try {
-         if (keystorePath != null && !keystorePath.isEmpty() && !keystorePath.equalsIgnoreCase(NONE)) {
-            URL keystoreURL = SSLSupport.validateStoreURL(keystorePath);
-            in = keystoreURL.openStream();
-         }
-         ks.load(in, keystorePassword == null ? null : keystorePassword.toCharArray());
-      } finally {
-         if (in != null) {
-            try {
-               in.close();
-            } catch (IOException ignored) {
-            }
-         }
-      }
-      return ks;
-   }
-
-   /**
-    * This method calls out to a separate class in order to avoid a hard dependency on the provider's implementation.
-    * This allows folks who don't use PEM to avoid using the corresponding dependency.
-    */
-   public static void checkPemProviderLoaded(String keystoreType) {
-      if (keystoreType != null && keystoreType.startsWith("PEM")) {
-         if (Security.getProvider("PEM") == null) {
-            PemSupport.loadProvider();
-         }
       }
    }
 
@@ -515,44 +476,14 @@ public class SSLSupport {
    }
 
    private KeyManagerFactory loadKeyManagerFactory() throws Exception {
-      if ((keystorePath == null || keystorePath.isEmpty() || keystorePath.equalsIgnoreCase(NONE)) && (keystoreProvider == null || !keystoreProvider.toUpperCase().contains("PKCS11"))) {
+      if ((keystorePath == null || keystorePath.isEmpty() || keystorePath.equalsIgnoreCase(KeyStoreSupport.NONE)) && (keystoreProvider == null || !keystoreProvider.toUpperCase().contains(KeyStoreSupport.PKCS_11))) {
          return null;
       } else {
          KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-         KeyStore ks = SSLSupport.loadKeystore(keystoreProvider, keystoreType, keystorePath, keystorePassword);
+         KeyStore ks = KeyStoreSupport.loadKeystore(keystoreProvider, keystoreType, keystorePath, keystorePassword);
          kmf.init(ks, getKeyPasswordOrDefault());
          return kmf;
       }
-   }
-
-   private static URL validateStoreURL(final String storePath) throws Exception {
-      assert storePath != null;
-
-      // First see if this is a URL
-      try {
-         return new URL(storePath);
-      } catch (MalformedURLException e) {
-         File file = new File(storePath);
-         if (file.exists() && file.isFile()) {
-            return file.toURI().toURL();
-         } else {
-            URL url = findResource(storePath);
-            if (url != null) {
-               return url;
-            }
-         }
-      }
-
-      throw new Exception("Failed to find a store at " + storePath);
-   }
-
-   /**
-    * This seems duplicate code all over the place, but for security reasons we can't let something like this to be open
-    * in a utility class, as it would be a door to load anything you like in a safe VM. For that reason any class trying
-    * to do a privileged block should do with the AccessController directly.
-    */
-   private static URL findResource(final String resourceName) {
-      return SecurityManagerShim.doPrivileged((PrivilegedAction<URL>) () -> ClassloadingUtil.findResource(resourceName));
    }
 
    private Pair<PrivateKey, X509Certificate[]> getPrivateKeyAndCertChain(KeyStore keyStore) throws KeyStoreException, UnrecoverableKeyException, NoSuchAlgorithmException {
