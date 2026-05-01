@@ -951,6 +951,20 @@
             <!-- License: Apache 2.0 -->
          </dependency>
 
+         <!-- Kubernetes client dependencies for kube-lock - core -->
+         <dependency>
+            <groupId>io.kubernetes</groupId>
+            <artifactId>client-java</artifactId>
+            <version>${kubernetes.client.version}</version>
+            <!-- License: Apache 2.0 -->
+         </dependency>
+         <!-- Kubernetes client dependencies for kube-lock - extension including locks -->
+         <dependency>
+            <groupId>io.kubernetes</groupId>
+            <artifactId>client-java-extended</artifactId>
+            <version>${kubernetes.client.version}</version>
+            <!-- License: Apache 2.0 -->
+         </dependency>
       </dependencies>
    </dependencyManagement>
 

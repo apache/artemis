@@ -31,6 +31,7 @@
       <sts-surefire-extra-args />
       <artemis-distribution-lib-dir>-Ddistribution.lib="${activemq.basedir}/artemis-distribution/target/apache-artemis-${project.version}-bin/apache-artemis-${project.version}/lib"</artemis-distribution-lib-dir>
       <sts-http-host>localhost</sts-http-host>
+      <enableKubernetes>false</enableKubernetes>
    </properties>
 
    <dependencies>
@@ -44,6 +45,18 @@
          <version>${project.version}</version>
          <scope>compile</scope>
          <type>pom</type>
+         <exclusions>
+            <exclusion>
+               <groupId>org.apache.artemis</groupId>
+               <artifactId>artemis-kube-lock-all</artifactId>
+            </exclusion>
+         </exclusions>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-kube-lock</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
       </dependency>
       <dependency>
          <groupId>org.apache.artemis</groupId>
@@ -412,7 +425,7 @@
                <forkCount>1</forkCount>
                <reuseForks>false</reuseForks>
                <skipTests>${skipSmokeTests}</skipTests>
-               <argLine>${sts-surefire-extra-args} ${activemq-surefire-argline} ${artemis-distribution-lib-dir}</argLine>
+               <argLine>${sts-surefire-extra-args} ${activemq-surefire-argline} ${artemis-distribution-lib-dir} -DenableKubernetes=${enableKubernetes}</argLine>
             </configuration>
          </plugin>
       </plugins>
@@ -449,6 +462,15 @@
                </plugins>
             </pluginManagement>
          </build>
+      </profile>
+
+      <profile>
+         <!-- Profile to enable Kubernetes tests.
+              Start Minikube with "minikube start" to run the Kubernetes tests. -->
+         <id>kubernetes-tests</id>
+         <properties>
+            <enableKubernetes>true</enableKubernetes>
+         </properties>
       </profile>
 
    </profiles>

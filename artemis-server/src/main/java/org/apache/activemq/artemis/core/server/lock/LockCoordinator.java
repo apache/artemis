@@ -220,7 +220,7 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
     * @param name a descriptive name for this lock coordinator
     */
    public LockCoordinator(ScheduledExecutorService scheduledExecutor, Executor executor, long checkPeriod, DistributedLockManager lockManager, String lockID, String name) {
-      super(scheduledExecutor, executor, checkPeriod, checkPeriod, TimeUnit.MILLISECONDS, false);
+      super(scheduledExecutor, executor, 0, checkPeriod, TimeUnit.MILLISECONDS, false);
       assert executor != null;
       this.lockManager = lockManager;
       this.lockID = lockID;

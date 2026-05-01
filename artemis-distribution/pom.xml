@@ -126,6 +126,11 @@
          <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-lockmanager-ri</artifactId>
       </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-kube-lock-all</artifactId>
+         <version>${project.version}</version>
+      </dependency>
 
       <!--TODO: no other modules seem to use this, is it equivalent to something else they do use ? -->
       <dependency>

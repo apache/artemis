@@ -130,6 +130,9 @@
       <pem-keystore.version>3.0.0</pem-keystore.version>
       <nimbus.jwt.version>10.9</nimbus.jwt.version>
 
+      <!-- Used for Kube-lock -->
+      <kubernetes.client.version>26.0.0</kubernetes.client.version>
+
       <!-- Overrides the parent pom property, downgrades dependency plugin
            https://github.com/apache/maven-dependency-plugin/issues/1588 -->
       <version.maven-dependency-plugin>3.8.1</version.maven-dependency-plugin>

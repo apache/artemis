@@ -31,6 +31,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.apache.activemq.artemis.core.server.lock.LockCoordinator;
+import org.apache.activemq.artemis.lockmanager.DistributedLock;
 import org.apache.activemq.artemis.lockmanager.DistributedLockManager;
 import org.apache.activemq.artemis.lockmanager.MutableLong;
 import org.apache.activemq.artemis.lockmanager.file.FileBasedLockManager;
@@ -39,9 +40,11 @@ import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.artemis.utils.Wait;
 import org.apache.activemq.artemis.utils.actors.OrderedExecutorFactory;
+import org.apache.artemis.lock.kube.KubeLockManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,13 +95,108 @@ public class LockCoordinatorTest extends ActiveMQTestBase {
       internalTest(i -> getFileCoordinators(i));
    }
 
+
+   @EnabledIfSystemProperty(named = "enableKubernetes", matches = "true")
+   @Test
+   public void testWithKube() throws Exception {
+      internalTest(i -> getKubeCoordinators(i));
+   }
+
+   public void testPassiveLockOnCoordinator(List<LockCoordinator> list) throws Exception {
+      assertEquals(2, list.size());
+      DistributedLockManager lockManager0 = list.get(0).getLockManager();
+      DistributedLockManager lockManager1 = list.get(1).getLockManager();
+      lockManager0.start();
+      lockManager1.start();
+
+      runAfter(lockManager0::stop);
+      runAfter(lockManager1::stop);
+
+      LockCoordinator lockCoordinator0 = new LockCoordinator(scheduledExecutor, executorFactory.getExecutor(), 10_000, lockManager0, "lock-it", "lock-it");
+      lockCoordinator0.start();
+      runAfter(lockCoordinator0::stop);
+
+      Wait.assertTrue(lockCoordinator0::isLocked, 3600000, 100);
+
+      LockCoordinator lockCoordinator1 = new LockCoordinator(scheduledExecutor, executorFactory.getExecutor(), 10_000, lockManager1, "lock-it", "lock-it");
+      lockCoordinator1.start();
+      runAfter(lockCoordinator1::stop);
+
+      assertFalse(lockCoordinator1.isLocked());
+
+
+      lockCoordinator0.stop();
+
+      Wait.assertTrue(lockCoordinator1::isLocked, 5000, 100);
+   }
+
+
+   public void testSimplePair(List<LockCoordinator> list) throws Exception {
+      assertEquals(2, list.size());
+      DistributedLockManager lockManager0 = list.get(0).getLockManager();
+      DistributedLockManager lockManager1 = list.get(1).getLockManager();
+
+      lockManager0.start();
+      lockManager1.start();
+
+      try {
+         for (int i = 0; i < 100; i++) {
+            DistributedLock lock0 = lockManager0.getDistributedLock("lock");
+            assertTrue(lock0.tryLock());
+            assertTrue(lock0.isHeldByCaller());
+            DistributedLock lock1 = lockManager1.getDistributedLock("lock");
+            assertFalse(lock1.tryLock());
+            assertFalse(lock1.isHeldByCaller());
+
+            lock0.unlock();
+            assertTrue(lock1.tryLock());
+            assertTrue(lock1.isHeldByCaller());
+            lock1.unlock();
+         }
+      } finally {
+         lockManager0.stop();
+         lockManager1.stop();
+      }
+   }
+
+   private List<LockCoordinator> getKubeCoordinators(int numberOfCoordinators) {
+      try {
+         String hostPortion = "host_" + RandomUtil.randomAlphaNumericString(10);
+         ArrayList<LockCoordinator> locks = new ArrayList<>();
+         String lockName = "lock-test-" + RandomUtil.randomUUIDString();
+         for (int i = 0; i < numberOfCoordinators; i++) {
+            HashMap<String, String> parameters = new HashMap<>();
+            parameters.put("hostname", hostPortion + "_host_" + i);
+            parameters.put("namespace", "default");
+            parameters.put("lease-timeout", "10");
+            DistributedLockManager lockManager = DistributedLockManager.newInstanceOf(KubeLockManager.class.getName(), parameters);
+
+            LockCoordinator lockCoordinator = new LockCoordinator(scheduledExecutor, executorFactory.getExecutor(), KEEP_ALIVE_INTERVAL_MS, lockManager, lockName, lockName);
+            lockCoordinator.onLockAcquired(() -> lock(lockCoordinator));
+            lockCoordinator.onLockReleased(() -> unlock(lockCoordinator));
+            lockCoordinator.onLockReleased(() -> lockChanged.incrementAndGet());
+            lockCoordinator.onLockAcquired(() -> lockChanged.incrementAndGet());
+            lockCoordinator.setDebugInfo("ID" + i);
+            locks.add(lockCoordinator);
+         }
+         return locks;
+      } catch (Exception e) {
+         throw new RuntimeException(e.getMessage(), e);
+      }
+   }
+
    @Test
    public void testWithZK() throws Exception {
+      ZookeeperCluster zkCluster = startZK();
+      internalTest(i -> getZKCoordinators(i, zkCluster.getConnectString()));
+   }
+
+   private ZookeeperCluster startZK() throws Exception {
       ZookeeperCluster zkCluster = new ZookeeperCluster(temporaryFolder, 1, ZK_BASE_PORT, 100);
       zkCluster.start();
       runAfter(zkCluster::stop);
       assertEquals(ZK_ENDPOINTS, zkCluster.getConnectString());
-      internalTest(i -> getZKCoordinators(i, zkCluster.getConnectString()));
+      return zkCluster;
    }
 
    private void internalTest(Function<Integer, List<LockCoordinator>> lockCoordinatorSupplier) throws Exception {
@@ -107,6 +205,8 @@ public class LockCoordinatorTest extends ActiveMQTestBase {
       testRetryAfterError(lockCoordinatorSupplier.apply(1).get(0));
       testRetryAfterErrorWithDelayAdd(lockCoordinatorSupplier.apply(1).get(0));
       testPriorityOrdering(lockCoordinatorSupplier.apply(1).get(0));
+      testSimplePair(lockCoordinatorSupplier.apply(2));
+      testPassiveLockOnCoordinator(getKubeCoordinators(2));
 
       {
          List<LockCoordinator> list = lockCoordinatorSupplier.apply(2);
