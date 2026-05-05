@@ -26,6 +26,7 @@ A full demonstration is available in the https://github.com/apache/artemis-examp
 * The xref:configuring-transports.adoc#configuring-netty-ssl[`keyPassword`] property is now supported for SSL connections.
 It is used to access the private key within a keystore.
 It is only supported for JKS & JCEKS stores.
+* The xref:using-cli.adoc[CLI] now supports listing xref:lock-coordination.adoc[locks] and their status via the `lock list` command.
 
 === Upgrading from 2.53.0
 
