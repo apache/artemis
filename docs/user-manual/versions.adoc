@@ -27,6 +27,9 @@ A full demonstration is available in the https://github.com/apache/artemis-examp
 It is used to access the private key within a keystore.
 It is only supported for JKS & JCEKS stores.
 * The xref:using-cli.adoc[CLI] now supports listing xref:lock-coordination.adoc[locks] and their status via the `lock list` command.
+* The xref:management-console.adoc[web console] was upgraded to 1.8.0.
+This release mainly contains bug fixes and dependency updates.
+See the https://issues.apache.org/jira/projects/ARTEMIS/versions/12356761[release notes] for more details.
 
 === Upgrading from 2.53.0
 
