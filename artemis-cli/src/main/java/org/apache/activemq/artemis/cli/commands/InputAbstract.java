@@ -31,11 +31,15 @@ public class InputAbstract extends ActionAbstract {
    private static boolean inputEnabled = false;
 
    /**
-    * Test cases validating or using the CLI cannot deal with inputs, so they are generally disabled, however the main
-    * method from the CLI will enable it back.
+    * Test cases validating or using the CLI usually don't deal with inputs, so they are generally disabled, however
+    * the main method from the CLI will enable it back.
     */
    public static void enableInput() {
       inputEnabled = true;
+   }
+
+   public static void disableInput() {
+      inputEnabled = false;
    }
 
    @Option(names = "--silent", description = "Disable all the inputs, and make a best guess for any required input.")
@@ -144,5 +148,9 @@ public class InputAbstract extends ActionAbstract {
       }
 
       return null;
+   }
+
+   public void setLineReader(InputReader lineReader) {
+      this.lineReader = lineReader;
    }
 }

@@ -35,6 +35,7 @@ import org.apache.activemq.artemis.core.server.cluster.impl.MessageLoadBalancing
 import org.apache.activemq.artemis.nativo.jlibaio.LibaioContext;
 import org.apache.activemq.artemis.nativo.jlibaio.LibaioFile;
 import org.apache.activemq.artemis.utils.FileUtil;
+import org.apache.activemq.artemis.utils.PasswordMaskingUtil;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
@@ -444,9 +445,23 @@ public class Create extends InstallAbstract {
       return clusterUser;
    }
 
-   private String getClusterPassword() {
+   protected void setClusterPassword(String clusterPassword) {
+      this.clusterPassword = clusterPassword;
+   }
+
+   protected String getClusterPassword() {
       if (clusterPassword == null) {
          clusterPassword = inputPassword("--cluster-password", "What is the cluster password?", "password-admin");
+      }
+      if (!PasswordMaskingUtil.isEncMasked(clusterPassword)) {
+         try {
+            clusterPassword = PasswordMaskingUtil.wrap(PasswordMaskingUtil.getDefaultCodec().encode(clusterPassword));
+            getActionContext().out.println("Using masked cluster-password: " + clusterPassword);
+         } catch (Exception e) {
+            getActionContext().err.println("Warning: Failed to mask password.");
+            getActionContext().err.println("Reason: " + e.getMessage());
+            e.printStackTrace();
+         }
       }
       return clusterPassword;
    }
@@ -489,7 +504,9 @@ public class Create extends InstallAbstract {
          password = inputPassword("--password", "What is the default password?", "admin");
       }
 
-      password = HashUtil.tryHash(getActionContext(), password);
+      if (!PasswordMaskingUtil.isEncMasked(password)) {
+         password = HashUtil.tryHash(getActionContext(), password);
+      }
 
       return password;
    }
