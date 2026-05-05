@@ -23,6 +23,9 @@ https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&versio
 
 * OpenID Connect is now supported via the xref:security.adoc#oidcloginmodule[`OIDCLoginModule`].
 A full demonstration is available in the https://github.com/apache/artemis-examples/tree/main/examples/features/standard/security-oidc[examples repo].
+* The xref:configuring-transports.adoc#configuring-netty-ssl[`keyPassword`] property is now supported for SSL connections.
+It is used to access the private key within a keystore.
+It is only supported for JKS & JCEKS stores.
 
 === Upgrading from 2.53.0
 
