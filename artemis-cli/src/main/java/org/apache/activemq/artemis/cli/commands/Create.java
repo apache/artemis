@@ -440,7 +440,7 @@ public class Create extends InstallAbstract {
 
    private String getClusterUser() {
       if (clusterUser == null) {
-         clusterUser = input("--cluster-user", "What is the cluster user?", "cluster-admin");
+         clusterUser = input("--cluster-user", "What is the cluster user?", ActiveMQDefaultConfiguration.getDefaultClusterUser());
       }
       return clusterUser;
    }
@@ -451,7 +451,7 @@ public class Create extends InstallAbstract {
 
    protected String getClusterPassword() {
       if (clusterPassword == null) {
-         clusterPassword = inputPassword("--cluster-password", "What is the cluster password?", "password-admin");
+         clusterPassword = inputPassword("--cluster-password", "What is the cluster password?", ActiveMQDefaultConfiguration.getDefaultClusterPassword());
       }
       if (!PasswordMaskingUtil.isEncMasked(clusterPassword)) {
          try {

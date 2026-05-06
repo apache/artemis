@@ -104,7 +104,7 @@ public class ClusteredMirrorSoakTest extends SoakTestBase {
       cliCreateServer.setClustered(true);
       cliCreateServer.setNoWeb(true);
       cliCreateServer.setStaticCluster(clusterURI);
-      cliCreateServer.setArgs("--no-stomp-acceptor", "--no-hornetq-acceptor", "--no-mqtt-acceptor", "--no-amqp-acceptor", "--max-hops", "1", "--name", DC1_NODE_A);
+      cliCreateServer.setArgs("--no-stomp-acceptor", "--no-hornetq-acceptor", "--no-mqtt-acceptor", "--no-amqp-acceptor", "--max-hops", "1", "--name", DC1_NODE_A, "--cluster-user", "my-cluster-user", "--cluster-password", "my-cluster-password");
       cliCreateServer.addArgs("--addresses", "order");
       cliCreateServer.addArgs("--queues", "myQueue");
       cliCreateServer.setPortOffset(portOffset);
