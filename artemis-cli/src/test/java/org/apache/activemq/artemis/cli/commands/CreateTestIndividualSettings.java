@@ -20,14 +20,20 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Map;
 
+import org.apache.activemq.artemis.cli.commands.util.input.InputReader;
 import org.apache.activemq.artemis.tests.extensions.TargetTempDirFactory;
+import org.apache.activemq.artemis.utils.DefaultSensitiveStringCodec;
+import org.apache.activemq.artemis.utils.PasswordMaskingUtil;
 import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.cli.test.TestActionContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.Mockito;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -83,5 +89,39 @@ public class CreateTestIndividualSettings {
       } catch (IOException e) {
       }
       return false;
+   }
+
+   @Test
+   public void testMaskClusterPassword() throws Exception {
+      final String password = RandomUtil.randomUUIDString();
+
+      Create c = new Create();
+      Create.enableInput();
+      try {
+         InputReader inputReader = Mockito.mock(InputReader.class);
+         Mockito.when(inputReader.readPassword(Mockito.anyString())).thenReturn(password);
+         c.setLineReader(inputReader);
+
+         assertEquals(PasswordMaskingUtil.wrap(PasswordMaskingUtil.getDefaultCodec().encode(password)), c.getClusterPassword());
+      } finally {
+         Create.disableInput();
+      }
+   }
+
+   @Test
+   public void testMaskAdminPassword() throws Exception {
+      final String password = RandomUtil.randomUUIDString();
+
+      Create c = new Create();
+      Create.enableInput();
+      try {
+         InputReader inputReader = Mockito.mock(InputReader.class);
+         Mockito.when(inputReader.readPassword(Mockito.anyString())).thenReturn(password);
+         c.setLineReader(inputReader);
+
+         assertTrue(PasswordMaskingUtil.getDefaultCodec(Map.of(DefaultSensitiveStringCodec.ALGORITHM, DefaultSensitiveStringCodec.ONE_WAY)).verify(password.toCharArray(), PasswordMaskingUtil.unwrap(c.getPassword())));
+      } finally {
+         Create.disableInput();
+      }
    }
 }

@@ -35,6 +35,7 @@ import org.apache.activemq.artemis.core.server.cluster.impl.MessageLoadBalancing
 import org.apache.activemq.artemis.nativo.jlibaio.LibaioContext;
 import org.apache.activemq.artemis.nativo.jlibaio.LibaioFile;
 import org.apache.activemq.artemis.utils.FileUtil;
+import org.apache.activemq.artemis.utils.PasswordMaskingUtil;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
@@ -444,9 +445,17 @@ public class Create extends InstallAbstract {
       return clusterUser;
    }
 
-   private String getClusterPassword() {
+   protected String getClusterPassword() {
       if (clusterPassword == null) {
          clusterPassword = inputPassword("--cluster-password", "What is the cluster password?", "password-admin");
+         try {
+            clusterPassword = PasswordMaskingUtil.wrap(PasswordMaskingUtil.getDefaultCodec().encode(clusterPassword));
+            getActionContext().out.println("Using masked cluster-password: " + clusterPassword);
+         } catch (Exception e) {
+            getActionContext().err.println("Warning: Failed to mask password.");
+            getActionContext().err.println("Reason: " + e.getMessage());
+            e.printStackTrace();
+         }
       }
       return clusterPassword;
    }
