@@ -32,6 +32,8 @@
    <modules>
       <module>artemis-lockmanager-api</module>
       <module>artemis-lockmanager-ri</module>
+      <module>artemis-kube-lock</module>
+      <module>artemis-kube-lock-all</module>
    </modules>
 
 </project>

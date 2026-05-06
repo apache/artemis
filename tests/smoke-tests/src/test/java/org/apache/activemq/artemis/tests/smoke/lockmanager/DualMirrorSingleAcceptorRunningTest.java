@@ -34,21 +34,28 @@ import java.util.function.Consumer;
 
 import org.apache.activemq.artemis.api.core.management.SimpleManagement;
 import org.apache.activemq.artemis.cli.commands.helper.HelperCreate;
+import org.apache.activemq.artemis.json.JsonArray;
+import org.apache.activemq.artemis.json.JsonObject;
 import org.apache.activemq.artemis.tests.smoke.common.SmokeTestBase;
 import org.apache.activemq.artemis.tests.util.CFUtil;
 import org.apache.activemq.artemis.utils.FileUtil;
 import org.apache.activemq.artemis.utils.Wait;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class DualMirrorSingleAcceptorRunningTest extends SmokeTestBase {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+   public static final String SERVER_NAME_WITH_KUBE_A = "lockmanager/dualMirrorSingleAcceptor/kube/A";
+   public static final String SERVER_NAME_WITH_KUBE_B = "lockmanager/dualMirrorSingleAcceptor/kube/B";
 
    public static final String SERVER_NAME_WITH_ZK_A = "lockmanager/dualMirrorSingleAcceptor/ZK/A";
    public static final String SERVER_NAME_WITH_ZK_B = "lockmanager/dualMirrorSingleAcceptor/ZK/B";
@@ -110,6 +117,22 @@ public class DualMirrorSingleAcceptorRunningTest extends SmokeTestBase {
    }
 
    @Test
+   @EnabledIfSystemProperty(named = "enableKubernetes", matches = "true")
+   public void testAlternatingKube() throws Throwable {
+      {
+         createServerPair(SERVER_NAME_WITH_KUBE_A, SERVER_NAME_WITH_KUBE_B,
+                          "./src/main/resources/servers/lockmanager/dualMirrorSingleAcceptor/kube/A",
+                          "./src/main/resources/servers/lockmanager/dualMirrorSingleAcceptor/kube/B",
+                          null);
+
+         cleanupData(SERVER_NAME_WITH_KUBE_A);
+         cleanupData(SERVER_NAME_WITH_KUBE_B);
+      }
+
+      testAlternating(SERVER_NAME_WITH_KUBE_A, SERVER_NAME_WITH_KUBE_B, null, null);
+   }
+
+   @Test
    public void testAlternatingZK() throws Throwable {
       {
          createServerPair(SERVER_NAME_WITH_ZK_A, SERVER_NAME_WITH_ZK_B,
@@ -146,18 +169,18 @@ public class DualMirrorSingleAcceptorRunningTest extends SmokeTestBase {
 
       Properties properties = new Properties();
 
-      properties.put("acceptorConfigurations.artemis.extraParams.amqpCredits", "1000");
-      properties.put("acceptorConfigurations.artemis.extraParams.amqpLowCredits", "300");
-      properties.put("acceptorConfigurations.artemis.factoryClassName", "org.apache.activemq.artemis.core.remoting.impl.netty.NettyAcceptorFactory");
-      properties.put("acceptorConfigurations.artemis.lockCoordinator", "failover");
-      properties.put("acceptorConfigurations.artemis.name", "artemis");
-      properties.put("acceptorConfigurations.artemis.params.scheme", "tcp");
-      properties.put("acceptorConfigurations.artemis.params.tcpReceiveBufferSize", "1048576");
-      properties.put("acceptorConfigurations.artemis.params.port", "61616");
-      properties.put("acceptorConfigurations.artemis.params.host", "localhost");
-      properties.put("acceptorConfigurations.artemis.params.protocols", "CORE,AMQP,STOMP,HORNETQ,MQTT,OPENWIRE");
-      properties.put("acceptorConfigurations.artemis.params.useEpoll", "true");
-      properties.put("acceptorConfigurations.artemis.params.tcpSendBufferSize", "1048576");
+      properties.put("acceptorConfigurations.forClients.extraParams.amqpCredits", "1000");
+      properties.put("acceptorConfigurations.forClients.extraParams.amqpLowCredits", "300");
+      properties.put("acceptorConfigurations.forClients.factoryClassName", "org.apache.activemq.artemis.core.remoting.impl.netty.NettyAcceptorFactory");
+      properties.put("acceptorConfigurations.forClients.lockCoordinator", "failover");
+      properties.put("acceptorConfigurations.forClients.name", "forClients");
+      properties.put("acceptorConfigurations.forClients.params.scheme", "tcp");
+      properties.put("acceptorConfigurations.forClients.params.tcpReceiveBufferSize", "1048576");
+      properties.put("acceptorConfigurations.forClients.params.port", "61616");
+      properties.put("acceptorConfigurations.forClients.params.host", "localhost");
+      properties.put("acceptorConfigurations.forClients.params.protocols", "CORE,AMQP,STOMP,HORNETQ,MQTT,OPENWIRE");
+      properties.put("acceptorConfigurations.forClients.params.useEpoll", "true");
+      properties.put("acceptorConfigurations.forClients.params.tcpSendBufferSize", "1048576");
 
       properties.put("lockCoordinatorConfigurations.failover.checkPeriod", "5000");
       properties.put("lockCoordinatorConfigurations.failover.className", "org.apache.activemq.artemis.lockmanager.file.FileBasedLockManager");
@@ -185,15 +208,20 @@ public class DualMirrorSingleAcceptorRunningTest extends SmokeTestBase {
       processB = startServer(nameServerB, 0, -1, brokerPropertiesB);
       ConnectionFactory cfX = CFUtil.createConnectionFactory("amqp", "tcp://localhost:61616");
 
+      String uriManagementA = "tcp://localhost:61000";
+      String uriManagementB = "tcp://localhost:61001";
+
       for (int i = 0; i < ALTERNATING_TEST_ITERATIONS; i++) {
          logger.info("Iteration {}: Server {} active", i, (i % 2 == 0) ? "A" : "B");
 
          if (i % 2 == 0) {
             // Even iteration: Server A active, kill Server B
             killServer(processB);
+            waitForLockStatus(uriManagementA, true);
          } else {
             // Odd iteration: Server B active, kill Server A
             killServer(processA);
+            waitForLockStatus(uriManagementB, true);
          }
 
          // Send messages through the shared acceptor
@@ -205,14 +233,36 @@ public class DualMirrorSingleAcceptorRunningTest extends SmokeTestBase {
          // Restart the killed server
          if (i % 2 == 0) {
             processB = startServer(nameServerB, 0, -1, brokerPropertiesB);
+            waitForLockStatus(uriManagementA, true);
+            waitForLockStatus(uriManagementB, false);
          } else {
             processA = startServer(nameServerA, 0, -1, brokerPropertiesA);
+            waitForLockStatus(uriManagementA, false);
+            waitForLockStatus(uriManagementB, true);
          }
       }
 
       // Verify they both have the expected message count (iterations × (sent - consumed))
-      assertMessageCount("tcp://localhost:61000", "myQueue", EXPECTED_FINAL_MESSAGE_COUNT);
-      assertMessageCount("tcp://localhost:61001", "myQueue", EXPECTED_FINAL_MESSAGE_COUNT);
+      assertMessageCount(uriManagementA, "myQueue", EXPECTED_FINAL_MESSAGE_COUNT);
+      assertMessageCount(uriManagementB, "myQueue", EXPECTED_FINAL_MESSAGE_COUNT);
+
+      int countActive = 0;
+
+      if (getLockedStatus(uriManagementA).getBoolean("locked")) {
+         logger.info("server 0 is locked");
+         countActive++;
+      } else {
+         logger.debug("server 0 is not locked");
+      }
+
+      if (getLockedStatus(uriManagementB).getBoolean("locked")) {
+         logger.info("server 1 is locked");
+         countActive++;
+      } else {
+         logger.info("server 1 is not locked");
+      }
+
+      assertEquals(1, countActive);
    }
 
    private static void sendMessages(ConnectionFactory cfX, int nmessages) throws JMSException {
@@ -258,15 +308,46 @@ public class DualMirrorSingleAcceptorRunningTest extends SmokeTestBase {
       }
    }
 
+   protected JsonObject getLockedStatus(String uri) throws Exception {
+      try (SimpleManagement simpleManagement = new SimpleManagement(uri, null, null)) {
+         return simpleManagement.listLockCoordinators().getJsonObject(0);
+      }
+   }
+
+   protected void waitForLockStatus(String uri, boolean expectedStatus) throws Exception {
+      try (SimpleManagement simpleManagement = new SimpleManagement(uri, null, null)) {
+         Wait.assertEquals(expectedStatus, () -> {
+            int retry = 0;
+
+            do {
+               try {
+                  JsonArray lockList = simpleManagement.listLockCoordinators();
+                  return lockList.getJsonObject(0).getBoolean("locked");
+               } catch (Exception e) {
+                  logger.info(e.getMessage(), e);
+               }
+               Thread.sleep(500);
+               retry++;
+            }
+            while (retry < 10);
+
+            throw new RuntimeException("could not execute lockStatus check");
+
+         });
+      }
+   }
+
+
    protected void assertMessageCount(String uri, String queueName, int count) throws Exception {
-      SimpleManagement simpleManagement = new SimpleManagement(uri, null, null);
-      Wait.assertEquals(count, () -> {
-         try {
-            return simpleManagement.getMessageCountOnQueue(queueName);
-         } catch (Throwable e) {
-            return -1;
-         }
-      });
+      try (SimpleManagement simpleManagement = new SimpleManagement(uri, null, null)) {
+         Wait.assertEquals(count, () -> {
+            try {
+               return simpleManagement.getMessageCountOnQueue(queueName);
+            } catch (Throwable e) {
+               return -1;
+            }
+         });
+      }
    }
 
 }

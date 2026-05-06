@@ -105,23 +105,26 @@ under the License.
          <!-- amqpLowCredits: The server will send the # credits specified at amqpCredits at this low mark -->
 
          <!-- Acceptor for every supported protocol -->
-         <acceptor name="artemis">tcp://0.0.0.0:61001?tcpSendBufferSize=1048576;tcpReceiveBufferSize=1048576;protocols=CORE,AMQP,STOMP,HORNETQ,MQTT,OPENWIRE;useEpoll=true;amqpCredits=1000;amqpLowCredits=300</acceptor>
-         <acceptor name="forClients" lock-coordinator="failover">tcp://0.0.0.0:61616?tcpSendBufferSize=1048576;tcpReceiveBufferSize=1048576;protocols=CORE,AMQP,STOMP,HORNETQ,MQTT,OPENWIRE;useEpoll=true;amqpCredits=1000;amqpLowCredits=300</acceptor>
+         <acceptor name="artemis">tcp://0.0.0.0:61000?tcpSendBufferSize=1048576;tcpReceiveBufferSize=1048576;protocols=CORE,AMQP,STOMP,HORNETQ,MQTT,OPENWIRE;useEpoll=true;amqpCredits=1000;amqpLowCredits=300</acceptor>
+         <acceptor name="clients" lock-coordinator="failover">tcp://0.0.0.0:61616?tcpSendBufferSize=1048576;tcpReceiveBufferSize=1048576;protocols=CORE,AMQP,STOMP,HORNETQ,MQTT,OPENWIRE;useEpoll=true;amqpCredits=1000;amqpLowCredits=300</acceptor>
       </acceptors>
 
       <lock-coordinators>
          <lock-coordinator name="failover">
-            <class-name>org.apache.activemq.artemis.lockmanager.zookeeper.CuratorDistributedLockManager</class-name>
+            <class-name>org.apache.artemis.lock.kube.KubeLockManager</class-name>
             <lock-id>fail</lock-id>
+            <check-period>5000</check-period>
             <properties>
-               <property key="connect-string" value="localhost:2181"/>
+               <property key="hostname" value="host1"/>
+               <property key="namespace" value="default"/>
+               <property key="lease-timeout" value="30"/>
             </properties>
          </lock-coordinator>
       </lock-coordinators>
 
 
       <broker-connections>
-         <amqp-connection uri="tcp://localhost:61000" name="mirror" retry-interval="2000">
+         <amqp-connection uri="tcp://localhost:61001" name="mirror" retry-interval="2000">
             <mirror sync="false"/>
          </amqp-connection>
       </broker-connections>

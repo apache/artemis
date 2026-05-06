@@ -23,12 +23,41 @@
       <version>2.54.0-SNAPSHOT</version>
    </parent>
 
-   <artifactId>artemis-lockmanager-api</artifactId>
+   <artifactId>artemis-kube-lock</artifactId>
    <packaging>bundle</packaging>
-   <name>Apache Artemis Lock Manager API</name>
+   <name>Kubernetes Lock Manager</name>
 
    <properties>
       <activemq.basedir>${project.basedir}/../..</activemq.basedir>
    </properties>
+
+   <dependencies>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-lockmanager-api</artifactId>
+      </dependency>
+      <!-- Kubernetes Java Client - Core -->
+      <dependency>
+         <groupId>io.kubernetes</groupId>
+         <artifactId>client-java</artifactId>
+         <version>${kubernetes.client.version}</version>
+      </dependency>
+
+      <!-- Kubernetes Java Client - Extended (includes LeaderElection) -->
+      <dependency>
+         <groupId>io.kubernetes</groupId>
+         <artifactId>client-java-extended</artifactId>
+         <version>${kubernetes.client.version}</version>
+      </dependency>
+
+      <!-- BouncyCastle - needed for certificate authentication, marked as test in client-java but required at runtime -->
+      <dependency>
+         <groupId>org.bouncycastle</groupId>
+         <artifactId>bcpkix-jdk18on</artifactId>
+         <version>1.84</version>
+         <scope>compile</scope>
+      </dependency>
+   </dependencies>
+
 
 </project>

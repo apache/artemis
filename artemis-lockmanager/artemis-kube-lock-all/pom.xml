@@ -1,0 +1,209 @@
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+
+   <parent>
+      <groupId>org.apache.artemis</groupId>
+      <artifactId>artemis-lockmanager</artifactId>
+      <version>2.54.0-SNAPSHOT</version>
+   </parent>
+
+   <artifactId>artemis-kube-lock-all</artifactId>
+   <packaging>jar</packaging>
+   <name>Kube Lock Manager (all dependencies)</name>
+
+   <properties>
+      <activemq.basedir>${project.basedir}/../..</activemq.basedir>
+   </properties>
+
+   <dependencies>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-kube-lock</artifactId>
+         <version>${project.version}</version>
+         <optional>true</optional>
+      </dependency>
+
+      <!-- BouncyCastle - needed for certificate authentication -->
+      <dependency>
+         <groupId>org.bouncycastle</groupId>
+         <artifactId>bcpkix-jdk18on</artifactId>
+         <version>${bc-java-version}</version>
+         <scope>compile</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.bouncycastle</groupId>
+         <artifactId>bcprov-jdk18on</artifactId>
+         <version>${bc-java-version}</version>
+         <scope>compile</scope>
+      </dependency>
+   </dependencies>
+
+   <build>
+      <plugins>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-shade-plugin</artifactId>
+            <executions>
+               <execution>
+                  <phase>package</phase>
+                  <goals>
+                     <goal>shade</goal>
+                  </goals>
+                  <configuration>
+                     <createDependencyReducedPom>true</createDependencyReducedPom>
+                     <createSourcesJar>false</createSourcesJar>
+                     <shadedArtifactAttached>false</shadedArtifactAttached>
+                     <artifactSet>
+                        <includes>
+                           <include>*:*</include>
+                        </includes>
+                        <excludes>
+                           <!-- Exclude only the Artemis Lock Manager API from shading -->
+                           <exclude>org.apache.artemis:artemis-lockmanager-api</exclude>
+                        </excludes>
+                     </artifactSet>
+                     <relocations>
+                        <!-- Shade all third-party dependencies -->
+                        <relocation>
+                           <pattern>io.kubernetes</pattern>
+                           <shadedPattern>artemis.kube.shade.io.kubernetes</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>io.swagger</pattern>
+                           <shadedPattern>artemis.kube.shade.io.swagger</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>io.gapi</pattern>
+                           <shadedPattern>artemis.kube.shade.io.gapi</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>io.sundr</pattern>
+                           <shadedPattern>artemis.kube.shade.io.sundr</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>io.gsonfire</pattern>
+                           <shadedPattern>artemis.kube.shade.io.gsonfire</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>com.google</pattern>
+                           <shadedPattern>artemis.kube.shade.com.google</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>com.squareup</pattern>
+                           <shadedPattern>artemis.kube.shade.com.squareup</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>com.fasterxml</pattern>
+                           <shadedPattern>artemis.kube.shade.com.fasterxml</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>okhttp3</pattern>
+                           <shadedPattern>artemis.kube.shade.okhttp3</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>okio</pattern>
+                           <shadedPattern>artemis.kube.shade.okio</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>org.yaml</pattern>
+                           <shadedPattern>artemis.kube.shade.org.yaml</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>org.joda</pattern>
+                           <shadedPattern>artemis.kube.shade.org.joda</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>org.threeten</pattern>
+                           <shadedPattern>artemis.kube.shade.org.threeten</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>org.checkerframework</pattern>
+                           <shadedPattern>artemis.kube.shade.org.checkerframework</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>javax.annotation</pattern>
+                           <shadedPattern>artemis.kube.shade.javax.annotation</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>kotlin</pattern>
+                           <shadedPattern>artemis.kube.shade.kotlin</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>org.jetbrains</pattern>
+                           <shadedPattern>artemis.kube.shade.org.jetbrains</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>org.intellij</pattern>
+                           <shadedPattern>artemis.kube.shade.org.intellij</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>org.apache.commons</pattern>
+                           <shadedPattern>artemis.kube.shade.org.apache.commons</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>org.slf4j</pattern>
+                           <shadedPattern>artemis.kube.shade.org.slf4j</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>jakarta</pattern>
+                           <shadedPattern>artemis.kube.shade.jakarta</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>org.jose4j</pattern>
+                           <shadedPattern>artemis.kube.shade.org.jose4j</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>com.github</pattern>
+                           <shadedPattern>artemis.kube.shade.com.github</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>io.github</pattern>
+                           <shadedPattern>artemis.kube.shade.io.github</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>org.jspecify</pattern>
+                           <shadedPattern>artemis.kube.shade.org.jspecify</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>org.bouncycastle</pattern>
+                           <shadedPattern>artemis.kube.shade.org.bouncycastle</shadedPattern>
+                        </relocation>
+                     </relocations>
+                     <transformers>
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
+                     </transformers>
+                     <filters>
+                        <filter>
+                           <artifact>*:*</artifact>
+                           <excludes>
+                              <exclude>META-INF/*.SF</exclude>
+                              <exclude>META-INF/*.DSA</exclude>
+                              <exclude>META-INF/*.RSA</exclude>
+                           </excludes>
+                        </filter>
+                     </filters>
+                  </configuration>
+               </execution>
+            </executions>
+         </plugin>
+      </plugins>
+   </build>
+
+</project>

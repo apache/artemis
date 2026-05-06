@@ -16,21 +16,20 @@
  */
 package org.apache.activemq.artemis.lockmanager;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.apache.activemq.artemis.utils.ClassloadingUtil;
-
 public interface DistributedLockManager extends AutoCloseable {
 
    static DistributedLockManager newInstanceOf(String className, Map<String, String> properties) throws Exception {
-      return (DistributedLockManager) ClassloadingUtil.getInstanceForParamsWithTypeCheck(className,
-                                                                                         DistributedLockManager.class,
-                                                                                         DistributedLockManager.class.getClassLoader(),
-                                                                                         new Class[]{Map.class},
-                                                                                         properties);
+      return (DistributedLockManager) getInstanceForParamsWithTypeCheck(className,
+                                                                        DistributedLockManager.class,
+                                                                        DistributedLockManager.class.getClassLoader(),
+                                                                        new Class[]{Map.class},
+                                                                        properties);
    }
 
    @FunctionalInterface
@@ -59,4 +58,24 @@ public interface DistributedLockManager extends AutoCloseable {
    default void close() {
       stop();
    }
+
+   // This is copied from ClassLoadingUtils..
+   // I need to cut the dependency here to make it easier for external modules to implement the API here.
+   private static Object getInstanceForParamsWithTypeCheck(String className,
+                                                          Class<?> expectedType,
+                                                          ClassLoader loader,  Class<?>[] parameterTypes, Object... params) throws ClassNotFoundException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+      final Class<?> clazz = loadWithCheck(className, expectedType, loader);
+      return clazz.getDeclaredConstructor(parameterTypes).newInstance(params);
+   }
+
+   private static Class<?> loadWithCheck(String className,
+                                         Class<?> expectedType,
+                                         ClassLoader loader) throws ClassNotFoundException {
+      Class<?> clazz = loader.loadClass(className);
+      if (!expectedType.isAssignableFrom(clazz)) {
+         throw new IllegalStateException("clazz [" + className + "] is not assignable from expected type: " + expectedType);
+      }
+      return clazz;
+   }
+
 }

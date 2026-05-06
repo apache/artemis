@@ -395,6 +395,16 @@
          </dependency>
          <dependency>
             <groupId>org.apache.activemq</groupId>
+            <artifactId>artemis-kube-lock</artifactId>
+            <version>${project.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>org.apache.activemq</groupId>
+            <artifactId>artemis-kube-lock-all</artifactId>
+            <version>${project.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>org.apache.activemq</groupId>
             <artifactId>artemis-ra</artifactId>
             <version>${project.version}</version>
          </dependency>
