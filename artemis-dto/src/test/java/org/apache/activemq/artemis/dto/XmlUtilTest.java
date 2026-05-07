@@ -30,13 +30,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class XmlUtilTest extends ArtemisTestCase {
 
    @Test
-   public void testPropertySubstituion(@TempDir Path tempDir) throws Exception {
+   public void testPropertySubstitution(@TempDir Path tempDir) throws Exception {
       final String SYSTEM_PROP_NAME = getTestMethodName() + "SysPropName";
       final String SYSTEM_PROP_VALUE = getTestMethodName() + "SysPropValue";
       System.setProperty(SYSTEM_PROP_NAME, SYSTEM_PROP_VALUE);
 
       // since System.getenv() returns an immutable Map we rely here on an environment variable that is likely to exist
-      final String ENV_VAR_NAME = "HOME";
+      String ENV_VAR_NAME = "HOME";
+
+      // override to USERPROFILE if OS is windows
+      if (System.getProperty("os.name").toLowerCase().contains("win")) {
+         ENV_VAR_NAME = "USERPROFILE";
+      }
 
       BrokerDTO brokerDTO = getBrokerDTO(tempDir, SYSTEM_PROP_NAME, ENV_VAR_NAME);
       assertEquals(SYSTEM_PROP_VALUE, ((JaasSecurityDTO)brokerDTO.security).domain);
@@ -44,7 +49,7 @@ public class XmlUtilTest extends ArtemisTestCase {
    }
 
    @Test
-   public void testPropertySubstituionPrecedence(@TempDir Path tempDir) throws Exception {
+   public void testPropertySubstitutionPrecedence(@TempDir Path tempDir) throws Exception {
       final String SYSTEM_PROP_NAME = "HOME";
       final String SYSTEM_PROP_VALUE = getTestMethodName() + "SysPropValue";
       System.setProperty(SYSTEM_PROP_NAME, SYSTEM_PROP_VALUE);
