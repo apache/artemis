@@ -82,7 +82,7 @@ public class ArtemisMBeanServerGuardTest extends ServerTestBase {
 
 
    @Test
-   public void testCanInvokeMethodDoeNotHasRole() throws Throwable {
+   public void testCanInvokeMethodDoesNotHaveRole() throws Throwable {
       ArtemisMBeanServerGuard  guard = new ArtemisMBeanServerGuard();
       JMXAccessControlList controlList = new JMXAccessControlList();
       guard.setJMXAccessControlList(controlList);

@@ -36,12 +36,19 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.security.Principal;
 import java.util.List;
+import java.util.Map;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ArtemisMBeanServerGuard implements GuardInvocationHandler {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private JMXAccessControlList jmxAccessControlList = JMXAccessControlList.createDefaultList();
+
+   private final Map<ObjectName, Boolean> bypassRBACCache = new ConcurrentHashMap<>();
 
    public void init() {
       ArtemisMBeanServerBuilder.setGuard(this);
@@ -122,18 +129,12 @@ public class ArtemisMBeanServerGuard implements GuardInvocationHandler {
    }
 
    private boolean canBypassRBAC(ObjectName objectName) {
-      return jmxAccessControlList.isInAllowList(objectName);
+      return bypassRBACCache.computeIfAbsent(objectName, name -> jmxAccessControlList.isInAllowList(name));
    }
 
    @Override
    public boolean canInvoke(String object, String operationName) {
-      ObjectName objectName = null;
-      try {
-         objectName = ObjectName.getInstance(object);
-      } catch (MalformedObjectNameException e) {
-         logger.debug("can't check invoke rights as object name invalid: {}", object, e);
-         return false;
-      }
+
       /*
        * HawtIO calls this with a null operationName as a coarse grained way of authenticating against all the
        * operations on an mbean. Until this addition this was throwing a null pointer on operationName later in this
@@ -142,7 +143,19 @@ public class ArtemisMBeanServerGuard implements GuardInvocationHandler {
        * it. Since it is just an optimisation it is fine to always return true. Note that the alternative
        * ArtemisRbacInvocationHandler does allow the ability to restrict a whole mbean.
        */
-      if (operationName == null || canBypassRBAC(objectName)) {
+      if (operationName == null) {
+         return true;
+      }
+
+      ObjectName objectName = null;
+      try {
+         objectName = ObjectName.getInstance(object);
+      } catch (MalformedObjectNameException e) {
+         logger.debug("can't check invoke rights as object name invalid: {}", object, e);
+         return false;
+      }
+
+      if (canBypassRBAC(objectName)) {
          return true;
       }
 
@@ -151,15 +164,21 @@ public class ArtemisMBeanServerGuard implements GuardInvocationHandler {
       if (paramListIndex > 0) {
          operationName = operationName.substring(0, paramListIndex);
       }
+      Set<String> currentUserRoles = getCurrentUserRoles();
 
-      List<String> requiredRoles = getRequiredRoles(objectName, operationName);
-      for (String role : requiredRoles) {
-         if (currentUserHasRole(role)) {
-            return true;
-         }
+      if (currentUserRoles.isEmpty()) {
+         return false;
       }
-      logger.debug("{} {} false", object, operationName);
-      return false;
+      boolean authorized = authorizeUserForMethod(objectName, operationName, currentUserRoles);
+
+      if (authorized) {
+         logger.debug("{} {} true", object, operationName);
+         return true;
+      } else {
+         logger.debug("{} {} false", object, operationName);
+         return false;
+      }
+
    }
 
    void handleInvoke(ObjectName objectName, String operationName) throws IOException {
@@ -180,6 +199,10 @@ public class ArtemisMBeanServerGuard implements GuardInvocationHandler {
 
    List<String> getRequiredRoles(ObjectName objectName, String methodName) {
       return jmxAccessControlList.getRolesForObject(objectName, methodName);
+   }
+
+   boolean authorizeUserForMethod(ObjectName objectName, String operationName, Set<String> currentUserRoles) {
+      return jmxAccessControlList.authorizeUserForMethod(objectName, operationName, currentUserRoles);
    }
 
    public void setJMXAccessControlList(JMXAccessControlList JMXAccessControlList) {
@@ -210,4 +233,18 @@ public class ArtemisMBeanServerGuard implements GuardInvocationHandler {
       }
       return false;
    }
+
+   public static Set<String> getCurrentUserRoles() {
+      Subject subject = SecurityManagerShim.currentSubject();
+      if (subject == null) {
+         return Collections.emptySet();
+      }
+
+      Set<String> roles = new HashSet<>();
+      for (Principal p : subject.getPrincipals()) {
+         roles.add(p.getName());
+      }
+      return roles;
+   }
+
 }

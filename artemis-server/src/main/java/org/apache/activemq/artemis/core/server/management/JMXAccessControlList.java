@@ -18,11 +18,13 @@ package org.apache.activemq.artemis.core.server.management;
 
 import javax.management.ObjectName;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -30,6 +32,36 @@ import java.util.regex.Pattern;
 
 public class JMXAccessControlList {
    private static final String WILDCARD = "*";
+
+   private record AccessEntry(Access access, String rawPattern) { }
+   private record Bucket(
+      Map<String, AccessEntry> exactMatches,
+      List<AccessEntry> regexPatterns
+   ) { }
+
+   private final Map<String, Map<String, String>> keyPropertyCache =
+      Collections.synchronizedMap(new LinkedHashMap<String, Map<String, String>>(128, 0.75f, true) {
+         @Override
+         protected boolean removeEldestEntry(Map.Entry<String, Map<String, String>> eldest) {
+            return size() > 5000;
+         }
+      });
+
+   private final Map<String, TreeMap<String, Access>> domainCache =
+      Collections.synchronizedMap(new LinkedHashMap<String, TreeMap<String, Access>>(128, 0.75f, true) {
+         @Override
+         protected boolean removeEldestEntry(Map.Entry<String, TreeMap<String, Access>> eldest) {
+            return size() > 5000;
+         }
+      });
+
+   private final Map<String, Map<String, Bucket>> bucketedDomainCache =
+      Collections.synchronizedMap(new LinkedHashMap<>(128, 0.75f, true) {
+         @Override
+         protected boolean removeEldestEntry(Map.Entry<String, Map<String, Bucket>> eldest) {
+            return size() > 1000;
+         }
+      });
 
    private Access defaultAccess = new Access(WILDCARD);
    private ConcurrentMap<String, TreeMap<String, Access>> domainAccess = new ConcurrentHashMap<>();
@@ -47,6 +79,7 @@ public class JMXAccessControlList {
 
       return key2.length() - key1.length();
    };
+
 
    public void addToAllowList(String domain, String key) {
       TreeMap<String, Access> domainMap = new TreeMap<>(keyComparator);
@@ -80,6 +113,86 @@ public class JMXAccessControlList {
 
       return defaultAccess.getMatchingRolesForMethod(methodName);
    }
+
+
+   public boolean authorizeUserForMethod(ObjectName objectName, String methodName, Set<String> userRoles) {
+
+      String domainKey = objectName.getDomain();
+
+      TreeMap<String, Access> domainMap = domainCache.computeIfAbsent(objectName.getDomain(), key ->
+         domainAccess.get(key)
+      );
+
+      Map<String, Bucket> bucketedMap = bucketedDomainCache.computeIfAbsent(domainKey, d -> {
+         TreeMap<String, Access> rawMap = domainAccess.get(d);
+         if (rawMap == null) {
+            return null;
+         }
+
+         Map<String, Bucket> grouped = new HashMap<>();
+         for (Access access : rawMap.values()) {
+            String rawPattern = access.getKeyPattern().pattern();
+            int eqIndex = rawPattern.indexOf('=');
+            String prefix = (eqIndex != -1) ? rawPattern.substring(0, eqIndex) : "";
+
+            // Initialize the Bucket (Map + List) instead of just an ArrayList
+            Bucket bucket = grouped.computeIfAbsent(prefix, k ->
+                  new Bucket(new HashMap<>(), new ArrayList<>())
+            );
+
+            AccessEntry entry = new AccessEntry(access, rawPattern);
+
+            // Sort into Exact or Regex
+            if (rawPattern.contains("*") || rawPattern.contains("?") || rawPattern.contains("[")) {
+               bucket.regexPatterns().add(entry);
+            } else {
+               bucket.exactMatches().put(rawPattern, entry);
+            }
+         }
+         return grouped;
+      });
+
+      if (bucketedMap != null) {
+
+         String cacheKey = objectName.getCanonicalName();
+         Map<String, String> keyPropertyList = keyPropertyCache.get(cacheKey);
+         if (keyPropertyList == null) {
+            keyPropertyList = objectName.getKeyPropertyList();
+            keyPropertyCache.put(cacheKey, keyPropertyList);
+         }
+
+
+         for (Map.Entry<String, String> entry : keyPropertyList.entrySet()) {
+            String propKey = entry.getKey();
+            Bucket bucket = bucketedMap.get(propKey);
+
+            if (bucket != null) {
+               String normalizedValue = normalizeKey(propKey + "=" + entry.getValue());
+
+               // Priority 1: O(1) Exact Match Check
+               if (bucket.exactMatches().containsKey(normalizedValue)) {
+                  return bucket.exactMatches().get(normalizedValue).access().authorizeUserForMethod(methodName, userRoles);
+               }
+
+               // Priority 2: O(N) Regex Match (but only for actual regexes)
+               for (AccessEntry regexEntry : bucket.regexPatterns()) {
+                  if (regexEntry.access().getKeyPattern().matcher(normalizedValue).matches()) {
+                     return regexEntry.access().authorizeUserForMethod(methodName, userRoles);
+                  }
+               }
+            }
+         }
+
+         Access access = domainMap.get("");
+         if (access != null) {
+            return access.authorizeUserForMethod(methodName, userRoles);
+         }
+      }
+
+      return defaultAccess.authorizeUserForMethod(methodName, userRoles);
+   }
+
+
 
    public boolean isInAllowList(ObjectName objectName) {
       TreeMap<String, Access> domainMap = allowList.get(objectName.getDomain());
@@ -222,6 +335,20 @@ public class JMXAccessControlList {
             }
          }
          return catchAllRoles;
+      }
+
+      public boolean authorizeUserForMethod(String methodName, Set<String> userRoles) {
+         List<String> roles = methodRoles.get(methodName);
+         if (roles != null) {
+            return !Collections.disjoint(roles, userRoles);
+
+         }
+         for (Map.Entry<String, List<String>> entry : methodPrefixRoles.entrySet()) {
+            if (methodName.startsWith(entry.getKey())) {
+               return !Collections.disjoint(entry.getValue(), userRoles);
+            }
+         }
+         return !Collections.disjoint(catchAllRoles, userRoles);
       }
    }
 
