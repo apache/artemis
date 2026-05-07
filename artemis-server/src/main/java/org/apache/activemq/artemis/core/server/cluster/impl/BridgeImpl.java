@@ -71,6 +71,7 @@ import org.apache.activemq.artemis.core.server.impl.QueueImpl;
 import org.apache.activemq.artemis.core.server.management.Notification;
 import org.apache.activemq.artemis.core.server.management.NotificationService;
 import org.apache.activemq.artemis.core.server.transformer.Transformer;
+import org.apache.activemq.artemis.core.protocol.core.CoreRemotingConnection;
 import org.apache.activemq.artemis.spi.core.protocol.EmbedMessageUtil;
 import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
 import org.apache.activemq.artemis.spi.core.remoting.ReadyListener;
@@ -153,6 +154,8 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
    private final OperationContextImpl bridgeContext;
 
    private final Lock statusLock = new ReentrantLock();
+
+   private volatile int embedWireVersion = EmbedMessageUtil.LATEST_WIRE_VERSION;
 
    public BridgeImpl(final ServerLocatorInternal serverLocator,
                      final BridgeConfiguration configuration,
@@ -537,6 +540,24 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
       return beforeForwardingNoCopy(message, forwardingAddress);
    }
 
+   private void updateEmbedWireVersion() {
+      ClientSessionInternal sessionToUse = session;
+      if (sessionToUse != null) {
+         RemotingConnection connection = sessionToUse.getConnection();
+         if (connection instanceof CoreRemotingConnection coreConnection) {
+            if (coreConnection.isBeforeAMQPMapCodecChanged()) {
+               embedWireVersion = EmbedMessageUtil.NO_MAP_WIRE_VERSION;
+               return;
+            }
+         }
+      }
+      embedWireVersion = EmbedMessageUtil.LATEST_WIRE_VERSION;
+   }
+
+   private int getEmbedWireVersion() {
+      return embedWireVersion;
+   }
+
    /**
     * ClusterConnectionBridge already makes a copy of the message. So I needed I hook where the message is not copied.
     */
@@ -574,9 +595,9 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
          if (transformedMessage != message) {
             logger.debug("The transformer {} made a copy of the message {} as transformedMessage", transformer, message);
          }
-         return EmbedMessageUtil.embedAsCoreMessage(transformedMessage);
+         return EmbedMessageUtil.embedAsCoreMessage(transformedMessage, getEmbedWireVersion());
       } else {
-         return EmbedMessageUtil.embedAsCoreMessage(message);
+         return EmbedMessageUtil.embedAsCoreMessage(message, getEmbedWireVersion());
       }
    }
 
@@ -1085,6 +1106,8 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
                   session = (ClientSessionInternal) csf.createSession(configuration.getUser(), configuration.getPassword(), false, true, true, true, 1, configuration.getClientId());
                   session.getProducerCreditManager().setCallback(BridgeImpl.this);
                   sessionConsumer = (ClientSessionInternal) csf.createSession(configuration.getUser(), configuration.getPassword(), false, true, true, true, 1, configuration.getClientId());
+                  // Update the wire version based on the newly created session
+                  updateEmbedWireVersion();
                }
 
                if (configuration.getForwardingAddress() != null) {

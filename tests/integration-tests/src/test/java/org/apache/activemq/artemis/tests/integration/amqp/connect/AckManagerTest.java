@@ -97,7 +97,8 @@ public class AckManagerTest extends ActiveMQTestBase {
       super.setUp();
 
       server1 = createServer(true, createDefaultConfig(0, true), 100024, -1, -1, -1);
-      server1.getConfiguration().addAddressSetting(SNF_NAME, new AddressSettings().setMaxSizeBytes(-1).setMaxSizeMessages(-1).setMaxReadPageMessages(20));
+      server1.getConfiguration().addAddressSetting(SNF_NAME, new AddressSettings().setMaxSizeBytes(-1).setMaxSizeMessages(-1).setMaxReadPageMessages(20).setMaxReadPageMessages(-1));
+      server1.getConfiguration().addAddressSetting("#", new AddressSettings().setMaxSizeBytes(-1).setMaxSizeMessages(-1).setMaxReadPageMessages(-1).setMaxReadPageMessages(-1));
       server1.getConfiguration().getAcceptorConfigurations().clear();
       server1.getConfiguration().addAcceptorConfiguration("server", "tcp://localhost:61616");
    }

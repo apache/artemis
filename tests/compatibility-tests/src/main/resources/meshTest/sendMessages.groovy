@@ -26,10 +26,19 @@ String serverType = arg[0];
 String clientType = arg[1];
 String operation = arg[2];
 String protocol = null;
+int messageSize;
 
 if (arg.length > 3) {
     protocol = arg[3];
 }
+
+if (arg.length > 4) {
+    messageSize = Integer.parseInt(arg[4]);
+} else {
+    messageSize = 100;
+}
+
+System.out.println("Message size = " + messageSize + ", operation = " + operation)
 
 try {
     legacyOption = legacy;
@@ -61,8 +70,7 @@ BYTES_BODY[0] = (byte) 0x77;
 BYTES_BODY[1] = (byte) 0x77;
 BYTES_BODY[2] = (byte) 0x77;
 
-String textBody = "a rapadura e doce mas nao e mole nao";
-
+String textBody = "a".repeat(messageSize);
 
 if (clientType.startsWith("ARTEMIS")) {
     // Can't depend directly on artemis, otherwise it wouldn't compile in hornetq

@@ -421,7 +421,7 @@ public class ElasticQueueTest extends ActiveMQTestBase {
    private void prepareNodesAndStartCombinedHeadTail() throws Exception {
       AddressSettings blockingQueue = new AddressSettings();
       blockingQueue
-         .setMaxSizeBytes(100 * 1024)
+         .setMaxSizeBytes(400 * 1024)
          .setAddressFullMessagePolicy(AddressFullMessagePolicy.FAIL)
          .setSlowConsumerPolicy(SlowConsumerPolicy.KILL).setSlowConsumerThreshold(0).setSlowConsumerCheckPeriod(1)
          .setAutoDeleteQueues(false).setAutoDeleteAddresses(false); // so slow consumer can kick in!
