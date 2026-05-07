@@ -269,7 +269,6 @@
          -Djava.library.path="${activemq.basedir}/target/bin/lib/linux-x86_64:${activemq.basedir}/target/bin/lib/linux-i686"
          -Djgroups.bind_addr=localhost
          -Djava.net.preferIPv4Stack=true
-         -Dbasedir=${basedir}
          -Djdk.attach.allowAttachSelf=true
          -Dartemis.distribution.output="${artemis.distribution.output}"
          -Dlog4j2.configurationFile="file:${activemq.basedir}/tests/config/${logging.config}"
