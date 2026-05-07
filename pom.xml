@@ -110,7 +110,7 @@
       <caffeine.version>3.2.4</caffeine.version>
       <guava.version>33.6.0-jre</guava.version>
       <jsr305.version>3.0.2</jsr305.version>
-      <jetty.version>12.1.8</jetty.version>
+      <jetty.version>12.1.9</jetty.version>
       <jetty-servlet-api.version>5.0.2</jetty-servlet-api.version>
       <jgroups.version>5.3.13.Final</jgroups.version>
       <errorprone.version>2.49.0</errorprone.version>
