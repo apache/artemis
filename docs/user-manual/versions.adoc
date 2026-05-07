@@ -21,7 +21,15 @@ https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&versio
 
 === Highlights
 
-* xxx
+* OpenID Connect is now supported via the xref:security.adoc#oidcloginmodule[`OIDCLoginModule`].
+A full demonstration is available in the https://github.com/apache/artemis-examples/tree/main/examples/features/standard/security-oidc[examples repo].
+* The xref:configuring-transports.adoc#configuring-netty-ssl[`keyPassword`] property is now supported for SSL connections.
+It is used to access the private key within a keystore.
+It is only supported for JKS & JCEKS stores.
+* The xref:using-cli.adoc[CLI] now supports listing xref:lock-coordination.adoc[locks] and their status via the `lock list` command.
+* The xref:management-console.adoc[web console] was upgraded to 1.8.0.
+This release mainly contains bug fixes and dependency updates.
+See the https://issues.apache.org/jira/projects/ARTEMIS/versions/12356761[release notes] for more details.
 
 === Upgrading from 2.53.0
 
@@ -33,6 +41,9 @@ To restore functionality, use a non-default value for `cluster-user` and `cluste
 +
 This change similarly impacts any Core bridge connecting to a secured broker using the default `user` and `password` because those defaults are based on the default  `cluster-user` and `cluster-password` respectively.
 To restore functionality, we recommend specifying `user` and `password` values on the `bridge` that correspond to a valid user account on the target broker. The corresponding role on the target broker should have the xref:security.adoc#role-based-security-for-addresses[`send` permission] for the bridge's `forwarding-address`.
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-5949[ARTEMIS-5949], the `security-settings` in the default `broker.xml` have changed so that permissions are explicitly set on the management address.
+There is no semantic change.
+This is simply to clarify permissions so that security is easier to understand.
 
 == Version 2.53.0
 
