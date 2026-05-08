@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.nio.file.Files;
@@ -68,7 +69,7 @@ public class Shell implements Runnable {
    @CommandLine.Option(names = "--history", description = "File where shell history is being stored.")
    protected File historyFile;
 
-   private static final String DEFAULT_HISTORY_FILE = "history-file";
+   public static final String DEFAULT_HISTORY_FILE = "history-file";
 
    public Shell(CommandLine commandLine) {
    }
@@ -82,7 +83,7 @@ public class Shell implements Runnable {
          connect.setUser(user).setPassword(password).setBrokerURL(brokerURL);
          connect.run();
       }
-      runShell(false, historyFile);
+      runShell(false, historyFile, null);
    }
 
    private static ThreadLocal<AtomicBoolean> IN_SHELL = ThreadLocal.withInitial(() -> new AtomicBoolean(false));
@@ -106,10 +107,10 @@ public class Shell implements Runnable {
    }
 
    public static void runShell(boolean printBanner) {
-      runShell(printBanner, null);
+      runShell(printBanner, null, null);
    }
 
-   public static void runShell(boolean printBanner, File historyFile) {
+   public static void runShell(boolean printBanner, File historyFile, InputStream pipedInput) {
       try {
          setInShell();
 
@@ -117,8 +118,21 @@ public class Shell implements Runnable {
 
          boolean isInstance = artemisInstance != null;
 
-         if (isInstance && historyFile == null) {
-            historyFile = inquiryDefaultHistory(historyFile, artemisInstance);
+         if (historyFile == null) {
+            String historyFilePath = System.getProperty("artemis.shell.history");
+            if (historyFilePath == null) {
+               historyFilePath = System.getenv("ARTEMIS_SHELL_HISTORY");
+            }
+            if (historyFilePath != null) {
+               historyFile = new File(historyFilePath);
+            } else {
+               historyFile = inquiryDefaultHistory(historyFile, artemisInstance);
+            }
+         }
+
+         if (pipedInput != null) {
+            runPipedMode(isInstance, pipedInput);
+            return;
          }
 
          Supplier<Path> workDir = () -> Paths.get(System.getProperty("user.dir"));
@@ -168,7 +182,11 @@ public class Shell implements Runnable {
                printBanner();
             }
 
-            if (historyFile != null) {
+            if (historyFile == null) {
+               File preferenceFile = new File(artemisInstance + "/etc/" + DEFAULT_HISTORY_FILE);
+               System.out.println(org.apache.activemq.artemis.cli.Terminal.WARNING_COLOR_UNICODE + "Shell history disabled as recorded in " + preferenceFile.getAbsolutePath() + org.apache.activemq.artemis.cli.Terminal.CLEAR_UNICODE);
+               System.out.println();
+            } else {
                System.out.println(org.apache.activemq.artemis.cli.Terminal.WARNING_COLOR_UNICODE + "Shell history being saved at " + historyFile.getAbsolutePath() + org.apache.activemq.artemis.cli.Terminal.CLEAR_UNICODE);
                System.out.println();
             }
@@ -254,6 +272,7 @@ public class Shell implements Runnable {
                } else {
                   defaultHistoryFile.createNewFile();
                }
+               setHistoryFilePermissions(defaultHistoryFile);
             }
 
             if (historyFile == null) {
@@ -321,6 +340,36 @@ public class Shell implements Runnable {
             Files.setPosixFilePermissions(path, perms);
          }
       } catch (Exception e) {
+      }
+   }
+
+   private static void runPipedMode(boolean isInstance, InputStream is) throws Exception {
+
+      try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+         String line;
+         while ((line = reader.readLine()) != null) {
+            line = line.trim();
+
+            // Skip empty lines and comments
+            if (line.isEmpty() || line.startsWith("#")) {
+               continue;
+            }
+
+            // Exit command
+            if (line.equals("exit") || line.equals("quit")) {
+               break;
+            }
+
+            try {
+               // Rebuild command for each execution to avoid state issues
+               CommandLine commandLine = Artemis.buildCommand(isInstance, !isInstance, false);
+               String[] args = line.split("\\s+");
+               commandLine.execute(args);
+            } catch (Exception e) {
+               System.err.println("Error executing command: " + line);
+               e.printStackTrace();
+            }
+         }
       }
    }
 

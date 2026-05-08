@@ -19,6 +19,10 @@ ARTEMIS_HOME='${artemis.home}'
 ARTEMIS_INSTANCE='@artemis.instance@'
 ARTEMIS_DATA_DIR='${artemis.instance.data}'
 
+if [ -z "$ARTEMIS_SHELL_HISTORY" ]; then
+    ARTEMIS_SHELL_HISTORY=~/.artemis_history
+fi
+
 if [ -z "$LOGGING_ARGS" ]; then
     LOGGING_ARGS="-Dlog4j2.configurationFile=log4j2-utility.properties"
 fi
