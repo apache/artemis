@@ -15,16 +15,15 @@
  * limitations under the License.
  */
 
-package org.apache.activemq.artemis.core.remoting.impl.netty;
+package org.apache.activemq.artemis.utils;
 
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.kqueue.KQueue;
-import org.apache.activemq.artemis.core.client.ActiveMQClientLogger;
-import org.apache.activemq.artemis.utils.Env;
+import io.netty.channel.uring.IoUring;
+import org.apache.activemq.artemis.logs.ActiveMQUtilLogger;
 
 /**
- * This class will check for Epoll or KQueue is available, and return false in case of NoClassDefFoundError it could be
- * improved to check for other cases eventually.
+ * This class will check if certain dependencies are available, and return false in case of NoClassDefFoundError
  */
 public class CheckDependencies {
 
@@ -32,10 +31,10 @@ public class CheckDependencies {
       try {
          return Env.isLinuxOs() && Epoll.isAvailable();
       } catch (NoClassDefFoundError noClassDefFoundError) {
-         ActiveMQClientLogger.LOGGER.unableToCheckEpollAvailabilitynoClass();
+         ActiveMQUtilLogger.LOGGER.unableToCheckEpollAvailabilityNoClass();
          return false;
       } catch (Throwable e)  {
-         ActiveMQClientLogger.LOGGER.unableToCheckEpollAvailability(e);
+         ActiveMQUtilLogger.LOGGER.unableToCheckEpollAvailability(e);
          return false;
       }
    }
@@ -44,11 +43,24 @@ public class CheckDependencies {
       try {
          return Env.isMacOs() && KQueue.isAvailable();
       } catch (NoClassDefFoundError noClassDefFoundError) {
-         ActiveMQClientLogger.LOGGER.unableToCheckKQueueAvailabilityNoClass();
+         ActiveMQUtilLogger.LOGGER.unableToCheckKQueueAvailabilityNoClass();
          return false;
       } catch (Throwable e) {
-         ActiveMQClientLogger.LOGGER.unableToCheckKQueueAvailability(e);
+         ActiveMQUtilLogger.LOGGER.unableToCheckKQueueAvailability(e);
          return false;
       }
    }
+
+   public static final boolean isIoUringAvailable() {
+      try {
+         return Env.isLinuxOs() && IoUring.isAvailable();
+      } catch (NoClassDefFoundError noClassDefFoundError) {
+         ActiveMQUtilLogger.LOGGER.unableToCheckIoUringAvailabilityNoClass();
+         return false;
+      } catch (Throwable e)  {
+         ActiveMQUtilLogger.LOGGER.unableToCheckIoUringAvailability(e);
+         return false;
+      }
+   }
+
 }
