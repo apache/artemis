@@ -145,7 +145,7 @@
       <slf4j.version>2.0.17</slf4j.version>
       <log4j.version>2.26.0</log4j.version>
       <qpid.jms.version>1.16.0</qpid.jms.version>
-      <johnzon.version>1.2.22</johnzon.version>
+      <johnzon.version>1.3.0</johnzon.version>
       <hawtbuff.version>1.11</hawtbuff.version>
       <hawtdispatch.version>1.22</hawtdispatch.version>
       <picocli.version>4.7.7</picocli.version>
