@@ -170,6 +170,9 @@ public final class ActiveMQDefaultConfiguration {
    // true means that the server supports wild card routing
    private static boolean DEFAULT_WILDCARD_ROUTING_ENABLED = true;
 
+   // true means that sizes on wildcard addresses should be aggregated
+   private static boolean DEFAULT_WILDCARD_AGGREGATE_SIZES = false;
+
    private static String DEFAULT_ADDRESS_PATH_SEPARATOR = ".";
 
    private static SimpleString DEFAULT_MANAGEMENT_ADDRESS = SimpleString.of("activemq.management");
@@ -832,6 +835,13 @@ public final class ActiveMQDefaultConfiguration {
     */
    public static boolean isDefaultWildcardRoutingEnabled() {
       return DEFAULT_WILDCARD_ROUTING_ENABLED;
+   }
+
+   /**
+    * {@code true} means that sizes on wildcard addresses should be aggregated
+    */
+   public static boolean isDefaultWildcardAggregateSizes() {
+      return DEFAULT_WILDCARD_AGGREGATE_SIZES;
    }
 
    public static String getDefaultAddressPathSeparator() {

@@ -74,6 +74,9 @@
       <critical-analyzer-timeout>777</critical-analyzer-timeout>
       <critical-analyzer>false</critical-analyzer>
       <literal-match-markers>()</literal-match-markers>
+      <wildcard-addresses>
+         <aggregate-sizes>true</aggregate-sizes>
+      </wildcard-addresses>
 
       <mirror-ack-manager-queue-attempts>111</mirror-ack-manager-queue-attempts>
       <mirror-ack-manager-page-attempts>222</mirror-ack-manager-page-attempts>

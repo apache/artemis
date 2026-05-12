@@ -3188,6 +3188,7 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
       conf.setSingleWord(getString(e, "single-word", Character.toString(conf.getSingleWord()), NO_CHECK).charAt(0));
       conf.setRoutingEnabled(getBoolean(e, "enabled", conf.isRoutingEnabled()));
       conf.setRoutingEnabled(getBoolean(e, "routing-enabled", conf.isRoutingEnabled()));
+      conf.setAggregateSizes(getBoolean(e, "aggregate-sizes", conf.isAggregateSizes()));
    }
 
    private ConnectorServiceConfiguration parseConnectorService(final Element e) {

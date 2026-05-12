@@ -5416,7 +5416,7 @@
             <xsd:element maxOccurs="1" minOccurs="0" name="routing-enabled" type="xsd:boolean">
                <xsd:annotation>
                   <xsd:documentation>
-                     is wildcard addresses routing enabled.
+                     is wildcard addresses routing enabled. Default 'true'
                   </xsd:documentation>
                </xsd:annotation>
             </xsd:element>
@@ -5438,6 +5438,13 @@
                <xsd:annotation>
                   <xsd:documentation>
                      wildcard address single word character. Default '*'
+                  </xsd:documentation>
+               </xsd:annotation>
+            </xsd:element>
+            <xsd:element maxOccurs="1" minOccurs="0" name="aggregate-sizes" type="xsd:boolean">
+               <xsd:annotation>
+                  <xsd:documentation>
+                     true means that sizes on wildcard addresses should be aggregated. Default 'false'
                   </xsd:documentation>
                </xsd:annotation>
             </xsd:element>

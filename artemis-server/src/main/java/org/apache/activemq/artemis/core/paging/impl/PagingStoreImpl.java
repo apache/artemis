@@ -219,7 +219,7 @@ public class PagingStoreImpl implements PagingStore {
 
       this.size = new SizeAwareMetric(maxSize, maxSize, maxMessages, maxMessages).
          setUnderCallback(this::underSized).setOverCallback(this::overSized).
-         setOnSizeCallback(pagingManager::addSize);
+         setOnSizeCallback(pagingManager::addSize).setOwner(this);
 
       applySetting(addressSettings, true);
 
@@ -536,9 +536,27 @@ public class PagingStoreImpl implements PagingStore {
    }
 
    @Override
+   public SizeAwareMetric getSizeMetric() {
+      return size;
+   }
+
+   @Override
    public long getAddressElements() {
       return size.getElements();
    }
+
+   @Override
+   public void addHierarchy(PagingStore related) {
+      PagingStoreImpl storeRelated = (PagingStoreImpl) related;
+      size.addHierarchy(storeRelated.size);
+   }
+
+   @Override
+   public void removeHierarchy(PagingStore related) {
+      PagingStoreImpl storeRelated = (PagingStoreImpl) related;
+      size.removeHierarchy(storeRelated.size);
+   }
+
 
    @Override
    public long getMaxSize() {

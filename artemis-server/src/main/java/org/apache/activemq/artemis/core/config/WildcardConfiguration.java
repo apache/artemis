@@ -35,6 +35,8 @@ public class WildcardConfiguration implements Serializable {
 
    boolean routingEnabled = true;
 
+   boolean aggregateSizes = false;
+
    char singleWord = SINGLE_WORD;
 
    char anyWords = ANY_WORDS;
@@ -59,6 +61,7 @@ public class WildcardConfiguration implements Serializable {
       }
 
       return routingEnabled == other.routingEnabled &&
+             aggregateSizes == other.aggregateSizes &&
              singleWord == other.singleWord &&
              anyWords == other.anyWords &&
              delimiter == other.delimiter;
@@ -66,13 +69,14 @@ public class WildcardConfiguration implements Serializable {
 
    @Override
    public int hashCode() {
-      return Objects.hash(routingEnabled, singleWord, anyWords, delimiter);
+      return Objects.hash(routingEnabled, aggregateSizes, singleWord, anyWords, delimiter);
    }
 
    @Override
    public String toString() {
       return "WildcardConfiguration{" +
               "routingEnabled=" + routingEnabled +
+              ", aggregateSizes=" + aggregateSizes +
               ", anyWords=" + anyWords +
               ", singleWord=" + singleWord +
               ", delimiter=" + delimiter +
@@ -85,6 +89,15 @@ public class WildcardConfiguration implements Serializable {
 
    public WildcardConfiguration setRoutingEnabled(boolean routingEnabled) {
       this.routingEnabled = routingEnabled;
+      return this;
+   }
+
+   public boolean isAggregateSizes() {
+      return aggregateSizes;
+   }
+
+   public WildcardConfiguration setAggregateSizes(boolean aggregateSizes) {
+      this.aggregateSizes = aggregateSizes;
       return this;
    }
 

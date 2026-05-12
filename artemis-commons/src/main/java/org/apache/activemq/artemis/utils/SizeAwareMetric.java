@@ -16,6 +16,9 @@
  */
 package org.apache.activemq.artemis.utils;
 
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
@@ -56,10 +59,24 @@ public class SizeAwareMetric {
 
    private Runnable underCallback;
 
+   private final CopyOnWriteArraySet<SizeAwareMetric> hierarchy = new CopyOnWriteArraySet<>();
+
+   private Object owner;
+
    /**
     * To be used in a case where we just measure elements
     */
    public SizeAwareMetric() {
+   }
+
+   public Object getOwner() {
+      return owner;
+   }
+
+   /* owner is used for debugging and logging purposes. (to know where the metric is coming from) */
+   public SizeAwareMetric setOwner(Object owner) {
+      this.owner = owner;
+      return this;
    }
 
 
@@ -102,6 +119,21 @@ public class SizeAwareMetric {
 
    public boolean isSizeEnabled() {
       return maxSize >= 0;
+   }
+
+   public void addHierarchy(SizeAwareMetric hierarchy) {
+      if (hierarchy == this) {
+         throw new IllegalArgumentException("recursive hierarchy");
+      }
+      this.hierarchy.add(hierarchy);
+   }
+
+   public void removeHierarchy(SizeAwareMetric hierarchy) {
+      this.hierarchy.remove(hierarchy);
+   }
+
+   public Set<SizeAwareMetric> getHierarchy() {
+      return Collections.unmodifiableSet(hierarchy);
    }
 
    public SizeAwareMetric setOnSizeCallback(AddCallback onSize) {
@@ -161,12 +193,17 @@ public class SizeAwareMetric {
 
       changeFlag(NOT_USED, FREE);
 
-      if (onSizeCallback != null && affectCallbacks) {
-         try {
-            onSizeCallback.add(delta, sizeOnly);
-         } catch (Throwable e) {
-            logger.warn(e.getMessage(), e);
+      if (affectCallbacks) {
+         if (onSizeCallback != null) {
+            try {
+               onSizeCallback.add(delta, sizeOnly);
+            } catch (Throwable e) {
+               logger.warn(e.getMessage(), e);
+            }
          }
+
+         // on Hierarchy calls, we don't affect callbacks (which would affect global-size and other callbacks)
+         hierarchy.forEach(f -> f.addSize(delta, sizeOnly, false));
       }
 
       long currentSize = sizeUpdater.addAndGet(this, delta);
@@ -270,6 +307,14 @@ public class SizeAwareMetric {
 
    @Override
    public String toString() {
-      return "SizeAwareMetric{" + "elements=" + elements + ", size=" + size + '}';
+      return "SizeAwareMetric{" + "elements=" + elements + ", size=" + size + ", owner=" + String.valueOf(owner) + '}';
+   }
+
+   public String debugHierarchy() {
+      StringBuilder result = new StringBuilder();
+      for (SizeAwareMetric item : hierarchy) {
+         result.append(item.toString()).append("\n");
+      }
+      return result.toString();
    }
 }

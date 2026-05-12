@@ -542,6 +542,6 @@ public interface ActiveMQMessageBundle {
    IllegalArgumentException invalidDiskFullPolicyType(String val);
 
    @Message(id = 229260, value = "Wildcard addresses are not supported on producers. Only on consumers. Please send to a real address. {}")
-   ActiveMQException wildcardOnProducerNotSupported(String val);
+   IllegalArgumentException wildcardOnProducerNotSupported(String val);
 
 }

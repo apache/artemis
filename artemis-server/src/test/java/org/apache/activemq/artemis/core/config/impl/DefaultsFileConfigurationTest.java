@@ -134,6 +134,8 @@ public class DefaultsFileConfigurationTest extends AbstractConfigurationTestBase
 
       assertEquals(ActiveMQDefaultConfiguration.isDefaultWildcardRoutingEnabled(), conf.isWildcardRoutingEnabled());
 
+      assertEquals(ActiveMQDefaultConfiguration.isDefaultWildcardAggregateSizes(), conf.getWildcardConfiguration().isAggregateSizes());
+
       assertEquals(ActiveMQDefaultConfiguration.getDefaultTransactionTimeout(), conf.getTransactionTimeout());
 
       assertEquals(ActiveMQDefaultConfiguration.isDefaultMessageCounterEnabled(), conf.isMessageCounterEnabled());

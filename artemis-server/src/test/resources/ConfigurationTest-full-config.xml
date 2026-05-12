@@ -75,6 +75,9 @@
       <critical-analyzer>false</critical-analyzer>
       <suppress-session-notifications>false</suppress-session-notifications>
       <literal-match-markers>()</literal-match-markers>
+      <wildcard-addresses>
+         <aggregate-sizes>true</aggregate-sizes>
+      </wildcard-addresses>
       <remoting-incoming-interceptors>
          <class-name>org.apache.activemq.artemis.tests.unit.core.config.impl.TestInterceptor1</class-name>
          <class-name>org.apache.activemq.artemis.tests.unit.core.config.impl.TestInterceptor2</class-name>

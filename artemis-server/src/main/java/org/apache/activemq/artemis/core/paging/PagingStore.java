@@ -36,6 +36,7 @@ import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.settings.impl.PageFullMessagePolicy;
 import org.apache.activemq.artemis.core.transaction.Transaction;
+import org.apache.activemq.artemis.utils.SizeAwareMetric;
 import org.apache.activemq.artemis.utils.actors.ArtemisExecutor;
 import org.apache.activemq.artemis.utils.runnables.AtomicRunnable;
 
@@ -93,6 +94,10 @@ public interface PagingStore extends ActiveMQComponent, RefCountMessageListener 
 
    long getAddressSize();
 
+   default SizeAwareMetric getSizeMetric() {
+      return null;
+   }
+
    long getAddressElements();
 
    long getMaxSize();
@@ -106,6 +111,10 @@ public interface PagingStore extends ActiveMQComponent, RefCountMessageListener 
    int getPrefetchPageMessages();
 
    void applySetting(AddressSettings addressSettings);
+
+   void addHierarchy(PagingStore related);
+
+   void removeHierarchy(PagingStore related);
 
    /**
     * This method will look if the current state of paging is not paging, without using a lock. For cases where you need

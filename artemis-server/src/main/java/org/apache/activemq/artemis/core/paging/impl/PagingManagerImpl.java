@@ -451,6 +451,12 @@ public final class PagingManagerImpl implements PagingManager {
    }
 
    @Override
+   public PagingStore lookupPageStore(final SimpleString rawStoreName) throws Exception {
+      final SimpleString storeName = CompositeAddress.extractAddressName(rawStoreName);
+      return stores.get(storeName);
+   }
+
+   @Override
    public void addTransaction(final PageTransactionInfo pageTransaction) {
       if (logger.isTraceEnabled()) {
          logger.trace("Adding pageTransaction {}", pageTransaction.getTransactionID());

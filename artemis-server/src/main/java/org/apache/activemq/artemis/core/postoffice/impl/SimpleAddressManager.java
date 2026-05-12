@@ -317,7 +317,7 @@ public class SimpleAddressManager implements AddressManager {
    }
 
    @Override
-   public boolean reloadAddressInfo(AddressInfo addressInfo) {
+   public boolean reloadAddressInfo(AddressInfo addressInfo) throws Exception {
       return addressInfoMap.putIfAbsent(addressInfo.getName(), addressInfo) == null;
    }
 

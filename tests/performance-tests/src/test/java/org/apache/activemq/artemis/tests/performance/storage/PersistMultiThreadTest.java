@@ -277,6 +277,14 @@ public class PersistMultiThreadTest extends ActiveMQTestBase {
       }
 
       @Override
+      public void addHierarchy(PagingStore related) {
+      }
+
+      @Override
+      public void removeHierarchy(PagingStore related) {
+      }
+
+      @Override
       public Page usePage(long page, boolean createEntry, boolean createFile) {
          return null;
       }

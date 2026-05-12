@@ -19,19 +19,10 @@ package org.apache.activemq.artemis.tests.performance.jmh;
 import java.text.MessageFormat;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.config.WildcardConfiguration;
-import org.apache.activemq.artemis.core.filter.Filter;
-import org.apache.activemq.artemis.core.persistence.impl.nullpm.NullStorageManager;
 import org.apache.activemq.artemis.core.postoffice.Binding;
-import org.apache.activemq.artemis.core.postoffice.BindingType;
-import org.apache.activemq.artemis.core.postoffice.Bindings;
-import org.apache.activemq.artemis.core.postoffice.BindingsFactory;
-import org.apache.activemq.artemis.core.postoffice.impl.BindingsImpl;
 import org.apache.activemq.artemis.core.postoffice.impl.WildcardAddressManager;
-import org.apache.activemq.artemis.core.server.Bindable;
-import org.apache.activemq.artemis.core.server.RoutingContext;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
@@ -46,111 +37,7 @@ import org.openjdk.jmh.annotations.Warmup;
 @Fork(2)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 8, time = 1)
-public class WildcardAddressManagerHeirarchyPerfTest {
-
-   private static class BindingFactoryFake implements BindingsFactory {
-
-      @Override
-      public Bindings createBindings(SimpleString address) {
-         return new BindingsImpl(address, null, new NullStorageManager(1000));
-      }
-   }
-
-   private static class BindingFake implements Binding {
-
-      final SimpleString address;
-      final SimpleString id;
-      final Long idl;
-
-      BindingFake(SimpleString addressParameter, SimpleString id, long idl) {
-         this.address = addressParameter;
-         this.id = id;
-         this.idl = idl;
-      }
-
-      @Override
-      public void unproposed(SimpleString groupID) {
-
-      }
-
-      @Override
-      public SimpleString getAddress() {
-         return address;
-      }
-
-      @Override
-      public Bindable getBindable() {
-         return null;
-      }
-
-      @Override
-      public BindingType getType() {
-         return BindingType.LOCAL_QUEUE;
-      }
-
-      @Override
-      public SimpleString getUniqueName() {
-         return id;
-      }
-
-      @Override
-      public SimpleString getRoutingName() {
-         return id;
-      }
-
-      @Override
-      public SimpleString getClusterName() {
-         return null;
-      }
-
-      @Override
-      public Filter getFilter() {
-         return null;
-      }
-
-      @Override
-      public boolean isHighAcceptPriority(Message message) {
-         return false;
-      }
-
-      @Override
-      public boolean isExclusive() {
-         return false;
-      }
-
-      @Override
-      public Long getID() {
-         return idl;
-      }
-
-      @Override
-      public int getDistance() {
-         return 0;
-      }
-
-      @Override
-      public void route(Message message, RoutingContext context) {
-      }
-
-      @Override
-      public void close() {
-      }
-
-      @Override
-      public String toManagementString() {
-         return "FakeBiding Address=" + this.address;
-      }
-
-      @Override
-      public boolean isConnected() {
-         return true;
-      }
-
-      @Override
-      public void routeWithAck(Message message, RoutingContext context) {
-
-      }
-   }
+public class WildcardAddressManagerHierarchyPerfTest {
 
    public WildcardAddressManager addressManager;
 
@@ -184,11 +71,11 @@ public class WildcardAddressManagerHeirarchyPerfTest {
          if (verifyWildcardBinding) {
             // ensure simple matches present
             addresses[i] = SimpleString.of(MessageFormat.format("Topic1.abc-{0}.def-{0}.{1}", i % partitions, i));
-            addressManager.addBinding(new BindingFake(addresses[i], SimpleString.of("" + i), i));
+            addressManager.addBinding(new BindingFactoryFake.BindingFake(addresses[i], SimpleString.of("" + i), i));
          } else {
             // ensure wildcard matches present
             addresses[i] = SimpleString.of(MessageFormat.format("Topic1.abc-{0}.*.{1}", i % partitions, i));
-            addressManager.addBinding(new BindingFake(addresses[i], SimpleString.of("" + i), i));
+            addressManager.addBinding(new BindingFactoryFake.BindingFake(addresses[i], SimpleString.of("" + i), i));
 
          }
       }
@@ -209,13 +96,13 @@ public class WildcardAddressManagerHeirarchyPerfTest {
       Binding binding;
 
       @Setup
-      public void init(WildcardAddressManagerHeirarchyPerfTest benchmarkState) {
+      public void init(WildcardAddressManagerHierarchyPerfTest benchmarkState) {
          final long id = benchmarkState.nextId();
          addresses = benchmarkState.addresses;
          if (benchmarkState.verifyWildcardBinding) {
-            binding = new BindingFake(SimpleString.of(MessageFormat.format("Topic1.abc-{0}.def-{1}.>", id % benchmarkState.partitions, id)), SimpleString.of("" + id), id);
+            binding = new BindingFactoryFake.BindingFake(SimpleString.of(MessageFormat.format("Topic1.abc-{0}.def-{1}.>", id % benchmarkState.partitions, id)), SimpleString.of("" + id), id);
          } else {
-            binding = new BindingFake(SimpleString.of(MessageFormat.format("Topic1.abc-{0}.def-{0}.{1}", id % benchmarkState.partitions, id)), SimpleString.of("" + id), id);
+            binding = new BindingFactoryFake.BindingFake(SimpleString.of(MessageFormat.format("Topic1.abc-{0}.def-{0}.{1}", id % benchmarkState.partitions, id)), SimpleString.of("" + id), id);
          }
       }
 

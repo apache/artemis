@@ -3174,6 +3174,18 @@ public class ConfigurationImplTest extends AbstractConfigurationTestBase {
       assertEquals("false", brokerProperties.get("JMXNotificationEnabled"));
    }
 
+   @Test
+   public void testParseWildcardAggregateSizesOnProperties() throws Exception {
+      Properties properties = new Properties();
+
+      // Test setting via nested property path
+      properties.put("wildcardConfiguration.aggregateSizes", "true");
+      ConfigurationImpl configuration = new ConfigurationImpl();
+      configuration.parsePrefixedProperties(properties, null);
+
+      // Verify it was set correctly
+      assertTrue(configuration.getWildcardConfiguration().isAggregateSizes());
+   }
 
 
    /**

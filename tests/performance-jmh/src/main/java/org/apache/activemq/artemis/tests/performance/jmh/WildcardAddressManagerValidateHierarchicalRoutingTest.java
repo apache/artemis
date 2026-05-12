@@ -18,6 +18,8 @@ package org.apache.activemq.artemis.tests.performance.jmh;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -33,7 +35,6 @@ import org.apache.activemq.artemis.core.persistence.StorageManager;
 import org.apache.activemq.artemis.core.persistence.impl.journal.OperationContextImpl;
 import org.apache.activemq.artemis.core.persistence.impl.nullpm.NullStorageManager;
 import org.apache.activemq.artemis.core.postoffice.Binding;
-import org.apache.activemq.artemis.core.postoffice.Bindings;
 import org.apache.activemq.artemis.core.postoffice.impl.WildcardAddressManager;
 import org.apache.activemq.artemis.core.server.impl.AddressInfo;
 import org.apache.activemq.artemis.core.settings.HierarchicalRepository;
@@ -43,8 +44,6 @@ import org.apache.activemq.artemis.utils.FileUtil;
 import org.apache.activemq.artemis.utils.actors.OrderedExecutorFactory;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Fork;
-import org.openjdk.jmh.annotations.Group;
-import org.openjdk.jmh.annotations.GroupThreads;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
@@ -57,37 +56,34 @@ import org.openjdk.jmh.annotations.Warmup;
 @Fork(2)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 8, time = 1)
-public class WildcardAddressManagerPerfTest {
+public class WildcardAddressManagerValidateHierarchicalRoutingTest {
 
    public WildcardAddressManager addressManager;
 
-   @Param({"2", "8", "10"})
-   int topicsLog2;
-   int topics;
+   int topics = 100;
    AtomicLong topicCounter;
-   private static final WildcardConfiguration WILDCARD_CONFIGURATION;
+   private static final WildcardConfiguration WILDCARD_CONFIGURATION = new WildcardConfiguration();
    SimpleString[] addresses;
    PagingStoreImpl[] stores;
 
-   static {
-      WILDCARD_CONFIGURATION = new WildcardConfiguration();
-      WILDCARD_CONFIGURATION.setAnyWords('>');
-   }
+   @Param({"2", "5", "10", "100"})
+   int levels;
 
-   private static final SimpleString WILDCARD = SimpleString.of("Topic1.>");
-
-   @Param({"false", "true"})
+   @Param({"true", "false"})
    boolean useHierarchy;
 
    PagingManagerImpl pagingManager;
-
 
    File tempDirectory;
    private ExecutorService executorService;
    private ScheduledExecutorService scheduledExecutorService;
 
+   List<SimpleString> wildcardLevels = new ArrayList<>();
+
    @Setup
    public void init() throws Exception {
+
+      String basicAddress = "a.".repeat(levels - 1);
 
       tempDirectory = Files.createTempDirectory("jmh-artemis-").toFile();
       tempDirectory.deleteOnExit();
@@ -103,18 +99,44 @@ public class WildcardAddressManagerPerfTest {
 
       addressManager = new WildcardAddressManager(new BindingFactoryFake(), WILDCARD_CONFIGURATION, null, null, useHierarchy ? pagingManager : null, useHierarchy);
 
-      addressManager.addAddressInfo(new AddressInfo(WILDCARD, RoutingType.MULTICAST));
+      for (int i = 1; i < levels; i++) {
+         StringBuilder levelBuilder = new StringBuilder();
+         levelBuilder.append("a.".repeat(i));
+         levelBuilder.append("*.".repeat(levels - i - 1) + "*");
+         String levelString = levelBuilder.toString();
 
-      topics = 1 << topicsLog2;
+         wildcardLevels.add(SimpleString.of(levelString));
+
+         addressManager.reloadAddressInfo(new AddressInfo(levelString).addRoutingType(RoutingType.MULTICAST));
+      }
+
       addresses = new SimpleString[topics];
       stores = new PagingStoreImpl[topics];
 
       for (int i = 0; i < topics; i++) {
-         Binding binding = new BindingFactoryFake.BindingFake(WILDCARD, SimpleString.of("" + i), i);
+         SimpleString addressName = SimpleString.of(basicAddress + i);
+
+         Binding binding = new BindingFactoryFake.BindingFake(addressName, SimpleString.of("" + i), i);
+         addressManager.reloadAddressInfo(new AddressInfo(addressName).addRoutingType(RoutingType.MULTICAST));
          addressManager.addBinding(binding);
-         addresses[i] = SimpleString.of("Topic1." + i);
+         addresses[i] = addressName;
          addressManager.getBindingsForRoutingAddress(addresses[i]);
          stores[i] = (PagingStoreImpl) pagingManager.getPageStore(addresses[i]);
+      }
+
+      if (useHierarchy) {
+         for (int i = 0; i < topics; i++) {
+            if (stores[i].getSizeMetric().getHierarchy().size() != levels - 1) {
+               throw new IllegalStateException("We are supposed to have " + levels + " on each store, store " + stores[i] + " had " + stores[i].getSizeMetric().getHierarchy().size() + " on " + stores[i]);
+            }
+         }
+      } else {
+         for (int i = 0; i < topics; i++) {
+            if (!stores[i].getSizeMetric().getHierarchy().isEmpty()) {
+               throw new IllegalStateException("Hierarchy on store " + stores[i] + " is supposed to be empty");
+            }
+         }
+
       }
       topicCounter = new AtomicLong(0);
       topicCounter.set(topics);
@@ -142,70 +164,28 @@ public class WildcardAddressManagerPerfTest {
    @State(value = Scope.Thread)
    public static class ThreadState {
 
-      Binding binding;
       long next;
-      SimpleString[] addresses;
       PagingStoreImpl[] stores;
 
       @Setup
-      public void init(WildcardAddressManagerPerfTest benchmarkState) {
-         final long id = benchmarkState.nextId();
-         binding = new BindingFactoryFake.BindingFake(WILDCARD, SimpleString.of("" + id), id);
-         addresses = benchmarkState.addresses;
+      public void init(WildcardAddressManagerValidateHierarchicalRoutingTest benchmarkState) {
          stores = benchmarkState.stores;
       }
 
       public PagingStoreImpl nextPagingStore() {
          final long current = next;
          next = current + 1;
-         final int index = (int) (current & (addresses.length - 1));
+         final int index = (int) (current & (stores.length - 1));
          return stores[index];
       }
-
-      public SimpleString nextAddress() {
-         final long current = next;
-         next = current + 1;
-         final int index = (int) (current & (addresses.length - 1));
-         return addresses[index];
-      }
    }
 
    @Benchmark
-   @Group("both")
-   @GroupThreads(2)
-   public Bindings testPublishWhileAddRemoveNewBinding(ThreadState state) throws Exception {
+   public PagingStoreImpl testMeasureDepth(ThreadState state) throws Exception {
       PagingStoreImpl store = state.nextPagingStore();
-      Bindings bindings = addressManager.getBindingsForRoutingAddress(store.getAddress());
       store.addSize(1, false, true);
       store.addSize(1, true, true);
-      return bindings;
-   }
-
-   @Benchmark
-   @Group("both")
-   @GroupThreads(2)
-   public Binding testAddRemoveNewBindingWhilePublish(ThreadState state) throws Exception {
-      final Binding binding = state.binding;
-      addressManager.addBinding(binding);
-      return addressManager.removeBinding(binding.getUniqueName(), null);
-   }
-
-   @Benchmark
-   @GroupThreads(4)
-   public Bindings testJustPublish(ThreadState state) throws Exception {
-      PagingStoreImpl store = state.nextPagingStore();
-      Bindings bindings = addressManager.getBindingsForRoutingAddress(store.getAddress());
-      store.addSize(1, false, true);
-      store.addSize(1, true, true);
-      return bindings;
-   }
-
-   @Benchmark
-   @GroupThreads(4)
-   public Binding testJustAddRemoveNewBinding(ThreadState state) throws Exception {
-      final Binding binding = state.binding;
-      addressManager.addBinding(binding);
-      return addressManager.removeBinding(binding.getUniqueName(), null);
+      return store;
    }
 
 }
