@@ -114,7 +114,7 @@ public class ClusterNotificationsContinuityTest extends SoakTestBase {
 
          cliCreateServer.setMessageLoadBalancing("OFF_WITH_REDISTRIBUTION");
          cliCreateServer.setStaticCluster(staticClusterURI);
-         cliCreateServer.setArgs("--no-stomp-acceptor", "--no-hornetq-acceptor", "--no-mqtt-acceptor", "--no-amqp-acceptor", "--max-hops", "1");
+         cliCreateServer.setArgs("--no-stomp-acceptor", "--no-hornetq-acceptor", "--no-mqtt-acceptor", "--no-amqp-acceptor", "--max-hops", "1", "--cluster-user", "my-cluster-user", "--cluster-password", "my-cluster-password");
 
          cliCreateServer.createServer();
 

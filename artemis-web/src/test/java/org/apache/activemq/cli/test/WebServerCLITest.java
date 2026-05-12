@@ -78,7 +78,7 @@ public class WebServerCLITest extends ArtemisTestCase {
       Run.setEmbedded(true);
       File instance1 = new File(temporaryFolder, "instance_user");
       System.setProperty("java.security.auth.login.config", instance1.getAbsolutePath() + "/etc/login.config");
-      Artemis.main("create", instance1.getAbsolutePath(), "--silent", "--no-autotune", "--no-amqp-acceptor", "--no-mqtt-acceptor", "--no-stomp-acceptor", "--no-hornetq-acceptor");
+      Artemis.main("create", instance1.getAbsolutePath(), "--silent", "--no-autotune", "--no-amqp-acceptor", "--no-mqtt-acceptor", "--no-stomp-acceptor", "--no-hornetq-acceptor", "--user", "admin", "--password", "admin");
       System.setProperty("artemis.instance", instance1.getAbsolutePath());
       Object result = Artemis.internalExecute("run");
       ActiveMQServer activeMQServer = ((Pair<ManagementContext, ActiveMQServer>) result).getB();

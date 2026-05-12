@@ -25,7 +25,7 @@ public class PasswordAction extends UserAction {
 
    void checkInputPassword() {
       if (userCommandPassword == null) {
-         userCommandPassword = inputPassword("--user-command-password", "What is the password to use for the chosen user command?", null);
+         userCommandPassword = inputPassword("--user-command-password", "What is the password to use for the chosen user command?");
       }
    }
 

@@ -33,14 +33,18 @@ See the https://issues.apache.org/jira/projects/ARTEMIS/versions/12356761[releas
 
 === Upgrading from 2.53.0
 
-* To improve security we've hardened the code dealing with cluster credentials.
-In short, *any connection using the default values of `cluster-user` and `cluster-password` will be rejected*.
+* To improve security we've hardened the broker in a few areas:
+** First, *any connection using the default values of `cluster-user` and `cluster-password` will be rejected*.
 +
 Therefore, any broker using the default `cluster-user` and `cluster-password` will no longer cluster properly.
 To restore functionality, use a non-default value for `cluster-user` and `cluster-password`.
 +
 This change similarly impacts any Core bridge connecting to a secured broker using the default `user` and `password` because those defaults are based on the default  `cluster-user` and `cluster-password` respectively.
 To restore functionality, we recommend specifying `user` and `password` values on the `bridge` that correspond to a valid user account on the target broker. The corresponding role on the target broker should have the xref:security.adoc#role-based-security-for-addresses[`send` permission] for the bridge's `forwarding-address`.
+** When creating a broker via the xref:using-cli.adoc[CLI] (i.e., using the `create` command) we've always prompted users for default credentials.
+However, there was a `--silent` option that would skip all prompts and use default values.
+This has been changed so that that no passwords will have default values, even when using the `--silent` option.
+**When using `--silent` you will need to explicitly define password values** (e.g., via `--password`, `--cluster-password`, etc.) or creation will fail.
 * Due to https://issues.apache.org/jira/browse/ARTEMIS-5949[ARTEMIS-5949], the `security-settings` in the default `broker.xml` have changed so that permissions are explicitly set on the management address.
 There is no semantic change.
 This is simply to clarify permissions so that security is easier to understand.

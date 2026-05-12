@@ -108,9 +108,9 @@ public class InputAbstract extends ActionAbstract {
       return inputStr.trim();
    }
 
-   protected String inputPassword(String propertyName, String prompt, String silentDefault) {
+   protected String inputPassword(String propertyName, String prompt) {
       if (isSilentInput()) {
-         return silentDefault;
+         throw new IllegalArgumentException("Must specify " + propertyName + " when using --silent option");
       }
 
       String inputStr = "";

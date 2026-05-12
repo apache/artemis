@@ -222,6 +222,8 @@
                         <arg>tcp://noexist</arg>
                         <arg>--jdbc-driver-class-name</arg>
                         <arg>badDriver</arg>
+                        <arg>--cluster-password</arg>
+                        <arg>admin</arg>
                      </args>
                   </configuration>
                </execution>

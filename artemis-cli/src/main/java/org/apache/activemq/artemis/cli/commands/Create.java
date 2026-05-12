@@ -440,7 +440,7 @@ public class Create extends InstallAbstract {
 
    private String getClusterUser() {
       if (clusterUser == null) {
-         clusterUser = input("--cluster-user", "What is the cluster user?", "cluster-admin");
+         clusterUser = input("--cluster-user", "What is the cluster user?", ActiveMQDefaultConfiguration.getDefaultClusterUser());
       }
       return clusterUser;
    }
@@ -451,7 +451,7 @@ public class Create extends InstallAbstract {
 
    protected String getClusterPassword() {
       if (clusterPassword == null) {
-         clusterPassword = inputPassword("--cluster-password", "What is the cluster password?", "password-admin");
+         clusterPassword = inputPassword("--cluster-password", "What is the cluster password?");
       }
       if (!PasswordMaskingUtil.isEncMasked(clusterPassword)) {
          try {
@@ -468,7 +468,7 @@ public class Create extends InstallAbstract {
 
    private String getSslKeyPassword() {
       if (sslKeyPassword == null) {
-         sslKeyPassword = inputPassword("--ssl-key-password", "What is the keystore password?", "password");
+         sslKeyPassword = inputPassword("--ssl-key-password", "What is the keystore password?");
       }
       return sslKeyPassword;
    }
@@ -482,7 +482,7 @@ public class Create extends InstallAbstract {
 
    private String getSslTrustPassword() {
       if (sslTrustPassword == null) {
-         sslTrustPassword = inputPassword("--ssl-key-password", "What is the keystore password?", "password");
+         sslTrustPassword = inputPassword("--ssl-key-password", "What is the keystore password?");
       }
       return sslTrustPassword;
    }
@@ -499,9 +499,8 @@ public class Create extends InstallAbstract {
    }
 
    public String getPassword() {
-
       if (password == null) {
-         password = inputPassword("--password", "What is the default password?", "admin");
+         password = inputPassword("--password", "What is the default password?");
       }
 
       if (!PasswordMaskingUtil.isEncMasked(password)) {

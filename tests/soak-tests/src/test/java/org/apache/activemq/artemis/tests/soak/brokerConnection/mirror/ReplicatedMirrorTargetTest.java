@@ -143,7 +143,7 @@ public class ReplicatedMirrorTargetTest extends SoakTestBase {
       HelperCreate cliCreateServer = helperCreate();
       cliCreateServer.setAllowAnonymous(true).setArtemisInstance(serverLocation);
       cliCreateServer.setNoWeb(false);
-      cliCreateServer.setArgs("--no-stomp-acceptor", "--no-hornetq-acceptor", "--no-mqtt-acceptor", "--no-amqp-acceptor", "--max-hops", "1", "--name", DC1_NODE);
+      cliCreateServer.setArgs("--no-stomp-acceptor", "--no-hornetq-acceptor", "--no-mqtt-acceptor", "--no-amqp-acceptor", "--max-hops", "1", "--name", DC1_NODE, "--cluster-user", "my-cluster-user", "--cluster-password", "my-cluster-password");
       cliCreateServer.addArgs("--addresses", TOPIC_NAME);
       cliCreateServer.setPortOffset(portOffset);
       if (replicated) {
@@ -204,7 +204,7 @@ public class ReplicatedMirrorTargetTest extends SoakTestBase {
       cliCreateServer.setAllowAnonymous(true).setArtemisInstance(serverLocation);
       cliCreateServer.setMessageLoadBalancing("ON_DEMAND");
       cliCreateServer.setNoWeb(false);
-      cliCreateServer.setArgs("--no-stomp-acceptor", "--no-hornetq-acceptor", "--no-mqtt-acceptor", "--no-amqp-acceptor", "--max-hops", "1", "--name", DC1_NODE);
+      cliCreateServer.setArgs("--no-stomp-acceptor", "--no-hornetq-acceptor", "--no-mqtt-acceptor", "--no-amqp-acceptor", "--max-hops", "1", "--name", DC1_NODE, "--cluster-user", "my-cluster-user", "--cluster-password", "my-cluster-password");
       cliCreateServer.addArgs("--addresses", TOPIC_NAME);
       cliCreateServer.setPortOffset(portOffset);
       cliCreateServer.setClustered(true);

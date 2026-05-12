@@ -194,7 +194,29 @@ public class ArtemisTest extends CliTestBase {
    public void testSimpleCreate() throws Exception {
       //instance1: default using http
       File instance1 = new File(temporaryFolder, "instance1");
-      Artemis.main("create", instance1.getAbsolutePath(), "--silent", "--no-fsync", "--no-autotune");
+      Artemis.main(getCreateParameters(instance1.getAbsolutePath()));
+   }
+
+   private String[] getCreateParameters(String path, String... extraParams) {
+      List<String> parameters = new ArrayList<>();
+      parameters.add("create");
+      parameters.add(path);
+      parameters.add("--silent");
+      parameters.add("--no-fsync");
+      parameters.add("--no-autotune");
+      parameters.add("--no-web");
+      parameters.add("--no-amqp-acceptor");
+      parameters.add("--no-stomp-acceptor");
+      parameters.add("--no-mqtt-acceptor");
+      parameters.add("--no-hornetq-acceptor");
+      parameters.add("--user");
+      parameters.add("admin");
+      parameters.add("--password");
+      parameters.add("admin");
+      for (String extraParam : extraParams) {
+         parameters.add(extraParam);
+      }
+      return parameters.toArray(new String[0]);
    }
 
    @Test
@@ -210,7 +232,7 @@ public class ArtemisTest extends CliTestBase {
    }
 
    private void testMaxHops(int maxHops) throws Exception {
-      List<String> args = new ArrayList<>(List.of("--silent", "--no-autotune", "--clustered"));
+      List<String> args = new ArrayList<>(List.of("--silent", "--no-autotune", "--clustered", "--user", "admin", "--password", "admin", "--cluster-user", "admin", "--cluster-password", "admin"));
       if (maxHops != Create.DEFAULT_MAX_HOPS) {
          args.add("--max-hops");
          args.add(String.valueOf(maxHops));
@@ -223,7 +245,7 @@ public class ArtemisTest extends CliTestBase {
    @Timeout(60)
    public void testCreateDB() throws Exception {
       File instance1 = new File(temporaryFolder, "instance1");
-      Artemis.internalExecute("create", instance1.getAbsolutePath(), "--silent", "--jdbc");
+      Artemis.internalExecute(getCreateParameters(instance1.getAbsolutePath(), "--jdbc"));
    }
 
 
@@ -233,7 +255,7 @@ public class ArtemisTest extends CliTestBase {
       try {
          //instance1: default using http
          File instance1 = new File(temporaryFolder, "instance1");
-         Artemis.main("create", instance1.getAbsolutePath(), "--silent", "--mapped", "--no-autotune");
+         Artemis.main(getCreateParameters(instance1.getAbsolutePath(), "--mapped"));
       } catch (Throwable e) {
          e.printStackTrace();
          throw e;
@@ -244,7 +266,7 @@ public class ArtemisTest extends CliTestBase {
    @Timeout(60)
    public void testOpenwireSupportAdvisoryDisabledByDefault() throws Exception {
       FileConfiguration configuration = createFileConfiguration("supportAdvisory",
-                                                                "--force", "--silent", "--no-web", "--no-autotune");
+                                                                "--force", "--silent", "--no-web", "--no-autotune", "--user", "admin", "--password", "admin");
       Map<String, Object> params = configuration.getAcceptorConfigurations()
          .stream().filter(tc -> tc.getName().equals("artemis")).findFirst().get().getExtraParams();
       assertFalse(Boolean.parseBoolean(params.get("supportAdvisory").toString()));
@@ -256,13 +278,13 @@ public class ArtemisTest extends CliTestBase {
    public void testOpenwireEnabledSupportAdvisory() throws Exception {
       FileConfiguration configuration = createFileConfiguration("supportAdvisory",
                                                                 "--force", "--silent", "--no-web", "--no-autotune",
-                                                                "--support-advisory", "--suppress-internal-management-objects");
+                                                                "--support-advisory", "--suppress-internal-management-objects",
+                                                                "--user", "admin", "--password", "admin");
       Map<String, Object> params = configuration.getAcceptorConfigurations()
          .stream().filter(tc -> tc.getName().equals("artemis")).findFirst().get().getExtraParams();
       assertTrue(Boolean.parseBoolean(params.get("supportAdvisory").toString()));
       assertTrue(Boolean.parseBoolean(params.get("suppressInternalManagementObjects").toString()));
    }
-
 
    private FileConfiguration createFileConfiguration(String folder, String... createAdditionalArg) throws Exception {
       File instanceFolder = newFolder(temporaryFolder, folder);
@@ -294,7 +316,7 @@ public class ArtemisTest extends CliTestBase {
       Run.setEmbedded(true);
       //instance1: default using http
       File instance1 = new File(temporaryFolder, "instance1");
-      Artemis.main("create", instance1.getAbsolutePath(), "--silent", "--no-fsync", "--no-autotune");
+      Artemis.main("create", instance1.getAbsolutePath(), "--silent", "--no-fsync", "--no-autotune", "--user", "admin", "--password", "admin");
       File bootstrapFile = new File(new File(instance1, "etc"), "bootstrap.xml");
       assertTrue(bootstrapFile.exists());
       Document config = parseXml(bootstrapFile);
@@ -314,7 +336,7 @@ public class ArtemisTest extends CliTestBase {
 
       //instance2: https
       File instance2 = new File(temporaryFolder, "instance2");
-      Artemis.main("create", instance2.getAbsolutePath(), "--silent", "--ssl-key", "etc/keystore", "--ssl-key-password", "password1", "--no-fsync", "--no-autotune");
+      Artemis.main("create", instance2.getAbsolutePath(), "--silent", "--ssl-key", "etc/keystore", "--ssl-key-password", "password1", "--no-fsync", "--no-autotune", "--user", "admin", "--password", "admin");
       bootstrapFile = new File(new File(instance2, "etc"), "bootstrap.xml");
       assertTrue(bootstrapFile.exists());
       config = parseXml(bootstrapFile);
@@ -336,7 +358,7 @@ public class ArtemisTest extends CliTestBase {
 
       //instance3: https with clientAuth
       File instance3 = new File(temporaryFolder, "instance3");
-      Artemis.main("create", instance3.getAbsolutePath(), "--silent", "--ssl-key", "etc/keystore", "--ssl-key-password", "password1", "--use-client-auth", "--ssl-trust", "etc/truststore", "--ssl-trust-password", "password2", "--no-fsync", "--no-autotune");
+      Artemis.main("create", instance3.getAbsolutePath(), "--silent", "--ssl-key", "etc/keystore", "--ssl-key-password", "password1", "--use-client-auth", "--ssl-trust", "etc/truststore", "--ssl-trust-password", "password2", "--no-fsync", "--no-autotune", "--user", "admin", "--password", "admin");
       bootstrapFile = new File(new File(instance3, "etc"), "bootstrap.xml");
       assertTrue(bootstrapFile.exists());
 
@@ -371,7 +393,7 @@ public class ArtemisTest extends CliTestBase {
       setupAuth();
       Run.setEmbedded(true);
       File instance1 = new File(temporaryFolder, "instance1");
-      Artemis.main("create", instance1.getAbsolutePath(), "--silent", "--no-fsync", "--no-autotune", "--no-web", "--no-stomp-acceptor", "--no-amqp-acceptor", "--no-mqtt-acceptor", "--no-hornetq-acceptor");
+      Artemis.main(getCreateParameters(instance1.getAbsolutePath()));
       File originalBootstrapFile = new File(new File(instance1, "etc"), "bootstrap.xml");
       assertTrue(originalBootstrapFile.exists());
 
@@ -449,7 +471,7 @@ public class ArtemisTest extends CliTestBase {
       Run.setEmbedded(true);
       File instance1 = new File(temporaryFolder, "instance_user");
       System.setProperty("java.security.auth.login.config", instance1.getAbsolutePath() + "/etc/login.config");
-      Artemis.main("create", instance1.getAbsolutePath(), "--silent", "--no-autotune", "--no-web", "--no-amqp-acceptor", "--no-mqtt-acceptor", "--no-stomp-acceptor", "--no-hornetq-acceptor");
+      Artemis.main(getCreateParameters(instance1.getAbsolutePath()));
       System.setProperty("artemis.instance", instance1.getAbsolutePath());
       Object result = Artemis.internalExecute("run");
       ManagementContext managementContext = ((Pair<ManagementContext, ActiveMQServer>)result).getA();
@@ -475,7 +497,7 @@ public class ArtemisTest extends CliTestBase {
       Run.setEmbedded(true);
       File instance1 = new File(temporaryFolder, "instance_user");
       System.setProperty("java.security.auth.login.config", instance1.getAbsolutePath() + "/etc/login.config");
-      Artemis.main("create", instance1.getAbsolutePath(), "--silent", "--no-autotune", "--no-web", "--require-login", "--security-manager", basic ? "basic" : "jaas");
+      Artemis.main(getCreateParameters(instance1.getAbsolutePath(), "--require-login", "--security-manager", basic ? "basic" : "jaas"));
       System.setProperty("artemis.instance", instance1.getAbsolutePath());
       Object runResult = Artemis.internalExecute("run");
       server = ((Pair<ManagementContext, ActiveMQServer>)runResult).getB();
@@ -663,7 +685,7 @@ public class ArtemisTest extends CliTestBase {
       Run.setEmbedded(true);
       File instance1 = new File(temporaryFolder, "instance_user");
       System.setProperty("java.security.auth.login.config", instance1.getAbsolutePath() + "/etc/login.config");
-      Artemis.main("create", instance1.getAbsolutePath(), "--silent", "--no-autotune", "--no-web", "--no-amqp-acceptor", "--no-mqtt-acceptor", "--no-stomp-acceptor", "--no-hornetq-acceptor", "--security-manager", basic ? "basic" : "jaas");
+      Artemis.main(getCreateParameters(instance1.getAbsolutePath(), "--security-manager", basic ? "basic" : "jaas"));
       System.setProperty("artemis.instance", instance1.getAbsolutePath());
       Object result = Artemis.internalExecute("run");
       server = ((Pair<ManagementContext, ActiveMQServer>)result).getB();
@@ -767,7 +789,7 @@ public class ArtemisTest extends CliTestBase {
          Run.setEmbedded(true);
          File instance1 = new File(temporaryFolder, "instance_user");
          System.setProperty("java.security.auth.login.config", instance1.getAbsolutePath() + "/etc/login.config");
-         Artemis.main("create", instance1.getAbsolutePath(), "--silent", "--no-autotune", "--no-web", "--no-amqp-acceptor", "--no-mqtt-acceptor", "--no-stomp-acceptor", "--no-hornetq-acceptor", "--security-manager", "jaas");
+         Artemis.main(getCreateParameters(instance1.getAbsolutePath(), "--security-manager", "jaas"));
          System.setProperty("artemis.instance", instance1.getAbsolutePath());
          Object result = Artemis.internalExecute("run");
          server = ((Pair<ManagementContext, ActiveMQServer>) result).getB();
@@ -817,7 +839,7 @@ public class ArtemisTest extends CliTestBase {
       Run.setEmbedded(true);
       File instance1 = new File(temporaryFolder, "instance_user");
       System.setProperty("java.security.auth.login.config", instance1.getAbsolutePath() + "/etc/login.config");
-      Artemis.main("create", instance1.getAbsolutePath(), "--silent", "--no-autotune", "--no-web", "--no-amqp-acceptor", "--no-mqtt-acceptor", "--no-stomp-acceptor", "--no-hornetq-acceptor", "--require-login", "--security-manager", basic ? "basic" : "jaas");
+      Artemis.main(getCreateParameters(instance1.getAbsolutePath(), "--require-login", "--security-manager", basic ? "basic" : "jaas"));
       System.setProperty("artemis.instance", instance1.getAbsolutePath());
       Object result = Artemis.internalExecute("run");
       ActiveMQServer activeMQServer = ((Pair<ManagementContext, ActiveMQServer>)result).getB();
@@ -858,7 +880,7 @@ public class ArtemisTest extends CliTestBase {
       Run.setEmbedded(true);
       File instance1 = new File(temporaryFolder, "instance_user");
       System.setProperty("java.security.auth.login.config", instance1.getAbsolutePath() + "/etc/login.config");
-      Artemis.main("create", instance1.getAbsolutePath(), "--silent", "--no-autotune", "--no-web", "--no-amqp-acceptor", "--no-mqtt-acceptor", "--no-stomp-acceptor", "--no-hornetq-acceptor");
+      Artemis.main(getCreateParameters(instance1.getAbsolutePath()));
       System.setProperty("artemis.instance", instance1.getAbsolutePath());
       Object result = Artemis.internalExecute("run");
       ActiveMQServer activeMQServer = ((Pair<ManagementContext, ActiveMQServer>)result).getB();
@@ -882,7 +904,7 @@ public class ArtemisTest extends CliTestBase {
       Run.setEmbedded(true);
       File instance1 = new File(temporaryFolder, "instance_user");
       System.setProperty("java.security.auth.login.config", instance1.getAbsolutePath() + "/etc/login.config");
-      Artemis.main("create", instance1.getAbsolutePath(), "--silent", "--no-autotune", "--no-web", "--no-amqp-acceptor", "--no-mqtt-acceptor", "--no-stomp-acceptor", "--no-hornetq-acceptor");
+      Artemis.main(getCreateParameters(instance1.getAbsolutePath()));
       System.setProperty("artemis.instance", instance1.getAbsolutePath());
       Object result = Artemis.internalExecute("run");
       ActiveMQServer activeMQServer = ((Pair<ManagementContext, ActiveMQServer>)result).getB();
@@ -916,7 +938,7 @@ public class ArtemisTest extends CliTestBase {
       Run.setEmbedded(true);
       File instance1 = new File(temporaryFolder, "instance_user");
       System.setProperty("java.security.auth.login.config", instance1.getAbsolutePath() + "/etc/login.config");
-      Artemis.main("create", instance1.getAbsolutePath(), "--silent", "--no-autotune", "--no-web", "--require-login", "--security-manager", basic ? "basic" : "jaas");
+      Artemis.main(getCreateParameters(instance1.getAbsolutePath(), "--require-login", "--security-manager", basic ? "basic" : "jaas"));
       System.setProperty("artemis.instance", instance1.getAbsolutePath());
       Object runResult = Artemis.internalExecute("run");
       server = ((Pair<ManagementContext, ActiveMQServer>)runResult).getB();
@@ -1049,7 +1071,7 @@ public class ArtemisTest extends CliTestBase {
       Run.setEmbedded(true);
       File instance1 = new File(temporaryFolder, "instance_user");
       System.setProperty("java.security.auth.login.config", instance1.getAbsolutePath() + "/etc/login.config");
-      Artemis.main("create", instance1.getAbsolutePath(), "--silent", "--no-autotune", "--no-web", "--require-login", "--security-manager", basic ? "basic" : "jaas");
+      Artemis.main(getCreateParameters(instance1.getAbsolutePath(), "--require-login", "--security-manager", basic ? "basic" : "jaas"));
       System.setProperty("artemis.instance", instance1.getAbsolutePath());
       Artemis.internalExecute("run");
 
@@ -1154,7 +1176,7 @@ public class ArtemisTest extends CliTestBase {
       Run.setEmbedded(true);
       File instanceRole = new File(temporaryFolder, "instance_role");
       System.setProperty("java.security.auth.login.config", instanceRole.getAbsolutePath() + "/etc/login.config");
-      Artemis.main("create", instanceRole.getAbsolutePath(), "--silent", "--no-autotune", "--no-web", "--require-login", "--role", roleWithSpaces);
+      Artemis.main(getCreateParameters(instanceRole.getAbsolutePath(), "--require-login", "--role", roleWithSpaces));
       System.setProperty("artemis.instance", instanceRole.getAbsolutePath());
       Artemis.internalExecute("run");
 
@@ -1194,7 +1216,7 @@ public class ArtemisTest extends CliTestBase {
       Run.setEmbedded(true);
       File instance1 = new File(temporaryFolder, "instance_user");
       System.setProperty("java.security.auth.login.config", instance1.getAbsolutePath() + "/etc/login.config");
-      Artemis.main("create", instance1.getAbsolutePath(), "--silent", "--no-autotune", "--no-web", "--no-amqp-acceptor", "--no-mqtt-acceptor", "--no-stomp-acceptor", "--no-hornetq-acceptor");
+      Artemis.main(getCreateParameters(instance1.getAbsolutePath()));
       System.setProperty("artemis.instance", instance1.getAbsolutePath());
       Object result = Artemis.internalExecute("run");
       ActiveMQServer activeMQServer = ((Pair<ManagementContext, ActiveMQServer>)result).getB();
@@ -1338,7 +1360,7 @@ public class ArtemisTest extends CliTestBase {
       File instanceFolder = newFolder(temporaryFolder, "server");
       setupAuth(instanceFolder);
       Run.setEmbedded(true);
-      Artemis.main("create", instanceFolder.getAbsolutePath(), "--verbose", "--force", "--disable-persistence", "--silent", "--no-web", "--queues", "q1", "--no-autotune", "--require-login", "--default-port", "61616");
+      Artemis.main(getCreateParameters(instanceFolder.getAbsolutePath(), "--verbose", "--force", "--disable-persistence", "--queues", "q1", "--require-login", "--default-port", "61616"));
       System.setProperty("artemis.instance", instanceFolder.getAbsolutePath());
 
       try {
@@ -1389,13 +1411,11 @@ public class ArtemisTest extends CliTestBase {
       setupAuth(instanceFolder);
 
       Run.setEmbedded(true);
-      Artemis.main("create", instanceFolder.getAbsolutePath(), "--force", "--silent", "--no-web", "--no-autotune", "--require-login");
+      Artemis.main(getCreateParameters(instanceFolder.getAbsolutePath(), "--force", "--require-login"));
       System.setProperty("artemis.instance", instanceFolder.getAbsolutePath());
 
       Artemis.main("perf-journal", "--journal-type", "NIO", "--writes", "5", "--tries", "1");
-
    }
-
 
    public void testSimpleRun(String folderName) throws Exception {
       testSimpleRun(folderName, 61616);
@@ -1411,9 +1431,8 @@ public class ArtemisTest extends CliTestBase {
 
       // This is usually set when run from the command line via artemis.profile
       Run.setEmbedded(true);
-      Artemis.main("create", instanceFolder.getAbsolutePath(), "--force", "--silent", "--no-web", "--queues", queues, "--addresses", addresses, "--no-autotune", "--require-login", "--default-port", Integer.toString(acceptorPort));
+      Artemis.main(getCreateParameters(instanceFolder.getAbsolutePath(), "--force", "--queues", queues, "--addresses", addresses, "--require-login", "--default-port", Integer.toString(acceptorPort)));
       System.setProperty("artemis.instance", instanceFolder.getAbsolutePath());
-
 
       try {
          // Some exceptions may happen on the initialization, but they should be ok on start the basic core protocol
@@ -1531,12 +1550,11 @@ public class ArtemisTest extends CliTestBase {
       // This is usually set when run from the command line via artemis.profile
       Run.setEmbedded(true);
       if (autoDelete) {
-         Artemis.main("create", instanceFolder.getAbsolutePath(), "--force", "--silent", "--no-web", "--no-autotune", "--require-login", "--autodelete");
+         Artemis.main(getCreateParameters(instanceFolder.getAbsolutePath(), "--force", "--require-login", "--autodelete"));
       } else {
-         Artemis.main("create", instanceFolder.getAbsolutePath(), "--force", "--silent", "--no-web", "--require-login", "--no-autotune");
+         Artemis.main(getCreateParameters(instanceFolder.getAbsolutePath(), "--force", "--require-login"));
       }
       System.setProperty("artemis.instance", instanceFolder.getAbsolutePath());
-
 
       try {
          // Some exceptions may happen on the initialization, but they should be ok on start the basic core protocol
@@ -1581,7 +1599,7 @@ public class ArtemisTest extends CliTestBase {
 
       // This is usually set when run from the command line via artemis.profile
       Run.setEmbedded(true);
-      Artemis.main("create", instanceFolder.getAbsolutePath(), "--force", "--silent", "--no-web", "--queues", queues, "--addresses", topics, "--require-login", "--ping", "127.0.0.1", "--no-autotune");
+      Artemis.main(getCreateParameters(instanceFolder.getAbsolutePath(), "--force", "--queues", queues, "--addresses", topics, "--require-login", "--ping", "127.0.0.1"));
       System.setProperty("artemis.instance", instanceFolder.getAbsolutePath());
 
       FileConfiguration fc = new FileConfiguration();
@@ -1602,7 +1620,7 @@ public class ArtemisTest extends CliTestBase {
 
       // This is usually set when run from the command line via artemis.profile
       Run.setEmbedded(true);
-      Artemis.main("create", instanceFolder.getAbsolutePath(), "--force", "--silent", "--no-web", "--require-login");
+      Artemis.main(getCreateParameters(instanceFolder.getAbsolutePath(), "--force", "--require-login"));
       System.setProperty("artemis.instance", instanceFolder.getAbsolutePath());
 
       FileConfiguration fc = new FileConfiguration();
@@ -1622,7 +1640,7 @@ public class ArtemisTest extends CliTestBase {
       File instanceQstat = new File(temporaryFolder, "instanceQStat");
       setupAuth(instanceQstat);
       Run.setEmbedded(true);
-      Artemis.main("create", instanceQstat.getAbsolutePath(), "--silent", "--no-fsync", "--no-autotune", "--no-web", "--require-login");
+      Artemis.main(getCreateParameters(instanceQstat.getAbsolutePath(), "--require-login"));
       System.setProperty("artemis.instance", instanceQstat.getAbsolutePath());
       Artemis.internalExecute("run");
 
@@ -1893,7 +1911,7 @@ public class ArtemisTest extends CliTestBase {
       File instanceQstat = new File(temporaryFolder, "instanceQStat");
       setupAuth(instanceQstat);
       Run.setEmbedded(true);
-      Artemis.main("create", instanceQstat.getAbsolutePath(), "--silent", "--no-fsync", "--no-autotune", "--no-web", "--require-login");
+      Artemis.main(getCreateParameters(instanceQstat.getAbsolutePath(), "--require-login"));
       System.setProperty("artemis.instance", instanceQstat.getAbsolutePath());
       Object result = Artemis.internalExecute("run");
       ActiveMQServer activeMQServer = ((Pair<ManagementContext, ActiveMQServer>)result).getB();
@@ -1921,7 +1939,7 @@ public class ArtemisTest extends CliTestBase {
       File instanceQstat = new File(temporaryFolder, "instanceQStat");
       setupAuth(instanceQstat);
       Run.setEmbedded(true);
-      Artemis.main("create", instanceQstat.getAbsolutePath(), "--silent", "--no-fsync", "--no-autotune", "--no-web", "--require-login");
+      Artemis.main(getCreateParameters(instanceQstat.getAbsolutePath(), "--require-login"));
       System.setProperty("artemis.instance", instanceQstat.getAbsolutePath());
       Artemis.internalExecute("run");
 
@@ -1994,7 +2012,7 @@ public class ArtemisTest extends CliTestBase {
       File instanceQstat = new File(temporaryFolder, "instanceQStatErrors");
       setupAuth(instanceQstat);
       Run.setEmbedded(true);
-      Artemis.main("create", instanceQstat.getAbsolutePath(), "--silent", "--no-fsync", "--no-autotune", "--no-web", "--require-login");
+      Artemis.main(getCreateParameters(instanceQstat.getAbsolutePath(), "--require-login"));
       System.setProperty("artemis.instance", instanceQstat.getAbsolutePath());
       Artemis.internalExecute("run");
       try {
@@ -2098,7 +2116,7 @@ public class ArtemisTest extends CliTestBase {
       File instanceQstat = new File(temporaryFolder, "instanceQStat");
       setupAuth(instanceQstat);
       Run.setEmbedded(true);
-      Artemis.main("create", instanceQstat.getAbsolutePath(), "--silent", "--no-fsync", "--no-autotune", "--no-web", "--require-login");
+      Artemis.main(getCreateParameters(instanceQstat.getAbsolutePath(), "--require-login"));
       System.setProperty("artemis.instance", instanceQstat.getAbsolutePath());
       Artemis.internalExecute("run");
 
@@ -2180,7 +2198,7 @@ public class ArtemisTest extends CliTestBase {
       File instanceFile = new File(temporaryFolder, "testRunPropertiesArgumentSetsAcceptorPort");
       setupAuth(instanceFile);
       Run.setEmbedded(true);
-      Artemis.main("create", instanceFile.getAbsolutePath(), "--silent", "--no-fsync", "--no-autotune", "--no-web", "--require-login");
+      Artemis.main(getCreateParameters(instanceFile.getAbsolutePath(), "--require-login"));
       System.setProperty("artemis.instance", instanceFile.getAbsolutePath());
 
       // configure
@@ -2202,7 +2220,7 @@ public class ArtemisTest extends CliTestBase {
       File instanceFile = new File(temporaryFolder, "testRunPropertiesDudArgument");
       setupAuth(instanceFile);
       Run.setEmbedded(true);
-      Artemis.main("create", instanceFile.getAbsolutePath(), "--silent", "--no-fsync", "--no-autotune", "--no-web", "--require-login");
+      Artemis.main(getCreateParameters(instanceFile.getAbsolutePath(), "--require-login"));
       System.setProperty("artemis.instance", instanceFile.getAbsolutePath());
 
       // verify error
@@ -2387,7 +2405,7 @@ public class ArtemisTest extends CliTestBase {
    @Timeout(60)
    public void testDefaultSecuritySettings() throws Exception {
       FileConfiguration configuration = createFileConfiguration(getTestMethodName(),
-                                                                "--silent", "--no-web", "--no-autotune");
+                                                                "--silent", "--no-web", "--no-autotune", "--user", "admin", "--password", "admin");
 
       Map<String, Set<Role>> securityRoles = configuration.getSecurityRoles();
 

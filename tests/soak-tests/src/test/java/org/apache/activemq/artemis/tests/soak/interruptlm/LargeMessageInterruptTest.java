@@ -66,7 +66,7 @@ public class LargeMessageInterruptTest extends SoakTestBase {
          HelperCreate cliCreateServer = helperCreate();
          cliCreateServer.setRole("amq").setUser("artemis").setPassword("artemis").setAllowAnonymous(true).setArtemisInstance(serverLocation).
             setConfiguration("./src/main/resources/servers/interruptlm");
-         cliCreateServer.setArgs("--java-options", "-Djava.rmi.server.hostname=localhost", "--clustered", "--static-cluster", "tcp://localhost:61716", "--queues", "ClusteredLargeMessageInterruptTest", "--name", "lmbroker1");
+         cliCreateServer.setArgs("--java-options", "-Djava.rmi.server.hostname=localhost", "--clustered", "--static-cluster", "tcp://localhost:61716", "--queues", "ClusteredLargeMessageInterruptTest", "--name", "lmbroker1", "--cluster-user", "my-cluster-user", "--cluster-password", "my-cluster-password");
          cliCreateServer.createServer();
       }
    }
