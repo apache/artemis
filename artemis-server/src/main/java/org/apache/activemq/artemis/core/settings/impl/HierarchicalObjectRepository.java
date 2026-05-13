@@ -37,6 +37,7 @@ import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.settings.HierarchicalRepository;
 import org.apache.activemq.artemis.core.settings.HierarchicalRepositoryChangeListener;
 import org.apache.activemq.artemis.core.settings.Mergeable;
+import org.apache.activemq.artemis.utils.CompositeAddress;
 import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -203,7 +204,7 @@ public class HierarchicalObjectRepository<T> implements HierarchicalRepository<T
       lock.writeLock().lock();
       try {
          // an exact match (i.e. one without wildcards) won't impact any other matches so no need to clear the cache
-         if (wildcardConfiguration.isWild(modifiedMatch)) {
+         if (wildcardConfiguration.isWild(modifiedMatch) && !CompositeAddress.isFullyQualified(modifiedMatch)) {
             clearCache();
          } else if (modifiedMatch != null && cache.containsKey(modifiedMatch)) {
             cache.remove(modifiedMatch);
@@ -216,7 +217,7 @@ public class HierarchicalObjectRepository<T> implements HierarchicalRepository<T
          Match<T> match1 = new Match<>(modifiedMatch, value, wildcardConfiguration, literal);
          if (literal) {
             literalMatches.put(modifiedMatch, match1);
-         } else if (wildcardConfiguration.isWild(modifiedMatch)) {
+         } else if (wildcardConfiguration.isWild(modifiedMatch) && !CompositeAddress.isFullyQualified(modifiedMatch)) {
             wildcardMatches.put(modifiedMatch, match1);
          } else {
             exactMatches.put(modifiedMatch, match1);
