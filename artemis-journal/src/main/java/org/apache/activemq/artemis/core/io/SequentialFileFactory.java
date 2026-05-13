@@ -34,6 +34,18 @@ public interface SequentialFileFactory {
    default void setCriticalErrorListener(IOCriticalErrorListener listener) {
    }
 
+   default SequentialFileFactory disableBufferReuse() {
+      return this;
+   }
+
+   default ByteBuffer newNativeBuffer(int size, int alignment) {
+      throw new UnsupportedOperationException();
+   }
+
+   default void freeNativeBuffer(ByteBuffer buffer) {
+      throw new UnsupportedOperationException();
+   }
+
    default CriticalAnalyzer getCriticalAnalyzer() {
       return null;
    }

@@ -14,30 +14,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.activemq.artemis.core.io.aio;
+package org.apache.artemis.nativo.jlibaio.ffm;
 
-import java.io.IOException;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 
-import org.apache.activemq.artemis.nativo.jlibaio.LibaioFile;
+import static org.apache.artemis.nativo.jlibaio.ffm.FFMHandles.CAPTURE_STATE_LAYOUT;
 
-public class ActiveMQFileLock extends FileLock {
+public final class SharedContext {
 
-   private final LibaioFile file;
+   private final Arena arena;
+   private final MemorySegment stateCapture;
+   private final MemorySegment iocbArray;
 
-   public ActiveMQFileLock(final LibaioFile handle) {
-      super((FileChannel) null, 0, 0, false);
-      this.file = handle;
+   public SharedContext() {
+      this.arena = Arena.ofShared();
+      this.stateCapture = arena.allocate(CAPTURE_STATE_LAYOUT);
+      this.iocbArray = arena.allocate(ValueLayout.ADDRESS, 1);
    }
 
-   @Override
-   public boolean isValid() {
-      return true;
+   public Arena getArena() {
+      return arena;
    }
 
-   @Override
-   public void release() throws IOException {
-      file.close();
+   public MemorySegment getStateCapture() {
+      return stateCapture;
+   }
+
+   public MemorySegment getIocbArray() {
+      return iocbArray;
    }
 }

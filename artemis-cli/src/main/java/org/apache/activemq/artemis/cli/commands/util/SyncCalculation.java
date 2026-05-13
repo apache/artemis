@@ -28,6 +28,7 @@ import org.apache.activemq.artemis.core.io.IOCallback;
 import org.apache.activemq.artemis.core.io.SequentialFile;
 import org.apache.activemq.artemis.core.io.SequentialFileFactory;
 import org.apache.activemq.artemis.core.io.aio.AIOSequentialFileFactory;
+import org.apache.artemis.core.io.aio2.AIO2Helper;
 import org.apache.activemq.artemis.core.io.mapped.MappedSequentialFileFactory;
 import org.apache.activemq.artemis.core.io.nio.NIOSequentialFileFactory;
 import org.apache.activemq.artemis.core.server.ActiveMQMessageBundle;
@@ -247,7 +248,12 @@ public class SyncCalculation {
          case ASYNCIO:
             factory = new AIOSequentialFileFactory(datafolder, maxAIO).setDatasync(datasync);
             factory.start();
-            ((AIOSequentialFileFactory) factory).disableBufferReuse();
+            factory.disableBufferReuse();
+            return factory;
+         case ASYNCIO_2:
+            factory = AIO2Helper.getAIO2SequentialFileFactory(datafolder, maxAIO).setDatasync(datasync);
+            factory.start();
+            factory.disableBufferReuse();
             return factory;
          case MAPPED:
             factory = new MappedSequentialFileFactory(datafolder, fileSize, false, 0, 0, null)

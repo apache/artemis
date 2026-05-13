@@ -84,6 +84,7 @@ import org.apache.activemq.artemis.core.filter.impl.FilterImpl;
 import org.apache.activemq.artemis.core.io.IOCriticalErrorListener;
 import org.apache.activemq.artemis.core.io.SequentialFile;
 import org.apache.activemq.artemis.core.io.aio.AIOSequentialFileFactory;
+import org.apache.artemis.core.io.aio2.AIO2Helper;
 import org.apache.activemq.artemis.core.journal.JournalLoadInformation;
 import org.apache.activemq.artemis.core.journal.RecordInfo;
 import org.apache.activemq.artemis.core.management.impl.ActiveMQServerControlImpl;
@@ -3373,6 +3374,13 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
 
       ServerStatus.starting(this);
+
+      if (configuration.getJournalType() == JournalType.ASYNCIO_2) {
+         if (!AIO2Helper.isSupported()) {
+            ActiveMQServerLogger.LOGGER.switchingAIO();
+            configuration.setJournalType(JournalType.ASYNCIO);
+         }
+      }
 
       if (configuration.getJournalType() == JournalType.ASYNCIO) {
          if (!AIOSequentialFileFactory.isSupported()) {

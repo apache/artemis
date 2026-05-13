@@ -110,8 +110,10 @@ public class NIOSequentialFileFactory extends AbstractSequentialFileFactory {
       this.bufferPooling = true;
    }
 
-   public void disableBufferReuse() {
+   @Override
+   public NIOSequentialFileFactory disableBufferReuse() {
       this.bufferPooling = false;
+      return this;
    }
 
    @Override

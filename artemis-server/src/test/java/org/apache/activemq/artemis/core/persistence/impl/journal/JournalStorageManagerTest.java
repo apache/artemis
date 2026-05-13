@@ -37,6 +37,7 @@ import org.apache.activemq.artemis.api.core.ActiveMQBuffers;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.io.SequentialFile;
 import org.apache.activemq.artemis.core.io.aio.AIOSequentialFileFactory;
+import org.apache.artemis.core.io.aio2.AIO2Helper;
 import org.apache.activemq.artemis.core.postoffice.PostOffice;
 import org.apache.activemq.artemis.core.server.JournalType;
 import org.apache.activemq.artemis.core.server.impl.JournalLoader;
@@ -48,6 +49,7 @@ import org.apache.activemq.artemis.utils.ExecutorFactory;
 import org.apache.activemq.artemis.utils.actors.OrderedExecutorFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -67,6 +69,17 @@ public class JournalStorageManagerTest extends ServerTestBase {
    private static ExecutorService executor;
    private static ExecutorService ioExecutor;
    private static ExecutorService testExecutor;
+
+   @BeforeEach
+   public void assumeAIOisSupported() {
+      switch (journalType) {
+         case ASYNCIO ->
+            assumeTrue(AIOSequentialFileFactory.isSupported(), "AIO is not supported on this platform");
+
+         case ASYNCIO_2 ->
+            assumeTrue(AIO2Helper.isSupported(), "AIO2 is not supported on this platform");
+      }
+   }
 
    @BeforeAll
    public static void initExecutors() {
@@ -88,9 +101,6 @@ public class JournalStorageManagerTest extends ServerTestBase {
     */
    @TestTemplate
    public void testFixJournalFileSize() throws Exception {
-      if (journalType == JournalType.ASYNCIO) {
-         assumeTrue(AIOSequentialFileFactory.isSupported(), "AIO is not supported on this platform");
-      }
       final Configuration configuration = createDefaultInVMConfig().setJournalType(journalType);
       final ExecutorFactory executorFactory = new OrderedExecutorFactory(executor);
       final ExecutorFactory ioExecutorFactory = new OrderedExecutorFactory(ioExecutor);
@@ -102,9 +112,6 @@ public class JournalStorageManagerTest extends ServerTestBase {
 
    @TestTemplate
    public void testAddBytesToLargeMessageNotLeakingByteBuffer() throws Exception {
-      if (journalType == JournalType.ASYNCIO) {
-         assumeTrue(AIOSequentialFileFactory.isSupported(), "AIO is not supported on this platform");
-      }
       final Configuration configuration = createDefaultInVMConfig().setJournalType(journalType);
       final ExecutorFactory executorFactory = new OrderedExecutorFactory(executor);
       final ExecutorFactory ioExecutorFactory = new OrderedExecutorFactory(ioExecutor);
