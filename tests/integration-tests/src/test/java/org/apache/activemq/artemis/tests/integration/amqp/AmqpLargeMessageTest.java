@@ -594,7 +594,7 @@ public class AmqpLargeMessageTest extends AmqpClientTestSupport {
          connection.start();
 
          MessageConsumer consumer = session.createConsumer(session.createQueue(testQueueName));
-         TextMessage recMessage =  (TextMessage) consumer.receive(5000);
+         TextMessage recMessage = (TextMessage) consumer.receive(5000);
          assertEquals(smallString, recMessage.getStringProperty("test"));
          assertEquals(body, recMessage.getText());
          session.commit();
@@ -1129,7 +1129,7 @@ public class AmqpLargeMessageTest extends AmqpClientTestSupport {
 
       server.stop();
 
-      try (AssertionLoggerHandler loggerHandler = new AssertionLoggerHandler())  {
+      try (AssertionLoggerHandler loggerHandler = new AssertionLoggerHandler()) {
          server.start();
          assertTrue(loggerHandler.findText("AMQ221019"));
       }
@@ -1294,7 +1294,7 @@ public class AmqpLargeMessageTest extends AmqpClientTestSupport {
 
             assertEquals(bodySize, expectedPayload.length);
 
-            byte[] receivedPayLoad =  new byte[bodySize];
+            byte[] receivedPayLoad = new byte[bodySize];
             msg.readBytes(receivedPayLoad);
 
             assertArrayEquals(expectedPayload, receivedPayLoad);

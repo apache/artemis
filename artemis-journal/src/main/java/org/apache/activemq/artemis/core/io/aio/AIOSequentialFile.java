@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
 /**
  * This class is implementing Runnable to reuse a callback to close it.
  */
-public class AIOSequentialFile extends AbstractSequentialFile  {
+public class AIOSequentialFile extends AbstractSequentialFile {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 

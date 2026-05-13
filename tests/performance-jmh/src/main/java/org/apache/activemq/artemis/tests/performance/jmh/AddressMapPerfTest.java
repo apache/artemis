@@ -54,7 +54,7 @@ public class AddressMapPerfTest {
    }
 
    @Setup
-   public void init()  {
+   public void init() {
       objectAddressMap =
          new AddressMap<>(WILDCARD_CONFIGURATION.getAnyWordsString(), WILDCARD_CONFIGURATION.getSingleWordString(), WILDCARD_CONFIGURATION.getDelimiter());
 

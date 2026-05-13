@@ -44,7 +44,7 @@ public class SimpleManagement implements AutoCloseable {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-   private static final String SIMPLE_OPTIONS  = "{\"field\":\"\",\"value\":\"\",\"operation\":\"\"}";
+   private static final String SIMPLE_OPTIONS = "{\"field\":\"\",\"value\":\"\",\"operation\":\"\"}";
 
    String uri, user, password;
 

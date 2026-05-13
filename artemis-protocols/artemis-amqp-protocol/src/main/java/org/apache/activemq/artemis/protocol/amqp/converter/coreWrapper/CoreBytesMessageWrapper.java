@@ -91,123 +91,123 @@ public class CoreBytesMessageWrapper extends CoreMessageWrapper {
       return message.getBodyBufferSize();
    }
 
-   public boolean readBoolean()  {
+   public boolean readBoolean() {
       return bytesReadBoolean(getReadBodyBuffer());
    }
 
-   public byte readByte()  {
+   public byte readByte() {
       return bytesReadByte(getReadBodyBuffer());
    }
 
-   public int readUnsignedByte()  {
+   public int readUnsignedByte() {
       return bytesReadUnsignedByte(getReadBodyBuffer());
    }
 
-   public short readShort()  {
+   public short readShort() {
       return bytesReadShort(getReadBodyBuffer());
    }
 
-   public int readUnsignedShort()  {
+   public int readUnsignedShort() {
       return bytesReadUnsignedShort(getReadBodyBuffer());
    }
 
-   public char readChar()  {
+   public char readChar() {
       return bytesReadChar(getReadBodyBuffer());
    }
 
-   public int readInt()  {
+   public int readInt() {
       return bytesReadInt(getReadBodyBuffer());
    }
 
-   public long readLong()  {
+   public long readLong() {
       return bytesReadLong(getReadBodyBuffer());
    }
 
-   public float readFloat()  {
+   public float readFloat() {
       return bytesReadFloat(getReadBodyBuffer());
    }
 
-   public double readDouble()  {
+   public double readDouble() {
       return bytesReadDouble(getReadBodyBuffer());
    }
 
-   public String readUTF()  {
+   public String readUTF() {
       return bytesReadUTF(getReadBodyBuffer());
    }
 
-   public int readBytes(byte[] value)  {
+   public int readBytes(byte[] value) {
       return bytesReadBytes(getReadBodyBuffer(), value);
    }
 
-   public int readBytes(byte[] value, int length)  {
+   public int readBytes(byte[] value, int length) {
       return bytesReadBytes(getReadBodyBuffer(), value, length);
    }
 
-   public void writeBoolean(boolean value)  {
+   public void writeBoolean(boolean value) {
       bytesWriteBoolean(getWriteBodyBuffer(), value);
 
    }
 
-   public void writeByte(byte value)  {
+   public void writeByte(byte value) {
       bytesWriteByte(getWriteBodyBuffer(), value);
    }
 
-   public void writeShort(short value)  {
+   public void writeShort(short value) {
       bytesWriteShort(getWriteBodyBuffer(), value);
    }
 
-   public void writeChar(char value)  {
+   public void writeChar(char value) {
       bytesWriteChar(getWriteBodyBuffer(), value);
    }
 
-   public void writeInt(int value)  {
+   public void writeInt(int value) {
       bytesWriteInt(getWriteBodyBuffer(), value);
    }
 
-   public void writeLong(long value)  {
+   public void writeLong(long value) {
       bytesWriteLong(getWriteBodyBuffer(), value);
    }
 
-   public void writeFloat(float value)  {
+   public void writeFloat(float value) {
       bytesWriteFloat(getWriteBodyBuffer(), value);
    }
 
-   public void writeDouble(double value)  {
+   public void writeDouble(double value) {
       bytesWriteDouble(getWriteBodyBuffer(), value);
    }
 
-   public void writeUTF(String value)  {
+   public void writeUTF(String value) {
       bytesWriteUTF(getWriteBodyBuffer(), value);
    }
 
-   public void writeBytes(byte[] value)  {
+   public void writeBytes(byte[] value) {
       bytesWriteBytes(getWriteBodyBuffer(), value);
    }
 
-   public void writeBytes(byte[] value, int offset, int length)  {
+   public void writeBytes(byte[] value, int offset, int length) {
       bytesWriteBytes(getWriteBodyBuffer(), value, offset, length);
    }
 
-   public void writeObject(Object value) throws ConversionException  {
+   public void writeObject(Object value) throws ConversionException {
       if (!bytesWriteObject(getWriteBodyBuffer(), value)) {
          throw new ConversionException("Can't make conversion of " + value + " to any known type");
       }
    }
 
    @Override
-   public void encode()  {
+   public void encode() {
       super.encode();
       // this is to make sure we encode the body-length before it's persisted
       getBodyLength();
    }
 
    @Override
-   public void decode()  {
+   public void decode() {
       super.decode();
 
    }
 
-   public void reset()  {
+   public void reset() {
       if (!message.isLargeMessage()) {
          bytesMessageReset(getReadBodyBuffer());
          bytesMessageReset(getWriteBodyBuffer());

@@ -810,7 +810,7 @@ public class JmsConsumerTest extends JMSTestBase {
 
       session.createConsumer(session.createQueue(queueName));
 
-      org.apache.activemq.artemis.core.server.Queue  queue = server.locateQueue(SimpleString.of(queueName));
+      org.apache.activemq.artemis.core.server.Queue queue = server.locateQueue(SimpleString.of(queueName));
 
       assertEquals(5, queue.getMaxConsumers());
       assertTrue(queue.isPurgeOnNoConsumers());

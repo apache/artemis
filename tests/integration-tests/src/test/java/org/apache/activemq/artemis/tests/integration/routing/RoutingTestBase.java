@@ -162,7 +162,7 @@ public class RoutingTestBase extends ClusterTestBase {
    }
 
    protected ConnectionFactory createFactory(String protocol, boolean sslEnabled, String host, int port, String clientID, String user, String password) throws Exception {
-      return createFactory(protocol, sslEnabled,  host, port, clientID, user, password, false, -1);
+      return createFactory(protocol, sslEnabled, host, port, clientID, user, password, false, -1);
    }
 
    protected ConnectionFactory createFactory(String protocol, boolean sslEnabled, String host, int port, String clientID, String user, String password, boolean needClientAuth, int retries) throws Exception {

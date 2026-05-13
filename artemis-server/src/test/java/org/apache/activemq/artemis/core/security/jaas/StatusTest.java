@@ -97,10 +97,10 @@ public class StatusTest extends ServerTestBase {
       ActiveMQServerImpl server = new ActiveMQServerImpl();
       assertEquals(server, ServerStatus.getServer());
 
-      ServerStatus.getInstance().update(JAAS_COMPONENT + "/properties/" + EARLY_BIRD,  "{\"reloadTime\":\"2\"}");
+      ServerStatus.getInstance().update(JAAS_COMPONENT + "/properties/" + EARLY_BIRD, "{\"reloadTime\":\"2\"}");
       assertTrue(ServerStatus.getInstance().asJson().contains(EARLY_BIRD), "contains");
 
-      ServerStatus.getInstance().update(JAAS_COMPONENT + "/properties/" + BIRD,  "{\"reloadTime\":\"2\"}");
+      ServerStatus.getInstance().update(JAAS_COMPONENT + "/properties/" + BIRD, "{\"reloadTime\":\"2\"}");
 
       assertTrue(ServerStatus.getInstance().asJson().contains(EARLY_BIRD), "contains");
       assertTrue(ServerStatus.getInstance().asJson().contains(BIRD), "contains");
@@ -111,10 +111,10 @@ public class StatusTest extends ServerTestBase {
       final String EARLY_BIRD = "early";
       final String BIRD = "later";
 
-      ServerStatus.getInstance().update(JAAS_COMPONENT + "/properties/" + EARLY_BIRD,  "{\"reloadTime\":\"2\"}");
+      ServerStatus.getInstance().update(JAAS_COMPONENT + "/properties/" + EARLY_BIRD, "{\"reloadTime\":\"2\"}");
       assertTrue(ServerStatus.getInstance().asJson().contains(EARLY_BIRD), "contains");
 
-      ServerStatus.getInstance().update(JAAS_COMPONENT + "/properties/" + BIRD,  "{\"reloadTime\":\"2\"}");
+      ServerStatus.getInstance().update(JAAS_COMPONENT + "/properties/" + BIRD, "{\"reloadTime\":\"2\"}");
 
       ActiveMQServerImpl server = new ActiveMQServerImpl();
       assertEquals(server, ServerStatus.getServer());

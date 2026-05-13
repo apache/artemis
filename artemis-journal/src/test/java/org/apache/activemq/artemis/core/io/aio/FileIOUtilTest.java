@@ -48,7 +48,7 @@ public class FileIOUtilTest {
       assumeTrue(LibaioContext.isLoaded());
       AtomicInteger errors = new AtomicInteger(0);
 
-      SequentialFileFactory factory = new AIOSequentialFileFactory(temporaryFolder, (Throwable error, String message, String file) -> errors.incrementAndGet(),  4 * 1024);
+      SequentialFileFactory factory = new AIOSequentialFileFactory(temporaryFolder, (Throwable error, String message, String file) -> errors.incrementAndGet(), 4 * 1024);
       factory.start();
 
       SequentialFile file = factory.createSequentialFile("fileAIO.bin");

@@ -114,7 +114,7 @@ public class ReloadableProperties {
       Map<String, String> statusAttributes = new HashMap<>();
       statusAttributes.put("Alder32", String.valueOf(checksum));
       statusAttributes.put("reloadTime", String.valueOf(reloadTime));
-      ServerStatus.getInstance().update(JAAS_COMPONENT + "/properties/" + key.file.getName(),  statusAttributes);
+      ServerStatus.getInstance().update(JAAS_COMPONENT + "/properties/" + key.file.getName(), statusAttributes);
    }
 
    public synchronized Map<String, String> invertedPropertiesMap() {

@@ -126,7 +126,7 @@ public class FlowControlPagingTest extends SoakTestBase {
    boolean unzipped = false;
 
    private String getZipName() {
-      return "flow-data-" + protocol +  "-" + MESSAGES + "-" + MESSAGE_SIZE + ".zip";
+      return "flow-data-" + protocol + "-" + MESSAGES + "-" + MESSAGE_SIZE + ".zip";
    }
 
    @BeforeEach
@@ -138,7 +138,7 @@ public class FlowControlPagingTest extends SoakTestBase {
       String zipName = getZipName();
       File zipFile = useZip ? new File(ZIP_LOCATION + "/" + zipName) : null;
 
-      if (ZIP_LOCATION  != null && zipFile.exists()) {
+      if (ZIP_LOCATION != null && zipFile.exists()) {
          unzipped = true;
          unzip(zipFile, new File(getServerLocation(SERVER_NAME_0)));
       }

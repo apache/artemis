@@ -166,7 +166,7 @@ public final class ConfigurationUtils {
       }
    }
 
-   public static List<TransportConfiguration> parseAcceptorURI(String name, URI uri)  {
+   public static List<TransportConfiguration> parseAcceptorURI(String name, URI uri) {
       try {
          AcceptorTransportConfigurationParser parser = new AcceptorTransportConfigurationParser();
 

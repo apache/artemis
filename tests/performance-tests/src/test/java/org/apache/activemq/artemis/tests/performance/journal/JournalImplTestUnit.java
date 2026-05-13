@@ -105,7 +105,7 @@ public abstract class JournalImplTestUnit extends JournalImplTestBase {
       Assertions.assertThrows(Exception.class, () -> {
          journal.appendCommitRecord(1, true, context, true);
       });
-      CountDownLatch latch  = new CountDownLatch(1);
+      CountDownLatch latch = new CountDownLatch(1);
       context.executeOnCompletion(new IOCompletion() {
          @Override
          public void storeLineUp() {
@@ -139,7 +139,7 @@ public abstract class JournalImplTestUnit extends JournalImplTestBase {
       Assertions.assertThrows(Exception.class, () -> {
          addTxWithSize(1024 * 1024, 1, 1);
       });
-      CountDownLatch latch  = new CountDownLatch(1);
+      CountDownLatch latch = new CountDownLatch(1);
       context.executeOnCompletion(new IOCompletion() {
          @Override
          public void storeLineUp() {
@@ -173,7 +173,7 @@ public abstract class JournalImplTestUnit extends JournalImplTestBase {
       Assertions.assertThrows(Exception.class, () -> {
          addWithSize(1024 * 1024, context, 1, 1);
       });
-      CountDownLatch latch  = new CountDownLatch(1);
+      CountDownLatch latch = new CountDownLatch(1);
       context.executeOnCompletion(new IOCompletion() {
          @Override
          public void storeLineUp() {

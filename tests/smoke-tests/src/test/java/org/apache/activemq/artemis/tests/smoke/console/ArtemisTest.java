@@ -16,7 +16,7 @@
  */
 package org.apache.activemq.artemis.tests.smoke.console;
 
-public abstract class ArtemisTest  extends ConsoleTest {
+public abstract class ArtemisTest extends ConsoleTest {
    public ArtemisTest(String browser, String serverName) {
       super(browser, serverName);
    }

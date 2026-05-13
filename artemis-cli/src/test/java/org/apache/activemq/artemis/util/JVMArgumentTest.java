@@ -92,7 +92,7 @@ public class JVMArgumentTest {
       String[] fixedArguments = new String[]{"-Xmx", "-Xms"};
 
       Map<String, String> usedArgs = new HashMap<>();
-      JVMArgumentParser.parseOriginalArgs(prefix, "\"", arguments, Collections.emptyMap(),  fixedArguments, usedArgs);
+      JVMArgumentParser.parseOriginalArgs(prefix, "\"", arguments, Collections.emptyMap(), fixedArguments, usedArgs);
       assertEquals(2, usedArgs.size());
       assertEquals("-Xmx77G", usedArgs.get("-Xmx"));
       assertEquals("-Xms333M", usedArgs.get("-Xms"));

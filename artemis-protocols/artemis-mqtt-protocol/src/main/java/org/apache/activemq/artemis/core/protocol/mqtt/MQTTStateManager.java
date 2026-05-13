@@ -48,7 +48,7 @@ public class MQTTStateManager {
    private final Map<String, MQTTSessionState> sessionStates = new ConcurrentHashMap<>();
    private final Queue sessionStore;
    private static final Map<Integer, MQTTStateManager> INSTANCES = new HashMap<>();
-   private final Map<String, MQTTConnection> connectedClients  = new ConcurrentHashMap<>();
+   private final Map<String, MQTTConnection> connectedClients = new ConcurrentHashMap<>();
    private final boolean subscriptionPersistenceEnabled;
 
    /*

@@ -283,7 +283,7 @@ public abstract class ClusterTestBase extends ActiveMQTestBase {
       ActiveMQServer server = servers[bNode];
 
       if (logger.isDebugEnabled()) {
-         logger.debug("waiting for {} on the topology for server = {}",  Arrays.toString(nodes), server);
+         logger.debug("waiting for {} on the topology for server = {}", Arrays.toString(nodes), server);
       }
 
       long start = System.currentTimeMillis();

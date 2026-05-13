@@ -181,7 +181,7 @@ public class OIDCSupport {
 
       String[] segments = path.split("\\.");
       Map<?, ?> current = claims.getClaims();
-      for  (int i = 0; i < segments.length; i++) {
+      for (int i = 0; i < segments.length; i++) {
          String segment = segments[i];
          Object v = current.get(segment);
          if (i < segments.length - 1) {

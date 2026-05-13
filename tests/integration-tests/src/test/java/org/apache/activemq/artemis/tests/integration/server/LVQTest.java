@@ -860,7 +860,7 @@ public class LVQTest extends ActiveMQTestBase {
       producer.send(m2);
       // encoded size is a little larger than payload
       Wait.assertTrue(() -> queue.getPersistentSize() > 10 * 1024);
-      Wait.assertEquals(0L,  () -> queue.getDeliveringSize(), 5000, 100);
+      Wait.assertEquals(0L, () -> queue.getDeliveringSize(), 5000, 100);
    }
 
    @Test

@@ -72,7 +72,7 @@ public class JMSOrderTest extends JMSTestBase {
 
    @Parameters(name = "protocol={0}&exclusive={1}")
    public static Collection getParameters() {
-      return Arrays.asList(new Object[][]{{"AMQP", true}, {"AMQP", false}, {"OPENWIRE", true},  {"OPENWIRE", false}, {"CORE", true}, {"CORE", false}});
+      return Arrays.asList(new Object[][]{{"AMQP", true}, {"AMQP", false}, {"OPENWIRE", true}, {"OPENWIRE", false}, {"CORE", true}, {"CORE", false}});
    }
 
    @Override

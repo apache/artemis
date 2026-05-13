@@ -521,7 +521,7 @@ public interface ActiveMQServer extends ServiceComponent {
 
    @Deprecated
    Queue createQueue(SimpleString address, RoutingType routingType, SimpleString queueName, SimpleString user,
-                               SimpleString filterString,  boolean durable, boolean temporary) throws Exception;
+                               SimpleString filterString, boolean durable, boolean temporary) throws Exception;
 
    @Deprecated
    Queue createQueue(SimpleString address, RoutingType routingType, SimpleString queueName, SimpleString filter, boolean durable, boolean temporary, int maxConsumers, boolean purgeOnNoConsumers, boolean autoCreateAddress) throws Exception;

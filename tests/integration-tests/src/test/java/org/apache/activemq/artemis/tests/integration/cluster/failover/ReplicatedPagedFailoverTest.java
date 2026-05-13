@@ -112,7 +112,7 @@ public class ReplicatedPagedFailoverTest extends ReplicatedFailoverTest {
          for (long pageID = store.getFirstPage(); pageID <= store.getCurrentPage().getPageId() + 10; pageID++) {
             primaryServer.getServer().getStorageManager().pageClosed(store.getStoreName(), (int) pageID);
          }
-      }  else if (tamperMode == 2) {
+      } else if (tamperMode == 2) {
          for (long pageID = store.getFirstPage(); pageID <= store.getCurrentPage().getPageId() + 10; pageID++) {
             primaryServer.getServer().getStorageManager().pageDeleted(store.getStoreName(), (int) pageID);
          }

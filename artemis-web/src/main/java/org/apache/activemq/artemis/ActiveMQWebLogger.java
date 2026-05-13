@@ -24,7 +24,7 @@ import org.apache.activemq.artemis.logs.annotation.LogMessage;
  * Logger Codes 240000 - 249999
  */
 @LogBundle(projectCode = "AMQ", regexID = "24[0-9]{4}", retiredIDs = {244003})
-public interface ActiveMQWebLogger  {
+public interface ActiveMQWebLogger {
 
    ActiveMQWebLogger LOGGER = BundleFactory.newBundle(ActiveMQWebLogger.class, ActiveMQWebLogger.class.getPackage().getName());
 

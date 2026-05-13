@@ -201,7 +201,7 @@ public class JournalStorageManager extends AbstractJournalStorageManager {
    /**
     * We need to correct the file size if its not a multiple of the alignement
     *
-    * @param fileSize  : the configured file size.
+    * @param fileSize : the configured file size.
     * @param alignment : the alignment.
     * @return the fixed file size
     */
@@ -904,7 +904,7 @@ public class JournalStorageManager extends AbstractJournalStorageManager {
    }
 
    @Override
-   public int getAllowedPageSize(int pageSize)  {
+   public int getAllowedPageSize(int pageSize) {
       if (config.getStoreConfiguration() == null) {
          return pageSize;
       }

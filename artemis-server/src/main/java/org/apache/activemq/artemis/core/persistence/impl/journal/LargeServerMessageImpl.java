@@ -87,7 +87,7 @@ public final class LargeServerMessageImpl extends CoreMessage implements CoreLar
       // that we would have no control. that's usually stored in a ThreadLocal within the native layer.
       // to avoid that buffer be kept in memory holding resources we will allocate our own buffer here from the NettyPool.
       // ./soakTest/OWLeakTest was written to validate this scenario here.
-      ByteBuf ioBuffer  = PooledByteBufAllocator.DEFAULT.ioBuffer(CHUNK_LM_SIZE, CHUNK_LM_SIZE);
+      ByteBuf ioBuffer = PooledByteBufAllocator.DEFAULT.ioBuffer(CHUNK_LM_SIZE, CHUNK_LM_SIZE);
       ActiveMQBuffer wrappedIOBuffer = new ChannelBufferWrapper(ioBuffer);
 
       try {

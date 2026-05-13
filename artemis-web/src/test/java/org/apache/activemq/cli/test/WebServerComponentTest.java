@@ -1105,7 +1105,7 @@ public class WebServerComponentTest extends ArtemisTestCase {
       JarEntry entry = new JarEntry(name);
       entry.setTime(source.lastModified());
       target.putNextEntry(entry);
-      try (BufferedInputStream input  = new BufferedInputStream(new FileInputStream(source))) {
+      try (BufferedInputStream input = new BufferedInputStream(new FileInputStream(source))) {
          byte[] buffer = new byte[1024];
          while (true) {
             int count = input.read(buffer);

@@ -20,7 +20,7 @@ import org.apache.activemq.artemis.core.paging.cursor.PageSubscriptionCounter;
 
 public abstract class BasePagingCounter implements PageSubscriptionCounter {
 
-   private volatile  boolean rebuilding = false;
+   private volatile boolean rebuilding = false;
 
    @Override
    public void markRebuilding() {

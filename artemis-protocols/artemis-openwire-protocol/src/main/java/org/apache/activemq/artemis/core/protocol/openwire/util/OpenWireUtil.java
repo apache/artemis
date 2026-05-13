@@ -37,7 +37,7 @@ public class OpenWireUtil {
          return info.getSelector();
       }
       if (info.getSelector() != null) {
-         if (openWireDest.getOptions()  != null) {
+         if (openWireDest.getOptions() != null) {
             if (Boolean.valueOf(openWireDest.getOptions().get(SELECTOR_AWARE_OPTION))) {
                return info.getSelector();
             }

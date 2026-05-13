@@ -411,7 +411,7 @@ public class PostOfficeJournalLoader implements JournalLoader {
                }
             } else {
                // on this case the page file didn't exist, we just remove all the records since the page is already gone
-               logger.debug("Page {} didn't exist on address {}, so we are just removing records",  pageId, addressPageMapEntry.getKey());
+               logger.debug("Page {} didn't exist on address {}, so we are just removing records", pageId, addressPageMapEntry.getKey());
                for (List<PageCountPending> records : perQueue.values()) {
                   for (PageCountPending record : records) {
                      if (logger.isDebugEnabled()) {

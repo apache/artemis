@@ -344,7 +344,7 @@ public class ElasticQueueTest extends ActiveMQTestBase {
                   }
                }
             } catch (JMSException | InterruptedException ignored) {
-               System.out.println("Exception: "  + ignored.toString() + ", PC=" +   producedCount.get());
+               System.out.println("Exception: " + ignored.toString() + ", PC=" + producedCount.get());
             }
          }
       }
@@ -585,7 +585,7 @@ public class ElasticQueueTest extends ActiveMQTestBase {
       nodes.get(1).start();
 
       // ensure nothing can be consumed from the head
-      AddressControl addressControl1 =  (AddressControl) ManagementControlHelper.createProxy(node1NameBuilder.getAddressObjectName(qNameSimple), AddressControl.class, mBeanServer);
+      AddressControl addressControl1 = (AddressControl) ManagementControlHelper.createProxy(node1NameBuilder.getAddressObjectName(qNameSimple), AddressControl.class, mBeanServer);
       assertTrue(Wait.waitFor(() -> {
          try {
             addressControl1.pause();
@@ -692,7 +692,7 @@ public class ElasticQueueTest extends ActiveMQTestBase {
       nodes.get(1).start();
 
       // ensure nothing can be consumed from the head
-      AddressControl addressControl1 =  (AddressControl) ManagementControlHelper.createProxy(node1NameBuilder.getAddressObjectName(qNameSimple), AddressControl.class, mBeanServer);
+      AddressControl addressControl1 = (AddressControl) ManagementControlHelper.createProxy(node1NameBuilder.getAddressObjectName(qNameSimple), AddressControl.class, mBeanServer);
       assertTrue(Wait.waitFor(() -> {
          try {
             addressControl1.pause();

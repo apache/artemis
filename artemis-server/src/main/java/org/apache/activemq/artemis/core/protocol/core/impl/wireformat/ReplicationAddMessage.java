@@ -71,7 +71,7 @@ public final class ReplicationAddMessage extends PacketImpl {
 
    @Override
    public int expectedEncodeSize() {
-      return  PACKET_HEADERS_SIZE +
+      return PACKET_HEADERS_SIZE +
          DataConstants.SIZE_BYTE + // buffer.writeByte(journalID);
          DataConstants.SIZE_BOOLEAN + // buffer.writeBoolean(operation.toBoolean());
          DataConstants.SIZE_LONG + // buffer.writeLong(id);

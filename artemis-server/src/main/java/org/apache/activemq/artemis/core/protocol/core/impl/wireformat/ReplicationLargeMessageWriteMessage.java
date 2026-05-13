@@ -79,7 +79,7 @@ public final class ReplicationLargeMessageWriteMessage extends PacketImpl {
 
    @Override
    protected String getPacketString() {
-      return  super.getPacketString() +
+      return super.getPacketString() +
          "messageId=" + messageId +
          ", body.size=" + body.length;
    }

@@ -285,7 +285,7 @@ public class MegaCleanerPagingTest extends ActiveMQTestBase {
 
       ConnectionFactory cf = CFUtil.createConnectionFactory("core", "tcp://localhost:61616?consumerWindowSize=0");
       assertEquals(0, ((ActiveMQConnectionFactory)cf).getServerLocator().getConsumerWindowSize());
-      Connection slowConnection  = cf.createConnection();
+      Connection slowConnection = cf.createConnection();
       Session slowSession = slowConnection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
       Queue slowQueue = slowSession.createQueue(queueName);
       MessageProducer slowProducer = slowSession.createProducer(slowQueue);

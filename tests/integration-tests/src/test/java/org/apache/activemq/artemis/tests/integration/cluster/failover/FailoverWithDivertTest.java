@@ -116,7 +116,7 @@ public class FailoverWithDivertTest extends FailoverTestBase {
       session.commit();
 
       ClientConsumer consumer = session.createConsumer(DIVERT_ADDRESS);
-      for (int i = 0;  i < num; i++) {
+      for (int i = 0; i < num; i++) {
          ClientMessage receivedFromSourceQueue = consumer.receive(5000);
          assertNotNull(receivedFromSourceQueue);
          receivedFromSourceQueue.acknowledge();

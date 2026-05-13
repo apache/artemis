@@ -66,7 +66,7 @@ public class AMQPRoutingHandler extends RoutingHandler<AMQPRoutingContext> {
       ErrorCondition error = new ErrorCondition();
       error.setCondition(ConnectionError.REDIRECT);
       error.setDescription(String.format("Connection router %s redirected this connection to %s:%d", context.getRouter(), host, port));
-      Map<Symbol, Object>  info = new HashMap<>();
+      Map<Symbol, Object> info = new HashMap<>();
       info.put(AmqpSupport.NETWORK_HOST, host);
       info.put(AmqpSupport.PORT, port);
       error.setInfo(info);

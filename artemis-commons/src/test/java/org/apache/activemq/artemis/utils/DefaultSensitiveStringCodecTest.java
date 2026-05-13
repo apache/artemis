@@ -120,7 +120,7 @@ public class DefaultSensitiveStringCodecTest {
       codecFromEnvVarConfig.init(params);
       String blaVersion = codecFromEnvVarConfig.encode(someString);
       Map<String, String> twoWayParams = Map.of(DefaultSensitiveStringCodec.ALGORITHM, DefaultSensitiveStringCodec.TWO_WAY);
-      assertNotEquals(blaVersion,  PasswordMaskingUtil.getDefaultCodec(twoWayParams).encode(someString));
+      assertNotEquals(blaVersion, PasswordMaskingUtil.getDefaultCodec(twoWayParams).encode(someString));
    }
 
    @Test

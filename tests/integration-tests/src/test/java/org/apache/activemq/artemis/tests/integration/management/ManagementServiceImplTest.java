@@ -190,7 +190,7 @@ public class ManagementServiceImplTest extends ActiveMQTestBase {
    public void testCorrelateResponseByMessageID() throws Exception {
       String queue = RandomUtil.randomUUIDString();
       String address = RandomUtil.randomUUIDString();
-      UUID messageId =  UUIDGenerator.getInstance().generateUUID();
+      UUID messageId = UUIDGenerator.getInstance().generateUUID();
 
       Configuration config = createBasicConfig().setJMXManagementEnabled(false);
 

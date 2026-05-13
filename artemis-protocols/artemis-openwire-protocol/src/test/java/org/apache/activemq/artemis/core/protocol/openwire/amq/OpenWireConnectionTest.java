@@ -142,15 +142,15 @@ public class OpenWireConnectionTest {
             }
          };
 
-         openWireConnection.bufferReceived(openWireConnection,  wireFormatInfoBuffer);
-         openWireConnection.bufferReceived(openWireConnection,  connectionInfoBuffer);
+         openWireConnection.bufferReceived(openWireConnection, wireFormatInfoBuffer);
+         openWireConnection.bufferReceived(openWireConnection, connectionInfoBuffer);
          // actor tasks
-         openWireConnection.bufferReceived(openWireConnection,  sessionInfoBuffer);
-         openWireConnection.bufferReceived(openWireConnection,  producerInfoBuffer);
+         openWireConnection.bufferReceived(openWireConnection, sessionInfoBuffer);
+         openWireConnection.bufferReceived(openWireConnection, producerInfoBuffer);
 
          assertTrue(okResponses.await(10, TimeUnit.SECONDS), "fail on ok response check, iteration: " + i);
 
-         openWireConnection.bufferReceived(openWireConnection,  removeInfoBuffer);
+         openWireConnection.bufferReceived(openWireConnection, removeInfoBuffer);
 
          assertTrue(okResponsesWithRemove.await(10, TimeUnit.SECONDS), "fail on ok response check with remove, iteration: " + i);
 

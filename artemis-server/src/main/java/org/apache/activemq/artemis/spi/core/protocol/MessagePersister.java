@@ -52,7 +52,7 @@ public class MessagePersister implements Persister<Message> {
       CoreMessagePersister persister = CoreMessagePersister.getInstance();
       MessagePersister.registerPersister(persister);
 
-      Iterable<ProtocolManagerFactory> protocols  = ServiceLoader.load(ProtocolManagerFactory.class, MessagePersister.class.getClassLoader());
+      Iterable<ProtocolManagerFactory> protocols = ServiceLoader.load(ProtocolManagerFactory.class, MessagePersister.class.getClassLoader());
       for (ProtocolManagerFactory next : protocols) {
          registerProtocol(next);
       }

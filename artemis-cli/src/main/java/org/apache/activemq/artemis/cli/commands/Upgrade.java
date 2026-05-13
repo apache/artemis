@@ -315,7 +315,7 @@ public class Upgrade extends InstallAbstract {
                 },
                 newLine -> {
                    if (newLine.trim().startsWith(jdkPrefix)) {
-                      String result =  JVMArgumentParser.parseNewLine(jdkPrefix, endOfLine, newLine, keepArguments, currentArguments);
+                      String result = JVMArgumentParser.parseNewLine(jdkPrefix, endOfLine, newLine, keepArguments, currentArguments);
                       return result;
                    } else {
                       for (String prefix : keepingPrefixes) {

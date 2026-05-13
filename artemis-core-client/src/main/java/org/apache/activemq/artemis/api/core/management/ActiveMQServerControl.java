@@ -1630,7 +1630,7 @@ public interface ActiveMQServerControl {
     */
    @Operation(desc = "Add security-settings for matching addresses", impact = MBeanOperationInfo.ACTION)
    void addSecuritySettings(@Parameter(desc = "an address match", name = "addressMatch") String addressMatch,
-                            @Parameter(desc = "The configuration of the security-settings as JSON", name = "securitySettingsAsJson")  String securitySettingsAsJson) throws Exception;
+                            @Parameter(desc = "The configuration of the security-settings as JSON", name = "securitySettingsAsJson") String securitySettingsAsJson) throws Exception;
 
    @Operation(desc = "Remove security settings for an address", impact = MBeanOperationInfo.ACTION)
    void removeSecuritySettings(@Parameter(desc = "an address match", name = "addressMatch") String addressMatch) throws Exception;
@@ -1957,7 +1957,7 @@ public interface ActiveMQServerControl {
     */
    @Operation(desc = "Add address settings for addresses matching the addressMatch", impact = MBeanOperationInfo.ACTION)
    String addAddressSettings(@Parameter(desc = "an address match", name = "addressMatch") String address,
-                             @Parameter(desc = "The configuration of the address settings as JSON", name = "addressSettingsAsJson")  String addressSettingsAsJson) throws Exception;
+                             @Parameter(desc = "The configuration of the address settings as JSON", name = "addressSettingsAsJson") String addressSettingsAsJson) throws Exception;
 
    @Operation(desc = "Remove address settings", impact = MBeanOperationInfo.ACTION)
    void removeAddressSettings(@Parameter(desc = "an address match", name = "addressMatch") String addressMatch) throws Exception;

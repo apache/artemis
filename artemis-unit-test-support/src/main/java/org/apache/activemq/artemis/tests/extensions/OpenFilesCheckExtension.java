@@ -60,7 +60,7 @@ public class OpenFilesCheckExtension implements Extension, AfterAllCallback {
 
       if (!Wait.waitFor(() -> getOpenFD() < maxFiles, 10000, 0)) {
          String fileList = getOpenList();
-         fail("Too many files open (" + getOpenFD()  + ">" + maxFiles + ") after " + testName + ". A possible list: " + fileList);
+         fail("Too many files open (" + getOpenFD() + ">" + maxFiles + ") after " + testName + ". A possible list: " + fileList);
       }
    }
 

@@ -137,14 +137,14 @@ public class GroovyRun {
       }
    }
 
-   public static void assertTrue(boolean  value) {
+   public static void assertTrue(boolean value) {
       if (!value) {
          throw new RuntimeException("Expected true");
       }
    }
 
 
-   public static void assertFalse(boolean  value) {
+   public static void assertFalse(boolean value) {
       if (value) {
          throw new RuntimeException("Expected false");
       }

@@ -84,7 +84,7 @@ import org.slf4j.LoggerFactory;
 
 import static org.apache.activemq.artemis.core.protocol.openwire.util.OpenWireUtil.SELECTOR_AWARE_OPTION;
 
-public class OpenWireProtocolManager  extends AbstractProtocolManager<Command, OpenWireInterceptor, OpenWireConnection, OpenWireRoutingHandler> implements ClusterTopologyListener {
+public class OpenWireProtocolManager extends AbstractProtocolManager<Command, OpenWireInterceptor, OpenWireConnection, OpenWireRoutingHandler> implements ClusterTopologyListener {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 

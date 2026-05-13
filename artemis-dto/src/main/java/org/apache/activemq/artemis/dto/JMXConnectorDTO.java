@@ -28,19 +28,19 @@ import org.apache.activemq.artemis.utils.PasswordMaskingUtil;
 @XmlAccessorType(XmlAccessType.FIELD)
 public class JMXConnectorDTO {
 
-   @XmlAttribute  (name = "connector-host")
+   @XmlAttribute (name = "connector-host")
    String connectorHost;
 
-   @XmlAttribute  (name = "connector-port", required = true)
+   @XmlAttribute (name = "connector-port", required = true)
    Integer connectorPort;
 
-   @XmlAttribute  (name = "rmi-registry-port")
+   @XmlAttribute (name = "rmi-registry-port")
    Integer rmiRegistryPort;
 
-   @XmlAttribute  (name = "jmx-realm")
+   @XmlAttribute (name = "jmx-realm")
    String jmxRealm;
 
-   @XmlAttribute  (name = "object-name")
+   @XmlAttribute (name = "object-name")
    String objectName;
 
    @XmlAttribute (name = "authenticator-type")

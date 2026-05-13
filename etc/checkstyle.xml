@@ -97,6 +97,9 @@ under the License.
       <module name="ParenPad">
          <property name="option" value="nospace"/>
       </module>
+      <module name="SingleSpaceSeparator">
+         <property name="validateComments" value="false"/>
+      </module>
       <!-- Ensure there is no space between the identifier of a method definition, constructor definition, method call, or constructor invocation and the left parenthesis of the parameter list. -->
       <module name="MethodParamPad"/>
       <!-- Ensure proper indentation. -->

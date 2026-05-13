@@ -48,8 +48,8 @@ public class PrefixSendAckTest extends ServerBase {
 
    @TestTemplate
    public void testSendReceive() throws Throwable {
-      evaluate(senderClassloader,  "prefixSendAckTest/sendAckMessages.groovy", server, sender, "sendAckMessages");
-      evaluate(receiverClassloader,  "prefixSendAckTest/sendAckMessages.groovy", server, receiver, "receiveMessages");
+      evaluate(senderClassloader, "prefixSendAckTest/sendAckMessages.groovy", server, sender, "sendAckMessages");
+      evaluate(receiverClassloader, "prefixSendAckTest/sendAckMessages.groovy", server, receiver, "receiveMessages");
    }
 
    @Override

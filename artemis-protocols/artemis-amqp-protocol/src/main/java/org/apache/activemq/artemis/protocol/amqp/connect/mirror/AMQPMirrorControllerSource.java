@@ -478,7 +478,7 @@ public class AMQPMirrorControllerSource extends BasicMirrorController<Sender> im
       if (ctx != null) {
          ctx.replicationDone();
          logger.debug("syncDone::replicationDone::ctx={},ref={}", ctx, reference);
-      }  else {
+      } else {
          Message message = reference.getMessage();
          if (message != null) {
             ctx = (OperationContext) message.getUserContext(OperationContext.class);

@@ -395,7 +395,7 @@ public class SSLSupport {
 
 
       // Add a certPathChecker to log soft fail exceptions caught by the revocation checker.
-      pkixParams.addCertPathChecker(new  PKIXCertPathChecker() {
+      pkixParams.addCertPathChecker(new PKIXCertPathChecker() {
          @Override
          public void init(boolean forward) throws CertPathValidatorException {
          }
@@ -436,7 +436,7 @@ public class SSLSupport {
    protected Set<PKIXRevocationChecker.Option> loadRevocationOptions() {
       String[] revocationOptionNames = crcOptions.split(",");
 
-      Set<PKIXRevocationChecker.Option>  revocationOptions = new HashSet<>();
+      Set<PKIXRevocationChecker.Option> revocationOptions = new HashSet<>();
       for (String revocationOptionName : revocationOptionNames) {
          revocationOptions.add(PKIXRevocationChecker.Option.valueOf(revocationOptionName));
       }

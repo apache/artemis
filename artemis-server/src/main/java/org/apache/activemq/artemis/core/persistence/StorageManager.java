@@ -517,7 +517,7 @@ public interface StorageManager extends MapStorageManager, IDGenerator, ActiveMQ
 
    void injectMonitor(FileStoreMonitor monitor) throws Exception;
 
-   default int getAllowedPageSize(int pageSize)  {
+   default int getAllowedPageSize(int pageSize) {
       return pageSize;
    }
 }

@@ -31,7 +31,7 @@ public class BridgeTestAccessor {
    }
 
    public static boolean withinRefs(BridgeImpl bridge, Function<Map<Long, MessageReference>, Boolean> function) {
-      Map<Long, MessageReference>  refs = getRefs(bridge);
+      Map<Long, MessageReference> refs = getRefs(bridge);
       return function.apply(refs);
    }
 

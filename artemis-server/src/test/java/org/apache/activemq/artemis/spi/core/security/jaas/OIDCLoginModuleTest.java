@@ -610,7 +610,7 @@ public class OIDCLoginModuleTest {
       new SecureRandom().nextBytes(newSignature);
       String[] split = token.split("\\.");
       Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
-      token = split[0] +  "." + split[1] + "." + encoder.encodeToString(newSignature);
+      token = split[0] + "." + split[1] + "." + encoder.encodeToString(newSignature);
 
       Subject subject = new Subject();
       lm.initialize(subject, new JaasCallbackHandler(null, token, null), null, config);
@@ -1173,7 +1173,7 @@ public class OIDCLoginModuleTest {
       }
    }
 
-   public static class MyNonPrincipal  {
+   public static class MyNonPrincipal {
       private final String name;
 
       public MyNonPrincipal(String name) {

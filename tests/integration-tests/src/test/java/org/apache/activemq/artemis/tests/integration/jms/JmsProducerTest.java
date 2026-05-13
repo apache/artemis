@@ -154,7 +154,7 @@ public class JmsProducerTest extends JMSTestBase {
 
       context.createProducer().setProperty("prop1", 1).setProperty("prop2", 2).send(q1, "Text1");
 
-      org.apache.activemq.artemis.core.server.Queue  queue = server.locateQueue(SimpleString.of(queueName));
+      org.apache.activemq.artemis.core.server.Queue queue = server.locateQueue(SimpleString.of(queueName));
 
       assertEquals(5, queue.getMaxConsumers());
       assertTrue(queue.isPurgeOnNoConsumers());
@@ -172,7 +172,7 @@ public class JmsProducerTest extends JMSTestBase {
 
       session.createProducer(session.createQueue(queueName));
 
-      org.apache.activemq.artemis.core.server.Queue  queue = server.locateQueue(SimpleString.of(queueName));
+      org.apache.activemq.artemis.core.server.Queue queue = server.locateQueue(SimpleString.of(queueName));
 
       assertEquals(5, queue.getMaxConsumers());
       assertTrue(queue.isPurgeOnNoConsumers());

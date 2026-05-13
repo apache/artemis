@@ -18,7 +18,7 @@ package org.apache.activemq.artemis.tests.integration.cluster.failover;
 
 import org.junit.jupiter.api.Test;
 
-public  abstract class ClusterWithBackupFailoverTest extends ClusterWithBackupFailoverTestBase {
+public abstract class ClusterWithBackupFailoverTest extends ClusterWithBackupFailoverTestBase {
    @Test
    public void testFailPrimaryNodes() throws Throwable {
       setupCluster();

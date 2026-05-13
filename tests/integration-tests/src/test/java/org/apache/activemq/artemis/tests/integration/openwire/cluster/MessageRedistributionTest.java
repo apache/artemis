@@ -213,8 +213,8 @@ public class MessageRedistributionTest extends ClusterTestBase {
          MessageProducer producer = session.createProducer(dest);
          producer.send(session.createTextMessage("test message"));
          Message message = mySubscriber.receive(5000);
-         SimpleString  advQueue = SimpleString.of("ActiveMQ.Advisory.TempQueue");
-         SimpleString  advTopic = SimpleString.of("ActiveMQ.Advisory.TempTopic");
+         SimpleString advQueue = SimpleString.of("ActiveMQ.Advisory.TempQueue");
+         SimpleString advTopic = SimpleString.of("ActiveMQ.Advisory.TempTopic");
          //we create a consumer on node 2 and assert that the advisory subscription queue is not clustered
          assertEquals(1, servers[0].getPostOffice().getBindingsForAddress(advQueue).getBindings().size(), "");
          assertEquals(1, servers[0].getPostOffice().getBindingsForAddress(advTopic).getBindings().size(), "");

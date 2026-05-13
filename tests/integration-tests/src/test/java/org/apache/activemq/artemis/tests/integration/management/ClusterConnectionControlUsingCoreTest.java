@@ -128,8 +128,8 @@ public class ClusterConnectionControlUsingCoreTest extends ClusterConnectionCont
          }
 
          @Override
-         public long getProducerWindowSize()  {
-            return  (Long) proxy.retrieveAttributeValue("producerWindowSize", Long.class);
+         public long getProducerWindowSize() {
+            return (Long) proxy.retrieveAttributeValue("producerWindowSize", Long.class);
          }
       };
    }

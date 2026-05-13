@@ -130,36 +130,36 @@ public class CoreMessageWrapper {
       return message.getBodyBuffer();
    }
 
-   public final String getJMSMessageID()  {
+   public final String getJMSMessageID() {
       if (message.containsProperty(NATIVE_MESSAGE_ID)) {
          return getStringProperty(NATIVE_MESSAGE_ID);
       }
       return null;
    }
 
-   public final void setJMSMessageID(String id)  {
+   public final void setJMSMessageID(String id) {
       if (id != null) {
          message.putStringProperty(NATIVE_MESSAGE_ID, id);
       }
    }
 
-   public final long getJMSTimestamp()  {
+   public final long getJMSTimestamp() {
       return message.getTimestamp();
    }
 
-   public final void setJMSTimestamp(long timestamp)  {
+   public final void setJMSTimestamp(long timestamp) {
       message.setTimestamp(timestamp);
    }
 
-   public final byte[] getJMSCorrelationIDAsBytes()  {
+   public final byte[] getJMSCorrelationIDAsBytes() {
       return MessageUtil.getJMSCorrelationIDAsBytes(message);
    }
 
-   public final void setJMSCorrelationIDAsBytes(byte[] correlationID)  {
+   public final void setJMSCorrelationIDAsBytes(byte[] correlationID) {
       message.setCorrelationID(correlationID);
    }
 
-   public final String getJMSCorrelationID()  {
+   public final String getJMSCorrelationID() {
 
       Object correlationID = message.getCorrelationID();
       if (correlationID instanceof String string) {
@@ -172,30 +172,30 @@ public class CoreMessageWrapper {
       }
    }
 
-   public final void setJMSCorrelationID(String correlationID)  {
+   public final void setJMSCorrelationID(String correlationID) {
       message.setCorrelationID(correlationID);
    }
 
-   public final SimpleString getJMSReplyTo()  {
+   public final SimpleString getJMSReplyTo() {
       return MessageUtil.getJMSReplyTo(message);
    }
 
-   public final void setJMSReplyTo(String replyTo)  {
+   public final void setJMSReplyTo(String replyTo) {
       MessageUtil.setJMSReplyTo(message, SimpleString.of(replyTo));
    }
 
-   public SimpleString getDestination()  {
+   public SimpleString getDestination() {
       if (message.getAddress() == null || message.getAddress().isEmpty()) {
          return null;
       }
       return SimpleString.of(AMQPMessageSupport.destination(message.getRoutingType(), message.getAddress()));
    }
 
-   public final void setDestination(String destination)  {
+   public final void setDestination(String destination) {
       message.setAddress(destination);
    }
 
-   public final int getJMSDeliveryMode()  {
+   public final int getJMSDeliveryMode() {
       return message.isDurable() ? PERSISTENT : NON_PERSISTENT;
    }
 
@@ -214,109 +214,109 @@ public class CoreMessageWrapper {
    }
 
 
-   public final String getJMSType()  {
+   public final String getJMSType() {
       return MessageUtil.getJMSType(message);
    }
 
-   public final void setJMSType(String type)  {
+   public final void setJMSType(String type) {
       MessageUtil.setJMSType(message, type);
    }
 
-   public final long getExpiration()  {
+   public final long getExpiration() {
       return message.getExpiration();
    }
 
-   public final void setJMSExpiration(long expiration)  {
+   public final void setJMSExpiration(long expiration) {
       message.setExpiration(expiration);
    }
 
 
-   public final int getJMSPriority()  {
+   public final int getJMSPriority() {
       return message.getPriority();
    }
 
-   public final void setJMSPriority(int priority)  {
+   public final void setJMSPriority(int priority) {
       message.setPriority((byte) priority);
    }
 
-   public final void clearProperties()  {
+   public final void clearProperties() {
       MessageUtil.clearProperties(message);
 
    }
 
-   public final boolean propertyExists(String name)  {
+   public final boolean propertyExists(String name) {
       return MessageUtil.propertyExists(message, name);
    }
 
-   public final boolean getBooleanProperty(String name)  {
+   public final boolean getBooleanProperty(String name) {
       return message.getBooleanProperty(name);
    }
 
-   public final byte getByteProperty(String name)  {
+   public final byte getByteProperty(String name) {
       return message.getByteProperty(name);
    }
 
-   public final short getShortProperty(String name)  {
+   public final short getShortProperty(String name) {
       return message.getShortProperty(name);
    }
 
-   public final int getIntProperty(String name)  {
+   public final int getIntProperty(String name) {
       return MessageUtil.getIntProperty(message, name);
    }
 
-   public final long getLongProperty(String name)  {
+   public final long getLongProperty(String name) {
       return MessageUtil.getLongProperty(message, name);
    }
 
-   public final float getFloatProperty(String name)  {
+   public final float getFloatProperty(String name) {
       return message.getFloatProperty(name);
    }
 
-   public final double getDoubleProperty(String name)  {
+   public final double getDoubleProperty(String name) {
       return message.getDoubleProperty(name);
    }
 
-   public final String getStringProperty(String name)  {
+   public final String getStringProperty(String name) {
       return MessageUtil.getStringProperty(message, name);
    }
 
-   public final Object getObjectProperty(String name)  {
+   public final Object getObjectProperty(String name) {
       return MessageUtil.getObjectProperty(message, name);
    }
 
-   public final Enumeration getPropertyNames()  {
+   public final Enumeration getPropertyNames() {
       return Collections.enumeration(MessageUtil.getPropertyNames(message));
    }
 
-   public final void setBooleanProperty(String name, boolean value)  {
+   public final void setBooleanProperty(String name, boolean value) {
       message.putBooleanProperty(name, value);
    }
 
-   public final void setByteProperty(String name, byte value)  {
+   public final void setByteProperty(String name, byte value) {
       message.putByteProperty(name, value);
    }
 
-   public final void setShortProperty(String name, short value)  {
+   public final void setShortProperty(String name, short value) {
       message.putShortProperty(name, value);
    }
 
-   public final void setIntProperty(String name, int value)  {
+   public final void setIntProperty(String name, int value) {
       MessageUtil.setIntProperty(message, name, value);
    }
 
-   public final void setLongProperty(String name, long value)  {
+   public final void setLongProperty(String name, long value) {
       MessageUtil.setLongProperty(message, name, value);
    }
 
-   public final void setFloatProperty(String name, float value)  {
+   public final void setFloatProperty(String name, float value) {
       message.putFloatProperty(name, value);
    }
 
-   public final void setDoubleProperty(String name, double value)  {
+   public final void setDoubleProperty(String name, double value) {
       message.putDoubleProperty(name, value);
    }
 
-   public final void setStringProperty(String name, String value)  {
+   public final void setStringProperty(String name, String value) {
       MessageUtil.setStringProperty(message, name, value);
    }
 

@@ -83,7 +83,7 @@ public class TargetMonitor extends ActiveMQScheduledComponent implements TargetL
             target.connect();
          }
 
-         targetReady = target.checkReadiness() &&  checkTargetProbes();
+         targetReady = target.checkReadiness() && checkTargetProbes();
 
          if (targetReady) {
             logger.debug("{} is ready", target);

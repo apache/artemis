@@ -310,7 +310,7 @@ public class DivertConfiguration implements Serializable, EncodingSupport {
       } else {
          transformerSize = DataConstants.SIZE_NULL;
       }
-      int size =  BufferHelper.sizeOfNullableString(name) +
+      int size = BufferHelper.sizeOfNullableString(name) +
             BufferHelper.sizeOfNullableString(address) +
             BufferHelper.sizeOfNullableString(forwardingAddress) +
             BufferHelper.sizeOfNullableString(routingName) +

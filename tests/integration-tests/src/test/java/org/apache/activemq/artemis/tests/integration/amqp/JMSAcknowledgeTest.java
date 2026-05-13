@@ -81,7 +81,7 @@ public class JMSAcknowledgeTest extends JMSClientTestSupport {
       for (int i = 0; i < msgCount / 2; i++) {
          Message msg = messages.remove(rand.nextInt(msgCount - i));
 
-         int messageNumber =  msg.getIntProperty(MSG_NUM);
+         int messageNumber = msg.getIntProperty(MSG_NUM);
          acknowledged.add(messageNumber);
 
          msg.acknowledge();

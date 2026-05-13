@@ -38,7 +38,7 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 
-public class RejectValidatedUserTest  extends ActiveMQTestBase {
+public class RejectValidatedUserTest extends ActiveMQTestBase {
 
    private static final String ADDRESS = "TestQueue";
    private ActiveMQServer server;

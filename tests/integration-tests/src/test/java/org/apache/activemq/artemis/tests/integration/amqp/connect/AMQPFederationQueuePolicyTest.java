@@ -374,7 +374,7 @@ public class AMQPFederationQueuePolicyTest extends AmqpClientTestSupport {
 
          try (Connection connection = factory.createConnection()) {
             final Session session = connection.createSession(Session.AUTO_ACKNOWLEDGE);
-            final Queue queue  = session.createQueue("test");
+            final Queue queue = session.createQueue("test");
 
             session.createConsumer(queue, "color='red'"); // new receiver for this selector
 
@@ -479,7 +479,7 @@ public class AMQPFederationQueuePolicyTest extends AmqpClientTestSupport {
 
          try (Connection connection = factory.createConnection()) {
             final Session session = connection.createSession(Session.AUTO_ACKNOWLEDGE);
-            final Queue queue  = session.createQueue("test");
+            final Queue queue = session.createQueue("test");
 
             session.createConsumer(queue, "color='red'"); // Consumer filter should be ignored
 

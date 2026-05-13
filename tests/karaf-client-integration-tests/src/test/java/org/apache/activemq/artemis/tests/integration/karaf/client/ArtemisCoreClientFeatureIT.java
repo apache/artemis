@@ -64,7 +64,7 @@ public class ArtemisCoreClientFeatureIT {
    @Test
    public void testArtemisCoreClient() throws Exception {
       try (ServerLocator locator = ActiveMQClient.createServerLocator("tcp://localhost:61616")) {
-         ClientSessionFactory factory =  locator.createSessionFactory();
+         ClientSessionFactory factory = locator.createSessionFactory();
          ClientSession session = factory.createSession();
          String queueName = "artemisCoreClientFeatureITQueue";
          ClientProducer producer = session.createProducer(queueName);

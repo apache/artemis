@@ -65,7 +65,7 @@ public class AMQPMessagePersister extends MessagePersister {
    }
 
    @Override
-   public Message decode(ActiveMQBuffer buffer, Message record,  CoreMessageObjectPools pool) {
+   public Message decode(ActiveMQBuffer buffer, Message record, CoreMessageObjectPools pool) {
       long id = buffer.readLong();
       long format = buffer.readLong();
       final SimpleString address;

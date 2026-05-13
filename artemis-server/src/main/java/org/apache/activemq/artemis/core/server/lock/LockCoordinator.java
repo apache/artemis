@@ -296,7 +296,7 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
       }
    }
 
-   private void doRun(RunnableEx r) throws Exception  {
+   private void doRun(RunnableEx r) throws Exception {
       r.run();
    }
 

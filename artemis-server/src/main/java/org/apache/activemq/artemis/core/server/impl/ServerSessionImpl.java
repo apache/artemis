@@ -1878,7 +1878,7 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
       AutoCreateResult result;
       SimpleString unPrefixedAddress = removePrefix(queueConfig.getAddress());
       SimpleString unPrefixedQueue = removePrefix(queueConfig.getName());
-      AddressSettings addressSettings =  server.getAddressSettingsRepository().getMatch(unPrefixedAddress.toString());
+      AddressSettings addressSettings = server.getAddressSettingsRepository().getMatch(unPrefixedAddress.toString());
 
       if (unPrefixedAddress.equals(server.getManagementService().getManagementAddress())) {
          return AutoCreateResult.EXISTED;
@@ -2206,7 +2206,7 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
                .add(ProducerField.CREATION_TIME.getName(), String.valueOf(entry.getValue().getCreationTime()))
                .add(ProducerField.ADDRESS.getAlternativeName(), entry.getValue().getAddress())
                .add(ProducerField.LAST_PRODUCED_MESSAGE_ID.getName(), uuid, JsonValue.NULL)
-               .add(ProducerField.MESSAGE_SENT.getName(),  entry.getValue().getMessagesSent())
+               .add(ProducerField.MESSAGE_SENT.getName(), entry.getValue().getMessagesSent())
                .add(ProducerField.MESSAGE_SENT_SIZE.getName(), entry.getValue().getMessagesSentSize());
          array.add(producerInfo);
       }
@@ -2611,7 +2611,7 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
    }
 
    @Override
-   public Collection<ServerProducer>   getServerProducers() {
+   public Collection<ServerProducer> getServerProducers() {
       return serverProducers.getServerProducers();
    }
 

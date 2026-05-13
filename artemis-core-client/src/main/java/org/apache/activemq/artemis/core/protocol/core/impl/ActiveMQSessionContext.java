@@ -607,7 +607,7 @@ public class ActiveMQSessionContext extends SessionContext {
                                     int reconnectID,
                                     int senderID,
                                     SendAcknowledgementHandler messageHandler) throws ActiveMQException {
-      return sendSessionSendContinuationMessage(this.sessionChannel, msgI, messageBodySize, sendBlocking, lastChunk, chunk, senderID,  messageHandler);
+      return sendSessionSendContinuationMessage(this.sessionChannel, msgI, messageBodySize, sendBlocking, lastChunk, chunk, senderID, messageHandler);
    }
 
    @Override

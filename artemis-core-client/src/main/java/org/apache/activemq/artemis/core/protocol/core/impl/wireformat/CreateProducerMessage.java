@@ -22,7 +22,7 @@ import org.apache.activemq.artemis.core.protocol.core.impl.PacketImpl;
 
 import java.util.Objects;
 
-public class CreateProducerMessage  extends PacketImpl {
+public class CreateProducerMessage extends PacketImpl {
    protected int id;
 
    protected SimpleString address;

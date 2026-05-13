@@ -1404,7 +1404,7 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
             addressSettings.setMaxReadPageBytes(MINUS_ONE_OR_POSITIVE_INT.validate(MAX_READ_PAGE_BYTES_NODE_NAME, ByteUtil.convertTextBytes(getTrimmedTextContent(child))).intValue());
          } else if (PREFETCH_PAGE_MESSAGES_NODE_NAME.equalsIgnoreCase(name)) {
             addressSettings.setPrefetchPageMessages(MINUS_ONE_OR_POSITIVE_INT.validate(PREFETCH_PAGE_MESSAGES_NODE_NAME, Long.parseLong(getTrimmedTextContent(child))).intValue());
-         }  else if (PREFETCH_PAGE_BYTES_NODE_NAME.equalsIgnoreCase(name)) {
+         } else if (PREFETCH_PAGE_BYTES_NODE_NAME.equalsIgnoreCase(name)) {
             addressSettings.setPrefetchPageBytes(MINUS_ONE_OR_POSITIVE_INT.validate(PREFETCH_PAGE_BYTES_NODE_NAME, ByteUtil.convertTextBytes(getTrimmedTextContent(child))).intValue());
          } else if (PAGE_MAX_CACHE_SIZE_NODE_NAME.equalsIgnoreCase(name)) {
             if (!printPageMaxSizeUsed) {
@@ -1472,7 +1472,7 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
             addressSettings.setAutoDeleteQueuesDelay(GE_ZERO.validate(AUTO_DELETE_QUEUES_DELAY, XMLUtil.parseLong(child)).longValue());
          } else if (AUTO_DELETE_QUEUES_MESSAGE_COUNT.equalsIgnoreCase(name)) {
             addressSettings.setAutoDeleteQueuesMessageCount((Long) MINUS_ONE_OR_GE_ZERO.validate(AUTO_DELETE_QUEUES_MESSAGE_COUNT, XMLUtil.parseLong(child)));
-         }  else if (AUTO_DELETE_QUEUES_SKIP_USAGE_CHECK.equalsIgnoreCase(name)) {
+         } else if (AUTO_DELETE_QUEUES_SKIP_USAGE_CHECK.equalsIgnoreCase(name)) {
             addressSettings.setAutoDeleteQueuesSkipUsageCheck(XMLUtil.parseBoolean(child));
          } else if (CONFIG_DELETE_QUEUES.equalsIgnoreCase(name)) {
             addressSettings.setConfigDeleteQueues(Enum.valueOf(DeletionPolicy.class, DELETION_POLICY_TYPE.validate(CONFIG_DELETE_QUEUES, getTrimmedTextContent(child))));

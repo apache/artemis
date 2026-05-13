@@ -155,7 +155,7 @@ public abstract class AbstractSequentialFileFactory implements SequentialFileFac
    }
 
    @Override
-   public void onIOError(Throwable exception, String message,  String file) {
+   public void onIOError(Throwable exception, String message, String file) {
       if (file != null) {
          ActiveMQJournalLogger.LOGGER.criticalIOFile(message, file, exception);
       } else {

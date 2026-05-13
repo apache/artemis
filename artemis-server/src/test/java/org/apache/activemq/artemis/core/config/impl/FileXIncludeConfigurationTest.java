@@ -24,7 +24,7 @@ public class FileXIncludeConfigurationTest extends FileConfigurationTest {
 
    @Override
    protected String getConfigurationName() {
-      return  "ConfigurationTest-xinclude-config.xml";
+      return "ConfigurationTest-xinclude-config.xml";
    }
 
    public FileXIncludeConfigurationTest(boolean xxeEnabled) {

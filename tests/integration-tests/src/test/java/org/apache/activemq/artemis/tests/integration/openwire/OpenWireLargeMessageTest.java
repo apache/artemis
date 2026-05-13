@@ -236,7 +236,7 @@ public class OpenWireLargeMessageTest extends BasicOpenWireTest {
             Message message;
             if (sent % 2 == 0) {
                message = session.createTextMessage(largeString);
-            }  else {
+            } else {
                BytesMessage bytesMessage = session.createBytesMessage();
                bytesMessage.writeBytes(largeString.getBytes(StandardCharsets.UTF_8));
                message = bytesMessage;

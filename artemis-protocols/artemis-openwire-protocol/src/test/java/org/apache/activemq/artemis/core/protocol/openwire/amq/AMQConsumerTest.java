@@ -51,7 +51,7 @@ import org.mockito.Mockito;
 
 public class AMQConsumerTest {
    final OpenWireFormatFactory formatFactory = new OpenWireFormatFactory();
-   final WireFormat openWireFormat =  formatFactory.createWireFormat();
+   final WireFormat openWireFormat = formatFactory.createWireFormat();
 
    @Test
    public void testClientId() throws Exception {
@@ -111,7 +111,7 @@ public class AMQConsumerTest {
       return consumer;
    }
 
-   private void testCredits(AMQConsumer consumer) throws  Exception {
+   private void testCredits(AMQConsumer consumer) throws Exception {
       ICoreMessage message = new CoreMessage(1, 0);
       MessageReference reference = Mockito.mock(MessageReference.class);
 

@@ -70,7 +70,7 @@ public class NettyConnectorTest extends ActiveMQTestBase {
       params.put(TransportConstants.SSL_PROVIDER, TransportConstants.OPENSSL_PROVIDER);
       params.put(TransportConstants.KEYSTORE_PATH_PROP_NAME, "server-keystore.jks");
       params.put(TransportConstants.KEYSTORE_PASSWORD_PROP_NAME, "securepass");
-      params.put(TransportConstants.TRUSTSTORE_PATH_PROP_NAME,  "client-ca-truststore.jks");
+      params.put(TransportConstants.TRUSTSTORE_PATH_PROP_NAME, "client-ca-truststore.jks");
       params.put(TransportConstants.TRUSTSTORE_PASSWORD_PROP_NAME, "securepass");
       params.put(TransportConstants.NEED_CLIENT_AUTH_PROP_NAME, true);
       ConfigurationImpl config = createBasicConfig().addAcceptorConfiguration(new TransportConfiguration(NETTY_ACCEPTOR_FACTORY, params, "nettySSL"));
@@ -242,7 +242,7 @@ public class NettyConnectorTest extends ActiveMQTestBase {
 
       Map<String, Object> params = new HashMap<>();
       params.put(TransportConstants.SSL_ENABLED_PROP_NAME, true);
-      params.put(TransportConstants.KEYSTORE_PATH_PROP_NAME,  "client-keystore.jks");
+      params.put(TransportConstants.KEYSTORE_PATH_PROP_NAME, "client-keystore.jks");
       params.put(TransportConstants.KEYSTORE_PASSWORD_PROP_NAME, "securepass");
       params.put(TransportConstants.TRUSTSTORE_PATH_PROP_NAME, "server-ca-truststore.jks");
       params.put(TransportConstants.TRUSTSTORE_PASSWORD_PROP_NAME, "securepass");
@@ -272,7 +272,7 @@ public class NettyConnectorTest extends ActiveMQTestBase {
 
       Map<String, Object> params = new HashMap<>();
       params.put(TransportConstants.SSL_ENABLED_PROP_NAME, true);
-      params.put(TransportConstants.KEYSTORE_PATH_PROP_NAME,  "bad path");
+      params.put(TransportConstants.KEYSTORE_PATH_PROP_NAME, "bad path");
       params.put(TransportConstants.KEYSTORE_PASSWORD_PROP_NAME, "bad password");
       params.put(TransportConstants.TRUSTSTORE_PATH_PROP_NAME, "bad path");
       params.put(TransportConstants.TRUSTSTORE_PASSWORD_PROP_NAME, "bad password");
@@ -304,7 +304,7 @@ public class NettyConnectorTest extends ActiveMQTestBase {
       Map<String, Object> params = new HashMap<>();
       params.put(TransportConstants.SSL_ENABLED_PROP_NAME, true);
       params.put(TransportConstants.FORCE_SSL_PARAMETERS, true);
-      params.put(TransportConstants.KEYSTORE_PATH_PROP_NAME,  "client-keystore.jks");
+      params.put(TransportConstants.KEYSTORE_PATH_PROP_NAME, "client-keystore.jks");
       params.put(TransportConstants.KEYSTORE_PASSWORD_PROP_NAME, "securepass");
       params.put(TransportConstants.TRUSTSTORE_PATH_PROP_NAME, "server-ca-truststore.jks");
       params.put(TransportConstants.TRUSTSTORE_PASSWORD_PROP_NAME, "securepass");

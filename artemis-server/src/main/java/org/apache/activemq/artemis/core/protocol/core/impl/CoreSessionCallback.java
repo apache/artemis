@@ -112,7 +112,7 @@ public final class CoreSessionCallback implements SessionCallback {
    }
 
    @Override
-   public int sendMessage(MessageReference ref, ServerConsumer consumer, int deliveryCount)  {
+   public int sendMessage(MessageReference ref, ServerConsumer consumer, int deliveryCount) {
 
       Packet packet;
       if (channel.getConnection().isVersionBeforeAddressChange()) {

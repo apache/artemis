@@ -819,7 +819,7 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
    }
 
    @Override
-   public int  getAddressMemoryUsagePercentage() {
+   public int getAddressMemoryUsagePercentage() {
       if (AuditLogger.isBaseLoggingEnabled()) {
          AuditLogger.getAddressMemoryUsagePercentage(this.server);
       }
@@ -3884,7 +3884,7 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
       clearIO();
 
       try {
-         TransformerConfiguration transformerConfiguration = transformerClassName == null || transformerClassName.isEmpty()  ? null : new TransformerConfiguration(transformerClassName).setProperties(transformerProperties);
+         TransformerConfiguration transformerConfiguration = transformerClassName == null || transformerClassName.isEmpty() ? null : new TransformerConfiguration(transformerClassName).setProperties(transformerProperties);
          BridgeConfiguration config = new BridgeConfiguration().setName(name).setQueueName(queueName).setForwardingAddress(forwardingAddress).setFilterString(filterString).setTransformerConfiguration(transformerConfiguration).setClientFailureCheckPeriod(clientFailureCheckPeriod).setRetryInterval(retryInterval).setRetryIntervalMultiplier(retryIntervalMultiplier).setInitialConnectAttempts(initialConnectAttempts).setReconnectAttempts(reconnectAttempts).setUseDuplicateDetection(useDuplicateDetection).setConfirmationWindowSize(confirmationWindowSize).setProducerWindowSize(producerWindowSize).setHA(ha).setUser(user).setPassword(password).setConfigurationManaged(false);
 
          if (useDiscoveryGroup) {
@@ -3928,7 +3928,7 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
       clearIO();
 
       try {
-         TransformerConfiguration transformerConfiguration = transformerClassName == null || transformerClassName.isEmpty()  ? null : new TransformerConfiguration(transformerClassName);
+         TransformerConfiguration transformerConfiguration = transformerClassName == null || transformerClassName.isEmpty() ? null : new TransformerConfiguration(transformerClassName);
          BridgeConfiguration config = new BridgeConfiguration().setName(name).setQueueName(queueName).setForwardingAddress(forwardingAddress).setFilterString(filterString).setTransformerConfiguration(transformerConfiguration).setClientFailureCheckPeriod(clientFailureCheckPeriod).setRetryInterval(retryInterval).setRetryIntervalMultiplier(retryIntervalMultiplier).setInitialConnectAttempts(initialConnectAttempts).setReconnectAttempts(reconnectAttempts).setUseDuplicateDetection(useDuplicateDetection).setConfirmationWindowSize(confirmationWindowSize).setHA(ha).setUser(user).setPassword(password).setConfigurationManaged(false);
 
          if (useDiscoveryGroup) {

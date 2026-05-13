@@ -157,7 +157,7 @@ public class RingQueueTest extends ActiveMQTestBase {
       Wait.assertEquals(2, queue::getDeliveringCount);
       consumer.close();
       Wait.assertEquals(1, queue::getMessageCount);
-      Wait.assertEquals(0,  queue::getDeliveringCount);
+      Wait.assertEquals(0, queue::getDeliveringCount);
       Wait.assertEquals(1, queue::getMessagesReplaced);
       consumer = clientSession.createConsumer(qName);
       message = consumer.receiveImmediate();

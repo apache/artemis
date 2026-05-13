@@ -228,7 +228,7 @@ public class SimpleOpenWireTest extends BasicOpenWireTest {
    public void testSendEmptyMessages() throws Exception {
       Queue dest = new ActiveMQQueue(queueName);
 
-      QueueSession defaultQueueSession =  connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
+      QueueSession defaultQueueSession = connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
       QueueSender defaultSender = defaultQueueSession.createSender(dest);
       defaultSender.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
       connection.start();
@@ -646,7 +646,7 @@ public class SimpleOpenWireTest extends BasicOpenWireTest {
 
       MessageConsumer nolocalConsumer = session.createConsumer(dest, null, true);
       MessageConsumer consumer = session.createConsumer(dest, null, false);
-      MessageConsumer selectorConsumer  = session.createConsumer(dest, "TESTKEY = 'test'", false);
+      MessageConsumer selectorConsumer = session.createConsumer(dest, "TESTKEY = 'test'", false);
 
       MessageProducer producer = session.createProducer(dest);
 

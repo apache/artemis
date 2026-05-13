@@ -212,7 +212,7 @@ public class FederatedAddress extends FederatedAbstract implements ActiveMQServe
       createRemoteConsumer(divertBinding, matchingQueues, queueBinding);
    }
 
-   private void createRemoteConsumer(DivertBinding divertBinding, final Set<SimpleString> matchingQueues, QueueBinding queueBinding)  {
+   private void createRemoteConsumer(DivertBinding divertBinding, final Set<SimpleString> matchingQueues, QueueBinding queueBinding) {
       final AddressInfo addressInfo = server.getPostOffice().getAddressInfo(divertBinding.getAddress());
 
       //If the divert address matches and if the new queueBinding matches the forwarding address of the divert

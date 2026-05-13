@@ -231,7 +231,7 @@ public class ByteUtil {
       output[offset + 3] = (byte)(x >>> 32);
       output[offset + 4] = (byte)(x >>> 24);
       output[offset + 5] = (byte)(x >>> 16);
-      output[offset + 6] = (byte)(x >>>  8);
+      output[offset + 6] = (byte)(x >>> 8);
       output[offset + 7] = (byte)(x);
    }
 

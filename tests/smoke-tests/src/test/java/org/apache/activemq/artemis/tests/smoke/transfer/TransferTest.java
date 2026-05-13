@@ -333,7 +333,7 @@ public class TransferTest extends SmokeTestBase {
       connection.close();
       subscription.close();
 
-      callTransferQueue("tcp://localhost:61716", null, topicName, null, null, "testSubs",  "test", queueName, sourceTransferProtocol, targetTransferProtocol, false);
+      callTransferQueue("tcp://localhost:61716", null, topicName, null, null, "testSubs", "test", queueName, sourceTransferProtocol, targetTransferProtocol, false);
 
       ConnectionFactory factoryTarget = createConsumerCF(consumerProtocol);
       Connection connectionTarget = factoryTarget.createConnection();

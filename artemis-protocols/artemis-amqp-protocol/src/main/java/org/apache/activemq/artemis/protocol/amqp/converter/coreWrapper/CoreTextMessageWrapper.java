@@ -82,7 +82,7 @@ public class CoreTextMessageWrapper extends CoreMessageWrapper {
       return body;
    }
 
-   public void setText(final String text)  {
+   public void setText(final String text) {
       if (text != null) {
          this.text = SimpleString.of(text);
       } else {
@@ -101,20 +101,20 @@ public class CoreTextMessageWrapper extends CoreMessageWrapper {
    }
 
    @Override
-   public void clearBody()  {
+   public void clearBody() {
       super.clearBody();
 
       text = null;
    }
 
    @Override
-   public void encode()  {
+   public void encode() {
       super.encode();
       writeBodyText(getWriteBodyBuffer(), text);
    }
 
    @Override
-   public void decode()  {
+   public void decode() {
       super.decode();
       text = readBodyText(getReadBodyBuffer());
    }

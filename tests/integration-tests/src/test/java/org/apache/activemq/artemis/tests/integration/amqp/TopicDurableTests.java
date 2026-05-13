@@ -67,7 +67,7 @@ public class TopicDurableTests extends JMSClientTestSupport {
 
       logger.debug("testMessageDurableSubscription");
       Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-      Topic testTopic =  session.createTopic("jmsTopic");
+      Topic testTopic = session.createTopic("jmsTopic");
 
       String sub1ID = "sub1DurSub";
       String sub2ID = "sub2DurSub";

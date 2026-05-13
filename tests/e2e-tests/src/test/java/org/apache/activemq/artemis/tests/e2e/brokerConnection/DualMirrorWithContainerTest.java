@@ -107,7 +107,7 @@ public class DualMirrorWithContainerTest extends E2ETestBase {
 
       int NUMBER_OF_MESSAGES = 1_000;
       int FAILURE_INTERVAL = 500;
-      String extraBody = largemessage ?  RandomUtil.randomAlphaNumericString(200 * 1024) : "message ";
+      String extraBody = largemessage ? RandomUtil.randomAlphaNumericString(200 * 1024) : "message ";
 
       try (Connection connectionA = cfA.createConnection("artemis", "artemis")) {
 

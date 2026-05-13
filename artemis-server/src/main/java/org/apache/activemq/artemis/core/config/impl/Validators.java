@@ -84,7 +84,7 @@ public final class Validators {
       }
    };
 
-   public static final Validator<Number> MINUS_ONE_OR_GT_ZERO =  (name, value) -> {
+   public static final Validator<Number> MINUS_ONE_OR_GT_ZERO = (name, value) -> {
       if (value.doubleValue() == -1 || value.doubleValue() > 0) {
          return value;
       } else {

@@ -80,7 +80,7 @@ public class SecurityManagerUtilTest {
    public void testAuthorizeWithEmptyRoles() {
       Subject subject = getSubject("user");
 
-      assertFalse(SecurityManagerUtil.authorize(subject,  new HashSet<>(), CheckType.SEND, RolePrincipal.class));
+      assertFalse(SecurityManagerUtil.authorize(subject, new HashSet<>(), CheckType.SEND, RolePrincipal.class));
    }
 
    @Test

@@ -3835,7 +3835,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       Thread.sleep(500);
       server.addAddressInfo(new AddressInfo(queueName3, RoutingType.ANYCAST));
       if (legacyCreateQueue) {
-         server.createQueue(queueName3, RoutingType.ANYCAST, queueName3,  SimpleString.of("filter0"), null, true,
+         server.createQueue(queueName3, RoutingType.ANYCAST, queueName3, SimpleString.of("filter0"), null, true,
                             false, false, 10, false, false);
       } else {
          server.createQueue(QueueConfiguration.of(queueName3).setRoutingType(RoutingType.ANYCAST).setFilterString("filter0").setMaxConsumers(10).setAutoCreateAddress(false));
@@ -4524,7 +4524,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
          assertEquals(3, array.size(), "number of consumers returned from query");
 
          // filter by address
-         filterString = createJsonFilter(ConsumerField.ADDRESS.getName(),  "EQUALS", addressName1.toString());
+         filterString = createJsonFilter(ConsumerField.ADDRESS.getName(), "EQUALS", addressName1.toString());
          consumersAsJsonString = serverControl.listConsumers(filterString, 1, 50);
          consumersAsJsonObject = JsonUtil.readJsonObject(consumersAsJsonString);
          array = (JsonArray) consumersAsJsonObject.get("data");

@@ -533,7 +533,7 @@ public class AckManager implements ActiveMQComponent {
             addRetry(nodeID, targetQueue, messageID, reason);
          }
          return false;
-      } else  {
+      } else {
          if (logger.isTraceEnabled()) {
             logger.trace("ack worked well for messageID={} nodeID={} queue={}, reference={}", messageID, nodeID, reference.getQueue().getName(), reference);
             if (reference.isPaged()) {

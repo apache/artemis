@@ -72,7 +72,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Test the AMQP Bridge to address configuration and protocol behaviors
  */
-public class AMQPBridgeToAddressTest  extends AmqpClientTestSupport {
+public class AMQPBridgeToAddressTest extends AmqpClientTestSupport {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 

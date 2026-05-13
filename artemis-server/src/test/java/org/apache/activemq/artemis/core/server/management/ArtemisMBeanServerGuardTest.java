@@ -33,7 +33,7 @@ import java.util.concurrent.Callable;
 public class ArtemisMBeanServerGuardTest extends ServerTestBase {
    @Test
    public void testInvokeNoMethod() throws Throwable {
-      ArtemisMBeanServerGuard  guard = new ArtemisMBeanServerGuard();
+      ArtemisMBeanServerGuard guard = new ArtemisMBeanServerGuard();
       ObjectNameBuilder objectNameBuilder = ObjectNameBuilder.create("testdomain", "myBroker");
       ObjectName activeMQServerObjectName = objectNameBuilder.getActiveMQServerObjectName();
       assertTrue(guard.canInvoke(activeMQServerObjectName.getCanonicalName(), null));
@@ -41,7 +41,7 @@ public class ArtemisMBeanServerGuardTest extends ServerTestBase {
 
    @Test
    public void testCantInvokeMethod() throws Throwable {
-      ArtemisMBeanServerGuard  guard = new ArtemisMBeanServerGuard();
+      ArtemisMBeanServerGuard guard = new ArtemisMBeanServerGuard();
       ObjectNameBuilder objectNameBuilder = ObjectNameBuilder.create("testdomain", "myBroker");
       ObjectName activeMQServerObjectName = objectNameBuilder.getActiveMQServerObjectName();
       assertFalse(guard.canInvoke(activeMQServerObjectName.getCanonicalName(), "getSomething"));
@@ -50,7 +50,7 @@ public class ArtemisMBeanServerGuardTest extends ServerTestBase {
 
    @Test
    public void testCanInvokeMethodWhiteList() throws Throwable {
-      ArtemisMBeanServerGuard  guard = new ArtemisMBeanServerGuard();
+      ArtemisMBeanServerGuard guard = new ArtemisMBeanServerGuard();
       JMXAccessControlList controlList = new JMXAccessControlList();
       guard.setJMXAccessControlList(controlList);
       ObjectNameBuilder objectNameBuilder = ObjectNameBuilder.create("testdomain", "myBroker");
@@ -62,7 +62,7 @@ public class ArtemisMBeanServerGuardTest extends ServerTestBase {
 
    @Test
    public void testCanInvokeMethodHasRole() throws Throwable {
-      ArtemisMBeanServerGuard  guard = new ArtemisMBeanServerGuard();
+      ArtemisMBeanServerGuard guard = new ArtemisMBeanServerGuard();
       JMXAccessControlList controlList = new JMXAccessControlList();
       guard.setJMXAccessControlList(controlList);
       ObjectNameBuilder objectNameBuilder = ObjectNameBuilder.create("testdomain", "myBroker");
@@ -83,7 +83,7 @@ public class ArtemisMBeanServerGuardTest extends ServerTestBase {
 
    @Test
    public void testCanInvokeMethodDoeNotHasRole() throws Throwable {
-      ArtemisMBeanServerGuard  guard = new ArtemisMBeanServerGuard();
+      ArtemisMBeanServerGuard guard = new ArtemisMBeanServerGuard();
       JMXAccessControlList controlList = new JMXAccessControlList();
       guard.setJMXAccessControlList(controlList);
       ObjectNameBuilder objectNameBuilder = ObjectNameBuilder.create("testdomain", "myBroker");

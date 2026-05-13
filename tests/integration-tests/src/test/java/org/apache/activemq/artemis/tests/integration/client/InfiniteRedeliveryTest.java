@@ -169,7 +169,7 @@ public class InfiniteRedeliveryTest extends ActiveMQTestBase {
       Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
       Queue queue = session.createQueue("test");
       assertNotNull(queue);
-      MessageProducer  producer = session.createProducer(queue);
+      MessageProducer producer = session.createProducer(queue);
 
       producer.send(session.createTextMessage("hello"));
       session.commit();
@@ -199,12 +199,12 @@ public class InfiniteRedeliveryTest extends ActiveMQTestBase {
 
       Map<Integer, AtomicInteger> counts = countJournal(primaryServer.getServer().getConfiguration());
       counts.forEach((k, v) -> logger.debug("{}={}", k, v));
-      counts.forEach((k, v) -> assertTrue(v.intValue() < 20, "Record type " + k + " has a lot of records:" +  v));
+      counts.forEach((k, v) -> assertTrue(v.intValue() < 20, "Record type " + k + " has a lot of records:" + v));
 
       Map<Integer, AtomicInteger> backupCounts = countJournal(backupServer.getServer().getConfiguration());
       assertFalse(backupCounts.isEmpty());
       backupCounts.forEach((k, v) -> logger.debug("On Backup:{}={}", k, v));
-      backupCounts.forEach((k, v) -> assertTrue(v.intValue() < 10, "Backup Record type " + k + " has a lot of records:" +  v));
+      backupCounts.forEach((k, v) -> assertTrue(v.intValue() < 10, "Backup Record type " + k + " has a lot of records:" + v));
 
 
    }

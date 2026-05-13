@@ -56,7 +56,7 @@ public class WildcardTest extends JMSTestBase {
 
    @Override
    protected Configuration createDefaultConfig(boolean netty) throws Exception {
-      Configuration configuration =  super.createDefaultConfig(netty).setJMXManagementEnabled(true);
+      Configuration configuration = super.createDefaultConfig(netty).setJMXManagementEnabled(true);
       return configuration;
    }
 
@@ -70,10 +70,10 @@ public class WildcardTest extends JMSTestBase {
 
    @TestTemplate
    public void testWildcard1Topic() throws Exception {
-      Session         sessionA   = createSession();
-      MessageProducer producerA  = createProducer(sessionA, topicA);
+      Session sessionA = createSession();
+      MessageProducer producerA = createProducer(sessionA, topicA);
 
-      MessageConsumer consumerA  = createConsumer(topicA);
+      MessageConsumer consumerA = createConsumer(topicA);
       MessageConsumer consumerWC = createConsumer(topicWildcard);
 
       Message message = sessionA.createObjectMessage(1);
@@ -93,14 +93,14 @@ public class WildcardTest extends JMSTestBase {
 
    @TestTemplate
    public void testWildcard2Topics() throws Exception {
-      Session         sessionA   = createSession();
-      MessageProducer producerA  = createProducer(sessionA, topicA);
+      Session sessionA = createSession();
+      MessageProducer producerA = createProducer(sessionA, topicA);
 
-      Session         sessionB   = createSession();
-      MessageProducer producerB  = createProducer(sessionA, topicB);
+      Session sessionB = createSession();
+      MessageProducer producerB = createProducer(sessionA, topicB);
 
-      MessageConsumer consumerA  = createConsumer(topicA);
-      MessageConsumer consumerB  = createConsumer(topicB);
+      MessageConsumer consumerA = createConsumer(topicA);
+      MessageConsumer consumerB = createConsumer(topicB);
       MessageConsumer consumerWC = createConsumer(topicWildcard);
 
       Message message1 = sessionA.createObjectMessage(1);
@@ -173,10 +173,10 @@ public class WildcardTest extends JMSTestBase {
    }
 
    private void testNegativeAddressSizeOnWildcard(int numMessages) throws Exception {
-      Session         sessionA   = createSession();
-      MessageProducer producerA  = createProducer(sessionA, topicA);
+      Session sessionA = createSession();
+      MessageProducer producerA = createProducer(sessionA, topicA);
 
-      MessageConsumer consumerA  = createConsumer(topicA);
+      MessageConsumer consumerA = createConsumer(topicA);
       MessageConsumer consumerWC = createConsumer(topicWildcard);
 
       for (int i = 0; i < numMessages; i++) {
@@ -194,7 +194,7 @@ public class WildcardTest extends JMSTestBase {
          assertNotNull(received2.getObject(), "consumerWC message - " + i + " is null");
       }
 
-      long addressSizeA  = (Long)mbeanServer.getAttribute(new ObjectName("org.apache.activemq.artemis:broker=\"localhost\",component=addresses,address=\"" + topicA + "\""), "AddressSize");
+      long addressSizeA = (Long)mbeanServer.getAttribute(new ObjectName("org.apache.activemq.artemis:broker=\"localhost\",component=addresses,address=\"" + topicA + "\""), "AddressSize");
       long addressSizeWC = (Long)mbeanServer.getAttribute(new ObjectName("org.apache.activemq.artemis:broker=\"localhost\",component=addresses,address=\"" + topicWildcard + "\""), "AddressSize");
 
       assertTrue(addressSizeA >= 0, topicA + " AddressSize < 0");
@@ -202,13 +202,13 @@ public class WildcardTest extends JMSTestBase {
    }
 
    private void testNegativeAddressSizeOnWildcardAsync(int numMessages) throws Exception {
-      Session         sessionA   = createSession();
-      MessageProducer producerA  = createProducer(sessionA, topicA);
+      Session sessionA = createSession();
+      MessageProducer producerA = createProducer(sessionA, topicA);
 
-      CountDownLatch  latchA    = new CountDownLatch(numMessages);
+      CountDownLatch latchA = new CountDownLatch(numMessages);
       MessageConsumer consumerA = createAsyncConsumer(topicA, latchA);
 
-      CountDownLatch  latchWC    = new CountDownLatch(numMessages);
+      CountDownLatch latchWC = new CountDownLatch(numMessages);
       MessageConsumer consumerWC = createAsyncConsumer(topicWildcard, latchWC);
 
       for (int i = 0; i < numMessages; i++) {
@@ -225,7 +225,7 @@ public class WildcardTest extends JMSTestBase {
          fail("Waiting to receive " + latchWC.getCount() + " messages on " + topicWildcard);
       }
 
-      long addressSizeA  = (Long)mbeanServer.getAttribute(new ObjectName("org.apache.activemq.artemis:broker=\"localhost\",component=addresses,address=\"" + topicA + "\""), "AddressSize");
+      long addressSizeA = (Long)mbeanServer.getAttribute(new ObjectName("org.apache.activemq.artemis:broker=\"localhost\",component=addresses,address=\"" + topicA + "\""), "AddressSize");
       long addressSizeWC = (Long)mbeanServer.getAttribute(new ObjectName("org.apache.activemq.artemis:broker=\"localhost\",component=addresses,address=\"" + topicWildcard + "\""), "AddressSize");
 
       assertTrue(addressSizeA >= 0, topicA + " AddressSize < 0");
@@ -234,7 +234,7 @@ public class WildcardTest extends JMSTestBase {
 
    private Session createSession() throws Exception {
       Connection connection = createConnection();
-      Session    session    = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+      Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
       return session;
    }
@@ -252,8 +252,8 @@ public class WildcardTest extends JMSTestBase {
       Connection connection = createConnection();
       connection.start();
 
-      Session    session    = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-      Topic      topic      = session.createTopic(topicName);
+      Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+      Topic topic = session.createTopic(topicName);
 
       MessageConsumer consumer = session.createConsumer(topic, null, false);
 

@@ -255,7 +255,7 @@ public class ArtemisRbacInvocationHandler implements GuardInvocationHandler {
 
    private void handleInvoke(ObjectName objectName, String operationName) throws Exception {
       final SimpleString rbacAddress = addressFrom(objectName, operationName);
-      final CheckType permission =  permissionFrom(operationName);
+      final CheckType permission = permissionFrom(operationName);
       securityStoreCheck(rbacAddress, permission);
    }
 

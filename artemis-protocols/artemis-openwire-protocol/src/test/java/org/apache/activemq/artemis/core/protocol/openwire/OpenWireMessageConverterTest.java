@@ -55,7 +55,7 @@ import org.mockito.Mockito;
 public class OpenWireMessageConverterTest {
 
    final OpenWireFormatFactory formatFactory = new OpenWireFormatFactory();
-   final WireFormat openWireFormat =  formatFactory.createWireFormat();
+   final WireFormat openWireFormat = formatFactory.createWireFormat();
    final byte[] content = new byte[] {'a', 'a'};
    final String address = "Q";
    final ActiveMQDestination destination = new ActiveMQQueue(address);

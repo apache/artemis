@@ -40,7 +40,7 @@ import org.apache.qpid.proton.amqp.messaging.TerminusDurability;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
-public class ClientDefinedMultiConsumerTest extends AmqpClientTestSupport  {
+public class ClientDefinedMultiConsumerTest extends AmqpClientTestSupport {
 
    SimpleString address = SimpleString.of("testAddress");
 

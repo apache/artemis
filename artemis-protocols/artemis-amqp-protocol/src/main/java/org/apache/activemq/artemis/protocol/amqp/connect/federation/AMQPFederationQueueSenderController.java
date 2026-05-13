@@ -51,7 +51,7 @@ import org.apache.qpid.proton.engine.Sender;
 public final class AMQPFederationQueueSenderController extends AMQPFederationSenderController {
 
    public AMQPFederationQueueSenderController(AMQPFederationRemoteQueuePolicyManager manager, ProducerMetrics metrics, Consumer<AMQPFederationSenderController> closedListener) throws ActiveMQAMQPException {
-      super(manager, metrics,  closedListener);
+      super(manager, metrics, closedListener);
    }
 
    @Override

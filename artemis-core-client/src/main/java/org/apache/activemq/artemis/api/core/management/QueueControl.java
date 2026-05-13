@@ -523,7 +523,7 @@ public interface QueueControl {
 
    @Operation(desc = "Send a copy of the message with given messageID to another queue)", impact = MBeanOperationInfo.ACTION)
    boolean copyMessage(@Parameter(name = "messageID", desc = "A message ID") long messageID,
-                       @Parameter(name = "targetQueue", desc = "The name of the queue to copy the messages to") String  targetQueue) throws Exception;
+                       @Parameter(name = "targetQueue", desc = "The name of the queue to copy the messages to") String targetQueue) throws Exception;
 
    /**
     * Sends the message corresponding to the specified message ID to this queue's dead letter address.

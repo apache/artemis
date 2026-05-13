@@ -404,8 +404,8 @@ public class ProtocolsMessageLoadBalancingTest extends ClusterTestBase {
 
       ConnectionFactory[] factory = new ConnectionFactory[NUMBER_OF_SERVERS];
       Connection[] connection = new Connection[NUMBER_OF_SERVERS];
-      Session[]  session = new Session[NUMBER_OF_SERVERS];
-      MessageConsumer[]  consumer = new MessageConsumer[NUMBER_OF_SERVERS];
+      Session[] session = new Session[NUMBER_OF_SERVERS];
+      MessageConsumer[] consumer = new MessageConsumer[NUMBER_OF_SERVERS];
 
       // this will pre create consumers to make sure messages are distributed evenly without redistribution
       for (int node = 0; node < NUMBER_OF_SERVERS; node++) {

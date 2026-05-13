@@ -1137,9 +1137,9 @@ public class ActiveMQSession implements QueueSession, TopicSession {
       try {
          final ActiveMQTemporaryQueue queue;
          if (enable1xPrefixes) {
-            queue  = ActiveMQDestination.createTemporaryQueue(this, PacketImpl.OLD_TEMP_QUEUE_PREFIX.toString());
+            queue = ActiveMQDestination.createTemporaryQueue(this, PacketImpl.OLD_TEMP_QUEUE_PREFIX.toString());
          } else {
-            queue  = ActiveMQDestination.createTemporaryQueue(this);
+            queue = ActiveMQDestination.createTemporaryQueue(this);
          }
 
          SimpleString simpleAddress = queue.getSimpleAddress();
@@ -1169,9 +1169,9 @@ public class ActiveMQSession implements QueueSession, TopicSession {
       try {
          final ActiveMQTemporaryTopic topic;
          if (enable1xPrefixes) {
-            topic  = ActiveMQDestination.createTemporaryTopic(this, PacketImpl.OLD_TEMP_TOPIC_PREFIX.toString());
+            topic = ActiveMQDestination.createTemporaryTopic(this, PacketImpl.OLD_TEMP_TOPIC_PREFIX.toString());
          } else {
-            topic  = ActiveMQDestination.createTemporaryTopic(this);
+            topic = ActiveMQDestination.createTemporaryTopic(this);
          }
 
          SimpleString simpleAddress = topic.getSimpleAddress();

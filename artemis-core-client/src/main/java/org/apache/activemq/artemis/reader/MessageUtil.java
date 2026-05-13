@@ -258,7 +258,7 @@ public class MessageUtil {
       }
    }
 
-   public static void setObjectProperty(final Message message,  final String name, final Object value) {
+   public static void setObjectProperty(final Message message, final String name, final Object value) {
       if (MessageUtil.JMSXGROUPID.equals(name)) {
          message.setGroupID(Objects.toString(value, null));
       } else if (MessageUtil.JMSXGROUPSEQ.equals(name)) {

@@ -207,7 +207,7 @@ public class CorePluginTest extends JMSTestBase {
       sess.createConsumer(autoCreatedQueue);
       conn.close();
 
-      verifier.validatePluginMethodsEquals(1,  BEFORE_DESTROY_QUEUE,
+      verifier.validatePluginMethodsEquals(1, BEFORE_DESTROY_QUEUE,
             AFTER_DESTROY_QUEUE, BEFORE_REMOVE_ADDRESS, AFTER_REMOVE_ADDRESS);
 
       verifier.validatePluginMethodsEquals(3, BEFORE_ADD_ADDRESS,
@@ -227,7 +227,7 @@ public class CorePluginTest extends JMSTestBase {
       conn.close();
 
       //before/add address called just once to remove autocreated destination
-      verifier.validatePluginMethodsEquals(1,  BEFORE_DESTROY_QUEUE,
+      verifier.validatePluginMethodsEquals(1, BEFORE_DESTROY_QUEUE,
             AFTER_DESTROY_QUEUE, BEFORE_REMOVE_ADDRESS, AFTER_REMOVE_ADDRESS, BEFORE_REMOVE_BINDING, AFTER_REMOVE_BINDING);
 
       //Before/Add address are called twice because of the autocreated destination and the

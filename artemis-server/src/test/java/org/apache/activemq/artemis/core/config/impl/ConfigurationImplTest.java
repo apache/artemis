@@ -972,7 +972,7 @@ public class ConfigurationImplTest extends AbstractConfigurationTestBase {
       properties.put("bridgeConfigurations.b1.queueName", queueName);
       properties.put("bridgeConfigurations.b1.forwardingAddress", forwardingAddress);
       properties.put("bridgeConfigurations.b1.confirmationWindowSize", "10");
-      properties.put("bridgeConfigurations.b1.routingType", "STRIP");  // enum
+      properties.put("bridgeConfigurations.b1.routingType", "STRIP"); // enum
       // this is a List<String> from comma sep value
       properties.put("bridgeConfigurations.b1.staticConnectors", "a,b");
       // flip b in place
@@ -2830,7 +2830,7 @@ public class ConfigurationImplTest extends AbstractConfigurationTestBase {
       properties.put("name", "a");
       properties.store(new FileOutputStream(tmpFile), null);
 
-      tmpFile =   File.createTempFile("b_stuff", ".0-properties", temporaryFolder);
+      tmpFile = File.createTempFile("b_stuff", ".0-properties", temporaryFolder);
       properties = new Properties();
       properties.put("name", "0");
       properties.store(new FileOutputStream(tmpFile), null);

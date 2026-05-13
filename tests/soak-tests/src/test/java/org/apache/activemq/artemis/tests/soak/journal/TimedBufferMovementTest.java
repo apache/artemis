@@ -245,7 +245,7 @@ public class TimedBufferMovementTest extends ActiveMQTestBase {
          journal.forceBackup(1, TimeUnit.SECONDS);
 
          // If the issue was happening, this would print the IDs that are missing
-         if (pendingCallbacks.size() < 10 && !pendingCallbacks.isEmpty()  && done.getCount() == 0) {
+         if (pendingCallbacks.size() < 10 && !pendingCallbacks.isEmpty() && done.getCount() == 0) {
             if (missingData++ > 5) {
                // lets give a chance for the test to finish, otherwise it would never finish
                break;

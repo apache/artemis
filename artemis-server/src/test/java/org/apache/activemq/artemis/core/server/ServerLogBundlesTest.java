@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Test;
 public class ServerLogBundlesTest {
 
    private static final String SERVER_LOGGER = ActiveMQServerLogger.class.getPackage().getName();
-   private static final String QUEUE_LOGGER =  Queue.class.getName();
+   private static final String QUEUE_LOGGER = Queue.class.getName();
    private static LogLevel origServerLoggerLevel;
    private static LogLevel origQueueLoggerLevel;
 

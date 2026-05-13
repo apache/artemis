@@ -89,7 +89,7 @@ public interface ActiveMQAMQPProtocolMessageBundle {
    @Message(id = 119022, value = "The broker connection is trying to connect to itself. Check your configuration.")
    ActiveMQAMQPIllegalStateException brokerConnectionMirrorItself();
 
-   @Message(id = 119023, value =  "Sender link refused for address {}")
+   @Message(id = 119023, value = "Sender link refused for address {}")
    ActiveMQAMQPIllegalStateException senderLinkRefused(String address);
 
    @Message(id = 119024, value = "link is missing a desired capability declaration {}")
@@ -107,7 +107,7 @@ public interface ActiveMQAMQPProtocolMessageBundle {
    @Message(id = 119028, value = "Malformed Federation event message: {}")
    ActiveMQException malformedFederationEventMessage(String message);
 
-   @Message(id = 119029, value =  "Receiver link refused for address {}")
+   @Message(id = 119029, value = "Receiver link refused for address {}")
    ActiveMQAMQPIllegalStateException receiverLinkRefused(String address);
 
    @Message(id = 119300, value = "not authorized to delete temporary destination, {}")

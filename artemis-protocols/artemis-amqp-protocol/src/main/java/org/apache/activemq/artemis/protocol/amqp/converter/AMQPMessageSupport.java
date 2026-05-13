@@ -290,7 +290,7 @@ public final class AMQPMessageSupport {
 
          return key;
       }
-      return  key;
+      return key;
    }
 
    public static CoreBytesMessageWrapper createBytesMessage(long id, CoreMessageObjectPools coreMessageObjectPools) {

@@ -142,7 +142,7 @@ public class ArtemisTest extends CliTestBase {
       super.setup();
    }
 
-   private  void setupScanTimeout() throws Exception {
+   private void setupScanTimeout() throws Exception {
       timeBefore = ActiveMQDefaultConfiguration.getDefaultAddressQueueScanPeriod();
       org.apache.activemq.artemis.api.config.ActiveMQDefaultConfigurationTestAccessor.setDefaultAddressQueueScanPeriod(100);
    }
@@ -1531,9 +1531,9 @@ public class ArtemisTest extends CliTestBase {
       // This is usually set when run from the command line via artemis.profile
       Run.setEmbedded(true);
       if (autoDelete) {
-         Artemis.main("create", instanceFolder.getAbsolutePath(), "--force", "--silent",  "--no-web", "--no-autotune",  "--require-login", "--autodelete");
+         Artemis.main("create", instanceFolder.getAbsolutePath(), "--force", "--silent", "--no-web", "--no-autotune", "--require-login", "--autodelete");
       } else {
-         Artemis.main("create", instanceFolder.getAbsolutePath(), "--force", "--silent", "--no-web",  "--require-login", "--no-autotune");
+         Artemis.main("create", instanceFolder.getAbsolutePath(), "--force", "--silent", "--no-web", "--require-login", "--no-autotune");
       }
       System.setProperty("artemis.instance", instanceFolder.getAbsolutePath());
 

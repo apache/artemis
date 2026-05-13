@@ -682,7 +682,7 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
     * messages to be delivered.
     */
    @Override
-   public void forceDelivery(final long sequence)  {
+   public void forceDelivery(final long sequence) {
       forceDelivery(sequence, () -> {
          Message forcedDeliveryMessage = new CoreMessage(storageManager.generateID(), 50)
             .putLongProperty(ClientConsumerImpl.FORCED_DELIVERY_MESSAGE, sequence)

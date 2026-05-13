@@ -118,6 +118,6 @@ public interface ActiveMQRALogger {
    @LogMessage(id = 153004, value = "Invalid number of session (negative) {}, defaulting to {}.", level = LogMessage.Level.WARN)
    void invalidNumberOfMaxSession(int value, int defaultValue);
 
-   @LogMessage(id = 153005, value =  "Unable to retrieve \"{}\" from JNDI. Creating a new \"{}\" named \"{}\" to be used by the MDB.", level = LogMessage.Level.WARN)
+   @LogMessage(id = 153005, value = "Unable to retrieve \"{}\" from JNDI. Creating a new \"{}\" named \"{}\" to be used by the MDB.", level = LogMessage.Level.WARN)
    void unableToRetrieveDestinationName(String destinationName, String name, String calculatedDestinationName);
 }

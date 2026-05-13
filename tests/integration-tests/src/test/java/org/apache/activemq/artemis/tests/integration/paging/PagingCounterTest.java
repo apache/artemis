@@ -282,7 +282,7 @@ public class PagingCounterTest extends ActiveMQTestBase {
                storage.waitOnOperations();
 
                Wait.assertEquals(i + 1, counter::getValue);
-               Wait.assertEquals((i + 1) * 1000,  counter::getPersistentSize);
+               Wait.assertEquals((i + 1) * 1000, counter::getPersistentSize);
 
                tx = new TransactionImpl(server.getStorageManager());
             }

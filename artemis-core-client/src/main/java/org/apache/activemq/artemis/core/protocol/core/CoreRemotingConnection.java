@@ -33,47 +33,47 @@ public interface CoreRemotingConnection extends RemotingConnection {
 
    default boolean isVersionBeforeAddressChange() {
       int version = getChannelVersion();
-      return  (version > 0 && version < PacketImpl.ADDRESSING_CHANGE_VERSION);
+      return (version > 0 && version < PacketImpl.ADDRESSING_CHANGE_VERSION);
    }
 
    default boolean isVersionBeforeAsyncResponseChange() {
       int version = getChannelVersion();
-      return  (version > 0 && version < PacketImpl.ASYNC_RESPONSE_CHANGE_VERSION);
+      return (version > 0 && version < PacketImpl.ASYNC_RESPONSE_CHANGE_VERSION);
    }
 
    default boolean isVersionSupportConsumerPriority() {
       int version = getChannelVersion();
-      return  version >= PacketImpl.CONSUMER_PRIORITY_CHANGE_VERSION;
+      return version >= PacketImpl.CONSUMER_PRIORITY_CHANGE_VERSION;
    }
 
    default boolean isVersionNewFQQN() {
       int version = getChannelVersion();
-      return  version >= PacketImpl.ARTEMIS_2_7_0_VERSION;
+      return version >= PacketImpl.ARTEMIS_2_7_0_VERSION;
    }
 
    default boolean isVersionSupportClientID() {
       int version = getChannelVersion();
-      return  version >= PacketImpl.ARTEMIS_2_18_0_VERSION;
+      return version >= PacketImpl.ARTEMIS_2_18_0_VERSION;
    }
 
    default boolean isVersionSupportRouting() {
       int version = getChannelVersion();
-      return  version >= PacketImpl.ARTEMIS_2_18_0_VERSION;
+      return version >= PacketImpl.ARTEMIS_2_18_0_VERSION;
    }
 
    default boolean isVersionSupportCommitV2() {
       int version = getChannelVersion();
-      return  version >= PacketImpl.ARTEMIS_2_21_0_VERSION;
+      return version >= PacketImpl.ARTEMIS_2_21_0_VERSION;
    }
 
    default boolean isVersionUsingLongOnPageReplication() {
       int version = getChannelVersion();
-      return  version >= PacketImpl.ARTEMIS_2_24_0_VERSION;
+      return version >= PacketImpl.ARTEMIS_2_24_0_VERSION;
    }
 
    default boolean isBeforeTwoEighteen() {
       int version = getChannelVersion();
-      return  version < PacketImpl.ARTEMIS_2_18_0_VERSION;
+      return version < PacketImpl.ARTEMIS_2_18_0_VERSION;
    }
 
    default boolean isBeforeProducerMetricsChanged() {

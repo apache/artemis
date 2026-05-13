@@ -403,7 +403,7 @@ public interface Message {
 
    Message setUserID(Object userID);
 
-   default  String getValidatedUserID() {
+   default String getValidatedUserID() {
       return null;
    }
 
