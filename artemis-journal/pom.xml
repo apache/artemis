@@ -28,6 +28,17 @@
    <packaging>jar</packaging>
    <name>Apache Artemis Journal</name>
 
+   <properties>
+      <test.stress.time>5000</test.stress.time>
+
+      <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+      <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+      <activemq-child-surefire-argline>
+         -Dtest.stress.time=${test.stress.time} --enable-native-access=ALL-UNNAMED
+      </activemq-child-surefire-argline>
+   </properties>
+
    <dependencies>
 
       <!-- logging -->
@@ -71,6 +82,17 @@
       </dependency>
       <!-- needed to compile the tests -->
       <dependency>
+         <groupId>junit</groupId>
+         <artifactId>junit</artifactId>
+         <scope>test</scope>
+         <!-- License: EPL 1.0 -->
+      </dependency>
+      <dependency>
+         <groupId>org.junit.vintage</groupId>
+         <artifactId>junit-vintage-engine</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
          <groupId>org.junit.jupiter</groupId>
          <artifactId>junit-jupiter-api</artifactId>
          <scope>test</scope>
@@ -92,4 +114,74 @@
          <scope>test</scope>
       </dependency>
    </dependencies>
+   <profiles>
+      <profile>
+         <id>jdk24onwards</id>
+         <activation>
+            <jdk>[24,)</jdk>
+         </activation>
+         <build>
+            <plugins>
+               <plugin>
+                  <artifactId>maven-compiler-plugin</artifactId>
+                  <configuration>
+                     <release>24</release>
+                  </configuration>
+                  <executions>
+                     <execution>
+                        <id>java24-compile</id>
+                        <phase>compile</phase>
+                        <goals>
+                           <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                           <compileSourceRoots>
+                              <compileSourceRoot>${project.basedir}/src/main/java24</compileSourceRoot>
+                              <multiReleaseOutput>true</multiReleaseOutput>
+                           </compileSourceRoots>
+                        </configuration>
+                     </execution>
+                     <execution>
+                        <id>java24-test-compile</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                           <goal>testCompile</goal>
+                        </goals>
+                        <configuration>
+                           <compileSourceRoots>${project.basedir}/src/test/java24</compileSourceRoots>
+                        </configuration>
+                     </execution>
+                  </executions>
+               </plugin>
+               <plugin>
+                  <artifactId>maven-jar-plugin</artifactId>
+                  <!-- Do jar creation earlier, before the "test" phase, so that the
+                       multi-release-jar content is visible to any dependent modules,
+                       enabling them to use the relevant classes during their tests. -->
+                  <executions>
+                     <execution>
+                        <id>default-jar</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                           <goal>jar</goal>
+                        </goals>
+                     </execution>
+                  </executions>
+               </plugin>
+            </plugins>
+         </build>
+      </profile>
+   </profiles>
+
+   <build>
+      <plugins>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+               <argLine>${activemq-surefire-argline} ${activemq-child-surefire-argline}</argLine>
+            </configuration>
+         </plugin>
+      </plugins>
+   </build>
 </project>

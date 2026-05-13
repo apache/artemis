@@ -1550,4 +1550,12 @@ public interface ActiveMQServerLogger {
 
    @LogMessage(id = 224164, value = "Failed to recover stored configuration for divert named '{}': {}. To repair this record create a new divert with the same name via the management API.", level = LogMessage.Level.WARN)
    void failedToRecoverStoredDivertConfiguration(String divertName, String divert);
+
+   @LogMessage(id = 224165, value = "Panama FFM libaio (AsyncIO_2) is not available, switching the configuration into JNI AIO (AsyncIO)", level = LogMessage.Level.INFO)
+   void switchingAIO();
+
+   @LogMessage(id = 224166, value = "Using Panama FFM AIO Version 2 Journal", level = LogMessage.Level.INFO)
+   void journalUseAIO_2();
+
+
 }
