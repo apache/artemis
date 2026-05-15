@@ -51,6 +51,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -149,6 +150,11 @@ public class OIDCLoginModule implements AuditLoginModule {
    private String[] rolesPaths;
 
    /**
+    * Mapping for roles, where a role taken from JWT token can be mapped (renamed) to <em>local</em> role.
+    */
+   private Map<String, String> roleMapping = new HashMap<>();
+
+   /**
     * <p>Flag which enforces OAuth 2.0 Mutual-TLS Client Authentication and Certificate-Bound Access Tokens
     * (RFC 8705). If a token contains {@code cnf/x5t#256} claim, it is always verified and mTLS is required.</p>
     *
@@ -243,6 +249,7 @@ public class OIDCLoginModule implements AuditLoginModule {
       // configuration for what to extract from the token
       identityPaths = OIDCSupport.stringArrayOption(ConfigKey.IDENTITY_PATHS, options);
       rolesPaths = OIDCSupport.stringArrayOption(ConfigKey.ROLES_PATHS, options);
+      roleMapping = OIDCSupport.mappingOption(ConfigKey.ROLE_MAPPING, options);
    }
 
    @Override
@@ -373,7 +380,14 @@ public class OIDCLoginModule implements AuditLoginModule {
                   if (!roles.valid()) {
                      throw new LoginException("Can't determine user role from JWT using \"" + rolePath + "\" path");
                   }
-                  rolePrincipalNames.addAll(Arrays.asList(roles.value()));
+                  String[] tab = roles.value();
+                  for (String role : tab) {
+                     String mapped = roleMapping.get(role);
+                     if (mapped == null) {
+                        mapped = role;
+                     }
+                     rolePrincipalNames.add(mapped);
+                  }
                }
                if (debug) {
                   logger.debug("Found roles: {}", String.join(", ", rolePrincipalNames));

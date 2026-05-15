@@ -1076,6 +1076,68 @@ public class OIDCLoginModuleTest {
    }
 
    @Test
+   public void tokenRolesWithMapping() throws NoSuchAlgorithmException, JOSEException, LoginException {
+      KeyPairGenerator kpgRSA = KeyPairGenerator.getInstance("RSA");
+      KeyPair pairRSA = kpgRSA.generateKeyPair();
+
+      List<JWK> keys = new ArrayList<>();
+      // directly from the public key
+      keys.add(new RSAKey.Builder((RSAPublicKey) pairRSA.getPublic()).keyID("k1").build());
+
+      Map<String, String> config = configMap(
+            OIDCSupport.ConfigKey.DEBUG.getName(), "true",
+            OIDCSupport.ConfigKey.ROLES_PATHS.getName(), "realm_access.roles",
+            OIDCSupport.ConfigKey.ROLE_MAPPING.getName(), "realm_admin=broker_admin, realm_viewer = broker=viewer"
+      );
+
+      OIDCLoginModule lm = new OIDCLoginModule();
+      lm.setOidcSupport(new OIDCSupport(config, true) {
+         @Override
+         public JWKSecurityContext currentContext() {
+            return new JWKSecurityContext(keys);
+         }
+      });
+
+      String uuid = UUID.randomUUID().toString();
+
+      JWTClaimsSet claims = new JWTClaimsSet.Builder()
+            .issuer("http://localhost")
+            .subject("Alice")
+            .audience("me-the-broker")
+            .claim("sub", uuid)
+            .claim("azp", "artemis-oidc-client")
+            .claim("realm_access", Map.of("roles", List.of("realm_admin", "realm_manager", "realm_viewer")))
+            .expirationTime(new Date(new Date().getTime() + 3_600_000))
+            .build();
+
+      SignedJWT signedJWT = new SignedJWT(new JWSHeader.Builder(JWSAlgorithm.RS256).keyID("k1").build(), claims);
+      JWSSigner signer = new RSASSASigner(pairRSA.getPrivate());
+      signedJWT.sign(signer);
+      String token = signedJWT.serialize();
+
+      Subject subject = new Subject();
+      lm.initialize(subject, new JaasCallbackHandler(null, token, null), null, config);
+
+      assertTrue(lm.login());
+      assertTrue(lm.commit());
+
+      Set<Principal> principals = subject.getPrincipals();
+      assertEquals(4, principals.size());
+      Set<String> identities = new HashSet<>(Set.of(uuid));
+      // one should be mapped, the other should be used as in the token
+      Set<String> roles = new HashSet<>(Set.of("broker_admin", "realm_manager", "broker=viewer"));
+      principals.forEach(principal -> {
+         if (principal.getClass() == UserPrincipal.class) {
+            identities.remove(principal.getName());
+         } else if (principal.getClass() == RolePrincipal.class) {
+            roles.remove(principal.getName());
+         }
+      });
+      assertTrue(identities.isEmpty());
+      assertTrue(roles.isEmpty());
+   }
+
+   @Test
    public void wrongPathsForToken() throws NoSuchAlgorithmException, JOSEException, LoginException {
       KeyPairGenerator kpgRSA = KeyPairGenerator.getInstance("RSA");
       KeyPair pairRSA = kpgRSA.generateKeyPair();

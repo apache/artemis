@@ -1304,6 +1304,13 @@ Comma-separated _JSON paths_ that point to the fields (direct or nested) in the 
 arrays or whitespace-separated strings) used as _user roles_ (translated into `org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal` principals). +
 There's no default value. For Keycloak OpenID Connect provider it could be for example `realm_access.roles`.
 
+roleMapping::
+Comma-separated list of `jwtRole=localRole` mappings. +
+This option allows configuration of possible _role mapping_ if the roles present (as configured by `rolesPaths` option) in the JWT
+token should be _translated_ into other role names. This behavior is usually specific to LDAP role mapping and is easy to avoid
+with JWT, but it is still an option.
+Defaults to no mapping and roles are taken directly from JWT token.
+
 requireOAuth2MTLS::
 This option adds extra layer of security and enforces https://datatracker.ietf.org/doc/html/rfc8705[OAuth 2.0 Mutual-TLS Client Authentication and Certificate-Bound Access Tokens]. +
 With this option enabled, JWT tokens must include `cnf/x5t#256` claim which contains

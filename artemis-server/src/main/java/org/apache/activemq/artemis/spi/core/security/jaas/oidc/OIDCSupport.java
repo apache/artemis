@@ -25,6 +25,8 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -146,6 +148,31 @@ public class OIDCSupport {
          return result.toArray(new String[0]);
       }
       return null;
+   }
+
+   public static Map<String, String> mappingOption(ConfigKey configKey, Map<String, ?> options) {
+      Object v = options != null ? options.get(configKey.name) : null;
+
+      String vs = configKey.defaultValue;
+      if (v instanceof String s) {
+         vs = s;
+      }
+      String[] values = vs == null ? null : vs.split("\\s*,\\s*");
+      if (values != null) {
+         Map<String, String> result = new HashMap<>();
+         for (String value : values) {
+            if (value != null && !value.trim().isEmpty() && value.contains("=")) {
+               String[] kv = value.split("=", 2);
+               String jwtRole = kv[0].trim();
+               String localRole = kv[1].trim();
+               if (!jwtRole.isEmpty() && !localRole.isEmpty()) {
+                  result.put(jwtRole, localRole);
+               }
+            }
+         }
+         return result;
+      }
+      return Collections.emptyMap();
    }
 
    /**
@@ -438,6 +465,12 @@ public class OIDCSupport {
       // different login module (like LDAP).
       // Each value referred will be added as JAAS subject "role" principal
       ROLES_PATHS("rolesPaths", null),
+
+      // comma-separated original-role=mapped-role list of role mapping.
+      // Without any mapping, roles found using `rolesPath` option are added as role principals to the JAAS subject
+      // However we can configure a literal mapping where JWT role names are mapped into other values.
+      // By default no mapping is performed
+      ROLE_MAPPING("roleMapping", null),
 
       // Whether the token should contain cnf/x5t#256 claim according to https://datatracker.ietf.org/doc/html/rfc8705
       // When enabled, the field contains a base64url(sha256(der(client certificate))) value which SHOULD
