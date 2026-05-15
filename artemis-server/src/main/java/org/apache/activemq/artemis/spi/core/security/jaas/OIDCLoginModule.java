@@ -133,7 +133,8 @@ public class OIDCLoginModule implements AuditLoginModule {
     * Set of required JWT claims that should be present (with any value - to be validated by different means)
     * in each processed JWT token.
     */
-   private final Set<String> requiredClaims;
+   private Set<String> requiredClaims;
+   private boolean requiredClaimsConfigured = false;
 
    /**
     * "JSON paths" to claims (possibly nested) which should point to JSON strings or JSON string arrays, which
@@ -194,6 +195,7 @@ public class OIDCLoginModule implements AuditLoginModule {
     */
    OIDCLoginModule(Set<String> requiredClaims) {
       this.requiredClaims = requiredClaims == null ? defaultRequiredClaims : requiredClaims;
+      this.requiredClaimsConfigured = true;
    }
 
    @Override
@@ -223,8 +225,13 @@ public class OIDCLoginModule implements AuditLoginModule {
       Set<String> audience = audiences == null ? null : new HashSet<>(Arrays.asList(audiences));
       int maxClockSkew = OIDCSupport.intOption(ConfigKey.MAX_CLOCK_SKEW_SECONDS, options);
 
+      String[] requiredClaimsArray = OIDCSupport.stringArrayOption(ConfigKey.REQUIRED_CLAIMS, options);
+      if (!requiredClaimsConfigured && requiredClaimsArray != null) {
+         this.requiredClaims = new HashSet<>(Arrays.asList(requiredClaimsArray));
+      }
+
       DefaultJWTClaimsVerifier<JWKSecurityContext> claimsVerifier = new DefaultJWTClaimsVerifier<>(
-            audience, exactMatchClaims, requiredClaims, prohibitedClaims
+            audience, exactMatchClaims, this.requiredClaims, prohibitedClaims
       );
       claimsVerifier.setMaxClockSkew(maxClockSkew);
 

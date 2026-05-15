@@ -223,6 +223,83 @@ public class OIDCLoginModuleTest {
    }
 
    @Test
+   public void plainJWTWithDefaultRequiredClaims() throws BadJOSEException, ParseException, JOSEException {
+      OIDCLoginModule lm = new OIDCLoginModule();
+      Subject subject = new Subject();
+      lm.initialize(subject, new JaasCallbackHandler(null, null, null), null, configMap(
+            OIDCSupport.ConfigKey.ALLOW_PLAIN_JWT.getName(), "true"
+      ));
+
+      String jwt = new PlainJWT(new JWTClaimsSet.Builder()
+            .audience("anything")
+            .claim("azp", "authorized-party")
+            .claim("iss", "some-issuer")
+            .claim("sub", "some-subject")
+            .expirationTime(new Date(new Date().getTime() + 5000L))
+            .build()).serialize();
+      lm.validateToken(JWTParser.parse(jwt));
+   }
+
+   @Test
+   public void plainJWTWithCustomRequiredClaims() throws BadJOSEException, ParseException, JOSEException {
+      OIDCLoginModule lm = new OIDCLoginModule();
+      Subject subject = new Subject();
+      lm.initialize(subject, new JaasCallbackHandler(null, null, null), null, configMap(
+            OIDCSupport.ConfigKey.ALLOW_PLAIN_JWT.getName(), "true",
+            OIDCSupport.ConfigKey.REQUIRED_CLAIMS.getName(), "aud, sub"
+      ));
+
+      String jwt1 = new PlainJWT(new JWTClaimsSet.Builder()
+            .audience("anything")
+            .claim("sub", "some-subject")
+            .build()).serialize();
+      lm.validateToken(JWTParser.parse(jwt1));
+
+      String jwt2 = new PlainJWT(new JWTClaimsSet.Builder()
+            .audience("anything")
+            .build()).serialize();
+      try {
+         lm.validateToken(JWTParser.parse(jwt2));
+         fail("Should fail with missing \"sub\" claim");
+      } catch (BadJWTException e) {
+         assertTrue(e.getMessage().contains("JWT missing required claims: [sub]"));
+      }
+   }
+
+   @Test
+   public void plainJWTWithNoRequiredClaims() throws BadJOSEException, ParseException, JOSEException {
+      OIDCLoginModule lm = new OIDCLoginModule();
+      Subject subject = new Subject();
+      lm.initialize(subject, new JaasCallbackHandler(null, null, null), null, configMap(
+            OIDCSupport.ConfigKey.ALLOW_PLAIN_JWT.getName(), "true",
+            OIDCSupport.ConfigKey.REQUIRED_CLAIMS.getName(), ""
+      ));
+
+      String jwt1 = new PlainJWT(new JWTClaimsSet.Builder()
+            .build()).serialize();
+      lm.validateToken(JWTParser.parse(jwt1));
+   }
+
+   @Test
+   public void plainJWTWithoutCustomClaims() throws BadJOSEException, ParseException, JOSEException {
+      OIDCLoginModule lm = new OIDCLoginModule();
+      Subject subject = new Subject();
+      lm.initialize(subject, new JaasCallbackHandler(null, null, null), null, configMap(
+            OIDCSupport.ConfigKey.ALLOW_PLAIN_JWT.getName(), "true",
+            OIDCSupport.ConfigKey.REQUIRED_CLAIMS.getName(), null
+      ));
+
+      String jwt1 = new PlainJWT(new JWTClaimsSet.Builder()
+            .build()).serialize();
+      try {
+         lm.validateToken(JWTParser.parse(jwt1));
+         fail("Should fail with missing default claim");
+      } catch (BadJWTException e) {
+         assertTrue(e.getMessage().contains("JWT missing required claims: [aud, azp, exp, iss, sub]"));
+      }
+   }
+
+   @Test
    public void plainJWTWithIncorrectDates() throws BadJOSEException, JOSEException, ParseException {
       OIDCLoginModule lm = new OIDCLoginModule(NO_CLAIMS);
       Subject subject = new Subject();

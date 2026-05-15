@@ -1289,6 +1289,11 @@ audience::
 Comma-separated list of values which must be present in the `aud` (_audience_) claim of the JWT token. +
 There's no default value.
 
+requiredClaims::
+Comma-separated list of claim names that should be present (validation of the claim values is configured separately)
+in the JWT token. +
+Defaults to `aud, iss, sub, azp, exp` (audience, issuer, subject, authorize party, expiration date).
+
 identityPaths::
 Comma-separated _JSON paths_ that point to the fields (direct or nested) in the JWT token which contain values (strings, JSON string
 arrays or whitespace-separated strings) used as _user identities_ (translated into `org.apache.activemq.artemis.spi.core.security.jaas.UserPrincipal` principals). +

@@ -135,7 +135,17 @@ public class OIDCSupport {
       if (v instanceof String s) {
          vs = s;
       }
-      return vs == null ? null : vs.split("\\s*,\\s*");
+      String[] values = vs == null ? null : vs.split("\\s*,\\s*");
+      if (values != null) {
+         List<String> result = new ArrayList<>(values.length);
+         for (String value : values) {
+            if (value != null && !value.trim().isEmpty()) {
+               result.add(value);
+            }
+         }
+         return result.toArray(new String[0]);
+      }
+      return null;
    }
 
    /**
@@ -389,6 +399,9 @@ public class OIDCSupport {
 
       // comma-separated required/expected audience ("aud" string/string[] claim)
       AUDIENCE("audience", null),
+
+      // comma-separated required claims (must exist, but validation is performed with other options, like "audience")
+      REQUIRED_CLAIMS("requiredClaims", "aud, iss, sub, azp, exp"),
 
       // comma-separated "json paths" to fields (could be nested using "." separator, but no complex array navigation.
       // just field1.field2.xxx) with the identity of the caller. For Keycloak it could be:
