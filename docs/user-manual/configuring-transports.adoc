@@ -303,6 +303,12 @@ Must be `true` to have the broker 'watch' an acceptors keyStorePath and/or trust
 The watch period is controlled by xref:config-reload.adoc#configuration-reload[the configuration reload feature].
 Default is `false`.
 
+sslHandshakeTimeout::
+This is only valid for acceptors.
+It is the number of seconds the broker will wait for a client to complete the SSL handshake before closing the connection.
+Any non-negative integer value is valid, where `0` disables the timeout.
+Default is `10`.
+
 keyStorePath::
 When used on an `acceptor` this is the path to the SSL key store on the server which holds the server's certificates (whether self-signed or signed by an authority).
 +

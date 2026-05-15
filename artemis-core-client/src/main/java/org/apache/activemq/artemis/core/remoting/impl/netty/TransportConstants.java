@@ -36,6 +36,10 @@ public class TransportConstants {
 
    public static final String SSL_ENABLED_PROP_NAME = "sslEnabled";
 
+   public static final String SSL_HANDSHAKE_TIMEOUT = "sslHandshakeTimeout";
+
+   public static final int DEFAULT_SSL_HANDSHAKE_TIMEOUT = 10;
+
    public static final String PROXY_PROTOCOL_ENABLED_PROP_NAME = "proxyProtocolEnabled";
 
    public static final String SSL_AUTO_RELOAD_PROP_NAME = "sslAutoReload";
@@ -436,6 +440,7 @@ public class TransportConstants {
       Set<String> allowableAcceptorKeys = new HashSet<>();
       allowableAcceptorKeys.add(TransportConstants.SSL_ENABLED_PROP_NAME);
       allowableAcceptorKeys.add(TransportConstants.SSL_AUTO_RELOAD_PROP_NAME);
+      allowableAcceptorKeys.add(TransportConstants.SSL_HANDSHAKE_TIMEOUT);
       allowableAcceptorKeys.add(TransportConstants.HTTP_RESPONSE_TIME_PROP_NAME);
       allowableAcceptorKeys.add(TransportConstants.HTTP_SERVER_SCAN_PERIOD_PROP_NAME);
       allowableAcceptorKeys.add(TransportConstants.HTTP_UPGRADE_ENABLED_PROP_NAME);
