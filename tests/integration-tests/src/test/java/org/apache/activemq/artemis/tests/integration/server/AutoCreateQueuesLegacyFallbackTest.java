@@ -30,6 +30,7 @@ import javax.jms.Queue;
 import javax.jms.Session;
 
 import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
@@ -38,30 +39,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Locks in the JMS-client behavior when {@code ActiveMQSession.createQueue} cannot resolve
- * the un-prefixed destination and falls back to the HornetQ 1.x compatibility path. The
- * producer is a plain Artemis CORE JMS client targeting {@code test.test2.somequeue} with
- * no client-side prefix manipulation ({@code enable1xPrefixes} at its default {@code false}).
- * Each test varies the {@code auto-create-queues} / {@code auto-create-addresses} flags on
- * a specific {@code test.test2.#} match and on the catch-all {@code #} match and asserts
- * which (if any) broker-side queue is created.
- *
- * <p>Historical bug: when the un-prefixed lookup failed (because the specific match had
- * {@code auto-create-queues=false}), {@code ActiveMQSession.internalCreateQueue} fell back
- * to {@code internalCreateQueueCompatibility}, which called
- * {@code lookupQueue("jms.queue." + name)} and consulted address-settings for the prefixed
- * name. The catch-all matched and reported auto-create=true, so the broker silently
- * auto-created a queue under the legacy-prefixed address
- * {@code jms.queue.test.test2.somequeue} — the producer ended up sending and the consumer
- * receiving from a legacy-namespaced queue even though the specific match had auto-create
- * disabled. The catch-all itself is not the problem; the bug is that the legacy fallback
- * path triggers auto-creation under the prefixed name at all.
- *
- * <p>The fix in {@code ActiveMQSession.internalCreateQueueCompatibility} gates the legacy
- * fallback on existence ({@code session.queueQuery(...).isExists()}) instead of on
- * address-settings, so the fallback can only adopt a pre-existing legacy-prefixed queue
- * and can no longer itself auto-create one. These tests pin the post-fix outcomes across
- * all four combinations of the two flags.
+ * Tests JMS-client behavior when {@code ActiveMQSession.createQueue} falls back to the
+ * HornetQ 1.x compatibility path. Tests vary {@code auto-create-queues} and
+ * {@code auto-create-addresses} flags on specific and catch-all matches to verify the
+ * fix that prevents the legacy fallback from auto-creating prefixed queues.
  */
 public class AutoCreateQueuesLegacyFallbackTest extends ActiveMQTestBase {
 
@@ -69,6 +50,10 @@ public class AutoCreateQueuesLegacyFallbackTest extends ActiveMQTestBase {
    private static final String QUEUE_NAME = "test.test2.somequeue";
    private static final String PREFIXED_QUEUE_NAME = "jms.queue." + QUEUE_NAME;
    private static final String DLQ_SUFFIX = ".DLQ";
+
+   private static final int COMPAT_ACCEPTOR_PORT = TransportConstants.DEFAULT_PORT + 1;
+   private static final String COMPAT_ACCEPTOR_URL =
+      "tcp://localhost:" + COMPAT_ACCEPTOR_PORT + "?anycastPrefix=jms.queue.;multicastPrefix=jms.topic.";
 
    private ActiveMQServer server;
 
@@ -81,13 +66,9 @@ public class AutoCreateQueuesLegacyFallbackTest extends ActiveMQTestBase {
    }
 
    /**
-    * Specific match: auto-create FALSE. Catch-all: auto-create TRUE. This is the regression
-    * scenario. Pre-fix, the un-prefixed lookup failed, the legacy fallback consulted
-    * address-settings for {@code jms.queue.test.test2.somequeue}, the catch-all reported
-    * auto-create=true, and the broker created the prefixed queue. Post-fix, the fallback
-    * gates on existence: no pre-existing legacy queue → {@code internalCreateQueueCompatibility}
-    * returns null, {@code internalCreateQueue} throws {@code JMSException}, and the broker
-    * creates nothing.
+    * Specific match: auto-create FALSE. Catch-all: auto-create TRUE. Verifies the legacy
+    * fallback no longer auto-creates the prefixed queue when the specific match disables
+    * auto-create.
     */
    @Test
    public void testAutoCreateFalseOnSpecificMatch() throws Exception {
@@ -110,9 +91,8 @@ public class AutoCreateQueuesLegacyFallbackTest extends ActiveMQTestBase {
    }
 
    /**
-    * Specific match: auto-create TRUE. Catch-all: auto-create TRUE. The un-prefixed lookup
-    * succeeds via the specific match, the JMS client never enters the legacy fallback path,
-    * and the broker auto-creates {@code test.test2.somequeue} under its expected name.
+    * Specific match: auto-create TRUE. Catch-all: auto-create TRUE. The un-prefixed queue
+    * is auto-created normally without entering the legacy fallback path.
     */
    @Test
    public void testAutoCreateTrueOnSpecificMatch() throws Exception {
@@ -134,10 +114,8 @@ public class AutoCreateQueuesLegacyFallbackTest extends ActiveMQTestBase {
    }
 
    /**
-    * Specific match: auto-create TRUE. Catch-all: auto-create FALSE. The un-prefixed lookup
-    * succeeds via the specific match and the broker auto-creates {@code test.test2.somequeue}.
-    * The legacy fallback path is never entered, so the catch-all's auto-create=false is
-    * irrelevant to the producer path.
+    * Specific match: auto-create TRUE. Catch-all: auto-create FALSE. The un-prefixed queue
+    * is auto-created via the specific match; legacy fallback is never entered.
     */
    @Test
    public void testCatchAllFalseSpecificTrue() throws Exception {
@@ -159,10 +137,8 @@ public class AutoCreateQueuesLegacyFallbackTest extends ActiveMQTestBase {
    }
 
    /**
-    * Specific match and catch-all: both auto-create FALSE. The un-prefixed lookup returns
-    * {@code isExists=false}; the legacy fallback finds no pre-existing legacy-prefixed
-    * queue (and after the fix could not auto-create one anyway), so
-    * {@code internalCreateQueue} throws {@code JMSException} and nothing is created.
+    * Specific match and catch-all: both auto-create FALSE. No queue is created by either
+    * the normal or legacy fallback path.
     */
    @Test
    public void testBothMatchesFalse() throws Exception {
@@ -183,6 +159,58 @@ public class AutoCreateQueuesLegacyFallbackTest extends ActiveMQTestBase {
          "'" + PREFIXED_QUEUE_NAME + "' must not be auto-created by the legacy fallback either");
    }
 
+   /**
+    * Tests legacy fallback through an acceptor with {@code anycastPrefix=jms.queue.}.
+    * Verifies the fix doesn't change behavior for deployments with the acceptor-side
+    * workaround.
+    */
+   @Test
+   public void testLegacyFallbackThroughAcceptorWithAnycastPrefix() throws Exception {
+      server.getAddressSettingsRepository().addMatch("test.test2.#", baseDlaSettings()
+         .setAutoCreateQueues(false)
+         .setAutoCreateAddresses(false));
+      server.getAddressSettingsRepository().addMatch("#", baseDlaSettings()
+         .setAutoCreateQueues(true)
+         .setAutoCreateAddresses(true));
+
+      server.getConfiguration().addAcceptorConfiguration("compat", COMPAT_ACCEPTOR_URL);
+      server.start();
+
+      runJmsScenarioAndDump("acceptor anycastPrefix=jms.queue. + specific FALSE",
+         "tcp://localhost:" + COMPAT_ACCEPTOR_PORT, QUEUE_NAME);
+
+      assertNull(server.locateQueue(SimpleString.of(QUEUE_NAME)),
+         "un-prefixed queue must not be auto-created — specific match disables auto-create");
+      assertNull(server.locateQueue(SimpleString.of(PREFIXED_QUEUE_NAME)),
+         "legacy-prefixed queue must not appear — broker's anycastPrefix already normalizes the address");
+   }
+
+   /**
+    * Verifies legacy-1.x JMS clients ({@code enable1xPrefixes=true}) with acceptor
+    * {@code anycastPrefix=jms.queue.} are unaffected by the fix. The normal lookup
+    * succeeds and auto-creates the un-prefixed queue.
+    */
+   @Test
+   public void testAnycastPrefixClientStillAutoCreates() throws Exception {
+      server.getAddressSettingsRepository().addMatch("test.test2.#", baseDlaSettings()
+         .setAutoCreateQueues(true)
+         .setAutoCreateAddresses(true));
+      server.getAddressSettingsRepository().addMatch("#", baseDlaSettings()
+         .setAutoCreateQueues(true)
+         .setAutoCreateAddresses(true));
+
+      server.getConfiguration().addAcceptorConfiguration("compat", COMPAT_ACCEPTOR_URL);
+      server.start();
+
+      runJmsScenarioAndDump("acceptor anycastPrefix + client enable1xPrefixes",
+         "tcp://localhost:" + COMPAT_ACCEPTOR_PORT + "?enable1xPrefixes=true", QUEUE_NAME);
+
+      assertNotNull(server.locateQueue(SimpleString.of(QUEUE_NAME)),
+         "un-prefixed queue '" + QUEUE_NAME + "' should be auto-created — prefix is stripped at the broker");
+      assertNull(server.locateQueue(SimpleString.of(PREFIXED_QUEUE_NAME)),
+         "legacy-prefixed queue must not appear — the acceptor normalizes back to the un-prefixed name");
+   }
+
    private static AddressSettings baseDlaSettings() {
       return new AddressSettings()
          .setAutoCreateDeadLetterResources(true)
@@ -192,18 +220,19 @@ public class AutoCreateQueuesLegacyFallbackTest extends ActiveMQTestBase {
    }
 
    /**
-    * Runs a CORE JMS produce/receive/rollback flow against {@link #QUEUE_NAME} so that the
-    * single message crosses {@code max-delivery-attempts=1} and triggers DLA resource
-    * auto-creation, then dumps the resulting queue/address inventory for diagnostic output.
-    * Any JMS exception is captured rather than propagated so the assertions can observe the
-    * broker-side state regardless of whether the producer flow succeeded.
+    * Runs a JMS produce/receive/rollback flow to trigger DLA resource auto-creation and
+    * dumps the resulting queue/address inventory. Captures JMS exceptions for diagnostics.
     */
    private void runJmsScenarioAndDump(String scenarioLabel) throws Exception {
+      runJmsScenarioAndDump(scenarioLabel, "vm://0", QUEUE_NAME);
+   }
+
+   private void runJmsScenarioAndDump(String scenarioLabel, String brokerUrl, String jmsQueueName) throws Exception {
       Exception sendError = null;
-      ActiveMQConnectionFactory cf = new ActiveMQConnectionFactory("vm://0");
+      ActiveMQConnectionFactory cf = new ActiveMQConnectionFactory(brokerUrl);
       try (Connection connection = cf.createConnection()) {
          Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-         Queue queue = session.createQueue(QUEUE_NAME);
+         Queue queue = session.createQueue(jmsQueueName);
          MessageProducer producer = session.createProducer(queue);
          producer.send(session.createTextMessage("hello"));
          session.commit();
