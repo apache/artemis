@@ -186,9 +186,12 @@ public class AutoCreateQueuesLegacyFallbackTest extends ActiveMQTestBase {
    }
 
    /**
-    * Verifies legacy-1.x JMS clients ({@code enable1xPrefixes=true}) with acceptor
-    * {@code anycastPrefix=jms.queue.} are unaffected by the fix. The normal lookup
-    * succeeds and auto-creates the un-prefixed queue.
+    * Happy-path cover for legacy-1.x clients ({@code enable1xPrefixes=true}) on an
+    * acceptor with {@code anycastPrefix=jms.queue.}. The normal lookup succeeds via
+    * {@code isAutoCreateQueues=true}, so the legacy fallback is NOT entered here —
+    * the compatibility-path fix is not exercised by this test. Compat-path coverage
+    * in the same client configuration lives in
+    * {@link #testAnycastPrefixClientHitsCompatPathCleanly}.
     */
    @Test
    public void testAnycastPrefixClientStillAutoCreates() throws Exception {
@@ -209,6 +212,36 @@ public class AutoCreateQueuesLegacyFallbackTest extends ActiveMQTestBase {
          "un-prefixed queue '" + QUEUE_NAME + "' should be auto-created — prefix is stripped at the broker");
       assertNull(server.locateQueue(SimpleString.of(PREFIXED_QUEUE_NAME)),
          "legacy-prefixed queue must not appear — the acceptor normalizes back to the un-prefixed name");
+   }
+
+   /**
+    * Forces the legacy fallback for {@code enable1xPrefixes=true} clients on an
+    * {@code anycastPrefix=jms.queue.} acceptor: both matches set auto-create=false so
+    * both regular {@code lookupQueue} calls return null and
+    * {@code internalCreateQueueCompatibility} runs. The post-fix compat queueQuery
+    * is normalized by the broker back to the un-prefixed name, finds nothing, and
+    * the JMS call throws cleanly. Guards against accidental auto-creation when the
+    * compat path is exercised in this client configuration.
+    */
+   @Test
+   public void testAnycastPrefixClientHitsCompatPathCleanly() throws Exception {
+      server.getAddressSettingsRepository().addMatch("test.test2.#", baseDlaSettings()
+         .setAutoCreateQueues(false)
+         .setAutoCreateAddresses(false));
+      server.getAddressSettingsRepository().addMatch("#", baseDlaSettings()
+         .setAutoCreateQueues(false)
+         .setAutoCreateAddresses(false));
+
+      server.getConfiguration().addAcceptorConfiguration("compat", COMPAT_ACCEPTOR_URL);
+      server.start();
+
+      runJmsScenarioAndDump("acceptor anycastPrefix + client enable1xPrefixes + all FALSE",
+         "tcp://localhost:" + COMPAT_ACCEPTOR_PORT + "?enable1xPrefixes=true", QUEUE_NAME);
+
+      assertNull(server.locateQueue(SimpleString.of(QUEUE_NAME)),
+         "un-prefixed queue must not be auto-created — all auto-create disabled");
+      assertNull(server.locateQueue(SimpleString.of(PREFIXED_QUEUE_NAME)),
+         "legacy-prefixed queue must not appear — compat path returns null cleanly");
    }
 
    private static AddressSettings baseDlaSettings() {
