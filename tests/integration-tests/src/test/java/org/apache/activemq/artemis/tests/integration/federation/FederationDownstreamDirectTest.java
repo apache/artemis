@@ -153,7 +153,7 @@ public class FederationDownstreamDirectTest extends ActiveMQTestBase {
       FederationDownstreamConnectMessage msg = new FederationDownstreamConnectMessage();
       msg.setName(name);
 
-      Map<String, FederationPolicy> policyMap = new HashMap<>();
+      Map<String, FederationPolicy<?>> policyMap = new HashMap<>();
       policyMap.put(policyConfigName, new FederationQueuePolicyConfiguration().setName(policyConfigName).addInclude(new FederationQueuePolicyConfiguration.Matcher().setQueueMatch("#").setAddressMatch("#")));
       policyMap.put(policySetName, new FederationPolicySet().setName(policySetName).addPolicyRef(policyConfigName));
       msg.setFederationPolicyMap(policyMap);

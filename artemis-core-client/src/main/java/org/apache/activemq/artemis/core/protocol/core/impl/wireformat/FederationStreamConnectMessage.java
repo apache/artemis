@@ -26,13 +26,12 @@ import org.apache.activemq.artemis.core.config.federation.FederationPolicy;
 import org.apache.activemq.artemis.core.config.federation.FederationStreamConfiguration;
 import org.apache.activemq.artemis.core.config.federation.FederationTransformerConfiguration;
 import org.apache.activemq.artemis.core.protocol.core.impl.PacketImpl;
-import org.apache.activemq.artemis.utils.ClassloadingUtil;
 
 public abstract class FederationStreamConnectMessage<T extends FederationStreamConfiguration> extends PacketImpl {
 
    private String name;
    private Credentials credentials;
-   private Map<String, FederationPolicy> federationPolicyMap = new HashMap<>();
+   private Map<String, FederationPolicy<?>> federationPolicyMap = new HashMap<>();
    private Map<String, FederationTransformerConfiguration> transformerConfigurationMap = new HashMap<>();
    private T streamConfiguration;
 
@@ -65,12 +64,12 @@ public abstract class FederationStreamConnectMessage<T extends FederationStreamC
       this.streamConfiguration = streamConfiguration;
    }
 
-   public Map<String, FederationPolicy> getFederationPolicyMap() {
+   public Map<String, FederationPolicy<?>> getFederationPolicyMap() {
       return federationPolicyMap;
    }
 
    public void setFederationPolicyMap(
-      Map<String, FederationPolicy> federationPolicyMap) {
+      Map<String, FederationPolicy<?>> federationPolicyMap) {
       this.federationPolicyMap = federationPolicyMap;
    }
 
@@ -129,7 +128,7 @@ public abstract class FederationStreamConnectMessage<T extends FederationStreamC
       int policySize = buffer.readInt();
       for (int i = 0; i < policySize; i++) {
          String clazz = buffer.readString();
-         FederationPolicy policy = getFederationPolicy(clazz);
+         FederationPolicy<?> policy = FederationPolicy.getFederationPolicy(clazz);
          policy.decode(buffer);
          federationPolicyMap.put(policy.getName(), policy);
       }
@@ -147,11 +146,4 @@ public abstract class FederationStreamConnectMessage<T extends FederationStreamC
 
    protected abstract T decodeStreamConfiguration(ActiveMQBuffer buffer);
 
-   private FederationPolicy getFederationPolicy(String clazz) {
-      try {
-         return (FederationPolicy) ClassloadingUtil.getInstanceWithTypeCheck(clazz, FederationPolicy.class, this.getClass().getClassLoader());
-      } catch (Exception e) {
-         throw new IllegalStateException("Error. Unable to instantiate FederationPolicy: " + e.getMessage(), e);
-      }
-   }
 }
