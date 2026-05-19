@@ -78,6 +78,7 @@ import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.core.config.BridgeConfiguration;
+import org.apache.activemq.artemis.core.config.BrokerPluginConfiguration;
 import org.apache.activemq.artemis.core.config.ClusterConnectionConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.config.ConfigurationUtils;
@@ -377,6 +378,7 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
    private MetricsConfiguration metricsConfiguration = null;
 
    private final List<ActiveMQServerBasePlugin> brokerPlugins = new CopyOnWriteArrayList<>();
+   private List<BrokerPluginConfiguration> brokerPluginConfigurations = new ArrayList<>();
    private final List<ActiveMQServerConnectionPlugin> brokerConnectionPlugins = new CopyOnWriteArrayList<>();
    private final List<ActiveMQServerSessionPlugin> brokerSessionPlugins = new CopyOnWriteArrayList<>();
    private final List<ActiveMQServerConsumerPlugin> brokerConsumerPlugins = new CopyOnWriteArrayList<>();
@@ -1073,6 +1075,8 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
       "status",
       // we cannot import a map<string,set<string>> property and this feature is only applied by the xml parser
       "securityRoleNameMappings",
+      // only used for reload matching, cannot be imported as plugins are instantiated via XML
+      "brokerPluginConfigurations",
       // using a deprecated config object
       "queueConfigurations",
       "queueConfigs",
@@ -2688,6 +2692,17 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
    @Override
    public List<ActiveMQServerBasePlugin> getBrokerPlugins() {
       return brokerPlugins;
+   }
+
+   @Override
+   public List<BrokerPluginConfiguration> getBrokerPluginConfigurations() {
+      return brokerPluginConfigurations;
+   }
+
+   @Override
+   public ConfigurationImpl setBrokerPluginConfigurations(final List<BrokerPluginConfiguration> configs) {
+      brokerPluginConfigurations = configs;
+      return this;
    }
 
    // for properties type inference

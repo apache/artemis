@@ -1381,6 +1381,13 @@ public interface Configuration {
 
    void unRegisterBrokerPlugin(ActiveMQServerBasePlugin plugin);
 
+   /**
+    * {@return the broker plugin configurations parsed from broker.xml}
+    */
+   List<BrokerPluginConfiguration> getBrokerPluginConfigurations();
+
+   Configuration setBrokerPluginConfigurations(List<BrokerPluginConfiguration> configs);
+
    Collection<LockCoordinatorConfiguration> getLockCoordinatorConfigurations();
 
    void addLockCoordinatorConfiguration(LockCoordinatorConfiguration configuration);
