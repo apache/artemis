@@ -19,6 +19,7 @@ package org.apache.activemq.artemis.core.client;
 import org.apache.activemq.artemis.api.core.ActiveMQAddressFullException;
 import org.apache.activemq.artemis.api.core.ActiveMQConnectionTimedOutException;
 import org.apache.activemq.artemis.api.core.ActiveMQDisconnectedException;
+import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.ActiveMQIllegalStateException;
 import org.apache.activemq.artemis.api.core.ActiveMQInterceptorRejectedPacketException;
 import org.apache.activemq.artemis.api.core.ActiveMQInternalErrorException;
@@ -234,4 +235,8 @@ public interface ActiveMQClientMessageBundle {
 
    @Message(id = 219070, value = "The server discovery is disabled by default. See the Server Discovery section in the user manual for security requirements and enablement.")
    IllegalStateException serverDiscoveryDisabled();
+
+   @Message(id = 219071, value = "Serialization is not allowed for management operations")
+   ActiveMQException serializationNotAllowedOnManagement();
+
 }

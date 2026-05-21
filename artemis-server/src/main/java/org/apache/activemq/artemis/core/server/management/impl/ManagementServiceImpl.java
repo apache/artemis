@@ -667,13 +667,13 @@ public class ManagementServiceImpl implements ManagementService {
       String operation = message.getStringProperty(ManagementHelper.HDR_OPERATION_NAME);
 
       if (operation != null) {
-         Object[] params = ManagementHelper.retrieveOperationParameters(message);
-
-         if (params == null) {
-            params = new Object[0];
-         }
-
          try {
+            Object[] params = ManagementHelper.retrieveOperationParameters(message);
+
+            if (params == null) {
+               params = new Object[0];
+            }
+
             Object result = invokeOperation(resourceName, operation, params, auth);
 
             ManagementHelper.storeResult(reply, result);
