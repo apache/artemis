@@ -202,7 +202,7 @@
       <elementary.version>3.0.0</elementary.version>
       <groovy.version>5.0.6</groovy.version>
       <hadoop.minikdc.version>3.5.0</hadoop.minikdc.version>
-      <mockserver.version>5.15.0</mockserver.version>
+      <mockserver.version>6.0.0</mockserver.version>
 
       <owasp.version>12.2.2</owasp.version>
       <spring.version>5.3.39</spring.version>
