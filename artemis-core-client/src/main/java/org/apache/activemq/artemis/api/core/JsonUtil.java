@@ -20,6 +20,7 @@ import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
 import java.io.ByteArrayInputStream;
 import java.io.StringReader;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -28,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.activemq.artemis.core.client.ActiveMQClientMessageBundle;
 import org.apache.activemq.artemis.json.JsonArray;
 import org.apache.activemq.artemis.json.JsonArrayBuilder;
 import org.apache.activemq.artemis.json.JsonNumber;
@@ -39,8 +41,57 @@ import org.apache.activemq.artemis.utils.Base64;
 import org.apache.activemq.artemis.utils.JsonLoader;
 import org.apache.activemq.artemis.utils.ObjectInputStreamWithClassLoader;
 import org.apache.activemq.artemis.utils.StringEscapeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.ObjectInputFilter;
 
 public final class JsonUtil {
+
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+   private static final String SERIAL_FILTER;
+
+   static {
+      String filter = System.getProperty("artemis.json.composite.data.serial.filter");
+      if (filter == null) {
+         filter = System.getenv("ARTEMIS_JSON_COMPOSITE_DATA_SERIAL_FILTER");
+      }
+      if (filter == null) {
+         // this is the minimal necessary to deserialize a CompositeData
+         filter = "maxdepth=10;" +
+            "javax.management.openmbean.CompositeType;" +
+            "javax.management.openmbean.CompositeDataSupport;" +
+            "javax.management.openmbean.OpenType;" +
+            "javax.management.openmbean.ArrayType;" +
+            "javax.management.openmbean.SimpleType;" +
+            "javax.management.openmbean.TabularType;" +
+            "javax.management.openmbean.TabularDataSupport;" +
+            "java.util.TreeMap;" +
+            "java.util.Collections;" +
+            "java.util.Collections$UnmodifiableList;" +
+            "java.util.Collections$UnmodifiableCollection;" +
+            "java.util.Collections$UnmodifiableRandomAccessList;" +
+            "java.util.ArrayList;" +
+            "java.util.LinkedHashMap;" +
+            "java.util.HashMap;" +
+            "java.util.Map$Entry;" +
+            "java.util.Arrays;" +
+            "java.util.Arrays$ArrayList;" +
+            "java.lang.Object;" +
+            "java.lang.String;" +
+            "java.lang.Boolean;" +
+            "java.lang.Long;" +
+            "java.lang.Number;" +
+            "java.lang.Byte;" +
+            "java.lang.Double;" +
+            "java.lang.Float;" +
+            "java.lang.Integer;" +
+            "java.lang.Short;" +
+            "!*";
+      }
+      SERIAL_FILTER = filter;
+   }
 
    public static JsonArray toJSONArray(final Object[] array) throws Exception {
       JsonArrayBuilder jsonArray = JsonLoader.createArrayBuilder();
@@ -52,13 +103,17 @@ public final class JsonUtil {
    }
 
    public static Object[] fromJsonArray(final JsonArray jsonArray) throws Exception {
+      return fromJsonArray(jsonArray, true);
+   }
+
+   public static Object[] fromJsonArray(final JsonArray jsonArray, boolean allowCompositeDataSerialization) throws Exception {
       Object[] array = new Object[jsonArray.size()];
 
       for (int i = 0; i < jsonArray.size(); i++) {
          Object val = jsonArray.get(i);
 
          if (val instanceof JsonArray jsonArrayValue) {
-            Object[] inner = fromJsonArray(jsonArrayValue);
+            Object[] inner = fromJsonArray(jsonArrayValue, allowCompositeDataSerialization);
 
             array[i] = inner;
          } else if (val instanceof JsonObject jsonObject) {
@@ -71,7 +126,7 @@ public final class JsonUtil {
                Object innerVal = jsonObject.get(key);
 
                if (innerVal instanceof JsonArray jsonArrayValue) {
-                  innerVal = fromJsonArray(jsonArrayValue);
+                  innerVal = fromJsonArray(jsonArrayValue, allowCompositeDataSerialization);
                } else if (innerVal instanceof JsonString jsonString) {
                   innerVal = jsonString.getString();
                } else if (innerVal == JsonValue.FALSE) {
@@ -93,12 +148,26 @@ public final class JsonUtil {
                   innerVal = innerMap;
                }
                if (CompositeData.class.getName().equals(key)) {
+                  if (!allowCompositeDataSerialization) {
+                     throw ActiveMQClientMessageBundle.BUNDLE.serializationNotAllowedOnManagement();
+                  }
                   Object[] data = (Object[]) innerVal;
                   CompositeData[] cds = new CompositeData[data.length];
                   for (int i1 = 0; i1 < data.length; i1++) {
                      String dataConverted = convertJsonValue(data[i1], String.class).toString();
                      try (ObjectInputStreamWithClassLoader ois = new ObjectInputStreamWithClassLoader(new ByteArrayInputStream(Base64.decode(dataConverted)))) {
-                        ois.setAllowList("java.util,java.lang,javax.management");
+                        ObjectInputFilter serialFilter = ObjectInputFilter.Config.createFilter(SERIAL_FILTER);
+                        if (logger.isDebugEnabled()) {
+                           ois.setObjectInputFilter(info -> {
+                              ObjectInputFilter.Status status = serialFilter.checkInput(info);
+                              if (status == ObjectInputFilter.Status.REJECTED && info.serialClass() != null) {
+                                 logger.debug("Serialization class rejected: {} (depth={}, refs={})", info.serialClass().getName(), info.depth(), info.references());
+                              }
+                              return status;
+                           });
+                        } else {
+                           ois.setObjectInputFilter(serialFilter);
+                        }
                         cds[i1] = (CompositeDataSupport) ois.readObject();
                      }
                   }

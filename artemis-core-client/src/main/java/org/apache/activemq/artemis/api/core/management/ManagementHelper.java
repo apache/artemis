@@ -207,7 +207,8 @@ public final class ManagementHelper {
       if (jsonString != null) {
          JsonArray jsonArray = JsonUtil.readJsonArray(jsonString);
 
-         return JsonUtil.fromJsonArray(jsonArray);
+         // this is used on client 2 server communication and serialization is never needed at this point
+         return JsonUtil.fromJsonArray(jsonArray, false);
       } else {
          return null;
       }

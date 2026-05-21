@@ -16,6 +16,8 @@
  */
 package org.apache.activemq.artemis.tests.integration.management;
 
+import javax.management.openmbean.CompositeData;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -23,13 +25,22 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.activemq.artemis.api.core.ICoreMessage;
+import org.apache.activemq.artemis.api.core.JsonUtil;
 import org.apache.activemq.artemis.api.core.Message;
+import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.api.core.client.ClientConsumer;
+import org.apache.activemq.artemis.api.core.client.ClientMessage;
+import org.apache.activemq.artemis.api.core.client.ClientProducer;
+import org.apache.activemq.artemis.api.core.client.ClientSession;
+import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
+import org.apache.activemq.artemis.api.core.client.ServerLocator;
 import org.apache.activemq.artemis.api.core.management.AddressControl;
 import org.apache.activemq.artemis.api.core.management.ManagementHelper;
 import org.apache.activemq.artemis.api.core.management.QueueControl;
 import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.core.config.Configuration;
+import org.apache.activemq.artemis.core.client.impl.ClientMessageImpl;
 import org.apache.activemq.artemis.core.message.impl.CoreMessage;
 import org.apache.activemq.artemis.core.persistence.impl.nullpm.NullStorageManager;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
@@ -37,10 +48,13 @@ import org.apache.activemq.artemis.core.server.ActiveMQServers;
 import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.impl.AddressInfo;
 import org.apache.activemq.artemis.core.server.management.impl.ManagementServiceImpl;
+import org.apache.activemq.artemis.json.JsonArrayBuilder;
 import org.apache.activemq.artemis.reader.MessageUtil;
+import org.apache.activemq.artemis.reader.TextMessageUtil;
 import org.apache.activemq.artemis.tests.integration.server.FakeStorageManager;
 import org.apache.activemq.artemis.tests.unit.core.postoffice.impl.fakes.FakeQueue;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
+import org.apache.activemq.artemis.utils.JsonLoader;
 import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.artemis.utils.UUID;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
@@ -67,6 +81,60 @@ public class ManagementServiceImplTest extends ActiveMQTestBase {
       Message reply = server.getManagementService().handleMessage(null, message);
 
       assertTrue(ManagementHelper.hasOperationSucceeded(reply));
+   }
+
+   @Test
+   public void testHandleInvalidSerialization() throws Exception {
+
+      CoreMessage messageCD = new CoreMessage().initBuffer(1024);
+      TextMessageUtil.writeBodyText(messageCD.getBodyBuffer(), RandomUtil.randomUUIDSimpleString());
+      messageCD.putStringProperty("hello", "its me");
+
+      CompositeData compositeData = messageCD.toCompositeData(10, 10);
+
+      ActiveMQServer server = createServer(false, false);
+      server.start();
+
+      SimpleString replyQueue = RandomUtil.randomUUIDSimpleString();
+
+      try (
+         ServerLocator locator = createInVMNonHALocator();
+         ClientSessionFactory sf = createSessionFactory(locator);
+         ClientSession session = sf.createSession(false, true, true);
+      ) {
+         session.createQueue(QueueConfiguration.of(replyQueue).setAddress(replyQueue).setDurable(false).setTemporary(true));
+
+         ClientProducer producer = session.createProducer(server.getConfiguration().getManagementAddress());
+         ClientConsumer consumer = session.createConsumer(replyQueue);
+
+         session.start();
+
+         ClientMessage message = session.createMessage(false);
+
+         message.putStringProperty(ManagementHelper.HDR_RESOURCE_NAME, SimpleString.of(ResourceNames.BROKER));
+         // we don't need a valid operation name to trigger JSONUtil deserialization
+         message.putStringProperty(ManagementHelper.HDR_OPERATION_NAME, SimpleString.of("idontcare"));
+
+         message.putStringProperty(ClientMessageImpl.REPLYTO_HEADER_NAME, replyQueue);
+
+         JsonArrayBuilder arrayBuilder = JsonLoader.createArrayBuilder();
+         JsonUtil.addToArray(new CompositeData[]{compositeData}, arrayBuilder);
+         String json = arrayBuilder.build().toString();
+
+         message.getBodyBuffer().writeNullableSimpleString(SimpleString.of(json));
+         producer.send(message);
+
+         ClientMessage reply = consumer.receive(5000);
+         assertNotNull(reply);
+         assertFalse(ManagementHelper.hasOperationSucceeded(reply));
+         SimpleString resultString = reply.getReadOnlyBodyBuffer().readNullableSimpleString();
+         assertNotNull(resultString);
+         // verify the operation fails due to "Serialization not allowed"
+         assertTrue(String.valueOf(resultString).contains("AMQ219071"), () -> "Expected to fail because of AMQ219070 (serialization disallowed), invalidResult=" + resultString);
+
+         producer.close();
+         consumer.close();
+      }
    }
 
    @Test
