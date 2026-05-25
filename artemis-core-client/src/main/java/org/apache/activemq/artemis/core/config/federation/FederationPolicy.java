@@ -20,6 +20,23 @@ import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 
 public interface FederationPolicy<T> {
 
+   static FederationPolicy<?> getFederationPolicy(String clazz) {
+      switch (clazz) {
+         case "org.apache.activemq.artemis.core.config.federation.FederationAddressPolicyConfiguration":
+            return new FederationAddressPolicyConfiguration();
+
+         case "org.apache.activemq.artemis.core.config.federation.FederationPolicySet":
+            return new FederationPolicySet();
+
+         case "org.apache.activemq.artemis.core.config.federation.FederationQueuePolicyConfiguration":
+            return new FederationQueuePolicyConfiguration();
+
+         default:
+            throw new IllegalArgumentException("unknown " + clazz);
+      }
+   }
+
+
    String getName();
 
    T setName(String name);

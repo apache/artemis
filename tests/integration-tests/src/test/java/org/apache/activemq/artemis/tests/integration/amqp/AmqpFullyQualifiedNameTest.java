@@ -156,7 +156,7 @@ public class AmqpFullyQualifiedNameTest extends JMSClientTestSupport {
       Exception e = null;
 
       // Wrong FQQN.  Attempt to subscribe to a queue belonging to a different address than given in the FQQN.
-      String wrongFQQN = address1 + "::"  + queue2;
+      String wrongFQQN = address1 + "::" + queue2;
       Connection connection = createConnection(false);
       try {
          connection.setClientID("FQQNconn");
@@ -188,7 +188,7 @@ public class AmqpFullyQualifiedNameTest extends JMSClientTestSupport {
       Exception e = null;
 
       // Wrong FQQN.  Attempt to subscribe to a queue belonging to a different address than given in the FQQN.
-      String wrongFQQN = address1 + "::"  + queue2;
+      String wrongFQQN = address1 + "::" + queue2;
       Connection connection = createConnection(false);
       try {
          connection.setClientID("FQQNconn");

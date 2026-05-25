@@ -2905,4 +2905,11 @@ public interface AuditLogger {
    @LogMessage(id = 601803, value = "User {} is getting BlockedViaManagement on target resource: {}", level = LogMessage.Level.INFO)
    void isBlockedViaManagement(String user, Object source);
 
+   static void listLockCoordinatorsAsJSON(Object source) {
+      BASE_LOGGER.listLockCoordinatorsAsJSON(getCaller(), source);
+   }
+
+   @LogMessage(id = 601804, value = "User {} is listing lock coordinators as json on target resource: {}", level = LogMessage.Level.INFO)
+   void listLockCoordinatorsAsJSON(String user, Object source);
+
 }

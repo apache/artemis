@@ -138,7 +138,7 @@ public class ScaleDownHandler {
                }
             }
 
-            String sfPrefix =  ((PostOfficeImpl) postOffice).getServer().getInternalNamingPrefix() + "sf.";
+            String sfPrefix = ((PostOfficeImpl) postOffice).getServer().getInternalNamingPrefix() + "sf.";
             long messageCountItem = 0;
             if (address.toString().startsWith(sfPrefix)) {
                messageCountItem += scaleDownSNF(address, queues, producer);

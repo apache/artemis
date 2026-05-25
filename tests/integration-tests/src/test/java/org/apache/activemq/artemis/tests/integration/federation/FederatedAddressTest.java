@@ -591,7 +591,7 @@ public class FederatedAddressTest extends FederatedTestBase {
          Connection newConnection = getCF(0).createConnection();
          newConnection.start();
          session0 = newConnection.createSession();
-         topic0 =  session0.createTopic(address);
+         topic0 = session0.createTopic(address);
          consumer0 = session0.createConsumer(topic0);
 
          Wait.waitFor(() -> getServer(1).getPostOffice().getBindingsForAddress(SimpleString.of(address)).getBindings().size() == 1);

@@ -127,7 +127,7 @@ public class PageCleanupWhileReplicaCatchupTest extends FailoverTestBase {
 
       for (Worker worker : workers) {
          if (worker.throwable != null) {
-            throw new RuntimeException("Worker " + worker.queueName  + " failed", worker.throwable);
+            throw new RuntimeException("Worker " + worker.queueName + " failed", worker.throwable);
          }
       }
 

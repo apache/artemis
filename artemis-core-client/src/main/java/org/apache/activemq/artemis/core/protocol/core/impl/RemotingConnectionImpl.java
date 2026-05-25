@@ -375,7 +375,7 @@ public class RemotingConnectionImpl extends AbstractRemotingConnection implement
          final Packet packet = packetDecoder.decode(buffer, this);
 
          if (logger.isTraceEnabled()) {
-            logger.trace("RemotingConnectionID={} handling packet {}",  getID(), packet);
+            logger.trace("RemotingConnectionID={} handling packet {}", getID(), packet);
          }
 
          doBufferReceived(packet);

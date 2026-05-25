@@ -176,7 +176,7 @@ public class ArtemisRbacMBeanServerBuilderTest extends ServerTestBase {
                Class<?> type = m.getParameterTypes()[i];
                if (type == String.class) {
                   args[i] = RandomUtil.randomUUIDString();
-               } else  if (SimpleString.class == type) {
+               } else if (SimpleString.class == type) {
                   args[i] = RandomUtil.randomUUIDSimpleString();
                } else if (RoutingType.class == type) {
                   args[i] = RoutingType.ANYCAST;
@@ -461,7 +461,7 @@ public class ArtemisRbacMBeanServerBuilderTest extends ServerTestBase {
       viewSubject.getPrincipals().add(new UserPrincipal("v"));
       viewSubject.getPrincipals().add(new RolePrincipal("viewers"));
 
-      Object ret =  SecurityManagerShim.callAs(viewSubject, (Callable<Object>) () -> {
+      Object ret = SecurityManagerShim.callAs(viewSubject, (Callable<Object>) () -> {
          try {
             return serverControl.isSecurityEnabled();
          } catch (Exception e1) {
@@ -474,7 +474,7 @@ public class ArtemisRbacMBeanServerBuilderTest extends ServerTestBase {
       assertTrue(((Exception)ret).getMessage().contains("EDIT"));
 
       // another `is` op is ok with view
-      ret =  SecurityManagerShim.callAs(viewSubject, (Callable<Object>) () -> {
+      ret = SecurityManagerShim.callAs(viewSubject, (Callable<Object>) () -> {
          try {
             return serverControl.isActive();
          } catch (Exception e1) {
@@ -516,7 +516,7 @@ public class ArtemisRbacMBeanServerBuilderTest extends ServerTestBase {
       testSubject.getPrincipals().add(new UserPrincipal("v"));
       testSubject.getPrincipals().add(new RolePrincipal("viewers"));
 
-      Object ret =  SecurityManagerShim.callAs(testSubject, (Callable<Object>) () -> {
+      Object ret = SecurityManagerShim.callAs(testSubject, (Callable<Object>) () -> {
          try {
             return serverControl.getAddressCount();
          } catch (Exception e1) {
@@ -531,7 +531,7 @@ public class ArtemisRbacMBeanServerBuilderTest extends ServerTestBase {
       // with updaters role we can access a specific method
       testSubject.getPrincipals().add(new RolePrincipal("updaters"));
 
-      ret =  SecurityManagerShim.callAs(testSubject, (Callable<Object>) () -> {
+      ret = SecurityManagerShim.callAs(testSubject, (Callable<Object>) () -> {
          try {
             return serverControl.isSecurityEnabled();
          } catch (Exception e1) {

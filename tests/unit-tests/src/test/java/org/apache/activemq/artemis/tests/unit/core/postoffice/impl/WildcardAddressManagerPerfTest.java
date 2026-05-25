@@ -71,9 +71,9 @@ public class WildcardAddressManagerPerfTest {
                }
 
                // subscribe as wildcard
-               ad.addBinding(new BindingFake(SimpleString.of("Topic1." +  id % partitions +  ".>"), SimpleString.of("" + id), id));
+               ad.addBinding(new BindingFake(SimpleString.of("Topic1." + id % partitions + ".>"), SimpleString.of("" + id), id));
 
-               SimpleString pubAddr = SimpleString.of("Topic1." +  id % partitions + "." + id);
+               SimpleString pubAddr = SimpleString.of("Topic1." + id % partitions + "." + id);
 
 
                if (id != 0 && id % 1000 == 0) {

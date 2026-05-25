@@ -203,7 +203,7 @@ public class NodeCheck extends CheckAbstract {
       Double diskStoreUsage = context.getManagementProxy().
          getAttribute("broker", "DiskStoreUsage", Double.class, 0);
 
-      checkNodeResourceUsage("DiskStoreUsage", (int)(diskStoreUsage *  100), maxDiskUsage);
+      checkNodeResourceUsage("DiskStoreUsage", (int)(diskStoreUsage * 100), maxDiskUsage);
    }
 
    private void checkNodeMemoryUsage(final CheckContext context) throws Exception {

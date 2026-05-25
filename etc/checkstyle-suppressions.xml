@@ -26,8 +26,8 @@ under the License.
 <!-- http://checkstyle.sourceforge.net/config.html#SuppressionFilter -->
 <suppressions>
 
-   <!-- Suppress unfixable violations in JavaCC generated sources -->
-   <suppress checks="MethodParamPad|FileTabCharacter|Indentation|Whitespace|Curly|Modifier|AvoidStarImport|RedundantImport|UnusedImports|EmptyStatement|ArrayTypeStyle|RegexpSingleline|NeedBraces" files="[\\/]generated-sources[\\/]javacc[\\/]"/>
-   <suppress checks="MethodParamPad|FileTabCharacter|Indentation|Whitespace|Curly|Modifier|AvoidStarImport|RedundantImport|UnusedImports|EmptyStatement|ArrayTypeStyle|RegexpSingleline|NeedBraces" files="[\\/]generated-sources[\\/]annotations[\\/]"/>
+   <!-- Suppress unfixable violations in generated sources -->
+   <suppress checks=".*" files="[\\/]generated-sources[\\/]javacc[\\/]"/>
+   <suppress checks=".*" files="[\\/]generated-sources[\\/]annotations[\\/]"/>
 
 </suppressions>

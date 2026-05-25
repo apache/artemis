@@ -42,21 +42,21 @@ public class JMSTopicSubscriberTest extends MultiprotocolJMSClientTestSupport {
    @Test
    @Timeout(30)
    public void testCoreSubscriptionQueueCreatedWhenAutoCreateDisabled() throws Exception {
-      Connection connection =  createCoreConnection();
+      Connection connection = createCoreConnection();
       testSubscriptionQueueCreatedWhenAutoCreateDisabled(connection);
    }
 
    @Test
    @Timeout(30)
    public void testOpenWireSubscriptionQueueCreatedWhenAutoCreateDisabled() throws Exception {
-      Connection connection =  createOpenWireConnection();
+      Connection connection = createOpenWireConnection();
       testSubscriptionQueueCreatedWhenAutoCreateDisabled(connection);
    }
 
    @Test
    @Timeout(30)
    public void testAMQPSubscriptionQueueCreatedWhenAutoCreateDisabled() throws Exception {
-      Connection connection =  createConnection();
+      Connection connection = createConnection();
       testSubscriptionQueueCreatedWhenAutoCreateDisabled(connection);
    }
 

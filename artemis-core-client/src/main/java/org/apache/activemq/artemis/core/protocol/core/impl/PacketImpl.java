@@ -345,7 +345,7 @@ public class PacketImpl implements Packet {
 
    @Override
    public ActiveMQBuffer encode(final CoreRemotingConnection connection) {
-      ActiveMQBuffer buffer =  createPacket(connection);
+      ActiveMQBuffer buffer = createPacket(connection);
 
       encodeHeader(buffer);
 

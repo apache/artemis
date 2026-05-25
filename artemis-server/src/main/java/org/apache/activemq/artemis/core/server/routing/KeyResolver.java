@@ -68,7 +68,7 @@ public class KeyResolver {
             }
             break;
          case SOURCE_IP:
-            if (connection != null &&  connection.getRemoteAddress() != null) {
+            if (connection != null && connection.getRemoteAddress() != null) {
                keyValue = connection.getRemoteAddress();
 
                boolean hasPrefix = keyValue.startsWith(SOCKET_ADDRESS_PREFIX);
@@ -84,7 +84,7 @@ public class KeyResolver {
             keyValue = username;
             break;
          case ROLE_NAME:
-            if (connection != null &&  connection.getProtocolConnection() != null) {
+            if (connection != null && connection.getProtocolConnection() != null) {
                Subject subject = connection.getProtocolConnection().getSubject();
                if (subject != null) {
                   for (RolePrincipal candidateRole : subject.getPrincipals(RolePrincipal.class)) {

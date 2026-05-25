@@ -57,7 +57,7 @@ import org.junit.jupiter.api.Timeout;
  * [MQTT-3.14.2-4] The sender MUST NOT send this property if it would increase the size of the DISCONNECT packet beyond the Maximum Packet Size specified by the receiver.
  */
 
-public class DisconnectTests  extends MQTT5TestSupport {
+public class DisconnectTests extends MQTT5TestSupport {
 
    /*
     * [MQTT-3.14.2-1] The Client or Server sending the DISCONNECT packet MUST use one of the DISCONNECT Reason Codes.

@@ -430,7 +430,7 @@ public class BindingsImplTest extends ActiveMQTestBase {
       }
    }
 
-   private final class FakeRemoteBinding extends FakeBinding implements RemoteQueueBinding  {
+   private final class FakeRemoteBinding extends FakeBinding implements RemoteQueueBinding {
       MessageLoadBalancingType messageLoadBalancingType;
       FakeRemoteBinding(SimpleString name) {
          super(name);

@@ -34,7 +34,7 @@ public class CheckDependencies {
       } catch (NoClassDefFoundError noClassDefFoundError) {
          ActiveMQClientLogger.LOGGER.unableToCheckEpollAvailabilitynoClass();
          return false;
-      } catch (Throwable e)  {
+      } catch (Throwable e) {
          ActiveMQClientLogger.LOGGER.unableToCheckEpollAvailability(e);
          return false;
       }

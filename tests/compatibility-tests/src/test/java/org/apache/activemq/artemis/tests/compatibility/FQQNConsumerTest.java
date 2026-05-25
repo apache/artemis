@@ -71,8 +71,8 @@ public class FQQNConsumerTest extends ServerBase {
 
    @TestTemplate
    public void testSendReceive() throws Throwable {
-      evaluate(senderClassloader,  "fqqnconsumertest/fqqnConsumerProducer.groovy", server, sender, "sendMessage");
-      evaluate(receiverClassloader,  "fqqnconsumertest/fqqnConsumerProducer.groovy", server, receiver, "receiveMessage");
+      evaluate(senderClassloader, "fqqnconsumertest/fqqnConsumerProducer.groovy", server, sender, "sendMessage");
+      evaluate(receiverClassloader, "fqqnconsumertest/fqqnConsumerProducer.groovy", server, receiver, "receiveMessage");
    }
 
 }

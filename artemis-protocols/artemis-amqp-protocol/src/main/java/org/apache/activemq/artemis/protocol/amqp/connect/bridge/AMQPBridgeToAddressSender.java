@@ -288,7 +288,7 @@ public class AMQPBridgeToAddressSender extends AMQPBridgeSender {
                queueQuery = sessionSPI.queueQuery(configuration, true);
             }
 
-            if (!queueQuery.getAddress().equals(address))  {
+            if (!queueQuery.getAddress().equals(address)) {
                throw new ActiveMQAMQPIllegalStateException(
                   "Requested queue: " + queue + " for bridge to address: " + address +
                   ", but it is already mapped to a different address: " + queueQuery.getAddress());

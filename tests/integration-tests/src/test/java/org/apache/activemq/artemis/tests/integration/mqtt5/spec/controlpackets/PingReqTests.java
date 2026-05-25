@@ -30,7 +30,7 @@ import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
-public class PingReqTests  extends MQTT5TestSupport {
+public class PingReqTests extends MQTT5TestSupport {
 
    /*
     * [MQTT-3.12.4-1] The Server MUST send a PINGRESP packet in response to a PINGREQ packet.

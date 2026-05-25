@@ -137,7 +137,7 @@ public class JournalHashMapTest extends ActiveMQTestBase {
          journalHashMapProvider.reload(r);
       });
 
-      List<JournalHashMap<Long, Long, Object>>  existingLists = journalHashMapProvider.getMaps();
+      List<JournalHashMap<Long, Long, Object>> existingLists = journalHashMapProvider.getMaps();
       assertEquals(1, existingLists.size());
       JournalHashMap<Long, Long, Object> reloadedList = existingLists.get(0);
 

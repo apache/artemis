@@ -114,7 +114,7 @@ public class ForceDeleteQueue extends ActiveMQTestBase {
 
          conn.start();
 
-         LinkedListIterator<MessageReference> queueiterator =  serverQueue.browserIterator();
+         LinkedListIterator<MessageReference> queueiterator = serverQueue.browserIterator();
          List<Long> listQueue = new ArrayList<>(1000);
 
          while (queueiterator.hasNext()) {

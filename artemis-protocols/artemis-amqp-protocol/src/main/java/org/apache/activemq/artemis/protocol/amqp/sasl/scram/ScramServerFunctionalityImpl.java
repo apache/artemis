@@ -70,7 +70,7 @@ public class ScramServerFunctionalityImpl implements ScramServerFunctionality {
                                        String serverPartNonce) throws NoSuchAlgorithmException {
       digest = MessageDigest.getInstance(ScramUtils.requireNonNullAndNotEmpty(digestName, "digestName"));
       hmac = Mac.getInstance(ScramUtils.requireNonNullAndNotEmpty(hmacName, "hmacName"));
-      mServerPartNonce =  ScramUtils.requireNonNullAndNotEmpty(serverPartNonce, "serverPartNonce");
+      mServerPartNonce = ScramUtils.requireNonNullAndNotEmpty(serverPartNonce, "serverPartNonce");
    }
 
    /**

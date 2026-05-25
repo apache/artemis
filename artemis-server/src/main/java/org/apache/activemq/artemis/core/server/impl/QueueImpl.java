@@ -1538,7 +1538,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
          long returnValue = (long) pendingMetrics.getNonPagedMessageCount() + scheduledDeliveryHandler.getNonPagedScheduledCount() + deliveringMetrics.getNonPagedMessageCount() + pageSubscription.getMessageCount();
          if (logger.isDebugEnabled()) {
             logger.debug("Queue={}/{} returning getMessageCount \n\treturning {}. \n\tpendingMetrics.getMessageCount() = {}, \n\tgetScheduledCount() = {}, \n\tpageSubscription.getMessageCount()={}, \n\tpageSubscription.getCounter().getValue()={}",
-                         queueConfiguration.getName(), queueConfiguration.getId(), returnValue, pendingMetrics.getMessageCount(),  scheduledDeliveryHandler.getNonPagedScheduledCount(), pageSubscription.getMessageCount(), pageSubscription.getCounter().getValue());
+                         queueConfiguration.getName(), queueConfiguration.getId(), returnValue, pendingMetrics.getMessageCount(), scheduledDeliveryHandler.getNonPagedScheduledCount(), pageSubscription.getMessageCount(), pageSubscription.getCounter().getValue());
          }
          return returnValue;
       } else {

@@ -131,7 +131,7 @@ public abstract class ProtonAbstractReceiver extends ProtonInitializable impleme
          throw new IllegalStateException("Cannot start a receiver that is not yet stopped");
       }
 
-      if (state == ReceiverState.STOPPED)  {
+      if (state == ReceiverState.STOPPED) {
          state = ReceiverState.STARTED;
          topUpCreditIfNeeded();
       }

@@ -30,6 +30,7 @@ import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.core.config.DivertConfiguration;
 import org.apache.activemq.artemis.core.io.IOCallback;
 import org.apache.activemq.artemis.core.io.OperationConsistencyLevel;
 import org.apache.activemq.artemis.core.io.SequentialFile;
@@ -391,6 +392,8 @@ public interface StorageManager extends MapStorageManager, IDGenerator, ActiveMQ
 
    List<PersistedDivertConfiguration> recoverDivertConfigurations();
 
+   DivertConfiguration getDivertConfiguration(String name);
+
    void storeBridgeConfiguration(PersistedBridgeConfiguration persistedBridgeConfiguration) throws Exception;
 
    void deleteBridgeConfiguration(String bridgeName) throws Exception;
@@ -514,7 +517,7 @@ public interface StorageManager extends MapStorageManager, IDGenerator, ActiveMQ
 
    void injectMonitor(FileStoreMonitor monitor) throws Exception;
 
-   default int getAllowedPageSize(int pageSize)  {
+   default int getAllowedPageSize(int pageSize) {
       return pageSize;
    }
 }

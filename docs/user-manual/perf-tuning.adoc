@@ -32,7 +32,7 @@ If using Linux, try to keep your journal type as `ASYNCIO`.
 The timeout can be increased to increase throughput at the expense of latency.
 * If you're running `ASYNCIO` you might be able to get some better performance by increasing `journal-max-io`.
 DO NOT change this parameter if you are running NIO.
-* If you are 100% sure you don't need power failure durability guarantees, disable `journal-data-sync` and use `NIO` or `MAPPED` journal: you'll benefit a huge performance boost on writes with process failure durability guarantees.
+* If you are 100% sure you don't need power failure durability guarantees, disable `journal-datasync` and use `NIO` or `MAPPED` journal: you'll benefit a huge performance boost on writes with process failure durability guarantees.
 
 == Tuning JMS
 

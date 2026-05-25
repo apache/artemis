@@ -179,7 +179,7 @@ public class PropertiesLoginModuleRaceConditionTest extends ArtemisTestCase {
       for (int i = 0; i < 100; i++) {
          groups.put("group" + i, "first,second,third");
       }
-      store(groups,  new File(temp, ROLES_FILE));
+      store(groups, new File(temp, ROLES_FILE));
    }
 
    private void createUsers() throws FileNotFoundException, IOException {

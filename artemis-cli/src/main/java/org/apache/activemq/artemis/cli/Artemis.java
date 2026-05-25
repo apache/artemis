@@ -45,6 +45,7 @@ import org.apache.activemq.artemis.cli.commands.Upgrade;
 import org.apache.activemq.artemis.cli.commands.activation.ActivationGroup;
 import org.apache.activemq.artemis.cli.commands.address.AddressGroup;
 import org.apache.activemq.artemis.cli.commands.check.CheckGroup;
+import org.apache.activemq.artemis.cli.commands.lock.LockGroup;
 import org.apache.activemq.artemis.cli.commands.messages.Browse;
 import org.apache.activemq.artemis.cli.commands.Connect;
 import org.apache.activemq.artemis.cli.commands.messages.Consumer;
@@ -282,6 +283,7 @@ public class Artemis implements Runnable {
       }
 
       if (includeInstanceCommands) {
+         commandLine.addSubcommand(new LockGroup(commandLine));
          commandLine.addSubcommand(new ExportProperties());
          commandLine.addSubcommand(new ActivationGroup(commandLine));
          commandLine.addSubcommand(new DataGroup(commandLine));

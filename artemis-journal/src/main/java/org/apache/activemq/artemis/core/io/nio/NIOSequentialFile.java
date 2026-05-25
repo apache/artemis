@@ -63,7 +63,7 @@ public class NIOSequentialFile extends AbstractSequentialFile {
     */
    private static final int CHUNK_SIZE = 2 * 1024 * 1024;
 
-   protected volatile  FileChannel channel;
+   protected volatile FileChannel channel;
 
    protected volatile RandomAccessFile rfile;
 

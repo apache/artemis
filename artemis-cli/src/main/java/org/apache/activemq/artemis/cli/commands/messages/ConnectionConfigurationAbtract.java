@@ -16,8 +16,6 @@
  */
 package org.apache.activemq.artemis.cli.commands.messages;
 
-import static org.apache.activemq.artemis.cli.commands.ActionAbstract.DEFAULT_BROKER_URL;
-
 import org.apache.activemq.artemis.cli.Shell;
 import org.apache.activemq.artemis.cli.commands.ActionContext;
 import org.apache.activemq.artemis.cli.commands.InputAbstract;
@@ -119,13 +117,13 @@ public class ConnectionConfigurationAbtract extends InputAbstract {
       if (CONNECTION_INFORMATION.get() != null) {
          ConnectionInformation connectionInfo = CONNECTION_INFORMATION.get();
          if (this.user == null) {
-            this.user  = connectionInfo.user;
+            this.user = connectionInfo.user;
          }
          if (this.password == null) {
-            this.password  = connectionInfo.password;
+            this.password = connectionInfo.password;
          }
          if (this.brokerURL == null || this.brokerURL == DEFAULT_BROKER_URL) {
-            this.brokerURL  = connectionInfo.uri;
+            this.brokerURL = connectionInfo.uri;
          }
       }
    }
@@ -163,7 +161,7 @@ public class ConnectionConfigurationAbtract extends InputAbstract {
 
    protected String inputPassword(String password) {
       if (password == null) {
-         this.password = inputPassword("--password", "Type the password for a retry", null);
+         this.password = inputPassword("--password", "Type the password for a retry");
          return this.password;
       }
       return password;

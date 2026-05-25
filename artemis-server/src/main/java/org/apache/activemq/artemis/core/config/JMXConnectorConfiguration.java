@@ -28,7 +28,7 @@ public class JMXConnectorConfiguration {
    private String jmxRealm = "activemq";
    private String objectName = "connector:name=rmi";
    private String authenticatorType = "password";
-   private boolean secured =  false;
+   private boolean secured = false;
    private String keyStoreProvider = TransportConstants.DEFAULT_KEYSTORE_PROVIDER;
    private String keyStoreType = TransportConstants.DEFAULT_KEYSTORE_TYPE;
    private String keyStorePath;

@@ -279,7 +279,7 @@ public class MQTTSubscriptionManager {
                reasonCode = MQTTReasonCodes.UNSPECIFIED_ERROR;
             }
 
-            reasonCodes[i] =  reasonCode;
+            reasonCodes[i] = reasonCode;
          }
 
          // deal with durable state after *all* requested subscriptions have been removed in memory

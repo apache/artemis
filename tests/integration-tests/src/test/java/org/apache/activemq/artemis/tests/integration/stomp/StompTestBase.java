@@ -93,6 +93,10 @@ public abstract class StompTestBase extends ActiveMQTestBase {
 
    protected String defPass = "wombats";
 
+   protected String onlySendCredential = "onlySend";
+
+   protected String onlyConsumeCredential = "onlyConsume";
+
    public StompTestBase(String scheme) {
       this.scheme = scheme;
    }
@@ -211,6 +215,16 @@ public abstract class StompTestBase extends ActiveMQTestBase {
          final String role = "testRole";
          securityManager.getConfiguration().addRole(defUser, role);
          config.getSecurityRoles().put("#", new HashSet<Role>(Set.of(new Role(role, true, true, true, true, true, true, true, true, true, true, false, false))));
+
+         final String onlySend = onlySendCredential;
+         securityManager.getConfiguration().addUser(onlySend, onlySend);
+         securityManager.getConfiguration().addRole(onlySend, onlySend);
+         config.getSecurityRoles().get("#").add(new Role(onlySend, true, false, false, false, false, false, false, false, false, false, false, false));
+
+         final String onlyConsume = onlyConsumeCredential;
+         securityManager.getConfiguration().addUser(onlyConsume, onlyConsume);
+         securityManager.getConfiguration().addRole(onlyConsume, onlyConsume);
+         config.getSecurityRoles().get("#").add(new Role(onlyConsume, false, true, false, false, false, false, false, false, false, false, false, false));
       }
 
       return activeMQServer;

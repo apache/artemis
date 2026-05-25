@@ -63,7 +63,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Test the AMQP Bridge to queue configuration and protocol behaviors
  */
-class AMQPBridgeToQueueTest  extends AmqpClientTestSupport {
+class AMQPBridgeToQueueTest extends AmqpClientTestSupport {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 

@@ -1110,7 +1110,7 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
                exportKeyValue(nested, bufferedWriter, (String) enumSet.stream().map(Object::toString).collect(Collectors.joining(",")));
             } else {
 
-               Stream stream  = collection.stream();
+               Stream stream = collection.stream();
                if (collection.stream().findFirst().orElseThrow() instanceof AMQPBrokerConnectionElement amqpBrokerConnectionElement) {
                   // filter type from the shared underlying collection
                   String collectionName = nested.peek();
@@ -1187,7 +1187,7 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
             try {
                attributeValue = propertyDescriptor.getReadMethod().invoke(value, null);
             } catch (Exception e) {
-               throw new RuntimeException("accessing: " + propertyDescriptor.getName()  + "@" + nested, e);
+               throw new RuntimeException("accessing: " + propertyDescriptor.getName() + "@" + nested, e);
             }
             if (attributeValue != null) {
                nested.push(propertyDescriptor.getName());

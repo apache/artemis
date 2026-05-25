@@ -71,7 +71,7 @@ public class PagedMirrorSmokeTest extends SmokeTestBase {
    Process processA;
 
    @BeforeEach
-   public  void beforeClass() throws Exception {
+   public void beforeClass() throws Exception {
       cleanupData(SERVER_NAME_A);
       cleanupData(SERVER_NAME_B);
       processB = startServer(SERVER_NAME_B, 1, 0);

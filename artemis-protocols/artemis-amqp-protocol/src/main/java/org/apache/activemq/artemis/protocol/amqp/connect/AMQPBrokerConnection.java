@@ -687,7 +687,7 @@ public class AMQPBrokerConnection implements ClientConnectionLifeCycleListener, 
             retryCounter = 0;
             started = false;
             connecting = false;
-            ActiveMQAMQPProtocolLogger.LOGGER.retryConnectionFailed(brokerConnectConfiguration.getName(), host + ":" +  port, lastRetryCounter);
+            ActiveMQAMQPProtocolLogger.LOGGER.retryConnectionFailed(brokerConnectConfiguration.getName(), host + ":" + port, lastRetryCounter);
             if (logger.isDebugEnabled()) {
                logger.debug("no more reconnections as the retry counter reached {} out of {}", retryCounter, brokerConnectConfiguration.getReconnectAttempts());
             }

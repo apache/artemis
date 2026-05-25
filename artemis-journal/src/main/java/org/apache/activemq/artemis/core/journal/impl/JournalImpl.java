@@ -805,7 +805,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
                logger.trace("reading {}, userRecordType={}, compactCount={}", recordID, userRecordType, compactCount);
             }
 
-            boolean replaceableUpdate =  replaceableRecords != null ? replaceableRecords.containsKey(userRecordType) : false;
+            boolean replaceableUpdate = replaceableRecords != null ? replaceableRecords.containsKey(userRecordType) : false;
 
             switch (recordType) {
                case EVENT_RECORD: {
@@ -1184,7 +1184,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
    private void internalAppendDeleteRecord(long id,
                                            boolean sync,
                                            JournalUpdateCallback updateCallback,
-                                           IOCompletion callback)  {
+                                           IOCompletion callback) {
 
       appendExecutor.execute(() -> {
          journalLock.readLock().lock();
@@ -1559,7 +1559,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
             result.fail(e);
             logger.error("Exception during appendRollbackRecord:", e);
             setErrorCondition(callback, tx, e);
-         }  finally {
+         } finally {
             journalLock.readLock().unlock();
             result.set(tx);
          }

@@ -4582,7 +4582,7 @@ public class QueueControlTest extends ManagementTestBase {
          ConnectionFactory factory = CFUtil.createConnectionFactory("amqp", "tcp://localhost:61616");
          try (Connection connection = factory.createConnection("myUser", "myPassword")) {
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            MessageProducer producer =  session.createProducer(session.createQueue(address.toString()));
+            MessageProducer producer = session.createProducer(session.createQueue(address.toString()));
             producer.setDeliveryMode(DeliveryMode.PERSISTENT);
             TextMessage message = session.createTextMessage("theAMQPBody");
             message.setStringProperty("protocolUsed", "amqp");
@@ -4594,7 +4594,7 @@ public class QueueControlTest extends ManagementTestBase {
          ConnectionFactory factory = CFUtil.createConnectionFactory("core", "tcp://localhost:61616");
          try (Connection connection = factory.createConnection("myUser", "myPassword")) {
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            MessageProducer producer =  session.createProducer(session.createQueue(address.toString()));
+            MessageProducer producer = session.createProducer(session.createQueue(address.toString()));
             producer.setDeliveryMode(DeliveryMode.PERSISTENT);
             TextMessage message = session.createTextMessage("theCoreBody");
             message.setStringProperty("protocolUsed", "core");
@@ -4654,7 +4654,7 @@ public class QueueControlTest extends ManagementTestBase {
          ConnectionFactory factory = CFUtil.createConnectionFactory("amqp", "tcp://localhost:61616");
          try (Connection connection = factory.createConnection("myUser", "myPassword")) {
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            MessageProducer producer =  session.createProducer(session.createQueue(address.toString()));
+            MessageProducer producer = session.createProducer(session.createQueue(address.toString()));
             producer.setDeliveryMode(DeliveryMode.PERSISTENT);
             TextMessage message = session.createTextMessage(text);
             message.setStringProperty("protocolUsed", "amqp");
@@ -4666,7 +4666,7 @@ public class QueueControlTest extends ManagementTestBase {
          ConnectionFactory factory = CFUtil.createConnectionFactory("core", "tcp://localhost:61616");
          try (Connection connection = factory.createConnection("myUser", "myPassword")) {
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            MessageProducer producer =  session.createProducer(session.createQueue(address.toString()));
+            MessageProducer producer = session.createProducer(session.createQueue(address.toString()));
             producer.setDeliveryMode(DeliveryMode.PERSISTENT);
             TextMessage message = session.createTextMessage(text);
             message.setStringProperty("protocolUsed", "core");

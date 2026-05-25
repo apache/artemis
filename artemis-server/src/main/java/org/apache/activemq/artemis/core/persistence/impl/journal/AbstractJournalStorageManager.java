@@ -46,6 +46,7 @@ import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.buffers.impl.ChannelBufferWrapper;
 import org.apache.activemq.artemis.core.config.Configuration;
+import org.apache.activemq.artemis.core.config.DivertConfiguration;
 import org.apache.activemq.artemis.core.filter.Filter;
 import org.apache.activemq.artemis.core.io.IOCallback;
 import org.apache.activemq.artemis.core.io.IOCriticalErrorListener;
@@ -843,6 +844,16 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
    @Override
    public List<PersistedDivertConfiguration> recoverDivertConfigurations() {
       return new ArrayList<>(mapPersistedDivertConfigurations.values());
+   }
+
+   @Override
+   public DivertConfiguration getDivertConfiguration(String name) {
+      PersistedDivertConfiguration persistedDivertConfiguration = mapPersistedDivertConfigurations.get(name);
+      if (persistedDivertConfiguration != null) {
+         return new DivertConfiguration(persistedDivertConfiguration.getDivertConfiguration());
+      } else {
+         return null;
+      }
    }
 
    @Override

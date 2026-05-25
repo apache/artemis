@@ -63,7 +63,7 @@ public class AMQPPrintDataTest extends ActiveMQTestBase {
                             this.getClass().getClassLoader().getResource("dataprint").getFile());
 
          ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-         PrintStream printStream = new PrintStream(byteArrayOutputStream, true,  StandardCharsets.UTF_8.name());
+         PrintStream printStream = new PrintStream(byteArrayOutputStream, true, StandardCharsets.UTF_8.name());
          PrintData.printData(server.getConfiguration().getBindingsLocation().getAbsoluteFile(), server.getConfiguration().getJournalLocation().getAbsoluteFile(), server.getConfiguration().getPagingLocation().getAbsoluteFile(),
                              printStream, false, false);
 

@@ -133,7 +133,7 @@ public class JMSSelectorTest extends MultiprotocolJMSClientTestSupport {
       }
    }
 
-   private void sendMessage(ConnectionSupplier producerConnectionSupplier, String queueName, MessageSetter setValue,  int deliveryMode, int priority, long timeToLive) throws JMSException {
+   private void sendMessage(ConnectionSupplier producerConnectionSupplier, String queueName, MessageSetter setValue, int deliveryMode, int priority, long timeToLive) throws JMSException {
       try (Connection producerConnection = producerConnectionSupplier.createConnection()) {
          Session producerSession = producerConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
          Queue queue1 = producerSession.createQueue(queueName);

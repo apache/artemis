@@ -44,7 +44,7 @@ public class SimpleManagement implements AutoCloseable {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-   private static final String SIMPLE_OPTIONS  = "{\"field\":\"\",\"value\":\"\",\"operation\":\"\"}";
+   private static final String SIMPLE_OPTIONS = "{\"field\":\"\",\"value\":\"\",\"operation\":\"\"}";
 
    String uri, user, password;
 
@@ -169,6 +169,9 @@ public class SimpleManagement implements AutoCloseable {
       return consumersAsJSON.size();
    }
 
+   public JsonArray listLockCoordinators() throws Exception {
+      return JsonUtil.readJsonArray(simpleManagement("broker", "listLockCoordinatorsAsJSON"));
+   }
 
    public long getMessagesAddedOnQueue(String queueName) throws Exception {
       return simpleManagementLong(ResourceNames.QUEUE + queueName, "getMessagesAdded");

@@ -45,6 +45,9 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -85,6 +88,7 @@ import org.apache.activemq.artemis.core.config.BridgeConfiguration;
 import org.apache.activemq.artemis.core.config.ClusterConnectionConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.config.DivertConfiguration;
+import org.apache.activemq.artemis.core.config.LockCoordinatorConfiguration;
 import org.apache.activemq.artemis.core.config.brokerConnectivity.BrokerConnectConfiguration;
 import org.apache.activemq.artemis.core.config.impl.SecurityConfiguration;
 import org.apache.activemq.artemis.core.management.impl.ActiveMQServerControlImpl;
@@ -124,6 +128,10 @@ import org.apache.activemq.artemis.jms.client.ActiveMQSession;
 import org.apache.activemq.artemis.json.JsonArray;
 import org.apache.activemq.artemis.json.JsonObject;
 import org.apache.activemq.artemis.json.JsonValue;
+import org.apache.activemq.artemis.lockmanager.DistributedLock;
+import org.apache.activemq.artemis.lockmanager.DistributedLockManager;
+import org.apache.activemq.artemis.lockmanager.MutableLong;
+import org.apache.activemq.artemis.lockmanager.UnavailableStateException;
 import org.apache.activemq.artemis.marker.WebServerComponentMarker;
 import org.apache.activemq.artemis.nativo.jlibaio.LibaioContext;
 import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
@@ -3827,7 +3835,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       Thread.sleep(500);
       server.addAddressInfo(new AddressInfo(queueName3, RoutingType.ANYCAST));
       if (legacyCreateQueue) {
-         server.createQueue(queueName3, RoutingType.ANYCAST, queueName3,  SimpleString.of("filter0"), null, true,
+         server.createQueue(queueName3, RoutingType.ANYCAST, queueName3, SimpleString.of("filter0"), null, true,
                             false, false, 10, false, false);
       } else {
          server.createQueue(QueueConfiguration.of(queueName3).setRoutingType(RoutingType.ANYCAST).setFilterString("filter0").setMaxConsumers(10).setAutoCreateAddress(false));
@@ -4516,7 +4524,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
          assertEquals(3, array.size(), "number of consumers returned from query");
 
          // filter by address
-         filterString = createJsonFilter(ConsumerField.ADDRESS.getName(),  "EQUALS", addressName1.toString());
+         filterString = createJsonFilter(ConsumerField.ADDRESS.getName(), "EQUALS", addressName1.toString());
          consumersAsJsonString = serverControl.listConsumers(filterString, 1, 50);
          consumersAsJsonObject = JsonUtil.readJsonObject(consumersAsJsonString);
          array = (JsonArray) consumersAsJsonObject.get("data");
@@ -6565,6 +6573,104 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       }
    }
 
+   @TestTemplate
+   public void testListLockCoordinators() throws Exception {
+      server.stop();
+
+      {
+         // Add two lock coordinator configurations using File implementation
+         LockCoordinatorConfiguration lock = new LockCoordinatorConfiguration();
+         lock.setName("coordinator1");
+         lock.setLockId("lock-id-1");
+         lock.setClassName(MyFakeLockManager.class.getName());
+         lock.setCheckPeriod(10);
+         conf.addLockCoordinatorConfiguration(lock);
+      }
+
+      {
+         LockCoordinatorConfiguration lock = new LockCoordinatorConfiguration();
+         lock.setName("coordinator2");
+         lock.setLockId("lock-id-2");
+         lock.setClassName(MyFakeLockManager.class.getName());
+         lock.setCheckPeriod(10);
+         conf.addLockCoordinatorConfiguration(lock);
+      }
+
+      {
+         LockCoordinatorConfiguration lock = new LockCoordinatorConfiguration();
+         lock.setName("coordinator3");
+         lock.setLockId("lock-id-3");
+         lock.setClassName(MyFakeLockManager.class.getName());
+         lock.setCheckPeriod(10);
+         conf.addLockCoordinatorConfiguration(lock);
+      }
+
+      ActiveMQServerControl serverControl = createManagementControl();
+      server.start();
+
+      Wait.assertTrue(server.getLockCoordinator("coordinator1")::isLocked);
+      LockCoordinator lockCoordinator3 = server.getLockCoordinator("coordinator3");
+      lockCoordinator3.stop();
+
+      String jsonString = serverControl.listLockCoordinatorsAsJSON();
+      assertNotNull(jsonString);
+
+      JsonArray array = JsonUtil.readJsonArray(jsonString);
+      assertEquals(3, array.size());
+
+
+      {
+         // Check first coordinator
+         JsonObject coordinator = array.getJsonObject(0);
+         assertEquals("coordinator1", coordinator.getString("name"));
+         assertEquals(MyFakeLockManager.class.getName(), coordinator.getString("className"));
+         assertEquals(MyFakeLockManager.class.getSimpleName(), coordinator.getString("simpleName"));
+         assertTrue(coordinator.getBoolean("locked"));
+         assertTrue(coordinator.getBoolean("started"));
+         assertEquals("Locked", coordinator.getString("status"));
+      }
+
+      {
+         // Check second coordinator
+         JsonObject coordinator = array.getJsonObject(1);
+         assertEquals("coordinator2", coordinator.getString("name"));
+         assertEquals(MyFakeLockManager.class.getName(), coordinator.getString("className"));
+         assertEquals(MyFakeLockManager.class.getSimpleName(), coordinator.getString("simpleName"));
+         assertTrue(coordinator.getBoolean("locked"));
+         assertTrue(coordinator.getBoolean("started"));
+         assertEquals("Locked", coordinator.getString("status"));
+      }
+
+      {
+         // Check third coordinator
+         JsonObject coordinator = array.getJsonObject(2);
+         assertEquals("coordinator3", coordinator.getString("name"));
+         assertEquals(MyFakeLockManager.class.getName(), coordinator.getString("className"));
+         assertEquals(MyFakeLockManager.class.getSimpleName(), coordinator.getString("simpleName"));
+         assertFalse(coordinator.getBoolean("locked"));
+         assertFalse(coordinator.getBoolean("started"));
+         assertEquals("Stopped", coordinator.getString("status"));
+      }
+
+   }
+
+
+   @TestTemplate
+   public void testEmptyLockCoordinators() throws Exception {
+      server.stop();
+
+      server.start();
+
+      ActiveMQServerControl serverControl = createManagementControl();
+      String jsonString = serverControl.listLockCoordinatorsAsJSON();
+      assertNotNull(jsonString);
+
+      JsonArray array = JsonUtil.readJsonArray(jsonString);
+      assertEquals(0, array.size());
+   }
+
+
+
    class FakeWebServerComponent implements ServiceComponent, WebServerComponentMarker {
       AtomicBoolean started = new AtomicBoolean(false);
       AtomicLong startTime = new AtomicLong(0);
@@ -6771,5 +6877,94 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       public void registered(ActiveMQServer server) {
       }
    }
-}
 
+   public static class MyFakeLockManager implements DistributedLockManager {
+
+      public MyFakeLockManager(Map<String, String> parameters) {
+      }
+
+      @Override
+      public void addUnavailableManagerListener(UnavailableManagerListener listener) {
+
+      }
+
+      @Override
+      public void removeUnavailableManagerListener(UnavailableManagerListener listener) {
+
+      }
+
+      @Override
+      public boolean start(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException {
+         return true;
+      }
+
+      @Override
+      public void start() throws InterruptedException, ExecutionException {
+
+      }
+
+      @Override
+      public boolean isStarted() {
+         return true;
+      }
+
+      @Override
+      public void stop() {
+
+      }
+
+      @Override
+      public DistributedLock getDistributedLock(String lockId) throws InterruptedException, ExecutionException, TimeoutException {
+         return new MyLock(lockId);
+      }
+
+      @Override
+      public MutableLong getMutableLong(String mutableLongId) throws InterruptedException, ExecutionException, TimeoutException {
+         return null;
+      }
+   }
+
+   public static class MyLock implements DistributedLock {
+
+      public MyLock(String lockId) {
+         this.lockId = lockId;
+      }
+
+      String lockId;
+
+      @Override
+      public String getLockId() {
+         return lockId;
+      }
+
+      @Override
+      public boolean isHeldByCaller() throws UnavailableStateException {
+         return true;
+      }
+
+      @Override
+      public boolean tryLock() throws UnavailableStateException, InterruptedException {
+         return true;
+      }
+
+      @Override
+      public void unlock() throws UnavailableStateException {
+
+      }
+
+      @Override
+      public void addListener(UnavailableLockListener listener) {
+
+      }
+
+      @Override
+      public void removeListener(UnavailableLockListener listener) {
+
+      }
+
+      @Override
+      public void close() {
+
+      }
+   }
+}

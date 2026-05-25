@@ -204,7 +204,7 @@ public class AMQPSessionCallback implements SessionCallback {
 
       String name = UUIDGenerator.getInstance().generateStringUUID();
 
-      if (connection.isBrokerConnection())  {
+      if (connection.isBrokerConnection()) {
          serverSession = manager.getServer().createInternalSession(name, ActiveMQClient.DEFAULT_MIN_LARGE_MESSAGE_SIZE, protonSPI.getProtonConnectionDelegate(), // RemotingConnection remotingConnection,
                                                            false, // boolean autoCommitSends
                                                            false, // boolean autoCommitAcks,

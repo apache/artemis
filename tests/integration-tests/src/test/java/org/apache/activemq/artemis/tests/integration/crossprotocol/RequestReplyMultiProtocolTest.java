@@ -123,7 +123,7 @@ public class RequestReplyMultiProtocolTest extends OpenWireTestBase {
          Destination consumerDestination;
          if (useTopic) {
             consumerDestination = consumerSess.createTopic(topicName.toString());
-         }  else {
+         } else {
             consumerDestination = consumerSess.createQueue(queueName.toString());
          }
          MessageConsumer consumer;

@@ -308,7 +308,7 @@ public class ActiveMQMessageHandlerXATest extends ActiveMQRATestBase {
       }
    }
 
-   class XADummyEndpointBegin extends  XADummyEndpoint {
+   class XADummyEndpointBegin extends XADummyEndpoint {
 
       private boolean afterDelivery = false;
 

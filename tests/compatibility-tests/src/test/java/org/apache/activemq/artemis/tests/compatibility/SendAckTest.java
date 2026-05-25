@@ -53,8 +53,8 @@ public class SendAckTest extends ServerBase {
 
    @TestTemplate
    public void testSendReceive() throws Throwable {
-      evaluate(senderClassloader,  "sendAckTest/sendAckMessages.groovy", server, sender, "sendAckMessages");
-      evaluate(receiverClassloader,  "sendAckTest/sendAckMessages.groovy", server, receiver, "receiveMessages");
+      evaluate(senderClassloader, "sendAckTest/sendAckMessages.groovy", server, sender, "sendAckMessages");
+      evaluate(receiverClassloader, "sendAckTest/sendAckMessages.groovy", server, receiver, "receiveMessages");
    }
 
 }

@@ -381,7 +381,7 @@ public class NIOJournalCompactTest extends JournalImplTestBase {
       long recordId = idGenerator.generateID();
       for (int i = 0; i < 100; i++) {
          if (i % 10 == 0) {
-            logger.debug("i = {}",  i);
+            logger.debug("i = {}", i);
          }
          recordId = idGenerator.generateID();
          journal.appendAddRecord(recordId, recordType, "test".getBytes(), false);

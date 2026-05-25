@@ -223,6 +223,83 @@ public class OIDCLoginModuleTest {
    }
 
    @Test
+   public void plainJWTWithDefaultRequiredClaims() throws BadJOSEException, ParseException, JOSEException {
+      OIDCLoginModule lm = new OIDCLoginModule();
+      Subject subject = new Subject();
+      lm.initialize(subject, new JaasCallbackHandler(null, null, null), null, configMap(
+            OIDCSupport.ConfigKey.ALLOW_PLAIN_JWT.getName(), "true"
+      ));
+
+      String jwt = new PlainJWT(new JWTClaimsSet.Builder()
+            .audience("anything")
+            .claim("azp", "authorized-party")
+            .claim("iss", "some-issuer")
+            .claim("sub", "some-subject")
+            .expirationTime(new Date(new Date().getTime() + 5000L))
+            .build()).serialize();
+      lm.validateToken(JWTParser.parse(jwt));
+   }
+
+   @Test
+   public void plainJWTWithCustomRequiredClaims() throws BadJOSEException, ParseException, JOSEException {
+      OIDCLoginModule lm = new OIDCLoginModule();
+      Subject subject = new Subject();
+      lm.initialize(subject, new JaasCallbackHandler(null, null, null), null, configMap(
+            OIDCSupport.ConfigKey.ALLOW_PLAIN_JWT.getName(), "true",
+            OIDCSupport.ConfigKey.REQUIRED_CLAIMS.getName(), "aud, sub"
+      ));
+
+      String jwt1 = new PlainJWT(new JWTClaimsSet.Builder()
+            .audience("anything")
+            .claim("sub", "some-subject")
+            .build()).serialize();
+      lm.validateToken(JWTParser.parse(jwt1));
+
+      String jwt2 = new PlainJWT(new JWTClaimsSet.Builder()
+            .audience("anything")
+            .build()).serialize();
+      try {
+         lm.validateToken(JWTParser.parse(jwt2));
+         fail("Should fail with missing \"sub\" claim");
+      } catch (BadJWTException e) {
+         assertTrue(e.getMessage().contains("JWT missing required claims: [sub]"));
+      }
+   }
+
+   @Test
+   public void plainJWTWithNoRequiredClaims() throws BadJOSEException, ParseException, JOSEException {
+      OIDCLoginModule lm = new OIDCLoginModule();
+      Subject subject = new Subject();
+      lm.initialize(subject, new JaasCallbackHandler(null, null, null), null, configMap(
+            OIDCSupport.ConfigKey.ALLOW_PLAIN_JWT.getName(), "true",
+            OIDCSupport.ConfigKey.REQUIRED_CLAIMS.getName(), ""
+      ));
+
+      String jwt1 = new PlainJWT(new JWTClaimsSet.Builder()
+            .build()).serialize();
+      lm.validateToken(JWTParser.parse(jwt1));
+   }
+
+   @Test
+   public void plainJWTWithoutCustomClaims() throws BadJOSEException, ParseException, JOSEException {
+      OIDCLoginModule lm = new OIDCLoginModule();
+      Subject subject = new Subject();
+      lm.initialize(subject, new JaasCallbackHandler(null, null, null), null, configMap(
+            OIDCSupport.ConfigKey.ALLOW_PLAIN_JWT.getName(), "true",
+            OIDCSupport.ConfigKey.REQUIRED_CLAIMS.getName(), null
+      ));
+
+      String jwt1 = new PlainJWT(new JWTClaimsSet.Builder()
+            .build()).serialize();
+      try {
+         lm.validateToken(JWTParser.parse(jwt1));
+         fail("Should fail with missing default claim");
+      } catch (BadJWTException e) {
+         assertTrue(e.getMessage().contains("JWT missing required claims: [aud, azp, exp, iss, sub]"));
+      }
+   }
+
+   @Test
    public void plainJWTWithIncorrectDates() throws BadJOSEException, JOSEException, ParseException {
       OIDCLoginModule lm = new OIDCLoginModule(NO_CLAIMS);
       Subject subject = new Subject();
@@ -610,7 +687,7 @@ public class OIDCLoginModuleTest {
       new SecureRandom().nextBytes(newSignature);
       String[] split = token.split("\\.");
       Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
-      token = split[0] +  "." + split[1] + "." + encoder.encodeToString(newSignature);
+      token = split[0] + "." + split[1] + "." + encoder.encodeToString(newSignature);
 
       Subject subject = new Subject();
       lm.initialize(subject, new JaasCallbackHandler(null, token, null), null, config);
@@ -999,6 +1076,68 @@ public class OIDCLoginModuleTest {
    }
 
    @Test
+   public void tokenRolesWithMapping() throws NoSuchAlgorithmException, JOSEException, LoginException {
+      KeyPairGenerator kpgRSA = KeyPairGenerator.getInstance("RSA");
+      KeyPair pairRSA = kpgRSA.generateKeyPair();
+
+      List<JWK> keys = new ArrayList<>();
+      // directly from the public key
+      keys.add(new RSAKey.Builder((RSAPublicKey) pairRSA.getPublic()).keyID("k1").build());
+
+      Map<String, String> config = configMap(
+            OIDCSupport.ConfigKey.DEBUG.getName(), "true",
+            OIDCSupport.ConfigKey.ROLES_PATHS.getName(), "realm_access.roles",
+            OIDCSupport.ConfigKey.ROLE_MAPPING.getName(), "realm_admin=broker_admin, realm_viewer = broker=viewer"
+      );
+
+      OIDCLoginModule lm = new OIDCLoginModule();
+      lm.setOidcSupport(new OIDCSupport(config, true) {
+         @Override
+         public JWKSecurityContext currentContext() {
+            return new JWKSecurityContext(keys);
+         }
+      });
+
+      String uuid = UUID.randomUUID().toString();
+
+      JWTClaimsSet claims = new JWTClaimsSet.Builder()
+            .issuer("http://localhost")
+            .subject("Alice")
+            .audience("me-the-broker")
+            .claim("sub", uuid)
+            .claim("azp", "artemis-oidc-client")
+            .claim("realm_access", Map.of("roles", List.of("realm_admin", "realm_manager", "realm_viewer")))
+            .expirationTime(new Date(new Date().getTime() + 3_600_000))
+            .build();
+
+      SignedJWT signedJWT = new SignedJWT(new JWSHeader.Builder(JWSAlgorithm.RS256).keyID("k1").build(), claims);
+      JWSSigner signer = new RSASSASigner(pairRSA.getPrivate());
+      signedJWT.sign(signer);
+      String token = signedJWT.serialize();
+
+      Subject subject = new Subject();
+      lm.initialize(subject, new JaasCallbackHandler(null, token, null), null, config);
+
+      assertTrue(lm.login());
+      assertTrue(lm.commit());
+
+      Set<Principal> principals = subject.getPrincipals();
+      assertEquals(4, principals.size());
+      Set<String> identities = new HashSet<>(Set.of(uuid));
+      // one should be mapped, the other should be used as in the token
+      Set<String> roles = new HashSet<>(Set.of("broker_admin", "realm_manager", "broker=viewer"));
+      principals.forEach(principal -> {
+         if (principal.getClass() == UserPrincipal.class) {
+            identities.remove(principal.getName());
+         } else if (principal.getClass() == RolePrincipal.class) {
+            roles.remove(principal.getName());
+         }
+      });
+      assertTrue(identities.isEmpty());
+      assertTrue(roles.isEmpty());
+   }
+
+   @Test
    public void wrongPathsForToken() throws NoSuchAlgorithmException, JOSEException, LoginException {
       KeyPairGenerator kpgRSA = KeyPairGenerator.getInstance("RSA");
       KeyPair pairRSA = kpgRSA.generateKeyPair();
@@ -1173,7 +1312,7 @@ public class OIDCLoginModuleTest {
       }
    }
 
-   public static class MyNonPrincipal  {
+   public static class MyNonPrincipal {
       private final String name;
 
       public MyNonPrincipal(String name) {

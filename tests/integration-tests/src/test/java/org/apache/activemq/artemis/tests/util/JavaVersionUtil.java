@@ -22,7 +22,7 @@ public class JavaVersionUtil {
 
    static {
       String version = System.getProperty("java.version");
-      if (version != null  && version.startsWith("1.8.")) {
+      if (version != null && version.startsWith("1.8.")) {
          isJdk8 = true;
       }
    }

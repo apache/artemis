@@ -341,8 +341,8 @@ public interface ActiveMQServerLogger {
    @LogMessage(id = 222006, value = "Binding already exists with name {}, divert will not be deployed", level = LogMessage.Level.WARN)
    void divertBindingAlreadyExists(SimpleString bindingName);
 
-   @LogMessage(id = 222007, value = "Security risk! Apache Artemis is running with the default cluster admin user and default password. Please see the cluster chapter in the Artemis User Guide for instructions on how to change this.", level = LogMessage.Level.WARN)
-   void clusterSecurityRisk();
+   @LogMessage(id = 222007, value = "Apache Artemis is running with the default cluster user and password. Any connection using these credentials will be rejected. Please see the cluster chapter in the Artemis User Guide for instructions on how to change this.", level = LogMessage.Level.WARN)
+   void defaultClusterCredentialsInUse();
 
    @LogMessage(id = 222008, value = "unable to restart server, please kill and restart manually", level = LogMessage.Level.WARN)
    void serverRestartWarning(Exception e);
@@ -1544,4 +1544,7 @@ public interface ActiveMQServerLogger {
 
    @LogMessage(id = 224163, value = "Failed to clone SHA256 MessageDigest, falling back to getInstance", level = LogMessage.Level.INFO)
    void sha256CloneNotSupported(CloneNotSupportedException cns);
+
+   @LogMessage(id = 224164, value = "Failed to recover stored configuration for divert named '{}': {}. To repair this record create a new divert with the same name via the management API.", level = LogMessage.Level.WARN)
+   void failedToRecoverStoredDivertConfiguration(String divertName, String divert);
 }

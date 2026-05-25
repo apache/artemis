@@ -279,7 +279,7 @@ public class DivertTest extends ActiveMQTestBase {
       amqpConnection.start();
 
       for (int i = 0; i < 10; i++) {
-         javax.jms.Message received =  consumerFromConvert.receive(5000);
+         javax.jms.Message received = consumerFromConvert.receive(5000);
          assertNotNull(received);
          producer.send(received);
       }

@@ -195,7 +195,7 @@ public class NettyReplicatedFailoverTest extends NettyFailoverInVMTest {
 
          logger.info("Depaged:: {}", depaged.getPageId());
 
-         for (int i = 0;  i < 10; i++) {
+         for (int i = 0; i < 10; i++) {
             producer.send(session.createTextMessage("on current page"));
             session.commit();
             store.depage();

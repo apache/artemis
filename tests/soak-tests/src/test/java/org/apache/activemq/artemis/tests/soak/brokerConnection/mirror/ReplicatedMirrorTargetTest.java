@@ -74,9 +74,9 @@ public class ReplicatedMirrorTargetTest extends SoakTestBase {
    private static final int SEND_COMMIT = TestParameters.testProperty(TEST_NAME, "SEND_COMMIT", 200);
 
    // If -1 means to never kill the target broker
-   private static final int KILL_INTERVAL =  TestParameters.testProperty(TEST_NAME, "KILL_INTERVAL", 1_000);
-   private static final int SNF_TIMEOUT =  TestParameters.testProperty(TEST_NAME, "SNF_TIMEOUT", 300_000);
-   private static final int GENERAL_WAIT_TIMEOUT =  TestParameters.testProperty(TEST_NAME, "GENERAL_TIMEOUT", 10_000);
+   private static final int KILL_INTERVAL = TestParameters.testProperty(TEST_NAME, "KILL_INTERVAL", 1_000);
+   private static final int SNF_TIMEOUT = TestParameters.testProperty(TEST_NAME, "SNF_TIMEOUT", 300_000);
+   private static final int GENERAL_WAIT_TIMEOUT = TestParameters.testProperty(TEST_NAME, "GENERAL_TIMEOUT", 10_000);
 
    /*
     * Time each consumer takes to process a message received to allow some messages accumulating.
@@ -143,7 +143,7 @@ public class ReplicatedMirrorTargetTest extends SoakTestBase {
       HelperCreate cliCreateServer = helperCreate();
       cliCreateServer.setAllowAnonymous(true).setArtemisInstance(serverLocation);
       cliCreateServer.setNoWeb(false);
-      cliCreateServer.setArgs("--no-stomp-acceptor", "--no-hornetq-acceptor", "--no-mqtt-acceptor", "--no-amqp-acceptor", "--max-hops", "1", "--name", DC1_NODE);
+      cliCreateServer.setArgs("--no-stomp-acceptor", "--no-hornetq-acceptor", "--no-mqtt-acceptor", "--no-amqp-acceptor", "--max-hops", "1", "--name", DC1_NODE, "--cluster-user", "my-cluster-user", "--cluster-password", "my-cluster-password");
       cliCreateServer.addArgs("--addresses", TOPIC_NAME);
       cliCreateServer.setPortOffset(portOffset);
       if (replicated) {
@@ -204,7 +204,7 @@ public class ReplicatedMirrorTargetTest extends SoakTestBase {
       cliCreateServer.setAllowAnonymous(true).setArtemisInstance(serverLocation);
       cliCreateServer.setMessageLoadBalancing("ON_DEMAND");
       cliCreateServer.setNoWeb(false);
-      cliCreateServer.setArgs("--no-stomp-acceptor", "--no-hornetq-acceptor", "--no-mqtt-acceptor", "--no-amqp-acceptor", "--max-hops", "1", "--name", DC1_NODE);
+      cliCreateServer.setArgs("--no-stomp-acceptor", "--no-hornetq-acceptor", "--no-mqtt-acceptor", "--no-amqp-acceptor", "--max-hops", "1", "--name", DC1_NODE, "--cluster-user", "my-cluster-user", "--cluster-password", "my-cluster-password");
       cliCreateServer.addArgs("--addresses", TOPIC_NAME);
       cliCreateServer.setPortOffset(portOffset);
       cliCreateServer.setClustered(true);

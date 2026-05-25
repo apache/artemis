@@ -188,7 +188,7 @@ public final class AMQPFederationAddressSenderController extends AMQPFederationS
          queueQuery = sessionSPI.queueQuery(configuration, true);
       }
 
-      if (!queueQuery.getAddress().equals(address))  {
+      if (!queueQuery.getAddress().equals(address)) {
          throw new ActiveMQAMQPIllegalStateException("Requested queue: " + queueName + " for federation of address: " + address +
                                                      ", but it is already mapped to a different address: " + queueQuery.getAddress());
       }

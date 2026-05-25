@@ -35,7 +35,7 @@ public class FederatedQueueConsumerKey implements FederatedConsumerKey {
       this.address = address;
       this.routingType = routingType;
       this.queueName = queueName;
-      this.fqqn  = CompositeAddress.toFullyQualified(address, queueName);
+      this.fqqn = CompositeAddress.toFullyQualified(address, queueName);
       this.filterString = filterString;
       this.queueFilterString = queueFilterString;
       this.priority = priority;

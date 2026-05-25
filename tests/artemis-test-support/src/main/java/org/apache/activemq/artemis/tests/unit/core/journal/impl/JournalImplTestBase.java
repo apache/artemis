@@ -412,7 +412,7 @@ public abstract class JournalImplTestBase extends ActiveMQTestBase {
       journal.debugWait();
    }
 
-   protected boolean tryUpdate(final long  argument) throws Exception {
+   protected boolean tryUpdate(final long argument) throws Exception {
       byte[] updateRecord = generateRecord(recordLength);
 
       beforeJournalOperation();
@@ -729,7 +729,7 @@ public abstract class JournalImplTestBase extends ActiveMQTestBase {
             NIOSequentialFileFactory nioSequentialFileFactory = new NIOSequentialFileFactory(journal.getHistoryFolder(), 1);
 
 
-            JournalImpl backupJournal  = new JournalImpl(journal.getFileSize(), journal.getMinFiles(), 10, 0, 0, nioSequentialFileFactory, "amq", "amq", 1);
+            JournalImpl backupJournal = new JournalImpl(journal.getFileSize(), journal.getMinFiles(), 10, 0, 0, nioSequentialFileFactory, "amq", "amq", 1);
 
             describeJournal(nioSequentialFileFactory, backupJournal, journal.getHistoryFolder(), System.out);
 

@@ -63,8 +63,8 @@ public class PagingSizeWildcardTest extends ActiveMQTestBase {
          publish(cf, numMessages);
 
          for (int i = 0; i < numMessages; i++) {
-            assertNotNull(consumerA.receive(1000), " on " +  i);
-            assertNotNull(consumerW.receive(1000), " on " +  i);
+            assertNotNull(consumerA.receive(1000), " on " + i);
+            assertNotNull(consumerW.receive(1000), " on " + i);
          }
 
          // commit in reverse order to dispatch
@@ -108,8 +108,8 @@ public class PagingSizeWildcardTest extends ActiveMQTestBase {
          publish(cf, numMessages);
 
          for (int i = 0; i < numMessages; i++) {
-            assertNotNull(consumerA.receive(1000), " on " +  i);
-            assertNotNull(consumerW.receive(1000), " on " +  i);
+            assertNotNull(consumerA.receive(1000), " on " + i);
+            assertNotNull(consumerW.receive(1000), " on " + i);
          }
 
          // commit in reverse order to dispatch

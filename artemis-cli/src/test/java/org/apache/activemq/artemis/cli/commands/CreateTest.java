@@ -27,6 +27,7 @@ import java.util.Collection;
 
 import org.apache.activemq.artemis.tests.extensions.parameterized.ParameterizedTestExtension;
 import org.apache.activemq.artemis.tests.extensions.parameterized.Parameters;
+import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.artemis.utils.XmlProvider;
 import org.apache.activemq.cli.test.CliTestBase;
 import org.apache.activemq.cli.test.TestActionContext;
@@ -73,6 +74,7 @@ public class CreateTest extends CliTestBase {
       c.setInstance(testInstance);
       c.setHttpHost(httpHost);
       c.setRelaxJolokia(relaxJolokia);
+      c.setPassword(RandomUtil.randomUUIDString());
       c.execute(context);
 
       assertTrue(isXmlValid(new File(testInstance, "etc/" + Create.ETC_JOLOKIA_ACCESS_XML)));

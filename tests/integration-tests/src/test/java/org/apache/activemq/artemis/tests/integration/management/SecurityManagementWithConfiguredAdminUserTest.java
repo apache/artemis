@@ -42,7 +42,7 @@ public class SecurityManagementWithConfiguredAdminUserTest extends SecurityManag
     * default CLUSTER_ADMIN_USER must work even when there are other configured admin users
     */
    @TestTemplate
-   public void testSendManagementMessageWithClusterAdminUser() throws Exception {
+   public void testSendManagementMessageWithNonDefaultClusterAdminUser() throws Exception {
       doSendBrokerManagementMessage(ActiveMQDefaultConfiguration.getDefaultClusterUser(), CLUSTER_PASSWORD, true);
    }
 

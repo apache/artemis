@@ -83,8 +83,8 @@ public class ScaleDownCommitIntervalTest extends ClusterTestBase {
       consumers[1].getSession().commit();
       removeConsumer(1);
 
-      Wait.assertEquals((long) TEST_SIZE, () ->  servers[0].locateQueue(queueName1).getMessageCount(), 500, 20);
-      Wait.assertEquals((long) TEST_SIZE - 1, () ->  servers[0].locateQueue(queueName2).getMessageCount(), 500, 20);
+      Wait.assertEquals((long) TEST_SIZE, () -> servers[0].locateQueue(queueName1).getMessageCount(), 500, 20);
+      Wait.assertEquals((long) TEST_SIZE - 1, () -> servers[0].locateQueue(queueName2).getMessageCount(), 500, 20);
 
       assertEquals((long) TEST_SIZE, performScaledown(commitInterval));
 

@@ -152,4 +152,47 @@ public class JMSConfigurationTest extends ActiveMQTestBase {
          server.stop();
       }
    }
+
+   @Test
+   public void testSslHandshakeTimeoutWithValueSet() throws Exception {
+      final int SSL_HANDSHAKE_TIMEOUT = 20;
+
+      String url = "tcp://127.0.0.1:61616?sslEnabled=true;keyStorePath=server-ca-truststore.p12;keyStorePassword=securepass;sslHandshakeTimeout=20;handshake-timeout=0";
+      ActiveMQServer server = addServer(ActiveMQServers.newActiveMQServer(createDefaultConfig(false)
+                                                                             .clearAcceptorConfigurations()
+                                                                             .addAcceptorConfiguration("netty", url)));
+      server.start();
+
+      TransportConfiguration tc = server.getConfiguration().getAcceptorConfigurations().iterator().next();
+      String host = (String) tc.getParams().get(TransportConstants.HOST_PROP_NAME);
+      String port = (String) tc.getParams().get(TransportConstants.PORT_PROP_NAME);
+      Object sslHandshakeTimeout = tc.getParams().get(TransportConstants.SSL_HANDSHAKE_TIMEOUT);
+      assertNotNull(sslHandshakeTimeout);
+      assertEquals(SSL_HANDSHAKE_TIMEOUT, Integer.parseInt(sslHandshakeTimeout.toString()));
+
+      NettyTransport transport = NettyTransportFactory.createTransport(new URI("tcp://" + host + ":" + port));
+      transport.setTransportListener(new NettyTransportListener() {
+         @Override
+         public void onData(ByteBuf incoming) {
+
+         }
+
+         @Override
+         public void onTransportClosed() {
+         }
+
+         @Override
+         public void onTransportError(Throwable cause) {
+         }
+
+      });
+
+      try {
+         transport.connect();
+         assertTrue(Wait.waitFor(() -> !transport.isConnected(), TimeUnit.SECONDS.toMillis(SSL_HANDSHAKE_TIMEOUT + 1)), "Connection should be closed now");
+      } finally {
+         transport.close();
+         server.stop();
+      }
+   }
 }

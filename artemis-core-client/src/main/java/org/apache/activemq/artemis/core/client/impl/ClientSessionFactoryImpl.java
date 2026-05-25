@@ -786,7 +786,6 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                sessionsToClose = new HashSet<>(sessions);
             }
             callFailoverListeners(FailoverEventType.FAILOVER_FAILED);
-            callSessionFailureListeners(me, true, false, scaleDownTargetNodeID);
          }
       } finally {
          localFailoverLock.unlock();
@@ -795,7 +794,10 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       // This needs to be outside the failover lock to prevent deadlock
       if (connection != null) {
          callSessionFailureListeners(me, true, true);
+      } else {
+         callSessionFailureListeners(me, true, false, scaleDownTargetNodeID);
       }
+
       if (sessionsToClose != null) {
          // If connection is null it means we didn't succeed in failing over or reconnecting
          // so we close all the sessions, so they will throw exceptions when attempted to be used

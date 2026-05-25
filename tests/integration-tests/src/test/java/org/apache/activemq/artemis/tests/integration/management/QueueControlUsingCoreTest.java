@@ -220,7 +220,7 @@ public class QueueControlUsingCoreTest extends QueueControlTest {
 
          @Override
          public boolean isEnabled() {
-            return  (Boolean) proxy.retrieveAttributeValue("isEnabled");
+            return (Boolean) proxy.retrieveAttributeValue("isEnabled");
          }
 
          @Override

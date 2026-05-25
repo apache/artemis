@@ -906,7 +906,7 @@ public class SelectorTest extends ActiveMQServerTestCase {
          tm.setText("3");
          tm.setStringProperty("PROP2", "VALUE2");
          msgProducer.send(tm);
-         logger.debug("Sent message with id [{}]",  tm.getJMSMessageID());
+         logger.debug("Sent message with id [{}]", tm.getJMSMessageID());
 
          tm = session.createTextMessage();
          tm.setText("4");

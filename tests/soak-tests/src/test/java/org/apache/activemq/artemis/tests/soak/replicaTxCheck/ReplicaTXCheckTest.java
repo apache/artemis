@@ -45,7 +45,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ReplicaTXCheckTest  extends SoakTestBase {
+public class ReplicaTXCheckTest extends SoakTestBase {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 

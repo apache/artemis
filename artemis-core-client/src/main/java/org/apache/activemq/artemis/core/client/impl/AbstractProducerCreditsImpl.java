@@ -162,7 +162,7 @@ public abstract class AbstractProducerCreditsImpl implements ClientProducerCredi
       int toRequest = -1;
 
       synchronized (this) {
-         if (getBalance() + arriving < needed) {
+         if (getBalance() + arriving <= needed) {
             toRequest = needed - arriving;
 
             if (logger.isTraceEnabled()) {
@@ -170,7 +170,7 @@ public abstract class AbstractProducerCreditsImpl implements ClientProducerCredi
             }
          } else {
             if (logger.isTraceEnabled()) {
-               logger.trace("CheckCredits did not need it, balance={}, arriving={},  needed={}, getbalance + arriving < needed={}", getBalance(), arriving, needed, (boolean)(getBalance() + arriving < needed));
+               logger.trace("CheckCredits did not need it, balance={}, arriving={},  needed={}, getbalance + arriving <= needed={}", getBalance(), arriving, needed, (boolean)(getBalance() + arriving <= needed));
             }
          }
       }

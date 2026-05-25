@@ -220,7 +220,7 @@ public class AMQConsumer {
       if (isDurable) {
          queueName = org.apache.activemq.artemis.jms.client.ActiveMQDestination.createQueueNameForSubscription(true, clientID, subscriptionName);
          if (info.getDestination().isComposite()) {
-            queueName =  queueName.concat(physicalName);
+            queueName = queueName.concat(physicalName);
          }
          QueueConfiguration queueConfiguration = QueueConfiguration.of(queueName).setAddress(address).setRoutingType(RoutingType.MULTICAST).setFilterString(selector).setInternal(internalAddress);
          QueueQueryResult result = session.getCoreSession().executeQueueQuery(queueName);

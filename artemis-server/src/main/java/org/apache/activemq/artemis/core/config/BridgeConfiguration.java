@@ -732,7 +732,7 @@ public final class BridgeConfiguration implements Serializable {
             staticConnectorSize += BufferHelper.sizeOfNullableString(connector);
          }
       }
-      int size =  BufferHelper.sizeOfNullableString(name) +
+      int size = BufferHelper.sizeOfNullableString(name) +
          BufferHelper.sizeOfNullableString(parentName) +
          BufferHelper.sizeOfNullableString(queueName) +
          BufferHelper.sizeOfNullableString(forwardingAddress) +

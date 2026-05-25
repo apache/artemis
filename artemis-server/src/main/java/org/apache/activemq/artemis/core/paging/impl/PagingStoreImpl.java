@@ -395,7 +395,7 @@ public class PagingStoreImpl implements PagingStore {
    private boolean isBelowPageLimitBytes() {
       if (estimatedMaxPages != null) {
          return (numberOfPages <= estimatedMaxPages.longValue());
-      }  else {
+      } else {
          return true;
       }
    }

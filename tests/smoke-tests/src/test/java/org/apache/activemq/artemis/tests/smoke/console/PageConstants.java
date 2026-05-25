@@ -75,16 +75,16 @@ public class PageConstants {
    public static final By BRAND_LOCATOR = By.xpath("//img[@class='pf-v5-c-brand']");
 
    //Component Locators
-   public static final  By USERNAME_LOCATOR = By.id("pf-login-username-id");
+   public static final By USERNAME_LOCATOR = By.id("pf-login-username-id");
 
-   public static final  By PASSWORD_LOCATOR = By.id("pf-login-password-id");
+   public static final By PASSWORD_LOCATOR = By.id("pf-login-password-id");
 
    public static final By LOGOUT_DROPDOWN_LOCATOR = By.id(HAWTIO_HEADER_USER_DROPDOWN_TOGGLE);
 
    public static final By LOGIN_BUTTON_LOCATOR = By.xpath("//button[@type='submit']");
 
 
-   public static final  By MESSAGE_TEXT_EDITOR_LOCATOR = By.cssSelector("div[class='pf-v5-c-code-editor__code']");
+   public static final By MESSAGE_TEXT_EDITOR_LOCATOR = By.cssSelector("div[class='pf-v5-c-code-editor__code']");
 
    public static final By USE_LOGIN_LOCATOR = By.id("uselogon");
 
@@ -94,7 +94,7 @@ public class PageConstants {
 
    public static final By DATA_TABLE = By.id("data-table");
 
-   public static final  By DATA_ROW_CONTEXT_MENU = By.cssSelector("div[class='pf-v5-c-menu']");
+   public static final By DATA_ROW_CONTEXT_MENU = By.cssSelector("div[class='pf-v5-c-menu']");
 
    public static final By MESSAGE_TABLE = By.id("message-table");
 

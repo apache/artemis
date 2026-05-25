@@ -72,7 +72,6 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
 
    private final ArrayList<PrioritizedCallback> lockAcquiredCallback = new ArrayList<>();
    private final ArrayList<PrioritizedCallback> lockReleasedCallback = new ArrayList<>();
-   private final long checkPeriod;
    private final String name;
    private final String lockID;
 
@@ -82,6 +81,27 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
 
    public DistributedLockManager getLockManager() {
       return lockManager;
+   }
+
+   public String getName() {
+      return name;
+   }
+
+   // Returns a string representation of the current status of this Lock Coordinator.
+   public String getStatus() {
+      if (!isStarted()) {
+         return "Stopped";
+      } else {
+         if (isLocked()) {
+            return "Locked";
+         } else {
+            return "Unlocked";
+         }
+      }
+   }
+
+   public String getLockId() {
+      return lockID;
    }
 
    /**
@@ -163,7 +183,6 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
             } catch (Exception e) {
                logger.debug("Error closing lock during stop", e);
             }
-            distributedLock = null;
          }
          if (lockManager != null) {
             try {
@@ -171,7 +190,6 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
             } catch (Exception e) {
                logger.debug("Error stopping lock manager during stop", e);
             }
-            lockManager = null;
          }
          simpleFuture.set(null);
       });
@@ -205,7 +223,6 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
       super(scheduledExecutor, executor, checkPeriod, checkPeriod, TimeUnit.MILLISECONDS, false);
       assert executor != null;
       this.lockManager = lockManager;
-      this.checkPeriod = checkPeriod;
       this.lockID = lockID;
       this.name = name;
    }
@@ -279,7 +296,7 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
       }
    }
 
-   private void doRun(RunnableEx r) throws Exception  {
+   private void doRun(RunnableEx r) throws Exception {
       r.run();
    }
 

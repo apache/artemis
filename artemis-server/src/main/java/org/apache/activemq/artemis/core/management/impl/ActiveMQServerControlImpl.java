@@ -125,6 +125,7 @@ import org.apache.activemq.artemis.core.server.cluster.ha.PrimaryOnlyPolicy;
 import org.apache.activemq.artemis.core.server.cluster.ha.ScaleDownPolicy;
 import org.apache.activemq.artemis.core.server.cluster.ha.SharedStoreBackupPolicy;
 import org.apache.activemq.artemis.core.server.group.GroupingHandler;
+import org.apache.activemq.artemis.core.server.lock.LockCoordinator;
 import org.apache.activemq.artemis.core.server.impl.Activation;
 import org.apache.activemq.artemis.core.server.impl.AddressInfo;
 import org.apache.activemq.artemis.core.server.impl.SharedNothingPrimaryActivation;
@@ -818,7 +819,7 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
    }
 
    @Override
-   public int  getAddressMemoryUsagePercentage() {
+   public int getAddressMemoryUsagePercentage() {
       if (AuditLogger.isBaseLoggingEnabled()) {
          AuditLogger.getAddressMemoryUsagePercentage(this.server);
       }
@@ -3883,7 +3884,7 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
       clearIO();
 
       try {
-         TransformerConfiguration transformerConfiguration = transformerClassName == null || transformerClassName.isEmpty()  ? null : new TransformerConfiguration(transformerClassName).setProperties(transformerProperties);
+         TransformerConfiguration transformerConfiguration = transformerClassName == null || transformerClassName.isEmpty() ? null : new TransformerConfiguration(transformerClassName).setProperties(transformerProperties);
          BridgeConfiguration config = new BridgeConfiguration().setName(name).setQueueName(queueName).setForwardingAddress(forwardingAddress).setFilterString(filterString).setTransformerConfiguration(transformerConfiguration).setClientFailureCheckPeriod(clientFailureCheckPeriod).setRetryInterval(retryInterval).setRetryIntervalMultiplier(retryIntervalMultiplier).setInitialConnectAttempts(initialConnectAttempts).setReconnectAttempts(reconnectAttempts).setUseDuplicateDetection(useDuplicateDetection).setConfirmationWindowSize(confirmationWindowSize).setProducerWindowSize(producerWindowSize).setHA(ha).setUser(user).setPassword(password).setConfigurationManaged(false);
 
          if (useDiscoveryGroup) {
@@ -3927,7 +3928,7 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
       clearIO();
 
       try {
-         TransformerConfiguration transformerConfiguration = transformerClassName == null || transformerClassName.isEmpty()  ? null : new TransformerConfiguration(transformerClassName);
+         TransformerConfiguration transformerConfiguration = transformerClassName == null || transformerClassName.isEmpty() ? null : new TransformerConfiguration(transformerClassName);
          BridgeConfiguration config = new BridgeConfiguration().setName(name).setQueueName(queueName).setForwardingAddress(forwardingAddress).setFilterString(filterString).setTransformerConfiguration(transformerConfiguration).setClientFailureCheckPeriod(clientFailureCheckPeriod).setRetryInterval(retryInterval).setRetryIntervalMultiplier(retryIntervalMultiplier).setInitialConnectAttempts(initialConnectAttempts).setReconnectAttempts(reconnectAttempts).setUseDuplicateDetection(useDuplicateDetection).setConfirmationWindowSize(confirmationWindowSize).setHA(ha).setUser(user).setPassword(password).setConfigurationManaged(false);
 
          if (useDiscoveryGroup) {
@@ -4753,6 +4754,36 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
             File exportFileInTmp = new File(System.getProperty(TMP_DIR_SYSTEM_PROPERTY), CONFIG_AS_PROPERTIES_FILE);
             this.server.getConfiguration().exportAsProperties(exportFileInTmp);
          }
+      }
+   }
+
+   @Override
+   public String listLockCoordinatorsAsJSON() {
+      if (AuditLogger.isBaseLoggingEnabled()) {
+         AuditLogger.listLockCoordinatorsAsJSON(this.server);
+      }
+      checkStarted();
+
+      clearIO();
+      try {
+         List<LockCoordinator> coordinators = server.getLockCoordinators();
+
+         JsonArrayBuilder array = JsonLoader.createArrayBuilder();
+         coordinators.forEach(l -> {
+            JsonObjectBuilder objectBuilder = JsonLoader.createObjectBuilder();
+            objectBuilder.add("name", l.getName());
+            objectBuilder.add("lockId", l.getLockId());
+            objectBuilder.add("className", l.getLockManager().getClass().getName());
+            objectBuilder.add("simpleName", l.getLockManager().getClass().getSimpleName());
+            objectBuilder.add("locked", l.isLocked());
+            objectBuilder.add("started", l.isStarted());
+            objectBuilder.add("status", l.getStatus());
+            array.add(objectBuilder);
+         });
+
+         return array.build().toString();
+      } finally {
+         blockOnIO();
       }
    }
 

@@ -634,7 +634,7 @@ public class EmbeddedActiveMQDelegate implements EmbeddedActiveMQOperations {
                try {
                   message = consumer.receive(timeout);
                } catch (ActiveMQException amqEx) {
-                  failureCause =  new EmbeddedActiveMQResourceException(String.format("ClientConsumer.receive( timeout = %d ) for %s failed",
+                  failureCause = new EmbeddedActiveMQResourceException(String.format("ClientConsumer.receive( timeout = %d ) for %s failed",
                                                                         timeout, address.toString()), amqEx);
                   throw failureCause;
                }

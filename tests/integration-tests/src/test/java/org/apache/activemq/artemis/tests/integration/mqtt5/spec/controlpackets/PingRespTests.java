@@ -25,5 +25,5 @@ import org.junit.jupiter.api.Disabled;
  */
 
 @Disabled
-public class PingRespTests  extends MQTT5TestSupport {
+public class PingRespTests extends MQTT5TestSupport {
 }

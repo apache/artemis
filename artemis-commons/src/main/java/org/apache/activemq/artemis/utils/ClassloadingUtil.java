@@ -75,7 +75,7 @@ public final class ClassloadingUtil {
 
    public static Object getInstanceForParamsWithTypeCheck(String className,
                                                  Class<?> expectedType,
-                                                 ClassLoader loader,  Class<?>[] parameterTypes, Object... params) throws ClassNotFoundException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+                                                 ClassLoader loader, Class<?>[] parameterTypes, Object... params) throws ClassNotFoundException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
       final Class<?> clazz = loadWithCheck(className, expectedType, loader);
       return clazz.getDeclaredConstructor(parameterTypes).newInstance(params);
    }

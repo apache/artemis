@@ -197,7 +197,7 @@ public class CompareUpgradeTest {
       checkExpectedValues(windowsBin + "/artemis.cmd", "set ARTEMIS_INSTANCE_ETC=", "\"" + windowsETC + "\"");
       Map<String, String> result = checkExpectedValues(windowsBin + "/artemis-service.xml",
                                                        "<env name=\"ARTEMIS_HOME\" value=", null, // no expected value for this, we will check on the output
-                                                       "<env name=\"ARTEMIS_INSTANCE\" value=", "\"" + windows  + "\"/>",
+                                                       "<env name=\"ARTEMIS_INSTANCE\" value=", "\"" + windows + "\"/>",
                                                        "<env name=\"ARTEMIS_INSTANCE_ETC\" value=", "\"" + windowsETC + "\"/>",
                                                        "<env name=\"ARTEMIS_DATA_DIR\" value=", "\"" + windowsData + "\"/>",
                                                        "<startargument>-Dhawtio.roles=", hawtioRoles + "</startargument>"

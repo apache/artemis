@@ -294,7 +294,7 @@ public class ClusterConnectionControlImpl extends AbstractControl implements Clu
    }
 
    @Override
-   public Map<String, Object> getMetrics()  {
+   public Map<String, Object> getMetrics() {
       if (AuditLogger.isBaseLoggingEnabled()) {
          AuditLogger.getMetrics(this.clusterConnection);
       }

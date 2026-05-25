@@ -438,7 +438,7 @@ public class ValidateAMQPErrorsTest extends AmqpClientTestSupport {
             expectMirroredJMSMessage(peer, i);
          }
 
-         sendJMSMessage(msgCount,  getQueueName());
+         sendJMSMessage(msgCount, getQueueName());
 
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
       }

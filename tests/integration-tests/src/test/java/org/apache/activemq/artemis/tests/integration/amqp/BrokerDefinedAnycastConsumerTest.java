@@ -39,7 +39,7 @@ import org.apache.qpid.proton.amqp.messaging.Source;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
-public class BrokerDefinedAnycastConsumerTest extends AmqpClientTestSupport  {
+public class BrokerDefinedAnycastConsumerTest extends AmqpClientTestSupport {
 
    SimpleString address = SimpleString.of("testAddress");
    SimpleString queue1 = SimpleString.of("queue1");

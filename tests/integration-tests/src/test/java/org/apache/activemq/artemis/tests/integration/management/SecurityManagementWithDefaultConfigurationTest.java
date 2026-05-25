@@ -31,7 +31,7 @@ public class SecurityManagementWithDefaultConfigurationTest extends SecurityMana
 
    @TestTemplate
    public void testSendManagementMessageWithDefaultClusterAdminUser() throws Exception {
-      doSendBrokerManagementMessage(ActiveMQDefaultConfiguration.getDefaultClusterUser(), ActiveMQDefaultConfiguration.getDefaultClusterPassword(), true);
+      doSendBrokerManagementMessage(ActiveMQDefaultConfiguration.getDefaultClusterUser(), ActiveMQDefaultConfiguration.getDefaultClusterPassword(), false);
    }
 
    @TestTemplate

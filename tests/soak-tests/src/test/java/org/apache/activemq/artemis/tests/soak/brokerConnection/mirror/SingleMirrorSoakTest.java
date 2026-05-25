@@ -74,9 +74,9 @@ public class SingleMirrorSoakTest extends SoakTestBase {
    private static final int SEND_COMMIT = TestParameters.testProperty(TEST_NAME, "SEND_COMMIT", 100);
 
    // If -1 means to never kill the target broker
-   private static final int KILL_INTERVAL =  TestParameters.testProperty(TEST_NAME, "KILL_INTERVAL", 1_000);
-   private static final int SNF_TIMEOUT =  TestParameters.testProperty(TEST_NAME, "SNF_TIMEOUT", 300_000);
-   private static final int GENERAL_WAIT_TIMEOUT =  TestParameters.testProperty(TEST_NAME, "GENERAL_TIMEOUT", 10_000);
+   private static final int KILL_INTERVAL = TestParameters.testProperty(TEST_NAME, "KILL_INTERVAL", 1_000);
+   private static final int SNF_TIMEOUT = TestParameters.testProperty(TEST_NAME, "SNF_TIMEOUT", 300_000);
+   private static final int GENERAL_WAIT_TIMEOUT = TestParameters.testProperty(TEST_NAME, "GENERAL_TIMEOUT", 10_000);
 
    /*
     * Time each consumer takes to process a message received to allow some messages accumulating.

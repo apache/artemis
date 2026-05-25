@@ -275,7 +275,7 @@ public class KeyTypeTest extends RoutingTestBase {
                testMQTTConnection(host, port, clientID, user, password, sslEnabled, needClientAuth);
                break;
             } catch (Throwable t) {
-               if (i == retries)  {
+               if (i == retries) {
                   throw t;
                }
             }

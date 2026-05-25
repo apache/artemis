@@ -93,7 +93,7 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
             if (future.isSuccess()) {
                // we need to insert an encoder that takes the underlying ChannelBuffer of a StompFrame.toActiveMQBuffer and
                // wrap it in a web socket frame before letting the wsencoder send it on the wire
-               WebSocketFrameEncoder  encoder = new WebSocketFrameEncoder(maxFramePayloadLength, encoderType);
+               WebSocketFrameEncoder encoder = new WebSocketFrameEncoder(maxFramePayloadLength, encoderType);
                future.channel().pipeline().addAfter("wsencoder", "websocket-frame-encoder", encoder);
             } else {
                // Handshake failed, fire an exceptionCaught event

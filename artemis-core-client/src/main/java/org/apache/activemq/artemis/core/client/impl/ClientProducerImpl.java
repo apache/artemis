@@ -136,7 +136,7 @@ public class ClientProducerImpl implements ClientProducerInternal {
       checkClosed();
 
       if (handler != null) {
-         handler =  session.wrap(handler);
+         handler = session.wrap(handler);
       }
 
       doSend(address1, message, handler);

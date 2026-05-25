@@ -323,7 +323,7 @@ public class DatabaseStorageConfiguration implements StoreConfiguration {
    }
 
    @Override
-   public int getAllowedPageSize(int pageSize)  {
+   public int getAllowedPageSize(int pageSize) {
       return Math.min(pageSize, maxPageSizeBytes);
    }
 

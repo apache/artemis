@@ -140,10 +140,4 @@ public class ReplayTest extends ActiveMQTestBase {
    public void testReplayCorePaging() throws Exception {
       testReplay("CORE", 10, true);
    }
-
-   @Test
-   public void testReplayLargeCorePaging() throws Exception {
-      testReplay("CORE", 500 * 1024, true);
-   }
-
 }

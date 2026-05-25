@@ -51,7 +51,7 @@ public final class ActiveMQClient {
 
    private static int globalScheduledThreadPoolSize;
 
-   private static  int globalFlowControlThreadPoolSize;
+   private static int globalFlowControlThreadPoolSize;
 
    public static final String DEFAULT_CONNECTION_LOAD_BALANCING_POLICY_CLASS_NAME = RoundRobinConnectionLoadBalancingPolicy.class.getCanonicalName();
 

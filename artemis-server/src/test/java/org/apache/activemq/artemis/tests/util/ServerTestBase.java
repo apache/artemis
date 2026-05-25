@@ -498,7 +498,7 @@ public abstract class ServerTestBase extends ArtemisTestCase {
                                                final Integer maxReadPageMessages,
                                                final Integer maxReadPageBytes,
                                                final Map<String, AddressSettings> settings) {
-      return  createServer(realFiles, configuration, pageSize, maxAddressSize, maxReadPageMessages, maxReadPageBytes, null, null, null, settings);
+      return createServer(realFiles, configuration, pageSize, maxAddressSize, maxReadPageMessages, maxReadPageBytes, null, null, null, settings);
 
    }
 

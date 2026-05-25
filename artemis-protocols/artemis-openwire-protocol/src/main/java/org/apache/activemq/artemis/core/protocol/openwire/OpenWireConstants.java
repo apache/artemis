@@ -28,11 +28,11 @@ public class OpenWireConstants {
    public static final SimpleString AMQ_MSG_COMMAND_ID = SimpleString.of(AMQ_PREFIX + "COMMAND_ID");
    public static final SimpleString AMQ_MSG_DATASTRUCTURE = SimpleString.of(AMQ_PREFIX + "DATASTRUCTURE");
    public static final SimpleString AMQ_MSG_MESSAGE_ID = SimpleString.of(AMQ_PREFIX + "MESSAGE_ID");
-   public static final SimpleString AMQ_MSG_ORIG_DESTINATION =  SimpleString.of(AMQ_PREFIX + "ORIG_DESTINATION");
-   public static final SimpleString AMQ_MSG_PRODUCER_ID =  SimpleString.of(AMQ_PREFIX + "PRODUCER_ID");
+   public static final SimpleString AMQ_MSG_ORIG_DESTINATION = SimpleString.of(AMQ_PREFIX + "ORIG_DESTINATION");
+   public static final SimpleString AMQ_MSG_PRODUCER_ID = SimpleString.of(AMQ_PREFIX + "PRODUCER_ID");
    public static final SimpleString AMQ_MSG_REPLY_TO = SimpleString.of(AMQ_PREFIX + "REPLY_TO");
    public static final SimpleString AMQ_MSG_USER_ID = SimpleString.of(AMQ_PREFIX + "USER_ID");
-   public static final SimpleString AMQ_MSG_DROPPABLE =  SimpleString.of(AMQ_PREFIX + "DROPPABLE");
+   public static final SimpleString AMQ_MSG_DROPPABLE = SimpleString.of(AMQ_PREFIX + "DROPPABLE");
    public static final SimpleString AMQ_MSG_COMPRESSED = SimpleString.of(AMQ_PREFIX + "COMPRESSED");
 
    public static final SimpleString JMS_TYPE_PROPERTY = SimpleString.of("JMSType");

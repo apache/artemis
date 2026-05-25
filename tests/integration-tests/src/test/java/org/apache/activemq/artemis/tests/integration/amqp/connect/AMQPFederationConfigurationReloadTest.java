@@ -647,7 +647,7 @@ public class AMQPFederationConfigurationReloadTest extends AmqpClientTestSupport
          assertNotNull(address1Consumer.receive(5_000));
          assertNotNull(address2Consumer.receive(5_000));
 
-      } finally  {
+      } finally {
          embeddedActiveMQ.stop();
       }
    }
@@ -737,7 +737,7 @@ public class AMQPFederationConfigurationReloadTest extends AmqpClientTestSupport
          assertNotNull(queue1Consumer.receiveNoWait());
          assertNotNull(queue2Consumer.receiveNoWait());
 
-      } finally  {
+      } finally {
          embeddedActiveMQ.stop();
       }
    }
@@ -811,7 +811,7 @@ public class AMQPFederationConfigurationReloadTest extends AmqpClientTestSupport
          // connection was recreated.
          Wait.assertTrue(() -> server.bindingQuery(SimpleString.of("address2")).getQueueNames().isEmpty());
 
-      } finally  {
+      } finally {
          embeddedActiveMQ.stop();
       }
    }
@@ -907,7 +907,7 @@ public class AMQPFederationConfigurationReloadTest extends AmqpClientTestSupport
          assertNotNull(queue1Consumer.receiveNoWait());
          assertNotNull(queue2Consumer.receiveNoWait());
 
-      } finally  {
+      } finally {
          embeddedActiveMQ.stop();
       }
    }

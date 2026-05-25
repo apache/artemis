@@ -186,7 +186,7 @@ public class SlowConsumerTest extends ActiveMQTestBase {
          consumer.receiveImmediate().individualAcknowledge();
       }
 
-      Thread.sleep(3 *  checkPeriod * 1000);
+      Thread.sleep(3 * checkPeriod * 1000);
 
       try {
          consumer.receiveImmediate();
@@ -220,7 +220,7 @@ public class SlowConsumerTest extends ActiveMQTestBase {
          consumer.receiveImmediate().individualAcknowledge();
       }
 
-      Thread.sleep(3 *  checkPeriod * 1000);
+      Thread.sleep(3 * checkPeriod * 1000);
 
       assertNotNull(consumer.receiveImmediate());
    }

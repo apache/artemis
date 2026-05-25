@@ -74,13 +74,6 @@ public interface ClusterConnection extends ActiveMQComponent, ClusterTopologyLis
 
    boolean isNodeActive(String id);
 
-   /**
-    * Verifies whether user and password match the ones configured for this ClusterConnection.
-    *
-    * @return {@code true} if username and password match, {@code false} otherwise
-    */
-   boolean verify(String clusterUser, String clusterPassword);
-
    void removeRecord(String targetNodeID);
 
    void disconnectRecord(String targetNodeID);

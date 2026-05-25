@@ -274,7 +274,7 @@ public class ActiveMQDestination extends JNDIStorable implements Destination, Se
       String name = UUID.randomUUID().toString();
       String address = prefix + name;
 
-      ActiveMQTemporaryTopic topic  = createTemporaryTopic(address, session);
+      ActiveMQTemporaryTopic topic = createTemporaryTopic(address, session);
       topic.setName(name);
       return topic;
    }

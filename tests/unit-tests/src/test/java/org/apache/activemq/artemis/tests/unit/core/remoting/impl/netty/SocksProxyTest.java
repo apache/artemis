@@ -74,8 +74,8 @@ public class SocksProxyTest extends ActiveMQTestBase {
    public void setUp() throws Exception {
       super.setUp();
 
-      closeExecutor       = Executors.newCachedThreadPool(ActiveMQThreadFactory.defaultThreadFactory(getClass().getName()));
-      threadPool          = Executors.newCachedThreadPool(ActiveMQThreadFactory.defaultThreadFactory(getClass().getName()));
+      closeExecutor = Executors.newCachedThreadPool(ActiveMQThreadFactory.defaultThreadFactory(getClass().getName()));
+      threadPool = Executors.newCachedThreadPool(ActiveMQThreadFactory.defaultThreadFactory(getClass().getName()));
       scheduledThreadPool = Executors.newScheduledThreadPool(5, ActiveMQThreadFactory.defaultThreadFactory(getClass().getName()));
 
       startSocksProxy();
@@ -264,7 +264,7 @@ public class SocksProxyTest extends ActiveMQTestBase {
    }
 
    private void startSocksProxy() throws Exception {
-      bossGroup   = new NioEventLoopGroup();
+      bossGroup = new NioEventLoopGroup();
       workerGroup = new NioEventLoopGroup();
 
       ServerBootstrap b = new ServerBootstrap();

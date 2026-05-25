@@ -432,7 +432,7 @@ public final class ActiveMQDefaultConfiguration {
    private static boolean DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN = false;
 
    // Will a shared-store primary startup wait for activation
-   private static boolean  DEFAULT_WAIT_FOR_ACTIVATION = true;
+   private static boolean DEFAULT_WAIT_FOR_ACTIVATION = true;
 
    // Will the broker populate the message with the name of the validated user
    private static boolean DEFAULT_POPULATE_VALIDATED_USER = false;

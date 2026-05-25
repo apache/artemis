@@ -565,6 +565,11 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    }
 
    @Override
+   public List<LockCoordinator> getLockCoordinators() {
+      return new ArrayList<>(lockCoordinators.values());
+   }
+
+   @Override
    public void replay(Date start, Date end, String address, String target, String filter) throws Exception {
       if (replayManager == null) {
          throw ActiveMQMessageBundle.BUNDLE.noRetention();
@@ -1108,7 +1113,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    }
 
    @Override
-   public void stop(boolean isShutdown)  throws Exception {
+   public void stop(boolean isShutdown) throws Exception {
       try {
          stop(false, isShutdown);
       } finally {
@@ -1430,7 +1435,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       try {
          if (remotingService != null) {
             // it will close all connections except to the one used by replication
-            remotingService.prepareStop(criticalIOError,  storageManager != null ? storageManager.getUsedConnections() : Collections.emptySet());
+            remotingService.prepareStop(criticalIOError, storageManager != null ? storageManager.getUsedConnections() : Collections.emptySet());
          }
       } catch (Throwable t) {
          ActiveMQServerLogger.LOGGER.errorStoppingComponent(remotingService.getClass().getName(), t);
@@ -2283,14 +2288,14 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    @Override
    public Queue createQueue(AddressInfo addressInfo, SimpleString queueName, SimpleString filter, SimpleString user, boolean durable, boolean temporary, boolean autoCreated, Integer maxConsumers, Boolean purgeOnNoConsumers, boolean autoCreateAddress) throws Exception {
       AddressSettings as = getAddressSettingsRepository().getMatch(addressInfo == null ? queueName.toString() : addressInfo.getName().toString());
-      return createQueue(addressInfo, queueName, filter, user, durable, temporary, false, false, autoCreated, maxConsumers, purgeOnNoConsumers, as.isDefaultExclusiveQueue(),  as.isDefaultGroupRebalance(), as.getDefaultGroupBuckets(), as.getDefaultGroupFirstKey(), as.isDefaultLastValueQueue(), as.getDefaultLastValueKey(), as.isDefaultNonDestructive(), as.getDefaultConsumersBeforeDispatch(), as.getDefaultDelayBeforeDispatch(), isAutoDelete(autoCreated, as), as.getAutoDeleteQueuesDelay(), as.getAutoDeleteQueuesMessageCount(), autoCreateAddress, false, as.getDefaultRingSize());
+      return createQueue(addressInfo, queueName, filter, user, durable, temporary, false, false, autoCreated, maxConsumers, purgeOnNoConsumers, as.isDefaultExclusiveQueue(), as.isDefaultGroupRebalance(), as.getDefaultGroupBuckets(), as.getDefaultGroupFirstKey(), as.isDefaultLastValueQueue(), as.getDefaultLastValueKey(), as.isDefaultNonDestructive(), as.getDefaultConsumersBeforeDispatch(), as.getDefaultDelayBeforeDispatch(), isAutoDelete(autoCreated, as), as.getAutoDeleteQueuesDelay(), as.getAutoDeleteQueuesMessageCount(), autoCreateAddress, false, as.getDefaultRingSize());
    }
 
    @Deprecated
    @Override
    public Queue createQueue(AddressInfo addressInfo, SimpleString queueName, SimpleString filter, SimpleString user, boolean durable, boolean temporary, boolean autoCreated, Integer maxConsumers, Boolean purgeOnNoConsumers, Boolean exclusive, Boolean lastValue, boolean autoCreateAddress) throws Exception {
       AddressSettings as = getAddressSettingsRepository().getMatch(addressInfo == null ? queueName.toString() : addressInfo.getName().toString());
-      return createQueue(addressInfo, queueName, filter, user, durable, temporary, false, false, autoCreated, maxConsumers, purgeOnNoConsumers, exclusive,  as.isDefaultGroupRebalance(), as.getDefaultGroupBuckets(), as.getDefaultGroupFirstKey(), lastValue, as.getDefaultLastValueKey(), as.isDefaultNonDestructive(), as.getDefaultConsumersBeforeDispatch(), as.getDefaultDelayBeforeDispatch(), isAutoDelete(autoCreated, as), as.getAutoDeleteQueuesDelay(), as.getAutoDeleteQueuesMessageCount(), autoCreateAddress, false, as.getDefaultRingSize());
+      return createQueue(addressInfo, queueName, filter, user, durable, temporary, false, false, autoCreated, maxConsumers, purgeOnNoConsumers, exclusive, as.isDefaultGroupRebalance(), as.getDefaultGroupBuckets(), as.getDefaultGroupFirstKey(), lastValue, as.getDefaultLastValueKey(), as.isDefaultNonDestructive(), as.getDefaultConsumersBeforeDispatch(), as.getDefaultDelayBeforeDispatch(), isAutoDelete(autoCreated, as), as.getAutoDeleteQueuesDelay(), as.getAutoDeleteQueuesMessageCount(), autoCreateAddress, false, as.getDefaultRingSize());
    }
 
    @Deprecated
@@ -2332,7 +2337,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
                             SimpleString user, boolean durable, boolean temporary, boolean ignoreIfExists, boolean transientQueue,
                             boolean autoCreated, int maxConsumers, boolean purgeOnNoConsumers, boolean exclusive, boolean lastValue, boolean autoCreateAddress) throws Exception {
       AddressSettings as = getAddressSettingsRepository().getMatch(address == null ? queueName.toString() : address.toString());
-      return createQueue(address, routingType, queueName, filter, user, durable, temporary, ignoreIfExists, transientQueue, autoCreated, maxConsumers, purgeOnNoConsumers, exclusive,  as.isDefaultGroupRebalance(), as.getDefaultGroupBuckets(), lastValue, as.getDefaultLastValueKey(), as.isDefaultNonDestructive(), as.getDefaultConsumersBeforeDispatch(), as.getDefaultDelayBeforeDispatch(), isAutoDelete(autoCreated, as), as.getAutoDeleteQueuesDelay(), as.getAutoDeleteQueuesMessageCount(), autoCreateAddress);
+      return createQueue(address, routingType, queueName, filter, user, durable, temporary, ignoreIfExists, transientQueue, autoCreated, maxConsumers, purgeOnNoConsumers, exclusive, as.isDefaultGroupRebalance(), as.getDefaultGroupBuckets(), lastValue, as.getDefaultLastValueKey(), as.isDefaultNonDestructive(), as.getDefaultConsumersBeforeDispatch(), as.getDefaultDelayBeforeDispatch(), isAutoDelete(autoCreated, as), as.getAutoDeleteQueuesDelay(), as.getAutoDeleteQueuesMessageCount(), autoCreateAddress);
    }
 
 
@@ -3064,38 +3069,59 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          return null;
       }
 
-      final Divert divert = divertBinding.getDivert();
+      // The divert config may be in defined in the broker config (e.g. XML) or stored in the journal. If it's in the
+      // journal we want to make sure it's updated propertly otherwise we just update what's in memory.
+      DivertConfiguration onStorageDivert = storageManager.getDivertConfiguration(config.getName());
+      final Divert inMemoryDivert = divertBinding.getDivert();
 
       Filter filter = FilterImpl.createFilter(config.getFilterString());
       if (filter == null) {
-         divert.setFilter(null);
+         inMemoryDivert.setFilter(null);
+         if (onStorageDivert != null) {
+            onStorageDivert.setFilterString(null);
+         }
       } else {
-         if (!filter.equals(divert.getFilter())) {
-            divert.setFilter(filter);
+         if (!filter.equals(inMemoryDivert.getFilter())) {
+            inMemoryDivert.setFilter(filter);
+            if (onStorageDivert != null) {
+               onStorageDivert.setFilterString(config.getFilterString());
+            }
          }
       }
 
       if (config.getTransformerConfiguration() != null) {
-         getServiceRegistry().removeDivertTransformer(divert.getUniqueName().toString());
+         getServiceRegistry().removeDivertTransformer(inMemoryDivert.getUniqueName().toString());
          Transformer transformer = getServiceRegistry().getDivertTransformer(
             config.getName(), config.getTransformerConfiguration());
-         divert.setTransformer(transformer);
+         inMemoryDivert.setTransformer(transformer);
+         if (onStorageDivert != null) {
+            onStorageDivert.setTransformerConfiguration(config.getTransformerConfiguration());
+         }
       }
 
       if (config.getForwardingAddress() != null) {
          SimpleString forwardAddress = SimpleString.of(config.getForwardingAddress());
-         if (!forwardAddress.equals(divert.getForwardAddress())) {
-            divert.setForwardAddress(forwardAddress);
+         if (!forwardAddress.equals(inMemoryDivert.getForwardAddress())) {
+            inMemoryDivert.setForwardAddress(forwardAddress);
+            if (onStorageDivert != null) {
+               onStorageDivert.setForwardingAddress(config.getForwardingAddress());
+            }
          }
       }
 
-      if (config.getRoutingType() != null && divert.getRoutingType() != config.getRoutingType()) {
-         divert.setRoutingType(config.getRoutingType());
+      if (config.getRoutingType() != null && inMemoryDivert.getRoutingType() != config.getRoutingType()) {
+         inMemoryDivert.setRoutingType(config.getRoutingType());
+         if (onStorageDivert != null) {
+            onStorageDivert.setRoutingType(config.getRoutingType());
+         }
       }
 
-      storageManager.storeDivertConfiguration(new PersistedDivertConfiguration(config));
+      if (onStorageDivert != null) {
+         // this will replace the existing divert record in the journal using delete + add
+         storageManager.storeDivertConfiguration(new PersistedDivertConfiguration(onStorageDivert));
+      }
 
-      return divert;
+      return inMemoryDivert;
    }
 
    @Override
@@ -3375,7 +3401,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       storageManager = createStorageManager();
 
       if (!configuration.getClusterConfigurations().isEmpty() && ActiveMQDefaultConfiguration.getDefaultClusterUser().equals(configuration.getClusterUser()) && ActiveMQDefaultConfiguration.getDefaultClusterPassword().equals(configuration.getClusterPassword())) {
-         ActiveMQServerLogger.LOGGER.clusterSecurityRisk();
+         ActiveMQServerLogger.LOGGER.defaultClusterCredentialsInUse();
       }
 
       securityStore = new SecurityStoreImpl(securityRepository, securityManager, configuration.getSecurityInvalidationInterval(), configuration.isSecurityEnabled(), configuration.getClusterUser(), configuration.getClusterPassword(), managementService, configuration.getAuthenticationCacheSize(), configuration.getAuthorizationCacheSize());
@@ -4460,15 +4486,20 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       if (storageManager.recoverDivertConfigurations() != null) {
 
          for (PersistedDivertConfiguration persistedDivertConfiguration : storageManager.recoverDivertConfigurations()) {
-            //has it been removed from config
-            boolean deleted = configuration.getDivertConfigurations().stream().noneMatch(divertConfiguration -> divertConfiguration.getName().equals(persistedDivertConfiguration.getName()));
-            // if it has remove it if configured to do so
-            if (deleted) {
-               if (addressSettingsRepository.getMatch(persistedDivertConfiguration.getDivertConfiguration().getAddress()).getConfigDeleteDiverts() == DeletionPolicy.FORCE) {
-                  storageManager.deleteDivertConfiguration(persistedDivertConfiguration.getName());
-               } else {
-                  deployDivert(persistedDivertConfiguration.getDivertConfiguration());
+            try {
+               //has it been removed from config
+               boolean deleted = configuration.getDivertConfigurations().stream().noneMatch(divertConfiguration -> divertConfiguration.getName().equals(persistedDivertConfiguration.getName()));
+               // if it has remove it if configured to do so
+               if (deleted) {
+                  if (addressSettingsRepository.getMatch(persistedDivertConfiguration.getDivertConfiguration().getAddress()).getConfigDeleteDiverts() == DeletionPolicy.FORCE) {
+                     storageManager.deleteDivertConfiguration(persistedDivertConfiguration.getName());
+                  } else {
+                     deployDivert(persistedDivertConfiguration.getDivertConfiguration());
+                  }
                }
+            } catch (Exception e) {
+               logger.debug(e.getMessage(), e);
+               ActiveMQServerLogger.LOGGER.failedToRecoverStoredDivertConfiguration(persistedDivertConfiguration.getName(), String.valueOf(persistedDivertConfiguration.getDivertConfiguration()));
             }
          }
       }

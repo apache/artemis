@@ -72,7 +72,7 @@ public class ActiveMQImageExamplesTest {
       thread.start();
 
       // shut it down after it starts!
-      do  {
+      do {
          if (Main.getEmbeddedServer() != null) {
             if (Main.getEmbeddedServer().getActiveMQServer() != null) {
                if (Main.getEmbeddedServer().getActiveMQServer().getState() == ActiveMQServer.SERVER_STATE.STARTED) {

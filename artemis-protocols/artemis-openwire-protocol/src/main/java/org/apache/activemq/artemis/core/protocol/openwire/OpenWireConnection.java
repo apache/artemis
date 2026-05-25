@@ -1865,7 +1865,7 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
 
    }
 
-   private void   recoverOperationContext() {
+   private void recoverOperationContext() {
       server.getStorageManager().setContext(this.operationContext);
    }
 

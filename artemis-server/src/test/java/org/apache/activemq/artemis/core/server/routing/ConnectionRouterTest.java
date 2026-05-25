@@ -52,7 +52,7 @@ public class ConnectionRouterTest {
    @Test
    public void getTarget() throws Exception {
       Policy policy = null;
-      underTest  = new ConnectionRouter("test", KeyType.CLIENT_ID, "^.{3}",
+      underTest = new ConnectionRouter("test", KeyType.CLIENT_ID, "^.{3}",
                                         localTarget, "^FOO.*", null, null, policy);
 
       underTest.start();
@@ -64,7 +64,7 @@ public class ConnectionRouterTest {
    @Test
    public void getTargetWhenNotStarted() throws Exception {
       Policy policy = null;
-      underTest  = new ConnectionRouter("test", KeyType.CLIENT_ID, "^.{3}",
+      underTest = new ConnectionRouter("test", KeyType.CLIENT_ID, "^.{3}",
                                         localTarget, "^FOO.*", null, null, policy);
 
       assertEquals(TargetResult.REFUSED_UNAVAILABLE_RESULT, underTest.getTarget("BAR_EE"));
@@ -88,7 +88,7 @@ public class ConnectionRouterTest {
          }
       };
 
-      underTest  = new ConnectionRouter("test", KeyType.CLIENT_ID, "^.{3}",
+      underTest = new ConnectionRouter("test", KeyType.CLIENT_ID, "^.{3}",
                                         localTarget, "^FOO.*", null, null, policy);
       underTest.start();
 

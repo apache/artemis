@@ -123,7 +123,7 @@ public class Jmx {
    }
 
    private static long countNodes(Map<String, Pair<String, String>> networkTopology) {
-      final long count =  networkTopology.values().stream()
+      final long count = networkTopology.values().stream()
          .flatMap(pair -> Stream.of(pair.getA(), pair.getB()))
          .filter(primaryOrBackup -> primaryOrBackup != null && !primaryOrBackup.isEmpty())
          .count();

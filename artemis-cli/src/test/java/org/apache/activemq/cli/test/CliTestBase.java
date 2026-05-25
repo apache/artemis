@@ -82,7 +82,7 @@ public class CliTestBase extends ArtemisTestCase {
       File rootDirectory = new File(temporaryFolder, "broker");
       setupAuth(rootDirectory);
       Run.setEmbedded(true);
-      Artemis.main("create", rootDirectory.getAbsolutePath(), "--silent", "--no-fsync", "--no-autotune", "--no-web", "--require-login", "--disable-persistence");
+      Artemis.main("create", rootDirectory.getAbsolutePath(), "--silent", "--no-fsync", "--no-autotune", "--no-web", "--require-login", "--disable-persistence", "--user", "admin", "--password", "admin");
       System.setProperty("artemis.instance", rootDirectory.getAbsolutePath());
       return Artemis.internalExecute("run");
    }

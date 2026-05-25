@@ -150,6 +150,8 @@ public class NettyAcceptor extends AbstractAcceptor {
 
    private final boolean sslEnabled;
 
+   private final int sslHandshakeTimeout;
+
    private final boolean proxyProtocolEnabled;
 
    private final boolean useInvm;
@@ -300,6 +302,8 @@ public class NettyAcceptor extends AbstractAcceptor {
       this.metricsManager = metricsManager;
 
       sslEnabled = ConfigurationHelper.getBooleanProperty(TransportConstants.SSL_ENABLED_PROP_NAME, TransportConstants.DEFAULT_SSL_ENABLED, configuration);
+
+      sslHandshakeTimeout = ConfigurationHelper.getIntProperty(TransportConstants.SSL_HANDSHAKE_TIMEOUT, TransportConstants.DEFAULT_SSL_HANDSHAKE_TIMEOUT, configuration);
 
       proxyProtocolEnabled = ConfigurationHelper.getBooleanProperty(TransportConstants.PROXY_PROTOCOL_ENABLED_PROP_NAME, TransportConstants.DEFAULT_PROXY_PROTOCOL_ENABLED, configuration);
 
@@ -738,7 +742,9 @@ public class NettyAcceptor extends AbstractAcceptor {
          engine.setSSLParameters(sslParameters);
       }
 
-      return new SslHandler(engine);
+      SslHandler sslHandler = new SslHandler(engine);
+      sslHandler.setHandshakeTimeout(sslHandshakeTimeout, TimeUnit.SECONDS);
+      return sslHandler;
    }
 
    private SSLEngine loadJdkSslEngine(String peerHost, int peerPort) throws Exception {
@@ -757,6 +763,9 @@ public class NettyAcceptor extends AbstractAcceptor {
       }
       if (keyStorePath == null && keyStoreProvider == null) {
          throw new IllegalArgumentException("If \"" + TransportConstants.SSL_ENABLED_PROP_NAME + "\" is true then \"" + TransportConstants.KEYSTORE_PATH_PROP_NAME + "\" must be non-null unless an alternative \"" + TransportConstants.KEYSTORE_PROVIDER_PROP_NAME + "\" has been specified.");
+      }
+      if (sslHandshakeTimeout < 0) {
+         throw new IllegalArgumentException("\"" + TransportConstants.SSL_HANDSHAKE_TIMEOUT + "\" value must be >= 0");
       }
    }
 

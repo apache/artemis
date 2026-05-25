@@ -39,7 +39,7 @@ public class AutoCreateUtil {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-   public static  void autoCreateQueue(ClientSession session, SimpleString destAddress, SimpleString selectorString) throws ActiveMQException {
+   public static void autoCreateQueue(ClientSession session, SimpleString destAddress, SimpleString selectorString) throws ActiveMQException {
       AddressQuery response = session.addressQuery(destAddress);
       /*
        * The address query will send back exists=true even if the node only has a REMOTE binding for the destination.

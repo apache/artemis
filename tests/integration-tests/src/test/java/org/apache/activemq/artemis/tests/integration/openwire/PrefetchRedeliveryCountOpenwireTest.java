@@ -107,7 +107,7 @@ public class PrefetchRedeliveryCountOpenwireTest extends OpenWireTestBase {
       doTestConsumerSingleMessageLoop(false);
    }
 
-   public void  doTestConsumerSingleMessageLoop(boolean exclusive) throws Exception {
+   public void doTestConsumerSingleMessageLoop(boolean exclusive) throws Exception {
       Connection exConn = null;
 
       SimpleString durableQueue = SimpleString.of("exampleQueue");
@@ -273,7 +273,7 @@ public class PrefetchRedeliveryCountOpenwireTest extends OpenWireTestBase {
 
          final int batch = 100;
 
-         final  ExecutorService commitExecutor = Executors.newCachedThreadPool();
+         final ExecutorService commitExecutor = Executors.newCachedThreadPool();
 
          Runnable consumerTask = () -> {
 
@@ -323,7 +323,7 @@ public class PrefetchRedeliveryCountOpenwireTest extends OpenWireTestBase {
 
                   // manual ack in tx to setup server for rollback work on fail
                   Transport transport = ((ActiveMQConnection) consumerConnection).getTransport();
-                  TransactionId txId =  new LocalTransactionId(((ActiveMQConnection) consumerConnection).getConnectionInfo().getConnectionId(), receivedCount.get());
+                  TransactionId txId = new LocalTransactionId(((ActiveMQConnection) consumerConnection).getConnectionInfo().getConnectionId(), receivedCount.get());
                   TransactionInfo tx = new TransactionInfo(((ActiveMQConnection) consumerConnection).getConnectionInfo().getConnectionId(), txId, TransactionInfo.BEGIN);
                   transport.request(tx);
                   MessageAck ack = new MessageAck();
@@ -435,7 +435,7 @@ public class PrefetchRedeliveryCountOpenwireTest extends OpenWireTestBase {
 
          final int batch = 200;
 
-         final  ExecutorService commitExecutor = Executors.newCachedThreadPool();
+         final ExecutorService commitExecutor = Executors.newCachedThreadPool();
 
          Runnable consumerTask = () -> {
 

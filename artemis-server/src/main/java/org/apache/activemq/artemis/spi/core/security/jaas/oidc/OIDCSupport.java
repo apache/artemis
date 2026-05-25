@@ -25,6 +25,8 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -135,7 +137,42 @@ public class OIDCSupport {
       if (v instanceof String s) {
          vs = s;
       }
-      return vs == null ? null : vs.split("\\s*,\\s*");
+      String[] values = vs == null ? null : vs.split("\\s*,\\s*");
+      if (values != null) {
+         List<String> result = new ArrayList<>(values.length);
+         for (String value : values) {
+            if (value != null && !value.trim().isEmpty()) {
+               result.add(value);
+            }
+         }
+         return result.toArray(new String[0]);
+      }
+      return null;
+   }
+
+   public static Map<String, String> mappingOption(ConfigKey configKey, Map<String, ?> options) {
+      Object v = options != null ? options.get(configKey.name) : null;
+
+      String vs = configKey.defaultValue;
+      if (v instanceof String s) {
+         vs = s;
+      }
+      String[] values = vs == null ? null : vs.split("\\s*,\\s*");
+      if (values != null) {
+         Map<String, String> result = new HashMap<>();
+         for (String value : values) {
+            if (value != null && !value.trim().isEmpty() && value.contains("=")) {
+               String[] kv = value.split("=", 2);
+               String jwtRole = kv[0].trim();
+               String localRole = kv[1].trim();
+               if (!jwtRole.isEmpty() && !localRole.isEmpty()) {
+                  result.put(jwtRole, localRole);
+               }
+            }
+         }
+         return result;
+      }
+      return Collections.emptyMap();
    }
 
    /**
@@ -181,7 +218,7 @@ public class OIDCSupport {
 
       String[] segments = path.split("\\.");
       Map<?, ?> current = claims.getClaims();
-      for  (int i = 0; i < segments.length; i++) {
+      for (int i = 0; i < segments.length; i++) {
          String segment = segments[i];
          Object v = current.get(segment);
          if (i < segments.length - 1) {
@@ -390,6 +427,9 @@ public class OIDCSupport {
       // comma-separated required/expected audience ("aud" string/string[] claim)
       AUDIENCE("audience", null),
 
+      // comma-separated required claims (must exist, but validation is performed with other options, like "audience")
+      REQUIRED_CLAIMS("requiredClaims", "aud, iss, sub, azp, exp"),
+
       // comma-separated "json paths" to fields (could be nested using "." separator, but no complex array navigation.
       // just field1.field2.xxx) with the identity of the caller. For Keycloak it could be:
       // "preferred_username": from "profile" client scope  -> "User Attribute" mapper, "username" field
@@ -425,6 +465,12 @@ public class OIDCSupport {
       // different login module (like LDAP).
       // Each value referred will be added as JAAS subject "role" principal
       ROLES_PATHS("rolesPaths", null),
+
+      // comma-separated original-role=mapped-role list of role mapping.
+      // Without any mapping, roles found using `rolesPath` option are added as role principals to the JAAS subject
+      // However we can configure a literal mapping where JWT role names are mapped into other values.
+      // By default no mapping is performed
+      ROLE_MAPPING("roleMapping", null),
 
       // Whether the token should contain cnf/x5t#256 claim according to https://datatracker.ietf.org/doc/html/rfc8705
       // When enabled, the field contains a base64url(sha256(der(client certificate))) value which SHOULD

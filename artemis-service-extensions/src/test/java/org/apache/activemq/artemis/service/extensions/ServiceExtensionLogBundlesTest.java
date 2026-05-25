@@ -27,8 +27,8 @@ import org.junit.jupiter.api.Test;
 
 public class ServiceExtensionLogBundlesTest {
 
-   private static final String EXTENSIONS_LOGGER =  ActiveMQServiceExtensionLogger.class.getPackage().getName();
-   private static final String RECOVERY_LOGGER =  ActiveMQXARecoveryLogger.class.getPackage().getName();
+   private static final String EXTENSIONS_LOGGER = ActiveMQServiceExtensionLogger.class.getPackage().getName();
+   private static final String RECOVERY_LOGGER = ActiveMQXARecoveryLogger.class.getPackage().getName();
    private static LogLevel origExtensionsLoggerLevel;
    private static LogLevel origRecoveryLoggerLevel;
 

@@ -76,7 +76,7 @@ public class ProtonClientConnectionManager implements BaseConnectionLifeCycleLis
    public void connectionException(Object connectionID, ActiveMQException me) {
       RemotingConnection connection = connectionMap.get(connectionID);
       if (connection != null) {
-         logger.info("Connection {} exception: {}", connection.getRemoteAddress(),  me.getMessage());
+         logger.info("Connection {} exception: {}", connection.getRemoteAddress(), me.getMessage());
          connection.fail(me);
       } else {
          logger.error("Connection with id {} not found in connectionException", connectionID);

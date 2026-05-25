@@ -219,7 +219,7 @@ public class WildcardAddressFullTest extends ActiveMQTestBase {
    @Test
    public void testBlock() throws Exception {
       String addressToSend = "a.b.c.d.e.f.g";
-      String[]  queueToReceive = new String[]{"a.b.c.d.e.f.*", "a.b.c.d.e.*.*", "a.b.c.d.*.*.*", "a.b.c.*.*.*.*", "a.b.*.*.*.*.*", "a.*.*.*.*.*.*"};
+      String[] queueToReceive = new String[]{"a.b.c.d.e.f.*", "a.b.c.d.e.*.*", "a.b.c.d.*.*.*", "a.b.c.*.*.*.*", "a.b.*.*.*.*.*", "a.*.*.*.*.*.*"};
       String addressSettingsMatch = "a.#";
 
       ExecutorService executorService = Executors.newFixedThreadPool(1 + queueToReceive.length);

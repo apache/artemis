@@ -86,7 +86,7 @@ import org.junit.jupiter.api.Timeout;
  * [MQTT-3.2.2-20] The Server MUST NOT send this (i.e. User Property) property if it would increase the size of the CONNACK packet beyond the Maximum Packet Size specified by the Client.
  */
 
-public class ConnAckTests  extends MQTT5TestSupport {
+public class ConnAckTests extends MQTT5TestSupport {
 
    /*
     * [MQTT-3.1.3-6] A Server MAY allow a Client to supply a ClientID that has a length of zero bytes, however if it

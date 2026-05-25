@@ -62,7 +62,7 @@ public class ServerUtil {
    }
 
    public static Process startServer(String artemisInstance, String serverName, String uri, int timeout) throws Exception {
-      return  startServer(artemisInstance, serverName, uri, timeout, null);
+      return startServer(artemisInstance, serverName, uri, timeout, null);
    }
 
    public static Process startServer(String artemisInstance, String serverName, String uri, int timeout, File propertiesFile) throws Exception {

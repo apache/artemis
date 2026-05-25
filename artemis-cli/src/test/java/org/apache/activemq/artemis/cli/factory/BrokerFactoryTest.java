@@ -124,7 +124,7 @@ public class BrokerFactoryTest {
    public void testCreateBrokerConfigurationWithNewJaasDomainFromExistingJaasSecurityAndSystemProperties() throws Exception {
       setSystemProperty(securityJaasPropertyPrefix + "domain", "newTestDomain");
 
-      JaasSecurityDTO  security = new JaasSecurityDTO();
+      JaasSecurityDTO security = new JaasSecurityDTO();
       security.domain = "testDomain";
       security.certificateDomain = "testCertificateDomain";
       BrokerDTO broker = new BrokerDTO();
@@ -141,7 +141,7 @@ public class BrokerFactoryTest {
    public void testCreateBrokerConfigurationWithNewJaasCertificateDomainFromExistingJaasSecurityAndSystemProperties() throws Exception {
       setSystemProperty(securityJaasPropertyPrefix + "certificateDomain", "newTestCertificateDomain");
 
-      JaasSecurityDTO  security = new JaasSecurityDTO();
+      JaasSecurityDTO security = new JaasSecurityDTO();
       security.domain = "testDomain";
       security.certificateDomain = "testCertificateDomain";
       BrokerDTO broker = new BrokerDTO();
@@ -158,7 +158,7 @@ public class BrokerFactoryTest {
    public void testCreateBrokerConfigurationWithNewJaasDomainFromExistingSecurityManagerAndSystemProperties() throws Exception {
       setSystemProperty(securityJaasPropertyPrefix + "domain", "newTestDomain");
 
-      SecurityManagerDTO  security = new SecurityManagerDTO();
+      SecurityManagerDTO security = new SecurityManagerDTO();
       security.className = "testClass";
       BrokerDTO broker = new BrokerDTO();
       broker.security = security;
@@ -174,7 +174,7 @@ public class BrokerFactoryTest {
    public void testCreateBrokerConfigurationWithNewJaasCertificateDomainFromExistingSecurityManagerAndSystemProperties() throws Exception {
       setSystemProperty(securityJaasPropertyPrefix + "certificateDomain", "newTestCertificateDomain");
 
-      SecurityManagerDTO  security = new SecurityManagerDTO();
+      SecurityManagerDTO security = new SecurityManagerDTO();
       security.className = "testClass";
       BrokerDTO broker = new BrokerDTO();
       broker.security = security;
@@ -191,7 +191,7 @@ public class BrokerFactoryTest {
       setSystemProperty(securityJaasPropertyPrefix + "domain", "newTestDomain");
       setSystemProperty(securityJaasPropertyPrefix + "certificateDomain", "newTestCertificateDomain");
 
-      JaasSecurityDTO  security = new JaasSecurityDTO();
+      JaasSecurityDTO security = new JaasSecurityDTO();
       security.domain = "testDomain";
       security.certificateDomain = "testCertificateDomain";
       BrokerDTO broker = new BrokerDTO();
@@ -209,7 +209,7 @@ public class BrokerFactoryTest {
       setSystemProperty(securityJaasPropertyPrefix + "domain", "newTestDomain");
       setSystemProperty(securityJaasPropertyPrefix + "certificateDomain", "newTestCertificateDomain");
 
-      SecurityManagerDTO  security = new SecurityManagerDTO();
+      SecurityManagerDTO security = new SecurityManagerDTO();
       security.className = "testClassName";
       BrokerDTO broker = new BrokerDTO();
       broker.security = security;
@@ -273,7 +273,7 @@ public class BrokerFactoryTest {
    public void testCreateBrokerConfigurationWithNewSecurityManagerClassNameFromExistingSecurityManagerAndSystemProperties() throws Exception {
       setSystemProperty(securityManagerPropertyPrefix + "className", "newTestClassName");
 
-      SecurityManagerDTO  security = new SecurityManagerDTO();
+      SecurityManagerDTO security = new SecurityManagerDTO();
       security.className = "testClassName";
       security.properties = new ArrayList<>(List.of(
          new PropertyDTO("testKey1", "testValue1"),
@@ -294,7 +294,7 @@ public class BrokerFactoryTest {
       setSystemProperty(securityManagerPropertyPrefix + "properties.testKey1", "newTestValue1");
       setSystemProperty(securityManagerPropertyPrefix + "properties.newTestKey2", "newTestValue2");
 
-      SecurityManagerDTO  security = new SecurityManagerDTO();
+      SecurityManagerDTO security = new SecurityManagerDTO();
       security.className = "testClassName";
       security.properties = new ArrayList<>(List.of(
          new PropertyDTO("testKey1", "testValue1"),
@@ -317,7 +317,7 @@ public class BrokerFactoryTest {
       setSystemProperty(securityManagerPropertyPrefix + "properties.testKey1", "newTestValue1");
       setSystemProperty(securityManagerPropertyPrefix + "properties.newTestKey2", "newTestValue2");
 
-      SecurityManagerDTO  security = new SecurityManagerDTO();
+      SecurityManagerDTO security = new SecurityManagerDTO();
       security.className = "testClassName";
       security.properties = new ArrayList<>(List.of(
          new PropertyDTO("testKey1", "testValue1"),
@@ -338,7 +338,7 @@ public class BrokerFactoryTest {
    public void testCreateBrokerConfigurationWithNewSecurityManagerClassNameFromExistingJaasSecurityAndSystemProperties() throws Exception {
       setSystemProperty(securityManagerPropertyPrefix + "className", "newTestClassName");
 
-      JaasSecurityDTO  security = new JaasSecurityDTO();
+      JaasSecurityDTO security = new JaasSecurityDTO();
       security.domain = "testDomain";
       security.certificateDomain = "testCertificateDomain";
       BrokerDTO broker = new BrokerDTO();
@@ -356,7 +356,7 @@ public class BrokerFactoryTest {
       setSystemProperty(securityManagerPropertyPrefix + "properties.testKey1", "newTestValue1");
       setSystemProperty(securityManagerPropertyPrefix + "properties.newTestKey2", "newTestValue2");
 
-      JaasSecurityDTO  security = new JaasSecurityDTO();
+      JaasSecurityDTO security = new JaasSecurityDTO();
       security.domain = "testDomain";
       security.certificateDomain = "testCertificateDomain";
       BrokerDTO broker = new BrokerDTO();
@@ -375,7 +375,7 @@ public class BrokerFactoryTest {
       setSystemProperty(securityManagerPropertyPrefix + "properties.testKey1", "newTestValue1");
       setSystemProperty(securityManagerPropertyPrefix + "properties.newTestKey2", "newTestValue2");
 
-      JaasSecurityDTO  security = new JaasSecurityDTO();
+      JaasSecurityDTO security = new JaasSecurityDTO();
       security.domain = "testDomain";
       security.certificateDomain = "testCertificateDomain";
       BrokerDTO broker = new BrokerDTO();

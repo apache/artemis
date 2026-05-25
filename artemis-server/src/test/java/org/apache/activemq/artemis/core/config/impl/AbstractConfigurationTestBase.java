@@ -471,14 +471,14 @@ public abstract class AbstractConfigurationTestBase extends ServerTestBase {
 
       assertEquals(2, configuration.getConnectionRouters().size());
 
-      ConnectionRouterConfiguration autoShardConfig =  configuration.getConnectionRouters().stream().filter(
+      ConnectionRouterConfiguration autoShardConfig = configuration.getConnectionRouters().stream().filter(
          connectionRouterConfig -> "autoShard".equals(connectionRouterConfig.getName())).findFirst().get();
       assertEquals(KeyType.CLIENT_ID, autoShardConfig.getKeyType());
       assertEquals("2", autoShardConfig.getPolicyConfiguration().getProperties().get(ConsistentHashModuloPolicy.MODULO));
       assertNull(autoShardConfig.getCacheConfiguration());
       assertNull(autoShardConfig.getPoolConfiguration());
 
-      ConnectionRouterConfiguration symmetricRedirectConfig =  configuration.getConnectionRouters().stream().filter(
+      ConnectionRouterConfiguration symmetricRedirectConfig = configuration.getConnectionRouters().stream().filter(
          connectionRouterConfig -> "symmetricRedirect".equals(connectionRouterConfig.getName())).findFirst().get();
       assertEquals(KeyType.CLIENT_ID, symmetricRedirectConfig.getKeyType());
       assertEquals("^.{3}", symmetricRedirectConfig.getKeyFilter());

@@ -873,7 +873,7 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
                                                   PagingStoreImplTest.destinationTestName,
                                                   new AddressSettings()
                                                      .setAddressFullMessagePolicy(AddressFullMessagePolicy.PAGE),
-                                                  orderedExecutorFactory.getExecutor(),  true);
+                                                  orderedExecutorFactory.getExecutor(), true);
 
       store.start();
       try (AssertionLoggerHandler loggerHandler = new AssertionLoggerHandler()) {
@@ -894,7 +894,7 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
                                                   PagingStoreImplTest.destinationTestName,
                                                   new AddressSettings()
                                                      .setAddressFullMessagePolicy(AddressFullMessagePolicy.PAGE),
-                                                  orderedExecutorFactory.getExecutor(),  true);
+                                                  orderedExecutorFactory.getExecutor(), true);
       store.start();
       try (AssertionLoggerHandler loggerHandler = new AssertionLoggerHandler()) {
          store.startPaging();
@@ -914,7 +914,7 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
                                                   PagingStoreImplTest.destinationTestName,
                                                   new AddressSettings()
                                                      .setAddressFullMessagePolicy(AddressFullMessagePolicy.BLOCK),
-                                                  orderedExecutorFactory.getExecutor(),  true);
+                                                  orderedExecutorFactory.getExecutor(), true);
 
       store.start();
       try {
@@ -1033,7 +1033,7 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
 
       store.start();
       try {
-         final  AtomicInteger calls = new AtomicInteger();
+         final AtomicInteger calls = new AtomicInteger();
          final Runnable trackMemoryChecks = calls::incrementAndGet;
          store.applySetting(new AddressSettings().setMaxSizeBytes(1000).setAddressFullMessagePolicy(AddressFullMessagePolicy.BLOCK));
          store.addSize(100);

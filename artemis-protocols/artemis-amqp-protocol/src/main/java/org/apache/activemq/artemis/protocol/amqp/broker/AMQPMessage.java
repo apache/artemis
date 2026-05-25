@@ -1975,7 +1975,7 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
 
          rc.put(CompositeDataConstants.TYPE, type);
 
-         if (m.isLargeMessage())  {
+         if (m.isLargeMessage()) {
             rc.put(CompositeDataConstants.TEXT_BODY, "... Large message ...");
          } else {
             Object amqpValue;

@@ -200,7 +200,7 @@ public class RollingUpgradeTest extends RealServerTestBase {
       assumeTrue(distribution != null);
 
       String distributionUpgrading = TestParameters.testProperty("ROLLED", "DISTRIBUTION_UPGRADE", HelperBase.getHome(ARTEMIS_HOME_PROPERTY).getAbsolutePath());
-      testRollUpgrade(new File(distribution),  new File(distributionUpgrading));
+      testRollUpgrade(new File(distribution), new File(distributionUpgrading));
    }
 
    private void testRollUpgrade(File artemisHome, File upgradingArtemisHome) throws Exception {

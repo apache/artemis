@@ -51,6 +51,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -133,7 +134,8 @@ public class OIDCLoginModule implements AuditLoginModule {
     * Set of required JWT claims that should be present (with any value - to be validated by different means)
     * in each processed JWT token.
     */
-   private final Set<String> requiredClaims;
+   private Set<String> requiredClaims;
+   private boolean requiredClaimsConfigured = false;
 
    /**
     * "JSON paths" to claims (possibly nested) which should point to JSON strings or JSON string arrays, which
@@ -146,6 +148,11 @@ public class OIDCLoginModule implements AuditLoginModule {
     * contain user "roles" (or "groups")
     */
    private String[] rolesPaths;
+
+   /**
+    * Mapping for roles, where a role taken from JWT token can be mapped (renamed) to <em>local</em> role.
+    */
+   private Map<String, String> roleMapping = new HashMap<>();
 
    /**
     * <p>Flag which enforces OAuth 2.0 Mutual-TLS Client Authentication and Certificate-Bound Access Tokens
@@ -194,6 +201,7 @@ public class OIDCLoginModule implements AuditLoginModule {
     */
    OIDCLoginModule(Set<String> requiredClaims) {
       this.requiredClaims = requiredClaims == null ? defaultRequiredClaims : requiredClaims;
+      this.requiredClaimsConfigured = true;
    }
 
    @Override
@@ -223,8 +231,13 @@ public class OIDCLoginModule implements AuditLoginModule {
       Set<String> audience = audiences == null ? null : new HashSet<>(Arrays.asList(audiences));
       int maxClockSkew = OIDCSupport.intOption(ConfigKey.MAX_CLOCK_SKEW_SECONDS, options);
 
+      String[] requiredClaimsArray = OIDCSupport.stringArrayOption(ConfigKey.REQUIRED_CLAIMS, options);
+      if (!requiredClaimsConfigured && requiredClaimsArray != null) {
+         this.requiredClaims = new HashSet<>(Arrays.asList(requiredClaimsArray));
+      }
+
       DefaultJWTClaimsVerifier<JWKSecurityContext> claimsVerifier = new DefaultJWTClaimsVerifier<>(
-            audience, exactMatchClaims, requiredClaims, prohibitedClaims
+            audience, exactMatchClaims, this.requiredClaims, prohibitedClaims
       );
       claimsVerifier.setMaxClockSkew(maxClockSkew);
 
@@ -236,6 +249,7 @@ public class OIDCLoginModule implements AuditLoginModule {
       // configuration for what to extract from the token
       identityPaths = OIDCSupport.stringArrayOption(ConfigKey.IDENTITY_PATHS, options);
       rolesPaths = OIDCSupport.stringArrayOption(ConfigKey.ROLES_PATHS, options);
+      roleMapping = OIDCSupport.mappingOption(ConfigKey.ROLE_MAPPING, options);
    }
 
    @Override
@@ -366,7 +380,14 @@ public class OIDCLoginModule implements AuditLoginModule {
                   if (!roles.valid()) {
                      throw new LoginException("Can't determine user role from JWT using \"" + rolePath + "\" path");
                   }
-                  rolePrincipalNames.addAll(Arrays.asList(roles.value()));
+                  String[] tab = roles.value();
+                  for (String role : tab) {
+                     String mapped = roleMapping.get(role);
+                     if (mapped == null) {
+                        mapped = role;
+                     }
+                     rolePrincipalNames.add(mapped);
+                  }
                }
                if (debug) {
                   logger.debug("Found roles: {}", String.join(", ", rolePrincipalNames));

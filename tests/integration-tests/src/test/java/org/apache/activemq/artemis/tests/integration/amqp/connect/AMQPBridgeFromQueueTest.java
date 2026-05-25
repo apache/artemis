@@ -477,7 +477,7 @@ public class AMQPBridgeFromQueueTest extends AmqpClientTestSupport {
 
          try (Connection connection = factory.createConnection()) {
             final Session session = connection.createSession(Session.AUTO_ACKNOWLEDGE);
-            final Queue queue  = session.createQueue(getTestName());
+            final Queue queue = session.createQueue(getTestName());
 
             session.createConsumer(queue, "color='red'"); // new receiver for this selector
 
@@ -571,7 +571,7 @@ public class AMQPBridgeFromQueueTest extends AmqpClientTestSupport {
 
          try (Connection connection = factory.createConnection()) {
             final Session session = connection.createSession(Session.AUTO_ACKNOWLEDGE);
-            final Queue queue  = session.createQueue(getTestName());
+            final Queue queue = session.createQueue(getTestName());
 
             session.createConsumer(queue, "color='red'"); // Consumer filter should be ignored
 
@@ -635,7 +635,7 @@ public class AMQPBridgeFromQueueTest extends AmqpClientTestSupport {
 
          try (Connection connection = factory.createConnection()) {
             final Session session = connection.createSession(Session.AUTO_ACKNOWLEDGE);
-            final Queue queue  = session.createQueue(getTestName());
+            final Queue queue = session.createQueue(getTestName());
 
             session.createConsumer(queue, "color='red'"); // Consumer filter should be ignored
 
@@ -1179,7 +1179,7 @@ public class AMQPBridgeFromQueueTest extends AmqpClientTestSupport {
 
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
          peer.expectAttach().ofReceiver()
-                            .withTarget().withAddress(getTestName() +  "::test.queue").also()
+                            .withTarget().withAddress(getTestName() + "::test.queue").also()
                             .withSource().withAddress("test.queue")
                                          .withFilter(nullValue()).also()
                             .withName(allOf(containsString(getTestName()),

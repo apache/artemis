@@ -502,7 +502,7 @@ public class SizeAwareMetricTest {
 
       metric.setOverCallback(() -> over.set(true));
       metric.setOnSizeCallback(metricMain::addSize);
-      for (int i = 0; i  < 10; i++) {
+      for (int i = 0; i < 10; i++) {
          metric.addSize(10, true);
       }
 
@@ -511,7 +511,7 @@ public class SizeAwareMetricTest {
       assertEquals(0, metricMain.getElements());
       assertEquals(0, metric.getElements());
 
-      for (int i = 0; i  < 10; i++) {
+      for (int i = 0; i < 10; i++) {
          metric.addSize(10, false);
       }
 

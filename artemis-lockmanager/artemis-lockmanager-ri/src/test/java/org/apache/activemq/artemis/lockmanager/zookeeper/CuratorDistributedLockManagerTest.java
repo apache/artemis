@@ -120,7 +120,7 @@ public class CuratorDistributedLockManagerTest extends ArtemisTestCase {
       assertTrue(manager.getMutableLong("journal-identity-000-111").compareAndSet(0, 1));
 
       CuratorFramework curatorFramework = ((CuratorDistributedLockManager)manager).getCurator();
-      List<String> entries =  new LinkedList<>();
+      List<String> entries = new LinkedList<>();
       dumpZK(curatorFramework.getZookeeperClient().getZooKeeper(), "/", entries);
 
       assertTrue(entries.get(2).contains("activation-sequence"));

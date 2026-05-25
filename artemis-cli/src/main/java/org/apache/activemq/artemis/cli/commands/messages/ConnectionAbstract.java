@@ -150,7 +150,9 @@ public class ConnectionAbstract extends ConnectionConfigurationAbtract {
             getActionContext().err.println("Connection failed::" + e.getMessage());
          }
          user = inputUser(user);
-         password = inputPassword(password);
+         if (!isSilentInput()) {
+            password = inputPassword(password);
+         }
          cf = new ActiveMQConnectionFactory(brokerURL, user, password);
          if (clientID != null) {
             cf.setClientID(clientID);
@@ -167,7 +169,9 @@ public class ConnectionAbstract extends ConnectionConfigurationAbtract {
          }
          brokerURL = inputBrokerURL(brokerURL);
          user = inputUser(user);
-         password = inputPassword(password);
+         if (!isSilentInput()) {
+            password = inputPassword(password);
+         }
          cf = new ActiveMQConnectionFactory(brokerURL, user, password);
          if (clientID != null) {
             cf.setClientID(clientID);

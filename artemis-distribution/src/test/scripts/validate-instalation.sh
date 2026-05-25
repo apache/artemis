@@ -47,7 +47,7 @@ echo artemis instance is $ARTEMIS_HOME
 
 
 cd "$ARTEMIS_HOME/bin"
-./artemis create --silent --force --role "$ARTEMIS_ROLE" "$ARTEMIS_INSTANCE"
+./artemis create --silent --force --role "$ARTEMIS_ROLE" "$ARTEMIS_INSTANCE" --user admin --password admin
 
 cd "$ARTEMIS_INSTANCE/bin"
 pwd

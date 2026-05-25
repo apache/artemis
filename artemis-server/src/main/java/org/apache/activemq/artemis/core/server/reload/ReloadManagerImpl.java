@@ -101,7 +101,7 @@ public class ReloadManagerImpl extends ActiveMQScheduledComponent implements Rel
 
       private final List<ReloadCallback> callbacks = new LinkedList<>();
 
-      ReloadRegistry(URL uri)  {
+      ReloadRegistry(URL uri) {
          try {
             file = new File(uri.toURI()); // artemis-features will have this as "file:etc/artemis.xml"
                                           // so, we need to make sure we catch the exception and try

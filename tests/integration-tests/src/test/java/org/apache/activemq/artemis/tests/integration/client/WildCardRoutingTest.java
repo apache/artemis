@@ -16,7 +16,10 @@
  */
 package org.apache.activemq.artemis.tests.integration.client;
 
+import java.lang.invoke.MethodHandles;
+
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
+import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.client.ClientConsumer;
 import org.apache.activemq.artemis.api.core.client.ClientMessage;
@@ -27,15 +30,23 @@ import org.apache.activemq.artemis.api.core.client.ServerLocator;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ActiveMQServers;
+import org.apache.activemq.artemis.core.server.impl.AddressInfo;
+import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class WildCardRoutingTest extends ActiveMQTestBase {
+
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private ActiveMQServer server;
    private ServerLocator locator;
@@ -754,6 +765,27 @@ public class WildCardRoutingTest extends ActiveMQTestBase {
       assertEquals(1, server.getPostOffice().getBindingsForAddress(addressAC).getBindings().size());
       assertEquals(0, server.getPostOffice().getBindingsForAddress(address).getBindings().size());
    }
+
+
+   @Test
+   public void testInvalidWildcard() throws Exception {
+      String wildcardAddress = "a.*.*.*.*.*.*";
+      server.addAddressInfo(new AddressInfo(wildcardAddress).addRoutingType(RoutingType.ANYCAST));
+
+      try (AssertionLoggerHandler loggerHandler = new AssertionLoggerHandler(true)) {
+         assertThrows(Exception.class, () -> {
+            try {
+               ClientProducer producer = clientSession.createProducer(wildcardAddress);
+               producer.send(clientSession.createMessage(true));
+            } catch (Exception e) {
+               logger.warn(e.getMessage(), e);
+               throw e;
+            }
+         });
+         assertTrue(loggerHandler.findText("AMQ229260"));
+      }
+   }
+
 
    @Override
    @BeforeEach

@@ -41,7 +41,7 @@ public class RemoveDirectoryExtension implements AfterEachCallback, Extension {
 
    @Override
    public void afterEach(ExtensionContext context) throws Exception {
-      logger.trace("Removing directory: {}",  directoryPath);
+      logger.trace("Removing directory: {}", directoryPath);
 
       FileUtil.deleteDirectory(new File(directoryPath));
    }

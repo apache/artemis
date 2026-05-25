@@ -81,7 +81,7 @@ public class OpenWireSharedStoreFailoverSmokeTest extends SmokeTestBase {
       deleteDirectory(serverLocation);
 
       HelperCreate cliCreateServer = helperCreate();
-      cliCreateServer.setUseAIO(false).setAllowAnonymous(true).setNoWeb(true).setArtemisInstance(serverLocation).setSharedStore(true).setClustered(true).setStaticCluster("tcp://localhost:61617").setDataFolder(sharedDataPath).setFailoverOnShutdown(true).setMessageLoadBalancing("OFF");
+      cliCreateServer.setUseAIO(false).setAllowAnonymous(true).setNoWeb(true).setArtemisInstance(serverLocation).setSharedStore(true).setClustered(true).setStaticCluster("tcp://localhost:61617").setDataFolder(sharedDataPath).setFailoverOnShutdown(true).setMessageLoadBalancing("OFF").setArgs("--cluster-user", "my-cluster-user", "--cluster-password", "my-cluster-password");
 
       cliCreateServer.createServer();
    }
@@ -91,7 +91,7 @@ public class OpenWireSharedStoreFailoverSmokeTest extends SmokeTestBase {
       deleteDirectory(serverLocation);
 
       HelperCreate cliCreateServer = helperCreate();
-      cliCreateServer.setUseAIO(false).setAllowAnonymous(true).setNoWeb(true).setArtemisInstance(serverLocation).setSharedStore(true).setBackup(true).setClustered(true).setStaticCluster("tcp://localhost:61616").setPortOffset(1).setDataFolder(sharedDataPath).setMessageLoadBalancing("OFF");
+      cliCreateServer.setUseAIO(false).setAllowAnonymous(true).setNoWeb(true).setArtemisInstance(serverLocation).setSharedStore(true).setBackup(true).setClustered(true).setStaticCluster("tcp://localhost:61616").setPortOffset(1).setDataFolder(sharedDataPath).setMessageLoadBalancing("OFF").setArgs("--cluster-user", "my-cluster-user", "--cluster-password", "my-cluster-password");
       cliCreateServer.createServer();
    }
 

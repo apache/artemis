@@ -20,14 +20,21 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Map;
 
+import org.apache.activemq.artemis.cli.commands.util.input.InputReader;
 import org.apache.activemq.artemis.tests.extensions.TargetTempDirFactory;
+import org.apache.activemq.artemis.utils.DefaultSensitiveStringCodec;
+import org.apache.activemq.artemis.utils.PasswordMaskingUtil;
 import org.apache.activemq.artemis.utils.RandomUtil;
+import org.apache.activemq.artemis.utils.SensitiveDataCodec;
 import org.apache.activemq.cli.test.TestActionContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.Mockito;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -83,5 +90,99 @@ public class CreateTestIndividualSettings {
       } catch (IOException e) {
       }
       return false;
+   }
+
+   @Test
+   public void testMaskClusterPasswordUserInput() throws Exception {
+      final String password = RandomUtil.randomUUIDString();
+
+      Create c = new Create();
+      Create.enableInput();
+      try {
+         InputReader inputReader = Mockito.mock(InputReader.class);
+         Mockito.when(inputReader.readPassword(Mockito.anyString())).thenReturn(password);
+         c.setLineReader(inputReader);
+
+         assertEquals(PasswordMaskingUtil.wrap(PasswordMaskingUtil.getDefaultCodec().encode(password)), c.getClusterPassword());
+      } finally {
+         Create.disableInput();
+      }
+   }
+
+   @Test
+   public void testMaskClusterPasswordSwitch() throws Exception {
+      final String password = RandomUtil.randomUUIDString();
+
+      Create c = new Create();
+      c.setClusterPassword(password);
+      assertEquals(PasswordMaskingUtil.wrap(PasswordMaskingUtil.getDefaultCodec().encode(password)), c.getClusterPassword());
+   }
+
+   @Test
+   public void testMaskClusterPasswordAlreadyEncoded() throws Exception {
+      final String password = RandomUtil.randomUUIDString();
+      final String encodedPassword = PasswordMaskingUtil.wrap(PasswordMaskingUtil.getDefaultCodec().encode(password));
+
+      Create c = new Create();
+      c.setClusterPassword(encodedPassword);
+      assertEquals(encodedPassword, c.getClusterPassword());
+   }
+
+   @Test
+   public void testMaskClusterPasswordMultipleGets() throws Exception {
+      final String password = RandomUtil.randomUUIDString();
+      final String encodedPassword = PasswordMaskingUtil.wrap(PasswordMaskingUtil.getDefaultCodec().encode(password));
+
+      Create c = new Create();
+      c.setClusterPassword(password);
+      assertEquals(encodedPassword, c.getClusterPassword());
+      assertEquals(encodedPassword, c.getClusterPassword());
+   }
+
+   @Test
+   public void testMaskAdminPasswordUserInput() throws Exception {
+      final String password = RandomUtil.randomUUIDString();
+
+      Create c = new Create();
+      Create.enableInput();
+      try {
+         InputReader inputReader = Mockito.mock(InputReader.class);
+         Mockito.when(inputReader.readPassword(Mockito.anyString())).thenReturn(password);
+         c.setLineReader(inputReader);
+
+         assertTrue(PasswordMaskingUtil.getDefaultCodec(Map.of(DefaultSensitiveStringCodec.ALGORITHM, DefaultSensitiveStringCodec.ONE_WAY)).verify(password.toCharArray(), PasswordMaskingUtil.unwrap(c.getPassword())));
+      } finally {
+         Create.disableInput();
+      }
+   }
+
+   @Test
+   public void testMaskAdminPasswordSwitch() throws Exception {
+      final String password = RandomUtil.randomUUIDString();
+
+      Create c = new Create();
+      c.setPassword(password);
+      assertTrue(PasswordMaskingUtil.getDefaultCodec(Map.of(DefaultSensitiveStringCodec.ALGORITHM, DefaultSensitiveStringCodec.ONE_WAY)).verify(password.toCharArray(), PasswordMaskingUtil.unwrap(c.getPassword())));
+   }
+
+   @Test
+   public void testMaskAdminPasswordAlreadyHashed() throws Exception {
+      final String password = RandomUtil.randomUUIDString();
+      final String hashedPassword = PasswordMaskingUtil.getHashProcessor().hash(password);
+
+      Create c = new Create();
+      c.setPassword(hashedPassword);
+      assertEquals(hashedPassword, c.getPassword());
+   }
+
+   @Test
+   public void testMaskAdminPasswordMultipleGets() throws Exception {
+      final String password = RandomUtil.randomUUIDString();
+      final SensitiveDataCodec<String> codec = PasswordMaskingUtil.getDefaultCodec(Map.of(DefaultSensitiveStringCodec.ALGORITHM, DefaultSensitiveStringCodec.ONE_WAY));
+
+      Create c = new Create();
+      c.setPassword(password);
+      assertTrue(codec.verify(password.toCharArray(), PasswordMaskingUtil.unwrap(c.getPassword())));
+      assertTrue(codec.verify(password.toCharArray(), PasswordMaskingUtil.unwrap(c.getPassword())));
    }
 }

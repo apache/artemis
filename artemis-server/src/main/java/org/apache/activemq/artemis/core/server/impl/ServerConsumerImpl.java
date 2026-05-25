@@ -682,7 +682,7 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
     * messages to be delivered.
     */
    @Override
-   public void forceDelivery(final long sequence)  {
+   public void forceDelivery(final long sequence) {
       forceDelivery(sequence, () -> {
          Message forcedDeliveryMessage = new CoreMessage(storageManager.generateID(), 50)
             .putLongProperty(ClientConsumerImpl.FORCED_DELIVERY_MESSAGE, sequence)
@@ -1674,7 +1674,7 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
 
       private volatile int messagesAcknowledgedAwaitingCommit = 0;
 
-      private static final AtomicLongFieldUpdater<ServerConsumerMetrics>messagesDeliveredSizeUpdater = AtomicLongFieldUpdater.newUpdater(ServerConsumerMetrics.class, "messagesDeliveredSize");
+      private static final AtomicLongFieldUpdater<ServerConsumerMetrics> messagesDeliveredSizeUpdater = AtomicLongFieldUpdater.newUpdater(ServerConsumerMetrics.class, "messagesDeliveredSize");
 
       private volatile long messagesDeliveredSize = 0;
 
@@ -1682,7 +1682,7 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
 
       private volatile long lastAcknowledgedTime = 0;
 
-      private static final AtomicLongFieldUpdater<ServerConsumerMetrics>messagesDeliveredUpdater = AtomicLongFieldUpdater.newUpdater(ServerConsumerMetrics.class, "messagesDelivered");
+      private static final AtomicLongFieldUpdater<ServerConsumerMetrics> messagesDeliveredUpdater = AtomicLongFieldUpdater.newUpdater(ServerConsumerMetrics.class, "messagesDelivered");
 
       private volatile long messagesDelivered = 0;
 

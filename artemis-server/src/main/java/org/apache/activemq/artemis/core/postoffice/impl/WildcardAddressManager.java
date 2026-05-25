@@ -22,6 +22,7 @@ import org.apache.activemq.artemis.core.persistence.StorageManager;
 import org.apache.activemq.artemis.core.postoffice.Binding;
 import org.apache.activemq.artemis.core.postoffice.Bindings;
 import org.apache.activemq.artemis.core.postoffice.BindingsFactory;
+import org.apache.activemq.artemis.core.server.ActiveMQMessageBundle;
 import org.apache.activemq.artemis.core.server.impl.AddressInfo;
 import org.apache.activemq.artemis.core.server.metrics.MetricsManager;
 import org.apache.activemq.artemis.core.transaction.Transaction;
@@ -45,7 +46,9 @@ public class WildcardAddressManager extends SimpleAddressManager {
    // won't contain a wildcard because we don't ever route to a wildcards at this time
    @Override
    public Bindings getBindingsForRoutingAddress(final SimpleString address) throws Exception {
-      assert !wildcardConfiguration.isWild(address);
+      if (wildcardConfiguration.isWild(address)) {
+         throw ActiveMQMessageBundle.BUNDLE.wildcardOnProducerNotSupported(String.valueOf(address));
+      }
 
       Bindings bindings = super.getBindingsForRoutingAddress(address);
 

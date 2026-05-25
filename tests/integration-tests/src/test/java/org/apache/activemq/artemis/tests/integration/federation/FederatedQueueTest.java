@@ -592,7 +592,7 @@ public class FederatedQueueTest extends FederatedTestBase {
       Connection connection1 = cf1.createConnection();
       connection1.start();
       Session session1 = connection1.createSession();
-      Queue queue1 =  session1.createQueue(queueName);
+      Queue queue1 = session1.createQueue(queueName);
       MessageProducer producer = session1.createProducer(queue1);
       producer.send(session1.createTextMessage("hello"));
 
@@ -600,7 +600,7 @@ public class FederatedQueueTest extends FederatedTestBase {
       Connection connection0 = cf0.createConnection();
       connection0.start();
       Session session0 = connection0.createSession();
-      Queue queue0 =  session0.createQueue(queueName);
+      Queue queue0 = session0.createQueue(queueName);
       MessageConsumer consumer0 = session0.createConsumer(queue0);
 
       assertNotNull(consumer0.receive(1000));
@@ -621,7 +621,7 @@ public class FederatedQueueTest extends FederatedTestBase {
       connection1 = cf1.createConnection();
       connection1.start();
       session1 = connection1.createSession();
-      queue1 =  session1.createQueue(queueName);
+      queue1 = session1.createQueue(queueName);
       producer = session1.createProducer(queue1);
       producer.send(session1.createTextMessage("hello"));
 
@@ -654,7 +654,7 @@ public class FederatedQueueTest extends FederatedTestBase {
       Connection connection1 = cf1.createConnection();
       connection1.start();
       Session session1 = connection1.createSession();
-      Queue queue1 =  session1.createQueue(queueName);
+      Queue queue1 = session1.createQueue(queueName);
       MessageProducer producer = session1.createProducer(queue1);
       producer.send(session1.createTextMessage("hello"));
 
@@ -662,7 +662,7 @@ public class FederatedQueueTest extends FederatedTestBase {
       Connection connection0 = cf0.createConnection();
       connection0.start();
       Session session0 = connection0.createSession();
-      Queue queue0 =  session0.createQueue(queueName);
+      Queue queue0 = session0.createQueue(queueName);
       MessageConsumer consumer0 = session0.createConsumer(queue0);
 
       assertNotNull(consumer0.receive(1000));
@@ -683,7 +683,7 @@ public class FederatedQueueTest extends FederatedTestBase {
       connection0 = getCF(0).createConnection();
       connection0.start();
       session0 = connection0.createSession();
-      queue0 =  session0.createQueue(queueName);
+      queue0 = session0.createQueue(queueName);
       consumer0 = session0.createConsumer(queue0);
       producer.send(session1.createTextMessage("hello"));
 

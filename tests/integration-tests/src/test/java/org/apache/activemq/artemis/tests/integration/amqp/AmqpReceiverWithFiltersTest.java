@@ -157,7 +157,7 @@ public class AmqpReceiverWithFiltersTest extends AmqpClientTestSupport {
          AmqpReceiver receiver = session.createReceiver(getQueueName(), "myNewID < " + (NUM_MESSAGES / 2));
          List<AmqpMessage> messages = new ArrayList<>(NUM_MESSAGES);
          receiver.flow((NUM_MESSAGES + 2) * 2);
-         for (int i = 0; i < NUM_MESSAGES  / 2; ++i) {
+         for (int i = 0; i < NUM_MESSAGES / 2; ++i) {
             AmqpMessage message = receiver.receive(5, TimeUnit.SECONDS);
             assertNotNull(message);
             logger.debug("Read message: {}", message.getApplicationProperty("myNewID"));
