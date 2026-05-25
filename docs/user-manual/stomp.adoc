@@ -98,11 +98,11 @@ For example, broker.xml could use the following:
    <address-setting match="queue/#">
       <default-address-routing-type>ANYCAST</default-address-routing-type>
       <default-queue-routing-type>ANYCAST</default-queue-routing-type>
-   </address>
+   </address-setting>
    <address-setting match="topic/#">
       <default-address-routing-type>MULTICAST</default-address-routing-type>
       <default-queue-routing-type>MULTICAST</default-queue-routing-type>
-   </address>
+   </address-setting>
 </address-settings>
 <wildcard-addresses>
    <delimiter>/</delimiter>
