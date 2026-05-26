@@ -1068,7 +1068,13 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
    @Override
    public boolean isAddressBound(final SimpleString address) throws Exception {
       Collection<Binding> bindings = getDirectBindings(address);
-      return bindings != null && !bindings.isEmpty();
+      PagingStore pagingStore = pagingManager.getPageStore(address);
+      return (bindings != null && !bindings.isEmpty()) ||
+         // When an address has no direct bindings but the address size is > 0, it means queues on other addresses
+         // have one or more message references pointing to this address (e.g., queues bound to wildcard addresses).
+         // The address must be considered bound because these message references keep it in use, preventing
+         // operations like auto-deletion that should only occur when the address is truly unused.
+         (pagingStore != null && pagingStore.getAddressSize() > 0);
    }
 
    @Override

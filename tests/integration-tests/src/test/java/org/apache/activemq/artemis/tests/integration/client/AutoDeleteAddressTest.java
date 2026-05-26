@@ -18,18 +18,16 @@ package org.apache.activemq.artemis.tests.integration.client;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.client.ClientConsumer;
+import org.apache.activemq.artemis.api.core.client.ClientMessage;
 import org.apache.activemq.artemis.api.core.client.ClientProducer;
 import org.apache.activemq.artemis.api.core.client.ClientSession;
 import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
@@ -122,13 +120,11 @@ public class AutoDeleteAddressTest extends ActiveMQTestBase {
       String wildcardAddress = prefix + ".#";
       String queue = RandomUtil.randomUUIDString();
       final int MESSAGE_COUNT = 10;
-      final CountDownLatch latch = new CountDownLatch(MESSAGE_COUNT);
 
       server.createQueue(QueueConfiguration.of(queue).setAddress(wildcardAddress).setRoutingType(RoutingType.ANYCAST).setAutoCreated(true));
 
       ClientSession consumerSession = cf.createSession();
       ClientConsumer consumer = consumerSession.createConsumer(queue);
-      consumer.setMessageHandler(message -> latch.countDown());
       consumerSession.start();
 
       ClientSession producerSession = cf.createSession();
@@ -143,7 +139,19 @@ public class AutoDeleteAddressTest extends ActiveMQTestBase {
       }
       producerSession.close();
 
-      assertTrue(latch.await(2, TimeUnit.SECONDS));
+      PostOfficeTestAccessor.sweepAndReapAddresses((PostOfficeImpl) server.getPostOffice());
+
+      for (String address : addresses) {
+         assertNotNull(server.getAddressInfo(SimpleString.of(address)));
+         Wait.assertTrue(() -> Arrays.asList(server.getPagingManager().getStoreNames()).contains(SimpleString.of(address)), 2000, 100);
+      }
+
+      for (int i = 0; i < MESSAGE_COUNT; i++) {
+         ClientMessage message = consumer.receive(3000);
+         assertNotNull(message);
+         message.acknowledge();
+      }
+      consumer.close();
 
       for (String address : addresses) {
          assertNotNull(server.getAddressInfo(SimpleString.of(address)));
