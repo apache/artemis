@@ -55,6 +55,7 @@ import org.apache.activemq.artemis.core.deployers.impl.FileConfigurationParser;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.settings.impl.DiskFullMessagePolicy;
+import org.apache.activemq.artemis.core.settings.impl.HierarchicalFullPolicy;
 import org.apache.activemq.artemis.tests.util.ServerTestBase;
 import org.apache.activemq.artemis.utils.ClassloadingUtil;
 import org.apache.activemq.artemis.utils.DefaultSensitiveStringCodec;
@@ -1381,5 +1382,30 @@ public class FileConfigurationParserTest extends ServerTestBase {
 
       assertTrue(acceptor.getParams().containsKey("webSocketCompressionSupported"));
       assertFalse(acceptor.getExtraParams().containsKey("webSocketCompressionSupported"));
+   }
+
+   @Test
+   public void testParseHierarchicalSettings() throws Exception {
+      String configStr = """
+         <configuration>
+            <address-settings>
+               <address-setting match="hierarchical.#">
+                  <hierarchical>true</hierarchical>
+                  <max-hierarchical-size-messages>10000</max-hierarchical-size-messages>
+                  <max-hierarchical-size-bytes>50MB</max-hierarchical-size-bytes>
+                  <hierarchical-full-policy>DROP</hierarchical-full-policy>
+               </address-setting>
+            </address-settings>
+         </configuration>""";
+
+      FileConfigurationParser parser = new FileConfigurationParser();
+      ByteArrayInputStream input = new ByteArrayInputStream(configStr.getBytes(StandardCharsets.UTF_8));
+
+      Configuration configuration = parser.parseMainConfig(input);
+      AddressSettings settings = configuration.getAddressSettings().get("hierarchical.#");
+      assertTrue(settings.isHierarchical());
+      assertEquals(10000, settings.getMaxHierarchicalSizeMessages());
+      assertEquals(50 * 1024 * 1024, settings.getMaxHierarchicalSizeBytes());
+      assertEquals(HierarchicalFullPolicy.DROP, settings.getHierarchicalFullPolicy());
    }
 }

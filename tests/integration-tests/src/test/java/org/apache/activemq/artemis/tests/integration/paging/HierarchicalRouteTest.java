@@ -43,7 +43,6 @@ import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.tests.util.CFUtil;
 import org.apache.activemq.artemis.tests.util.Wait;
-import org.apache.activemq.artemis.utils.SizeAwareMetric;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -97,7 +96,7 @@ public class HierarchicalRouteTest extends ActiveMQTestBase {
          if (store == null) {
             logger.debug("no address for {}", q);
          } else {
-            logger.debug("hierarchy from {}/{}:\n {}", q, store.getSizeMetric(), store.getSizeMetric().debugHierarchy());
+            logger.debug("hierarchy from {}/{}:\n {}", q, store, store.debugHierarchy());
          }
       }
    }
@@ -206,9 +205,9 @@ public class HierarchicalRouteTest extends ActiveMQTestBase {
 
          for (String q2 : queueToReceive) {
             PagingStoreImpl store = (PagingStoreImpl) server.getPagingManager().getPageStore(SimpleString.of(q2));
-            for (SizeAwareMetric m : store.getSizeMetric().getHierarchy()) {
-               assertNotSame(store, m.getOwner());
-               assertNotEquals(store, m.getOwner());
+            for (PagingStore h : store.getHierarchy()) {
+               assertNotSame(store, h);
+               assertNotEquals(store, h);
 
             }
          }
@@ -218,7 +217,7 @@ public class HierarchicalRouteTest extends ActiveMQTestBase {
 
       for (String q : queueToReceive) {
          PagingStoreImpl store = (PagingStoreImpl) server.getPagingManager().getPageStore(SimpleString.of(q));
-         assertTrue(store.getSizeMetric().getHierarchy().isEmpty());
+         assertTrue(store.getHierarchy().isEmpty());
       }
 
       logger.debug("Checking hierarchy.............................");

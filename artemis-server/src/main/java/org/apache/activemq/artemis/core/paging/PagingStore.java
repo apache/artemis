@@ -116,6 +116,10 @@ public interface PagingStore extends ActiveMQComponent, RefCountMessageListener 
 
    void removeHierarchy(PagingStore related);
 
+   default Collection<PagingStore> getHierarchy() {
+      return java.util.Collections.emptySet();
+   }
+
    /**
     * This method will look if the current state of paging is not paging, without using a lock. For cases where you need
     * absolutely atomic results, check it directly on the internal variables while requiring a readLock.

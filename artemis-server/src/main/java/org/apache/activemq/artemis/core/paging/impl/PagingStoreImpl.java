@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -145,6 +146,8 @@ public class PagingStoreImpl implements PagingStore {
 
    // Bytes consumed by the queue on the memory
    private final SizeAwareMetric size;
+
+   private final CopyOnWriteArraySet<PagingStore> hierarchy = new CopyOnWriteArraySet<>();
 
    private volatile boolean full;
 
@@ -547,14 +550,28 @@ public class PagingStoreImpl implements PagingStore {
 
    @Override
    public void addHierarchy(PagingStore related) {
-      PagingStoreImpl storeRelated = (PagingStoreImpl) related;
-      size.addHierarchy(storeRelated.size);
+      if (related == this) {
+         throw new IllegalArgumentException("recursive hierarchy");
+      }
+      this.hierarchy.add(related);
    }
 
    @Override
    public void removeHierarchy(PagingStore related) {
-      PagingStoreImpl storeRelated = (PagingStoreImpl) related;
-      size.removeHierarchy(storeRelated.size);
+      this.hierarchy.remove(related);
+   }
+
+   @Override
+   public Collection<PagingStore> getHierarchy() {
+      return Collections.unmodifiableSet(hierarchy);
+   }
+
+   public String debugHierarchy() {
+      StringBuilder result = new StringBuilder();
+      for (PagingStore item : hierarchy) {
+         result.append(item.toString()).append(" (size=").append(item.getAddressSize()).append(", elements=").append(item.getAddressElements()).append(")\n");
+      }
+      return result.toString();
    }
 
 
@@ -1396,6 +1413,9 @@ public class PagingStoreImpl implements PagingStore {
 
    @Override
    public void addSize(final int size, boolean sizeOnly, boolean affectGlobal) {
+      // Propagate to hierarchical PagingStores (without affecting callbacks)
+      hierarchy.forEach(h -> h.addSize(size, sizeOnly, false));
+
       long newSize = this.size.addSize(size, sizeOnly, affectGlobal);
       boolean globalFull = pagingManager.isGlobalFull();
 

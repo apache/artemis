@@ -126,13 +126,13 @@ public class WildcardAddressManagerValidateHierarchicalRoutingTest {
 
       if (useHierarchy) {
          for (int i = 0; i < topics; i++) {
-            if (stores[i].getSizeMetric().getHierarchy().size() != levels - 1) {
-               throw new IllegalStateException("We are supposed to have " + levels + " on each store, store " + stores[i] + " had " + stores[i].getSizeMetric().getHierarchy().size() + " on " + stores[i]);
+            if (stores[i].getHierarchy().size() != levels - 1) {
+               throw new IllegalStateException("We are supposed to have " + levels + " on each store, store " + stores[i] + " had " + stores[i].getHierarchy().size() + " on " + stores[i]);
             }
          }
       } else {
          for (int i = 0; i < topics; i++) {
-            if (!stores[i].getSizeMetric().getHierarchy().isEmpty()) {
+            if (!stores[i].getHierarchy().isEmpty()) {
                throw new IllegalStateException("Hierarchy on store " + stores[i] + " is supposed to be empty");
             }
          }

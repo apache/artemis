@@ -106,7 +106,7 @@ public class WildcardHierarchicalMessagingTest {
          server.createQueue(QueueConfiguration.of(addressName).setRoutingType(RoutingType.ANYCAST));
          PagingStore store = server.getPagingManager().getPageStore(addressName);
          if (useHierarchy) {
-            if (store.getSizeMetric().getHierarchy().size() != levels - 1) {
+            if (store.getHierarchy().size() != levels - 1) {
                throw new IllegalStateException("sizes don't match");
             }
          }

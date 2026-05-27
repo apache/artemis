@@ -80,12 +80,12 @@ public class WildcardAddressHierarchicaTest extends ActiveMQTestBase {
 
       for (int i = 0; i < 1000; i++) {
          PagingStore store = pagingManager.getPageStore(SimpleString.of("a.b." + i));
-         assertEquals(1, store.getSizeMetric().getHierarchy().size());
+         assertEquals(1, store.getHierarchy().size());
       }
 
       for (int i = 0; i < 1000; i++) {
          PagingStore store = pagingManager.getPageStore(SimpleString.of("a.c." + i));
-         assertEquals(1, store.getSizeMetric().getHierarchy().size());
+         assertEquals(1, store.getHierarchy().size());
       }
 
       wildcardAddressManager.reloadAddressInfo(new AddressInfo("a.b.*"));
@@ -93,12 +93,12 @@ public class WildcardAddressHierarchicaTest extends ActiveMQTestBase {
 
       for (int i = 0; i < 1000; i++) {
          PagingStore store = pagingManager.getPageStore(SimpleString.of("a.b." + i));
-         assertEquals(2, store.getSizeMetric().getHierarchy().size());
+         assertEquals(2, store.getHierarchy().size());
       }
 
       for (int i = 0; i < 1000; i++) {
          PagingStore store = pagingManager.getPageStore(SimpleString.of("a.c." + i));
-         assertEquals(2, store.getSizeMetric().getHierarchy().size());
+         assertEquals(2, store.getHierarchy().size());
       }
 
       for (int i = 0; i < 1000; i++) {
@@ -137,8 +137,8 @@ public class WildcardAddressHierarchicaTest extends ActiveMQTestBase {
          PagingStore storeABChild = pagingManager.getPageStore(SimpleString.of("a.b." + i));
          PagingStore storeACChild = pagingManager.getPageStore(SimpleString.of("a.c." + i));
 
-         assertTrue(storeABChild.getSizeMetric().getHierarchy().isEmpty());
-         assertTrue(storeACChild.getSizeMetric().getHierarchy().isEmpty());
+         assertTrue(storeABChild.getHierarchy().isEmpty());
+         assertTrue(storeACChild.getHierarchy().isEmpty());
 
       }
 

@@ -544,4 +544,7 @@ public interface ActiveMQMessageBundle {
    @Message(id = 229260, value = "Wildcard addresses are not supported on producers. Only on consumers. Please send to a real address. {}")
    IllegalArgumentException wildcardOnProducerNotSupported(String val);
 
+   @Message(id = 229261, value = "Invalid hierarchical full policy type {}")
+   IllegalArgumentException invalidHierarchicalFullPolicyType(String val);
+
 }
