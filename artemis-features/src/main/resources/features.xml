@@ -70,6 +70,7 @@
 		<bundle dependency="true">mvn:jakarta.jms/jakarta.jms-api/${jakarta.jms-api.version}</bundle>
 		<bundle dependency="true">mvn:jakarta.transaction/jakarta.transaction-api/${jakarta.transaction-api.version}</bundle>
 		<bundle dependency="true">mvn:org.apache.commons/commons-configuration2/${commons.config.version}</bundle>
+		<bundle dependency="true">mvn:commons-io/commons-io/${commons.io.version}</bundle>
 		<bundle dependency="true">mvn:org.apache.commons/commons-text/${commons.text.version}</bundle>
 		<bundle dependency="true">mvn:org.apache.commons/commons-lang3/${commons.lang.version}</bundle>
 		<bundle dependency="true">mvn:org.jctools/jctools-core/${jctools.version}</bundle>
