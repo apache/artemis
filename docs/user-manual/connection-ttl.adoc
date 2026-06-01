@@ -83,16 +83,16 @@ Basically, the TTL determines how long the server will keep a connection alive i
 The client will automatically send "ping" packets periodically to prevent the server from closing it down.
 If the server doesn't receive any packets on a connection for the connection TTL time, then it will automatically close all the sessions on the server that relate to that connection.
 
-The connection TTL is configured on the URI using the `connectionTtl` parameter., e.g.:
+The connection TTL is configured on the URI using the `connectionTTL` parameter., e.g.:
 
 [,]
 ----
-tcp://localhost:61616?connectionTtl=60000
+tcp://localhost:61616?connectionTTL=60000
 ----
 
-The default `connectionTtl` on an "unreliable" connection (e.g. a Netty connection using the `tcp` URL scheme) is `60000` milliseconds (i.e. 1 minute).
-The default `connectionTtl` on a "reliable" connection (e.g. an in-vm connection using the `vm` URL scheme) is `-1`.
-A value of `-1` for `connectionTtl` means the server will never time out the connection on the server side.
+The default `connectionTTL` on an "unreliable" connection (e.g. a Netty connection using the `tcp` URL scheme) is `60000` milliseconds (i.e. 1 minute).
+The default `connectionTTL` on a "reliable" connection (e.g. an in-vm connection using the `vm` URL scheme) is `-1`.
+A value of `-1` for `connectionTTL` means the server will never time out the connection on the server side.
 
 If you do not wish clients to be able to specify their own connection TTL, you can override all values used by a global value set on the server side.
 This can be done by specifying the `connection-ttl-override` attribute in the server side configuration.
