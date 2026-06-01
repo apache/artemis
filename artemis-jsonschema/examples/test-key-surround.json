@@ -1,0 +1,8 @@
+{
+  "key.surround": "$$",
+  "addressSettings": {
+    "$$a.\"with_quote\".b$$": {
+      "maxDeliveryAttempts": 0
+    }
+  }
+}

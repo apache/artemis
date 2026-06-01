@@ -58,6 +58,7 @@
       <module>artemis-jakarta-client-osgi</module>
       <module>artemis-jms-server</module>
       <module>artemis-jakarta-server</module>
+      <module>artemis-jsonschema</module>
       <module>artemis-journal</module>
       <module>artemis-ra</module>
       <module>artemis-jakarta-ra</module>

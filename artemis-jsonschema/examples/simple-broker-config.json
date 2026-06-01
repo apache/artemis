@@ -1,0 +1,44 @@
+{
+  "globalMaxSize": "25K",
+  "gracefulShutdownEnabled": true,
+  "securityEnabled": false,
+  "maxRedeliveryRecords": 123,
+
+  "addressConfigurations": {
+    "LB.TEST": {
+      "queueConfigs": {
+        "LB.TEST": {
+          "routingType": "ANYCAST",
+          "durable": false
+        },
+        "my queue": {
+          "routingType": "ANYCAST",
+          "durable": false
+        }
+      }
+    }
+  },
+
+  "clusterConfigurations": {
+    "cc": {
+      "name": "cc",
+      "messageLoadBalancingType": "OFF_WITH_REDISTRIBUTION"
+    }
+  },
+
+  "criticalAnalyzerPolicy": "SHUTDOWN",
+
+  "divertConfigurations": {
+    "my-divert": {
+      "address": "testAddress",
+      "forwardingAddress": "forwardAddress",
+      "transformerConfiguration": {
+        "className": "s.o.m.e.class",
+        "properties": {
+          "a": "va",
+          "b.c": "vbc"
+        }
+      }
+    }
+  }
+}

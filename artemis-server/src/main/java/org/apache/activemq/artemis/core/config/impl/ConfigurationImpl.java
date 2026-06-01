@@ -626,7 +626,17 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
       try (CheckedInputStream checkedInputStream = new CheckedInputStream(new FileInputStream(file), new Adler32())) {
          try {
             if (file.getName().endsWith(".json")) {
-               brokerProperties.loadJson(configuration, checkedInputStream);
+               // Read JSON content for validation
+               byte[] jsonBytes = checkedInputStream.readAllBytes();
+               String jsonContent = new String(jsonBytes, java.nio.charset.StandardCharsets.UTF_8);
+
+               // Validate against schema (if enabled via -Dartemis.config.validate-json=true)
+               JsonSchemaValidator.validateJsonConfig(jsonContent);
+
+               // Parse validated JSON
+               try (java.io.Reader reader = new java.io.StringReader(jsonContent)) {
+                  brokerProperties.loadJson(configuration, reader);
+               }
             } else {
                brokerProperties.load(checkedInputStream);
             }

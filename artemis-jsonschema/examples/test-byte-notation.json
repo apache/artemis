@@ -1,0 +1,16 @@
+{
+  "globalMaxSize": "100M",
+  "globalMaxMessages": "50000",
+  "journalFileSize": 10485760,
+  "journalBufferSize_AIO": 524288,
+  "journalBufferSize_NIO": 262144,
+  "maxDiskUsage": 90,
+  "diskScanPeriod": 5000,
+  "addressSettings": {
+    "test": {
+      "maxSizeBytes": "10M",
+      "pageSizeBytes": 1048576,
+      "maxReadPageBytes": 20000000
+    }
+  }
+}

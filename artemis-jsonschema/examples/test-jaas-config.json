@@ -1,0 +1,40 @@
+{
+  "securityEnabled": true,
+  "jaasConfigs": {
+    "artemis": {
+      "name": "artemis",
+      "modules": {
+        "properties": {
+          "name": "properties",
+          "loginModuleClass": "org.apache.activemq.artemis.spi.core.security.jaas.PropertiesLoginModule",
+          "controlFlag": "REQUIRED",
+          "params": {
+            "user": "artemis-users.properties",
+            "role": "artemis-roles.properties",
+            "codec": "org.apache.activemq.artemis.utils.DefaultSensitiveStringCodec"
+          }
+        },
+        "ldap": {
+          "name": "ldap",
+          "loginModuleClass": "org.apache.activemq.artemis.spi.core.security.jaas.LDAPLoginModule",
+          "controlFlag": "SUFFICIENT",
+          "params": {
+            "initialContextFactory": "com.sun.jndi.ldap.LdapCtxFactory",
+            "connectionUrl": "ldap://localhost:389",
+            "connectionUsername": "cn=admin,dc=example,dc=com",
+            "connectionPassword": "secret",
+            "authentication": "simple",
+            "userBase": "ou=users,dc=example,dc=com",
+            "userSearchMatching": "(uid={0})",
+            "userSearchSubtree": "false",
+            "roleBase": "ou=groups,dc=example,dc=com",
+            "roleName": "cn",
+            "roleSearchMatching": "(member={0})",
+            "roleSearchSubtree": "false",
+            "debug": "true"
+          }
+        }
+      }
+    }
+  }
+}

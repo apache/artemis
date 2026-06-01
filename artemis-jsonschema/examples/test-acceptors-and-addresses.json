@@ -1,0 +1,35 @@
+{
+  "acceptorConfigurations": {
+    "tcp": {
+      "factoryClassName": "org.apache.activemq.artemis.core.remoting.impl.netty.NettyAcceptorFactory",
+      "params": {
+        "host": "LOCALHOST",
+        "port": "61616"
+      }
+    },
+    "invm": {
+      "factoryClassName": "org.apache.activemq.artemis.core.remoting.impl.invm.InVMAcceptorFactory",
+      "params": {
+        "serverId": "0"
+      }
+    }
+  },
+  "addressSettings": {
+    "NeedToTrackExpired": {
+      "expiryAddress": "important"
+    },
+    "Name.With.Dots": {
+      "expiryAddress": "moreImportant"
+    },
+    "NeedToSet": {
+      "autoCreateExpiryResources": true,
+      "deadLetterAddress": "iamDeadLetterAdd",
+      "expiryQueuePrefix": "add1Expiry",
+      "maxReadPageBytes": 20000000,
+      "deadLetterQueuePrefix": "iamDeadLetterQueuePre",
+      "managementMessageAttributeSizeLimit": 512,
+      "pageSizeBytes": 12345,
+      "expiryQueueSuffix": "add1ExpirySuffix"
+    }
+  }
+}

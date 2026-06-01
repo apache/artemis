@@ -1,0 +1,15 @@
+{
+  "AMQPConnections": {
+    "target": {
+      "uri": "tcp://host:6449?trustStorePath=/client.ts",
+      "transportConfigurations": {
+        "target": {
+          "factoryClassName": "org.apache.activemq.artemis.core.remoting.impl.netty.NettyConnectorFactory",
+          "params": {
+            "trustStorePassword": "pass"
+          }
+        }
+      }
+    }
+  }
+}

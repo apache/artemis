@@ -1,0 +1,115 @@
+{
+  "prettyPrint": true,
+  "ignoredProperties": [
+    "class",
+    "parent"
+  ],
+  "ignoredPropertiesReason": {
+    "class": "Java Object.getClass() - not a config property",
+    "parent": "Circular reference - causes infinite recursion"
+  },
+  "factoryInterfaces": [
+    "org.apache.activemq.artemis.spi.core.remoting.AcceptorFactory",
+    "org.apache.activemq.artemis.spi.core.remoting.ConnectorFactory",
+    "javax.security.auth.spi.LoginModule"
+  ],
+  "factoryScanPackages": [
+    "org.apache.activemq.artemis.core.remoting",
+    "org.apache.activemq.artemis.spi.core.security.jaas"
+  ],
+  "javadocSourceDirs": [
+    "artemis-server/src/main/java",
+    "artemis-core-client/src/main/java",
+    "artemis-commons/src/main/java",
+    "artemis-protocols/artemis-amqp-protocol/src/main/java"
+  ],
+  "xsdPath": "artemis-server/src/main/resources/schema/artemis-configuration.xsd",
+  "xmlParserSource": "org/apache/activemq/artemis/core/deployers/impl/FileConfigurationParser.java",
+  "xmlParserMethodToPath": {
+    "parseAddressConfiguration": "addressConfigurations.*",
+    "parseQueueConfiguration": "addressConfigurations.*.queueConfigurations.*",
+    "parseDivertConfiguration": "divertConfigurations.*",
+    "parseFederationConfiguration": "federationConfigurations.*",
+    "parseBridgeConfiguration": "bridgeConfigurations.*",
+    "parseClusterConnectionConfiguration": "clusterConfigurations.*",
+    "parseAcceptorTransportConfiguration": "acceptorConfigurations.*",
+    "parseConnectorTransportConfiguration": "connectorConfigurations.*",
+    "parseBroadcastGroupConfiguration": "broadcastGroupConfigurations.*",
+    "parseDiscoveryGroupConfiguration": "discoveryGroupConfigurations.*",
+    "parseAddressSettings": "addressSettings.*"
+  },
+  "reloadableConfigSource": "org/apache/activemq/artemis/core/server/impl/ActiveMQServerImpl.java",
+  "jaasSourceDir": "artemis-server/src/main/java/org/apache/activemq/artemis/spi/core/security/jaas",
+  "factoryParameterFiles": [
+    "artemis-core-client/src/main/java/org/apache/activemq/artemis/core/remoting/impl/netty/TransportConstants.java"
+  ],
+  "constantSourceFiles": [
+    "artemis-core-client/src/main/java/org/apache/activemq/artemis/api/config/ActiveMQDefaultConfiguration.java",
+    "artemis-server/src/main/java/org/apache/activemq/artemis/core/settings/impl/AddressSettings.java",
+    "artemis-server/src/main/java/org/apache/activemq/artemis/core/config/impl/ConfigurationImpl.java",
+    "artemis-server/src/main/java/org/apache/activemq/artemis/core/client/impl/ServerLocatorImpl.java",
+    "artemis-core-client/src/main/java/org/apache/activemq/artemis/core/remoting/impl/netty/TransportConstants.java"
+  ],
+  "xsdComplexTypeToPathPattern": {
+    "divertType": "divertConfigurations.*",
+    "federationType": "federationConfigurations.*",
+    "bridgeType": "bridgeConfigurations.*",
+    "cluster-connectionType": "clusterConnections.*",
+    "broadcastGroupType": "broadcastGroups.*",
+    "discoveryGroupType": "discoveryGroups.*",
+    "addressSettingType": "addressSettings.*",
+    "queueType": "queues.*",
+    "addressType": "addresses.*",
+    "connector-serviceType": "connectorServices.*",
+    "haReplicationType": "haPolicyConfiguration.*",
+    "haSharedStoreType": "haPolicyConfiguration.*",
+    "replicationPrimaryPolicyType": "haPolicyConfiguration.*",
+    "replicationBackupPolicyType": "haPolicyConfiguration.*",
+    "sharedStorePrimaryPolicyType": "haPolicyConfiguration.*",
+    "sharedStoreBackupPolicyType": "haPolicyConfiguration.*",
+    "metricsType": "metricsConfiguration",
+    "amqp-connectionUriType": "AMQPConnections.*",
+    "amqp-mirror-type": "AMQPConnections.*.mirrors.*",
+    "amqp-address-match-type": "AMQPConnections.*.senders.*",
+    "amqp-federation-type": "AMQPConnections.*.federations.*",
+    "amqp-bridge-type": "AMQPConnections.*.bridges.*",
+    "amqpFederationQueuePolicyType": "AMQPConnections.*.federations.*.localQueuePolicies.*",
+    "amqpFederationAddressPolicyType": "AMQPConnections.*.federations.*.localAddressPolicies.*",
+    "amqpBridgeAddressType": "AMQPConnections.*.bridges.*.bridgeFromAddressPolicies.*",
+    "amqpBridgeQueueType": "AMQPConnections.*.bridges.*.bridgeFromQueuePolicies.*",
+    "streamType": "federationConfigurations.*.upstreamConfigurations.*",
+    "transformerType": "bridgeConfigurations.*.transformerConfiguration",
+    "acceptorConfigurationType": "acceptorConfigurations.*",
+    "connectorConfigurationType": "connectorConfigurations.*"
+  },
+  "mapConstantKeys": {
+    "org.apache.activemq.artemis.protocol.amqp.connect.bridge.AMQPBridgeConstants": [
+      "AMQPConnections.*.bridges.*.bridgeFromQueuePolicies.*.properties",
+      "AMQPConnections.*.bridges.*.bridgeToQueuePolicies.*.properties",
+      "AMQPConnections.*.bridges.*.bridgeFromAddressPolicies.*.properties",
+      "AMQPConnections.*.bridges.*.bridgeToAddressPolicies.*.properties"
+    ],
+    "org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants": [
+      "AMQPConnections.*.federations.*.localQueuePolicies.*.properties",
+      "AMQPConnections.*.federations.*.remoteQueuePolicies.*.properties",
+      "AMQPConnections.*.federations.*.localAddressPolicies.*.properties",
+      "AMQPConnections.*.federations.*.remoteAddressPolicies.*.properties"
+    ]
+  },
+  "enrichmentPathAliases": {
+    "federationConfigurations.*.upstreamConfigurations.*.callTimeout": "federationConfigurations.*.upstreamConfigurations.*.connectionConfiguration.callTimeout",
+    "federationConfigurations.*.upstreamConfigurations.*.callFailoverTimeout": "federationConfigurations.*.upstreamConfigurations.*.connectionConfiguration.callFailoverTimeout",
+    "federationConfigurations.*.upstreamConfigurations.*.circuitBreakerTimeout": "federationConfigurations.*.upstreamConfigurations.*.connectionConfiguration.circuitBreakerTimeout",
+    "federationConfigurations.*.upstreamConfigurations.*.initialConnectAttempts": "federationConfigurations.*.upstreamConfigurations.*.connectionConfiguration.initialConnectAttempts",
+    "federationConfigurations.*.upstreamConfigurations.*.maxRetryInterval": "federationConfigurations.*.upstreamConfigurations.*.connectionConfiguration.maxRetryInterval",
+    "federationConfigurations.*.upstreamConfigurations.*.password": "federationConfigurations.*.upstreamConfigurations.*.connectionConfiguration.password",
+    "federationConfigurations.*.upstreamConfigurations.*.reconnectAttempts": "federationConfigurations.*.upstreamConfigurations.*.connectionConfiguration.reconnectAttempts",
+    "federationConfigurations.*.upstreamConfigurations.*.retryInterval": "federationConfigurations.*.upstreamConfigurations.*.connectionConfiguration.retryInterval",
+    "federationConfigurations.*.upstreamConfigurations.*.retryIntervalMultiplier": "federationConfigurations.*.upstreamConfigurations.*.connectionConfiguration.retryIntervalMultiplier",
+    "federationConfigurations.*.upstreamConfigurations.*.shareConnection": "federationConfigurations.*.upstreamConfigurations.*.connectionConfiguration.shareConnection",
+    "federationConfigurations.*.upstreamConfigurations.*.staticConnectors": "federationConfigurations.*.upstreamConfigurations.*.connectionConfiguration.staticConnectors",
+    "federationConfigurations.*.upstreamConfigurations.*.username": "federationConfigurations.*.upstreamConfigurations.*.connectionConfiguration.username",
+    "federationConfigurations.*.upstreamConfigurations.*.user": "federationConfigurations.*.upstreamConfigurations.*.connectionConfiguration.username",
+    "bridgeConfigurations.*.failoverOnServerShutdown": "failoverOnServerShutdown"
+  }
+}
