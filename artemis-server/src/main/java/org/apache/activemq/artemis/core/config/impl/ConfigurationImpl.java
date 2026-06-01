@@ -3913,6 +3913,10 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
             Object value = entry.getValue();
             if (value instanceof Map) {
                loadYamlMap(keySurroundString, propertyKey + ".", (Map<String, Object>) value);
+            } else if (value instanceof List<?> list) {
+               put(propertyKey, list.stream()
+                  .map(String::valueOf)
+                  .collect(java.util.stream.Collectors.joining(",")));
             } else if (value != null) {
                put(propertyKey, String.valueOf(value));
             }
@@ -3949,6 +3953,13 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
                case TRUE:
                case FALSE:
                   put(propertyKey, String.valueOf(jsonValue));
+                  break;
+               case ARRAY:
+                  put(propertyKey, jsonValue.asJsonArray().stream()
+                     .map(v -> v.getValueType() == JsonValue.ValueType.STRING
+                        ? ((JsonString) v).getString()
+                        : String.valueOf(v))
+                     .collect(java.util.stream.Collectors.joining(",")));
                   break;
                default:
                   throw new IllegalStateException("JSON value type not supported: " + jsonValueType);

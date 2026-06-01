@@ -1,0 +1,490 @@
+{
+  "name": "full-test-broker",
+  "persistenceEnabled": true,
+  "persistDeliveryCountBeforeDelivery": true,
+  "scheduledThreadPoolMaxSize": 10,
+  "threadPoolMaxSize": 50,
+  "securityEnabled": false,
+  "gracefulShutdownEnabled": true,
+  "gracefulShutdownTimeout": 30000,
+  "journalType": "NIO",
+  "journalSyncTransactional": true,
+  "journalSyncNonTransactional": false,
+  "journalFileSize": 10485760,
+  "journalMinFiles": 5,
+  "journalPoolFiles": 10,
+  "journalCompactMinFiles": 15,
+  "journalCompactPercentage": 50,
+  "journalMaxIO_NIO": 4,
+  "journalBufferTimeout_NIO": 3334,
+  "journalBufferSize_NIO": 307200,
+  "journalMaxAtticFiles": 5,
+  "journalFileOpenTimeout": 10,
+  "journalLockAcquisitionTimeout": 20,
+  "readWholePage": true,
+  "logJournalWriteRate": false,
+  "createBindingsDir": true,
+  "createJournalDir": true,
+  "largeMessageSync": false,
+  "journalDatasync": true,
+  "bindingsDirectory": "test-data/bindings",
+  "journalDirectory": "test-data/journal",
+  "pagingDirectory": "test-data/paging",
+  "largeMessagesDirectory": "test-data/large-messages",
+  "nodeManagerLockDirectory": "test-data/lock",
+  "securityInvalidationInterval": 5000,
+  "authenticationCacheSize": 500,
+  "authorizationCacheSize": 500,
+  "connectionTTLOverride": 60000,
+  "connectionTtlCheckInterval": 1000,
+  "globalMaxSize": "100M",
+  "globalMaxMessages": 5000,
+  "maxDiskUsage": 95,
+  "minDiskFree": 1048576,
+  "diskScanPeriod": 10000,
+  "jMXManagementEnabled": true,
+  "jMXDomain": "org.apache.activemq.test",
+  "jMXUseBrokerName": true,
+  "managementAddress": "activemq.management.test",
+  "managementNotificationAddress": "activemq.notifications.test",
+  "managementMessageRbac": false,
+  "managementRbacPrefix": "mops.rbac",
+  "viewPermissionMethodMatchPattern": "^(get|is|count|list|browse|query).*$",
+  "clusterUser": "test-cluster-user",
+  "clusterPassword": "test-cluster-password",
+  "messageCounterEnabled": true,
+  "messageCounterSamplePeriod": 5000,
+  "messageCounterMaxDayHistory": 5,
+  "messageExpiryScanPeriod": 15000,
+  "messageExpiryThreadPriority": 5,
+  "addressQueueScanPeriod": 25000,
+  "transactionTimeout": 120000,
+  "transactionTimeoutScanPeriod": 5000,
+  "criticalAnalyzer": true,
+  "criticalAnalyzerPolicy": "SHUTDOWN",
+  "criticalAnalyzerTimeout": 120000,
+  "criticalAnalyzerCheckPeriod": 30000,
+  "mirrorAckManagerQueueAttempts": 7,
+  "mirrorAckManagerPageAttempts": 3,
+  "mirrorAckManagerRetryDelay": 200,
+  "mirrorPageTransaction": true,
+  "mirrorAckManagerWarnUnacked": true,
+  "mqttSessionScanInterval": 2000,
+  "mqttSubscriptionPersistenceEnabled": true,
+  "maxRedeliveryRecords": 20,
+  "iDCacheSize": 500,
+  "persistIDCache": true,
+  "serverDumpInterval": 30000,
+  "memoryWarningThreshold": 70,
+  "memoryMeasureInterval": 5000,
+  "amqpUseCoreSubscriptionNaming": true,
+  "suppressSessionNotifications": true,
+  "pageSyncTimeout": 3334,
+  "pageMaxConcurrentIO": 10,
+  "literalMatchMarkers": "`",
+  "configurationFileRefreshPeriod": 3000,
+  "purgePageFolders": true,
+  "fileDeployerScanPeriod": 1000,
+  "populateValidatedUser": true,
+  "rejectEmptyValidatedUser": true,
+
+  "connectorConfigurations": {
+    "netty-connector": {
+      "factoryClassName": "org.apache.activemq.artemis.core.remoting.impl.netty.NettyConnectorFactory",
+      "params": {
+        "HOST": "localhost",
+        "PORT": "61617"
+      }
+    },
+    "invm-connector": {
+      "factoryClassName": "org.apache.activemq.artemis.core.remoting.impl.invm.InVMConnectorFactory",
+      "params": {
+        "ID": "0"
+      }
+    }
+  },
+
+  "acceptorConfigurations": {
+    "netty-acceptor": {
+      "factoryClassName": "org.apache.activemq.artemis.core.remoting.impl.netty.NettyAcceptorFactory",
+      "params": {
+        "HOST": "0.0.0.0",
+        "PORT": "61616"
+      },
+      "extraParams": {
+        "supportAdvisory": "false"
+      }
+    },
+    "invm-acceptor": {
+      "factoryClassName": "org.apache.activemq.artemis.core.remoting.impl.invm.InVMAcceptorFactory",
+      "params": {
+        "ID": "0"
+      }
+    }
+  },
+
+  "addressConfigurations": {
+    "orders": {
+      "routingTypes": ["ANYCAST"],
+      "queueConfigs": {
+        "orders": {
+          "routingType": "ANYCAST",
+          "durable": true
+        }
+      }
+    },
+    "notifications": {
+      "routingTypes": ["MULTICAST"],
+      "queueConfigs": {
+        "notifications": {
+          "routingType": "MULTICAST",
+          "durable": false
+        }
+      }
+    }
+  },
+
+  "securityRoles": {
+    "orders.#": {
+      "producers": {
+        "send": true,
+        "consume": false,
+        "createDurableQueue": false,
+        "deleteDurableQueue": false,
+        "createNonDurableQueue": false,
+        "deleteNonDurableQueue": false,
+        "manage": false,
+        "browse": false,
+        "createAddress": false,
+        "deleteAddress": false
+      },
+      "consumers": {
+        "send": false,
+        "consume": true,
+        "createDurableQueue": false,
+        "deleteDurableQueue": false,
+        "createNonDurableQueue": true,
+        "deleteNonDurableQueue": true,
+        "manage": false,
+        "browse": true,
+        "createAddress": false,
+        "deleteAddress": false
+      }
+    },
+    "notifications.*": {
+      "monitors": {
+        "send": false,
+        "consume": true,
+        "createDurableQueue": false,
+        "deleteDurableQueue": false,
+        "createNonDurableQueue": true,
+        "deleteNonDurableQueue": true,
+        "manage": false,
+        "browse": true,
+        "createAddress": false,
+        "deleteAddress": false
+      }
+    }
+  },
+
+  "bridgeConfigurations": {
+    "orders-bridge": {
+      "queueName": "orders",
+      "forwardingAddress": "orders.remote",
+      "staticConnectors": ["netty-connector"],
+      "confirmationWindowSize": 10,
+      "routingType": "STRIP",
+      "retryInterval": 500,
+      "retryIntervalMultiplier": 2.0,
+      "reconnectAttempts": 3,
+      "useDuplicateDetection": true,
+      "transformerConfiguration": {
+        "className": "org.apache.activemq.artemis.core.server.transformer.AddHeadersTransformer",
+        "properties": {
+          "header1": "value1",
+          "header2": "value2"
+        }
+      }
+    }
+  },
+
+  "clusterConfigurations": {
+    "my-cluster": {
+      "name": "my-cluster",
+      "connectorName": "netty-connector",
+      "staticConnectors": ["netty-connector"],
+      "messageLoadBalancingType": "ON_DEMAND",
+      "maxHops": 2,
+      "retryInterval": 1000,
+      "callTimeout": 30000,
+      "callFailoverTimeout": 5000,
+      "duplicateDetection": true,
+      "confirmationWindowSize": 1048576
+    }
+  },
+
+  "divertConfigurations": {
+    "my-divert": {
+      "routingName": "my-divert-routing",
+      "address": "orders",
+      "forwardingAddress": "orders.archive",
+      "exclusive": false,
+      "transformerConfiguration": {
+        "className": "org.apache.activemq.artemis.core.server.transformer.AddHeadersTransformer",
+        "properties": {
+          "archivedBy": "divert"
+        }
+      }
+    }
+  },
+
+  "addressSettings": {
+    "#": {
+      "expiryAddress": "globalExpiry",
+      "deadLetterAddress": "globalDLQ",
+      "maxDeliveryAttempts": 5
+    },
+    "orders": {
+      "expiryAddress": "orders.expiry",
+      "deadLetterAddress": "orders.dlq",
+      "maxDeliveryAttempts": 10,
+      "redeliveryDelay": 2000,
+      "redeliveryMultiplier": 2.5,
+      "redeliveryCollisionAvoidanceFactor": 0.25,
+      "maxRedeliveryDelay": 30000,
+      "maxSizeBytes": 10485760,
+      "maxSizeMessages": 50000,
+      "maxSizeBytesRejectThreshold": 20971520,
+      "pageSizeBytes": 65536,
+      "pageCacheMaxSize": 10,
+      "maxReadPageBytes": 1048576,
+      "maxReadPageMessages": 500,
+      "prefetchPageBytes": 524288,
+      "prefetchPageMessages": 250,
+      "pageLimitBytes": 104857600,
+      "pageLimitMessages": 100000,
+      "pageFullMessagePolicy": "DROP",
+      "addressFullMessagePolicy": "PAGE",
+      "diskFullMessagePolicy": "BLOCK",
+      "slowConsumerThreshold": 50,
+      "slowConsumerThresholdMeasurementUnit": "MESSAGES_PER_HOUR",
+      "slowConsumerCheckPeriod": 30,
+      "slowConsumerPolicy": "NOTIFY",
+      "messageCounterHistoryDayLimit": 10,
+      "redistributionDelay": 5000,
+      "sendToDLAOnNoRoute": true,
+      "autoCreateExpiryResources": true,
+      "expiryQueuePrefix": "EXP.",
+      "expiryQueueSuffix": ".EXPIRED",
+      "expiryDelay": 60000,
+      "minExpiryDelay": 10000,
+      "maxExpiryDelay": 120000,
+      "noExpiry": false,
+      "autoCreateDeadLetterResources": true,
+      "deadLetterQueuePrefix": "DLQ.",
+      "deadLetterQueueSuffix": ".DLQ",
+      "managementBrowsePageSize": 200,
+      "managementMessageAttributeSizeLimit": 1024,
+      "queuePrefetch": 1000,
+      "defaultConsumerWindowSize": 2048,
+      "defaultMaxConsumers": 25,
+      "defaultConsumersBeforeDispatch": 1,
+      "defaultDelayBeforeDispatch": 100,
+      "defaultPurgeOnNoConsumers": false,
+      "defaultQueueRoutingType": "ANYCAST",
+      "defaultAddressRoutingType": "ANYCAST",
+      "defaultLastValueQueue": false,
+      "defaultLastValueKey": "myLastValueKey",
+      "defaultNonDestructive": false,
+      "defaultExclusiveQueue": false,
+      "defaultGroupRebalance": true,
+      "defaultGroupRebalancePauseDispatch": false,
+      "defaultGroupBuckets": 64,
+      "defaultGroupFirstKey": "myGroupFirstKey",
+      "defaultRingSize": 1000,
+      "retroactiveMessageCount": 100,
+      "autoCreateQueues": true,
+      "autoDeleteQueues": true,
+      "autoDeleteCreatedQueues": false,
+      "autoDeleteQueuesDelay": 30000,
+      "autoDeleteQueuesMessageCount": 0,
+      "autoDeleteQueuesSkipUsageCheck": false,
+      "autoCreateAddresses": true,
+      "autoDeleteAddresses": true,
+      "autoDeleteAddressesDelay": 30000,
+      "autoDeleteAddressesSkipUsageCheck": false,
+      "configDeleteQueues": "OFF",
+      "configDeleteAddresses": "OFF",
+      "configDeleteDiverts": "OFF",
+      "enableMetrics": true,
+      "enableIngressTimestamp": true,
+      "iDCacheSize": 100
+    }
+  },
+
+  "AMQPConnections": {
+    "mirror-target": {
+      "uri": "tcp://mirror-host:5672",
+      "retryInterval": 5000,
+      "reconnectAttempts": -1,
+      "user": "mirror-user",
+      "password": "mirror-password",
+      "autostart": false,
+      "mirrors": {
+        "mirror1": {
+          "type": "MIRROR",
+          "messageAcknowledgements": true,
+          "queueCreation": true,
+          "queueRemoval": false,
+          "addressFilter": "orders",
+          "sync": true,
+          "properties": {
+            "mirrorProp1": "mirrorVal1"
+          }
+        }
+      }
+    }
+  },
+
+  "HAPolicyConfiguration": "PRIMARY_ONLY",
+
+  "resourceLimitSettings": {
+    "user1": {
+      "maxConnections": 100,
+      "maxQueues": 50
+    }
+  },
+
+  "wildcardConfiguration": {
+    "routingEnabled": true,
+    "anyWords": "#",
+    "singleWord": "*",
+    "delimiter": "."
+  },
+
+  "metricsConfiguration": {
+    "jvmMemory": true,
+    "jvmGc": true,
+    "jvmThread": true,
+    "nettyPool": true
+  },
+
+  "federationDownstreamAuthorization": ["admin", "operator", "monitor"],
+
+  "jaasConfigs": {
+    "artemis": {
+      "modules": {
+        "properties-module": {
+          "loginModuleClass": "org.apache.activemq.artemis.spi.core.security.jaas.PropertiesLoginModule",
+          "controlFlag": "required",
+          "params": {
+            "user": "artemis-users.properties",
+            "role": "artemis-roles.properties"
+          }
+        },
+        "guest-module": {
+          "loginModuleClass": "org.apache.activemq.artemis.spi.core.security.jaas.GuestLoginModule",
+          "controlFlag": "optional",
+          "params": {
+            "org.apache.activemq.jaas.guest.user": "guest",
+            "org.apache.activemq.jaas.guest.role": "guest"
+          }
+        }
+      }
+    }
+  },
+
+  "connectionRouters": {
+    "my-router": {
+      "keyType": "SOURCE_IP",
+      "localTargetFilter": "netty-acceptor|invm-acceptor",
+      "keyFilter": "STARTS_WITH"
+    }
+  },
+
+  "brokerPlugins": {
+    "org.apache.activemq.artemis.core.server.plugin.impl.LoggingActiveMQServerPlugin.class": {
+      "init": "LOG_ALL_EVENTS=true,LOG_SESSION_EVENTS=false"
+    }
+  },
+
+  "securitySettingPlugins": {
+    "org.apache.activemq.artemis.core.server.impl.LegacyLDAPSecuritySettingPlugin.class": {
+      "init": "initialContextFactory=com.sun.jndi.ldap.LdapCtxFactory,connectionURL=ldap://localhost:1024"
+    }
+  },
+
+  "federationConfigurations": {
+    "f1": {
+      "credentials": {
+        "user": "federation-user",
+        "password": "federation-pass"
+      },
+      "upstreamConfigurations": {
+        "upstream1": {
+          "connectionConfiguration": {
+            "reconnectAttempts": 5,
+            "staticConnectors": ["netty-connector"]
+          },
+          "policyRefs": ["qp1"]
+        }
+      },
+      "queuePolicies": {
+        "qp1": {
+          "transformerRef": "myTransform",
+          "includes": {
+            "all-queues": {
+              "queueMatch": "#"
+            }
+          }
+        }
+      },
+      "addressPolicies": {
+        "ap1": {
+          "transformerRef": "myTransform",
+          "excludes": {
+            "internal": {
+              "addressMatch": "activemq.#"
+            }
+          }
+        }
+      },
+      "transformerConfigurations": {
+        "myTransform": {
+          "transformerConfiguration": {
+            "className": "com.example.MyTransformer",
+            "properties": {
+              "key1": "value1"
+            }
+          }
+        }
+      }
+    }
+  },
+
+  "lockCoordinatorConfigurations": {
+    "myZK": {
+      "name": "myZK",
+      "className": "org.apache.activemq.artemis.lockmanager.zookeeper.CuratorDistributedLockManager",
+      "lockId": "broker-01",
+      "checkPeriod": 5000,
+      "properties": {
+        "connect-string": "zk1:2181,zk2:2181,zk3:2181",
+        "session-ms": "18000",
+        "namespace": "/artemis/ha"
+      }
+    }
+  },
+
+  "groupingHandlerConfiguration": {
+    "name": "my-grouping-handler",
+    "type": "LOCAL",
+    "address": "jms.queue.grouping",
+    "timeout": 5000,
+    "groupTimeout": 10000,
+    "reaperPeriod": 30000
+  },
+
+  "incomingInterceptorClassNames": ["com.example.IncomingInterceptor1", "com.example.IncomingInterceptor2"],
+  "outgoingInterceptorClassNames": ["com.example.OutgoingInterceptor1"]
+}
