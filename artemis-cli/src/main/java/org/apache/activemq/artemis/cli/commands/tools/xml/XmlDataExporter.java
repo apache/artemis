@@ -85,6 +85,9 @@ public final class XmlDataExporter extends DBOption {
    @Option(names = "undefined-prefix", description = "In case a queue does not exist, this will define the prefix to be used on the message export. Default: 'UndefinedQueue_'")
    private String undefinedPrefix = "UndefinedQueue_";
 
+   @Option(names = "--queue", description = "Only export the specified queue(s). Repeatable. When omitted, all queues are exported.")
+   private List<String> queues;
+
    // an inner map of message refs hashed by the queue ID to which they belong and then hashed by their record ID
    private final Map<Long, Map<Long, ReferenceDescribe>> messageRefs = new HashMap<>();
 
@@ -112,6 +115,20 @@ public final class XmlDataExporter extends DBOption {
    public XmlDataExporter setUndefinedPrefix(String undefinedPrefix) {
       this.undefinedPrefix = undefinedPrefix;
       return this;
+   }
+
+   public List<String> getQueues() {
+      return queues;
+   }
+
+   public XmlDataExporter setQueues(List<String> queues) {
+      this.queues = queues;
+      return this;
+   }
+
+   // when no queue filter is set (null/empty) everything is exported, preserving the default behavior
+   private boolean includeQueue(String queueName) {
+      return queues == null || queues.isEmpty() || queues.contains(queueName);
    }
 
    @Override
@@ -164,6 +181,7 @@ public final class XmlDataExporter extends DBOption {
    private void writeXMLData() throws Exception {
       long start = System.currentTimeMillis();
       getBindings();
+      warnUnknownQueues();
       processMessageJournal();
       printDataAsXML();
       logger.debug("\n\nProcessing took: {}ms", (System.currentTimeMillis() - start));
@@ -328,6 +346,25 @@ public final class XmlDataExporter extends DBOption {
       bindingsJournal.stop();
    }
 
+   /**
+    * Warn about any queue name passed via {@code --queue} that doesn't exist among the real bindings, so a typo doesn't
+    * silently result in an empty export. Must run after {@link #getBindings()} but before any synthetic
+    * {@code undefinedPrefix} bindings are created.
+    */
+   private void warnUnknownQueues() {
+      if (queues == null || queues.isEmpty()) {
+         return;
+      }
+      Set<String> existing = queueBindings.values().stream()
+         .map(binding -> binding.getQueueConfiguration().getName().toString())
+         .collect(Collectors.toSet());
+      for (String queue : queues) {
+         if (!existing.contains(queue)) {
+            getActionContext().err.println("Queue '" + queue + "' was not found; nothing will be exported for it.");
+         }
+      }
+   }
+
    private void printDataAsXML() {
       try {
 
@@ -349,9 +386,20 @@ public final class XmlDataExporter extends DBOption {
    }
 
    private void printBindingsAsXML() throws XMLStreamException {
+      // when a queue filter is active only export the addresses that host at least one of the requested queues
+      Set<String> includedAddresses = (queues == null || queues.isEmpty()) ? null :
+         queueBindings.values().stream()
+            .map(PersistentQueueBindingEncoding::getQueueConfiguration)
+            .filter(queueConfig -> includeQueue(queueConfig.getName().toString()))
+            .map(queueConfig -> queueConfig.getAddress().toString())
+            .collect(Collectors.toSet());
+
       xmlWriter.writeStartElement(XmlDataConstants.BINDINGS_PARENT);
       for (Map.Entry<Long, PersistentAddressBindingEncoding> addressBindingEncodingEntry : addressBindings.entrySet()) {
          PersistentAddressBindingEncoding bindingEncoding = addressBindings.get(addressBindingEncodingEntry.getKey());
+         if (includedAddresses != null && !includedAddresses.contains(bindingEncoding.getName().toString())) {
+            continue;
+         }
          xmlWriter.writeEmptyElement(XmlDataConstants.ADDRESS_BINDINGS_CHILD);
          String routingTypes = bindingEncoding.getRoutingTypes().stream().
             map(Enum::toString).collect(Collectors.joining(","));
@@ -362,6 +410,9 @@ public final class XmlDataExporter extends DBOption {
       }
       for (Map.Entry<Long, PersistentQueueBindingEncoding> queueBindingEncodingEntry : queueBindings.entrySet()) {
          QueueConfiguration queueConfig = queueBindings.get(queueBindingEncodingEntry.getKey()).getQueueConfiguration();
+         if (!includeQueue(queueConfig.getName().toString())) {
+            continue;
+         }
          xmlWriter.writeEmptyElement(XmlDataConstants.QUEUE_BINDINGS_CHILD);
          xmlWriter.writeAttribute(XmlDataConstants.QUEUE_BINDING_ADDRESS, queueConfig.getAddress().toString());
          xmlWriter.writeAttribute(XmlDataConstants.QUEUE_BINDING_FILTER_STRING, queueConfig.getFilterString() == null ? "" : queueConfig.getFilterString().toString());
@@ -384,7 +435,12 @@ public final class XmlDataExporter extends DBOption {
       // Order here is important.  We must process the messages from the journal before we process those from the page
       // files in order to get the messages in the right order.
       for (Map.Entry<Long, Message> messageMapEntry : messages.entrySet()) {
-         printSingleMessageAsXML(messageMapEntry.getValue().toCore(), extractQueueNames(messageRefs.get(messageMapEntry.getKey())));
+         List<String> queueNames = extractQueueNames(messageRefs.get(messageMapEntry.getKey()));
+         // when a queue filter is active a message with no matching queue is dropped entirely
+         if (queueNames.isEmpty()) {
+            continue;
+         }
+         printSingleMessageAsXML(messageMapEntry.getValue().toCore(), queueNames);
          msgs++;
          if (logInterval > 0) {
             if (msgs % logInterval == 0) {
@@ -457,7 +513,9 @@ public final class XmlDataExporter extends DBOption {
                               PersistentQueueBindingEncoding queueBinding = queueBindings.get(queueID);
                               if (queueBinding != null) {
                                  SimpleString queueName = queueBinding.getQueueConfiguration().getName();
-                                 queueNames.add(queueName.toString());
+                                 if (includeQueue(queueName.toString())) {
+                                    queueNames.add(queueName.toString());
+                                 }
                               }
                            }
                         }
@@ -482,13 +540,17 @@ public final class XmlDataExporter extends DBOption {
    }
 
    private List<String> extractQueueNames(Map<Long, DescribeJournal.ReferenceDescribe> refMap) {
-      List<String> queues = new ArrayList<>();
+      List<String> queueList = new ArrayList<>();
       for (DescribeJournal.ReferenceDescribe ref : refMap.values()) {
          String queueName;
 
          long id = ref.refEncoding.queueID;
          PersistentQueueBindingEncoding persistentQueueBindingEncoding = queueBindings.get(id);
          if (persistentQueueBindingEncoding == null) {
+            // an unknown queue ID has no name that could match a --queue filter, so there's nothing to export for it
+            if (queues != null && !queues.isEmpty()) {
+               continue;
+            }
             String name = undefinedPrefix + id;
             queueBindings.put(id, new PersistentQueueBindingEncoding(QueueConfiguration.of(name).setAddress(name)));
             queueName = String.valueOf(name);
@@ -497,9 +559,11 @@ public final class XmlDataExporter extends DBOption {
             queueName = String.valueOf(persistentQueueBindingEncoding.getQueueConfiguration().getName());
          }
 
-         queues.add(queueName);
+         if (includeQueue(queueName)) {
+            queueList.add(queueName);
+         }
       }
-      return queues;
+      return queueList;
    }
 
    /**

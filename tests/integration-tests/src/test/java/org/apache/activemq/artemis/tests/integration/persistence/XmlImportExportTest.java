@@ -37,6 +37,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.UUID;
 
 import org.apache.activemq.artemis.api.core.Message;
@@ -67,6 +68,7 @@ import org.apache.activemq.artemis.jms.server.impl.JMSServerManagerImpl;
 import org.apache.activemq.artemis.tests.unit.util.InVMContext;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.tests.util.CFUtil;
+import org.apache.activemq.artemis.utils.CompositeAddress;
 import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.artemis.tests.util.Wait;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
@@ -723,6 +725,113 @@ public class XmlImportExportTest extends ActiveMQTestBase {
       consumer = session.createConsumer("myQueue2");
       msg = consumer.receive(CONSUMER_TIMEOUT);
       assertNotNull(msg);
+   }
+
+   @Test
+   public void testExportSpecificQueue() throws Exception {
+      ClientSession session = basicSetUp();
+
+      // queueA1 and queueA2 share addressA; queueB lives on its own address
+      session.createQueue(QueueConfiguration.of("queueA1").setAddress("addressA").setRoutingType(RoutingType.ANYCAST));
+      session.createQueue(QueueConfiguration.of("queueA2").setAddress("addressA").setRoutingType(RoutingType.ANYCAST));
+      session.createQueue(QueueConfiguration.of("queueB").setAddress("addressB").setRoutingType(RoutingType.ANYCAST));
+
+      // FQQN addressing routes each message to exactly one queue
+      sendDurableTextMessage(session, CompositeAddress.toFullyQualified("addressA", "queueA1"), "A1");
+      sendDurableTextMessage(session, CompositeAddress.toFullyQualified("addressA", "queueA2"), "A2");
+      sendDurableTextMessage(session, CompositeAddress.toFullyQualified("addressB", "queueB"), "B");
+
+      session.close();
+      locator.close();
+      server.stop();
+
+      ByteArrayOutputStream xmlOutputStream = new ByteArrayOutputStream();
+      XmlDataExporter xmlDataExporter = new XmlDataExporter();
+      xmlDataExporter.setQueues(List.of("queueA1"));
+      xmlDataExporter.process(xmlOutputStream, server.getConfiguration().getBindingsDirectory(), server.getConfiguration().getJournalDirectory(), server.getConfiguration().getPagingDirectory(), server.getConfiguration().getLargeMessagesDirectory());
+      String xml = new String(xmlOutputStream.toByteArray());
+      if (logger.isDebugEnabled()) {
+         logger.debug(xml);
+      }
+
+      // only the requested queue and the address that hosts it are exported
+      assertTrue(xml.contains("queueA1"), "expected queueA1 in export");
+      assertTrue(xml.contains("addressA"), "expected addressA in export");
+      assertFalse(xml.contains("queueA2"), "queueA2 should not be exported");
+      assertFalse(xml.contains("queueB"), "queueB should not be exported");
+      assertFalse(xml.contains("addressB"), "addressB should not be exported");
+
+      clearDataRecreateServerDirs();
+      server.start();
+      forceLong();
+      locator = createInVMNonHALocator();
+      factory = createSessionFactory(locator);
+      session = factory.createSession(false, true, true);
+
+      ByteArrayInputStream xmlInputStream = new ByteArrayInputStream(xmlOutputStream.toByteArray());
+      XmlDataImporter xmlDataImporter = new XmlDataImporter();
+      xmlDataImporter.validate(xmlInputStream);
+      xmlInputStream.reset();
+      xmlDataImporter.process(xmlInputStream, session);
+
+      // round-trip: only queueA1 was recreated, carrying only its own message
+      assertNotNull(server.locateQueue("queueA1"));
+      assertNull(server.locateQueue("queueA2"));
+      assertNull(server.locateQueue("queueB"));
+
+      ClientConsumer consumer = session.createConsumer("queueA1");
+      session.start();
+      ClientMessage msg = consumer.receive(CONSUMER_TIMEOUT);
+      assertNotNull(msg);
+      assertEquals("A1", msg.getBodyBuffer().readString());
+      assertNull(consumer.receiveImmediate());
+      consumer.close();
+   }
+
+   @Test
+   public void testExportUnknownQueueWarns() throws Exception {
+      ClientSession session = basicSetUp();
+
+      session.createQueue(QueueConfiguration.of("realQueue"));
+      ClientProducer producer = session.createProducer("realQueue");
+      producer.send(session.createMessage(true));
+
+      session.close();
+      locator.close();
+      server.stop();
+
+      ByteArrayOutputStream xmlOutputStream = new ByteArrayOutputStream();
+      XmlDataExporter xmlDataExporter = new XmlDataExporter();
+      // filtering on a queue that doesn't exist must not throw and must export nothing for it
+      xmlDataExporter.setQueues(List.of("ghostQueue"));
+      xmlDataExporter.process(xmlOutputStream, server.getConfiguration().getBindingsDirectory(), server.getConfiguration().getJournalDirectory(), server.getConfiguration().getPagingDirectory(), server.getConfiguration().getLargeMessagesDirectory());
+      String xml = new String(xmlOutputStream.toByteArray());
+      assertNull(xmlDataExporter.getLastError());
+      assertFalse(xml.contains("realQueue"), "no real queue data should be exported when filtering an unknown queue");
+
+      // the produced XML must still be valid and importable; it simply won't recreate any queue
+      clearDataRecreateServerDirs();
+      server.start();
+      forceLong();
+      locator = createInVMNonHALocator();
+      factory = createSessionFactory(locator);
+      session = factory.createSession(false, true, true);
+
+      ByteArrayInputStream xmlInputStream = new ByteArrayInputStream(xmlOutputStream.toByteArray());
+      XmlDataImporter xmlDataImporter = new XmlDataImporter();
+      xmlDataImporter.validate(xmlInputStream);
+      xmlInputStream.reset();
+      xmlDataImporter.process(xmlInputStream, session);
+
+      assertNull(server.locateQueue("realQueue"));
+   }
+
+   private void sendDurableTextMessage(ClientSession session, String address, String body) throws Exception {
+      ClientProducer producer = session.createProducer(address);
+      ClientMessage message = session.createMessage(Message.TEXT_TYPE, true);
+      message.getBodyBuffer().writeString(body);
+      producer.send(message);
+      producer.close();
    }
 
    @Test
