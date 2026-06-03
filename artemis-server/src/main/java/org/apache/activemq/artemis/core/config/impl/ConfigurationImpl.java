@@ -138,6 +138,9 @@ import org.apache.activemq.artemis.json.JsonObject;
 import org.apache.activemq.artemis.json.JsonObjectBuilder;
 import org.apache.activemq.artemis.json.JsonString;
 import org.apache.activemq.artemis.json.JsonValue;
+import org.snakeyaml.engine.v2.api.Load;
+import org.snakeyaml.engine.v2.api.LoadSettings;
+
 import org.apache.activemq.artemis.utils.ByteUtil;
 import org.apache.activemq.artemis.utils.ClassloadingUtil;
 import org.apache.activemq.artemis.utils.Env;
@@ -497,7 +500,7 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
    private File artemisInstance;
    private transient JsonObject jsonStatus = JsonLoader.createObjectBuilder().build();
    private final Set<String> keysToRedact = new HashSet<>();
-   private static final Pattern defaultPropertiesFileNamePattern = Pattern.compile(".*\\.(json|properties)");
+   private static final Pattern defaultPropertiesFileNamePattern = Pattern.compile(".*\\.(json|yaml|properties)");
 
    private JsonObject getJsonStatus() {
       if (jsonStatus == null) {
@@ -625,8 +628,11 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
       InsertionOrderedProperties brokerProperties = new InsertionOrderedProperties();
       try (CheckedInputStream checkedInputStream = new CheckedInputStream(new FileInputStream(file), new Adler32())) {
          try {
-            if (file.getName().endsWith(".json")) {
+            String fileName = file.getName();
+            if (fileName.endsWith(".json")) {
                brokerProperties.loadJson(configuration, checkedInputStream);
+            } else if (fileName.endsWith(".yaml")) {
+               brokerProperties.loadYaml(configuration, checkedInputStream);
             } else {
                brokerProperties.load(checkedInputStream);
             }
@@ -3880,6 +3886,49 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
          loadJsonObject(surroundString, "", jsonObject);
 
          return true;
+      }
+
+      public synchronized boolean loadYaml(ConfigurationImpl configuration, InputStream inputStream) {
+         LoadSettings settings = LoadSettings.builder()
+            .setMaxAliasesForCollections(50)
+            .setCodePointLimit(3 * 1024 * 1024)
+            .build();
+         Load yamlLoad = new Load(settings);
+         @SuppressWarnings("unchecked")
+         Map<String, Object> yamlMap = (Map<String, Object>) yamlLoad.loadFromInputStream(inputStream);
+         if (yamlMap == null) {
+            return false;
+         }
+         final String surroundString = determineSurroundString(configuration, yamlMap);
+         loadYamlMap(surroundString, "", yamlMap);
+         return true;
+      }
+
+      @SuppressWarnings("unchecked")
+      private void loadYamlMap(String keySurroundString, String parentKey, Map<String, Object> map) {
+         for (Map.Entry<String, Object> entry : map.entrySet()) {
+            String key = entry.getKey();
+            key = autoSurroundIfNecessary(key, keySurroundString);
+            String propertyKey = parentKey + key;
+            Object value = entry.getValue();
+            if (value instanceof Map) {
+               loadYamlMap(keySurroundString, propertyKey + ".", (Map<String, Object>) value);
+            } else if (value != null) {
+               put(propertyKey, String.valueOf(value));
+            }
+         }
+      }
+
+      private String determineSurroundString(ConfigurationImpl configuration, Map<String, Object> yamlMap) {
+         Object surroundValue = yamlMap.get(ActiveMQDefaultConfiguration.BROKER_PROPERTIES_KEY_SURROUND_PROPERTY);
+         if (surroundValue != null) {
+            return String.valueOf(surroundValue);
+         }
+         Object brokerSurroundValue = yamlMap.get("brokerPropertiesKeySurround");
+         if (brokerSurroundValue != null) {
+            return String.valueOf(brokerSurroundValue);
+         }
+         return configuration.getBrokerPropertiesKeySurround();
       }
 
       private void loadJsonObject(String keySurroundString, String parentKey, JsonObject jsonObject) {

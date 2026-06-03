@@ -937,6 +937,13 @@
          </dependency>
 
          <dependency>
+            <groupId>org.snakeyaml</groupId>
+            <artifactId>snakeyaml-engine</artifactId>
+            <version>${snakeyaml-engine.version}</version>
+            <!-- Apache 2.0 License -->
+         </dependency>
+
+         <dependency>
             <groupId>com.fasterxml.jackson</groupId>
             <artifactId>jackson-bom</artifactId>
             <version>${jackson.version}</version>

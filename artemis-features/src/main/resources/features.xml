@@ -82,6 +82,8 @@
 		<!--bundle dependency="true">mvn:io.micrometer/micrometer-core/${version.micrometer}</bundle-->
 		<bundle dependency="true">mvn:com.nimbusds/nimbus-jose-jwt/${nimbus.jwt.version}</bundle>
 
+		<bundle dependency="true">mvn:org.snakeyaml/snakeyaml-engine/${snakeyaml-engine.version}</bundle>
+
 		<bundle>mvn:org.apache.activemq/activemq-artemis-native/${activemq-artemis-native-version}</bundle>
 		<bundle>mvn:org.apache.artemis/artemis-lockmanager-api/${pom.version}</bundle>
 		<bundle>mvn:org.apache.artemis/artemis-server-osgi/${pom.version}</bundle>

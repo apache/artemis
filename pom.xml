@@ -167,6 +167,7 @@
       <arquillian-weld-embedded.version>2.1.0.Final</arquillian-weld-embedded.version>
       <owb.version>2.0.28</owb.version>
       <arquillian.version>1.10.2.Final</arquillian.version>
+      <snakeyaml-engine.version>2.10</snakeyaml-engine.version>
       <servicemix.json-1.1.spec.version>2.9.0</servicemix.json-1.1.spec.version>
       <version.org.jacoco>0.8.14</version.org.jacoco>
       <version.org.jacoco.plugin>0.8.14</version.org.jacoco.plugin>
