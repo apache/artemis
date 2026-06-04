@@ -44,9 +44,11 @@ import org.apache.activemq.artemis.core.server.JournalType;
 import org.apache.activemq.artemis.core.server.RouteContextList;
 import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
+import org.apache.activemq.artemis.core.settings.impl.HierarchicalFullPolicy;
 import org.apache.activemq.artemis.core.settings.impl.PageFullMessagePolicy;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
+import org.apache.activemq.artemis.utils.SizeAwareMetric;
 import org.apache.activemq.artemis.utils.actors.ArtemisExecutor;
 import org.apache.activemq.artemis.utils.runnables.AtomicRunnable;
 import org.junit.jupiter.api.Test;
@@ -269,6 +271,49 @@ public class PersistMultiThreadTest extends ActiveMQTestBase {
       @Override
       public void pageFull(PageSubscription subscription) {
 
+      }
+
+      @Override
+      public long getHierarchicalSize() {
+         return 0;
+      }
+
+      @Override
+      public SizeAwareMetric getHierarchicalSizeMetric() {
+         return null;
+      }
+
+      @Override
+      public long getHierarchicalElements() {
+         return 0;
+      }
+
+      @Override
+      public void addHierarchySize(int size, boolean sizeOnly) {
+         
+      }
+
+      @Override
+      public boolean isHierarchicalFull() {
+         return false;
+      }
+
+      @Override
+      public HierarchicalFullPolicy getHierarchicalFullPolicy() {
+         return null;
+      }
+
+      @Override
+      public boolean checkFullPolicy(Message message) throws Exception {
+         return true;
+      }
+
+      @Override
+      public void addHierarchy(PagingStore related) {
+      }
+
+      @Override
+      public void removeHierarchy(PagingStore related) {
       }
 
       @Override

@@ -16,23 +16,31 @@
  */
 package org.apache.activemq.artemis.tests.performance.jmh;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.config.WildcardConfiguration;
-import org.apache.activemq.artemis.core.filter.Filter;
+import org.apache.activemq.artemis.core.paging.impl.PagingManagerImpl;
+import org.apache.activemq.artemis.core.paging.impl.PagingStoreFactoryNIO;
+import org.apache.activemq.artemis.core.paging.impl.PagingStoreImpl;
+import org.apache.activemq.artemis.core.persistence.StorageManager;
+import org.apache.activemq.artemis.core.persistence.impl.journal.OperationContextImpl;
 import org.apache.activemq.artemis.core.persistence.impl.nullpm.NullStorageManager;
 import org.apache.activemq.artemis.core.postoffice.Binding;
-import org.apache.activemq.artemis.core.postoffice.BindingType;
 import org.apache.activemq.artemis.core.postoffice.Bindings;
-import org.apache.activemq.artemis.core.postoffice.BindingsFactory;
-import org.apache.activemq.artemis.core.postoffice.impl.BindingsImpl;
 import org.apache.activemq.artemis.core.postoffice.impl.WildcardAddressManager;
-import org.apache.activemq.artemis.core.server.Bindable;
-import org.apache.activemq.artemis.core.server.RoutingContext;
 import org.apache.activemq.artemis.core.server.impl.AddressInfo;
+import org.apache.activemq.artemis.core.settings.HierarchicalRepository;
+import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
+import org.apache.activemq.artemis.core.settings.impl.HierarchicalObjectRepository;
+import org.apache.activemq.artemis.utils.FileUtil;
+import org.apache.activemq.artemis.utils.actors.OrderedExecutorFactory;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Group;
@@ -42,6 +50,7 @@ import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 
 @State(Scope.Benchmark)
@@ -49,110 +58,6 @@ import org.openjdk.jmh.annotations.Warmup;
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 8, time = 1)
 public class WildcardAddressManagerPerfTest {
-
-   private static class BindingFactoryFake implements BindingsFactory {
-
-      @Override
-      public Bindings createBindings(SimpleString address) {
-         return new BindingsImpl(address, null, new NullStorageManager(1000));
-      }
-   }
-
-   private static class BindingFake implements Binding {
-
-      final SimpleString address;
-      final SimpleString id;
-      final Long idl;
-
-      BindingFake(SimpleString addressParameter, SimpleString id, long idl) {
-         this.address = addressParameter;
-         this.id = id;
-         this.idl = idl;
-      }
-
-      @Override
-      public void unproposed(SimpleString groupID) {
-
-      }
-
-      @Override
-      public SimpleString getAddress() {
-         return address;
-      }
-
-      @Override
-      public Bindable getBindable() {
-         return null;
-      }
-
-      @Override
-      public BindingType getType() {
-         return BindingType.LOCAL_QUEUE;
-      }
-
-      @Override
-      public SimpleString getUniqueName() {
-         return id;
-      }
-
-      @Override
-      public SimpleString getRoutingName() {
-         return id;
-      }
-
-      @Override
-      public SimpleString getClusterName() {
-         return null;
-      }
-
-      @Override
-      public Filter getFilter() {
-         return null;
-      }
-
-      @Override
-      public boolean isHighAcceptPriority(Message message) {
-         return false;
-      }
-
-      @Override
-      public boolean isExclusive() {
-         return false;
-      }
-
-      @Override
-      public Long getID() {
-         return idl;
-      }
-
-      @Override
-      public int getDistance() {
-         return 0;
-      }
-
-      @Override
-      public void route(Message message, RoutingContext context) {
-      }
-
-      @Override
-      public void close() {
-      }
-
-      @Override
-      public String toManagementString() {
-         return "FakeBiding Address=" + this.address;
-      }
-
-      @Override
-      public boolean isConnected() {
-         return true;
-      }
-
-      @Override
-      public void routeWithAck(Message message, RoutingContext context) {
-
-      }
-   }
 
    public WildcardAddressManager addressManager;
 
@@ -162,6 +67,7 @@ public class WildcardAddressManagerPerfTest {
    AtomicLong topicCounter;
    private static final WildcardConfiguration WILDCARD_CONFIGURATION;
    SimpleString[] addresses;
+   PagingStoreImpl[] stores;
 
    static {
       WILDCARD_CONFIGURATION = new WildcardConfiguration();
@@ -170,22 +76,63 @@ public class WildcardAddressManagerPerfTest {
 
    private static final SimpleString WILDCARD = SimpleString.of("Topic1.>");
 
+   @Param({"false", "true"})
+   boolean useHierarchy;
+
+   PagingManagerImpl pagingManager;
+
+
+   File tempDirectory;
+   private ExecutorService executorService;
+   private ScheduledExecutorService scheduledExecutorService;
+
    @Setup
    public void init() throws Exception {
-      addressManager = new WildcardAddressManager(new BindingFactoryFake(), WILDCARD_CONFIGURATION, null, null);
+
+      tempDirectory = Files.createTempDirectory("jmh-artemis-").toFile();
+      tempDirectory.deleteOnExit();
+      HierarchicalRepository<AddressSettings> addressSettings = new HierarchicalObjectRepository<>();
+      addressSettings.addMatch("#", new AddressSettings());
+      scheduledExecutorService = Executors.newScheduledThreadPool(1);
+      executorService = Executors.newFixedThreadPool(1);
+      OrderedExecutorFactory orderedExecutorFactory = new OrderedExecutorFactory(executorService);
+      final StorageManager storageManager = new NullStorageManager().setContextSupplier(() -> OperationContextImpl.getContext(orderedExecutorFactory));
+      PagingStoreFactoryNIO storeFactory = new PagingStoreFactoryNIO(storageManager, tempDirectory, 100, scheduledExecutorService, orderedExecutorFactory, true, null);
+      pagingManager = new PagingManagerImpl(storeFactory, addressSettings);
+      pagingManager.start();
+
+      addressManager = new WildcardAddressManager(new BindingFactoryFake(), WILDCARD_CONFIGURATION, null, null, useHierarchy ? pagingManager : null, useHierarchy);
 
       addressManager.addAddressInfo(new AddressInfo(WILDCARD, RoutingType.MULTICAST));
 
       topics = 1 << topicsLog2;
       addresses = new SimpleString[topics];
+      stores = new PagingStoreImpl[topics];
+
       for (int i = 0; i < topics; i++) {
-         Binding binding = new BindingFake(WILDCARD, SimpleString.of("" + i), i);
+         Binding binding = new BindingFactoryFake.BindingFake(WILDCARD, SimpleString.of("" + i), i);
          addressManager.addBinding(binding);
          addresses[i] = SimpleString.of("Topic1." + i);
          addressManager.getBindingsForRoutingAddress(addresses[i]);
+         stores[i] = (PagingStoreImpl) pagingManager.getPageStore(addresses[i]);
       }
       topicCounter = new AtomicLong(0);
       topicCounter.set(topics);
+   }
+
+   @TearDown
+   public void shutdownExecutors() {
+      if (scheduledExecutorService != null) {
+         scheduledExecutorService.shutdownNow();
+      }
+      if (executorService != null) {
+         executorService.shutdownNow();
+      }
+
+      if (tempDirectory != null && tempDirectory.exists()) {
+         FileUtil.deleteDirectory(tempDirectory);
+      }
+
    }
 
    private long nextId() {
@@ -198,12 +145,21 @@ public class WildcardAddressManagerPerfTest {
       Binding binding;
       long next;
       SimpleString[] addresses;
+      PagingStoreImpl[] stores;
 
       @Setup
       public void init(WildcardAddressManagerPerfTest benchmarkState) {
          final long id = benchmarkState.nextId();
-         binding = new BindingFake(WILDCARD, SimpleString.of("" + id), id);
+         binding = new BindingFactoryFake.BindingFake(WILDCARD, SimpleString.of("" + id), id);
          addresses = benchmarkState.addresses;
+         stores = benchmarkState.stores;
+      }
+
+      public PagingStoreImpl nextPagingStore() {
+         final long current = next;
+         next = current + 1;
+         final int index = (int) (current & (addresses.length - 1));
+         return stores[index];
       }
 
       public SimpleString nextAddress() {
@@ -218,7 +174,11 @@ public class WildcardAddressManagerPerfTest {
    @Group("both")
    @GroupThreads(2)
    public Bindings testPublishWhileAddRemoveNewBinding(ThreadState state) throws Exception {
-      return addressManager.getBindingsForRoutingAddress(state.nextAddress());
+      PagingStoreImpl store = state.nextPagingStore();
+      Bindings bindings = addressManager.getBindingsForRoutingAddress(store.getAddress());
+      store.addSize(1, false, true);
+      store.addSize(1, true, true);
+      return bindings;
    }
 
    @Benchmark
@@ -233,7 +193,11 @@ public class WildcardAddressManagerPerfTest {
    @Benchmark
    @GroupThreads(4)
    public Bindings testJustPublish(ThreadState state) throws Exception {
-      return addressManager.getBindingsForRoutingAddress(state.nextAddress());
+      PagingStoreImpl store = state.nextPagingStore();
+      Bindings bindings = addressManager.getBindingsForRoutingAddress(store.getAddress());
+      store.addSize(1, false, true);
+      store.addSize(1, true, true);
+      return bindings;
    }
 
    @Benchmark

@@ -27,6 +27,7 @@ import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPMirrorBrokerConnectionElement;
 import org.apache.activemq.artemis.core.io.IOCallback;
+import org.apache.activemq.artemis.core.paging.PagingStore;
 import org.apache.activemq.artemis.core.persistence.OperationContext;
 import org.apache.activemq.artemis.core.persistence.impl.journal.OperationContextImpl;
 import org.apache.activemq.artemis.core.postoffice.impl.PostOfficeImpl;
@@ -787,12 +788,19 @@ public class AMQPMirrorControllerSource extends BasicMirrorController<Sender> im
 
    static class PagedRouteContext implements RouteContextList {
 
+      private final PagingStore addressStore;
       private final List<Queue> durableQueues;
       private final List<Queue> nonDurableQueues;
+
+      @Override
+      public PagingStore getAddressStore() {
+         return addressStore;
+      }
 
       PagedRouteContext(Queue snfQueue) {
          List<Queue> queues = new ArrayList<>(1);
          queues.add(snfQueue);
+         this.addressStore = snfQueue.getPagingStore();
 
          if (snfQueue.isDurable()) {
             durableQueues = queues;

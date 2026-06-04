@@ -4865,6 +4865,46 @@
             </xsd:annotation>
          </xsd:element>
 
+         <xsd:element name="hierarchical" type="xsd:boolean" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  Enable hierarchical size tracking for wildcard addresses
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+
+         <xsd:element name="max-hierarchical-messages" type="xsd:long" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  Maximum total messages across all queues matching the hierarchical pattern (-1 means unlimited)
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+
+         <xsd:element name="max-hierarchical-bytes" type="xsd:string" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  Maximum total bytes across all queues matching the hierarchical pattern (supports byte notation like 10MB, -1 means unlimited)
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+
+         <xsd:element name="hierarchical-full-policy" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  What happens when hierarchical limits are exceeded
+               </xsd:documentation>
+            </xsd:annotation>
+            <xsd:simpleType>
+               <xsd:restriction base="xsd:string">
+                  <xsd:enumeration value="DROP"/>
+                  <xsd:enumeration value="FAIL"/>
+                  <xsd:enumeration value="LOG"/>
+                  <xsd:enumeration value="NO_CHECK"/>
+               </xsd:restriction>
+            </xsd:simpleType>
+         </xsd:element>
+
       </xsd:all>
 
       <xsd:attribute name="match" type="xsd:string" use="required">
@@ -5416,7 +5456,7 @@
             <xsd:element maxOccurs="1" minOccurs="0" name="routing-enabled" type="xsd:boolean">
                <xsd:annotation>
                   <xsd:documentation>
-                     is wildcard addresses routing enabled.
+                     is wildcard addresses routing enabled. Default 'true'
                   </xsd:documentation>
                </xsd:annotation>
             </xsd:element>

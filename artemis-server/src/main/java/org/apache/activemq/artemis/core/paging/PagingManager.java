@@ -49,6 +49,13 @@ public interface PagingManager extends ActiveMQComponent, HierarchicalRepository
    PagingStore getPageStore(SimpleString address) throws Exception;
 
    /**
+    * {@return the PageStore associated with the address if it exists, or null if it doesn't exist}
+    */
+   default PagingStore lookupPageStore(SimpleString address) throws Exception {
+      return getPageStore(address);
+   }
+
+   /**
     * Point to inform/restoring Transactions used when the messages were added into paging
     */
    void addTransaction(PageTransactionInfo pageTransaction);

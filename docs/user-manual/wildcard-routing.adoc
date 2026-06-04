@@ -23,4 +23,32 @@ To turn it off add the following to the `<core>` element in `broker.xml`, e.g.:
 </wildcard-addresses>
 ----
 
+== Size Aggregation on Hierarchical Queues
+
+When using wildcard addresses to create hierarchical queues, you can enable size aggregation to propagate message sizes and element counts from child addresses up to their parent wildcard addresses.
+
+This is useful for monitoring and management purposes, as it allows you to track the total size and message count across an entire hierarchy of addresses through the parent wildcard address.
+
+To enable size aggregation, set `<aggregate-sizes>` to `true` in the `<wildcard-addresses>` element in `broker.xml`:
+
+[,xml]
+----
+<wildcard-addresses>
+   <aggregate-sizes>true</aggregate-sizes>
+</wildcard-addresses>
+----
+
+This setting is disabled by default (`false`).
+
+When enabled, messages sent to child addresses (e.g., `news.europe`, `news.usa`, `news.usa.sport`) will have their sizes aggregated to any parent wildcard addresses (e.g., `news.#`).
+This aggregation happens in real-time as messages are added to or removed from queues in the hierarchy.
+
+[WARNING]
+====
+If you create a wildcard address after messages have already been sent to child addresses, the aggregated sizes will not be correct.
+The aggregation only tracks messages added or removed after the wildcard address is created.
+
+For accurate size reporting, you should create wildcard addresses before sending messages to their child addresses.
+====
+
 For more information on the wild card syntax and how to configure it, take a look at xref:wildcard-syntax.adoc#wildcard-syntax[wildcard syntax] chapter, also see the topic hierarchy example in the xref:examples.adoc#examples[examples].

@@ -24,6 +24,7 @@ import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.settings.impl.DeletionPolicy;
+import org.apache.activemq.artemis.core.settings.impl.HierarchicalFullPolicy;
 import org.apache.activemq.artemis.tests.util.ServerTestBase;
 import org.apache.activemq.artemis.utils.JsonLoader;
 import org.junit.jupiter.api.Test;
@@ -64,6 +65,10 @@ public class AddressSettingsTest extends ServerTestBase {
       assertEquals(ActiveMQDefaultConfiguration.getDefaultPurgeOnNoConsumers(), addressSettings.isDefaultPurgeOnNoConsumers());
       assertEquals(Integer.valueOf(ActiveMQDefaultConfiguration.getDefaultMaxQueueConsumers()), addressSettings.getDefaultMaxConsumers());
       assertEquals(AddressSettings.DEFAULT_NO_EXPIRY, addressSettings.isNoExpiry());
+      assertEquals(AddressSettings.DEFAULT_HIERARCHICAL, addressSettings.isHierarchical());
+      assertEquals(AddressSettings.DEFAULT_MAX_HIERARCHICAL_MESSAGES, addressSettings.getMaxHierarchicalMessages());
+      assertEquals(AddressSettings.DEFAULT_MAX_HIERARCHICAL_BYTES, addressSettings.getMaxHierarchicalBytes());
+      assertEquals(AddressSettings.DEFAULT_HIERARCHICAL_FULL_POLICY, addressSettings.getHierarchicalFullPolicy());
    }
 
    @Test
@@ -105,6 +110,10 @@ public class AddressSettingsTest extends ServerTestBase {
       addressSettingsToMerge.setIDCacheSize(5);
       addressSettingsToMerge.setInitialQueueBufferSize(256);
       addressSettingsToMerge.setNoExpiry(true);
+      addressSettingsToMerge.setHierarchical(true);
+      addressSettingsToMerge.setMaxHierarchicalMessages(5000);
+      addressSettingsToMerge.setMaxHierarchicalBytes(10485760); // 10MB
+      addressSettingsToMerge.setHierarchicalFullPolicy(HierarchicalFullPolicy.DROP);
 
       if (copy) {
          addressSettings = addressSettings.mergeCopy(addressSettingsToMerge);
@@ -128,6 +137,10 @@ public class AddressSettingsTest extends ServerTestBase {
       assertEquals(Integer.valueOf(5), addressSettings.getIDCacheSize());
       assertEquals(Integer.valueOf(256), addressSettings.getInitialQueueBufferSize());
       assertTrue(addressSettings.isNoExpiry());
+      assertTrue(addressSettings.isHierarchical());
+      assertEquals(5000, addressSettings.getMaxHierarchicalMessages());
+      assertEquals(10485760, addressSettings.getMaxHierarchicalBytes());
+      assertEquals(HierarchicalFullPolicy.DROP, addressSettings.getHierarchicalFullPolicy());
    }
 
    @Test

@@ -27,6 +27,7 @@ import org.apache.activemq.artemis.core.server.cluster.impl.MessageLoadBalancing
 import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.DeletionPolicy;
 import org.apache.activemq.artemis.core.settings.impl.DiskFullMessagePolicy;
+import org.apache.activemq.artemis.core.settings.impl.HierarchicalFullPolicy;
 import org.apache.activemq.artemis.core.settings.impl.PageFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.SlowConsumerPolicy;
 import org.apache.activemq.artemis.core.settings.impl.SlowConsumerThresholdMeasurementUnit;
@@ -188,6 +189,16 @@ public final class Validators {
    public static final Validator<String> DELETION_POLICY_TYPE = (name, value) -> {
       if (value == null || !value.equals(DeletionPolicy.OFF.toString()) && !value.equals(DeletionPolicy.FORCE.toString())) {
          throw ActiveMQMessageBundle.BUNDLE.invalidDeletionPolicyType(value);
+      }
+      return value;
+   };
+
+   public static final Validator<String> HIERARCHICAL_FULL_POLICY_TYPE = (name, value) -> {
+      if (value == null || !value.equals(HierarchicalFullPolicy.DROP.toString()) &&
+         !value.equals(HierarchicalFullPolicy.FAIL.toString()) &&
+         !value.equals(HierarchicalFullPolicy.LOG.toString()) &&
+         !value.equals(HierarchicalFullPolicy.NO_CHECK.toString())) {
+         throw ActiveMQMessageBundle.BUNDLE.invalidHierarchicalFullPolicyType(value);
       }
       return value;
    };

@@ -408,7 +408,7 @@ public interface ActiveMQServerLogger {
    void pageStoreStart(SimpleString storeName, String sizeInfo);
 
    @LogMessage(id = 222039, value = "Messages sent to address '{}' are being dropped; {}", level = LogMessage.Level.WARN)
-   void pageStoreDropMessages(SimpleString storeName, String sizeInfo);
+   void pageStoreDropMessages(String storeName, String sizeInfo);
 
    @LogMessage(id = 222040, value = "Server is stopped", level = LogMessage.Level.WARN)
    void serverIsStopped();
@@ -1547,4 +1547,7 @@ public interface ActiveMQServerLogger {
 
    @LogMessage(id = 224164, value = "Failed to recover stored configuration for divert named '{}': {}. To repair this record create a new divert with the same name via the management API.", level = LogMessage.Level.WARN)
    void failedToRecoverStoredDivertConfiguration(String divertName, String divert);
+
+   @LogMessage(id = 224165, value = "Messages sent to address '{}' are being dropped as hierarchy is full at {}; {}", level = LogMessage.Level.WARN)
+   void pageStoreDropMessagesHierarchical(String storeName, String hierarchicalAddress, String sizeInfo);
 }

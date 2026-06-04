@@ -47,10 +47,29 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class PagingManagerImplTest extends ActiveMQTestBase {
+
+   @Test
+   public void testLookupOnly() throws Exception {
+      HierarchicalRepository<AddressSettings> addressSettings = new HierarchicalObjectRepository<>();
+      addressSettings.addMatch("#", new AddressSettings());
+      ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
+      runAfter(scheduledExecutorService::shutdownNow);
+      OrderedExecutorFactory orderedExecutorFactory = getOrderedExecutor();
+      final StorageManager storageManager = new NullStorageManager().setContextSupplier(() -> OperationContextImpl.getContext(orderedExecutorFactory));
+      PagingStoreFactoryNIO storeFactory = new PagingStoreFactoryNIO(storageManager, getPageDirFile(), 100, scheduledExecutorService, orderedExecutorFactory, true, null);
+      PagingManagerImpl managerImpl = new PagingManagerImpl(storeFactory, addressSettings);
+
+      SimpleString addressLookupName = RandomUtil.randomUUIDSimpleString();
+      managerImpl.start();
+      assertNull(managerImpl.lookupPageStore(addressLookupName));
+      assertNotNull(managerImpl.getPageStore(addressLookupName));
+      assertNotNull(managerImpl.lookupPageStore(addressLookupName));
+   }
 
    @Test
    public void testPagingManager() throws Exception {
@@ -59,7 +78,6 @@ public class PagingManagerImplTest extends ActiveMQTestBase {
       addressSettings.setDefault(new AddressSettings().setAddressFullMessagePolicy(AddressFullMessagePolicy.PAGE));
 
       OrderedExecutorFactory orderedExecutorFactory = getOrderedExecutor();
-
       final StorageManager storageManager = new NullStorageManager().setContextSupplier(() -> OperationContextImpl.getContext(orderedExecutorFactory));
 
       ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
@@ -78,11 +96,11 @@ public class PagingManagerImplTest extends ActiveMQTestBase {
       ICoreMessage msg = createMessage(1L, SimpleString.of("simple-test"), createRandomBuffer(10));
 
       final RoutingContextImpl ctx = new RoutingContextImpl(null);
-      assertFalse(store.page(msg, ctx.getTransaction(), ctx.getContextListing(store.getStoreName())));
+      assertFalse(store.page(msg, ctx.getTransaction(), ctx.getContextListing(store.getStoreName(), store)));
 
       store.startPaging();
 
-      assertTrue(store.page(msg, ctx.getTransaction(), ctx.getContextListing(store.getStoreName())));
+      assertTrue(store.page(msg, ctx.getTransaction(), ctx.getContextListing(store.getStoreName(), store)));
       syncOperationContext();
 
       Page page = depageOnExecutor(store);
@@ -102,7 +120,7 @@ public class PagingManagerImplTest extends ActiveMQTestBase {
       assertNull(depageOnExecutor(store));
 
       final RoutingContextImpl ctx2 = new RoutingContextImpl(null);
-      assertFalse(store.page(msg, ctx2.getTransaction(), ctx2.getContextListing(store.getStoreName())));
+      assertFalse(store.page(msg, ctx2.getTransaction(), ctx2.getContextListing(store.getStoreName(), store)));
 
    }
 

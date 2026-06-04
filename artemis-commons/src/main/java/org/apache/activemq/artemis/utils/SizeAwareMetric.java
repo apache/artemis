@@ -56,10 +56,22 @@ public class SizeAwareMetric {
 
    private Runnable underCallback;
 
+   private Object owner;
+
    /**
     * To be used in a case where we just measure elements
     */
    public SizeAwareMetric() {
+   }
+
+   public Object getOwner() {
+      return owner;
+   }
+
+   /* owner is used for debugging and logging purposes. (to know where the metric is coming from) */
+   public SizeAwareMetric setOwner(Object owner) {
+      this.owner = owner;
+      return this;
    }
 
 
@@ -198,6 +210,17 @@ public class SizeAwareMetric {
       long currentElements = elementsUpdater.get(this);
       checkOver(currentElements, currentSize);
       checkUnder(currentElements, currentSize);
+   }
+
+   public void addMetric(SizeAwareMetric other) {
+      if (other == null) {
+         return;
+      }
+      long otherSize = other.getSize();
+      long otherElements = other.getElements();
+
+      sizeUpdater.addAndGet(this, otherSize);
+      elementsUpdater.addAndGet(this, otherElements);
    }
 
    private void checkUnder(long currentElements, long currentSize) {

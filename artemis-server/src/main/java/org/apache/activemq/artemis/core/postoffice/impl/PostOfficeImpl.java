@@ -185,7 +185,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       this.addressQueueReaperPeriod = addressQueueReaperPeriod;
 
       if (wildcardConfiguration.isRoutingEnabled()) {
-         addressManager = new WildcardAddressManager(this, wildcardConfiguration, storageManager, server.getMetricsManager());
+         addressManager = new WildcardAddressManager(this, wildcardConfiguration, storageManager, server.getMetricsManager(), server.getPagingManager());
       } else {
          addressManager = new SimpleAddressManager(this, wildcardConfiguration, storageManager, server.getMetricsManager());
       }
@@ -1691,6 +1691,22 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       final SimpleString messageAddress = message.getAddressSimpleString();
       final PagingStore owningStore = pagingManager.getPageStore(messageAddress);
       message.setOwner(owningStore);
+
+      boolean dropMessages = false;
+      if (owningStore != null && !owningStore.checkFullPolicy(message)) {
+         dropMessages = true;
+      }
+      for (Map.Entry<SimpleString, RouteContextList> entry : context.getContexListing().entrySet()) {
+         final PagingStore store = entry.getValue().getAddressStore();
+         if (store != null && store != owningStore && !store.checkFullPolicy(message)) {
+            dropMessages = true;
+         }
+      }
+
+      if (dropMessages) {
+         return;
+      }
+
       for (Map.Entry<SimpleString, RouteContextList> entry : context.getContexListing().entrySet()) {
          final PagingStore store;
          if (entry.getKey().equals(messageAddress)) {

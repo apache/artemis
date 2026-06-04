@@ -182,7 +182,7 @@ public class RemoteQueueBindingImpl implements RemoteQueueBinding {
    public void route(final Message message, final RoutingContext context) {
       addRouteContextToMessage(message);
 
-      List<Queue> durableQueuesOnContext = context.getDurableQueues(storeAndForwardQueue.getAddress());
+      List<Queue> durableQueuesOnContext = context.getDurableQueues(storeAndForwardQueue.getAddress(), storeAndForwardQueue.getPagingStore());
 
       if (!durableQueuesOnContext.contains(storeAndForwardQueue)) {
          // There can be many remote bindings for the same node, we only want to add the message once to
@@ -195,7 +195,7 @@ public class RemoteQueueBindingImpl implements RemoteQueueBinding {
    public void routeWithAck(Message message, RoutingContext context) {
       addRouteContextToMessage(message);
 
-      List<Queue> durableQueuesOnContext = context.getDurableQueues(storeAndForwardQueue.getAddress());
+      List<Queue> durableQueuesOnContext = context.getDurableQueues(storeAndForwardQueue.getAddress(), storeAndForwardQueue.getPagingStore());
 
       if (!durableQueuesOnContext.contains(storeAndForwardQueue)) {
          // There can be many remote bindings for the same node, we only want to add the message once to

@@ -542,6 +542,12 @@ public interface ActiveMQMessageBundle {
    IllegalArgumentException invalidDiskFullPolicyType(String val);
 
    @Message(id = 229260, value = "Wildcard addresses are not supported on producers. Only on consumers. Please send to a real address. {}")
-   ActiveMQException wildcardOnProducerNotSupported(String val);
+   IllegalArgumentException wildcardOnProducerNotSupported(String val);
+
+   @Message(id = 229261, value = "Invalid hierarchical full policy type {}")
+   IllegalArgumentException invalidHierarchicalFullPolicyType(String val);
+
+   @Message(id = 229262, value = "Hierarchy is full at \"{}\" while sending on address \"{}\"")
+   ActiveMQAddressFullException hierarchyIsFull(String hierarchyName, String addressName);
 
 }

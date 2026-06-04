@@ -27,10 +27,12 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.StampedLock;
 import java.util.function.Consumer;
 
 import org.apache.activemq.artemis.api.core.Message;
@@ -57,6 +59,7 @@ import org.apache.activemq.artemis.core.server.impl.MessageReferenceImpl;
 import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.settings.impl.DiskFullMessagePolicy;
+import org.apache.activemq.artemis.core.settings.impl.HierarchicalFullPolicy;
 import org.apache.activemq.artemis.core.settings.impl.PageFullMessagePolicy;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.core.transaction.TransactionOperation;
@@ -113,6 +116,14 @@ public class PagingStoreImpl implements PagingStore {
 
    private long maxMessages;
 
+   private boolean hierarchical;
+
+   private Long maxHierarchicalMessages;
+
+   private Long maxHierarchicalBytes;
+
+   private HierarchicalFullPolicy hierarchicalPolicy;
+
    private volatile boolean pageFull;
 
    private Long pageLimitBytes;
@@ -146,6 +157,12 @@ public class PagingStoreImpl implements PagingStore {
    // Bytes consumed by the queue on the memory
    private final SizeAwareMetric size;
 
+   private final SizeAwareMetric hierarchicalSize;
+
+   private final CopyOnWriteArraySet<PagingStore> hierarchy = new CopyOnWriteArraySet<>();
+
+   private volatile boolean hierarchicalFull;
+
    private volatile boolean full;
 
    private long numberOfPages;
@@ -177,6 +194,8 @@ public class PagingStoreImpl implements PagingStore {
    private final Supplier<Boolean> purgePageFolder;
 
    private final ScheduledExecutorService scheduledExecutorService;
+
+   private final StampedLock hierarchyLock = new StampedLock();
 
    public PagingStoreImpl(final SimpleString address,
                           final ScheduledExecutorService scheduledExecutor,
@@ -217,11 +236,15 @@ public class PagingStoreImpl implements PagingStore {
 
       this.storeName = storeName;
 
+      applySetting(addressSettings, true);
+
       this.size = new SizeAwareMetric(maxSize, maxSize, maxMessages, maxMessages).
          setUnderCallback(this::underSized).setOverCallback(this::overSized).
-         setOnSizeCallback(pagingManager::addSize);
+         setOnSizeCallback(pagingManager::addSize).setOwner(this);
 
-      applySetting(addressSettings, true);
+      this.hierarchicalSize = new SizeAwareMetric(maxHierarchicalBytes, maxHierarchicalBytes, maxHierarchicalMessages, maxHierarchicalMessages).setOwner("Hierarchical " + storeName).
+         setUnderCallback(this::underSizedHierarchical).
+         setOverCallback(this::overSizedHierarchical);
 
       this.executor = executor;
 
@@ -260,6 +283,14 @@ public class PagingStoreImpl implements PagingStore {
       this.timedWriter = writer;
    }
 
+   private void overSizedHierarchical() {
+      hierarchicalFull = true;
+   }
+
+   private void underSizedHierarchical() {
+      hierarchicalFull = false;
+   }
+
    private void overSized() {
       full = true;
    }
@@ -270,7 +301,13 @@ public class PagingStoreImpl implements PagingStore {
    }
 
    private void configureSizeMetric() {
-      size.setMax(maxSize, maxSize, maxMessages, maxMessages);
+      if (size != null) {
+         size.setMax(maxSize, maxSize, maxMessages, maxMessages);
+      }
+
+      if (hierarchicalSize != null) {
+         hierarchicalSize.setMax(maxHierarchicalBytes, maxHierarchicalBytes, maxHierarchicalMessages, maxHierarchicalMessages);
+      }
    }
 
    @Override
@@ -290,6 +327,14 @@ public class PagingStoreImpl implements PagingStore {
       prefetchPageBytes = addressSettings.getPrefetchPageBytes();
 
       maxMessages = addressSettings.getMaxSizeMessages();
+
+      hierarchical = addressSettings.isHierarchical();
+
+      maxHierarchicalMessages = addressSettings.getMaxHierarchicalMessages();
+
+      maxHierarchicalBytes = addressSettings.getMaxHierarchicalBytes();
+
+      hierarchicalPolicy = addressSettings.getHierarchicalFullPolicy();
 
       configureSizeMetric();
 
@@ -536,9 +581,70 @@ public class PagingStoreImpl implements PagingStore {
    }
 
    @Override
+   public SizeAwareMetric getSizeMetric() {
+      return size;
+   }
+
+   @Override
    public long getAddressElements() {
       return size.getElements();
    }
+
+   @Override
+   public long getHierarchicalSize() {
+      return hierarchicalSize.getSize();
+   }
+
+   @Override
+   public SizeAwareMetric getHierarchicalSizeMetric() {
+      return hierarchicalSize;
+   }
+
+   @Override
+   public long getHierarchicalElements() {
+      return hierarchicalSize.getElements();
+   }
+
+   @Override
+   public void addHierarchy(PagingStore related) {
+      if (related == this) {
+         throw new IllegalArgumentException("recursive hierarchy");
+      }
+      final long stamp = hierarchyLock.writeLock();
+      try {
+         this.hierarchy.add(related);
+         if (related instanceof PagingStoreImpl) {
+            PagingStoreImpl relatedImpl = (PagingStoreImpl) related;
+            relatedImpl.hierarchicalSize.addMetric(this.hierarchicalSize);
+         }
+      } finally {
+         hierarchyLock.unlockWrite(stamp);
+      }
+   }
+
+   @Override
+   public void removeHierarchy(PagingStore related) {
+      final long stamp = hierarchyLock.writeLock();
+      try {
+         this.hierarchy.remove(related);
+      } finally {
+         hierarchyLock.unlockWrite(stamp);
+      }
+   }
+
+   @Override
+   public Collection<PagingStore> getHierarchy() {
+      return Collections.unmodifiableSet(hierarchy);
+   }
+
+   public String debugHierarchy() {
+      StringBuilder result = new StringBuilder();
+      for (PagingStore item : hierarchy) {
+         result.append(item.toString()).append(" (size=").append(item.getAddressSize()).append(", elements=").append(item.getAddressElements()).append(")\n");
+      }
+      return result.toString();
+   }
+
 
    @Override
    public long getMaxSize() {
@@ -1376,8 +1482,23 @@ public class PagingStoreImpl implements PagingStore {
       return true;
    }
 
+   public void addHierarchySize(final int size, boolean sizeOnly) {
+      this.hierarchicalSize.addSize(size, sizeOnly, false);
+   }
+
    @Override
    public void addSize(final int size, boolean sizeOnly, boolean affectGlobal) {
+
+      if (hierarchical) {
+         final long stamp = hierarchyLock.readLock();
+         try {
+            this.addHierarchySize(size, sizeOnly);
+            hierarchy.forEach(h -> h.addHierarchySize(size, sizeOnly));
+         } finally {
+            hierarchyLock.unlockRead(stamp);
+         }
+      }
+
       long newSize = this.size.addSize(size, sizeOnly, affectGlobal);
       boolean globalFull = pagingManager.isGlobalFull();
 
@@ -1424,6 +1545,65 @@ public class PagingStoreImpl implements PagingStore {
    }
 
    @Override
+   public boolean checkFullPolicy(Message message) throws Exception {
+      if (pagingManager.isDiskFull() && (diskFullMessagePolicy == DiskFullMessagePolicy.DROP || diskFullMessagePolicy == DiskFullMessagePolicy.FAIL)) {
+         handleDrop(message, diskFullMessagePolicy == DiskFullMessagePolicy.FAIL, null);
+         return false;
+      }
+
+      if (isFull() && (addressFullMessagePolicy == AddressFullMessagePolicy.DROP || addressFullMessagePolicy == AddressFullMessagePolicy.FAIL)) {
+         handleDrop(message, addressFullMessagePolicy == AddressFullMessagePolicy.FAIL, null);
+         return false;
+      }
+
+      if (pageFull) {
+         handleDrop(message, pageFullMessagePolicy == PageFullMessagePolicy.FAIL, null);
+         return false;
+      }
+
+      if (hierarchical) {
+         long stamp = hierarchyLock.readLock();
+         try {
+            for (PagingStore hstore : hierarchy) {
+               if (hstore.isHierarchicalFull() && (hstore.getHierarchicalFullPolicy() == HierarchicalFullPolicy.DROP || hstore.getHierarchicalFullPolicy() == HierarchicalFullPolicy.FAIL)) {
+                  handleDrop(message, hstore.getHierarchicalFullPolicy() == HierarchicalFullPolicy.FAIL, hstore.getAddress());
+                  return false;
+               }
+            }
+         } finally {
+            hierarchyLock.unlockRead(stamp);
+         }
+      }
+
+      return true;
+   }
+
+   // message will be dropped, we may throw an Exception if fail
+   private void handleDrop(Message message, boolean fail, SimpleString hierarchicalAddress) throws Exception {
+      if (message.isLargeMessage()) {
+         ((LargeServerMessage) message).deleteFile();
+      }
+
+      if (fail) {
+         if (hierarchicalAddress != null) {
+            throw ActiveMQMessageBundle.BUNDLE.hierarchyIsFull(String.valueOf(hierarchicalAddress), String.valueOf(address));
+         } else {
+            throw ActiveMQMessageBundle.BUNDLE.addressIsFull(String.valueOf(address));
+         }
+      }
+
+      // System is full, just drop the message
+      if (!printedDropMessagesWarning) {
+         printedDropMessagesWarning = true;
+         if (hierarchicalAddress != null) {
+            ActiveMQServerLogger.LOGGER.pageStoreDropMessagesHierarchical(String.valueOf(address), String.valueOf(hierarchicalAddress), getPageInfo());
+         } else {
+            ActiveMQServerLogger.LOGGER.pageStoreDropMessages(String.valueOf(address), getPageInfo());
+         }
+      }
+   }
+
+   @Override
    public int page(Message message,
                        final Transaction tx,
                        RouteContextList listCtx,
@@ -1434,80 +1614,10 @@ public class PagingStoreImpl implements PagingStore {
          return -1;
       }
 
-      boolean diskFull = pagingManager.isDiskFull();
-
-      if (diskFullMessagePolicy == DiskFullMessagePolicy.DROP || diskFullMessagePolicy == DiskFullMessagePolicy.FAIL) {
-         if (diskFull) {
-            if (message.isLargeMessage()) {
-               ((LargeServerMessage) message).deleteFile();
-            }
-
-            if (diskFullMessagePolicy == DiskFullMessagePolicy.FAIL) {
-               throw ActiveMQMessageBundle.BUNDLE.addressIsFull(address.toString());
-            }
-
-            // Dist is full, just drop the data
-            if (!printedDropMessagesWarning) {
-               printedDropMessagesWarning = true;
-               ActiveMQServerLogger.LOGGER.pageStoreDropMessages(storeName, getPageInfo());
-            }
-
-            return 0;
-         }
-      }
-
-      boolean full = isFull();
-
-      if (addressFullMessagePolicy == AddressFullMessagePolicy.DROP || addressFullMessagePolicy == AddressFullMessagePolicy.FAIL) {
-         if (full) {
-            if (message.isLargeMessage()) {
-               ((LargeServerMessage) message).deleteFile();
-            }
-
-            if (addressFullMessagePolicy == AddressFullMessagePolicy.FAIL) {
-               throw ActiveMQMessageBundle.BUNDLE.addressIsFull(address.toString());
-            }
-
-            // Address is full, we just pretend we are paging, and drop the data
-            if (!printedDropMessagesWarning) {
-               printedDropMessagesWarning = true;
-               ActiveMQServerLogger.LOGGER.pageStoreDropMessages(storeName, getPageInfo());
-            }
-            return 0;
-         } else {
-            return -1;
-         }
-      } else if (addressFullMessagePolicy == AddressFullMessagePolicy.BLOCK) {
+      if (addressFullMessagePolicy == AddressFullMessagePolicy.BLOCK) {
          return -1;
       }
 
-      if (pageFull) {
-         if (message.isLargeMessage()) {
-            ((LargeServerMessage) message).deleteFile();
-         }
-
-         if (pageFullMessagePolicy == PageFullMessagePolicy.FAIL) {
-            throw ActiveMQMessageBundle.BUNDLE.addressIsFull(address.toString());
-         }
-
-         if (!printedDropMessagesWarning) {
-            printedDropMessagesWarning = true;
-            ActiveMQServerLogger.LOGGER.pageStoreDropMessages(storeName, getPageInfo());
-         }
-
-         // we are in page mode, if we got to this point, we are dropping the message while still paging
-         // we return 0 as in the storage is in "page mode" however no credits are being taken.
-         return 0;
-      }
-
-      return writePage(message, tx, listCtx, pageDecorator, useFlowControl);
-   }
-
-   private int writePage(Message message,
-                             Transaction tx,
-                             RouteContextList listCtx,
-                             Function<Message, Message> pageDecorator,
-                             boolean useFlowControl) throws Exception {
       // We need to use a readLock as we need to keep paging until we scheduled a task
       // notice that to leave paging you need pending tasks done
       readLock();
@@ -1860,6 +1970,15 @@ public class PagingStoreImpl implements PagingStore {
    @Override
    public boolean isFull() {
       return full || pagingManager.isGlobalFull();
+   }
+
+   public boolean isHierarchicalFull() {
+      return hierarchicalFull && (hierarchicalPolicy == HierarchicalFullPolicy.DROP || hierarchicalPolicy == HierarchicalFullPolicy.FAIL);
+   }
+
+   @Override
+   public HierarchicalFullPolicy getHierarchicalFullPolicy() {
+      return hierarchicalPolicy;
    }
 
 

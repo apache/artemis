@@ -16,8 +16,12 @@
  */
 package org.apache.activemq.artemis.core.postoffice.impl;
 
+import java.lang.invoke.MethodHandles;
+
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.config.WildcardConfiguration;
+import org.apache.activemq.artemis.core.paging.PagingManager;
+import org.apache.activemq.artemis.core.paging.PagingStore;
 import org.apache.activemq.artemis.core.persistence.StorageManager;
 import org.apache.activemq.artemis.core.postoffice.Binding;
 import org.apache.activemq.artemis.core.postoffice.Bindings;
@@ -27,19 +31,42 @@ import org.apache.activemq.artemis.core.server.impl.AddressInfo;
 import org.apache.activemq.artemis.core.server.metrics.MetricsManager;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.utils.CompositeAddress;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * extends the simple manager to allow wildcard addresses to be used.
  */
 public class WildcardAddressManager extends SimpleAddressManager {
 
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
    private final AddressMap<Bindings> addressMap = new AddressMap<>(wildcardConfiguration.getAnyWordsString(), wildcardConfiguration.getSingleWordString(), wildcardConfiguration.getDelimiter());
+
+   private final AddressMap<PagingStore> storeAggregationMap;
+
+   final PagingManager pagingManager;
 
    public WildcardAddressManager(final BindingsFactory bindingsFactory,
                                  final WildcardConfiguration wildcardConfiguration,
                                  final StorageManager storageManager,
                                  final MetricsManager metricsManager) {
+      this(bindingsFactory, wildcardConfiguration, storageManager, metricsManager, null);
+   }
+
+   public WildcardAddressManager(final BindingsFactory bindingsFactory,
+                                 final WildcardConfiguration wildcardConfiguration,
+                                 final StorageManager storageManager,
+                                 final MetricsManager metricsManager,
+                                 final PagingManager pagingManager) {
       super(bindingsFactory, wildcardConfiguration, storageManager, metricsManager);
+      this.pagingManager = pagingManager;
+      if (pagingManager != null) {
+         // only activate the map if we are using it
+         storeAggregationMap = new AddressMap<>(wildcardConfiguration.getAnyWordsString(), wildcardConfiguration.getSingleWordString(), wildcardConfiguration.getDelimiter());
+      } else {
+         storeAggregationMap = null;
+      }
    }
 
    // publish, may be a new address that needs wildcard bindings added
@@ -124,9 +151,7 @@ public class WildcardAddressManager extends SimpleAddressManager {
       if (binding != null) {
          SimpleString address = binding.getAddress();
          if (wildcardConfiguration.isWild(address)) {
-
             addressMap.visitMatching(address, bindings -> removeBindingInternal(bindings.getName(), uniqueName));
-
          }
       }
       return binding;
@@ -141,6 +166,9 @@ public class WildcardAddressManager extends SimpleAddressManager {
    public void clear() {
       super.clear();
       addressMap.reset();
+      if (storeAggregationMap != null) {
+         storeAggregationMap.reset();
+      }
    }
 
    public AddressMap<Bindings> getAddressMap() {
@@ -148,9 +176,42 @@ public class WildcardAddressManager extends SimpleAddressManager {
    }
 
    @Override
+   public boolean reloadAddressInfo(AddressInfo addressInfo) throws Exception {
+      boolean result = super.reloadAddressInfo(addressInfo);
+
+      if (storeAggregationMap != null) {
+         PagingStore store = pagingManager.getPageStore(addressInfo.getName());
+         storeAggregationMap.put(addressInfo.getName(), store);
+
+         if (wildcardConfiguration.isWild(addressInfo.getName())) {
+            storeAggregationMap.visitMatching(addressInfo.getName(), child -> child.addHierarchy(store));
+         } else {
+            storeAggregationMap.visitMatchingWildcards(addressInfo.getName(), parent -> {
+               if (parent != store) {
+                  store.addHierarchy(parent);
+               }
+            });
+         }
+      }
+
+      return result;
+   }
+
+   @Override
    public AddressInfo removeAddressInfo(SimpleString address) throws Exception {
       SimpleString realAddress = CompositeAddress.extractAddressName(address);
       addressMap.remove(realAddress, super.getBindingsForRoutingAddress(realAddress));
+
+      if (storeAggregationMap != null) {
+         PagingStore store = pagingManager.lookupPageStore(address);
+         if (store != null) {
+            if (wildcardConfiguration.isWild(address)) {
+               storeAggregationMap.visitMatching(address, child -> child.removeHierarchy(store));
+            }
+         }
+         storeAggregationMap.remove(address, store);
+      }
+
       return super.removeAddressInfo(address);
    }
 }

@@ -108,6 +108,7 @@ import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.settings.impl.DeletionPolicy;
 import org.apache.activemq.artemis.core.settings.impl.DiskFullMessagePolicy;
+import org.apache.activemq.artemis.core.settings.impl.HierarchicalFullPolicy;
 import org.apache.activemq.artemis.core.settings.impl.PageFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.ResourceLimitSettings;
 import org.apache.activemq.artemis.core.settings.impl.SlowConsumerPolicy;
@@ -135,6 +136,7 @@ import static org.apache.activemq.artemis.core.config.impl.Validators.DELETION_P
 import static org.apache.activemq.artemis.core.config.impl.Validators.DISK_FULL_MESSAGE_POLICY_TYPE;
 import static org.apache.activemq.artemis.core.config.impl.Validators.GE_ZERO;
 import static org.apache.activemq.artemis.core.config.impl.Validators.GT_ZERO;
+import static org.apache.activemq.artemis.core.config.impl.Validators.HIERARCHICAL_FULL_POLICY_TYPE;
 import static org.apache.activemq.artemis.core.config.impl.Validators.JOURNAL_TYPE;
 import static org.apache.activemq.artemis.core.config.impl.Validators.KEY_TYPE;
 import static org.apache.activemq.artemis.core.config.impl.Validators.LE_ONE;
@@ -385,6 +387,14 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
    private static final String ENABLE_INGRESS_TIMESTAMP = "enable-ingress-timestamp";
 
    private static final String ID_CACHE_SIZE = "id-cache-size";
+
+   private static final String HIERARCHICAL_NODE_NAME = "hierarchical";
+
+   private static final String MAX_HIERARCHICAL_MESSAGES_NODE_NAME = "max-hierarchical-messages";
+
+   private static final String MAX_HIERARCHICAL_BYTES_NODE_NAME = "max-hierarchical-bytes";
+
+   private static final String HIERARCHICAL_FULL_POLICY_NODE_NAME = "hierarchical-full-policy";
 
    private static final String MIRROR_ACK_MANAGER_QUEUE_ATTEMPTS = "mirror-ack-manager-queue-attempts";
 
@@ -1530,6 +1540,14 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
             addressSettings.setIDCacheSize(GE_ZERO.validate(ID_CACHE_SIZE, XMLUtil.parseInt(child)).intValue());
          } else if (INITIAL_QUEUE_BUFFER_SIZE.equalsIgnoreCase(name)) {
             addressSettings.setInitialQueueBufferSize(POSITIVE_POWER_OF_TWO.validate(INITIAL_QUEUE_BUFFER_SIZE, XMLUtil.parseInt(child)).intValue());
+         } else if (HIERARCHICAL_NODE_NAME.equalsIgnoreCase(name)) {
+            addressSettings.setHierarchical(XMLUtil.parseBoolean(child));
+         } else if (MAX_HIERARCHICAL_MESSAGES_NODE_NAME.equalsIgnoreCase(name)) {
+            addressSettings.setMaxHierarchicalMessages(MINUS_ONE_OR_GT_ZERO.validate(MAX_HIERARCHICAL_MESSAGES_NODE_NAME, XMLUtil.parseLong(child)).longValue());
+         } else if (MAX_HIERARCHICAL_BYTES_NODE_NAME.equalsIgnoreCase(name)) {
+            addressSettings.setMaxHierarchicalBytes(MINUS_ONE_OR_GT_ZERO.validate(MAX_HIERARCHICAL_BYTES_NODE_NAME, ByteUtil.convertTextBytes(getTrimmedTextContent(child))).longValue());
+         } else if (HIERARCHICAL_FULL_POLICY_NODE_NAME.equalsIgnoreCase(name)) {
+            addressSettings.setHierarchicalFullPolicy(Enum.valueOf(HierarchicalFullPolicy.class, HIERARCHICAL_FULL_POLICY_TYPE.validate(HIERARCHICAL_FULL_POLICY_NODE_NAME, getTrimmedTextContent(child))));
          }
       }
       return setting;

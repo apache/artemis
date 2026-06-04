@@ -185,7 +185,7 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
       assertTrue(storeImpl.isPaging());
 
       final RoutingContextImpl ctx = new RoutingContextImpl(null);
-      assertTrue(storeImpl.page(msg, ctx.getTransaction(), ctx.getContextListing(storeImpl.getStoreName())));
+      assertTrue(storeImpl.page(msg, ctx.getTransaction(), ctx.getContextListing(storeImpl.getStoreName(), storeImpl)));
       syncOperationContext();
 
       assertEquals(1, storeImpl.getNumberOfPages());
@@ -227,7 +227,7 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
 
          Message msg = createMessage(i, storeImpl, destination, buffer);
          final RoutingContextImpl ctx = new RoutingContextImpl(null);
-         assertTrue(storeImpl.page(msg, ctx.getTransaction(), ctx.getContextListing(storeImpl.getStoreName())));
+         assertTrue(storeImpl.page(msg, ctx.getTransaction(), ctx.getContextListing(storeImpl.getStoreName(), storeImpl)));
          syncOperationContext();
       }
 
@@ -295,7 +295,7 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
                msg.putIntProperty("page", page);
                final RoutingContextImpl ctx = new RoutingContextImpl(null);
                ctx.addQueue(fakeQueue.getName(), fakeQueue);
-               assertTrue(storeImpl.page(msg, ctx.getTransaction(), ctx.getContextListing(storeImpl.getStoreName())));
+               assertTrue(storeImpl.page(msg, ctx.getTransaction(), ctx.getContextListing(storeImpl.getStoreName(), storeImpl)));
                syncOperationContext();
                if (i > 0 && i % 10 == 0) {
                   storeImpl.forceAnotherPage(true);
@@ -413,7 +413,7 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
                msg.putIntProperty("page", page);
                final RoutingContextImpl ctx = new RoutingContextImpl(null);
                ctx.addQueue(fakeQueue.getName(), fakeQueue);
-               assertTrue(storeImpl.page(msg, ctx.getTransaction(), ctx.getContextListing(storeImpl.getStoreName())));
+               assertTrue(storeImpl.page(msg, ctx.getTransaction(), ctx.getContextListing(storeImpl.getStoreName(), storeImpl)));
                syncOperationContext();
                if (i > 0 && i % 10 == 0) {
                   storeImpl.forceAnotherPage(true);
@@ -510,7 +510,7 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
          msg.putIntProperty("page", 1);
          final RoutingContextImpl ctx = new RoutingContextImpl(null);
          ctx.addQueue(fakeQueue.getName(), fakeQueue);
-         assertTrue(storeImpl.page(msg, ctx.getTransaction(), ctx.getContextListing(storeImpl.getStoreName())));
+         assertTrue(storeImpl.page(msg, ctx.getTransaction(), ctx.getContextListing(storeImpl.getStoreName(), storeImpl)));
          syncOperationContext();
       }
 
@@ -567,7 +567,7 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
          Message msg = createMessage(i, store, destination, buffer);
 
          final RoutingContextImpl ctx = new RoutingContextImpl(null);
-         assertTrue(store.page(msg, ctx.getTransaction(), ctx.getContextListing(store.getStoreName())));
+         assertTrue(store.page(msg, ctx.getTransaction(), ctx.getContextListing(store.getStoreName(), store)));
          syncOperationContext();
       }
 
@@ -601,7 +601,7 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
       Message msg = createMessage(1, store, destination, buffers.get(0));
 
       final RoutingContextImpl ctx = new RoutingContextImpl(null);
-      assertTrue(store.page(msg, ctx.getTransaction(), ctx.getContextListing(store.getStoreName())));
+      assertTrue(store.page(msg, ctx.getTransaction(), ctx.getContextListing(store.getStoreName(), store)));
       syncOperationContext();
 
       Page newPage = depageOnExecutor(store);
@@ -622,14 +622,14 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
 
       {
          final RoutingContextImpl ctx2 = new RoutingContextImpl(null);
-         assertFalse(store.page(msg, ctx2.getTransaction(), ctx2.getContextListing(store.getStoreName())));
+         assertFalse(store.page(msg, ctx2.getTransaction(), ctx2.getContextListing(store.getStoreName(), store)));
       }
 
       store.startPaging();
 
       {
          final RoutingContextImpl ctx2 = new RoutingContextImpl(null);
-         assertTrue(store.page(msg, ctx2.getTransaction(), ctx2.getContextListing(store.getStoreName())));
+         assertTrue(store.page(msg, ctx2.getTransaction(), ctx2.getContextListing(store.getStoreName(), store)));
          syncOperationContext();
       }
 
@@ -736,7 +736,7 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
                   msg.putLongProperty("count", i);
 
                   final RoutingContextImpl ctx2 = new RoutingContextImpl(null);
-                  store.page(msg, ctx2.getTransaction(), ctx2.getContextListing(store.getStoreName()));
+                  store.page(msg, ctx2.getTransaction(), ctx2.getContextListing(store.getStoreName(), store));
                }
                syncOperationContext();
             } catch (Throwable e) {
@@ -1165,7 +1165,7 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
       msg.putLongProperty("count", id);
 
       final RoutingContextImpl ctx2 = new RoutingContextImpl(null);
-      storeImpl.page(msg, ctx2.getTransaction(), ctx2.getContextListing(storeImpl.getStoreName()));
+      storeImpl.page(msg, ctx2.getTransaction(), ctx2.getContextListing(storeImpl.getStoreName(), storeImpl));
       syncOperationContext();
    }
 
@@ -1333,6 +1333,92 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
          assertEquals(1, trackMemoryCheck2.getCount());
       } finally {
          store.stop();
+      }
+   }
+
+   @Test
+   public void testHierarchy() throws Exception {
+      final int INSTANCES = 10;
+      final int SIZE_PER_MESSAGE = 100;
+      final int MESSAGES_PER_INSTANCE = 50;
+
+      SequentialFileFactory factory = new FakeSequentialFileFactory();
+      PagingStoreFactory storeFactory = new FakeStoreFactory(factory);
+
+      // Create root PagingStore
+      PagingStoreImpl root = new PagingStoreImpl(SimpleString.of("root"), scheduledExecutorService, 100,
+                                                  createMockManager(), nullStorageManager, factory, storeFactory,
+                                                  SimpleString.of("root"),
+                                                  new AddressSettings().setMaxSizeBytes(100000).setMaxSizeMessages(10000),
+                                                  orderedExecutorFactory.getExecutor(), true);
+
+      // Create child PagingStores
+      PagingStoreImpl[] stores = new PagingStoreImpl[INSTANCES];
+      for (int i = 0; i < INSTANCES; i++) {
+         stores[i] = new PagingStoreImpl(SimpleString.of("child." + i), scheduledExecutorService, 100,
+                                         createMockManager(), nullStorageManager, factory, storeFactory,
+                                         SimpleString.of("child." + i),
+                                         new AddressSettings().setMaxSizeBytes(10000).setMaxSizeMessages(1000),
+                                         orderedExecutorFactory.getExecutor(), true);
+      }
+
+      root.start();
+      for (int i = 0; i < INSTANCES; i++) {
+         stores[i].start();
+      }
+
+      try {
+         // Create hierarchy: each child adds root to its hierarchy
+         for (int i = 0; i < INSTANCES; i++) {
+            stores[i].addHierarchy(root);
+         }
+
+         // Validate hierarchy is set up correctly on each child
+         for (int i = 0; i < INSTANCES; i++) {
+            assertEquals(1, stores[i].getHierarchy().size());
+            assertTrue(stores[i].getHierarchy().contains(root));
+         }
+
+         // Add messages to each instance
+         for (int i = 0; i < INSTANCES; i++) {
+            for (int j = 0; j < MESSAGES_PER_INSTANCE; j++) {
+               stores[i].addSize(SIZE_PER_MESSAGE, false, true);
+            }
+         }
+
+         // Flush executors to ensure all size updates are processed
+         for (int i = 0; i < INSTANCES; i++) {
+            stores[i].flushExecutors();
+         }
+         root.flushExecutors();
+
+         // Validate individual stores
+         for (int i = 0; i < INSTANCES; i++) {
+            assertEquals(SIZE_PER_MESSAGE * MESSAGES_PER_INSTANCE, stores[i].getAddressSize());
+            assertEquals(MESSAGES_PER_INSTANCE, stores[i].getAddressElements());
+         }
+
+         // Validate root totals (root should have accumulated from all children via hierarchy)
+         long expectedTotalSize = (long) INSTANCES * MESSAGES_PER_INSTANCE * SIZE_PER_MESSAGE;
+         long expectedTotalElements = (long) INSTANCES * MESSAGES_PER_INSTANCE;
+         assertEquals(expectedTotalSize, root.getAddressSize());
+         assertEquals(expectedTotalElements, root.getAddressElements());
+
+         // Remove hierarchy from each child
+         for (int i = 0; i < INSTANCES; i++) {
+            stores[i].removeHierarchy(root);
+         }
+
+         // Validate hierarchy is empty on each child
+         for (int i = 0; i < INSTANCES; i++) {
+            assertEquals(0, stores[i].getHierarchy().size());
+            assertFalse(stores[i].getHierarchy().contains(root));
+         }
+      } finally {
+         for (int i = 0; i < INSTANCES; i++) {
+            stores[i].stop();
+         }
+         root.stop();
       }
    }
 

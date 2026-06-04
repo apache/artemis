@@ -111,6 +111,7 @@ import org.apache.activemq.artemis.core.server.transformer.AddHeadersTransformer
 import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.DeletionPolicy;
 import org.apache.activemq.artemis.core.settings.impl.DiskFullMessagePolicy;
+import org.apache.activemq.artemis.core.settings.impl.HierarchicalFullPolicy;
 import org.apache.activemq.artemis.core.settings.impl.ResourceLimitSettings;
 import org.apache.activemq.artemis.core.settings.impl.SlowConsumerThresholdMeasurementUnit;
 import org.apache.activemq.artemis.jdbc.store.drivers.JDBCDataSourceUtils;
@@ -1790,6 +1791,10 @@ public class ConfigurationImplTest extends AbstractConfigurationTestBase {
       properties.put("addressSettings.NeedToSet.defaultMaxConsumers", 10);
       properties.put("addressSettings.NeedToSet.iDCacheSize", 10);
       properties.put("addressSettings.NeedToSet.noExpiry", true);
+      properties.put("addressSettings.NeedToSet.hierarchical", "true");
+      properties.put("addressSettings.NeedToSet.maxHierarchicalMessages", 8888);
+      properties.put("addressSettings.NeedToSet.maxHierarchicalBytes", 9999);
+      properties.put("addressSettings.NeedToSet.hierarchicalFullPolicy", HierarchicalFullPolicy.FAIL);
 
       configuration.parsePrefixedProperties(properties, null);
 
@@ -1860,6 +1865,10 @@ public class ConfigurationImplTest extends AbstractConfigurationTestBase {
       assertEquals(Integer.valueOf(10), configuration.getAddressSettings().get("NeedToSet").getDefaultMaxConsumers());
       assertEquals(Integer.valueOf(10), configuration.getAddressSettings().get("NeedToSet").getIDCacheSize());
       assertTrue(configuration.getAddressSettings().get("NeedToSet").isNoExpiry());
+      assertTrue(configuration.getAddressSettings().get("NeedToSet").isHierarchical());
+      assertEquals(8888, configuration.getAddressSettings().get("NeedToSet").getMaxHierarchicalMessages());
+      assertEquals(9999, configuration.getAddressSettings().get("NeedToSet").getMaxHierarchicalBytes());
+      assertEquals(HierarchicalFullPolicy.FAIL, configuration.getAddressSettings().get("NeedToSet").getHierarchicalFullPolicy());
    }
 
    @Test
@@ -1888,6 +1897,27 @@ public class ConfigurationImplTest extends AbstractConfigurationTestBase {
       assertEquals(300L, storeImpl.getPageLimitMessages().longValue());
       assertEquals(300000L, storeImpl.getPageLimitBytes().longValue());
       assertEquals("DROP", storeImpl.getPageFullMessagePolicy().toString());
+   }
+
+   @Test
+   public void testAddressSettingsHierarchicalFullPolicyNoCheck() throws Throwable {
+      ConfigurationImpl configuration = new ConfigurationImpl();
+
+      Properties properties = new Properties();
+
+      properties.put("addressSettings.TestAddress.hierarchical", "true");
+      properties.put("addressSettings.TestAddress.maxHierarchicalMessages", "5000");
+      properties.put("addressSettings.TestAddress.maxHierarchicalBytes", "10000");
+      properties.put("addressSettings.TestAddress.hierarchicalFullPolicy", "NO_CHECK");
+
+      configuration.parsePrefixedProperties(properties, null);
+
+      assertTrue(configuration.getStatus().contains("\"errors\":[]"), configuration.getStatus());
+      assertEquals(1, configuration.getAddressSettings().size());
+      assertTrue(configuration.getAddressSettings().get("TestAddress").isHierarchical());
+      assertEquals(5000, configuration.getAddressSettings().get("TestAddress").getMaxHierarchicalMessages());
+      assertEquals(10000, configuration.getAddressSettings().get("TestAddress").getMaxHierarchicalBytes());
+      assertEquals(HierarchicalFullPolicy.NO_CHECK, configuration.getAddressSettings().get("TestAddress").getHierarchicalFullPolicy());
    }
 
    @Test

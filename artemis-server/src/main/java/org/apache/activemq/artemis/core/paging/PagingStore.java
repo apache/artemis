@@ -34,8 +34,10 @@ import org.apache.activemq.artemis.core.server.ActiveMQComponent;
 import org.apache.activemq.artemis.core.server.RouteContextList;
 import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
+import org.apache.activemq.artemis.core.settings.impl.HierarchicalFullPolicy;
 import org.apache.activemq.artemis.core.settings.impl.PageFullMessagePolicy;
 import org.apache.activemq.artemis.core.transaction.Transaction;
+import org.apache.activemq.artemis.utils.SizeAwareMetric;
 import org.apache.activemq.artemis.utils.actors.ArtemisExecutor;
 import org.apache.activemq.artemis.utils.runnables.AtomicRunnable;
 
@@ -93,7 +95,17 @@ public interface PagingStore extends ActiveMQComponent, RefCountMessageListener 
 
    long getAddressSize();
 
+   default SizeAwareMetric getSizeMetric() {
+      return null;
+   }
+
    long getAddressElements();
+
+   long getHierarchicalSize();
+
+   SizeAwareMetric getHierarchicalSizeMetric();
+
+   long getHierarchicalElements();
 
    long getMaxSize();
 
@@ -106,6 +118,14 @@ public interface PagingStore extends ActiveMQComponent, RefCountMessageListener 
    int getPrefetchPageMessages();
 
    void applySetting(AddressSettings addressSettings);
+
+   void addHierarchy(PagingStore related);
+
+   void removeHierarchy(PagingStore related);
+
+   default Collection<PagingStore> getHierarchy() {
+      return java.util.Collections.emptySet();
+   }
 
    /**
     * This method will look if the current state of paging is not paging, without using a lock. For cases where you need
@@ -138,6 +158,8 @@ public interface PagingStore extends ActiveMQComponent, RefCountMessageListener 
    int page(Message message, Transaction tx, RouteContextList listCtx, Function<Message, Message> pageDecorator, boolean useFlowControl) throws Exception;
 
    Page usePage(long page);
+
+   boolean checkFullPolicy(Message message) throws Exception;
 
    /**
     * Use this method when you want to use the cache of used pages. If you are just using offline (e.g. print-data), use
@@ -194,6 +216,8 @@ public interface PagingStore extends ActiveMQComponent, RefCountMessageListener 
    default void purgeFolder() {
    }
 
+   void addHierarchySize(int size, boolean sizeOnly);
+
    /**
     * Add size to this {@code PageStore}.
     *
@@ -214,6 +238,10 @@ public interface PagingStore extends ActiveMQComponent, RefCountMessageListener 
    boolean checkMemory(boolean runOnFailure, Runnable runnable, Runnable runWhenBlocking, Consumer<AtomicRunnable> blockedCallback);
 
    boolean isFull();
+
+   boolean isHierarchicalFull();
+
+   HierarchicalFullPolicy getHierarchicalFullPolicy();
 
    boolean isRejectingMessages();
 
