@@ -79,6 +79,7 @@ import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
 import org.apache.activemq.artemis.jms.client.ActiveMQDestination;
+import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
 import org.apache.activemq.artemis.protocol.amqp.connect.AMQPBrokerConnection;
 import org.apache.activemq.artemis.tests.unit.core.postoffice.impl.fakes.FakeQueue;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
@@ -2349,4 +2350,19 @@ public class RedeployTest extends ActiveMQTestBase {
           org.apache.activemq.artemis.core.server.Queue::getName).map(SimpleString::toString).collect(Collectors.toList());
    }
 
+   @Test
+   public void testReloadCompletion() throws Exception {
+      final EmbeddedActiveMQ embeddedActiveMQ = createEmbeddedActiveMQServer("reload-queue-filter.xml");
+      embeddedActiveMQ.start();
+      try {
+         try (AssertionLoggerHandler loggerHandler = new AssertionLoggerHandler()) {
+            deployBrokerConfig(embeddedActiveMQ, "reload-queue-filter.xml");
+
+            Wait.assertTrue(() -> loggerHandler.findText("AMQ221087", "Configuration reload completed"), 2000, 100);
+            assertEquals(1, loggerHandler.countText("Configuration reload completed"));
+         }
+      } finally {
+         embeddedActiveMQ.stop();
+      }
+   }
 }

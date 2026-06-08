@@ -323,6 +323,9 @@ public interface ActiveMQServerLogger {
    @LogMessage(id = 221086, value = "Cannot route {}", level = LogMessage.Level.INFO)
    void cannotRouteClientConnection(Connection connection);
 
+   @LogMessage(id = 221087, value = "Configuration reload completed", level = LogMessage.Level.INFO)
+   void configurationReloadCompleted();
+
    @LogMessage(id = 222000, value = "ActiveMQServer is being finalized and has not been stopped. Please remember to stop the server before letting it go out of scope", level = LogMessage.Level.WARN)
    void serverFinalisedWIthoutBeingSTopped();
 

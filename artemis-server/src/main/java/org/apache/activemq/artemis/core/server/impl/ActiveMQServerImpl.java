@@ -4887,6 +4887,8 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
          ActiveMQServerLogger.LOGGER.reloadingConfiguration("protocol services");
          updateProtocolServices();
+
+         ActiveMQServerLogger.LOGGER.configurationReloadCompleted();
       }
    }
 
