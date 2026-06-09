@@ -191,7 +191,7 @@ public class AMQPStandardMessage extends AMQPMessage {
    public synchronized int getMemoryEstimate() {
       if (memoryEstimate == VALUE_NOT_PRESENT) {
          // This estimation was tested and validated through AMQPGlobalMaxTest on soak-tests
-         memoryEstimate = MINIMUM_ESTIMATE + (data != null ? data.capacity() + getApplicationPropertiesEncodingSize(data) * 2 + getApplicationPropertiesCount() * DataConstants.SIZE_INT : 0);
+         memoryEstimate = BASE_MEMORY_OVERHEAD + (data != null ? data.capacity() + getApplicationPropertiesEncodingSize(data) * 2 + getApplicationPropertiesCount() * DataConstants.SIZE_INT : 0);
       }
 
       return memoryEstimate;
@@ -258,8 +258,8 @@ public class AMQPStandardMessage extends AMQPMessage {
    }
 
    @Override
-   public Persister<Message> getWireCompatiblePersister(int wireVersion) {
-      if (wireVersion == EmbedMessageUtil.NO_MAP_WIRE_VERSION) {
+   public Persister<Message> getWireCompatiblePersister(int embedWireVersion) {
+      if (embedWireVersion == EmbedMessageUtil.EMBED_WIRE_VERSION_1) {
          return AMQPMessagePersisterV3.getInstance();
       } else {
          return AMQPMessagePersisterV4.getInstance();

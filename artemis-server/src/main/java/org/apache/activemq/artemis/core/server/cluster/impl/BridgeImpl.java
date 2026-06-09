@@ -155,7 +155,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
    private final Lock statusLock = new ReentrantLock();
 
-   private volatile int embedWireVersion = EmbedMessageUtil.LATEST_WIRE_VERSION;
+   private volatile int embedWireVersion = EmbedMessageUtil.EMBED_WIRE_VERSION_2;
 
    public BridgeImpl(final ServerLocatorInternal serverLocator,
                      final BridgeConfiguration configuration,
@@ -545,13 +545,13 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
       if (sessionToUse != null) {
          RemotingConnection connection = sessionToUse.getConnection();
          if (connection instanceof CoreRemotingConnection coreConnection) {
-            if (coreConnection.isBeforeAMQPPersistenceMapUpdate()) {
-               embedWireVersion = EmbedMessageUtil.NO_MAP_WIRE_VERSION;
+            if (coreConnection.isBeforeEmbedWireVersion2()) {
+               embedWireVersion = EmbedMessageUtil.EMBED_WIRE_VERSION_1;
                return;
             }
          }
       }
-      embedWireVersion = EmbedMessageUtil.LATEST_WIRE_VERSION;
+      embedWireVersion = EmbedMessageUtil.EMBED_WIRE_VERSION_2;
    }
 
    private int getEmbedWireVersion() {

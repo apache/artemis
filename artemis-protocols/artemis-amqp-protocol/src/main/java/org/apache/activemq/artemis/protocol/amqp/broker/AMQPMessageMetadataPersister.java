@@ -30,15 +30,14 @@ import org.slf4j.LoggerFactory;
 /**
  * Supports the AMQPMessagePersisters ({@link AMQPLargeMessagePersisterV2} and {@link AMQPMessagePersisterV4}) by providing hashmap-like encodings
  * on data used by the broker during reloading of AMQP messages. */
-public class AMQPMapPersister
-   extends AbstractMapPersister {
+public class AMQPMessageMetadataPersister extends AbstractMapPersister<AMQPMetadataDecodingState> {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-   private static final ThreadLocal<AMQPMapPersister> mapPersisterThreadLocal = ThreadLocal.withInitial(AMQPMapPersister::new);
+   private static final AMQPMessageMetadataPersister theInstance = new AMQPMessageMetadataPersister();
 
-   public static AMQPMapPersister getInstance() {
-      return mapPersisterThreadLocal.get();
+   public static AMQPMessageMetadataPersister getInstance() {
+      return theInstance;
    }
 
    protected static final short KEY_MESSAGE_ID = 1;
@@ -50,21 +49,6 @@ public class AMQPMapPersister
    protected static final short KEY_IS_DURABLE = 7;
    protected static final short KEY_EXTRA_PROPERTIES = 8;
    protected static final short KEY_IS_REENCODED = 9; // used on large messages only
-
-   ///////////////////////////////////////////////////////////////////////////////////
-   // only used on reading, on writing we will write directly from the message
-   protected long messageID; // always present
-   protected long messageFormat; // always present
-   protected long messageExpiration; // always present
-   protected int memoryEstimate; // always present
-   protected byte priority; // always present
-   protected boolean isDurable; // always present
-   protected SimpleString address; // variable size based on the string size
-   protected TypedProperties extraProperties; // variable size based on the byte array size
-   protected boolean isReencoded; // used on large messages only
-   // only used on reading, on writing we will write directly from the message
-   ///////////////////////////////////////////////////////////////////////////////////
-
 
    /** This is the minimum size this codec will generate, as these will always be persisted */
    private static final int BASIC_SIZE = headerSize() +
@@ -90,19 +74,6 @@ public class AMQPMapPersister
       }
 
       return encodeSize;
-   }
-
-   public AMQPMapPersister reset() {
-      messageID = 0;
-      messageFormat = 0;
-      messageExpiration = 0;
-      memoryEstimate = 0;
-      priority = 0;
-      address = null;
-      isDurable = false;
-      extraProperties = null;
-      isReencoded = false;
-      return this;
    }
 
    public int getNumberOfElements(Message record) {
@@ -145,54 +116,54 @@ public class AMQPMapPersister
    }
 
    @Override
-   public void onMapReadInteger(short key, int value) {
+   public void onMapReadInteger(short key, int value, AMQPMetadataDecodingState metaData) {
       switch (key) {
-         case KEY_MEMORY_ESTIMATE -> memoryEstimate = value;
+         case KEY_MEMORY_ESTIMATE -> metaData.memoryEstimate = value;
          default -> logger.debug("Unknown Integer key={} value={} - ignoring", key, value);
       }
    }
 
    @Override
-   public void onMapReadByte(short key, byte value) {
+   public void onMapReadByte(short key, byte value, AMQPMetadataDecodingState metaData) {
       switch (key) {
-         case KEY_PRIORITY -> priority = value;
+         case KEY_PRIORITY -> metaData.priority = value;
          default -> logger.debug("Unknown Byte key={} value={} - ignoring", key, value);
       }
    }
 
    @Override
-   public void onMapReadBoolean(short key, boolean value) {
+   public void onMapReadBoolean(short key, boolean value, AMQPMetadataDecodingState metaData) {
       switch (key) {
-         case KEY_IS_DURABLE -> isDurable = value;
-         case KEY_IS_REENCODED -> isReencoded = value;
+         case KEY_IS_DURABLE -> metaData.isDurable = value;
+         case KEY_IS_REENCODED -> metaData.isReencoded = value;
          default -> logger.debug("Unknown Boolean key={} value={} - ignoring", key, value);
       }
    }
 
    @Override
-   public void onMapReadLong(short key, long value) {
+   public void onMapReadLong(short key, long value, AMQPMetadataDecodingState metaData) {
       switch (key) {
-         case KEY_MESSAGE_ID -> messageID = value;
-         case KEY_MESSAGE_FORMAT -> messageFormat = value;
-         case KEY_EXPIRATION -> messageExpiration = value;
+         case KEY_MESSAGE_ID -> metaData.messageID = value;
+         case KEY_MESSAGE_FORMAT -> metaData.messageFormat = value;
+         case KEY_EXPIRATION -> metaData.messageExpiration = value;
          default -> logger.debug("Unknown Long key={} value={} - ignoring", key, value);
       }
    }
 
    @Override
-   public void onMapReadSimpleString(short key, SimpleString value) {
+   public void onMapReadSimpleString(short key, SimpleString value, AMQPMetadataDecodingState metaData) {
       switch (key) {
-         case KEY_ADDRESS -> address = value;
+         case KEY_ADDRESS -> metaData.address = value;
          default -> logger.debug("Unknown String key={} value={} - ignoring", key, value);
       }
    }
 
    @Override
-   protected void onMapReadByteArray(short key, ActiveMQBuffer slice) {
+   protected void onMapReadByteArray(short key, ActiveMQBuffer slice, AMQPMetadataDecodingState metaData) {
       switch (key) {
          case KEY_EXTRA_PROPERTIES -> {
-            extraProperties = new TypedProperties(Message.INTERNAL_PROPERTY_NAMES_PREDICATE);
-            extraProperties.decode(slice.byteBuf());
+            metaData.extraProperties = new TypedProperties(Message.INTERNAL_PROPERTY_NAMES_PREDICATE);
+            metaData.extraProperties.decode(slice.byteBuf());
          }
          default -> logger.debug("Unknown byteArray key={} value={} - ignoring", key, slice);
       }

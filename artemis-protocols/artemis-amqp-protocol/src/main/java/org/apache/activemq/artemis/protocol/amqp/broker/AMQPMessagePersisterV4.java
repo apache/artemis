@@ -71,33 +71,34 @@ public class AMQPMessagePersisterV4 extends AMQPMessagePersisterV3 {
 
    /** Write persister data using Map like boundaries from MapPersister */
    protected void writeMapCodecData(ActiveMQBuffer buffer, Message record) {
-      AMQPMapPersister.getInstance().encode(buffer, record);
+      AMQPMessageMetadataPersister.getInstance().encode(buffer, record);
    }
 
    protected int getMapCodecSize(Message record) {
-      return AMQPMapPersister.getInstance().getEncodeSize(record);
+      return AMQPMessageMetadataPersister.getInstance().getEncodeSize(record);
    }
 
 
    @Override
    public Message decode(ActiveMQBuffer buffer, Message record, CoreMessageObjectPools pool) {
-      AMQPMapPersister mapCodec = AMQPMapPersister.getInstance().reset();
+      AMQPMessageMetadataPersister mapCodec = AMQPMessageMetadataPersister.getInstance();
+      AMQPMetadataDecodingState decodingMetaData = AMQPMetadataDecodingState.getInstance().reset();
 
-      mapCodec.decode(buffer);
+      mapCodec.decode(buffer, decodingMetaData);
 
-      assert mapCodec.memoryEstimate != 0;
+      assert decodingMetaData.memoryEstimate > 0;
 
-      AMQPStandardMessage standardMessage = new AMQPStandardMessage(mapCodec.messageFormat);
+      AMQPStandardMessage standardMessage = new AMQPStandardMessage(decodingMetaData.messageFormat);
       standardMessage.reloadPersistence(buffer, pool);
-      if (mapCodec.extraProperties != null) {
-         standardMessage.setExtraProperties(mapCodec.extraProperties);
+      if (decodingMetaData.extraProperties != null) {
+         standardMessage.setExtraProperties(decodingMetaData.extraProperties);
       }
-      standardMessage.setMessageID(mapCodec.messageID);
-      standardMessage.setAddress(mapCodec.address);
-      standardMessage.setMemoryEstimate(mapCodec.memoryEstimate);
-      standardMessage.reloadPriority(mapCodec.priority);
-      standardMessage.reloadSetDurable(mapCodec.isDurable);
-      standardMessage.reloadExpiration(mapCodec.messageExpiration);
+      standardMessage.setMessageID(decodingMetaData.messageID);
+      standardMessage.setAddress(decodingMetaData.address);
+      standardMessage.setMemoryEstimate(decodingMetaData.memoryEstimate);
+      standardMessage.reloadPriority(decodingMetaData.priority);
+      standardMessage.reloadSetDurable(decodingMetaData.isDurable);
+      standardMessage.reloadExpiration(decodingMetaData.messageExpiration);
       return standardMessage;
    }
 }

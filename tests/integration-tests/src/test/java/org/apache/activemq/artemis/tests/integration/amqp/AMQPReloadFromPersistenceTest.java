@@ -33,7 +33,7 @@ import org.apache.activemq.artemis.protocol.amqp.broker.AMQPLargeMessage;
 import org.apache.activemq.artemis.protocol.amqp.broker.AMQPLargeMessagePersister;
 import org.apache.activemq.artemis.protocol.amqp.broker.AMQPLargeMessagePersisterV2;
 import org.apache.activemq.artemis.protocol.amqp.broker.AMQPMessage;
-import org.apache.activemq.artemis.protocol.amqp.broker.AMQPMapPersister;
+import org.apache.activemq.artemis.protocol.amqp.broker.AMQPMessageMetadataPersister;
 import org.apache.activemq.artemis.protocol.amqp.broker.AMQPMessagePersister;
 import org.apache.activemq.artemis.protocol.amqp.broker.AMQPMessagePersisterV2;
 import org.apache.activemq.artemis.protocol.amqp.broker.AMQPMessagePersisterV3;
@@ -61,21 +61,21 @@ public class AMQPReloadFromPersistenceTest extends ActiveMQTestBase {
    public void testPersistCheck() throws Exception {
       internalPersistCheck(AMQPMessage.MessageDataScanningStatus.NOT_SCANNED, AMQPMessagePersisterV4.getInstance(), AMQPMessagePersisterV4.getInstance());
       try (AssertionLoggerHandler handler = new AssertionLoggerHandler()) {
-         AssertionLoggerHandler.LogLevel originalLevel = AssertionLoggerHandler.setLevel(AMQPMapPersister.class.getName(), AssertionLoggerHandler.LogLevel.TRACE);
+         AssertionLoggerHandler.LogLevel originalLevel = AssertionLoggerHandler.setLevel(AMQPMessageMetadataPersister.class.getName(), AssertionLoggerHandler.LogLevel.TRACE);
          try {
             internalPersistCheck(AMQPMessage.MessageDataScanningStatus.NOT_SCANNED, new FakePersisterFromTheFuture(), AMQPMessagePersisterV4.getInstance());
             internalPersistCheck(AMQPMessage.MessageDataScanningStatus.NOT_SCANNED, AMQPMessagePersisterV4.getInstance(), new FakePersisterFromTheFuture());
             assertTrue(handler.findText(stringAddedOnFake.toString()));
          } finally {
-            AssertionLoggerHandler.setLevel(AMQPMapPersister.class.getName(), originalLevel);
+            AssertionLoggerHandler.setLevel(AMQPMessageMetadataPersister.class.getName(), originalLevel);
          }
       }
    }
 
    @Test
    public void testPersistCheckOldVersion() throws Exception {
-      internalPersistCheck(AMQPMessage.MessageDataScanningStatus.SCANNED, AMQPMessagePersisterV2.getInstance(), AMQPMessagePersisterV2.getInstance());
       internalPersistCheck(AMQPMessage.MessageDataScanningStatus.SCANNED, AMQPMessagePersister.getInstance(), AMQPMessagePersister.getInstance());
+      internalPersistCheck(AMQPMessage.MessageDataScanningStatus.SCANNED, AMQPMessagePersisterV2.getInstance(), AMQPMessagePersisterV2.getInstance());
       internalPersistCheck(AMQPMessage.MessageDataScanningStatus.SCANNED, AMQPMessagePersisterV3.getInstance(), AMQPMessagePersisterV3.getInstance());
    }
 
@@ -129,14 +129,14 @@ public class AMQPReloadFromPersistenceTest extends ActiveMQTestBase {
          validateExtraBytes(originalRandomBytes, buffer);
       }
 
-      // none of these should make it scan anything
+      // verify that accessing application properties triggers scanning
       {
          buffer.readerIndex(1); // first byte is the persister version
          AMQPStandardMessage amqpStandardMessage = (AMQPStandardMessage) persisterOnRead.decode(buffer, null, null);
          assertEquals(expectedStatusAfterReload, amqpStandardMessage.getDataScanningStatus());
+         // accessing application properties should trigger scanning
          assertEquals(77, amqpStandardMessage.getApplicationPropertiesCount());
          assertEquals(77, amqpStandardMessage.getApplicationProperties().getValue().size());
-         // this check here should always be scanned, no matter the version you use
          assertEquals(AMQPMessage.MessageDataScanningStatus.SCANNED, amqpStandardMessage.getDataScanningStatus());
 
          validateExtraBytes(originalRandomBytes, buffer);
@@ -177,12 +177,12 @@ public class AMQPReloadFromPersistenceTest extends ActiveMQTestBase {
       internalPersistCheckLargeMessage(AMQPLargeMessagePersisterV2.getInstance(), new FakeLargePersisterFromTheFuture(), true);
 
       try (AssertionLoggerHandler handler = new AssertionLoggerHandler()) {
-         AssertionLoggerHandler.LogLevel originalLevel = AssertionLoggerHandler.setLevel(AMQPMapPersister.class.getName(), AssertionLoggerHandler.LogLevel.TRACE);
+         AssertionLoggerHandler.LogLevel originalLevel = AssertionLoggerHandler.setLevel(AMQPMessageMetadataPersister.class.getName(), AssertionLoggerHandler.LogLevel.TRACE);
          try {
             internalPersistCheckLargeMessage(new FakeLargePersisterFromTheFuture(), AMQPLargeMessagePersisterV2.getInstance(), true);
             assertTrue(handler.findText(stringAddedOnFake.toString()));
          } finally {
-            AssertionLoggerHandler.setLevel(AMQPMapPersister.class.getName(), originalLevel);
+            AssertionLoggerHandler.setLevel(AMQPMessageMetadataPersister.class.getName(), originalLevel);
          }
       }
    }
@@ -260,12 +260,12 @@ public class AMQPReloadFromPersistenceTest extends ActiveMQTestBase {
 
       @Override
       protected void writeMapCodecData(ActiveMQBuffer buffer, Message record) {
-         new FutureMap().encode(buffer, record);
+         new FutureMessageMetadata().encode(buffer, record);
       }
 
       @Override
       protected int getMapCodecSize(Message record) {
-         return new FutureMap().getEncodeSize(record);
+         return new FutureMessageMetadata().getEncodeSize(record);
       }
 
    }
@@ -278,17 +278,17 @@ public class AMQPReloadFromPersistenceTest extends ActiveMQTestBase {
 
       @Override
       protected void writeMapCodecData(ActiveMQBuffer buffer, Message record) {
-         new FutureMap().encode(buffer, record);
+         new FutureMessageMetadata().encode(buffer, record);
       }
 
       @Override
       protected int getMapCodecSize(Message record) {
-         return new FutureMap().getEncodeSize(record);
+         return new FutureMessageMetadata().getEncodeSize(record);
       }
 
    }
 
-   class FutureMap extends AMQPMapPersister {
+   class FutureMessageMetadata extends AMQPMessageMetadataPersister {
 
       private final short ID_FAKE = (short) 101;
 

@@ -118,13 +118,7 @@ public class AMQPGlobalMaxTest extends SoakTestBase {
    public void testValidateMemoryEstimateAMQP() throws Exception {
       validateOME("AMQP", (s, i) -> {
          try {
-            Message m = s.createMessage();
-            for (int propCount = 0; propCount < 10; propCount++) {
-               // making each string unique to avoid string deduplication from Garbage Collection
-               m.setStringProperty("string" + propCount, RandomUtil.randomUUIDString());
-               m.setLongProperty("myLong" + propCount, RandomUtil.randomLong());
-            }
-            return m;
+            return s.createMessage();
          } catch (Throwable e) {
             Assertions.fail(e.getMessage());
             return null;

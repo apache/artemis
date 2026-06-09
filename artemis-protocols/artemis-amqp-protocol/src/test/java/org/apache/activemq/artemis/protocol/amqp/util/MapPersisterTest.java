@@ -37,7 +37,7 @@ public class MapPersisterTest {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-   private static class TestMapPersister extends AbstractMapPersister {
+   private static class TestMapPersister extends AbstractMapPersister<Object> {
 
       public final Map<Short, Object> objectsHashMap = new LinkedHashMap<>();
 
@@ -75,37 +75,37 @@ public class MapPersisterTest {
       }
 
       @Override
-      protected void onMapReadInteger(short key, int value) {
+      protected void onMapReadInteger(short key, int value, Object ignored) {
          int originalValue = (int) objectsHashMap.remove(key);
          assertEquals(originalValue, value);
       }
 
       @Override
-      protected void onMapReadByte(short key, byte value) {
+      protected void onMapReadByte(short key, byte value, Object ignored) {
          byte originalValue = (byte) objectsHashMap.remove(key);
          assertEquals(originalValue, value);
       }
 
       @Override
-      protected void onMapReadBoolean(short key, boolean value) {
+      protected void onMapReadBoolean(short key, boolean value, Object ignored) {
          boolean originalValue = (boolean) objectsHashMap.remove(key);
          assertEquals(originalValue, value);
       }
 
       @Override
-      protected void onMapReadLong(short key, long value) {
+      protected void onMapReadLong(short key, long value, Object ignored) {
          long originalValue = (long) objectsHashMap.remove(key);
          assertEquals(originalValue, value);
       }
 
       @Override
-      protected void onMapReadSimpleString(short key, SimpleString value) {
+      protected void onMapReadSimpleString(short key, SimpleString value, Object ignored) {
          SimpleString originalValue = (SimpleString) objectsHashMap.remove(key);
          assertEquals(originalValue, value);
       }
 
       @Override
-      protected void onMapReadByteArray(short key, ActiveMQBuffer slice) {
+      protected void onMapReadByteArray(short key, ActiveMQBuffer slice, Object ignored) {
          byte[] originalArray = (byte[]) objectsHashMap.remove(key);
 
          int arraySize = slice.readableBytes();
@@ -232,7 +232,7 @@ public class MapPersisterTest {
 
       // notice decode here will remove entries while verifying they are the same.
       // in the end it should be empty to verify everything that was persisted will also be read
-      persister.decode(buffer);
+      persister.decode(buffer, null);
 
       if (!persister.objectsHashMap.isEmpty()) {
          persister.objectsHashMap.forEach((a, b) -> logger.info("{} = {}", a, b));

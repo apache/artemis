@@ -63,37 +63,38 @@ public class AMQPLargeMessagePersisterV2 extends AMQPLargeMessagePersister {
 
    /** Write persister data using Map like boundaries from MapPersister */
    protected void writeMapCodecData(ActiveMQBuffer buffer, Message record) {
-      AMQPMapPersister.getInstance().encode(buffer, record);
+      AMQPMessageMetadataPersister.getInstance().encode(buffer, record);
    }
 
    protected int getMapCodecSize(Message record) {
-      return AMQPMapPersister.getInstance().getEncodeSize(record);
+      return AMQPMessageMetadataPersister.getInstance().getEncodeSize(record);
    }
 
    @Override
    public Message decode(ActiveMQBuffer buffer, Message record, CoreMessageObjectPools pool) {
-      AMQPMapPersister mapCodec = AMQPMapPersister.getInstance().reset();
+      AMQPMessageMetadataPersister mapCodec = AMQPMessageMetadataPersister.getInstance();
 
-      mapCodec.decode(buffer);
+      AMQPMetadataDecodingState decodingMetaData = AMQPMetadataDecodingState.getInstance().reset();
+      mapCodec.decode(buffer, decodingMetaData);
 
-      assert mapCodec.memoryEstimate != 0;
+      assert decodingMetaData.memoryEstimate != 0;
 
-      AMQPLargeMessage largeMessage = new AMQPLargeMessage(mapCodec.messageID, mapCodec.messageFormat, mapCodec.extraProperties, null, null);
+      AMQPLargeMessage largeMessage = new AMQPLargeMessage(decodingMetaData.messageID, decodingMetaData.messageFormat, decodingMetaData.extraProperties, null, null);
 
-      largeMessage.reloadSetDurable(mapCodec.isDurable);
-      largeMessage.setFileDurable(mapCodec.isDurable);
-      if (mapCodec.address != null) {
-         largeMessage.setAddress(mapCodec.address);
+      largeMessage.reloadSetDurable(decodingMetaData.isDurable);
+      largeMessage.setFileDurable(decodingMetaData.isDurable);
+      if (decodingMetaData.address != null) {
+         largeMessage.setAddress(decodingMetaData.address);
       }
 
       largeMessage.readSavedEncoding(buffer.byteBuf());
 
-      largeMessage.reloadExpiration(mapCodec.messageExpiration);
-      largeMessage.setReencoded(mapCodec.isReencoded);
-      largeMessage.setMemoryEstimate(mapCodec.memoryEstimate);
-      largeMessage.reloadPriority(mapCodec.priority);
+      largeMessage.reloadExpiration(decodingMetaData.messageExpiration);
+      largeMessage.setReencoded(decodingMetaData.isReencoded);
+      largeMessage.setMemoryEstimate(decodingMetaData.memoryEstimate);
+      largeMessage.reloadPriority(decodingMetaData.priority);
 
-      mapCodec.reset();
+      decodingMetaData.reset();
 
       return largeMessage;
    }

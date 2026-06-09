@@ -17,7 +17,6 @@
 
 package org.apache.activemq.artemis.tests.compatibility;
 
-import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_2_33_0;
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.SNAPSHOT;
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_2_44_0;
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ARTEMIS_2_17_0;
@@ -31,6 +30,7 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -39,13 +39,18 @@ import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
 import org.apache.activemq.artemis.tests.compatibility.base.ClasspathBase;
 import org.apache.activemq.artemis.tests.extensions.parameterized.ParameterizedTestExtension;
 import org.apache.activemq.artemis.tests.extensions.parameterized.Parameters;
+import org.apache.activemq.artemis.utils.FileUtil;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @ExtendWith(ParameterizedTestExtension.class)
 public class MultiVersionReplicaTest extends ClasspathBase {
+
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private static final String QUEUE_NAME = "MultiVersionReplicaTestQueue";
 
@@ -61,11 +66,14 @@ public class MultiVersionReplicaTest extends ClasspathBase {
    public static Collection getParameters() {
       List<Object[]> combinations = new ArrayList<>();
 
+      // Replication compatibility is tested FORWARD ONLY (older main -> newer backup).
+      // Artemis 2.55.0 introduced AMQPMessagePersisterV4, which breaks backward replication compatibility.
+      // This means 2.55.0+ main servers cannot replicate to pre-2.55.0 backup servers.
+
       if (getJavaVersion() <= 22) {
          // Old 2.x servers fail on JDK23+ without workarounds.
          combinations.add(new Object[]{ARTEMIS_2_22_0, SNAPSHOT});
          combinations.add(new Object[]{ARTEMIS_2_17_0, SNAPSHOT});
-         combinations.add(new Object[]{ARTEMIS_2_33_0, SNAPSHOT});
       }
 
       combinations.add(new Object[]{ARTEMIS_2_44_0, SNAPSHOT});
@@ -98,9 +106,10 @@ public class MultiVersionReplicaTest extends ClasspathBase {
 
    @TestTemplate
    public void testReplica() throws Throwable {
-      System.out.println("Starting live");
+      FileUtil.deleteDirectory(serverFolder.getAbsoluteFile());
+      logger.info("Starting live {}", serverFolder.getAbsolutePath());
       evaluate(mainClassloader, "multiVersionReplica/mainServer.groovy", serverFolder.getAbsolutePath(), "1", "61000", "61001");
-      System.out.println("Starting backup");
+      logger.info("Starting backup {}", serverFolder.getAbsolutePath());
       evaluate(backupClassLoader, "multiVersionReplica/backupServer.groovy", serverFolder.getAbsolutePath(), "2", "61001", "61000");
 
       evaluate(mainClassloader, "multiVersionReplica/mainServerIsReplicated.groovy");

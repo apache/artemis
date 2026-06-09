@@ -428,10 +428,10 @@ public interface Message {
     * <p>
     * EmbedMessageUtil will contain the definitions for WIRE Version.
     *
-    * @param wireVersion the wire protocol version to match
+    * @param embedWireVersion the wire protocol version to match
     * @return the persister compatible with the specified wire version
     */
-   default Persister<Message> getWireCompatiblePersister(int wireVersion) {
+   default Persister<Message> getWireCompatiblePersister(int embedWireVersion) {
       return getPersister();
    }
 

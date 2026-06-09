@@ -1673,7 +1673,7 @@ public class AMQPMessageTest {
       }
 
       {
-         ICoreMessage embeddedMessage = EmbedMessageUtil.embedAsCoreMessage(decoded, EmbedMessageUtil.LATEST_WIRE_VERSION);
+         ICoreMessage embeddedMessage = EmbedMessageUtil.embedAsCoreMessage(decoded, EmbedMessageUtil.EMBED_WIRE_VERSION_2);
          AMQPStandardMessage readMessage = (AMQPStandardMessage) EmbedMessageUtil.extractEmbedded(embeddedMessage, null);
          assertEquals(33, readMessage.getMessageID());
          assertEquals("someAddress", readMessage.getAddress());
@@ -1723,7 +1723,7 @@ public class AMQPMessageTest {
 
       AMQPStandardMessage decoded = new AMQPStandardMessage(0, encodedProtonMessage, null, null);
 
-      final int expectedEstimate = AMQPMessage.MINIMUM_ESTIMATE + encodedProtonMessage.length;
+      final int expectedEstimate = AMQPMessage.BASE_MEMORY_OVERHEAD + encodedProtonMessage.length;
       assertEquals(expectedEstimate, decoded.getMemoryEstimate());
    }
 

@@ -81,7 +81,7 @@ public interface CoreRemotingConnection extends RemotingConnection {
       return version < PacketImpl.ARTEMIS_2_28_0_VERSION;
    }
 
-   default boolean isBeforeAMQPPersistenceMapUpdate() {
+   default boolean isBeforeEmbedWireVersion2() {
       int version = getChannelVersion();
       return version < PacketImpl.ARTEMIS_2_55_0_VERSION;
    }

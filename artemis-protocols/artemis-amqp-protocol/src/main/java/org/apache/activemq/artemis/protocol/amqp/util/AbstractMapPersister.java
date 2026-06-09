@@ -31,18 +31,18 @@ import org.slf4j.LoggerFactory;
  * It supports encoding of objects of type Boolean, SimpleString, Integer, Long, Byte and Byte Array
  * It provides support to predetermine the size of the encoding, and a callback reader for subclasses.
  */
-public abstract class AbstractMapPersister {
+public abstract class AbstractMapPersister<T> {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-   enum datatypes {
+   enum Datatypes {
       BOOLEAN((byte)0), SIMPLE_STRING((byte)1), INTEGER((byte)2), LONG((byte)3), BYTE((byte)4), BYTE_ARRAY((byte)5);
 
-      private static final datatypes[] VALUES = values();
+      private static final Datatypes[] VALUES = values();
 
       private byte id;
 
-      datatypes(byte id) {
+      Datatypes(byte id) {
          this.id = id;
       }
 
@@ -50,7 +50,7 @@ public abstract class AbstractMapPersister {
          return id;
       }
 
-      public static datatypes fromId(byte id) {
+      public static Datatypes fromId(byte id) {
          if (id < 0 || id >= VALUES.length) {
             throw new IllegalArgumentException("Unknown datatype id: " + id);
          }
@@ -58,12 +58,12 @@ public abstract class AbstractMapPersister {
       }
    }
 
-   protected abstract void onMapReadInteger(short key, int value);
-   protected abstract void onMapReadByte(short key, byte value);
-   protected abstract void onMapReadBoolean(short key, boolean value);
-   protected abstract void onMapReadLong(short key, long value);
-   protected abstract void onMapReadSimpleString(short key, SimpleString value);
-   protected abstract void onMapReadByteArray(short key, ActiveMQBuffer slice);
+   protected abstract void onMapReadInteger(short key, int value, T decodingObject);
+   protected abstract void onMapReadByte(short key, byte value, T decodingObject);
+   protected abstract void onMapReadBoolean(short key, boolean value, T decodingObject);
+   protected abstract void onMapReadLong(short key, long value, T decodingObject);
+   protected abstract void onMapReadSimpleString(short key, SimpleString value, T decodingObject);
+   protected abstract void onMapReadByteArray(short key, ActiveMQBuffer slice, T decodingObject);
 
    protected static int payloadSizeSimpleString(SimpleString string) {
       return DataConstants.SIZE_SHORT + DataConstants.SIZE_BYTE + SimpleString.sizeofNullableString(string);
@@ -100,67 +100,82 @@ public abstract class AbstractMapPersister {
 
    protected void writeSimpleString(ActiveMQBuffer buffer, short key, SimpleString value) {
       buffer.writeShort(key);
-      buffer.writeByte(datatypes.SIMPLE_STRING.getId());
+      buffer.writeByte(Datatypes.SIMPLE_STRING.getId());
       SimpleString.writeNullableSimpleString(buffer.byteBuf(), value);
    }
 
    protected void writeByte(ActiveMQBuffer buffer, short key, byte value) {
       buffer.writeShort(key);
-      buffer.writeByte(datatypes.BYTE.getId());
+      buffer.writeByte(Datatypes.BYTE.getId());
       buffer.writeByte(value);
    }
 
    protected void writeByteArray(ActiveMQBuffer buffer, short key, int size, Consumer<ActiveMQBuffer> consumer) {
       buffer.writeShort(key);
-      buffer.writeByte(datatypes.BYTE_ARRAY.getId());
+      buffer.writeByte(Datatypes.BYTE_ARRAY.getId());
       buffer.writeInt(size);
       consumer.accept(buffer);
    }
 
    protected void writeLong(ActiveMQBuffer buffer, short key, long value) {
       buffer.writeShort(key);
-      buffer.writeByte(datatypes.LONG.getId());
+      buffer.writeByte(Datatypes.LONG.getId());
       buffer.writeLong(value);
    }
 
    protected void writeInteger(ActiveMQBuffer buffer, short key, int value) {
       buffer.writeShort(key);
-      buffer.writeByte(datatypes.INTEGER.getId());
+      buffer.writeByte(Datatypes.INTEGER.getId());
       buffer.writeInt(value);
    }
 
    protected void writeBoolean(ActiveMQBuffer buffer, short key, boolean value) {
       buffer.writeShort(key);
-      buffer.writeByte(datatypes.BOOLEAN.getId());
+      buffer.writeByte(Datatypes.BOOLEAN.getId());
       buffer.writeBoolean(value);
    }
 
-   public void decode(ActiveMQBuffer buffer) {
+   public void decode(ActiveMQBuffer buffer, T decodingObject) {
       int initialPosition = buffer.readerIndex();
       int size = buffer.readInt();
+      if (size - DataConstants.SIZE_INT > buffer.readableBytes()) {
+         throw new IllegalStateException("Invalid record size " + size + " exceeds available buffer bytes: " + buffer.readableBytes());
+      }
       int endPosition = initialPosition + size;
       int entries = buffer.readInt();
+
+      if (entries < 0) {
+         throw new IllegalStateException("Invalid entry size on decoding");
+      }
 
       for (int i = 0; i < entries; i++) {
          short key = buffer.readShort();
          byte typeUsed = buffer.readByte();
-         switch (datatypes.fromId(typeUsed)) {
-            case BOOLEAN -> onMapReadBoolean(key, buffer.readBoolean());
-            case LONG -> onMapReadLong(key, buffer.readLong());
-            case INTEGER -> onMapReadInteger(key, buffer.readInt());
-            case SIMPLE_STRING -> onMapReadSimpleString(key, SimpleString.readNullableSimpleString(buffer.byteBuf()));
-            case BYTE -> onMapReadByte(key, buffer.readByte());
+         switch (Datatypes.fromId(typeUsed)) {
+            case BOOLEAN -> onMapReadBoolean(key, buffer.readBoolean(), decodingObject);
+            case LONG -> onMapReadLong(key, buffer.readLong(), decodingObject);
+            case INTEGER -> onMapReadInteger(key, buffer.readInt(), decodingObject);
+            case SIMPLE_STRING -> onMapReadSimpleString(key, SimpleString.readNullableSimpleString(buffer.byteBuf()), decodingObject);
+            case BYTE -> onMapReadByte(key, buffer.readByte(), decodingObject);
             case BYTE_ARRAY -> {
                int sizeByteArray = buffer.readInt();
+               if (sizeByteArray < 0) {
+                  throw new IllegalArgumentException("Negative byte array size: " + sizeByteArray);
+               }
+               if (sizeByteArray > buffer.readableBytes()) {
+                  throw new IllegalArgumentException("Byte array size " + sizeByteArray + " exceeds available buffer bytes: " + buffer.readableBytes());
+               }
                int currentPosition = buffer.readerIndex();
-               onMapReadByteArray(key, buffer.slice(buffer.readerIndex(), sizeByteArray));
+               onMapReadByteArray(key, buffer.slice(buffer.readerIndex(), sizeByteArray), decodingObject);
                buffer.readerIndex(currentPosition + sizeByteArray);
             }
          }
       }
 
       assert endPosition == buffer.readerIndex();
-      // calling this just in case (say there's a damaged record or something like that)
-      buffer.readerIndex(endPosition);
+
+      if (endPosition != buffer.readerIndex()) {
+         throw new IllegalStateException("Buffer position mismatch after decode: expected " + endPosition + " but at " + buffer.readerIndex() + " (consumed " + (buffer.readerIndex() - initialPosition) + " bytes, expected " + size + ")");
+      }
    }
 }

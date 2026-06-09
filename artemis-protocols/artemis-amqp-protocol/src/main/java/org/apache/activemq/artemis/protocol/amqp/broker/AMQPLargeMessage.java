@@ -628,7 +628,7 @@ public class AMQPLargeMessage extends AMQPMessage implements LargeServerMessage 
    public synchronized int getMemoryEstimate() {
       if (memoryEstimate == VALUE_NOT_PRESENT) {
          // This estimation was tested and validated through AMQPGlobalMaxTest on soak-tests
-         memoryEstimate = MINIMUM_ESTIMATE + (extraProperties != null ? extraProperties.getEncodeSize() : 0) + applicationPropertiesSize * 2 + applicationPropertiesCount * DataConstants.SIZE_INT;
+         memoryEstimate = BASE_MEMORY_OVERHEAD + (extraProperties != null ? extraProperties.getEncodeSize() : 0) + applicationPropertiesSize * 2 + applicationPropertiesCount * DataConstants.SIZE_INT;
       }
       return memoryEstimate;
    }
@@ -664,8 +664,8 @@ public class AMQPLargeMessage extends AMQPMessage implements LargeServerMessage 
    }
 
    @Override
-   public Persister<Message> getWireCompatiblePersister(int wireVersion) {
-      if (wireVersion == EmbedMessageUtil.NO_MAP_WIRE_VERSION) {
+   public Persister<Message> getWireCompatiblePersister(int embedWireVersion) {
+      if (embedWireVersion == EmbedMessageUtil.EMBED_WIRE_VERSION_1) {
          return AMQPLargeMessagePersister.getInstance();
       } else {
          return AMQPLargeMessagePersisterV2.getInstance();

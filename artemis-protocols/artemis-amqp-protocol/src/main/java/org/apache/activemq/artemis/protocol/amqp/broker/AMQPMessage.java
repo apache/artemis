@@ -50,13 +50,13 @@ import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.protocol.amqp.converter.AMQPMessageIdHelper;
 import org.apache.activemq.artemis.protocol.amqp.converter.AMQPMessageSupport;
 import org.apache.activemq.artemis.protocol.amqp.converter.AmqpCoreConverter;
+import org.apache.activemq.artemis.protocol.amqp.logger.ActiveMQAMQPProtocolLogger;
 import org.apache.activemq.artemis.protocol.amqp.util.NettyReadable;
 import org.apache.activemq.artemis.protocol.amqp.util.NettyWritable;
 import org.apache.activemq.artemis.protocol.amqp.util.TLSEncode;
 import org.apache.activemq.artemis.reader.MessageUtil;
 import org.apache.activemq.artemis.utils.ByteUtil;
 import org.apache.activemq.artemis.utils.collections.TypedProperties;
-import org.apache.qpid.proton.ProtonException;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedByte;
@@ -122,11 +122,16 @@ import static org.apache.activemq.artemis.protocol.amqp.converter.AMQPMessageSup
  */
 public abstract class AMQPMessage extends RefCountMessage implements org.apache.activemq.artemis.api.core.Message {
 
-   // The minimum size an AMQP message uses.
-   // This is an estimate, and it's based on the following test:
-   // By running AMQPGlobalMaxTest::testSendUntilOME, you look at the initial memory used by the broker without any messages.
-   // By the time you get the OME, you can do some basic calculations on how much each message uses and get an AVG.
-   public static final int MINIMUM_ESTIMATE = 1300;
+   /**
+    * Minimum memory footprint in bytes for any AMQP message instance.
+    * <p>
+    * This estimate accounts for the complete in-memory overhead including object instance size,
+    * member variables, and associated data structures (e.g., queue references, internal buffers).
+    * <p>
+    * The value is empirically derived from AMQPGlobalMaxTest#testValidateMemoryEstimateAMQP,
+    * which validates memory exhaustion behavior by sending minimal messages until OOM.
+    */
+   public static final int BASE_MEMORY_OVERHEAD = 1300;
 
    private static final byte DURABLE = 1;
    private static final byte NON_DURABLE = 0;
@@ -740,7 +745,15 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
                // Lazy decoding will start at the TypeConstructor of these ApplicationProperties
                // but we scan past it to grab the location of the possible body and footer section.
                applicationPropertiesPosition = constructorPos;
-               this.applicationPropertiesCount = parseApCountAndSkip(data);
+               int apCount = parseApCountAndSkip(data);
+               if (apCount >= 0) {
+                  this.applicationPropertiesCount = apCount;
+               } else {
+                  // if parseApCountAndSkip fails for an invalid message, we will try the skipValue from the original constructor
+                  this.applicationPropertiesCount = 0;
+                  data.position(constructorPos);
+                  constructor.skipValue();
+               }
                remainingBodyPosition = data.hasRemaining() ? data.position() : VALUE_NOT_PRESENT;
                break;
             } else {
@@ -762,35 +775,47 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
       return applicationPropertiesCount;
    }
 
-
-   // this is "borrowed" from:
-   // https://github.com/apache/qpid-proton-j/blob/6dc5587f1d1b23969a8994f1755198e638e92bc4/proton-j/src/main/java/org/apache/qpid/proton/codec/messaging/FastPathApplicationPropertiesType.java#L93-L115
-   private static int parseApCountAndSkip(ReadableBuffer data) {
+   private int parseApCountAndSkip(ReadableBuffer data) {
       byte encodingCode = data.get();
       int count;
       int size;
-      int sizePosition;
       switch (encodingCode) {
-         case EncodingCodes.MAP8:
+         case EncodingCodes.MAP8 -> {
             size = data.get() & 0xff;
-            sizePosition = data.position();
+            if (size > data.limit()) {
+               ActiveMQAMQPProtocolLogger.LOGGER.invalidEncodingApplicationProperties(messageID, "Invalid size on encoding");
+               return -1;
+            }
+            int startPosition = data.position();
             count = data.get() & 0xff;
-            break;
-         case EncodingCodes.MAP32:
+            data.position(startPosition + size);
+         }
+         case EncodingCodes.MAP32 -> {
             size = data.getInt();
-            sizePosition = data.position();
+            if (size < 0 || size > data.limit()) {
+               ActiveMQAMQPProtocolLogger.LOGGER.invalidEncodingApplicationProperties(messageID, "Invalid size on encoding");
+               // in case of an invalid encoding, we just return 0 and let the broker to deal with the encoding issue elsewhere
+               return -1;
+            }
+            int startPosition = data.position();
             count = data.getInt();
-            break;
-         case EncodingCodes.NULL:
-            sizePosition = data.position();
-            size = 0;
-            count = 0;
-            break;
-         default:
-            throw new ProtonException("Expected Map type but found encoding: " + encodingCode);
+            data.position(startPosition + size);
+         }
+         case EncodingCodes.NULL -> {
+            return 0;
+         }
+         default -> {
+            ActiveMQAMQPProtocolLogger.LOGGER.invalidEncodingApplicationProperties(messageID, "Invalid encoding type");
+            // in case of an invalid encoding, we just return 0 and let the broker to deal with the encoding issue elsewhere
+            return -1;
+         }
       }
 
-      data.position(sizePosition + size);
+      if (count < 0 || count % 2 != 0) {
+         ActiveMQAMQPProtocolLogger.LOGGER.invalidEncodingApplicationProperties(messageID, "invalid properties count");
+         // in case of an invalid encoding, we just return 0 and let the broker to deal with the encoding issue elsewhere
+         return -1;
+      }
 
       return count / 2;
    }
