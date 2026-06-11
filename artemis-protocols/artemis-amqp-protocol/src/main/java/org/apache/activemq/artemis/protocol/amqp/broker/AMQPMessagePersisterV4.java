@@ -82,7 +82,7 @@ public class AMQPMessagePersisterV4 extends AMQPMessagePersisterV3 {
    @Override
    public Message decode(ActiveMQBuffer buffer, Message record, CoreMessageObjectPools pool) {
       AMQPMessageMetadataPersister mapCodec = AMQPMessageMetadataPersister.getInstance();
-      AMQPMetadataDecodingState decodingMetaData = AMQPMetadataDecodingState.getInstance().reset();
+      AMQPMetadataDecodingState decodingMetaData = new AMQPMetadataDecodingState();
 
       mapCodec.decode(buffer, decodingMetaData);
 

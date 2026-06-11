@@ -30,8 +30,6 @@ import org.apache.activemq.artemis.utils.collections.TypedProperties;
  */
 public class AMQPMetadataDecodingState {
 
-   private static final ThreadLocal<AMQPMetadataDecodingState> instance = ThreadLocal.withInitial(AMQPMetadataDecodingState::new);
-
    protected long messageID; // always present
    protected long messageFormat; // always present
    protected long messageExpiration; // always present
@@ -42,29 +40,9 @@ public class AMQPMetadataDecodingState {
    protected TypedProperties extraProperties; // variable size based on the byte array size
    protected boolean isReencoded; // used on large messages only
 
-   private AMQPMetadataDecodingState() {
+   public AMQPMetadataDecodingState() {
    }
 
-   public static AMQPMetadataDecodingState getInstance() {
-      return instance.get();
-   }
-
-   public static void remove() {
-      instance.remove();
-   }
-
-   public AMQPMetadataDecodingState reset() {
-      messageID = 0;
-      messageFormat = 0;
-      messageExpiration = 0;
-      memoryEstimate = 0;
-      priority = 0;
-      address = null;
-      isDurable = false;
-      extraProperties = null;
-      isReencoded = false;
-      return this;
-   }
 
 
 

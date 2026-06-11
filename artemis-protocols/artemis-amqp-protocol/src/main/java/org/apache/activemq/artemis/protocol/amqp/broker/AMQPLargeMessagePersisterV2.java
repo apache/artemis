@@ -74,7 +74,7 @@ public class AMQPLargeMessagePersisterV2 extends AMQPLargeMessagePersister {
    public Message decode(ActiveMQBuffer buffer, Message record, CoreMessageObjectPools pool) {
       AMQPMessageMetadataPersister mapCodec = AMQPMessageMetadataPersister.getInstance();
 
-      AMQPMetadataDecodingState decodingMetaData = AMQPMetadataDecodingState.getInstance().reset();
+      AMQPMetadataDecodingState decodingMetaData = new AMQPMetadataDecodingState();
       mapCodec.decode(buffer, decodingMetaData);
 
       assert decodingMetaData.memoryEstimate != 0;
@@ -93,8 +93,6 @@ public class AMQPLargeMessagePersisterV2 extends AMQPLargeMessagePersister {
       largeMessage.setReencoded(decodingMetaData.isReencoded);
       largeMessage.setMemoryEstimate(decodingMetaData.memoryEstimate);
       largeMessage.reloadPriority(decodingMetaData.priority);
-
-      decodingMetaData.reset();
 
       return largeMessage;
    }
