@@ -87,7 +87,7 @@ import org.junit.jupiter.api.io.TempDir;
 public abstract class AbstractConfigurationFullTest {
 
    @TempDir
-   File tempDir;
+   static File tempDir;
 
    protected ConfigurationImpl configuration;
 
