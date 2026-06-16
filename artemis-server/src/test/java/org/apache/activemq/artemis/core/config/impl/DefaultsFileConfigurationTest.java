@@ -110,6 +110,10 @@ public class DefaultsFileConfigurationTest extends AbstractConfigurationTestBase
 
       assertEquals(ActiveMQDefaultConfiguration.getDefaultJournalLockAcquisitionTimeout(), conf.getJournalLockAcquisitionTimeout());
 
+      assertEquals(ActiveMQDefaultConfiguration.getDefaultJournalLockMonitorTimeout(), conf.getJournalLockMonitorTimeout());
+
+      assertEquals(ActiveMQDefaultConfiguration.getDefaultJournalLockMonitorMaxRetries(), conf.getJournalLockMonitorMaxRetries());
+
       assertEquals(ActiveMQDefaultConfiguration.getDefaultJournalMinFiles(), conf.getJournalMinFiles());
 
       assertEquals(ActiveMQDefaultConfiguration.getDefaultJournalMaxIoAio(), conf.getJournalMaxIO_AIO());

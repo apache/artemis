@@ -854,6 +854,10 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
       config.setJournalLockAcquisitionTimeout(getLong(e, "journal-lock-acquisition-timeout", config.getJournalLockAcquisitionTimeout(), MINUS_ONE_OR_GT_ZERO));
 
+      config.setJournalLockMonitorTimeout(getLong(e, "journal-lock-monitor-timeout", config.getJournalLockMonitorTimeout(), GT_ZERO));
+
+      config.setJournalLockMonitorMaxRetries(getInteger(e, "journal-lock-monitor-max-retries", config.getJournalLockMonitorMaxRetries(), GE_ZERO));
+
       if (e.hasAttribute("wild-card-routing-enabled")) {
          config.setWildcardRoutingEnabled(getBoolean(e, "wild-card-routing-enabled", config.isWildcardRoutingEnabled()));
       }

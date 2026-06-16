@@ -167,6 +167,12 @@ public final class ActiveMQDefaultConfiguration {
    // how long (in ms) to wait to acquire a file lock on the journal
    private static long DEFAULT_JOURNAL_LOCK_ACQUISITION_TIMEOUT = -1;
 
+   // how long (in ms) between journal lock health checks
+   private static long DEFAULT_JOURNAL_LOCK_MONITOR_TIMEOUT = 2000;
+
+   // how many times to retry a failed journal lock health check before declaring the lock lost
+   private static int DEFAULT_JOURNAL_LOCK_MONITOR_MAX_RETRIES = 0;
+
    // true means that the server supports wild card routing
    private static boolean DEFAULT_WILDCARD_ROUTING_ENABLED = true;
 
@@ -825,6 +831,20 @@ public final class ActiveMQDefaultConfiguration {
     */
    public static long getDefaultJournalLockAcquisitionTimeout() {
       return DEFAULT_JOURNAL_LOCK_ACQUISITION_TIMEOUT;
+   }
+
+   /**
+    * how long (in ms) between journal lock health checks
+    */
+   public static long getDefaultJournalLockMonitorTimeout() {
+      return DEFAULT_JOURNAL_LOCK_MONITOR_TIMEOUT;
+   }
+
+   /**
+    * how many times to retry a failed journal lock health check before declaring the lock lost
+    */
+   public static int getDefaultJournalLockMonitorMaxRetries() {
+      return DEFAULT_JOURNAL_LOCK_MONITOR_MAX_RETRIES;
    }
 
    /**

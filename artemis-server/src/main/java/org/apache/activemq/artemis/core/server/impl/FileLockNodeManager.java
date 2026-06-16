@@ -27,8 +27,11 @@ import java.nio.channels.FileLock;
 import java.util.Date;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
 import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.server.ActivateCallback;
 import org.apache.activemq.artemis.core.server.ActiveMQLockAcquisitionTimeoutException;
 import org.apache.activemq.artemis.core.server.ActiveMQScheduledComponent;
@@ -71,29 +74,35 @@ public class FileLockNodeManager extends FileBasedNodeManager {
 
    private final long lockAcquisitionTimeoutNanos;
 
+   private final long journalLockMonitorTimeoutNanos;
+
+   private final int journalLockMonitorMaxRetries;
+
    protected boolean interrupted = false;
 
    private final ScheduledExecutorService scheduledPool;
 
-   public FileLockNodeManager(final File directory, boolean replicatedBackup, ScheduledExecutorService scheduledPool) {
-      super(replicatedBackup, directory);
-      this.scheduledPool = scheduledPool;
-      this.lockAcquisitionTimeoutNanos = -1;
-   }
-
    public FileLockNodeManager(final File directory, boolean replicatedBackup) {
       super(replicatedBackup, directory);
       this.scheduledPool = null;
-      this.lockAcquisitionTimeoutNanos = -1;
+      long timeout = ActiveMQDefaultConfiguration.getDefaultJournalLockAcquisitionTimeout();
+      this.lockAcquisitionTimeoutNanos = timeout == -1 ? -1 : TimeUnit.MILLISECONDS.toNanos(timeout);
+      this.journalLockMonitorTimeoutNanos = TimeUnit.MILLISECONDS.toNanos(
+         ActiveMQDefaultConfiguration.getDefaultJournalLockMonitorTimeout());
+      this.journalLockMonitorMaxRetries = ActiveMQDefaultConfiguration.getDefaultJournalLockMonitorMaxRetries();
    }
 
    public FileLockNodeManager(final File directory,
                               boolean replicatedBackup,
-                              long lockAcquisitionTimeout,
+                              Configuration configuration,
                               ScheduledExecutorService scheduledPool) {
       super(replicatedBackup, directory);
       this.scheduledPool = scheduledPool;
-      this.lockAcquisitionTimeoutNanos = lockAcquisitionTimeout == -1 ? -1 : TimeUnit.MILLISECONDS.toNanos(lockAcquisitionTimeout);
+      this.lockAcquisitionTimeoutNanos = configuration.getJournalLockAcquisitionTimeout() == -1
+         ? -1
+         : TimeUnit.MILLISECONDS.toNanos(configuration.getJournalLockAcquisitionTimeout());
+      this.journalLockMonitorTimeoutNanos = TimeUnit.MILLISECONDS.toNanos(configuration.getJournalLockMonitorTimeout());
+      this.journalLockMonitorMaxRetries = configuration.getJournalLockMonitorMaxRetries();
    }
 
    @Override
@@ -477,7 +486,7 @@ public class FileLockNodeManager extends FileBasedNodeManager {
    private synchronized void startLockMonitoring() {
       logger.debug("Starting the lock monitor");
       if (monitorLock == null) {
-         monitorLock = new MonitorLock(scheduledPool, LOCK_MONITOR_TIMEOUT_NANOS, LOCK_MONITOR_TIMEOUT_NANOS, TimeUnit.NANOSECONDS, false);
+         monitorLock = new MonitorLock(scheduledPool, journalLockMonitorTimeoutNanos, journalLockMonitorTimeoutNanos, TimeUnit.NANOSECONDS, false, journalLockMonitorMaxRetries);
          monitorLock.start();
       } else {
          logger.debug("Lock monitor was already started");
@@ -503,7 +512,10 @@ public class FileLockNodeManager extends FileBasedNodeManager {
 
    // This has been introduced to help ByteMan test testLockMonitorInvalid on JDK 11: sun.nio.ch.FileLockImpl::isValid
    // can affecting setPrimary, causing an infinite loop due to java.nio.channels.OverlappingFileLockException on tryLock
-   private boolean isPrimaryLockLost() {
+   // Made protected to allow testing with controlled lock failures.
+   // Subclasses overriding this method should maintain the contract: return true when the primary lock is lost,
+   // false when the lock is healthy. The return value directly controls whether MonitorLock triggers notifyLostLock().
+   protected boolean isPrimaryLockLost() {
       final FileLock lock = this.primaryLock;
       return (lock != null && !lock.isValid()) || lock == null;
    }
@@ -511,12 +523,17 @@ public class FileLockNodeManager extends FileBasedNodeManager {
    private MonitorLock monitorLock;
 
    public class MonitorLock extends ActiveMQScheduledComponent {
+      private final int maxRetries;
+      private final AtomicInteger consecutiveFailures = new AtomicInteger(0);
+
       public MonitorLock(ScheduledExecutorService scheduledExecutorService,
                             long initialDelay,
                             long checkPeriod,
                             TimeUnit timeUnit,
-                            boolean onDemand) {
+                            boolean onDemand,
+                            int maxRetries) {
          super(scheduledExecutorService, initialDelay, checkPeriod, timeUnit, onDemand);
+         this.maxRetries = maxRetries;
       }
 
 
@@ -556,8 +573,19 @@ public class FileLockNodeManager extends FileBasedNodeManager {
          }
 
          if (lostLock) {
-            logger.warn("Lost the lock according to the monitor, notifying listeners");
-            notifyLostLock();
+            int failures = consecutiveFailures.incrementAndGet();
+            if (failures > maxRetries) {
+               logger.warn("Lost the lock according to the monitor after {} failed check(s), notifying listeners", failures);
+               notifyLostLock();
+            } else {
+               logger.warn("Lock check failed ({}/{}), will retry on next check period", failures, maxRetries + 1);
+            }
+         } else {
+            // Reset the failure counter on successful check
+            int previousFailures = consecutiveFailures.getAndSet(0);
+            if (previousFailures > 0) {
+               logger.info("Lock check succeeded after {} previous failure(s), resetting failure counter", previousFailures);
+            }
          }
       }
 

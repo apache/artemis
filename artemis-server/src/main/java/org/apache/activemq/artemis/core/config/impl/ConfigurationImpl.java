@@ -402,6 +402,10 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
 
    private long journalLockAcquisitionTimeout = ActiveMQDefaultConfiguration.getDefaultJournalLockAcquisitionTimeout();
 
+   private long journalLockMonitorTimeout = ActiveMQDefaultConfiguration.getDefaultJournalLockMonitorTimeout();
+
+   private int journalLockMonitorMaxRetries = ActiveMQDefaultConfiguration.getDefaultJournalLockMonitorMaxRetries();
+
    private HAPolicyConfiguration haPolicyConfiguration;
 
    private StoreConfiguration storeConfiguration;
@@ -3010,7 +3014,7 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
                           scheduledThreadPoolMaxSize, securityEnabled, populateValidatedUser,
                           securityInvalidationInterval, securitySettings, serverDumpInterval, threadPoolMaxSize,
                           transactionTimeout, transactionTimeoutScanPeriod, wildcardConfiguration, resolveProtocols,
-                          journalLockAcquisitionTimeout, connectionTtlCheckInterval);
+                          journalLockAcquisitionTimeout, journalLockMonitorTimeout, journalLockMonitorMaxRetries, connectionTtlCheckInterval);
    }
 
    @Override
@@ -3091,6 +3095,8 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
              Objects.equals(wildcardConfiguration, other.wildcardConfiguration) &&
              resolveProtocols == other.resolveProtocols &&
              journalLockAcquisitionTimeout == other.journalLockAcquisitionTimeout &&
+             journalLockMonitorTimeout == other.journalLockMonitorTimeout &&
+             journalLockMonitorMaxRetries == other.journalLockMonitorMaxRetries &&
              connectionTtlCheckInterval == other.connectionTtlCheckInterval &&
              journalDatasync == other.journalDatasync &&
              Objects.equals(globalMaxSize, other.globalMaxSize) &&
@@ -3130,6 +3136,28 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
    @Override
    public long getJournalLockAcquisitionTimeout() {
       return journalLockAcquisitionTimeout;
+   }
+
+   @Override
+   public ConfigurationImpl setJournalLockMonitorTimeout(long journalLockMonitorTimeout) {
+      this.journalLockMonitorTimeout = journalLockMonitorTimeout;
+      return this;
+   }
+
+   @Override
+   public long getJournalLockMonitorTimeout() {
+      return journalLockMonitorTimeout;
+   }
+
+   @Override
+   public ConfigurationImpl setJournalLockMonitorMaxRetries(int journalLockMonitorMaxRetries) {
+      this.journalLockMonitorMaxRetries = journalLockMonitorMaxRetries;
+      return this;
+   }
+
+   @Override
+   public int getJournalLockMonitorMaxRetries() {
+      return journalLockMonitorMaxRetries;
    }
 
    @Override

@@ -174,6 +174,8 @@ public class ConfigurationImplTest extends AbstractConfigurationTestBase {
       assertEquals(ActiveMQDefaultConfiguration.getDefaultLargeMessagesDir(), conf.getLargeMessagesDirectory());
       assertEquals(ActiveMQDefaultConfiguration.getDefaultJournalCompactPercentage(), conf.getJournalCompactPercentage());
       assertEquals(ActiveMQDefaultConfiguration.getDefaultJournalLockAcquisitionTimeout(), conf.getJournalLockAcquisitionTimeout());
+      assertEquals(ActiveMQDefaultConfiguration.getDefaultJournalLockMonitorTimeout(), conf.getJournalLockMonitorTimeout());
+      assertEquals(ActiveMQDefaultConfiguration.getDefaultJournalLockMonitorMaxRetries(), conf.getJournalLockMonitorMaxRetries());
       assertEquals(ArtemisConstants.DEFAULT_JOURNAL_BUFFER_TIMEOUT_AIO, conf.getJournalBufferTimeout_AIO());
       assertEquals(ArtemisConstants.DEFAULT_JOURNAL_BUFFER_TIMEOUT_NIO, conf.getJournalBufferTimeout_NIO());
       assertEquals(ArtemisConstants.DEFAULT_JOURNAL_BUFFER_SIZE_AIO, conf.getJournalBufferSize_AIO());

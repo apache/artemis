@@ -637,12 +637,12 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          } else if (haType == null || haType == HAPolicyConfiguration.TYPE.PRIMARY_ONLY) {
             logger.debug("Detected no Shared Store HA options on JDBC store");
             //PRIMARY_ONLY should be the default HA option when HA isn't configured
-            manager = new FileLockNodeManager(directory, replicatingBackup, configuration.getJournalLockAcquisitionTimeout(), scheduledPool);
+            manager = new FileLockNodeManager(directory, replicatingBackup, configuration, scheduledPool);
          } else {
             throw new IllegalArgumentException("JDBC persistence allows only Shared Store HA options");
          }
       } else {
-         manager = new FileLockNodeManager(directory, replicatingBackup, configuration.getJournalLockAcquisitionTimeout(), scheduledPool);
+         manager = new FileLockNodeManager(directory, replicatingBackup, configuration, scheduledPool);
       }
       return manager;
    }

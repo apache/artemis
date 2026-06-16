@@ -1237,6 +1237,14 @@ public interface Configuration {
 
    long getJournalLockAcquisitionTimeout();
 
+   Configuration setJournalLockMonitorTimeout(long journalLockMonitorTimeout);
+
+   long getJournalLockMonitorTimeout();
+
+   Configuration setJournalLockMonitorMaxRetries(int journalLockMonitorMaxRetries);
+
+   int getJournalLockMonitorMaxRetries();
+
    HAPolicyConfiguration getHAPolicyConfiguration();
 
    Configuration setHAPolicyConfiguration(HAPolicyConfiguration haPolicyConfiguration);

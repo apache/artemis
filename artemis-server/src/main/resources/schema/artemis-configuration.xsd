@@ -171,6 +171,22 @@
             </xsd:annotation>
          </xsd:element>
 
+         <xsd:element name="journal-lock-monitor-timeout" type="xsd:long" default="2000" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  how long (in ms) between lock health checks
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+
+         <xsd:element name="journal-lock-monitor-max-retries" type="xsd:int" default="0" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  how many times to retry a failed lock health check before declaring the lock lost (useful for transient storage outages)
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+
          <xsd:element name="wild-card-routing-enabled" type="xsd:boolean" default="true" maxOccurs="1" minOccurs="0">
             <xsd:annotation>
                <xsd:documentation>
