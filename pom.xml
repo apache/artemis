@@ -53,6 +53,7 @@
       <module>artemis-jms-client</module>
       <module>artemis-jms-client-all</module>
       <module>artemis-jms-client-osgi</module>
+      <module>artemis-mcp-server</module>
       <module>artemis-jakarta-client</module>
       <module>artemis-jakarta-client-all</module>
       <module>artemis-jakarta-client-osgi</module>
