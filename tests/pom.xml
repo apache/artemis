@@ -29,7 +29,7 @@
    <packaging>pom</packaging>
 
    <properties>
-      <byteman.version>4.0.26</byteman.version>
+      <byteman.version>4.0.27</byteman.version>
    </properties>
 
    <dependencyManagement>
