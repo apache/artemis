@@ -16,19 +16,16 @@
  */
 package org.apache.activemq.artemis.core.protocol.stomp;
 
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
-import org.apache.activemq.artemis.api.core.ActiveMQBuffers;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.ICoreMessage;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
-import org.apache.activemq.artemis.core.message.LargeBodyReader;
 import org.apache.activemq.artemis.core.message.impl.CoreMessage;
 import org.apache.activemq.artemis.core.protocol.stomp.Stomp.Headers;
 import org.apache.activemq.artemis.core.protocol.stomp.v10.StompFrameHandlerV10;
@@ -335,11 +332,7 @@ public abstract class VersionedStompFrameHandler {
          frame.addHeader(Stomp.Headers.Message.SUBSCRIPTION, subscription.getID());
       }
 
-      if (serverMessage.isLargeMessage()) {
-         populateFrameBodyFromLargeMessage(frame, serverMessage);
-      } else {
-         populateFrameBodyFromMessage(frame, serverMessage);
-      }
+      populateFrameBodyFromMessage(frame, serverMessage);
 
       frame.addHeader(Stomp.Headers.Message.MESSAGE_ID, new StringBuilder(41).append(consumer.getID()).append(StompSession.MESSAGE_ID_SEPARATOR).append(serverMessage.getMessageID()).toString());
       StompUtils.copyStandardHeadersFromMessageToFrame(serverMessage, frame, deliveryCount);
@@ -348,7 +341,7 @@ public abstract class VersionedStompFrameHandler {
    }
 
    private void populateFrameBodyFromMessage(StompFrame frame, ICoreMessage serverMessage) {
-      final ActiveMQBuffer buffer = serverMessage.getReadOnlyBodyBuffer();
+      final ActiveMQBuffer buffer = serverMessage.getDataBuffer();
       final int bodyLength = buffer.readableBytes();
 
       if (bodyLength > 0) {
@@ -368,38 +361,6 @@ public abstract class VersionedStompFrameHandler {
          }
       } else {
          frame.setByteBody(EMPTY_BODY);
-      }
-   }
-
-   private void populateFrameBodyFromLargeMessage(StompFrame frame, ICoreMessage serverMessage) throws ActiveMQException {
-      try (LargeBodyReader reader = serverMessage.getLargeBodyReader()) {
-         reader.open();
-
-         final int bodyLength = (int) reader.getSize();
-
-         if (bodyLength > 0) {
-            final byte[] bodyBytes = new byte[bodyLength];
-            final ByteBuffer bodyBuffer = ByteBuffer.wrap(bodyBytes);
-
-            reader.readInto(bodyBuffer);
-
-            if (serverMessage.containsProperty(Stomp.Headers.CONTENT_LENGTH) || serverMessage.getType() == Message.BYTES_TYPE) {
-               frame.addHeader(Headers.CONTENT_LENGTH, String.valueOf(bodyLength));
-               frame.setByteBody(bodyBytes);
-            } else {
-               final ActiveMQBuffer buffer = ActiveMQBuffers.wrappedBuffer(bodyBuffer);
-
-               buffer.writerIndex(bodyLength);
-
-               final SimpleString text = buffer.readNullableSimpleString();
-
-               if (text != null) {
-                  frame.setByteBody(text.toString().getBytes(StandardCharsets.UTF_8));
-               }
-            }
-         } else {
-            frame.setByteBody(EMPTY_BODY);
-         }
       }
    }
 

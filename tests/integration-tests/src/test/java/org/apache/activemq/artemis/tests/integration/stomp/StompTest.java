@@ -339,6 +339,33 @@ public class StompTest extends StompTestBase {
    }
 
    @Test
+   public void testReceiveCompressedMessage() throws Exception {
+      String DATA = RandomUtil.randomAlphaNumericString(1024 * 1024);
+      String queue = getQueuePrefix() + getQueueName();
+
+      server.createQueue(QueueConfiguration.of(queue).setDurable(true).setRoutingType(RoutingType.ANYCAST), true);
+
+      try (ServerLocator locator = ActiveMQClient.createServerLocator("tcp://" + hostname + ":" + port + "?compressLargeMessage=true");
+           ClientSessionFactory sf = locator.createSessionFactory();
+           ClientSession session = sf.createSession(false, true, true);
+           ClientProducer producer = session.createProducer()) {
+
+         ClientMessage message = session.createMessage(true);
+         message.getBodyBuffer().writeNullableSimpleString(SimpleString.of(DATA));
+         producer.send(queue, message);
+      }
+
+      conn.connect(defUser, defPass);
+
+      subscribe(conn, null, Stomp.Headers.Subscribe.AckModeValues.AUTO);
+
+      ClientStompFrame frame = conn.receiveFrame(10000);
+      assertEquals(DATA, frame.getBody());
+
+      conn.disconnect();
+   }
+
+   @Test
    public void sendEmptyCoreMessage() throws Exception {
       conn.connect(defUser, defPass);
       subscribe(conn, null, Stomp.Headers.Subscribe.AckModeValues.AUTO);
