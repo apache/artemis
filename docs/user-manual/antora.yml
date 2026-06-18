@@ -1,0 +1,6 @@
+name: user-manual
+title: User Manual
+version: true # this means the version will reflect the tag or branch name
+start_page: ROOT:index.adoc
+nav:
+  - modules/ROOT/nav.adoc

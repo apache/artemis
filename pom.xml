@@ -136,7 +136,6 @@
 
       <!-- docs -->
       <asciidoctor.maven.plugin.version>3.2.0</asciidoctor.maven.plugin.version>
-      <asciidoctorj.pdf.version>2.3.23</asciidoctorj.pdf.version>
 
       <!-- this is basically for tests -->
       <netty-tcnative-version>2.0.79.Final</netty-tcnative-version>
@@ -912,13 +911,15 @@
                      <exclude>**/*.txt</exclude>
                      <exclude>**/*.md</exclude>
                      <exclude>**/*.adoc</exclude>
+                     <exclude>**/*-playbook.yml</exclude>
                      <exclude>**/docinfo.html</exclude>
                      <exclude>etc/ide-settings/**</exclude>
                      <exclude>**/*.json</exclude>
-                     <exclude>docs/resources/font-awesome/**/*</exclude>
-                     <exclude>docs/user-manual/_diagrams/*.svg</exclude>
-                     <exclude>docs/user-manual/02-27-00-scripts-profiles.diff</exclude>
-                     <exclude>docs/user-manual/02-27-00-scripts-profiles-windows.diff</exclude>
+                     <exclude>docs/ui-bundle-custom/**/*</exclude>
+                     <exclude>docs/diagrams/*.svg</exclude>
+                     <exclude>docs/**/antora.yml</exclude>
+                     <exclude>docs/user-manual/modules/ROOT/pages/02-27-00-scripts-profiles.diff</exclude>
+                     <exclude>docs/user-manual/modules/ROOT/pages/02-27-00-scripts-profiles-windows.diff</exclude>
                      <exclude>**/target/</exclude>
                      <exclude>**/META-INF/MANIFEST.MF</exclude>
                      <exclude>**/META-INF/detectors</exclude>
