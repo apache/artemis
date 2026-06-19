@@ -16,6 +16,8 @@
  */
 package org.apache.activemq.artemis.core.server.management;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import javax.management.ObjectName;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,8 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
 
 public class JMXAccessControlList {
@@ -39,33 +39,13 @@ public class JMXAccessControlList {
       List<AccessEntry> regexPatterns
    ) { }
 
-   private final Map<String, Map<String, String>> keyPropertyCache =
-      Collections.synchronizedMap(new LinkedHashMap<String, Map<String, String>>(128, 0.75f, true) {
-         @Override
-         protected boolean removeEldestEntry(Map.Entry<String, Map<String, String>> eldest) {
-            return size() > 5000;
-         }
-      });
+   private final Cache<String, Map<String, String>> keyPropertyCache = Caffeine.newBuilder().maximumSize(10000).build();
+   private final Cache<String, TreeMap<String, Access>> domainAccess = Caffeine.newBuilder().maximumSize(32).build();
+   private final Cache<String, TreeMap<String, Access>> allowList = Caffeine.newBuilder().maximumSize(32).build();
+   private final Cache<String, Map<String, Bucket>> bucketedDomainCache = Caffeine.newBuilder().maximumSize(32).build();
 
-   private final Map<String, TreeMap<String, Access>> domainCache =
-      Collections.synchronizedMap(new LinkedHashMap<String, TreeMap<String, Access>>(128, 0.75f, true) {
-         @Override
-         protected boolean removeEldestEntry(Map.Entry<String, TreeMap<String, Access>> eldest) {
-            return size() > 5000;
-         }
-      });
+   private final Access defaultAccess = new Access(WILDCARD);
 
-   private final Map<String, Map<String, Bucket>> bucketedDomainCache =
-      Collections.synchronizedMap(new LinkedHashMap<>(128, 0.75f, true) {
-         @Override
-         protected boolean removeEldestEntry(Map.Entry<String, Map<String, Bucket>> eldest) {
-            return size() > 1000;
-         }
-      });
-
-   private Access defaultAccess = new Access(WILDCARD);
-   private ConcurrentMap<String, TreeMap<String, Access>> domainAccess = new ConcurrentHashMap<>();
-   private ConcurrentMap<String, TreeMap<String, Access>> allowList = new ConcurrentHashMap<>();
    private Comparator<String> keyComparator = (key1, key2) -> {
       boolean key1ContainsWildCard = key1.contains(WILDCARD);
       boolean key2ContainsWildcard = key2.contains(WILDCARD);
@@ -82,10 +62,9 @@ public class JMXAccessControlList {
 
 
    public void addToAllowList(String domain, String key) {
-      TreeMap<String, Access> domainMap = new TreeMap<>(keyComparator);
-      domainMap = allowList.putIfAbsent(domain, domainMap);
+      TreeMap<String, Access> domainMap = allowList.get(domain, k -> new TreeMap<>(keyComparator));
       if (domainMap == null) {
-         domainMap = allowList.get(domain);
+         domainMap = allowList.getIfPresent(domain);
       }
       Access access = new Access(domain, normalizeKey(key));
       domainMap.putIfAbsent(access.getKey(), access);
@@ -93,7 +72,7 @@ public class JMXAccessControlList {
 
 
    public List<String> getRolesForObject(ObjectName objectName, String methodName) {
-      TreeMap<String, Access> domainMap = domainAccess.get(objectName.getDomain());
+      TreeMap<String, Access> domainMap = domainAccess.getIfPresent(objectName.getDomain());
       if (domainMap != null) {
          Map<String, String> keyPropertyList = objectName.getKeyPropertyList();
          for (Map.Entry<String, String> keyEntry : keyPropertyList.entrySet()) {
@@ -119,12 +98,10 @@ public class JMXAccessControlList {
 
       String domainKey = objectName.getDomain();
 
-      TreeMap<String, Access> domainMap = domainCache.computeIfAbsent(objectName.getDomain(), key ->
-         domainAccess.get(key)
-      );
+      TreeMap<String, Access> domainMap = domainAccess.getIfPresent(objectName.getDomain());
 
-      Map<String, Bucket> bucketedMap = bucketedDomainCache.computeIfAbsent(domainKey, d -> {
-         TreeMap<String, Access> rawMap = domainAccess.get(d);
+      Map<String, Bucket> bucketedMap = bucketedDomainCache.get(domainKey, d -> {
+         TreeMap<String, Access> rawMap = domainAccess.getIfPresent(d);
          if (rawMap == null) {
             return null;
          }
@@ -155,7 +132,9 @@ public class JMXAccessControlList {
       if (bucketedMap != null) {
 
          String cacheKey = objectName.getCanonicalName();
-         Map<String, String> keyPropertyList = keyPropertyCache.get(cacheKey);
+         Map<String, String> keyPropertyList = keyPropertyCache.get(cacheKey, key ->
+            objectName.getKeyPropertyList()
+         );
          if (keyPropertyList == null) {
             keyPropertyList = objectName.getKeyPropertyList();
             keyPropertyCache.put(cacheKey, keyPropertyList);
@@ -195,10 +174,10 @@ public class JMXAccessControlList {
 
 
    public boolean isInAllowList(ObjectName objectName) {
-      TreeMap<String, Access> domainMap = allowList.get(objectName.getDomain());
+      TreeMap<String, Access> domainMap = allowList.getIfPresent(objectName.getDomain());
 
       if (domainMap == null) {
-         domainMap = allowList.get(WILDCARD);
+         domainMap = allowList.getIfPresent(WILDCARD);
       }
 
       if (domainMap != null) {
@@ -234,10 +213,9 @@ public class JMXAccessControlList {
    }
 
    public void addToRoleAccess(String domain, String key, String method, String... roles) {
-      TreeMap<String, Access> domainMap = new TreeMap<>(keyComparator);
-      domainMap = domainAccess.putIfAbsent(domain, domainMap);
+      TreeMap<String, Access> domainMap = domainAccess.get(domain, k -> new TreeMap<>(keyComparator));
       if (domainMap == null) {
-         domainMap = domainAccess.get(domain);
+         domainMap = domainAccess.getIfPresent(domain);
       }
 
       String accessKey = normalizeKey(key);

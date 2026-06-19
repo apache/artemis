@@ -23,6 +23,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import javax.management.Attribute;
 import javax.management.AttributeList;
 import javax.management.JMException;
@@ -36,11 +38,9 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.security.Principal;
 import java.util.List;
-import java.util.Map;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class ArtemisMBeanServerGuard implements GuardInvocationHandler {
 
@@ -48,8 +48,8 @@ public class ArtemisMBeanServerGuard implements GuardInvocationHandler {
 
    private JMXAccessControlList jmxAccessControlList = JMXAccessControlList.createDefaultList();
 
-   private final Map<ObjectName, Boolean> bypassRBACCache = new ConcurrentHashMap<>();
-   private final Map<String, ObjectName> objectNameCache = new ConcurrentHashMap<>();
+   private final Cache<String, ObjectName> objectNameCache = Caffeine.newBuilder().maximumSize(10000).build();
+   private final Cache<ObjectName, Boolean> bypassRBACCache = Caffeine.newBuilder().maximumSize(10000).build();
 
    private static final class CachedRolesPrincipal implements Principal {
       final Set<String> roles;
@@ -142,7 +142,7 @@ public class ArtemisMBeanServerGuard implements GuardInvocationHandler {
    }
 
    private boolean canBypassRBAC(ObjectName objectName) {
-      return bypassRBACCache.computeIfAbsent(objectName, name -> jmxAccessControlList.isInAllowList(name));
+      return bypassRBACCache.get(objectName, jmxAccessControlList::isInAllowList);
    }
 
    @Override
@@ -159,7 +159,7 @@ public class ArtemisMBeanServerGuard implements GuardInvocationHandler {
       if (operationName == null) {
          return true;
       }
-      ObjectName objectName = objectNameCache.computeIfAbsent(object, key -> {
+      ObjectName objectName = objectNameCache.get(object, key -> {
          try {
             return ObjectName.getInstance(key);
          } catch (MalformedObjectNameException e) {
