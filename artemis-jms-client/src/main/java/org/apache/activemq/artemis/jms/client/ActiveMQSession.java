@@ -598,7 +598,7 @@ public class ActiveMQSession implements QueueSession, TopicSession {
       }
 
       if (queue == null) {
-         queue = internalCreateQueueCompatibility("jms.queue." + queueName);
+         queue = internalCreateQueueCompatibility(PacketImpl.OLD_QUEUE_PREFIX + queueName);
       }
       if (queue == null) {
          throw new JMSException("There is no queue with name " + queueName);
@@ -607,13 +607,15 @@ public class ActiveMQSession implements QueueSession, TopicSession {
       }
    }
 
+   // HornetQ 1.x compatibility: locate an already-existing legacy-prefixed queue. Honoring
+   // isAutoCreateQueues here would let a broader address-settings match auto-create a queue
+   // under the legacy "jms.queue." name, so existence is the only signal we trust.
    protected ActiveMQQueue internalCreateQueueCompatibility(String queueName) throws ActiveMQException, JMSException {
-      ActiveMQQueue queue = lookupQueue(queueName, false);
-
-      if (queue == null) {
-         queue = lookupQueue(queueName, true);
+      ActiveMQQueue queue = ActiveMQDestination.createQueue(queueName);
+      if (!session.queueQuery(queue.getSimpleAddress()).isExists()) {
+         return null;
       }
-
+      queue.setName(queueName.substring(PacketImpl.OLD_QUEUE_PREFIX.length()));
       return queue;
    }
 
