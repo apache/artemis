@@ -99,8 +99,6 @@ public class JMXAccessControlList {
 
       String domainKey = objectName.getDomain();
 
-      TreeMap<String, Access> domainMap = domainAccess.getIfPresent(objectName.getDomain());
-
       Map<String, Bucket> bucketedMap = bucketedDomainCache.get(domainKey, d -> {
          TreeMap<String, Access> rawMap = domainAccess.getIfPresent(d);
          if (rawMap == null) {
@@ -162,6 +160,8 @@ public class JMXAccessControlList {
                }
             }
          }
+
+         TreeMap<String, Access> domainMap = domainAccess.getIfPresent(objectName.getDomain());
 
          Access access = domainMap.get("");
          if (access != null) {
