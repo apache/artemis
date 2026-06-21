@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,7 +72,7 @@ public class JMXAccessControlList {
    }
 
 
-   public List<String> getRolesForObject(ObjectName objectName, String methodName) {
+   public Set<String> getRolesForObject(ObjectName objectName, String methodName) {
       TreeMap<String, Access> domainMap = domainAccess.getIfPresent(objectName.getDomain());
       if (domainMap != null) {
          Map<String, String> keyPropertyList = objectName.getKeyPropertyList();
@@ -248,9 +249,9 @@ public class JMXAccessControlList {
       private final String id;
       private final String key;
       private final Pattern keyPattern;
-      List<String> catchAllRoles = new ArrayList<>();
-      Map<String, List<String>> methodRoles = new HashMap<>();
-      Map<String, List<String>> methodPrefixRoles = new LinkedHashMap<>();
+      Set<String> catchAllRoles = new HashSet<>();
+      Map<String, Set<String>> methodRoles = new HashMap<>();
+      Map<String, Set<String>> methodPrefixRoles = new LinkedHashMap<>();
 
       Access(String id) {
          this(id, "");
@@ -263,9 +264,9 @@ public class JMXAccessControlList {
       }
 
       public synchronized void addMethods(String prefix, String... roles) {
-         List<String> rolesList = methodRoles.get(prefix);
+         Set<String> rolesList = methodRoles.get(prefix);
          if (rolesList == null) {
-            rolesList = new ArrayList<>();
+            rolesList = new HashSet<>();
             methodRoles.put(prefix, rolesList);
          }
          for (String role : roles) {
@@ -274,9 +275,9 @@ public class JMXAccessControlList {
       }
 
       public synchronized void addMethodsPrefixes(String prefix, String... roles) {
-         List<String> rolesList = methodPrefixRoles.get(prefix);
+         Set<String> rolesList = methodPrefixRoles.get(prefix);
          if (rolesList == null) {
-            rolesList = new ArrayList<>();
+            rolesList = new HashSet<>();
             methodPrefixRoles.put(prefix, rolesList);
          }
          for (String role : roles) {
@@ -302,12 +303,12 @@ public class JMXAccessControlList {
          return keyPattern;
       }
 
-      public List<String> getMatchingRolesForMethod(String methodName) {
-         List<String> roles = methodRoles.get(methodName);
+      public Set<String> getMatchingRolesForMethod(String methodName) {
+         Set<String> roles = methodRoles.get(methodName);
          if (roles != null) {
             return roles;
          }
-         for (Map.Entry<String, List<String>> entry : methodPrefixRoles.entrySet()) {
+         for (Map.Entry<String, Set<String>> entry : methodPrefixRoles.entrySet()) {
             if (methodName.startsWith(entry.getKey())) {
                return entry.getValue();
             }
@@ -316,12 +317,11 @@ public class JMXAccessControlList {
       }
 
       public boolean authorizeUserForMethod(String methodName, Set<String> userRoles) {
-         List<String> roles = methodRoles.get(methodName);
+         Set<String> roles = methodRoles.get(methodName);
          if (roles != null) {
             return !Collections.disjoint(roles, userRoles);
-
          }
-         for (Map.Entry<String, List<String>> entry : methodPrefixRoles.entrySet()) {
+         for (Map.Entry<String, Set<String>> entry : methodPrefixRoles.entrySet()) {
             if (methodName.startsWith(entry.getKey())) {
                return !Collections.disjoint(entry.getValue(), userRoles);
             }
