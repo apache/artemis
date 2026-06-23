@@ -856,6 +856,14 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       threadDump();
    }
 
+   private boolean suppressCriticalAnalyzerWhileActivating(Object criticalComponent) {
+      if (!isActive()) {
+         takingLongToStart(criticalComponent);
+         return true;
+      }
+      return false;
+   }
+
    protected void initializeCriticalAnalyzer() throws Exception {
 
       // Some tests will play crazy frequenceistop/start
@@ -884,9 +892,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       final CriticalAnalyzerPolicy criticalAnalyzerPolicy = configuration.getCriticalAnalyzerPolicy();
       CriticalAction criticalAction = switch (criticalAnalyzerPolicy) {
          case HALT -> criticalComponent -> {
-            if (ActiveMQServerImpl.this.state == SERVER_STATE.STARTING) {
-               takingLongToStart(criticalComponent);
-            } else {
+            if (!suppressCriticalAnalyzerWhileActivating(criticalComponent)) {
                checkCriticalAnalyzerLogging();
                ActiveMQServerLogger.LOGGER.criticalSystemHalt(criticalComponent);
 
@@ -897,9 +903,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
             }
          };
          case SHUTDOWN -> criticalComponent -> {
-            if (ActiveMQServerImpl.this.state == SERVER_STATE.STARTING) {
-               takingLongToStart(criticalComponent);
-            } else {
+            if (!suppressCriticalAnalyzerWhileActivating(criticalComponent)) {
                checkCriticalAnalyzerLogging();
                ActiveMQServerLogger.LOGGER.criticalSystemShutdown(criticalComponent);
 
@@ -922,9 +926,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
             }
          };
          case LOG -> criticalComponent -> {
-            if (ActiveMQServerImpl.this.state == SERVER_STATE.STARTING) {
-               takingLongToStart(criticalComponent);
-            } else {
+            if (!suppressCriticalAnalyzerWhileActivating(criticalComponent)) {
                checkCriticalAnalyzerLogging();
                ActiveMQServerLogger.LOGGER.criticalSystemLog(criticalComponent);
                threadDump();
@@ -3558,7 +3560,6 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       if (state == SERVER_STATE.STOPPED || state == SERVER_STATE.STOPPING) {
          return;
       }
-
       loadProtocolServices();
 
       pagingManager.reloadStores();

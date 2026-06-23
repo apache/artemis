@@ -16,17 +16,19 @@
  */
 package org.apache.activemq.artemis.core.server.impl;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.activemq.artemis.core.config.impl.ConfigurationImpl;
-import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
 import org.apache.activemq.artemis.tests.util.ServerTestBase;
+import org.apache.activemq.artemis.utils.ReusableLatch;
 import org.apache.activemq.artemis.utils.critical.CriticalAnalyzerAccessor;
 import org.apache.activemq.artemis.utils.critical.CriticalAnalyzerPolicy;
 import org.apache.activemq.artemis.utils.critical.CriticalComponentImpl;
 import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
 
 public class ActiveMQServerStartupTest extends ServerTestBase {
 
@@ -56,11 +58,16 @@ public class ActiveMQServerStartupTest extends ServerTestBase {
          ActiveMQServerImpl server = new ActiveMQServerImpl(configuration);
          addServer(server);
          server.start();
-         // this will be faking a condition
-         server.setState(ActiveMQServer.SERVER_STATE.STARTING);
+
+         Field field = ActiveMQServerImpl.class.getDeclaredField("activationLatch");
+         field.setAccessible(true);
+         ReusableLatch activationLatch = (ReusableLatch) field.get(server);
+         // fake server not being active by holding the activation latch the same way start() does
+         activationLatch.setCount(1);
+
          CriticalAnalyzerAccessor.fireActions(server.getCriticalAnalyzer(), new CriticalComponentImpl(server.getCriticalAnalyzer(), 2));
+         assertFalse(server.isActive());
          assertTrue(loggerHandler.findText("AMQ224116"));
-         assertEquals(ActiveMQServer.SERVER_STATE.STARTING, server.getState()); // should not be changed
          server.stop();
       }
    }
