@@ -231,4 +231,7 @@ public interface ActiveMQClientMessageBundle {
 
    @Message(id = 219069, value = "Unable to create Session. Either the ClientSessionFactory is closed or the ClientProtocolManager is dead.")
    IllegalStateException unableToCreateSession();
+
+   @Message(id = 219070, value = "The server discovery is disabled by default. See the Server Discovery section in the user manual for security requirements and enablement.")
+   IllegalStateException serverDiscoveryDisabled();
 }

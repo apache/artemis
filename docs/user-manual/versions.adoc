@@ -57,6 +57,7 @@ Due to the additional persistent state there will be a performance impact.
 Of course, this is a traditional trade-off for increased reliability.
 The exact impact will depend on your specific use-case.
 Generally speaking, the recommendation is to use the lowest QoS possible to avoid unnecessary overhead.
+* Server discovery is disabled by default, see the xref:clusters.adoc#server-discovery[Server Discovery] section in the user manual for security requirements and enablement.
 
 == Version 2.55.0
 

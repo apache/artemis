@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.apache.activemq.artemis.api.config.ServerLocatorConfigTestAccessor;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.client.ActiveMQClient;
 import org.apache.activemq.artemis.cli.Artemis;
@@ -49,6 +50,14 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class CliTestBase extends ArtemisTestCase {
+
+   /**
+    * Enables discovery for the current test and resets it after the test completes.
+    */
+   protected void enableDiscoveryForTest() {
+      ServerLocatorConfigTestAccessor.setDiscoveryEnabled(true);
+      runAfter(() -> ServerLocatorConfigTestAccessor.setDiscoveryEnabled(null));
+   }
 
    // Temp folder at ./target/tmp/<TestClassName>/<generated>
    @TempDir(factory = TargetTempDirFactory.class)

@@ -91,6 +91,7 @@ public class HAPolicyConfigurationTest extends ServerTestBase {
    public void primaryOnlyTest() throws Exception {
       Configuration configuration = createConfiguration("primary-only-hapolicy-config.xml");
       ActiveMQServerImpl server = new ActiveMQServerImpl(configuration);
+      enableDiscoveryForTest();
       try {
          server.start();
          Activation activation = server.getActivation();
@@ -373,6 +374,7 @@ public class HAPolicyConfigurationTest extends ServerTestBase {
    public void BackupReplicationTest() throws Exception {
       Configuration configuration = createConfiguration("backup-hapolicy-config.xml");
       ActiveMQServerImpl server = new ActiveMQServerImpl(configuration);
+      enableDiscoveryForTest();
       try {
          server.start();
          Activation activation = server.getActivation();
@@ -451,6 +453,7 @@ public class HAPolicyConfigurationTest extends ServerTestBase {
    public void ReplicaTest() throws Exception {
       Configuration configuration = createConfiguration("replica-hapolicy-config.xml");
       ActiveMQServerImpl server = new ActiveMQServerImpl(configuration);
+      enableDiscoveryForTest();
       try {
          server.start();
          Activation activation = server.getActivation();
@@ -549,6 +552,7 @@ public class HAPolicyConfigurationTest extends ServerTestBase {
    public void SharedStoreBackupTest() throws Exception {
       Configuration configuration = createConfiguration("shared-store-backup-hapolicy-config.xml");
       ActiveMQServerImpl server = new ActiveMQServerImpl(configuration);
+      enableDiscoveryForTest();
       try {
          server.start();
          Activation activation = server.getActivation();
@@ -621,6 +625,7 @@ public class HAPolicyConfigurationTest extends ServerTestBase {
    public void colocatedTest() throws Exception {
       Configuration configuration = createConfiguration("colocated-hapolicy-config.xml");
       ActiveMQServerImpl server = new ActiveMQServerImpl(configuration);
+      enableDiscoveryForTest();
       try {
          server.start();
          Activation activation = server.getActivation();
@@ -649,6 +654,7 @@ public class HAPolicyConfigurationTest extends ServerTestBase {
    public void colocatedTestNullBackup() throws Exception {
       Configuration configuration = createConfiguration("colocated-hapolicy-config-null-backup.xml");
       ActiveMQServerImpl server = new ActiveMQServerImpl(configuration);
+      enableDiscoveryForTest();
       try {
          server.start();
          Activation activation = server.getActivation();

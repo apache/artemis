@@ -205,6 +205,9 @@ Reports about admin capabilities (e.g., "admin can read messages") are triaged a
 . *When `security-enabled=false`:* Can send arbitrary protocol messages and perform messaging or management operations without authentication.
 This configuration is not supported in production.
 Reports against such deployments with are triaged as `OUT-OF-SCOPE`.
+. *When `artemis.discovery.enabled=true` and insecure server discovery broadcast endpoint: *If unauthenticated senders send discovery packets, the broker does not defend against malicious discovery packets.
+This configuration is not supported in production.
+Reports against such deployments with are triaged as `OUT-OF-SCOPE`.
 
 == Security Properties Provided
 
@@ -222,6 +225,8 @@ If message payloads must be kept confidential from the broker operator, the appl
 . *Authentication of message content origin:* The broker authenticates the _connection_ that sends a message, not the message itself.
 A compromised client or a client authorized to send to an address can claim to be any logical sender.
 Applications requiring non-repudiation must implement message signing.
+. *Authentication of server discovery packets:* The broker and the client don't authenticate the server discovery packets.
+Server discovery broadcast endpoints must implement authentication.
 . *Comprehensive per-client message rate limiting across all protocols:* Message rate limiting is available for Core and MQTT 5 clients, but *not* for AMQP, STOMP, OpenWire, or MQTT 3.x clients.
 Clients using protocols without rate limiting can send messages at line rate until paging or disk space limits are enforced.
 Operators must use network-level controls for protocols that lack broker-side rate limiting.

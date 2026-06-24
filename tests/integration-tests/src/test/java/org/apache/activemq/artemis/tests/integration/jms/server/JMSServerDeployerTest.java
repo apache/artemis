@@ -103,6 +103,7 @@ public class JMSServerDeployerTest extends ActiveMQTestBase {
    @Override
    @BeforeEach
    public void setUp() throws Exception {
+      enableDiscoveryForTest();
       super.setUp();
 
       DiscoveryGroupConfiguration dcg = new DiscoveryGroupConfiguration().setName("mygroup").setRefreshTimeout(5432).setDiscoveryInitialWaitTimeout(5432).setBroadcastEndpointFactory(new UDPBroadcastEndpointFactory().setGroupAddress(getUDPDiscoveryAddress()).setGroupPort(getUDPDiscoveryPort()).setLocalBindAddress("172.16.8.10"));

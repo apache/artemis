@@ -54,6 +54,8 @@ import org.apache.activemq.artemis.jms.client.ActiveMQQueueConnectionFactory;
 import org.apache.activemq.artemis.jms.client.ActiveMQTopicConnectionFactory;
 import org.apache.activemq.artemis.jms.client.ActiveMQXAQueueConnectionFactory;
 import org.apache.activemq.artemis.jms.client.ActiveMQXATopicConnectionFactory;
+import org.apache.activemq.artemis.api.config.ServerLocatorConfigTestAccessor;
+import org.apache.activemq.artemis.tests.util.ArtemisTestCase;
 import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.commons.beanutils.BeanUtilsBean;
 import org.junit.jupiter.api.Test;
@@ -61,7 +63,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 
-public class ConnectionFactoryURITest {
+public class ConnectionFactoryURITest extends ArtemisTestCase {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -75,6 +77,11 @@ public class ConnectionFactoryURITest {
       ignoreList.add("protocolManagerFactoryStr");
       ignoreList.add("incomingInterceptorList");
       ignoreList.add("outgoingInterceptorList");
+   }
+
+   protected void enableDiscoveryForTest() {
+      ServerLocatorConfigTestAccessor.setDiscoveryEnabled(true);
+      runAfter(() -> ServerLocatorConfigTestAccessor.setDiscoveryEnabled(null));
    }
 
    @Test
@@ -319,6 +326,7 @@ public class ConnectionFactoryURITest {
 
    @Test
    public void testUDP() throws Exception {
+      enableDiscoveryForTest();
       ActiveMQConnectionFactory factory = parser.newObject(new URI("udp://localhost:3030?ha=true&type=QUEUE_XA_CF"), null);
 
       assertEquals(ActiveMQXAQueueConnectionFactory.class.getName(), factory.getClass().getName());
@@ -326,6 +334,7 @@ public class ConnectionFactoryURITest {
 
    @Test
    public void testUDPAllProperties() throws Exception {
+      enableDiscoveryForTest();
       ignoreList.add("deserializationBlackList");
       ignoreList.add("deserializationWhiteList");
       try {
@@ -344,6 +353,7 @@ public class ConnectionFactoryURITest {
 
    @Test
    public void testUDPAllPropertiesWithDeprecatedListProps() throws Exception {
+      enableDiscoveryForTest();
       ignoreList.add("deserializationDenyList");
       ignoreList.add("deserializationAllowList");
       try {
@@ -362,6 +372,7 @@ public class ConnectionFactoryURITest {
 
    @Test
    public void testUDPURI() throws Exception {
+      enableDiscoveryForTest();
       DiscoveryGroupConfiguration discoveryGroupConfiguration = new DiscoveryGroupConfiguration();
       UDPBroadcastEndpointFactory endpoint = new UDPBroadcastEndpointFactory();
       endpoint.setGroupPort(3333).setGroupAddress("wahey").setLocalBindPort(555).setLocalBindAddress("uhuh");
@@ -395,6 +406,7 @@ public class ConnectionFactoryURITest {
 
    @Test
    public void testInvalidCFType() throws Exception {
+      enableDiscoveryForTest();
       ActiveMQConnectionFactory factory = parser.newObject(new URI("udp://localhost:3030?ha=true&type=QUEUE_XA_CFInvalid"), null);
 
       assertEquals(ActiveMQJMSConnectionFactory.class.getName(), factory.getClass().getName());
@@ -402,6 +414,7 @@ public class ConnectionFactoryURITest {
 
    @Test
    public void testJGroupsFile() throws Exception {
+      enableDiscoveryForTest();
       ActiveMQConnectionFactory factory = parser.newObject(new URI("jgroups://channel-name?file=/path/to/some/file/channel-file.xml&test=33"), null);
 
       assertEquals(ActiveMQJMSConnectionFactory.class.getName(), factory.getClass().getName());
@@ -412,6 +425,7 @@ public class ConnectionFactoryURITest {
 
    @Test
    public void testJGroupsAllProperties() throws Exception {
+      enableDiscoveryForTest();
       ignoreList.add("deserializationBlackList");
       ignoreList.add("deserializationWhiteList");
       try {
@@ -430,6 +444,7 @@ public class ConnectionFactoryURITest {
 
    @Test
    public void testJGroupsAllPropertiesWithDeprecatedListProps() throws Exception {
+      enableDiscoveryForTest();
       ignoreList.add("deserializationDenyList");
       ignoreList.add("deserializationAllowList");
       try {
@@ -448,6 +463,7 @@ public class ConnectionFactoryURITest {
 
    @Test
    public void testJGroupsFileURI() throws Exception {
+      enableDiscoveryForTest();
       DiscoveryGroupConfiguration discoveryGroupConfiguration = new DiscoveryGroupConfiguration();
       JGroupsFileBroadcastEndpointFactory endpointFactory = new JGroupsFileBroadcastEndpointFactory().setChannelName("channel-name").setFile("channel-file.xml");
       discoveryGroupConfiguration.setName("foo").setRefreshTimeout(12345).setDiscoveryInitialWaitTimeout(5678).setBroadcastEndpointFactory(endpointFactory);

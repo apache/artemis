@@ -704,6 +704,7 @@ public class ActiveMQConnectionFactoryTest extends ActiveMQTestBase {
    @Override
    @BeforeEach
    public void setUp() throws Exception {
+      enableDiscoveryForTest();
       super.setUp();
 
       startServer();

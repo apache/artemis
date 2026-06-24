@@ -719,6 +719,8 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       configuration.parseProperties(propertiesFileUrl);
       updateStatus(ServerStatus.CONFIGURATION_COMPONENT, configuration.getStatus());
 
+      ConfigurationUtils.validateStartupConfiguration(configuration);
+
       initializeExecutorServices();
 
       initializeCriticalAnalyzer();

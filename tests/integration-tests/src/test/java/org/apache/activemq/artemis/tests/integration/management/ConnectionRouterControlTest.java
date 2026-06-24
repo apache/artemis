@@ -28,7 +28,6 @@ import org.apache.activemq.artemis.api.core.management.ConnectionRouterControl;
 import org.apache.activemq.artemis.core.server.routing.policies.FirstElementPolicy;
 import org.apache.activemq.artemis.core.server.routing.KeyType;
 import org.apache.activemq.artemis.tests.integration.routing.RoutingTestBase;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.apache.activemq.artemis.json.JsonObject;
@@ -49,12 +48,6 @@ public class ConnectionRouterControlTest extends RoutingTestBase {
       super.setUp();
 
       mbeanServer = createMBeanServer();
-   }
-
-   @Override
-   @AfterEach
-   public void tearDown() throws Exception {
-      super.tearDown();
    }
 
 
@@ -193,6 +186,7 @@ public class ConnectionRouterControlTest extends RoutingTestBase {
    }
 
    private ConnectionRouterControl getConnectionRouterControlForTarget() throws Exception {
+      enableDiscoveryForTest();
       setupPrimaryServerWithDiscovery(0, GROUP_ADDRESS, GROUP_PORT, true, true, false);
       setupRouterServerWithDiscovery(0, KeyType.USER_NAME, FirstElementPolicy.NAME, null, false, null, 1);
       getServer(0).setMBeanServer(mbeanServer);
@@ -205,6 +199,7 @@ public class ConnectionRouterControlTest extends RoutingTestBase {
    }
 
    private ConnectionRouterControl getConnectionRouterControlForLocalTarget() throws Exception {
+      enableDiscoveryForTest();
       setupPrimaryServerWithDiscovery(0, GROUP_ADDRESS, GROUP_PORT, true, true, false);
       setupRouterServerWithDiscovery(0, KeyType.USER_NAME, FirstElementPolicy.NAME, null, true, null, 1);
       getServer(0).setMBeanServer(mbeanServer);

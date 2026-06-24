@@ -31,7 +31,6 @@ import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ActiveMQServers;
 import org.apache.activemq.artemis.utils.RandomUtil;
 import org.jgroups.JChannel;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.apache.activemq.artemis.json.JsonArray;
@@ -74,6 +73,7 @@ public class JGroupsChannelBroadcastGroupControlTest extends ManagementTestBase 
    @Override
    @BeforeEach
    public void setUp() throws Exception {
+      enableDiscoveryForTest();
       super.setUp();
 
       prepareJChannel();
@@ -82,6 +82,7 @@ public class JGroupsChannelBroadcastGroupControlTest extends ManagementTestBase 
       List<String> connectorInfos = new ArrayList<>();
       connectorInfos.add(connectorConfiguration.getName());
       JChannel channel = new JChannel("udp.xml");
+      runAfter(() -> channel.close());
 
       String channelName1 = "channel1";
       ChannelBroadcastEndpointFactory endpointFactory = new ChannelBroadcastEndpointFactory(channel, channelName1);
@@ -96,10 +97,5 @@ public class JGroupsChannelBroadcastGroupControlTest extends ManagementTestBase 
 
    public void prepareJChannel() {
       JChannelManager.getInstance().setLoopbackMessages(true);
-   }
-
-   @AfterEach
-   public void cleanupJChannel() {
-      JChannelManager.getInstance().clear();
    }
 }

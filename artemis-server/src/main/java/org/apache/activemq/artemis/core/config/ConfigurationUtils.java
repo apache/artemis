@@ -46,6 +46,7 @@ import org.apache.activemq.artemis.core.server.cluster.ha.SharedStorePrimaryPoli
 import org.apache.activemq.artemis.core.server.cluster.ha.SharedStoreBackupPolicy;
 import org.apache.activemq.artemis.uri.AcceptorTransportConfigurationParser;
 import org.apache.activemq.artemis.uri.ConnectorTransportConfigurationParser;
+import org.apache.activemq.artemis.api.config.ServerLocatorConfig;
 
 public final class ConfigurationUtils {
 
@@ -149,6 +150,17 @@ public final class ConfigurationUtils {
    public static void validateConfiguration(Configuration configuration) {
       // Warn if connection-ttl-override/connection-ttl == check-period
       compareTTLWithCheckPeriod(configuration);
+   }
+
+   public static void validateStartupConfiguration(Configuration configuration) throws ActiveMQIllegalStateException {
+      if (!ServerLocatorConfig.isDiscoveryEnabled()) {
+         if (!configuration.getBroadcastGroupConfigurations().isEmpty()) {
+            throw ActiveMQMessageBundle.BUNDLE.broadcastGroupsConfiguredButDisabled();
+         }
+         if (!configuration.getDiscoveryGroupConfigurations().isEmpty()) {
+            throw ActiveMQMessageBundle.BUNDLE.discoveryGroupsConfiguredButDisabled();
+         }
+      }
    }
 
    public static List<TransportConfiguration> parseAcceptorURI(String name, String uri) {

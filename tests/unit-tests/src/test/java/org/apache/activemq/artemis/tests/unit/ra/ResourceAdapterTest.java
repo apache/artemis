@@ -250,6 +250,8 @@ public class ResourceAdapterTest extends ActiveMQTestBase {
 
    @Test
    public void testCreateConnectionFactoryOverrideDiscovery() throws Exception {
+      enableDiscoveryForTest();
+
       ActiveMQResourceAdapter ra = new ActiveMQResourceAdapter();
       ra.setConnectorClassName(InVMConnectorFactory.class.getName());
       ConnectionFactoryProperties connectionFactoryProperties = new ConnectionFactoryProperties();

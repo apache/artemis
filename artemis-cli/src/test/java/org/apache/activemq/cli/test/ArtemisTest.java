@@ -232,7 +232,7 @@ public class ArtemisTest extends CliTestBase {
    }
 
    private void testMaxHops(int maxHops) throws Exception {
-      List<String> args = new ArrayList<>(List.of("--silent", "--no-autotune", "--clustered", "--user", "admin", "--password", "admin", "--cluster-user", "admin", "--cluster-password", "admin"));
+      List<String> args = new ArrayList<>(List.of("--silent", "--no-autotune", "--static-cluster", "tcp://localhost:61616,tcp://localhost:61617", "--user", "admin", "--password", "admin", "--cluster-user", "admin", "--cluster-password", "admin"));
       if (maxHops != Create.DEFAULT_MAX_HOPS) {
          args.add("--max-hops");
          args.add(String.valueOf(maxHops));

@@ -91,11 +91,13 @@ public class SimpleJNDIClientTest extends ActiveMQTestBase {
       }
    }
 
+   @Override
    @AfterEach
-   public void closeCFs() {
+   public void tearDown() throws Exception {
       factories.forEach(cf -> {
          cf.close();
       });
+      super.tearDown();
    }
 
    @Test
@@ -399,6 +401,7 @@ public class SimpleJNDIClientTest extends ActiveMQTestBase {
    @Override
    @BeforeEach
    public void setUp() throws Exception {
+      enableDiscoveryForTest();
       super.setUp();
 
       startServer();

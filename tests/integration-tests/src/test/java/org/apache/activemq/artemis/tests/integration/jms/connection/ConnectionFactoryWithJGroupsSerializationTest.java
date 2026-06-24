@@ -55,6 +55,7 @@ public class ConnectionFactoryWithJGroupsSerializationTest extends JMSTestBase {
    @BeforeEach
    public void setUp() throws Exception {
       try {
+         enableDiscoveryForTest();
          super.setUp();
 
          channel = new JChannel("udp.xml");

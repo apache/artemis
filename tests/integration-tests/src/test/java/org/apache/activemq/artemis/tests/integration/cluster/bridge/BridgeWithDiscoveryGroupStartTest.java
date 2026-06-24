@@ -74,6 +74,7 @@ public class BridgeWithDiscoveryGroupStartTest extends ActiveMQTestBase {
 
    @TestTemplate
    public void testStartStop() throws Exception {
+      enableDiscoveryForTest();
       Map<String, Object> server0Params = new HashMap<>();
       ActiveMQServer server0 = createClusteredServerWithParams(isNetty(), 0, true, server0Params);
 

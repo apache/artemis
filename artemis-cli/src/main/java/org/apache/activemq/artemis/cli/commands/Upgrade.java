@@ -41,7 +41,7 @@ import picocli.CommandLine.Command;
 public class Upgrade extends InstallAbstract {
 
    // These are the JVM arguments we must keep between upgrades
-   private static final String[] KEEPING_JVM_ARGUMENTS = new String[]{"-Xmx", "-Djava.security.auth.login.config", "-Dhawtio.roles="};
+   private static final String[] KEEPING_JVM_ARGUMENTS = new String[]{"-Xmx", "-Djava.security.auth.login.config", "-Dhawtio.roles=", "-Dartemis.discovery.enabled="};
 
    // These are the renamed JVM arguments we must keep between upgrades
    // The keys MUST be one of the current KEEPING_JVM_ARGUMENTS args above, the values then being its old variant to be renamed.

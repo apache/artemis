@@ -50,6 +50,7 @@ If the answer to that question is "no" then you're likely to get better performa
 
 Also keep in mind that a xref:connection-routers.adoc#connection-routers[connection router] may improve performance of your cluster by grouping related consumers and producers together on the same node.
 
+[[server-discovery]]
 == Server discovery
 
 Server discovery is a mechanism by which servers can propagate their connection details to:
@@ -62,6 +63,31 @@ Servers in a cluster want to be able to create cluster connections to each other
 This information, let's call it the Cluster Topology, is actually sent around normal connections to clients and to other servers over cluster connections.
 This being the case, we need a way of establishing the initial first connection.
 This can be done using dynamic discovery techniques like https://en.wikipedia.org/wiki/User_Datagram_Protocol[UDP] and http://www.jgroups.org/[JGroups], or by providing a list of initial connectors.
+
+[WARNING]
+====
+Server discovery is *disabled by default* for security reasons.
+
+Before enabling server discovery, check that the broadcast endpoint authenticates the senders:
+
+* *JGroups*: configure the JGroups `AUTH` protocol and/or TLS in the stack referenced by `jgroups-file` so only authorized members can send broadcasts.
+* *UDP*: has no built-in sender authentication; use only on trusted networks.
+
+Set the JVM system property `artemis.discovery.enabled=true` or the environment
+variable `ARTEMIS_DISCOVERY_ENABLED=true` to enable discovery on clients and servers.
+
+You can set the JVM system property for the broker by including
+`-Dartemis.discovery.enabled=true` within the `JAVA_ARGS` within `etc/artemis.profile` and
+`etc/artemis-utility.profile` for your broker instance.`
+
+For clustered instances created with the CLI that require server discovery, you must pass
+the hidden `--discovery-enabled` flag to `artemis create`.
+The `--discovery-enabled` flag adds `-Dartemis.discovery.enabled=true` to `JAVA_ARGS` in
+both profile files.
+Use this only after reviewing the security requirements above.
+
+See xref:threat-model.adoc#threat-model[threat model] for trust boundary implications.
+====
 
 === Dynamic Discovery
 

@@ -46,7 +46,6 @@ import org.apache.activemq.artemis.jms.server.config.impl.ConnectionFactoryConfi
 import org.apache.activemq.artemis.tests.util.JMSTestBase;
 import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.commons.beanutils.BeanUtilsBean;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -56,15 +55,9 @@ public class ConnectionFactorySerializationTest extends JMSTestBase {
 
    protected static ActiveMQConnectionFactory cf;
 
-   @Override
-   @BeforeEach
-   public void setUp() throws Exception {
-      super.setUp();
-   }
-
-
    @Test
    public void testConnectionFactoryUDP() throws Exception {
+      enableDiscoveryForTest();
       createDiscoveryFactoryUDP();
       cf = (ActiveMQConnectionFactory) namingContext.lookup("/MyConnectionFactory");
 
@@ -87,6 +80,7 @@ public class ConnectionFactorySerializationTest extends JMSTestBase {
 
    @Test
    public void testConnectionFactoryJgroupsFile() throws Exception {
+      enableDiscoveryForTest();
       createDiscoveryFactoryJGroupsFile();
       cf = (ActiveMQConnectionFactory) namingContext.lookup("/MyConnectionFactory");
 
