@@ -51,7 +51,6 @@ import org.apache.activemq.artemis.core.server.management.Notification;
 import org.apache.activemq.artemis.tests.integration.SimpleNotificationService;
 import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.artemis.utils.Wait;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -170,6 +169,7 @@ public class ClusterConnectionControlTest extends ManagementTestBase {
    @Override
    @BeforeEach
    public void setUp() throws Exception {
+      enableDiscoveryForTest();
       super.setUp();
 
       Map<String, Object> acceptorParams = new HashMap<>();
@@ -199,12 +199,6 @@ public class ClusterConnectionControlTest extends ManagementTestBase {
 
       server_0 = addServer(ActiveMQServers.newActiveMQServer(conf_0, mbeanServer, false));
       server_0.start();
-   }
-
-   @Override
-   @AfterEach
-   public void tearDown() throws Exception {
-      super.tearDown();
    }
 
    protected ClusterConnectionControl createManagementControl(final String name) throws Exception {

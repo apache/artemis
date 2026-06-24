@@ -17,12 +17,20 @@
 package org.apache.activemq.artemis.tests.integration.cluster.failover;
 
 import org.apache.activemq.artemis.core.server.cluster.impl.MessageLoadBalancingType;
+import org.junit.jupiter.api.BeforeEach;
 
 public class DiscoveryClusterWithBackupFailoverTest extends ClusterWithBackupFailoverTest {
 
    protected final String groupAddress = getUDPDiscoveryAddress();
 
    protected final int groupPort = getUDPDiscoveryPort();
+
+   @Override
+   @BeforeEach
+   public void setUp() throws Exception {
+      enableDiscoveryForTest();
+      super.setUp();
+   }
 
    @Override
    protected void setupCluster(final MessageLoadBalancingType messageLoadBalancingType) throws Exception {

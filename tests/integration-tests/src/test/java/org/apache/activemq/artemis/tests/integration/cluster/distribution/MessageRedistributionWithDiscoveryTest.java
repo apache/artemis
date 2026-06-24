@@ -46,6 +46,7 @@ public class MessageRedistributionWithDiscoveryTest extends ClusterTestBase {
    @Override
    @BeforeEach
    public void setUp() throws Exception {
+      enableDiscoveryForTest();
       super.setUp();
       setupCluster();
    }

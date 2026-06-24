@@ -67,6 +67,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
+import org.apache.activemq.artemis.api.config.ServerLocatorConfigTestAccessor;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.ActiveMQExceptionType;
@@ -190,6 +191,14 @@ public abstract class ActiveMQTestBase extends ArtemisTestCase {
    public static final String NETTY_ACCEPTOR_FACTORY = NettyAcceptorFactory.class.getCanonicalName();
    public static final String NETTY_CONNECTOR_FACTORY = NettyConnectorFactory.class.getCanonicalName();
    public static final String CLUSTER_PASSWORD = "UnitTestsClusterPassword";
+
+   /**
+    * Enables discovery for the current test and resets it after the test completes.
+    */
+   protected void enableDiscoveryForTest() {
+      ServerLocatorConfigTestAccessor.setDiscoveryEnabled(true);
+      runAfter(() -> ServerLocatorConfigTestAccessor.setDiscoveryEnabled(null));
+   }
 
    /**
     * Add a "sendCallNumber" property to messages sent using helper classes. Meant to help in debugging.

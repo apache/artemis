@@ -19,14 +19,22 @@ package org.apache.activemq.artemis.tests.integration.cluster.topology;
 import org.apache.activemq.artemis.api.core.DiscoveryGroupConfiguration;
 import org.apache.activemq.artemis.api.core.UDPBroadcastEndpointFactory;
 import org.apache.activemq.artemis.api.core.client.ActiveMQClient;
-import org.apache.activemq.artemis.api.core.client.ServerLocator;
 import org.apache.activemq.artemis.core.server.cluster.impl.MessageLoadBalancingType;
+import org.apache.activemq.artemis.api.core.client.ServerLocator;
+import org.junit.jupiter.api.BeforeEach;
 
 public class HAClientTopologyWithDiscoveryTest extends TopologyClusterTestBase {
 
    protected final String groupAddress = getUDPDiscoveryAddress();
 
    protected final int groupPort = getUDPDiscoveryPort();
+
+   @Override
+   @BeforeEach
+   public void setUp() throws Exception {
+      enableDiscoveryForTest();
+      super.setUp();
+   }
 
    @Override
    protected boolean isNetty() {

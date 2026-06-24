@@ -31,6 +31,7 @@ import org.apache.activemq.transport.amqp.client.AmqpValidator;
 import org.apache.qpid.proton.amqp.transport.ConnectionError;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.engine.Connection;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -39,6 +40,13 @@ import org.junit.jupiter.api.Test;
  * This class only adds some additional validations that are AMQP-specific.
  */
 public class AmqpRedirectTest extends RoutingTestBase {
+
+   @Override
+   @BeforeEach
+   public void setUp() throws Exception {
+      enableDiscoveryForTest();
+      super.setUp();
+   }
 
    @Test
    public void testRouterRejectionDueToOfflineTargetPool() throws Exception {

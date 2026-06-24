@@ -38,6 +38,7 @@ import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
 import org.apache.activemq.artemis.core.client.impl.ClientSessionFactoryImpl;
 import org.apache.activemq.artemis.core.client.impl.ServerLocatorImpl;
+import org.apache.activemq.artemis.api.config.ServerLocatorConfigTestAccessor;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.config.impl.ConfigurationImpl;
 import org.apache.activemq.artemis.core.config.storage.DatabaseStorageConfiguration;
@@ -93,6 +94,14 @@ public abstract class ServerTestBase extends ArtemisTestCase {
    public static final String INVM_ACCEPTOR_FACTORY = InVMAcceptorFactory.class.getCanonicalName();
    public static final String NETTY_ACCEPTOR_FACTORY = NettyAcceptorFactory.class.getCanonicalName();
    public static final String CLUSTER_PASSWORD = "UnitTestsClusterPassword";
+
+   /**
+    * Enables discovery for the current test and resets it after the test completes.
+    */
+   protected void enableDiscoveryForTest() {
+      ServerLocatorConfigTestAccessor.setDiscoveryEnabled(true);
+      runAfter(() -> ServerLocatorConfigTestAccessor.setDiscoveryEnabled(null));
+   }
 
    // There is a verification about thread leakages. We only fail a single thread when this happens
    private static Set<Thread> alreadyFailedThread = new HashSet<>();

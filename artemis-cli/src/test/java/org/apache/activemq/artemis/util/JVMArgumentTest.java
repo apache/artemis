@@ -48,25 +48,26 @@ public class JVMArgumentTest {
       final String arguments;
       if (useNewArgPropName) {
          // Uses new args prop -Dhawtio.roles=
-         arguments = "IF \"%JAVA_ARGS%\"==\"\" (set JAVA_ARGS= -must-go -XX:AutoBoxCacheMax=20000 -XX:+PrintClassHistogram  -XX:+UseG1GC -XX:+UseStringDeduplication -Xms333M -Xmx77G -Dhawtio.disableProxy=true -Dhawtio.offline=true -Dhawtio.realm=activemq -Dhawtio.roles=amq -Dhawtio.rolePrincipalClasses=org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal -Dhawtio.http.strictTransportSecurity=max-age=31536000;includeSubDomains;preload -Djolokia.policyLocation=classpath:jolokia-access.xml --add-opens java.base/jdk.internal.misc=ALL-UNNAMED -Dlog4j2.disableJmx=true)";
+         arguments = "IF \"%JAVA_ARGS%\"==\"\" (set JAVA_ARGS= -must-go -XX:AutoBoxCacheMax=20000 -XX:+PrintClassHistogram  -XX:+UseG1GC -XX:+UseStringDeduplication -Xms333M -Xmx77G -Dartemis.discovery.enabled=true -Dhawtio.disableProxy=true -Dhawtio.offline=true -Dhawtio.realm=activemq -Dhawtio.roles=amq -Dhawtio.rolePrincipalClasses=org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal -Dhawtio.http.strictTransportSecurity=max-age=31536000;includeSubDomains;preload -Djolokia.policyLocation=classpath:jolokia-access.xml --add-opens java.base/jdk.internal.misc=ALL-UNNAMED -Dlog4j2.disableJmx=true)";
       } else {
          // Uses old args prop -Dhawtio.role=
-         arguments = "IF \"%JAVA_ARGS%\"==\"\" (set JAVA_ARGS= -must-go -XX:AutoBoxCacheMax=20000 -XX:+PrintClassHistogram  -XX:+UseG1GC -XX:+UseStringDeduplication -Xms333M -Xmx77G -Dhawtio.disableProxy=true -Dhawtio.offline=true -Dhawtio.realm=activemq -Dhawtio.role=amq -Dhawtio.rolePrincipalClasses=org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal -Dhawtio.http.strictTransportSecurity=max-age=31536000;includeSubDomains;preload -Djolokia.policyLocation=classpath:jolokia-access.xml --add-opens java.base/jdk.internal.misc=ALL-UNNAMED -Dlog4j2.disableJmx=true)";
+         arguments = "IF \"%JAVA_ARGS%\"==\"\" (set JAVA_ARGS= -must-go -XX:AutoBoxCacheMax=20000 -XX:+PrintClassHistogram  -XX:+UseG1GC -XX:+UseStringDeduplication -Xms333M -Xmx77G -Dartemis.discovery.enabled=true -Dhawtio.disableProxy=true -Dhawtio.offline=true -Dhawtio.realm=activemq -Dhawtio.role=amq -Dhawtio.rolePrincipalClasses=org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal -Dhawtio.http.strictTransportSecurity=max-age=31536000;includeSubDomains;preload -Djolokia.policyLocation=classpath:jolokia-access.xml --add-opens java.base/jdk.internal.misc=ALL-UNNAMED -Dlog4j2.disableJmx=true)";
       }
 
       String prefix = "IF \"%JAVA_ARGS%\"==\"\" (set JAVA_ARGS= ";
 
-      String[] fixedArguments = new String[]{"-Xmx", "-Xms", "-Dhawtio.roles="};
+      String[] fixedArguments = new String[]{"-Xmx", "-Xms", "-Dhawtio.roles=", "-Dartemis.discovery.enabled="};
       Map<String, String> keepArgumentsAlternates = Map.of("-Dhawtio.roles=", "-Dhawtio.role=");
 
       Map<String, String> usedArgs = new HashMap<>();
       JVMArgumentParser.parseOriginalArgs(prefix, "\"", arguments, keepArgumentsAlternates, fixedArguments, usedArgs);
-      assertEquals(3, usedArgs.size());
+      assertEquals(4, usedArgs.size());
       assertEquals("-Xmx77G", usedArgs.get("-Xmx"));
       assertEquals("-Xms333M", usedArgs.get("-Xms"));
       assertEquals("-Dhawtio.roles=amq", usedArgs.get("-Dhawtio.roles="));
+      assertEquals("-Dartemis.discovery.enabled=true", usedArgs.get("-Dartemis.discovery.enabled="));
 
-      String newLine = "IF \"%JAVA_ARGS%\"==\"\" (set JAVA_ARGS= -XX:AutoBoxCacheMax=20000 -XX:+PrintClassHistogram  -XX:+UseG1GC -XX:+UseStringDeduplication -Xms512M -Xmx1G -Dhawtio.disableProxy=true -Dhawtio.offline=true -Dhawtio.realm=activemq -Dhawtio.roles=replaceThisRole -Dhawtio.rolePrincipalClasses=org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal -Djolokia.policyLocation=classpath:jolokia-access.xml)";
+      String newLine = "IF \"%JAVA_ARGS%\"==\"\" (set JAVA_ARGS= -XX:AutoBoxCacheMax=20000 -XX:+PrintClassHistogram  -XX:+UseG1GC -XX:+UseStringDeduplication -Xms512M -Xmx1G -Dartemis.discovery.enabled=false -Dhawtio.disableProxy=true -Dhawtio.offline=true -Dhawtio.realm=activemq -Dhawtio.roles=replaceThisRole -Dhawtio.rolePrincipalClasses=org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal -Djolokia.policyLocation=classpath:jolokia-access.xml)";
 
       String resultLine = JVMArgumentParser.parseNewLine(prefix, "\"", newLine, fixedArguments, usedArgs);
 
@@ -76,9 +77,11 @@ public class JVMArgumentTest {
       assertTrue(resultLine.contains("-Xmx77G"));
       assertTrue(resultLine.contains("-Xms333M"));
       assertTrue(resultLine.contains("-Dhawtio.roles=amq"));
+      assertTrue(resultLine.contains("-Dartemis.discovery.enabled=true"));
       assertFalse(resultLine.contains("-Xmx1G"));
       assertFalse(resultLine.contains("-Xmx512M"));
       assertFalse(resultLine.contains("replaceThisRole"));
+      assertFalse(resultLine.contains("-Dartemis.discovery.enabled=false"));
       assertFalse(resultLine.contains("-Dhawtio.role="));
    }
 

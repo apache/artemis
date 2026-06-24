@@ -19,6 +19,33 @@ package org.apache.activemq.artemis.api.config;
 import org.apache.activemq.artemis.api.core.client.ActiveMQClient;
 
 public class ServerLocatorConfig {
+
+   public static final String DISCOVERY_ENABLED_PROPERTY = "artemis.discovery.enabled";
+
+   public static final String DISCOVERY_ENABLED_ENV_VAR = "ARTEMIS_DISCOVERY_ENABLED";
+
+   private static volatile Boolean discoveryEnabled;
+
+   public static boolean isDiscoveryEnabled() {
+      Boolean enabled = discoveryEnabled;
+      if (enabled == null) {
+         String value = System.getProperty(DISCOVERY_ENABLED_PROPERTY);
+         if (value == null) {
+            value = System.getenv(DISCOVERY_ENABLED_ENV_VAR);
+         }
+         enabled = Boolean.parseBoolean(value);
+         discoveryEnabled = enabled;
+      }
+      return enabled;
+   }
+
+   /**
+    * Overrides the cached discovery-enabled flag. Intended for tests only.
+    */
+   static void setDiscoveryEnabled(Boolean enabled) {
+      discoveryEnabled = enabled;
+   }
+
    public long clientFailureCheckPeriod = ActiveMQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD;
    public long connectionTTL = ActiveMQClient.DEFAULT_CONNECTION_TTL;
    public long callTimeout = ActiveMQClient.DEFAULT_CALL_TIMEOUT;

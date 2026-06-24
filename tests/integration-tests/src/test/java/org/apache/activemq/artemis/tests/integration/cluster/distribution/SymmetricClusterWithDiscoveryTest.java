@@ -31,6 +31,7 @@ import org.apache.activemq.artemis.core.server.cluster.impl.MessageLoadBalancing
 import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.tests.util.Wait;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class SymmetricClusterWithDiscoveryTest extends SymmetricClusterTest {
@@ -38,6 +39,13 @@ public class SymmetricClusterWithDiscoveryTest extends SymmetricClusterTest {
    protected final String groupAddress = ActiveMQTestBase.getUDPDiscoveryAddress();
 
    protected final int groupPort = ActiveMQTestBase.getUDPDiscoveryPort();
+
+   @Override
+   @BeforeEach
+   public void setUp() throws Exception {
+      enableDiscoveryForTest();
+      super.setUp();
+   }
 
    @Override
    protected boolean isNetty() {

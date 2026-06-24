@@ -344,6 +344,10 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
                              final boolean useHA,
                              final DiscoveryGroupConfiguration discoveryGroupConfiguration,
                              final TransportConfiguration[] transportConfigs) {
+      if (discoveryGroupConfiguration != null) {
+         ensureDiscoveryEnabled();
+      }
+
       this.topology = Objects.requireNonNullElseGet(topology, () -> new Topology(this));
 
       this.ha = useHA;
@@ -438,6 +442,10 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
    }
 
    private ServerLocatorImpl(ServerLocatorImpl locator) {
+      if (locator.discoveryGroupConfiguration != null) {
+         ensureDiscoveryEnabled();
+      }
+
       ha = locator.ha;
       clusterConnection = locator.clusterConnection;
       initialConnectors = locator.initialConnectors;
@@ -452,6 +460,12 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
       nodeID = locator.nodeID;
       clusterTransportConfiguration = locator.clusterTransportConfiguration;
       discoveryListener = locator.discoveryListener;
+   }
+
+   private static void ensureDiscoveryEnabled() {
+      if (!ServerLocatorConfig.isDiscoveryEnabled()) {
+         throw ActiveMQClientMessageBundle.BUNDLE.serverDiscoveryDisabled();
+      }
    }
 
    private boolean useInitConnector() {

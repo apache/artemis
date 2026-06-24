@@ -101,6 +101,13 @@ public class KeyTypeTest extends RoutingTestBase {
       this.protocol = protocol;
    }
 
+   @Override
+   @BeforeEach
+   public void setUp() throws Exception {
+      enableDiscoveryForTest();
+      super.setUp();
+   }
+
    @BeforeEach
    public void setup() throws Exception {
       PolicyFactoryResolver.getInstance().registerPolicyFactory(MOCK_POLICY_NAME, () -> new FirstElementPolicy(MOCK_POLICY_NAME) {

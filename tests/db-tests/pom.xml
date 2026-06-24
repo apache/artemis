@@ -215,6 +215,7 @@
                      <allowAnonymous>false</allowAnonymous>
                      <noWeb>true</noWeb>
                      <instance>${basedir}/target/jdbc-bad-driver</instance>
+                     <staticCluster>tcp://localhost:61616</staticCluster>
                      <args>
                         <arg>--shared-store</arg>
                         <arg>--jdbc</arg>
