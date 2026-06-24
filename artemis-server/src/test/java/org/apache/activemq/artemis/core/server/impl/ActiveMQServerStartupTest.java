@@ -20,15 +20,17 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.activemq.artemis.core.config.impl.ConfigurationImpl;
+import org.apache.activemq.artemis.core.server.ActivateCallback;
 import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
 import org.apache.activemq.artemis.tests.util.ServerTestBase;
-import org.apache.activemq.artemis.utils.ReusableLatch;
+import org.apache.activemq.artemis.utils.Wait;
 import org.apache.activemq.artemis.utils.critical.CriticalAnalyzerAccessor;
 import org.apache.activemq.artemis.utils.critical.CriticalAnalyzerPolicy;
 import org.apache.activemq.artemis.utils.critical.CriticalComponentImpl;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Field;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 
 public class ActiveMQServerStartupTest extends ServerTestBase {
 
@@ -57,17 +59,29 @@ public class ActiveMQServerStartupTest extends ServerTestBase {
          configuration.setPersistenceEnabled(false);
          ActiveMQServerImpl server = new ActiveMQServerImpl(configuration);
          addServer(server);
-         server.start();
-
-         Field field = ActiveMQServerImpl.class.getDeclaredField("activationLatch");
-         field.setAccessible(true);
-         ReusableLatch activationLatch = (ReusableLatch) field.get(server);
-         // fake server not being active by holding the activation latch the same way start() does
-         activationLatch.setCount(1);
-
+         CountDownLatch latch = new CountDownLatch(1);
+         server.registerActivateCallback(new ActivateCallback() {
+            @Override
+            public void preActivate() {
+               try {
+                  latch.await();
+               } catch (InterruptedException e) {
+                  throw new RuntimeException(e);
+               }
+            }
+         });
+         CompletableFuture.runAsync(() -> {
+            try {
+               server.start();
+            } catch (Exception e) {
+               e.printStackTrace();
+            }
+         });
+         Wait.waitFor(() -> server.getCriticalAnalyzer() != null);
          CriticalAnalyzerAccessor.fireActions(server.getCriticalAnalyzer(), new CriticalComponentImpl(server.getCriticalAnalyzer(), 2));
-         assertFalse(server.isActive());
          assertTrue(loggerHandler.findText("AMQ224116"));
+         assertFalse(server.isActive()); // should not be changed
+         latch.countDown();
          server.stop();
       }
    }
