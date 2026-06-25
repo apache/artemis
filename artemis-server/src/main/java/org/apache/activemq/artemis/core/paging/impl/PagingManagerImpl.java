@@ -41,6 +41,7 @@ import org.apache.activemq.artemis.core.paging.PageTransactionInfo;
 import org.apache.activemq.artemis.core.paging.PagingManager;
 import org.apache.activemq.artemis.core.paging.PagingStore;
 import org.apache.activemq.artemis.core.paging.PagingStoreFactory;
+import org.apache.activemq.artemis.core.server.quota.ResourceQuotaManager;
 import org.apache.activemq.artemis.core.paging.cursor.impl.PageCounterRebuildManager;
 import org.apache.activemq.artemis.core.server.ActiveMQScheduledComponent;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
@@ -81,6 +82,8 @@ public final class PagingManagerImpl implements PagingManager {
    private final ConcurrentMap<SimpleString, PagingStore> stores = new ConcurrentHashMap<>();
 
    private final HierarchicalRepository<AddressSettings> addressSettingsRepository;
+
+   private ResourceQuotaManager resourceQuotaManager;
 
    private final ActiveMQServer server;
 
@@ -171,6 +174,16 @@ public final class PagingManagerImpl implements PagingManager {
       return maxMessages;
    }
 
+   @Override
+   public ResourceQuotaManager getResourceQuotaManager() {
+      return resourceQuotaManager;
+   }
+
+   @Override
+   public void setResourceQuotaManager(ResourceQuotaManager resourceQuotaManager) {
+      this.resourceQuotaManager = resourceQuotaManager;
+   }
+
    public PagingManagerImpl(final PagingStoreFactory pagingSPI,
                             final HierarchicalRepository<AddressSettings> addressSettingsRepository) {
       this(pagingSPI, addressSettingsRepository, -1, -1, null, null);
@@ -200,6 +213,14 @@ public final class PagingManagerImpl implements PagingManager {
       for (PagingStore store : stores.values()) {
          AddressSettings settings = this.addressSettingsRepository.getMatch(store.getAddress().toString());
          store.applySetting(settings);
+
+         if (resourceQuotaManager != null && settings.getResourceQuota() != null) {
+            org.apache.activemq.artemis.core.settings.impl.ResourceQuota quota =
+               resourceQuotaManager.getQuotaForAddress(store.getAddress(), settings);
+            store.setResourceQuota(quota);
+         } else {
+            store.setResourceQuota(null);
+         }
       }
    }
 
@@ -400,6 +421,19 @@ public final class PagingManagerImpl implements PagingManager {
          for (PagingStore store : reloadedStores) {
             store.getCursorProvider().counterRebuildStarted();
             store.start();
+
+            if (resourceQuotaManager != null) {
+               org.apache.activemq.artemis.core.settings.impl.AddressSettings addrSettings =
+                  addressSettingsRepository.getMatch(store.getStoreName().toString());
+               if (addrSettings != null && addrSettings.getResourceQuota() != null) {
+                  org.apache.activemq.artemis.core.settings.impl.ResourceQuota quota =
+                     resourceQuotaManager.getQuotaForAddress(store.getStoreName(), addrSettings);
+                  if (quota != null) {
+                     store.setResourceQuota(quota);
+                  }
+               }
+            }
+
             stores.put(store.getStoreName(), store);
          }
       } finally {
@@ -574,7 +608,18 @@ public final class PagingManagerImpl implements PagingManager {
       assert managementAddress == null || (managementAddress != null && !address.startsWith(managementAddress));
       syncLock.readLock().lock();
       try {
-         PagingStore store = pagingStoreFactory.newStore(address, addressSettingsRepository.getMatch(address.toString()));
+         org.apache.activemq.artemis.core.settings.impl.AddressSettings settings = addressSettingsRepository.getMatch(address.toString());
+         PagingStore store = pagingStoreFactory.newStore(address, settings);
+
+         // Set resource quota if quota manager is available and address settings specify a quota
+         if (resourceQuotaManager != null && settings.getResourceQuota() != null) {
+            org.apache.activemq.artemis.core.settings.impl.ResourceQuota quota =
+               resourceQuotaManager.getQuotaForAddress(address, settings);
+            if (quota != null) {
+               store.setResourceQuota(quota);
+            }
+         }
+
          store.start();
          if (!cleanupEnabled) {
             store.disableCleanup();
@@ -604,6 +649,7 @@ public final class PagingManagerImpl implements PagingManager {
    public Future<Object> rebuildCounters(Set<Long> storedLargeMessages) {
       if (rebuildingPageCounters) {
          logger.debug("Rebuild page counters is already underway, ignoring call");
+         return null;
       }
       Map<Long, PageTransactionInfo> transactionsSet = new LongObjectHashMap();
       // making a copy
@@ -622,10 +668,27 @@ public final class PagingManagerImpl implements PagingManager {
          transactionsSet.forEach((a, b) -> logger.debug("{} = {}", a, b));
       }
 
+      // Quick synchronous estimate: set conservative byte counts from page metadata.
+      // This gives quotas a non-zero value immediately; the async rebuild corrects it.
+      currentStoreMap.forEach((address, pgStore) -> {
+         pgStore.applyPreliminaryQuotaEstimate();
+      });
+
       currentStoreMap.forEach((address, pgStore) -> {
          PageCounterRebuildManager rebuildManager = new PageCounterRebuildManager(this, pgStore, transactionsSet, storedLargeMessages, minLargeMessageID);
          logger.debug("Setting destination {} to rebuild counters", address);
          managerExecutor.execute(rebuildManager);
+      });
+
+      // Rebuild quota counters for each paging store after page counter rebuild completes
+      currentStoreMap.forEach((address, pgStore) -> {
+         managerExecutor.execute(() -> {
+            try {
+               pgStore.rebuildQuotaCounters();
+            } catch (Exception e) {
+               logger.warn("Error rebuilding quota counters for address {}", address, e);
+            }
+         });
       });
 
       managerExecutor.execute(() -> cleanupPageTransactions(transactionsSet, currentStoreMap));

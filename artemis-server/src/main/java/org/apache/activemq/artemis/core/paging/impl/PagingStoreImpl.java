@@ -60,6 +60,7 @@ import org.apache.activemq.artemis.core.settings.impl.DiskFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.PageFullMessagePolicy;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.core.transaction.TransactionOperation;
+import org.apache.activemq.artemis.core.transaction.TransactionOperationAbstract;
 import org.apache.activemq.artemis.core.transaction.TransactionPropertyIndexes;
 import org.apache.activemq.artemis.utils.ArtemisCloseable;
 import org.apache.activemq.artemis.utils.FutureLatch;
@@ -145,6 +146,12 @@ public class PagingStoreImpl implements PagingStore {
 
    // Bytes consumed by the queue on the memory
    private final SizeAwareMetric size;
+
+   private volatile org.apache.activemq.artemis.core.settings.impl.ResourceQuota resourceQuota;
+
+   private volatile long preliminaryQuotaBytes;
+
+   private volatile long rebuiltQuotaBytes = -1;
 
    private volatile boolean full;
 
@@ -276,6 +283,16 @@ public class PagingStoreImpl implements PagingStore {
    @Override
    public void applySetting(final AddressSettings addressSettings) {
       applySetting(addressSettings, false);
+   }
+
+   @Override
+   public void setResourceQuota(org.apache.activemq.artemis.core.settings.impl.ResourceQuota quota) {
+      this.resourceQuota = quota;
+   }
+
+   @Override
+   public org.apache.activemq.artemis.core.settings.impl.ResourceQuota getResourceQuota() {
+      return resourceQuota;
    }
 
    private void applySetting(final AddressSettings addressSettings, final boolean firstTime) {
@@ -1522,6 +1539,21 @@ public class PagingStoreImpl implements PagingStore {
             return -1;
          }
 
+         final org.apache.activemq.artemis.core.settings.impl.ResourceQuota quota = resourceQuota;
+         if (quota != null) {
+            final long size = message.getPersistentSize();
+            if (tx != null) {
+               tx.addOperation(new TransactionOperationAbstract() {
+                  @Override
+                  public void afterCommit(Transaction tx) {
+                     quota.addSize(size);
+                  }
+               });
+            } else {
+               quota.addSize(size);
+            }
+         }
+
          final long transactionID = (tx != null && tx.isAllowPageTransaction()) ? tx.getID() : -1L;
 
          if (pageDecorator != null) {
@@ -1734,6 +1766,61 @@ public class PagingStoreImpl implements PagingStore {
             } catch (Exception e2) {
                logger.debug(e2.getMessage(), e2);
             }
+         }
+      }
+   }
+
+   @Override
+   public long applyPreliminaryQuotaEstimate() {
+      final org.apache.activemq.artemis.core.settings.impl.ResourceQuota quota = resourceQuota;
+      if (quota == null || numberOfPages <= 0) {
+         return 0;
+      }
+      long estimate = numberOfPages * pageSize;
+      preliminaryQuotaBytes = estimate;
+      quota.addSize(estimate);
+      logger.debug("Applied preliminary quota estimate for address {}: {} bytes ({} pages x {} pageSize)",
+                   address, estimate, numberOfPages, pageSize);
+      return estimate;
+   }
+
+   @Override
+   public void setRebuiltQuotaBytes(long bytes) {
+      this.rebuiltQuotaBytes = bytes;
+   }
+
+   /**
+    * Apply the quota byte total computed by PageCounterRebuildManager during the
+    * page-counter rebuild, correcting the preliminary estimate that was set
+    * synchronously at startup.
+    */
+   @Override
+   public void rebuildQuotaCounters() throws Exception {
+      final org.apache.activemq.artemis.core.settings.impl.ResourceQuota quota = resourceQuota;
+      if (quota == null) {
+         if (logger.isDebugEnabled()) {
+            logger.debug("No quota configured for address {}, skipping quota rebuild", address);
+         }
+         return;
+      }
+
+      // Use the per-message quota bytes computed by PageCounterRebuildManager,
+      // which counted each paged message's persistentSize exactly once — matching
+      // what writePage() originally added to the quota. This avoids both re-reading
+      // page files and double-counting messages routed to multiple subscriptions.
+      long totalBytes = rebuiltQuotaBytes >= 0 ? rebuiltQuotaBytes : 0;
+      rebuiltQuotaBytes = -1;
+
+      long correction = totalBytes - preliminaryQuotaBytes;
+      preliminaryQuotaBytes = 0;
+      if (correction != 0) {
+         quota.addSize(correction);
+      }
+      if (totalBytes > 0) {
+         logger.info("Rebuilt quota for address {}: {} bytes", address, totalBytes);
+      } else {
+         if (logger.isDebugEnabled()) {
+            logger.debug("Quota rebuild for address {} found no paged data", address);
          }
       }
    }

@@ -112,6 +112,7 @@ import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.DeletionPolicy;
 import org.apache.activemq.artemis.core.settings.impl.DiskFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.ResourceLimitSettings;
+import org.apache.activemq.artemis.core.settings.impl.ResourceQuotaConfig;
 import org.apache.activemq.artemis.core.settings.impl.SlowConsumerThresholdMeasurementUnit;
 import org.apache.activemq.artemis.jdbc.store.drivers.JDBCDataSourceUtils;
 import org.apache.activemq.artemis.json.JsonObject;
@@ -2041,6 +2042,75 @@ public class ConfigurationImplTest extends AbstractConfigurationTestBase {
       assertNull(storeImpl.getPageLimitMessages());
       assertNull(storeImpl.getPageLimitBytes());
       assertNull(storeImpl.getPageFullMessagePolicy());
+   }
+
+   @Test
+   public void testResourceQuotaViaProperties() throws Throwable {
+      ConfigurationImpl configuration = new ConfigurationImpl();
+
+      Properties properties = new Properties();
+
+      properties.put("resourceQuotas.test-quota.maxAddresses", "10");
+      properties.put("resourceQuotas.test-quota.maxQueues", "20");
+      properties.put("resourceQuotas.test-quota.maxMessageBytes", "1000000");
+      properties.put("resourceQuotas.test-quota.partOf", "parent-quota");
+
+      properties.put("addressSettings.\"test.#\".resourceQuota", "test-quota");
+
+      configuration.parsePrefixedProperties(properties, null);
+
+      assertEquals(1, configuration.getResourceQuotas().size());
+      ResourceQuotaConfig quotaConfig = configuration.getResourceQuotas().get("test-quota");
+      assertNotNull(quotaConfig);
+      assertEquals("test-quota", quotaConfig.getName());
+      assertEquals(10, quotaConfig.getMaxAddresses());
+      assertEquals(20, quotaConfig.getMaxQueues());
+      assertEquals(1000000L, quotaConfig.getMaxMessageBytes());
+      assertEquals("parent-quota", quotaConfig.getPartOf());
+
+      assertEquals(1, configuration.getAddressSettings().size());
+      assertEquals("test-quota", configuration.getAddressSettings().get("test.#").getResourceQuota());
+   }
+
+   @Test
+   public void testResourceQuotaExportImport() throws Exception {
+      ConfigurationImpl configuration = new ConfigurationImpl();
+
+      ResourceQuotaConfig parentQuota = new ResourceQuotaConfig("parent-quota");
+      parentQuota.setMaxAddresses(100);
+      parentQuota.setMaxQueues(200);
+      parentQuota.setMaxMessageBytes(5000000);
+      configuration.addResourceQuota("parent-quota", parentQuota);
+
+      ResourceQuotaConfig childQuota = new ResourceQuotaConfig("child-quota");
+      childQuota.setMaxAddresses(10);
+      childQuota.setMaxQueues(20);
+      childQuota.setPartOf("parent-quota");
+      configuration.addResourceQuota("child-quota", childQuota);
+
+      File exported = new File(getTestDirfile(), "broker_config_as_properties_export.txt");
+      configuration.exportAsProperties(exported);
+
+      ConfigurationImpl loadFromExport = new ConfigurationImpl();
+      loadFromExport.parseFileProperties(exported);
+
+      assertTrue(loadFromExport.getStatus().contains("\"errors\":[]"), loadFromExport.getStatus());
+
+      assertEquals(2, loadFromExport.getResourceQuotas().size());
+
+      ResourceQuotaConfig importedParent = loadFromExport.getResourceQuotas().get("parent-quota");
+      assertNotNull(importedParent);
+      assertEquals("parent-quota", importedParent.getName());
+      assertEquals(100, importedParent.getMaxAddresses());
+      assertEquals(200, importedParent.getMaxQueues());
+      assertEquals(5000000L, importedParent.getMaxMessageBytes());
+
+      ResourceQuotaConfig importedChild = loadFromExport.getResourceQuotas().get("child-quota");
+      assertNotNull(importedChild);
+      assertEquals("child-quota", importedChild.getName());
+      assertEquals(10, importedChild.getMaxAddresses());
+      assertEquals(20, importedChild.getMaxQueues());
+      assertEquals("parent-quota", importedChild.getPartOf());
    }
 
    @Test

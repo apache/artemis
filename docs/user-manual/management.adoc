@@ -217,6 +217,19 @@ Broadcast groups parameters can be retrieved using the `BroadcastGroupControl` a
 They can be started or stopped using the `start()` or `stop()` method on the `ClusterConnectionControl` interface.
 Cluster connections parameters can be retrieved using the `ClusterConnectionControl` attributes (see xref:clusters.adoc#clusters[Clusters])
 
+* Resource quotas
++
+Resource quotas can be monitored using the `ResourceQuotaControl` interface.
+Resource quota parameters can be retrieved using the `ResourceQuotaControl` attributes, including current usage counts, configured limits, and utilization percentages for addresses, queues, and message bytes.
+The `ObjectName` for a resource quota named `myQuota` is:
++
+----
+org.apache.activemq.artemis:broker=<brokerName>,component=quotas,name="myQuota"
+----
++
+Resource quotas support hierarchical organization where child quotas count toward parent limits.
+Unlike other resources, quotas cannot be started or stopped via JMX; they are read-only monitoring interfaces.
+
 == Management Via JMX
 
 The broker can be managed using http://www.oracle.com/technetwork/java/javase/tech/javamanagement-140525.html[JMX].
