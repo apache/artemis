@@ -279,6 +279,12 @@ public enum ActiveMQExceptionType {
       public ActiveMQException createException(String msg) {
          return new ActiveMQTimeoutException(msg);
       }
+   },
+   RESOURCE_QUOTA_EXCEEDED(224) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQResourceQuotaExceededException(msg);
+      }
    };
    private static final Map<Integer, ActiveMQExceptionType> TYPE_MAP;
 

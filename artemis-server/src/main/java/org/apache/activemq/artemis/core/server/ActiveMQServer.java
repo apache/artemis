@@ -61,6 +61,7 @@ import org.apache.activemq.artemis.core.server.management.ManagementService;
 import org.apache.activemq.artemis.core.server.metrics.MetricsManager;
 import org.apache.activemq.artemis.core.server.mirror.MirrorController;
 import org.apache.activemq.artemis.core.server.mirror.MirrorRegistry;
+import org.apache.activemq.artemis.core.server.quota.ResourceQuotaService;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQPluginRunnable;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerAddressPlugin;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerBasePlugin;
@@ -172,6 +173,8 @@ public interface ActiveMQServer extends ServiceComponent {
    PagingManager createPagingManager() throws Exception;
 
    ManagementService getManagementService();
+
+   ResourceQuotaService getResourceQuotaService();
 
    ActiveMQSecurityManager getSecurityManager();
 
