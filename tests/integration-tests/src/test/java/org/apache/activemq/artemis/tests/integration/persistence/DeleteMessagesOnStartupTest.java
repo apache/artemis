@@ -82,7 +82,7 @@ public class DeleteMessagesOnStartupTest extends StorageManagerTestBase {
 
       FakePostOffice postOffice = new FakePostOffice();
 
-      journal.loadMessageJournal(postOffice, null, null, null, null, null, null, null, new PostOfficeJournalLoader(postOffice, null, journal, null, null, null, null, null, queues));
+      journal.loadMessageJournal(postOffice, null, null, null, null, null, null, null, new PostOfficeJournalLoader(postOffice, null, journal, null, null, null, null, null, null, queues));
 
       assertEquals(98, deletedMessage.size());
 

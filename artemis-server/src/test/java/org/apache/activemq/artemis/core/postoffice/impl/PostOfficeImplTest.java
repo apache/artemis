@@ -36,6 +36,7 @@ import org.apache.activemq.artemis.core.server.impl.QueueImpl;
 import org.apache.activemq.artemis.core.server.impl.RoutingContextImpl;
 import org.apache.activemq.artemis.core.server.management.ManagementService;
 import org.apache.activemq.artemis.core.server.mirror.MirrorController;
+import org.apache.activemq.artemis.core.server.quota.ResourceQuotaService;
 import org.apache.activemq.artemis.core.settings.HierarchicalRepository;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.settings.impl.HierarchicalObjectRepository;
@@ -353,12 +354,13 @@ public class PostOfficeImplTest {
       PagingStore pagingStore = mock(PagingStore.class);
       MirrorController mirrorController = mock(MirrorController.class);
       ManagementService managementService = mock(ManagementService.class);
+      ResourceQuotaService resourceQuotaService = mock(ResourceQuotaService.class);
       QueueFactory queueFactory = mock(QueueFactory.class);
       WildcardConfiguration wildcardConfiguration = new WildcardConfiguration();
       HierarchicalRepository<AddressSettings> hierarchicalRepository = new HierarchicalObjectRepository<>();
 
       PostOfficeImpl postOffice = new PostOfficeImpl(server, storageManager, pagingManager, queueFactory,
-                                                     managementService, 100, 100,
+                                                     managementService, resourceQuotaService, 100, 100,
                                                      wildcardConfiguration, -1, false, hierarchicalRepository).setMirrorControlSource(mirrorController);
 
       SimpleString address = RandomUtil.randomUUIDSimpleString();
@@ -414,12 +416,13 @@ public class PostOfficeImplTest {
       PagingStore pagingStore = mock(PagingStore.class);
       MirrorController mirrorController = mock(MirrorController.class);
       ManagementService managementService = mock(ManagementService.class);
+      ResourceQuotaService resourceQuotaService = mock(ResourceQuotaService.class);
       QueueFactory queueFactory = mock(QueueFactory.class);
       WildcardConfiguration wildcardConfiguration = new WildcardConfiguration().setRoutingEnabled(false);
       HierarchicalRepository<AddressSettings> hierarchicalRepository = new HierarchicalObjectRepository<>();
 
       PostOfficeImpl postOffice = new PostOfficeImpl(server, storageManager, pagingManager, queueFactory,
-                                                     managementService, 100, 100,
+                                                     managementService, resourceQuotaService, 100, 100,
                                                      wildcardConfiguration, -1, false, hierarchicalRepository);
 
 

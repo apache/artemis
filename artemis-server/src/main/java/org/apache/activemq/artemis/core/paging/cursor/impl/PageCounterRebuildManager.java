@@ -59,6 +59,7 @@ public class PageCounterRebuildManager implements Runnable {
    private int limitMessageNr;
    private LongObjectHashMap<CopiedSubscription> copiedSubscriptionMap = new LongObjectHashMap<>();
    private final Set<Long> storedLargeMessages;
+   private long quotaBytes;
 
 
    public PageCounterRebuildManager(PagingManager pagingManager, PagingStore store, Map<Long, PageTransactionInfo> transactions, Set<Long> storedLargeMessages, AtomicLong minPageTXIDFound) {
@@ -179,6 +180,7 @@ public class PageCounterRebuildManager implements Runnable {
             copiedSubscription.subscriptionCounter.finishRebuild();
          }
       });
+      pgStore.setRebuiltQuotaBytes(quotaBytes);
       pgStore.getCursorProvider().counterRebuildDone();
       pgStore.getCursorProvider().scheduleCleanup();
    }
@@ -262,6 +264,8 @@ public class PageCounterRebuildManager implements Runnable {
                   logger.trace("lookup on {}, tx={}, preparedTX={}", msg.getTransactionID(), txInfo, preparedTX);
                }
 
+               boolean messageActiveForQuota = false;
+
                for (long queueID : routedQueues) {
                   boolean ok = !isACK(queueID, msg.getPageNumber(), msg.getMessageNumber());
 
@@ -292,6 +296,7 @@ public class PageCounterRebuildManager implements Runnable {
                      }
 
                      if (ok && txIncluded) { // not acked and TX is ok
+                        messageActiveForQuota = true;
                         if (logger.isTraceEnabled()) {
                            logger.trace("Message pageNumber={}/{} NOT acked on queue {}", msg.getPageNumber(), msg.getMessageNumber(), queueID);
                         }
@@ -307,6 +312,10 @@ public class PageCounterRebuildManager implements Runnable {
                         }
                      }
                   }
+               }
+
+               if (messageActiveForQuota) {
+                  quotaBytes += msg.getPersistentSize();
                }
             }
          }

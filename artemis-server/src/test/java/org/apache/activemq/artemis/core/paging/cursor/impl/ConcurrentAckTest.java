@@ -34,6 +34,7 @@ import org.apache.activemq.artemis.core.paging.PagingManager;
 import org.apache.activemq.artemis.core.paging.PagingStoreFactory;
 import org.apache.activemq.artemis.core.paging.impl.PagingStoreImpl;
 import org.apache.activemq.artemis.core.persistence.impl.nullpm.NullStorageManager;
+import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.tests.util.ServerTestBase;
 import org.apache.activemq.artemis.utils.actors.ArtemisExecutor;
@@ -63,6 +64,7 @@ public class ConcurrentAckTest extends ServerTestBase {
 
       PageCursorProviderImpl pageCursorProvider = new PageCursorProviderImpl(store, new NullStorageManager());
       PageSubscriptionImpl subscription = (PageSubscriptionImpl) pageCursorProvider.createSubscription(1, null, true);
+      subscription.setQueue(Mockito.mock(Queue.class));// necessary if debug level logging is enabled
       PageSubscriptionImpl.PageCursorInfo cursorInfo = subscription.getPageInfo(new PagePositionImpl(1, 1));
       CountDownLatch done = new CountDownLatch(5);
 

@@ -65,7 +65,7 @@ public class BackupRecoveryJournalLoader extends PostOfficeJournalLoader {
                                       ServerLocatorInternal locator,
                                       ClusterController clusterController) {
 
-      super(postOffice, pagingManager, storageManager, queueFactory, nodeManager, managementService, groupingHandler, configuration);
+      super(postOffice, pagingManager, storageManager, queueFactory, nodeManager, managementService, groupingHandler, configuration, parentServer.getResourceQuotaService());
       this.parentServer = parentServer;
       this.locator = locator;
       this.clusterController = clusterController;
