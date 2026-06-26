@@ -1402,7 +1402,7 @@ public interface ActiveMQServerLogger {
    @LogMessage(id = 224115, value = "Address control unblock of address '{}'. Clients will be granted credit as normal.", level = LogMessage.Level.INFO)
    void unblockingViaControl(SimpleString addressName);
 
-   @LogMessage(id = 224116, value = "The component {} is not responsive. The Server may be taking too long to load", level = LogMessage.Level.WARN)
+   @LogMessage(id = 224116, value = "The component {} is not responsive. The Server may be taking too long to activate", level = LogMessage.Level.WARN)
    void tooLongToStart(Object component);
 
    @LogMessage(id = 224117, value = "\"page-max-cache-size\" being used on broker.xml. This configuration attribute is no longer used and it will be ignored.", level = LogMessage.Level.INFO)
