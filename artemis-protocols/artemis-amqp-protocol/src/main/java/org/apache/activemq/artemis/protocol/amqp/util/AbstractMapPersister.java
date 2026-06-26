@@ -138,9 +138,11 @@ public abstract class AbstractMapPersister<T> {
    public void decode(ActiveMQBuffer buffer, T decodingObject) {
       int initialPosition = buffer.readerIndex();
       int size = buffer.readInt();
+
       if (size - DataConstants.SIZE_INT > buffer.readableBytes()) {
          throw new IllegalStateException("Invalid record size " + size + " exceeds available buffer bytes: " + buffer.readableBytes());
       }
+
       int endPosition = initialPosition + size;
       int entries = buffer.readInt();
 
@@ -149,22 +151,37 @@ public abstract class AbstractMapPersister<T> {
       }
 
       for (int i = 0; i < entries; i++) {
+         checkReadableBytes(buffer, DataConstants.SIZE_SHORT + DataConstants.SIZE_BYTE, endPosition);
          short key = buffer.readShort();
          byte typeUsed = buffer.readByte();
          switch (Datatypes.fromId(typeUsed)) {
-            case BOOLEAN -> onMapReadBoolean(key, buffer.readBoolean(), decodingObject);
-            case LONG -> onMapReadLong(key, buffer.readLong(), decodingObject);
-            case INTEGER -> onMapReadInteger(key, buffer.readInt(), decodingObject);
-            case SIMPLE_STRING -> onMapReadSimpleString(key, SimpleString.readNullableSimpleString(buffer.byteBuf()), decodingObject);
-            case BYTE -> onMapReadByte(key, buffer.readByte(), decodingObject);
+            case BOOLEAN -> {
+               checkReadableBytes(buffer, DataConstants.SIZE_BOOLEAN, endPosition);
+               onMapReadBoolean(key, buffer.readBoolean(), decodingObject);
+            }
+            case LONG -> {
+               checkReadableBytes(buffer, DataConstants.SIZE_LONG, endPosition);
+               onMapReadLong(key, buffer.readLong(), decodingObject);
+            }
+            case INTEGER -> {
+               checkReadableBytes(buffer, DataConstants.SIZE_INT, endPosition);
+               onMapReadInteger(key, buffer.readInt(), decodingObject);
+            }
+            case SIMPLE_STRING -> {
+               checkReadableBytes(buffer, DataConstants.SIZE_BYTE, endPosition);
+               onMapReadSimpleString(key, SimpleString.readNullableSimpleString(buffer.byteBuf()), decodingObject);
+            }
+            case BYTE -> {
+               checkReadableBytes(buffer, DataConstants.SIZE_BYTE, endPosition);
+               onMapReadByte(key, buffer.readByte(), decodingObject);
+            }
             case BYTE_ARRAY -> {
+               checkReadableBytes(buffer, DataConstants.SIZE_INT, endPosition);
                int sizeByteArray = buffer.readInt();
                if (sizeByteArray < 0) {
                   throw new IllegalArgumentException("Negative byte array size: " + sizeByteArray);
                }
-               if (sizeByteArray > buffer.readableBytes()) {
-                  throw new IllegalArgumentException("Byte array size " + sizeByteArray + " exceeds available buffer bytes: " + buffer.readableBytes());
-               }
+               checkReadableBytes(buffer, sizeByteArray, endPosition);
                int currentPosition = buffer.readerIndex();
                onMapReadByteArray(key, buffer.slice(buffer.readerIndex(), sizeByteArray), decodingObject);
                buffer.readerIndex(currentPosition + sizeByteArray);
@@ -176,6 +193,13 @@ public abstract class AbstractMapPersister<T> {
 
       if (endPosition != buffer.readerIndex()) {
          throw new IllegalStateException("Buffer position mismatch after decode: expected " + endPosition + " but at " + buffer.readerIndex() + " (consumed " + (buffer.readerIndex() - initialPosition) + " bytes, expected " + size + ")");
+      }
+   }
+
+   final void checkReadableBytes(ActiveMQBuffer buffer, int bytesToRead, int endPosition) {
+      int remainingInRecord = endPosition - buffer.readerIndex();
+      if (remainingInRecord < bytesToRead) {
+         throw new IllegalStateException("Insufficient bytes in record for entry: " + remainingInRecord + " bytes remaining");
       }
    }
 }

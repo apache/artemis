@@ -205,8 +205,7 @@ public class AMQPLargeMessage extends AMQPMessage implements LargeServerMessage 
             temporaryBuffer = PooledByteBufAllocator.DEFAULT.buffer(getEstimateSavedEncode());
             saveEncoding(temporaryBuffer);
          }
-         temporaryBuffer.retain(1);
-         return temporaryBuffer;
+         return temporaryBuffer.retain(1);
       }
    }
 
