@@ -83,7 +83,7 @@ public interface CoreRemotingConnection extends RemotingConnection {
 
    default boolean isBeforeEmbedWireVersion2() {
       int version = getChannelVersion();
-      return version < PacketImpl.ARTEMIS_2_55_0_VERSION;
+      return version < PacketImpl.ARTEMIS_2_56_0_VERSION;
    }
 
    /**
