@@ -93,6 +93,18 @@
          <scope>test</scope>
       </dependency>
 
+      <!-- mock support -->
+      <dependency>
+         <groupId>org.mockito</groupId>
+         <artifactId>mockito-core</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.mockito</groupId>
+         <artifactId>mockito-junit-jupiter</artifactId>
+         <scope>test</scope>
+      </dependency>
+
       <!-- The johnzon-core and json-api contents are repackaged in -commons,
            However maven can still need them during tests, which run against
            the original -commons classes when built+run in the same reactor,
@@ -115,10 +127,21 @@
       <plugins>
          <plugin>
             <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <executions>
+               <execution>
+                  <goals>
+                     <goal>properties</goal>
+                  </goals>
+               </execution>
+            </executions>
+         </plugin>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-surefire-plugin</artifactId>
             <configuration>
                <skipTests>${skipJmsTests}</skipTests>
-               <argLine>${activemq-surefire-argline}</argLine>
+               <argLine>${activemq-surefire-argline} -javaagent:${org.mockito:mockito-core:jar}</argLine>
             </configuration>
          </plugin>
       </plugins>

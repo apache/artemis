@@ -27,32 +27,14 @@ import javax.jms.MessageNotWriteableException;
 import javax.jms.ObjectMessage;
 import javax.jms.StreamMessage;
 import javax.jms.TextMessage;
-import javax.transaction.xa.XAException;
-import javax.transaction.xa.XAResource;
-import javax.transaction.xa.Xid;
-import java.io.File;
 import java.io.Serializable;
-import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
-import org.apache.activemq.artemis.api.core.ActiveMQException;
-import org.apache.activemq.artemis.api.core.QueueAttributes;
-import org.apache.activemq.artemis.api.core.QueueConfiguration;
-import org.apache.activemq.artemis.api.core.RoutingType;
-import org.apache.activemq.artemis.api.core.SimpleString;
-import org.apache.activemq.artemis.api.core.client.ClientConsumer;
 import org.apache.activemq.artemis.api.core.client.ClientMessage;
-import org.apache.activemq.artemis.api.core.client.ClientProducer;
 import org.apache.activemq.artemis.api.core.client.ClientSession;
-import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
-import org.apache.activemq.artemis.api.core.client.FailoverEventListener;
-import org.apache.activemq.artemis.api.core.client.SendAcknowledgementHandler;
-import org.apache.activemq.artemis.api.core.client.SessionFailureListener;
 import org.apache.activemq.artemis.core.client.impl.ClientMessageImpl;
-import org.apache.activemq.artemis.core.remoting.FailureListener;
 import org.apache.activemq.artemis.jms.client.ActiveMQBytesMessage;
 import org.apache.activemq.artemis.jms.client.ActiveMQMapMessage;
 import org.apache.activemq.artemis.jms.client.ActiveMQMessage;
@@ -62,6 +44,7 @@ import org.apache.activemq.artemis.jms.client.ActiveMQTextMessage;
 import org.apache.activemq.artemis.jms.tests.util.ProxyAssertSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
@@ -69,6 +52,18 @@ import java.lang.invoke.MethodHandles;
 public class MessageHeaderTest extends MessageHeaderTestBase {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+   private static ClientSession createMockSession(ClientMessage clientMessage) {
+      ClientSession session = Mockito.mock(ClientSession.class);
+      Mockito.when(session.createMessage(
+              Mockito.anyByte(),
+              Mockito.anyBoolean(),
+              Mockito.anyLong(),
+              Mockito.anyLong(),
+              Mockito.anyByte()))
+          .thenReturn(clientMessage);
+      return session;
+   }
 
    @Test
    public void testClearMessage() throws Exception {
@@ -627,7 +622,7 @@ public class MessageHeaderTest extends MessageHeaderTestBase {
    @Test
    public void testCopyOnJBossMessage() throws JMSException {
       ClientMessage clientMessage = new ClientMessageImpl(ActiveMQTextMessage.TYPE, true, 0, System.currentTimeMillis(), (byte) 4, 1000);
-      ClientSession session = new FakeSession(clientMessage);
+      ClientSession session = createMockSession(clientMessage);
       ActiveMQMessage jbossMessage = ActiveMQMessage.createMessage(clientMessage, session);
       jbossMessage.clearProperties();
 
@@ -641,7 +636,7 @@ public class MessageHeaderTest extends MessageHeaderTestBase {
    @Test
    public void testCopyOnForeignMessage() throws JMSException {
       ClientMessage clientMessage = new ClientMessageImpl(ActiveMQTextMessage.TYPE, true, 0, System.currentTimeMillis(), (byte) 4, 1000);
-      ClientSession session = new FakeSession(clientMessage);
+      ClientSession session = createMockSession(clientMessage);
 
       Message foreignMessage = new SimpleJMSMessage();
 
@@ -654,7 +649,7 @@ public class MessageHeaderTest extends MessageHeaderTestBase {
    @Test
    public void testCopyOnForeignBytesMessage() throws JMSException {
       ClientMessage clientMessage = new ClientMessageImpl(ActiveMQTextMessage.TYPE, true, 0, System.currentTimeMillis(), (byte) 4, 1000);
-      ClientSession session = new FakeSession(clientMessage);
+      ClientSession session = createMockSession(clientMessage);
 
       BytesMessage foreignBytesMessage = new SimpleJMSBytesMessage();
       for (int i = 0; i < 20; i++) {
@@ -672,7 +667,8 @@ public class MessageHeaderTest extends MessageHeaderTestBase {
    @Test
    public void testCopyOnForeignMapMessage() throws JMSException {
       ClientMessage clientMessage = new ClientMessageImpl(ActiveMQTextMessage.TYPE, true, 0, System.currentTimeMillis(), (byte) 4, 1000);
-      ClientSession session = new FakeSession(clientMessage);
+      ClientSession session = createMockSession(clientMessage);
+
       MapMessage foreignMapMessage = new SimpleJMSMapMessage();
       foreignMapMessage.setInt("int", 1);
       foreignMapMessage.setString("string", "test");
@@ -685,7 +681,7 @@ public class MessageHeaderTest extends MessageHeaderTestBase {
    @Test
    public void testCopyOnForeignObjectMessage() throws JMSException {
       ClientMessage clientMessage = new ClientMessageImpl(ActiveMQTextMessage.TYPE, true, 0, System.currentTimeMillis(), (byte) 4, 1000);
-      ClientSession session = new FakeSession(clientMessage);
+      ClientSession session = createMockSession(clientMessage);
 
       ObjectMessage foreignObjectMessage = new SimpleJMSObjectMessage();
 
@@ -697,7 +693,7 @@ public class MessageHeaderTest extends MessageHeaderTestBase {
    @Test
    public void testCopyOnForeignStreamMessage() throws JMSException {
       ClientMessage clientMessage = new ClientMessageImpl(ActiveMQTextMessage.TYPE, true, 0, System.currentTimeMillis(), (byte) 4, 1000);
-      ClientSession session = new FakeSession(clientMessage);
+      ClientSession session = createMockSession(clientMessage);
 
       StreamMessage foreignStreamMessage = new SimpleJMSStreamMessage();
       foreignStreamMessage.writeByte((byte) 1);
@@ -712,7 +708,8 @@ public class MessageHeaderTest extends MessageHeaderTestBase {
    @Test
    public void testCopyOnForeignTextMessage() throws JMSException {
       ClientMessage clientMessage = new ClientMessageImpl(ActiveMQTextMessage.TYPE, true, 0, System.currentTimeMillis(), (byte) 4, 1000);
-      ClientSession session = new FakeSession(clientMessage);
+      ClientSession session = createMockSession(clientMessage);
+
       TextMessage foreignTextMessage = new SimpleJMSTextMessage();
 
       ActiveMQTextMessage copy = new ActiveMQTextMessage(foreignTextMessage, session);
@@ -761,647 +758,4 @@ public class MessageHeaderTest extends MessageHeaderTestBase {
       }
    }
 
-   class FakeSession implements ClientSession {
-
-      @Override
-      public ClientConsumer createConsumer(final SimpleString queueName,
-                                           final boolean browseOnly) throws ActiveMQException {
-         return null;
-      }
-
-      @Override
-      public ClientConsumer createConsumer(final String queueName, final boolean browseOnly) throws ActiveMQException {
-         return null;
-      }
-
-      @Override
-      public void createQueue(final String address, final String queueName) throws ActiveMQException {
-      }
-
-      private final ClientMessage message;
-
-      FakeSession(final ClientMessage message) {
-         this.message = message;
-      }
-
-      @Override
-      public void createQueue(final SimpleString address,
-                              final SimpleString queueName,
-                              final SimpleString filterString,
-                              final boolean durable) throws ActiveMQException {
-      }
-
-      @Override
-      public void createQueue(final SimpleString address,
-                              final SimpleString queueName,
-                              final boolean durable) throws ActiveMQException {
-      }
-
-      @Override
-      public void createSharedQueue(SimpleString address,
-                                    SimpleString queueName,
-                                    boolean durable) throws ActiveMQException {
-      }
-
-      @Override
-      public void createSharedQueue(SimpleString address,
-                                    SimpleString queueName,
-                                    SimpleString filter,
-                                    boolean durable) throws ActiveMQException {
-      }
-
-      @Override
-      public void createQueue(final String address,
-                              final String queueName,
-                              final boolean durable) throws ActiveMQException {
-      }
-
-      @Override
-      public void createQueue(final String address,
-                              final String queueName,
-                              final String filterString,
-                              final boolean durable) throws ActiveMQException {
-      }
-
-      @Override
-      public void createQueue(SimpleString address,
-                              SimpleString queueName,
-                              SimpleString filter,
-                              boolean durable,
-                              boolean autoCreated) throws ActiveMQException {
-
-      }
-
-      @Override
-      public void createQueue(String address,
-                              String queueName,
-                              String filter,
-                              boolean durable,
-                              boolean autoCreated) throws ActiveMQException {
-
-      }
-
-      @Override
-      public void createTemporaryQueue(final SimpleString address,
-                                       final SimpleString queueName) throws ActiveMQException {
-      }
-
-      @Override
-      public void createTemporaryQueue(final String address, final String queueName) throws ActiveMQException {
-      }
-
-      @Override
-      public void createTemporaryQueue(final SimpleString address,
-                                       final SimpleString queueName,
-                                       final SimpleString filter) throws ActiveMQException {
-      }
-
-      @Override
-      public void createTemporaryQueue(final String address,
-                                       final String queueName,
-                                       final String filter) throws ActiveMQException {
-      }
-
-      @Override
-      public void createQueue(SimpleString address, RoutingType routingType, SimpleString queueName, boolean durable) throws ActiveMQException {
-
-      }
-
-      @Override
-      public void createSharedQueue(SimpleString address, RoutingType routingType, SimpleString queueName, boolean durable) throws ActiveMQException {
-
-      }
-
-      @Override
-      public void createSharedQueue(SimpleString address, RoutingType routingType, SimpleString queueName, SimpleString filter,
-                                    boolean durable) throws ActiveMQException {
-
-      }
-
-      @Override
-      public void createSharedQueue(SimpleString address, RoutingType routingType, SimpleString queueName, SimpleString filter,
-                                    boolean durable, Integer maxConsumers, Boolean purgeOnNoConsumers, Boolean exclusive, Boolean lastValue) throws ActiveMQException {
-
-      }
-
-      @Override
-      public void createSharedQueue(SimpleString address, SimpleString queueName, QueueAttributes queueAttributes) throws ActiveMQException {
-
-      }
-
-      @Override
-      public void createQueue(String address, RoutingType routingType, String queueName, boolean durable) throws ActiveMQException {
-
-      }
-
-      @Override
-      public void createQueue(String address, RoutingType routingType, String queueName) throws ActiveMQException {
-
-      }
-
-      @Override
-      public void createQueue(SimpleString address, RoutingType routingType, SimpleString queueName) throws ActiveMQException {
-
-      }
-
-      @Override
-      public void createQueue(SimpleString address, RoutingType routingType, SimpleString queueName, SimpleString filter,
-                              boolean durable) throws ActiveMQException {
-
-      }
-
-      @Override
-      public void createQueue(String address, RoutingType routingType, String queueName, String filter, boolean durable) throws ActiveMQException {
-
-      }
-
-      @Override
-      public void createQueue(SimpleString address, RoutingType routingType, SimpleString queueName, SimpleString filter,
-                              boolean durable,
-                              boolean autoCreated) throws ActiveMQException {
-
-      }
-
-      @Override
-      public void createQueue(SimpleString address,
-                              RoutingType routingType,
-                              SimpleString queueName,
-                              SimpleString filter,
-                              boolean durable,
-                              boolean autoCreated,
-                              int maxConsumers,
-                              boolean purgeOnNoConsumers) throws ActiveMQException {
-
-      }
-
-      @Override
-      public void createQueue(SimpleString address, RoutingType routingType, SimpleString queueName, SimpleString filter, boolean durable,
-                              boolean autoCreated, int maxConsumers, boolean purgeOnNoConsumers, Boolean exclusive, Boolean lastValue)
-         throws ActiveMQException {
-
-      }
-
-      @Override
-      public void createQueue(SimpleString address, SimpleString queueName, boolean autoCreated, QueueAttributes queueAttributes) throws ActiveMQException {
-
-      }
-
-      @Override
-      public void createQueue(String address, RoutingType routingType, String queueName, String filter,
-                              boolean durable,
-                              boolean autoCreated) throws ActiveMQException {
-
-      }
-
-      @Override
-      public void createQueue(String address,
-                              RoutingType routingType,
-                              String queueName,
-                              String filter,
-                              boolean durable,
-                              boolean autoCreated,
-                              int maxConsumers,
-                              boolean purgeOnNoConsumers) throws ActiveMQException {
-
-      }
-
-      @Override
-      public void createQueue(String address, RoutingType routingType, String queueName, String filter, boolean durable,
-                              boolean autoCreated,
-                              int maxConsumers, boolean purgeOnNoConsumers, Boolean exclusive, Boolean lastValue) throws ActiveMQException {
-
-      }
-
-      @Override
-      public void createTemporaryQueue(SimpleString address, RoutingType routingType, SimpleString queueName) throws ActiveMQException {
-
-      }
-
-      @Override
-      public void createTemporaryQueue(String address, RoutingType routingType, String queueName) throws ActiveMQException {
-
-      }
-
-      @Override
-      public void createTemporaryQueue(SimpleString address, RoutingType routingType, SimpleString queueName, SimpleString filter,
-                                       int maxConsumers, boolean purgeOnNoConsumers, Boolean exclusive, Boolean lastValue)
-         throws ActiveMQException {
-
-      }
-
-      @Override
-      public void createTemporaryQueue(SimpleString address, SimpleString queueName, QueueAttributes queueAttributes) throws ActiveMQException {
-
-      }
-
-      @Override
-      public void createTemporaryQueue(SimpleString address,
-                                       RoutingType routingType,
-                                       SimpleString queueName,
-                                       SimpleString filter) throws ActiveMQException {
-
-      }
-
-      @Override
-      public void createTemporaryQueue(String address, RoutingType routingType, String queueName, String filter) throws ActiveMQException {
-
-      }
-
-      @Override
-      public void deleteQueue(final SimpleString queueName) throws ActiveMQException {
-      }
-
-      @Override
-      public void deleteQueue(final String queueName) throws ActiveMQException {
-      }
-
-      @Override
-      public ClientConsumer createConsumer(final SimpleString queueName) throws ActiveMQException {
-         return null;
-      }
-
-      @Override
-      public ClientConsumer createConsumer(final SimpleString queueName,
-                                           final SimpleString filterString) throws ActiveMQException {
-         return null;
-      }
-
-      @Override
-      public ClientConsumer createConsumer(final SimpleString queueName,
-                                           final SimpleString filterString,
-                                           final boolean browseOnly) throws ActiveMQException {
-         return null;
-      }
-
-      @Override
-      public ClientConsumer createConsumer(SimpleString queueName, SimpleString filter, int priority, boolean browseOnly) throws ActiveMQException {
-         return null;
-      }
-
-      @Override
-      public ClientConsumer createConsumer(final SimpleString queueName,
-                                           final SimpleString filterString,
-                                           final int windowSize,
-                                           final int maxRate,
-                                           final boolean browseOnly) throws ActiveMQException {
-         return null;
-      }
-
-      @Override
-      public ClientConsumer createConsumer(SimpleString queueName, SimpleString filter, int priority, int windowSize, int maxRate, boolean browseOnly) throws ActiveMQException {
-         return null;
-      }
-
-      @Override
-      public ClientConsumer createConsumer(final String queueName) throws ActiveMQException {
-         return null;
-      }
-
-      @Override
-      public ClientConsumer createConsumer(final String queueName, final String filterString) throws ActiveMQException {
-         return null;
-      }
-
-      @Override
-      public ClientConsumer createConsumer(final String queueName,
-                                           final String filterString,
-                                           final boolean browseOnly) throws ActiveMQException {
-         return null;
-      }
-
-      @Override
-      public ClientConsumer createConsumer(final String queueName,
-                                           final String filterString,
-                                           final int windowSize,
-                                           final int maxRate,
-                                           final boolean browseOnly) throws ActiveMQException {
-         return null;
-      }
-
-      public ClientConsumer createFileConsumer(final File directory,
-                                               final SimpleString queueName) throws ActiveMQException {
-         return null;
-      }
-
-      public ClientConsumer createFileConsumer(final File directory,
-                                               final SimpleString queueName,
-                                               final SimpleString filterString) throws ActiveMQException {
-         return null;
-      }
-
-      public ClientConsumer createFileConsumer(final File directory,
-                                               final SimpleString queueName,
-                                               final SimpleString filterString,
-                                               final boolean browseOnly) throws ActiveMQException {
-         return null;
-      }
-
-      public ClientConsumer createFileConsumer(final File directory,
-                                               final SimpleString queueName,
-                                               final SimpleString filterString,
-                                               final int windowSize,
-                                               final int maxRate,
-                                               final boolean browseOnly) throws ActiveMQException {
-         return null;
-      }
-
-      public ClientConsumer createFileConsumer(final File directory, final String queueName) throws ActiveMQException {
-         return null;
-      }
-
-      public ClientConsumer createFileConsumer(final File directory,
-                                               final String queueName,
-                                               final String filterString) throws ActiveMQException {
-         return null;
-      }
-
-      public ClientConsumer createFileConsumer(final File directory,
-                                               final String queueName,
-                                               final String filterString,
-                                               final boolean browseOnly) throws ActiveMQException {
-         return null;
-      }
-
-      public ClientConsumer createFileConsumer(final File directory,
-                                               final String queueName,
-                                               final String filterString,
-                                               final int windowSize,
-                                               final int maxRate,
-                                               final boolean browseOnly) throws ActiveMQException {
-         return null;
-      }
-
-      @Override
-      public ClientProducer createProducer() throws ActiveMQException {
-         return null;
-      }
-
-      @Override
-      public ClientProducer createProducer(final SimpleString address) throws ActiveMQException {
-         return null;
-      }
-
-      @Override
-      public ClientProducer createProducer(final SimpleString address, final int rate) throws ActiveMQException {
-         return null;
-      }
-
-      public ClientProducer createProducer(final SimpleString address,
-                                           final int maxRate,
-                                           final boolean blockOnNonDurableSend,
-                                           final boolean blockOnDurableSend) throws ActiveMQException {
-         return null;
-      }
-
-      @Override
-      public ClientProducer createProducer(final String address) throws ActiveMQException {
-         return null;
-      }
-
-      public ClientProducer createProducer(final String address, final int rate) throws ActiveMQException {
-         return null;
-      }
-
-      public ClientProducer createProducer(final String address,
-                                           final int maxRate,
-                                           final boolean blockOnNonDurableSend,
-                                           final boolean blockOnDurableSend) throws ActiveMQException {
-         return null;
-      }
-
-      @Override
-      public QueueQuery queueQuery(final SimpleString queueName) throws ActiveMQException {
-         return null;
-      }
-
-      @Override
-      public AddressQuery addressQuery(final SimpleString address) throws ActiveMQException {
-         return null;
-      }
-
-      @Override
-      public XAResource getXAResource() {
-         return null;
-      }
-
-      @Override
-      public void commit() throws ActiveMQException {
-      }
-
-      @Override
-      public void commit(boolean block) throws ActiveMQException {
-      }
-
-      @Override
-      public boolean isRollbackOnly() {
-
-         return false;
-      }
-
-      @Override
-      public void rollback() throws ActiveMQException {
-      }
-
-      @Override
-      public void rollback(final boolean considerLastMessageAsDelivered) throws ActiveMQException {
-      }
-
-      @Override
-      public void close() throws ActiveMQException {
-      }
-
-      @Override
-      public boolean isClosed() {
-         return false;
-      }
-
-      @Override
-      public boolean isAutoCommitSends() {
-         return false;
-      }
-
-      @Override
-      public boolean isAutoCommitAcks() {
-         return false;
-      }
-
-      @Override
-      public boolean isBlockOnAcknowledge() {
-         return false;
-      }
-
-      @Override
-      public boolean isXA() {
-         return false;
-      }
-
-      @Override
-      public ClientMessage createMessage(final byte type,
-                                         final boolean durable,
-                                         final long expiration,
-                                         final long timestamp,
-                                         final byte priority) {
-         return message;
-      }
-
-      @Override
-      public ClientMessage createMessage(final byte type, final boolean durable) {
-         return message;
-      }
-
-      @Override
-      public ClientMessage createMessage(final boolean durable) {
-         return message;
-      }
-
-      @Override
-      public FakeSession start() throws ActiveMQException {
-         return this;
-      }
-
-      @Override
-      public void stop() throws ActiveMQException {
-      }
-
-      public void addFailureListener(final FailureListener listener) {
-      }
-
-      @Override
-      public void addFailoverListener(FailoverEventListener listener) {
-      }
-
-      public boolean removeFailureListener(final FailureListener listener) {
-         return false;
-      }
-
-      @Override
-      public boolean removeFailoverListener(FailoverEventListener listener) {
-         return false;
-      }
-
-      @Override
-      public int getVersion() {
-         return 0;
-      }
-
-      @Override
-      public void createAddress(SimpleString address, EnumSet<RoutingType> routingTypes, boolean autoCreated) throws ActiveMQException {
-      }
-
-      @Override
-      public void createAddress(SimpleString address,
-                                Set<RoutingType> routingTypes,
-                                boolean autoCreated) throws ActiveMQException {
-
-      }
-
-      @Override
-      public void createAddress(SimpleString address,
-                                RoutingType routingType,
-                                boolean autoCreated) throws ActiveMQException {
-
-      }
-
-      @Override
-      public void createQueue(QueueConfiguration queueConfiguration) throws ActiveMQException {
-
-      }
-
-      @Override
-      public void createSharedQueue(QueueConfiguration queueConfiguration) throws ActiveMQException {
-
-      }
-
-      @Override
-      public FakeSession setSendAcknowledgementHandler(final SendAcknowledgementHandler handler) {
-         return this;
-      }
-
-      @Override
-      public void commit(final Xid xid, final boolean b) throws XAException {
-      }
-
-      @Override
-      public void end(final Xid xid, final int i) throws XAException {
-      }
-
-      @Override
-      public void forget(final Xid xid) throws XAException {
-      }
-
-      @Override
-      public int getTransactionTimeout() throws XAException {
-         return 0;
-      }
-
-      @Override
-      public boolean isSameRM(final XAResource xaResource) throws XAException {
-         return false;
-      }
-
-      @Override
-      public int prepare(final Xid xid) throws XAException {
-         return 0;
-      }
-
-      @Override
-      public Xid[] recover(final int i) throws XAException {
-         return new Xid[0];
-      }
-
-      @Override
-      public void rollback(final Xid xid) throws XAException {
-      }
-
-      @Override
-      public boolean setTransactionTimeout(final int i) throws XAException {
-         return false;
-      }
-
-      @Override
-      public void start(final Xid xid, final int i) throws XAException {
-      }
-
-      public ActiveMQBuffer createBuffer(final byte[] bytes) {
-         return null;
-      }
-
-      public ActiveMQBuffer createBuffer(final int size) {
-         return null;
-      }
-
-      @Override
-      public void addFailureListener(final SessionFailureListener listener) {
-
-      }
-
-      @Override
-      public boolean removeFailureListener(final SessionFailureListener listener) {
-         return false;
-      }
-
-      @Override
-      public void createQueue(SimpleString address, SimpleString queueName) throws ActiveMQException {
-
-      }
-
-      public void setClientID(String clientID) {
-
-      }
-
-      @Override
-      public void addMetaData(String key, String data) throws ActiveMQException {
-
-      }
-
-      @Override
-      public void addUniqueMetaData(String key, String data) throws ActiveMQException {
-
-      }
-
-      @Override
-      public ClientSessionFactory getSessionFactory() {
-         return null;
-      }
-   }
 }

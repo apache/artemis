@@ -20,8 +20,16 @@ import javax.jms.JMSException;
 import javax.jms.MapMessage;
 import javax.jms.Message;
 
+import org.apache.activemq.artemis.api.core.client.ClientMessage;
+import org.apache.activemq.artemis.api.core.client.ClientSession;
+import org.apache.activemq.artemis.core.client.impl.ClientMessageImpl;
+import org.apache.activemq.artemis.jms.client.ActiveMQMapMessage;
+import org.apache.activemq.artemis.jms.client.ActiveMQMessage;
 import org.apache.activemq.artemis.jms.tests.message.SimpleJMSMapMessage;
 import org.apache.activemq.artemis.jms.tests.util.ProxyAssertSupport;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
@@ -69,5 +77,26 @@ public class ForeignMapMessageTest extends ForeignMessageTest {
       ProxyAssertSupport.assertEquals(map.getObject("object1"), obj);
       ProxyAssertSupport.assertEquals(map.getShort("short1"), (short) 5);
       ProxyAssertSupport.assertEquals(map.getString("string1"), "stringvalue");
+   }
+
+   @Test
+   public void testSerializeEmptyForeignMapMessage() throws Exception {
+      ClientMessage clientMessage = new ClientMessageImpl(ActiveMQMapMessage.TYPE, true, 0, System.currentTimeMillis(), (byte) 4, 1000);
+      var mockSession = Mockito.mock(ClientSession.class);
+      Mockito.when(mockSession.createMessage(
+            Mockito.anyByte(),
+            Mockito.anyBoolean(),
+            Mockito.anyLong(),
+            Mockito.anyLong(),
+            Mockito.anyByte()))
+            .thenReturn(clientMessage);
+
+      MapMessage emptyForeignMessage = new SimpleJMSMapMessage();
+
+      ActiveMQMessage copy = new ActiveMQMapMessage(emptyForeignMessage, mockSession);
+
+      copy.doBeforeSend();
+
+      Assertions.assertEquals(1, copy.getCoreMessage().getBodySize());
    }
 }
