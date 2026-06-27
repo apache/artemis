@@ -90,12 +90,12 @@ public abstract class AbstractMapPersister<T> {
    }
 
    protected static int headerSize() {
-      return DataConstants.SIZE_INT * 2;
+      return DataConstants.SIZE_INT + DataConstants.SIZE_SHORT; // record size (int) and elements (unsigned short)
    }
 
    protected void writeHeader(ActiveMQBuffer buffer, int recordSize, int entries) {
       buffer.writeInt(recordSize);
-      buffer.writeInt(entries);
+      buffer.writeUnsignedShort(entries);
    }
 
    protected void writeSimpleString(ActiveMQBuffer buffer, short key, SimpleString value) {
@@ -144,16 +144,17 @@ public abstract class AbstractMapPersister<T> {
       }
 
       int endPosition = initialPosition + size;
-      int entries = buffer.readInt();
 
-      if (entries < 0) {
-         throw new IllegalStateException("Invalid entry size on decoding");
-      }
+      checkReadableBytes(buffer, DataConstants.SIZE_SHORT, endPosition);
+      int entries = buffer.readUnsignedShort();
 
       for (int i = 0; i < entries; i++) {
+         // This will check that each entry is valid. If entries is set to an invalid value through malicious data
+         // this check here would interrupt any further parsing
          checkReadableBytes(buffer, DataConstants.SIZE_SHORT + DataConstants.SIZE_BYTE, endPosition);
          short key = buffer.readShort();
          byte typeUsed = buffer.readByte();
+
          switch (Datatypes.fromId(typeUsed)) {
             case BOOLEAN -> {
                checkReadableBytes(buffer, DataConstants.SIZE_BOOLEAN, endPosition);
