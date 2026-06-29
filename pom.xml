@@ -173,8 +173,8 @@
       <version.org.jacoco.plugin>0.8.15</version.org.jacoco.plugin>
       <version.micrometer>1.17.0</version.micrometer>
       <hamcrest.version>3.0</hamcrest.version>
-      <junit.version>6.1.0</junit.version>
-      <junit5.version>5.14.0</junit5.version>
+      <junit.version>6.1.1</junit.version>
+      <junit5.version>6.1.1</junit5.version>
       <junit4.version>4.13.2</junit4.version>
       <version.jaxb.runtime>2.3.9</version.jaxb.runtime>
       <paho.client.mqtt.version>1.2.5</paho.client.mqtt.version>
