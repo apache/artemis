@@ -16,14 +16,10 @@
  */
 package org.apache.activemq.artemis.protocol.amqp.broker;
 
-import java.lang.invoke.MethodHandles;
-
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.core.persistence.CoreMessageObjectPools;
 import org.apache.activemq.artemis.utils.DataConstants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static org.apache.activemq.artemis.core.persistence.PersisterIDs.AMQPMessagePersisterV4_ID;
 
@@ -32,8 +28,6 @@ import static org.apache.activemq.artemis.core.persistence.PersisterIDs.AMQPMess
  * extensions without additional versioning.
  **/
 public class AMQPMessagePersisterV4 extends AMQPMessagePersisterV3 {
-
-   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    public static final byte ID = AMQPMessagePersisterV4_ID;
 
