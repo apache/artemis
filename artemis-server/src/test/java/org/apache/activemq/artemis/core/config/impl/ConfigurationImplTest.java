@@ -2971,12 +2971,15 @@ public class ConfigurationImplTest extends AbstractConfigurationTestBase {
       File tmpFile = File.createTempFile("a_stuff", ".properties", temporaryFolder);
       Properties properties = new Properties();
       properties.put("name", "a");
-      properties.store(new FileOutputStream(tmpFile), null);
-
+      try (FileOutputStream out = new FileOutputStream(tmpFile)) {
+         properties.store(out, null);
+      }
       tmpFile = File.createTempFile("b_stuff", ".0-properties", temporaryFolder);
       properties = new Properties();
       properties.put("name", "0");
-      properties.store(new FileOutputStream(tmpFile), null);
+      try (FileOutputStream out = new FileOutputStream(tmpFile)) {
+         properties.store(out, null);
+      }
 
       ConfigurationImpl configuration = new ConfigurationImpl();
       configuration.parseProperties(temporaryFolder + "/");

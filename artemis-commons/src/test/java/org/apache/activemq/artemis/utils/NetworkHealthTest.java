@@ -327,12 +327,18 @@ public class NetworkHealthTest {
    @Test
    @Timeout(30)
    public void testPurePingTimeout() throws Exception {
-      NetworkHealthCheck check = new NetworkHealthCheck(null, 100, 2000);
+      int timeout = 2000;
+
+      // Add a "tolerance" for Windows, since it reports less time spent in timeout than the networkTimeout parameter (around 200ms)
+      int tolerance = 500;
+
+      NetworkHealthCheck check = new NetworkHealthCheck(null, 100, timeout);
 
       long time = System.currentTimeMillis();
       //[RFC1166] reserves the address block 192.0.2.0/24 for test.
       assertFalse(check.purePing(InetAddress.getByName("192.0.2.0")));
-      assertTrue(System.currentTimeMillis() - time >= 2000);
+
+      assertTrue(System.currentTimeMillis() - time >= (timeout - tolerance));
    }
 
 }

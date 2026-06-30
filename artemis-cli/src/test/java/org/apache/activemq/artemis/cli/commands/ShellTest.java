@@ -98,17 +98,23 @@ public class ShellTest extends ArtemisTestCase {
 
          assertTrue(outputHistory.exists());
 
-         // Validate file permissions are 600 (owner read/write only)
-         Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(outputHistory.toPath());
-         assertTrue(permissions.contains(PosixFilePermission.OWNER_READ), "File should be readable by owner");
-         assertTrue(permissions.contains(PosixFilePermission.OWNER_WRITE), "File should be writable by owner");
-         // Explicitly verify group and others cannot read
-         assertFalse(permissions.contains(PosixFilePermission.GROUP_READ), "File should not be readable by group");
-         assertFalse(permissions.contains(PosixFilePermission.GROUP_WRITE), "File should not be writable by group");
-         assertFalse(permissions.contains(PosixFilePermission.GROUP_EXECUTE), "File should not be executable by group");
-         assertFalse(permissions.contains(PosixFilePermission.OTHERS_READ), "File should not be readable by others");
-         assertFalse(permissions.contains(PosixFilePermission.OTHERS_WRITE), "File should not be writable by others");
-         assertFalse(permissions.contains(PosixFilePermission.OTHERS_EXECUTE), "File should not be executable by others");
+         // Validate file permissions are 600 on unix-type systems (owner read/write only)
+         if (Files.getFileStore(outputHistory.toPath()).supportsFileAttributeView("posix")) {
+            Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(outputHistory.toPath());
+            assertTrue(permissions.contains(PosixFilePermission.OWNER_READ), "File should be readable by owner");
+            assertTrue(permissions.contains(PosixFilePermission.OWNER_WRITE), "File should be writable by owner");
+            // Explicitly verify group and others cannot read
+            assertFalse(permissions.contains(PosixFilePermission.GROUP_READ), "File should not be readable by group");
+            assertFalse(permissions.contains(PosixFilePermission.GROUP_WRITE), "File should not be writable by group");
+            assertFalse(permissions.contains(PosixFilePermission.GROUP_EXECUTE), "File should not be executable by group");
+            assertFalse(permissions.contains(PosixFilePermission.OTHERS_READ), "File should not be readable by others");
+            assertFalse(permissions.contains(PosixFilePermission.OTHERS_WRITE), "File should not be writable by others");
+            assertFalse(permissions.contains(PosixFilePermission.OTHERS_EXECUTE), "File should not be executable by others");
+         } else {
+            // Fallback for Windows: Verify owner can read/write
+            assertTrue(outputHistory.canRead(), "File should be readable");
+            assertTrue(outputHistory.canWrite(), "File should be writable");
+         }
 
       } finally {
          System.clearProperty("artemis.instance");

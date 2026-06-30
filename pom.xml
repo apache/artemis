@@ -271,7 +271,7 @@
          -Djava.net.preferIPv4Stack=true
          -Djdk.attach.allowAttachSelf=true
          -Dartemis.distribution.output="${artemis.distribution.output}"
-         -Dlog4j2.configurationFile="file:${activemq.basedir}/tests/config/${logging.config}"
+         -Dlog4j2.configurationFile="${activemq.basedir}/tests/config/${logging.config}"
       </activemq-surefire-argline>
       <activemq.basedir>${project.basedir}</activemq.basedir>
       <proton.trace.frames>false</proton.trace.frames>
