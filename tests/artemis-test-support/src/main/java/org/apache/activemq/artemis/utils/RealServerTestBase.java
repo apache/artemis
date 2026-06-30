@@ -62,7 +62,7 @@ public class RealServerTestBase extends ActiveMQTestBase {
    private static final String JMX_SERVER_HOSTNAME = "localhost";
    private static final int JMX_SERVER_PORT = 10099;
 
-   public static final String basedir = System.getProperty("basedir");
+   public static final String basedir = BasedirSupport.getBasedir();
 
    public static final String ARTEMIS_HOME_PROPERTY = "artemis.distribution.output";
 
