@@ -19,9 +19,10 @@ package org.apache.activemq.artemis.core.management.impl.view;
 import org.apache.activemq.artemis.core.management.impl.view.predicate.PredicateFilterPart;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -116,48 +117,53 @@ public abstract class ActiveMQAbstractView<T, V extends PredicateFilterPart<T>> 
    }
 
    public List<T> getPagedResult(int page, int pageSize) {
-      List<T> builder = new ArrayList<>();
-      final int start;
-      final int end;
-      if (page == -1 || pageSize == -1) {
-         start = 0;
-         end = collection.size();
-      } else {
-         start = (page - 1) * pageSize;
-         end = Math.min(page * pageSize, collection.size());
+      if (collection == null || collection.isEmpty()) {
+         return List.of();
       }
-      int i = 0;
-      for (T e : collection.stream().sorted(getComparator()).collect(Collectors.toList())) {
-         if (i >= start && i < end) {
-            builder.add(e);
+
+      T[] array = (T[]) collection.toArray();
+
+      // Pre-compute fields once per element
+      Map<Object, Object> fieldCache = new IdentityHashMap<>(array.length);
+      for (T item : array) {
+         if (item != null) {
+            fieldCache.put(item, getField(item, sortField));
          }
-         i++;
       }
-      return Collections.unmodifiableList(builder);
+
+      boolean sortOrderDescending = sortOrder.equalsIgnoreCase(DESCENDING);
+
+      Comparator<T> cachedComparator = (left, right) -> {
+         try {
+            Object leftValue = fieldCache.get(left);
+            Object rightValue = fieldCache.get(right);
+
+            if (leftValue instanceof Comparable l && rightValue instanceof Comparable r) {
+               return sortOrderDescending ? r.compareTo(leftValue) : l.compareTo(rightValue);
+            }
+            return 0;
+         } catch (Exception e) {
+            return 0;
+         }
+      };
+
+      Arrays.sort(array, cachedComparator);
+
+      if (page == -1 || pageSize == -1) {
+         return Arrays.asList(array);
+      }
+
+      int start = (page - 1) * pageSize;
+      if (start >= array.length || start < 0) {
+         return List.of();
+      }
+      int end = Math.min(page * pageSize, array.length);
+
+      return Arrays.asList(Arrays.copyOfRange(array, start, end));
    }
 
    public Predicate<T> getPredicate() {
       return predicate;
-   }
-
-   public Comparator<T> getComparator() {
-      return (left, right) -> {
-         try {
-            Object leftValue = getField(left, sortField);
-            Object rightValue = getField(right, sortField);
-            if (leftValue instanceof Comparable l && rightValue instanceof Comparable r) {
-               if (sortOrder.equalsIgnoreCase(DESCENDING)) {
-                  return r.compareTo(leftValue);
-               } else {
-                  return l.compareTo(rightValue);
-               }
-            }
-            return 0;
-         } catch (Exception e) {
-            //LOG.info("Exception sorting destinations", e);
-            return 0;
-         }
-      };
    }
 
    abstract Object getField(T t, String fieldName);
@@ -171,12 +177,11 @@ public abstract class ActiveMQAbstractView<T, V extends PredicateFilterPart<T>> 
       }
       if (predicate != null) {
          predicate.addFilterParts(createFilterPredicates(json));
-         if ((json.containsKey(SORT_COLUMN) || json.containsKey(SORT_FIELD)) && json.containsKey(SORT_ORDER)) {
-            if (json.containsKey(SORT_COLUMN)) {
-               this.sortField = json.getString(SORT_COLUMN);
-            } else {
-               this.sortField = json.getString(SORT_FIELD);
-            }
+         if ((json.containsKey(SORT_FIELD)) && json.containsKey(SORT_ORDER)) {
+            this.sortField = json.getString(SORT_FIELD);
+            this.sortOrder = json.getString(SORT_ORDER);
+         } else if (json.containsKey(SORT_COLUMN)) {
+            this.sortField = json.getString(SORT_COLUMN);
             this.sortOrder = json.getString(SORT_ORDER);
          }
       }
@@ -189,7 +194,8 @@ public abstract class ActiveMQAbstractView<T, V extends PredicateFilterPart<T>> 
          predicates.add(predicate.createFilterPart(json.getString(FILTER_FIELD), json.getString(FILTER_OPERATION), json.getString(FILTER_VALUE)));
       } else {
          for (JsonValue jsonValue : jsonArray) {
-            predicates.add(predicate.createFilterPart(((JsonObject)jsonValue).getString(FILTER_FIELD), ((JsonObject)jsonValue).getString(FILTER_OPERATION), ((JsonObject)jsonValue).getString(FILTER_VALUE)));
+            JsonObject jsonObject = (JsonObject) jsonValue;
+            predicates.add(predicate.createFilterPart(jsonObject.getString(FILTER_FIELD), jsonObject.getString(FILTER_OPERATION), jsonObject.getString(FILTER_VALUE)));
          }
       }
       return predicates;
