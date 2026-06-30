@@ -15,6 +15,20 @@ NOTE: Follow the general upgrade procedure outlined in the xref:upgrading.adoc#u
 
 :sectnums!:
 
+== Version 2.56.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12357208[Full release notes]
+
+=== Highlights
+
+* The AMQP size estimation was improved and fixed. The whole metadata of AMQP Messages is now used on sizing estimation
+
+
+=== Upgrading from 2.55.0
+
+* Since the AMQP Sizing was improved, you may want to revisit address-settings.
+* If using journal replication, we recommend you follow the xref:ha.adoc#rolling-upgrade[rolling upgrade procedure].
+
 == Version 2.55.0
 
 https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12357054[Full release notes]
