@@ -43,16 +43,7 @@ public class ArtemisMBeanServerGuard extends AbstractGuardInvocationHandler {
 
    @Override
    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-      if (method.getParameterTypes().length == 0) {
-         return null;
-      }
-
-      if (!ObjectName.class.isAssignableFrom(method.getParameterTypes()[0])) {
-         return null;
-      }
-
       securityCheck((MBeanServer) proxy, method, args);
-
       return null;
    }
 

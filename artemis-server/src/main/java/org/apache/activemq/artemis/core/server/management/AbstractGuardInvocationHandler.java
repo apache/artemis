@@ -42,18 +42,14 @@ public abstract class AbstractGuardInvocationHandler implements GuardInvocationH
       final String methodName = method.getName();
       ObjectName objectName = (ObjectName) args[0];
 
-      if ("getAttribute".equals(methodName)) {
-         handleGetAttribute(delegate, objectName, (String) args[1]);
-      } else if ("getAttributes".equals(methodName)) {
-         handleGetAttributes(delegate, objectName, (String[]) args[1]);
-      } else if ("setAttribute".equals(methodName)) {
-         handleSetAttribute(delegate, objectName, (Attribute) args[1]);
-      } else if ("setAttributes".equals(methodName)) {
-         handleSetAttributes(delegate, objectName, (AttributeList) args[1]);
-      } else if ("invoke".equals(methodName)) {
-         handleInvoke(objectName, (String) args[1]);
-      } else if (methodName.startsWith("query")) {
-         handleQuery(methodName);
+      switch (methodName) {
+         case "getAttribute" -> handleGetAttribute(delegate, objectName, (String) args[1]);
+         case "getAttributes" -> handleGetAttributes(delegate, objectName, (String[]) args[1]);
+         case "setAttribute" -> handleSetAttribute(delegate, objectName, (Attribute) args[1]);
+         case "setAttributes" -> handleSetAttributes(delegate, objectName, (AttributeList) args[1]);
+         case "invoke" -> handleInvoke(objectName, (String) args[1]);
+         case "queryMBeans", "queryNames" -> handleQuery(methodName);
+         default -> { }
       }
    }
 
