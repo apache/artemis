@@ -213,11 +213,6 @@ public final class ChannelImpl implements Channel {
    }
 
    @Override
-   public int getLastConfirmedCommandID() {
-      return lastConfirmedCommandID.get();
-   }
-
-   @Override
    public Lock getLock() {
       return lock;
    }
@@ -720,19 +715,6 @@ public final class ChannelImpl implements Channel {
       }
    }
 
-   @Override
-   public void replayCommands(final int otherLastConfirmedCommandID) {
-      if (resendCache != null) {
-         if (logger.isTraceEnabled()) {
-            logger.trace("RemotingConnectionID={} Replaying commands on channelID={}", connection.getID(), id);
-         }
-         clearUpTo(otherLastConfirmedCommandID);
-
-         for (final Packet packet : resendCache) {
-            doWrite(packet);
-         }
-      }
-   }
 
    @Override
    public boolean isLocked() {
