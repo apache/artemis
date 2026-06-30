@@ -200,8 +200,6 @@ public abstract class AbstractMapPersister<T> {
          }
       }
 
-      assert endPosition == buffer.readerIndex();
-
       if (endPosition != buffer.readerIndex()) {
          throw new IllegalStateException("Buffer position mismatch after decode: expected " + endPosition + " but at " + buffer.readerIndex() + " (consumed " + (buffer.readerIndex() - initialPosition) + " bytes, expected " + size + ")");
       }
