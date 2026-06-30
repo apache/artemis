@@ -45,6 +45,7 @@ import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.api.core.UDPBroadcastEndpointFactory;
 import org.apache.activemq.artemis.api.core.client.ActiveMQClient;
 import org.apache.activemq.artemis.core.config.BridgeConfiguration;
+import org.apache.activemq.artemis.core.config.BrokerPluginConfiguration;
 import org.apache.activemq.artemis.core.config.ClusterConnectionConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.config.ConfigurationUtils;
@@ -1048,18 +1049,20 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
       if (brokerPlugins.getLength() != 0) {
          Element node = (Element) brokerPlugins.item(0);
          NodeList list = node.getElementsByTagName(BROKER_PLUGIN_ELEMENT_NAME);
+         List<BrokerPluginConfiguration> pluginConfigs = new ArrayList<>();
          for (int i = 0; i < list.getLength(); i++) {
-            ActiveMQServerPlugin plugin = parseActiveMQServerPlugin(list.item(i));
+            String className = list.item(i).getAttributes().getNamedItem("class-name").getNodeValue();
+            Map<String, String> properties = getMapOfChildPropertyElements(list.item(i));
+
+            ActiveMQServerPlugin plugin = parseActiveMQServerPlugin(className, properties);
             config.registerBrokerPlugin(plugin);
+            pluginConfigs.add(new BrokerPluginConfiguration(className, properties));
          }
+         config.setBrokerPluginConfigurations(pluginConfigs);
       }
    }
 
-   private ActiveMQServerPlugin parseActiveMQServerPlugin(Node item) {
-      final String clazz = item.getAttributes().getNamedItem("class-name").getNodeValue();
-
-      Map<String, String> properties = getMapOfChildPropertyElements(item);
-
+   private ActiveMQServerPlugin parseActiveMQServerPlugin(String clazz, Map<String, String> properties) {
       ActiveMQServerPlugin serverPlugin = SecurityManagerShim.doPrivileged((PrivilegedAction<ActiveMQServerPlugin>) () -> (ActiveMQServerPlugin) ClassloadingUtil.newInstanceFromClassLoader(FileConfigurationParser.class, clazz, ActiveMQServerPlugin.class));
 
       serverPlugin.init(properties);
