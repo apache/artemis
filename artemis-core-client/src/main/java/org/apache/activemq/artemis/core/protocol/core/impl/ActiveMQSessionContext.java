@@ -69,8 +69,6 @@ import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.CreateSess
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.CreateSharedQueueMessage_V2;
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.DisconnectConsumerMessage;
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.DisconnectConsumerWithKillMessage;
-import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.ReattachSessionMessage;
-import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.ReattachSessionResponseMessage;
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.RemoveProducerMessage;
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.RollbackMessage;
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.SessionAcknowledgeMessage;
@@ -862,34 +860,7 @@ public class ActiveMQSessionContext extends SessionContext {
    public void transferConnection(RemotingConnection newConnection) {
       this.remotingConnection = newConnection;
       sessionChannel.transferConnection((CoreRemotingConnection) newConnection);
-   }
-
-   @Override
-   public boolean reattachOnNewConnection(RemotingConnection newConnection) throws ActiveMQException {
-
-      transferConnection(newConnection);
-
-      Packet request = new ReattachSessionMessage(name, sessionChannel.getLastConfirmedCommandID());
-
-      Channel channel1 = getCoreConnection().getChannel(1, -1);
-
-      ReattachSessionResponseMessage response = (ReattachSessionResponseMessage) channel1.sendBlocking(request, PacketImpl.REATTACH_SESSION_RESP);
-
-      if (response.isReattached()) {
-         logger.debug("Replaying commands for channelID={} with lastCommandID from the server={}", sessionChannel.getID(), response.getLastConfirmedCommandID());
-         // The session was found on the server - we reattached transparently ok
-
-         sessionChannel.replayCommands(response.getLastConfirmedCommandID());
-
-         return true;
-      } else {
-         logger.debug("Couldn't reattach session {}, performing as a failover operation now and recreating objects", sessionChannel.getID());
-
-         sessionChannel.clearCommands();
-
-         return false;
-      }
-
+      sessionChannel.clearCommands();
    }
 
    @Override

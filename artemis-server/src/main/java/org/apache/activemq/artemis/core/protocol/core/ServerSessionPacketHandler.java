@@ -105,8 +105,6 @@ import org.apache.activemq.artemis.spi.core.remoting.Connection;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
 import org.apache.activemq.artemis.utils.pools.MpscPool;
 import org.apache.activemq.artemis.utils.pools.Pool;
-import org.apache.activemq.artemis.utils.SimpleFuture;
-import org.apache.activemq.artemis.utils.SimpleFutureImpl;
 import org.apache.activemq.artemis.utils.actors.Actor;
 import org.apache.activemq.artemis.utils.actors.ArtemisExecutor;
 import org.slf4j.Logger;
@@ -993,63 +991,6 @@ public class ServerSessionPacketHandler implements ChannelHandler {
             remotingConnection.removeFailureListener(listener);
          }
       }
-   }
-
-   public int transferConnection(final CoreRemotingConnection newConnection, final int lastReceivedCommandID) {
-
-      SimpleFuture<Integer> future = new SimpleFutureImpl<>();
-      callExecutor.execute(() -> {
-         int value = internaltransferConnection(newConnection, lastReceivedCommandID);
-         future.set(value);
-      });
-
-      try {
-         return future.get().intValue();
-      } catch (Exception e) {
-         throw new IllegalStateException(e);
-      }
-   }
-
-   private int internaltransferConnection(final CoreRemotingConnection newConnection, final int lastReceivedCommandID) {
-      // We need to disable delivery on all the consumers while the transfer is occurring- otherwise packets might get
-      // delivered
-      // after the channel has transferred but *before* packets have been replayed - this will give the client the wrong
-      // sequence of packets.
-      // It is not sufficient to just stop the session, since right after stopping the session, another session start
-      // might be executed
-      // before we have transferred the connection, leaving it in a started state
-      session.setTransferring(true);
-
-      // Note. We do not destroy the replicating connection here. In the case the primary server has really crashed
-      // then the connection will get cleaned up anyway when the server ping timeout kicks in.
-      // In the case the primary server is really still up, i.e. a split brain situation (or in tests), then closing
-      // the replicating connection will cause the outstanding responses to be replayed on the primary server,
-      // if these reach the client who then subsequently fails over, on reconnection to backup, it will have
-      // received responses that the backup did not know about.
-
-      channel.transferConnection(newConnection);
-
-      newConnection.syncIDGeneratorSequence(remotingConnection.getIDGeneratorSequence());
-
-      session.transferConnection(newConnection);
-
-      Connection oldTransportConnection = remotingConnection.getTransportConnection();
-
-      remotingConnection = newConnection;
-
-      int serverLastReceivedCommandID = channel.getLastConfirmedCommandID();
-
-      channel.replayCommands(lastReceivedCommandID);
-
-      channel.setTransferring(false);
-
-      session.setTransferring(false);
-
-      // We do this because the old connection could be out of credits on netty
-      // this will force anything to resume after the reattach through the ReadyListener callbacks
-      oldTransportConnection.fireReady(true);
-
-      return serverLastReceivedCommandID;
    }
 
    // Large Message is part of the core protocol, we have these functions here as part of Packet handler

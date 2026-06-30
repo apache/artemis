@@ -20,15 +20,20 @@ package org.apache.activemq.artemis.tests.integration.jms.client;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import javax.jms.Connection;
+import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.Topic;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.Interceptor;
@@ -49,7 +54,7 @@ public class RollbackTest extends ActiveMQTestBase {
    @BeforeEach
    public void setUp() throws Exception {
       super.setUp();
-      server = createServer(false, createDefaultInVMConfig());
+      server = createServer(false, true);
       server.getConfiguration().getIncomingInterceptorClassNames().add(MyInterceptor.class.getName());
       server.start();
    }
@@ -59,12 +64,20 @@ public class RollbackTest extends ActiveMQTestBase {
       final String TOPIC = "myTopic";
       final String SUBSCRIPTION = "mySub";
 
-      try (ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory("vm://0")) {
+      try (ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory("tcp://localhost:61616")) {
          connectionFactory.setCallTimeout(1000); // fail fast
          connectionFactory.setReconnectAttempts(-1);
-         connectionFactory.setConfirmationWindowSize(1024 * 1024);
 
          try (Connection consumerConnection = connectionFactory.createConnection()) {
+
+            CountDownLatch failed = new CountDownLatch(1);
+            consumerConnection.setExceptionListener(new ExceptionListener() {
+               @Override
+               public void onException(JMSException exception) {
+                  failed.countDown();
+               }
+            });
+
             consumerConnection.start();
             final Session session = consumerConnection.createSession(Session.SESSION_TRANSACTED);
             Topic topic = session.createTopic(TOPIC);
@@ -77,17 +90,19 @@ public class RollbackTest extends ActiveMQTestBase {
             try {
                Message m = messageConsumer.receive(2000);
                assertNotNull(m);
-               // the interceptor will block this first rollback and trigger a failure, the failure will cause the client to re-attach its session
+               // the interceptor will block this first rollback and trigger a failure
                session.rollback();
                fail();
             } catch (JMSException jmsException) {
                // expected
             }
 
+            assertTrue(failed.await(10, TimeUnit.SECONDS));
+
             try {
                session.rollback();
             } catch (JMSException e) {
-               fail("Rollback failed again! Giving up. " + e.getMessage());
+               fail(e.getMessage(), e);
             }
 
             Message m = messageConsumer.receive(2000);
@@ -95,7 +110,7 @@ public class RollbackTest extends ActiveMQTestBase {
             try {
                session.commit();
             } catch (JMSException e) {
-               fail("Commit failed. " + e.getMessage());
+               fail("Commit failed. " + e.getMessage(), e);
             }
          }
       }

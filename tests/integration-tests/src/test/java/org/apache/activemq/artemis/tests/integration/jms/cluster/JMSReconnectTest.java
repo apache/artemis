@@ -58,29 +58,15 @@ public class JMSReconnectTest extends ActiveMQTestBase {
 
    private ActiveMQServer server;
 
-   //In this test we re-attach to the same node without restarting the server
-   @Test
-   public void testReattachSameNode() throws Exception {
-      testReconnectOrReattachSameNode(true);
-   }
-
    //In this test, we reconnect to the same node without restarting the server
    @Test
    public void testReconnectSameNode() throws Exception {
-      testReconnectOrReattachSameNode(false);
-   }
-
-   private void testReconnectOrReattachSameNode(boolean reattach) throws Exception {
       ActiveMQConnectionFactory jbcf = ActiveMQJMSClient.createConnectionFactoryWithoutHA(JMSFactoryType.CF, new TransportConfiguration(INVM_CONNECTOR_FACTORY));
 
       jbcf.setBlockOnDurableSend(true);
       jbcf.setBlockOnNonDurableSend(true);
 
       jbcf.setReconnectAttempts(-1);
-
-      if (reattach) {
-         jbcf.setConfirmationWindowSize(1024 * 1024);
-      }
 
       // Note we set consumer window size to a value so we can verify that consumer credit re-sending
       // works properly on failover

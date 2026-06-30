@@ -75,13 +75,6 @@ public abstract class SessionContext {
     */
    public abstract void transferConnection(RemotingConnection newConnection);
 
-   /**
-    * it will either reattach or reconnect, preferably reattaching it.
-    *
-    * @return true if it was possible to reattach
-    */
-   public abstract boolean reattachOnNewConnection(RemotingConnection newConnection) throws ActiveMQException;
-
    public RemotingConnection getRemotingConnection() {
       return remotingConnection;
    }

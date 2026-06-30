@@ -172,20 +172,6 @@ public interface Channel {
    void transferConnection(CoreRemotingConnection newConnection);
 
    /**
-    * resends any packets that have not received confirmations yet.
-    * <p>
-    * Typically called after a connection has been transferred.
-    *
-    * @param lastConfirmedCommandID the last confirmed packet
-    */
-   void replayCommands(int lastConfirmedCommandID);
-
-   /**
-    * {@return the last confirmed packet command id}
-    */
-   int getLastConfirmedCommandID();
-
-   /**
     * queries if this channel is locked. This method is designed for use in monitoring of the system state, not for
     * synchronization control.
     *

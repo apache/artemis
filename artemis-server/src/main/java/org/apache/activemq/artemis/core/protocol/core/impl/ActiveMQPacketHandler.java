@@ -39,7 +39,6 @@ import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.CreateQueu
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.CreateSessionMessage;
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.CreateSessionMessage_V2;
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.CreateSessionResponseMessage;
-import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.ReattachSessionMessage;
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.ReattachSessionResponseMessage;
 import org.apache.activemq.artemis.core.security.ActiveMQPrincipal;
 import org.apache.activemq.artemis.core.server.ActiveMQMessageBundle;
@@ -117,10 +116,8 @@ public class ActiveMQPacketHandler implements ChannelHandler {
             break;
          }
          case PacketImpl.REATTACH_SESSION: {
-            ReattachSessionMessage request = (ReattachSessionMessage) packet;
-
-            handleReattachSession(request);
-
+            // We no longer use reattachment
+            channel1.send(new ReattachSessionResponseMessage(-1, false));
             break;
          }
          case PacketImpl.CREATE_QUEUE: {
@@ -261,49 +258,6 @@ public class ActiveMQPacketHandler implements ChannelHandler {
       } else {
          channel1.send(response);
       }
-   }
-
-   private void handleReattachSession(final ReattachSessionMessage request) {
-      Packet response = null;
-
-      try {
-
-         if (!server.isStarted()) {
-            response = new ReattachSessionResponseMessage(-1, false);
-         }
-
-         logger.debug("Reattaching request from {}", connection.getRemoteAddress());
-
-         ServerSessionPacketHandler sessionHandler = protocolManager.getSessionHandler(request.getName());
-
-         if (/*!server.checkActivate() || */ sessionHandler == null) {
-            response = new ReattachSessionResponseMessage(-1, false);
-         } else {
-            if (sessionHandler.getChannel().getConfirmationWindowSize() == -1) {
-               // Even though session exists, we can't reattach since confi window size == -1,
-               // i.e. we don't have a resend cache for commands, so we just close the old session
-               // and let the client recreate
-
-               ActiveMQServerLogger.LOGGER.reattachRequestFailed(connection.getRemoteAddress());
-
-               sessionHandler.closeListeners();
-               sessionHandler.close();
-
-               response = new ReattachSessionResponseMessage(-1, false);
-            } else {
-               // Reconnect the channel to the new connection
-               int serverLastConfirmedCommandID = sessionHandler.transferConnection(connection, request.getLastConfirmedCommandID());
-
-               response = new ReattachSessionResponseMessage(serverLastConfirmedCommandID, true);
-            }
-         }
-      } catch (Exception e) {
-         ActiveMQServerLogger.LOGGER.failedToReattachSession(e);
-
-         response = new ActiveMQExceptionMessage(new ActiveMQInternalErrorException());
-      }
-
-      channel1.send(response);
    }
 
    private void handleCreateQueue(final CreateQueueMessage request) {

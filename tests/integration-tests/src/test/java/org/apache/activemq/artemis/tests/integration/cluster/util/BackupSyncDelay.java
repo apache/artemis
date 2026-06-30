@@ -292,16 +292,6 @@ public class BackupSyncDelay implements Interceptor {
       }
 
       @Override
-      public void replayCommands(int lastConfirmedCommandID) {
-         throw new UnsupportedOperationException();
-      }
-
-      @Override
-      public int getLastConfirmedCommandID() {
-         throw new UnsupportedOperationException();
-      }
-
-      @Override
       public boolean isLocked() {
          return false;
       }

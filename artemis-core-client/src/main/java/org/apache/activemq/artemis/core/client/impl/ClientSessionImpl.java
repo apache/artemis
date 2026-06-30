@@ -1296,76 +1296,70 @@ public final class ClientSessionImpl implements ClientSessionInternal, FailureLi
          }
 
          try {
+            sessionContext.transferConnection(backupConnection);
 
-            // TODO remove this and encapsulate it
+            // We change the name of the Session, otherwise the server could close it while we are still sending the recreate
+            // in certain failure scenarios
+            // For instance the fact we didn't change the name of the session after failover or reconnect
+            // was the reason allowing multiple Sessions to be closed simultaneously breaking concurrency
+            this.name = UUIDGenerator.getInstance().generateStringUUID();
 
-            boolean reattached = sessionContext.reattachOnNewConnection(backupConnection);
+            sessionContext.resetName(name);
 
-            if (!reattached) {
+            Map<ConsumerContext, ClientConsumerInternal> clonedConsumerEntries = cloneConsumerEntries();
 
-               // We change the name of the Session, otherwise the server could close it while we are still sending the recreate
-               // in certain failure scenarios
-               // For instance the fact we didn't change the name of the session after failover or reconnect
-               // was the reason allowing multiple Sessions to be closed simultaneously breaking concurrency
-               this.name = UUIDGenerator.getInstance().generateStringUUID();
-
-               sessionContext.resetName(name);
-
-               Map<ConsumerContext, ClientConsumerInternal> clonedConsumerEntries = cloneConsumerEntries();
-
-               for (ClientConsumerInternal consumer : clonedConsumerEntries.values()) {
-                  consumer.clearAtFailover();
-               }
-
-               // The session wasn't found on the server - probably we're failing over onto a backup server where the
-               // session won't exist or the target server has been restarted - in this case the session will need to be
-               // recreated,
-               // and we'll need to recreate any consumers
-
-               // It could also be that the server hasn't been restarted, but the session is currently executing close,
-               // and
-               // that
-               // has already been executed on the server, that's why we can't find the session- in this case we *don't*
-               // want
-               // to recreate the session, we just want to unblock the blocking call
-               if (!inClose && mayAttemptToFailover) {
-                  sessionContext.recreateSession(username, password, minLargeMessageSize, xa, autoCommitSends, autoCommitAcks, preAcknowledge);
-
-                  for (Map.Entry<ConsumerContext, ClientConsumerInternal> entryx : clonedConsumerEntries.entrySet()) {
-
-                     ClientConsumerInternal consumerInternal = entryx.getValue();
-                     synchronized (consumerInternal) {
-                        if (!consumerInternal.isClosed()) {
-                           sessionContext.recreateConsumerOnServer(consumerInternal, entryx.getKey().getId(), started);
-                        }
-                     }
-                  }
-
-                  if ((!autoCommitAcks || !autoCommitSends) && workDone) {
-                     // this is protected by a lock, so we can guarantee nothing will sneak here
-                     // while we do our work here
-                     rollbackOnly = true;
-                  }
-                  if (currentXID != null) {
-                     sessionContext.xaFailed(currentXID);
-                     rollbackOnly = true;
-                  }
-
-                  // Now start the session if it was already started
-                  if (started) {
-                     for (ClientConsumerInternal consumer : clonedConsumerEntries.values()) {
-                        consumer.clearAtFailover();
-                        consumer.start();
-                     }
-
-                     sessionContext.restartSession();
-                  }
-
-                  resetCreditManager = true;
-               }
-
-               sessionContext.returnBlocking(cause);
+            for (ClientConsumerInternal consumer : clonedConsumerEntries.values()) {
+               consumer.clearAtFailover();
             }
+
+            // The session wasn't found on the server - probably we're failing over onto a backup server where the
+            // session won't exist or the target server has been restarted - in this case the session will need to be
+            // recreated,
+            // and we'll need to recreate any consumers
+
+            // It could also be that the server hasn't been restarted, but the session is currently executing close,
+            // and
+            // that
+            // has already been executed on the server, that's why we can't find the session- in this case we *don't*
+            // want
+            // to recreate the session, we just want to unblock the blocking call
+            if (!inClose && mayAttemptToFailover) {
+               sessionContext.recreateSession(username, password, minLargeMessageSize, xa, autoCommitSends, autoCommitAcks, preAcknowledge);
+
+               for (Map.Entry<ConsumerContext, ClientConsumerInternal> entryx : clonedConsumerEntries.entrySet()) {
+
+                  ClientConsumerInternal consumerInternal = entryx.getValue();
+                  synchronized (consumerInternal) {
+                     if (!consumerInternal.isClosed()) {
+                        sessionContext.recreateConsumerOnServer(consumerInternal, entryx.getKey().getId(), started);
+                     }
+                  }
+               }
+
+               if ((!autoCommitAcks || !autoCommitSends) && workDone) {
+                  // this is protected by a lock, so we can guarantee nothing will sneak here
+                  // while we do our work here
+                  rollbackOnly = true;
+               }
+               if (currentXID != null) {
+                  sessionContext.xaFailed(currentXID);
+                  rollbackOnly = true;
+               }
+
+               // Now start the session if it was already started
+               if (started) {
+                  for (ClientConsumerInternal consumer : clonedConsumerEntries.values()) {
+                     consumer.clearAtFailover();
+                     consumer.start();
+                  }
+
+                  sessionContext.restartSession();
+               }
+
+               resetCreditManager = true;
+            }
+
+            sessionContext.returnBlocking(cause);
          } catch (ActiveMQRoutingException e) {
             logger.info("failedToHandleFailover.ActiveMQRoutingException");
             suc = false;

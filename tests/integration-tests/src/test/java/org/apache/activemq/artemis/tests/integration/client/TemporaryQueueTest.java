@@ -72,7 +72,7 @@ public class TemporaryQueueTest extends SingleServerTestBase {
 
    @Override
    protected ActiveMQServer createServer() throws Exception {
-      ActiveMQServer server = super.createServer();
+      ActiveMQServer server = createServer(false, true);
       server.getConfiguration().setAddressQueueScanPeriod(100);
       return server;
    }
@@ -327,10 +327,11 @@ public class TemporaryQueueTest extends SingleServerTestBase {
 
    @Test
    public void testRecreateConsumerOverServerFailure() throws Exception {
-      ServerLocator serverWithReattach = createInVMNonHALocator().setReconnectAttempts(30).setRetryInterval(1000).setConfirmationWindowSize(-1).setConnectionTTL(TemporaryQueueTest.CONNECTION_TTL).setClientFailureCheckPeriod(TemporaryQueueTest.CONNECTION_TTL / 3);
-      ClientSessionFactory reattachSF = createSessionFactory(serverWithReattach);
+      // This test has to use Netty to make sure the original connection is closed during failover.
+      ServerLocator locatorWithFailover = createNettyNonHALocator().setReconnectAttempts(200).setRetryInterval(100).setConfirmationWindowSize(-1).setConnectionTTL(TemporaryQueueTest.CONNECTION_TTL).setClientFailureCheckPeriod(TemporaryQueueTest.CONNECTION_TTL / 3);
+      ClientSessionFactory sf = createSessionFactory(locatorWithFailover);
 
-      ClientSession session = reattachSF.createSession(false, false);
+      ClientSession session = sf.createSession(false, false);
       session.createQueue(QueueConfiguration.of("tmpQ").setAddress("tmpAd").setDurable(false).setTemporary(true));
       ClientConsumer consumer = session.createConsumer("tmpQ");
 
@@ -349,9 +350,9 @@ public class TemporaryQueueTest extends SingleServerTestBase {
 
       session.close();
 
-      reattachSF.close();
+      sf.close();
 
-      serverWithReattach.close();
+      locatorWithFailover.close();
 
    }
 
