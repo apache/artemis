@@ -87,6 +87,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.apache.activemq.ActiveMQConnectionAccessor.getActiveTempDestinationsSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -784,7 +785,7 @@ public class SimpleOpenWireTest extends BasicOpenWireTest {
          TopicPublisher publisher = newTopicSession.createPublisher(tempTopic);
 
          // need to wait here because the ActiveMQ client's temp destination map is updated asynchronously, not waiting can introduce a race
-         assertTrue(Wait.waitFor(() -> newConn.activeTempDestinations.size() == 1, 2000, 100));
+         assertTrue(Wait.waitFor(() -> getActiveTempDestinationsSize(newConn) == 1, 2000, 100));
 
          TextMessage msg = newTopicSession.createTextMessage("Test Message");
 
@@ -1685,7 +1686,7 @@ public class SimpleOpenWireTest extends BasicOpenWireTest {
          MessageProducer producer = session2.createProducer(tempQueue);
 
          // need to wait here because the ActiveMQ client's temp destination map is updated asynchronously, not waiting can introduce a race
-         assertTrue(Wait.waitFor(() -> ((ActiveMQConnection)connection2).activeTempDestinations.size() == 1, 2000, 100));
+         assertTrue(Wait.waitFor(() -> getActiveTempDestinationsSize((ActiveMQConnection) connection2) == 1, 2000, 100));
 
          producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
          TextMessage m = session2.createTextMessage("Hello temp queue");
@@ -1700,7 +1701,7 @@ public class SimpleOpenWireTest extends BasicOpenWireTest {
          connection1.close();
 
          // need to wait here because the ActiveMQ client's temp destination map is updated asynchronously, not waiting can introduce a race
-         assertTrue(Wait.waitFor(() -> ((ActiveMQConnection) connection2).activeTempDestinations.isEmpty(), 2000, 100));
+         assertTrue(Wait.waitFor(() -> getActiveTempDestinationsSize((ActiveMQConnection) connection2) == 0, 2000, 100));
 
          waitForBindings(this.server, tempQueue.getQueueName(), true, 0, 0, 5000);
          //send again
