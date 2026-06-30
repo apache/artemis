@@ -67,8 +67,8 @@ public class MultiVersionReplicaTest extends ClasspathBase {
       List<Object[]> combinations = new ArrayList<>();
 
       // Replication compatibility is tested FORWARD ONLY (older main -> newer backup).
-      // Artemis 2.55.0 introduced AMQPMessagePersisterV4, which breaks backward replication compatibility.
-      // This means 2.55.0+ main servers cannot replicate to pre-2.55.0 backup servers.
+      // Artemis 2.56.0 introduced AMQPMessagePersisterV4, which breaks backward replication compatibility.
+      // This means 2.56.0+ servers cannot replicate to pre-2.56.0 backup servers.
 
       if (getJavaVersion() <= 22) {
          // Old 2.x servers fail on JDK23+ without workarounds.

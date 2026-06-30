@@ -57,34 +57,33 @@ public class AMQPMessagePersisterV4 extends AMQPMessagePersisterV3 {
 
    @Override
    public int getEncodeSize(Message record) {
-      return DataConstants.SIZE_BYTE + record.getPersistSize() + getMapCodecSize(record);
+      return DataConstants.SIZE_BYTE + record.getPersistSize() + getMetadataSize(record);
+   }
+
+   /** Write persister data using Map like boundaries from MapPersister */
+   protected void writeMessageMetadata(ActiveMQBuffer buffer, Message record) {
+      AMQPMessageMetadataPersister.getInstance().encode(buffer, record);
+   }
+
+   protected int getMetadataSize(Message record) {
+      return AMQPMessageMetadataPersister.getInstance().getEncodeSize(record);
    }
 
    @Override
    public void encode(ActiveMQBuffer buffer, Message record) {
       writePersisterID(buffer);
 
-      writeMapCodecData(buffer, record);
+      writeMessageMetadata(buffer, record);
 
       record.persist(buffer);
    }
 
-   /** Write persister data using Map like boundaries from MapPersister */
-   protected void writeMapCodecData(ActiveMQBuffer buffer, Message record) {
-      AMQPMessageMetadataPersister.getInstance().encode(buffer, record);
-   }
-
-   protected int getMapCodecSize(Message record) {
-      return AMQPMessageMetadataPersister.getInstance().getEncodeSize(record);
-   }
-
-
    @Override
    public Message decode(ActiveMQBuffer buffer, Message record, CoreMessageObjectPools pool) {
-      AMQPMessageMetadataPersister mapCodec = AMQPMessageMetadataPersister.getInstance();
+      AMQPMessageMetadataPersister metadataPersister = AMQPMessageMetadataPersister.getInstance();
       AMQPMetadataDecodingState decodingMetaData = new AMQPMetadataDecodingState();
 
-      mapCodec.decode(buffer, decodingMetaData);
+      metadataPersister.decode(buffer, decodingMetaData);
 
       assert decodingMetaData.memoryEstimate > 0;
 

@@ -80,10 +80,6 @@ public class EmbedMessageUtil {
       }
    }
 
-   public static ICoreMessage embedAsCoreMessage(Message source) {
-      return embedAsCoreMessage(source, EMBED_WIRE_VERSION_2);
-   }
-
    public static Message extractEmbedded(ICoreMessage message, StorageManager storageManager) {
       return switch (message.getType()) {
          case Message.EMBEDDED_TYPE -> extractRegularMessage(message, storageManager);

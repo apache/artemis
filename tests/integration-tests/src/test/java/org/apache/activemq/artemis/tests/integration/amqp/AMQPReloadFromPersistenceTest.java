@@ -259,12 +259,12 @@ public class AMQPReloadFromPersistenceTest extends ActiveMQTestBase {
       }
 
       @Override
-      protected void writeMapCodecData(ActiveMQBuffer buffer, Message record) {
+      protected void writeMessageMetadata(ActiveMQBuffer buffer, Message record) {
          new FutureMessageMetadata().encode(buffer, record);
       }
 
       @Override
-      protected int getMapCodecSize(Message record) {
+      protected int getMetadataSize(Message record) {
          return new FutureMessageMetadata().getEncodeSize(record);
       }
 
@@ -277,12 +277,12 @@ public class AMQPReloadFromPersistenceTest extends ActiveMQTestBase {
       }
 
       @Override
-      protected void writeMapCodecData(ActiveMQBuffer buffer, Message record) {
+      protected void writeMessageMetadata(ActiveMQBuffer buffer, Message record) {
          new FutureMessageMetadata().encode(buffer, record);
       }
 
       @Override
-      protected int getMapCodecSize(Message record) {
+      protected int getMetadataSize(Message record) {
          return new FutureMessageMetadata().getEncodeSize(record);
       }
 

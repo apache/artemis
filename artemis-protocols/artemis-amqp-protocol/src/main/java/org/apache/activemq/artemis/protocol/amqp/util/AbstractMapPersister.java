@@ -139,6 +139,10 @@ public abstract class AbstractMapPersister<T> {
       int initialPosition = buffer.readerIndex();
       int size = buffer.readInt();
 
+      if (size < DataConstants.SIZE_INT) {
+         throw new IllegalStateException("Invalid record size " + size);
+      }
+
       if (size - DataConstants.SIZE_INT > buffer.readableBytes()) {
          throw new IllegalStateException("Invalid record size " + size + " exceeds available buffer bytes: " + buffer.readableBytes());
       }

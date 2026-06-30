@@ -1642,7 +1642,16 @@ public class AMQPMessageTest {
    }
 
    @Test
-   public void testJournalPersistence() {
+   public void testJournalPersistenceWireVersion2() {
+      internalTestPersistence(EmbedMessageUtil.EMBED_WIRE_VERSION_2);
+   }
+
+   @Test
+   public void testJournalPersistenceWireVersion1() {
+      internalTestPersistence(EmbedMessageUtil.EMBED_WIRE_VERSION_1);
+   }
+
+   private void internalTestPersistence(int wireVersion) {
       MessageImpl protonMessage = (MessageImpl) Message.Factory.create();
 
       byte[] original = RandomUtil.randomBytes();
@@ -1673,7 +1682,7 @@ public class AMQPMessageTest {
       }
 
       {
-         ICoreMessage embeddedMessage = EmbedMessageUtil.embedAsCoreMessage(decoded, EmbedMessageUtil.EMBED_WIRE_VERSION_2);
+         ICoreMessage embeddedMessage = EmbedMessageUtil.embedAsCoreMessage(decoded, wireVersion);
          AMQPStandardMessage readMessage = (AMQPStandardMessage) EmbedMessageUtil.extractEmbedded(embeddedMessage, null);
          assertEquals(33, readMessage.getMessageID());
          assertEquals("someAddress", readMessage.getAddress());
@@ -1732,12 +1741,10 @@ public class AMQPMessageTest {
    public void testNonSenseNullApplicationProperties() {
       ByteBuffer buffer = ByteBuffer.allocate(4);
 
-      // this next section is simulating an invalid encoding, to validate this portion of the decoder.
-      // https://github.com/apache/qpid-proton-j/blob/6dc5587f1d1b23969a8994f1755198e638e92bc4/proton-j/src/main/java/org/apache/qpid/proton/codec/messaging/FastPathApplicationPropertiesType.java#L111-L112
-      // this is basically simulating message.setApplicationProperties(new ApplicationProperties(null));
+      // This is simulating a nonsense encoding data.
+      // This is effectively encoding new ApplicationProperties(null)
       byte[] encoded;
       {
-         // based on https://github.com/apache/qpid-proton-j/blob/6dc5587f1d1b23969a8994f1755198e638e92bc4/proton-j/src/main/java/org/apache/qpid/proton/codec/messaging/FastPathApplicationPropertiesType.java#L164-L167
          buffer.put(EncodingCodes.DESCRIBED_TYPE_INDICATOR);
          buffer.put(EncodingCodes.SMALLULONG);
          buffer.put((byte) 0x74);

@@ -25,8 +25,7 @@ import org.apache.activemq.artemis.utils.collections.TypedProperties;
  * <p>
  * When decoding metadata from {@link AMQPMessageMetadataPersister}, certain values
  * (e.g., messageID on large messages and messageFormat on regular messages) are needed before the Message
- * object can be created. This class stores those values in a ThreadLocal until the
- * Message is instantiated and the metadata can be applied.
+ * object can be created.
  */
 public class AMQPMetadataDecodingState {
 
@@ -35,15 +34,11 @@ public class AMQPMetadataDecodingState {
    protected long messageExpiration; // always present
    protected int memoryEstimate; // always present
    protected byte priority; // always present
-   protected boolean isDurable; // always present
    protected SimpleString address; // variable size based on the string size
+   protected boolean isDurable; // always present
    protected TypedProperties extraProperties; // variable size based on the byte array size
    protected boolean isReencoded; // used on large messages only
 
    public AMQPMetadataDecodingState() {
    }
-
-
-
-
 }

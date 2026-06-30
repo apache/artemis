@@ -54,7 +54,7 @@ public class AMQPLargeMessagePersisterV2 extends AMQPLargeMessagePersister {
       ByteBuf buf = msgEncode.getSavedEncodeBuffer();
 
       try {
-         size = buf.writerIndex() + getMapCodecSize(record) + DataConstants.SIZE_BYTE;
+         size = buf.writerIndex() + getMetadataSize(record) + DataConstants.SIZE_BYTE;
          return size;
       } finally {
          msgEncode.releaseEncodedBuffer();
@@ -62,20 +62,31 @@ public class AMQPLargeMessagePersisterV2 extends AMQPLargeMessagePersister {
    }
 
    /** Write persister data using Map like boundaries from MapPersister */
-   protected void writeMapCodecData(ActiveMQBuffer buffer, Message record) {
+   protected void writeMessageMetadata(ActiveMQBuffer buffer, Message record) {
       AMQPMessageMetadataPersister.getInstance().encode(buffer, record);
    }
 
-   protected int getMapCodecSize(Message record) {
+   protected int getMetadataSize(Message record) {
       return AMQPMessageMetadataPersister.getInstance().getEncodeSize(record);
    }
 
    @Override
+   public void encode(ActiveMQBuffer buffer, Message record) {
+      AMQPLargeMessage msgEncode = (AMQPLargeMessage) record;
+      writePersisterID(buffer);
+      writeMessageMetadata(buffer, record);
+
+      ByteBuf savedEncodeBuffer = msgEncode.getSavedEncodeBuffer();
+      buffer.writeBytes(savedEncodeBuffer, 0, savedEncodeBuffer.writerIndex());
+      msgEncode.releaseEncodedBufferAfterWrite();
+   }
+
+   @Override
    public Message decode(ActiveMQBuffer buffer, Message record, CoreMessageObjectPools pool) {
-      AMQPMessageMetadataPersister mapCodec = AMQPMessageMetadataPersister.getInstance();
+      AMQPMessageMetadataPersister metadataPersister = AMQPMessageMetadataPersister.getInstance();
 
       AMQPMetadataDecodingState decodingMetaData = new AMQPMetadataDecodingState();
-      mapCodec.decode(buffer, decodingMetaData);
+      metadataPersister.decode(buffer, decodingMetaData);
 
       assert decodingMetaData.memoryEstimate != 0;
 
@@ -95,17 +106,6 @@ public class AMQPLargeMessagePersisterV2 extends AMQPLargeMessagePersister {
       largeMessage.reloadPriority(decodingMetaData.priority);
 
       return largeMessage;
-   }
-
-   @Override
-   public void encode(ActiveMQBuffer buffer, Message record) {
-      AMQPLargeMessage msgEncode = (AMQPLargeMessage) record;
-      writePersisterID(buffer);
-      writeMapCodecData(buffer, record);
-
-      ByteBuf savedEncodeBuffer = msgEncode.getSavedEncodeBuffer();
-      buffer.writeBytes(savedEncodeBuffer, 0, savedEncodeBuffer.writerIndex());
-      msgEncode.releaseEncodedBufferAfterWrite();
    }
 
 }

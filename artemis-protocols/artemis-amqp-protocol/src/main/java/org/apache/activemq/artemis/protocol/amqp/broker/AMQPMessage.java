@@ -775,6 +775,9 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
       return applicationPropertiesCount;
    }
 
+   /**
+    * @return the number of application properties in the encoding, or -1 if the encoding is invalid
+    */
    private int parseApCountAndSkip(ReadableBuffer data) {
       byte encodingCode = data.get();
       int count;
@@ -794,7 +797,6 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
             size = data.getInt();
             if (size < 0 || size > data.limit()) {
                ActiveMQAMQPProtocolLogger.LOGGER.invalidEncodingApplicationProperties(messageID, "Invalid size on encoding");
-               // in case of an invalid encoding, we just return 0 and let the broker to deal with the encoding issue elsewhere
                return -1;
             }
             int startPosition = data.position();
@@ -806,14 +808,12 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
          }
          default -> {
             ActiveMQAMQPProtocolLogger.LOGGER.invalidEncodingApplicationProperties(messageID, "Invalid encoding type");
-            // in case of an invalid encoding, we just return 0 and let the broker to deal with the encoding issue elsewhere
             return -1;
          }
       }
 
       if (count < 0 || count % 2 != 0) {
          ActiveMQAMQPProtocolLogger.LOGGER.invalidEncodingApplicationProperties(messageID, "invalid properties count");
-         // in case of an invalid encoding, we just return 0 and let the broker to deal with the encoding issue elsewhere
          return -1;
       }
 
