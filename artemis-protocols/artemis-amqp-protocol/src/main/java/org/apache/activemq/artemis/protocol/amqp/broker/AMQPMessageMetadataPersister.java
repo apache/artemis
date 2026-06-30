@@ -50,6 +50,17 @@ public class AMQPMessageMetadataPersister extends AbstractMapPersister<AMQPMetad
    protected static final short KEY_EXTRA_PROPERTIES = 8;
    protected static final short KEY_IS_REENCODED = 9; // used on large messages only
 
+   // This persister cannot generate more elements than defined keys.
+   // Currently, KEY_IS_REENCODED is the last defined key (9), with KEY_MESSAGE_ID being the first (1).
+   // Reading beyond 9 elements indicates either invalid/malicious data or a message from a future version.
+   // We set a reasonable limit to support future versions while protecting the decoder from malformed data.
+   protected static final short MAX_ELEMENTS = 100;
+
+   @Override
+   protected int getMaxAllowedElements() {
+      return MAX_ELEMENTS;
+   }
+
    /** This is the minimum size this codec will generate, as these will always be persisted */
    private static final int BASIC_SIZE = headerSize() +
                                          payloadSizeLong() + // messageID

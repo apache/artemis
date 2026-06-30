@@ -58,6 +58,8 @@ public abstract class AbstractMapPersister<T> {
       }
    }
 
+   protected abstract int getMaxAllowedElements();
+
    protected abstract void onMapReadInteger(short key, int value, T decodingObject);
    protected abstract void onMapReadByte(short key, byte value, T decodingObject);
    protected abstract void onMapReadBoolean(short key, boolean value, T decodingObject);
@@ -151,6 +153,10 @@ public abstract class AbstractMapPersister<T> {
 
       checkReadableBytes(buffer, DataConstants.SIZE_SHORT, endPosition);
       int entries = buffer.readUnsignedShort();
+
+      if (entries > getMaxAllowedElements()) {
+         throw new IllegalStateException("Invalid entries size " + entries + " beyond max allowed elements of " + getMaxAllowedElements());
+      }
 
       for (int i = 0; i < entries; i++) {
          // This will check that each entry is valid. If entries is set to an invalid value through malicious data

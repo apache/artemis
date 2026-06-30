@@ -66,6 +66,11 @@ public class MapPersisterTest {
          encodeSize += headerSize();
       }
 
+      @Override
+      protected int getMaxAllowedElements() {
+         return Short.MAX_VALUE;
+      }
+
       public int getEncodeSize() {
          if (encodeSize == 0) {
             calculatePayloadSize();
