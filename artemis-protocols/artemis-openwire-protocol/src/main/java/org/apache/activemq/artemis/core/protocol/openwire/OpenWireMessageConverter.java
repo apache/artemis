@@ -230,7 +230,7 @@ public final class OpenWireMessageConverter {
                                      final ActiveMQBuffer body) throws IOException {
       InputStream tis = new ByteArrayInputStream(contents);
       if (messageCompressed) {
-         tis = new InflaterInputStream(tis);
+         tis = MarshallingSupport.createInflaterInputStream(Integer.MAX_VALUE, tis);
       }
       DataInputStream tdataIn = new DataInputStream(tis);
       String text = MarshallingSupport.readUTF8(tdataIn);
@@ -243,7 +243,7 @@ public final class OpenWireMessageConverter {
                                     final ActiveMQBuffer body) throws IOException {
       InputStream mis = new ByteArrayInputStream(contents);
       if (messageCompressed) {
-         mis = new InflaterInputStream(mis);
+         mis = MarshallingSupport.createInflaterInputStream(Integer.MAX_VALUE, mis);
       }
       DataInputStream mdataIn = new DataInputStream(mis);
       Map<String, Object> map = MarshallingSupport.unmarshalPrimitiveMap(mdataIn);
@@ -282,7 +282,7 @@ public final class OpenWireMessageConverter {
                                        final ActiveMQBuffer body) throws IOException {
       InputStream sis = new ByteArrayInputStream(contents);
       if (messageCompressed) {
-         sis = new InflaterInputStream(sis);
+         sis = MarshallingSupport.createInflaterInputStream(Integer.MAX_VALUE, sis);
       }
       DataInputStream sdis = new DataInputStream(sis);
       int stype = sdis.read();
