@@ -27,7 +27,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.lang.management.ManagementFactory;
 import java.net.URL;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -83,13 +82,23 @@ public class SSLSecurityNotificationTest extends ActiveMQTestBase {
    private SimpleString notifQueue;
 
    @Test
-   public void testSECURITY_AUTHENTICATION_VIOLATION() throws Exception {
+   public void testSecurityAuthenticationViolationDn() throws Exception {
+      testSecurityAuthenticationViolation("CertLogin", "unknown-client-keystore.jks", "CN=ActiveMQ Artemis Unknown Client, OU=Artemis, O=ActiveMQ, L=AMQ, ST=AMQ, C=AMQ", "unavailable");
+   }
+
+   @Test
+   public void testSecurityAuthenticationViolationUpn() throws Exception {
+      testSecurityAuthenticationViolation("UpnCertLogin", "unknown-upn-client-keystore.jks", "CN=ActiveMQ Artemis Unknown UPN Client, OU=Artemis, O=ActiveMQ, L=AMQ, ST=AMQ, C=AA", "unknown@domain.com");
+   }
+
+   private void testSecurityAuthenticationViolation(String configName, String keystore, String dnValue, String upnValue) throws Exception {
+      createServer(configName);
 
       TransportConfiguration tc = new TransportConfiguration(NETTY_CONNECTOR_FACTORY);
       tc.getParams().put(TransportConstants.SSL_ENABLED_PROP_NAME, true);
       tc.getParams().put(TransportConstants.TRUSTSTORE_PATH_PROP_NAME, "server-ca-truststore.jks");
       tc.getParams().put(TransportConstants.TRUSTSTORE_PASSWORD_PROP_NAME, "securepass");
-      tc.getParams().put(TransportConstants.KEYSTORE_PATH_PROP_NAME, "unknown-client-keystore.jks");
+      tc.getParams().put(TransportConstants.KEYSTORE_PATH_PROP_NAME, keystore);
       tc.getParams().put(TransportConstants.KEYSTORE_PASSWORD_PROP_NAME, "securepass");
 
       ServerLocator locator = addServerLocator(ActiveMQClient.createServerLocatorWithoutHA(tc));
@@ -103,18 +112,20 @@ public class SSLSecurityNotificationTest extends ActiveMQTestBase {
       } catch (Exception e) {
       }
 
-      ClientMessage[] notifications = SSLSecurityNotificationTest.consumeMessages(1, notifConsumer);
-      assertEquals(SECURITY_AUTHENTICATION_VIOLATION.toString(), notifications[0].getObjectProperty(ManagementHelper.HDR_NOTIFICATION_TYPE).toString());
-      assertNull(notifications[0].getObjectProperty(ManagementHelper.HDR_USER));
-      assertEquals("CN=ActiveMQ Artemis Unknown Client, OU=Artemis, O=ActiveMQ, L=AMQ, ST=AMQ, C=AMQ", notifications[0].getObjectProperty(ManagementHelper.HDR_CERT_SUBJECT_DN).toString());
-      assertTrue(notifications[0].getObjectProperty(ManagementHelper.HDR_REMOTE_ADDRESS).toString().startsWith("127.0.0.1"));
-      assertTrue(notifications[0].getTimestamp() >= start);
-      assertTrue((long) notifications[0].getObjectProperty(ManagementHelper.HDR_NOTIFICATION_TIMESTAMP) >= start);
-      assertEquals(notifications[0].getTimestamp(), (long) notifications[0].getObjectProperty(ManagementHelper.HDR_NOTIFICATION_TIMESTAMP));
+      ClientMessage notification = SSLSecurityNotificationTest.consumeMessages(1, notifConsumer)[0];
+      assertEquals(SECURITY_AUTHENTICATION_VIOLATION.toString(), notification.getObjectProperty(ManagementHelper.HDR_NOTIFICATION_TYPE).toString());
+      assertNull(notification.getObjectProperty(ManagementHelper.HDR_USER));
+      assertEquals(dnValue, notification.getObjectProperty(ManagementHelper.HDR_CERT_SUBJECT_DN).toString());
+      assertEquals(upnValue, notification.getObjectProperty(ManagementHelper.HDR_CERT_UPN).toString());
+      assertTrue(notification.getObjectProperty(ManagementHelper.HDR_REMOTE_ADDRESS).toString().startsWith("127.0.0.1"));
+      assertTrue(notification.getTimestamp() >= start);
+      assertTrue((long) notification.getObjectProperty(ManagementHelper.HDR_NOTIFICATION_TIMESTAMP) >= start);
+      assertEquals(notification.getTimestamp(), (long) notification.getObjectProperty(ManagementHelper.HDR_NOTIFICATION_TIMESTAMP));
    }
 
    @Test
-   public void testCONSUMER_CREATED() throws Exception {
+   public void testConsumerCreated() throws Exception {
+      createServer("CertLogin");
       SimpleString queue = RandomUtil.randomUUIDSimpleString();
       SimpleString address = RandomUtil.randomUUIDSimpleString();
 
@@ -148,6 +159,7 @@ public class SSLSecurityNotificationTest extends ActiveMQTestBase {
       assertEquals("first", notifications[0].getObjectProperty(ManagementHelper.HDR_VALIDATED_USER).toString());
       assertEquals(address.toString(), notifications[0].getObjectProperty(ManagementHelper.HDR_ADDRESS).toString());
       assertEquals("CN=ActiveMQ Artemis Client, OU=Artemis, O=ActiveMQ, L=AMQ, ST=AMQ, C=AMQ", notifications[0].getObjectProperty(ManagementHelper.HDR_CERT_SUBJECT_DN).toString());
+      assertEquals("unavailable", notifications[0].getObjectProperty(ManagementHelper.HDR_CERT_UPN).toString());
       assertTrue(notifications[0].getTimestamp() >= start);
       assertTrue((long) notifications[0].getObjectProperty(ManagementHelper.HDR_NOTIFICATION_TIMESTAMP) >= start);
       assertEquals(notifications[0].getTimestamp(), (long) notifications[0].getObjectProperty(ManagementHelper.HDR_NOTIFICATION_TIMESTAMP));
@@ -156,7 +168,8 @@ public class SSLSecurityNotificationTest extends ActiveMQTestBase {
    }
 
    @Test
-   public void testCONNECTION_CREATED() throws Exception {
+   public void testConnectionCreated() throws Exception {
+      createServer("CertLogin");
       Role role = new Role("notif", true, true, true, true, false, true, true, true, true, true, false, false);
       Set<Role> roles = new HashSet<>();
       roles.add(role);
@@ -179,6 +192,8 @@ public class SSLSecurityNotificationTest extends ActiveMQTestBase {
       assertEquals(CONNECTION_CREATED.toString(), notification.getObjectProperty(ManagementHelper.HDR_NOTIFICATION_TYPE).toString());
       assertNotNull(notification.getObjectProperty(ManagementHelper.HDR_CERT_SUBJECT_DN));
       assertEquals("CN=ActiveMQ Artemis Client, OU=Artemis, O=ActiveMQ, L=AMQ, ST=AMQ, C=AMQ", notification.getObjectProperty(ManagementHelper.HDR_CERT_SUBJECT_DN).toString());
+      assertNotNull(notification.getObjectProperty(ManagementHelper.HDR_CERT_UPN));
+      assertEquals("unavailable", notification.getObjectProperty(ManagementHelper.HDR_CERT_UPN).toString());
       assertTrue(notification.getObjectProperty(ManagementHelper.HDR_REMOTE_ADDRESS).toString().startsWith("127.0.0.1"));
       assertTrue(notification.getTimestamp() >= start);
       assertTrue((long) notification.getObjectProperty(ManagementHelper.HDR_NOTIFICATION_TIMESTAMP) >= start);
@@ -189,23 +204,24 @@ public class SSLSecurityNotificationTest extends ActiveMQTestBase {
    @BeforeEach
    public void setUp() throws Exception {
       super.setUp();
-      ActiveMQJAASSecurityManager securityManager = new ActiveMQJAASSecurityManager("CertLogin");
-      server = addServer(ActiveMQServers.newActiveMQServer(createDefaultInVMConfig().setSecurityEnabled(true), ManagementFactory.getPlatformMBeanServer(), securityManager, false));
 
-      Map<String, Object> params = new HashMap<>();
-      params.put(TransportConstants.SSL_ENABLED_PROP_NAME, true);
-      params.put(TransportConstants.KEYSTORE_PATH_PROP_NAME, "server-keystore.jks");
-      params.put(TransportConstants.KEYSTORE_PASSWORD_PROP_NAME, "securepass");
-      params.put(TransportConstants.TRUSTSTORE_PATH_PROP_NAME, "client-ca-truststore.jks");
-      params.put(TransportConstants.TRUSTSTORE_PASSWORD_PROP_NAME, "securepass");
-      params.put(TransportConstants.NEED_CLIENT_AUTH_PROP_NAME, true);
+   }
+
+   private void createServer(String configName) throws Exception {
+      ActiveMQJAASSecurityManager securityManager = new ActiveMQJAASSecurityManager(configName);
+      server = addServer(ActiveMQServers.newActiveMQServer(createDefaultInVMConfig().setSecurityEnabled(true).setClusterUser("x").setClusterPassword("x"), ManagementFactory.getPlatformMBeanServer(), securityManager, false));
+
+      Map<String, Object> params = Map.of(TransportConstants.SSL_ENABLED_PROP_NAME, true,
+                                          TransportConstants.KEYSTORE_PATH_PROP_NAME, "server-keystore.jks",
+                                          TransportConstants.KEYSTORE_PASSWORD_PROP_NAME, "securepass",
+                                          TransportConstants.TRUSTSTORE_PATH_PROP_NAME, "client-ca-truststore.jks",
+                                          TransportConstants.TRUSTSTORE_PASSWORD_PROP_NAME, "securepass",
+                                          TransportConstants.NEED_CLIENT_AUTH_PROP_NAME, true);
 
       server.getConfiguration().addAcceptorConfiguration(new TransportConfiguration(NETTY_ACCEPTOR_FACTORY, params));
 
       ActiveMQServerPlugin plugin = new NotificationActiveMQServerPlugin();
-      Map init = new HashMap();
-      init.put(NotificationActiveMQServerPlugin.SEND_CONNECTION_NOTIFICATIONS, "true");
-      plugin.init(init);
+      plugin.init(Map.of(NotificationActiveMQServerPlugin.SEND_CONNECTION_NOTIFICATIONS, "true"));
       server.registerBrokerPlugin(plugin);
 
       server.start();
@@ -217,16 +233,9 @@ public class SSLSecurityNotificationTest extends ActiveMQTestBase {
       roles.add(role);
       server.getSecurityRepository().addMatch(ActiveMQDefaultConfiguration.getDefaultManagementNotificationAddress().toString(), roles);
 
-      TransportConfiguration tc = new TransportConfiguration(NETTY_CONNECTOR_FACTORY);
-      tc.getParams().put(TransportConstants.SSL_ENABLED_PROP_NAME, true);
-      tc.getParams().put(TransportConstants.TRUSTSTORE_PATH_PROP_NAME, "server-ca-truststore.jks");
-      tc.getParams().put(TransportConstants.TRUSTSTORE_PASSWORD_PROP_NAME, "securepass");
-      tc.getParams().put(TransportConstants.KEYSTORE_PATH_PROP_NAME, "client-keystore.jks");
-      tc.getParams().put(TransportConstants.KEYSTORE_PASSWORD_PROP_NAME, "securepass");
-
-      ServerLocator locator = addServerLocator(ActiveMQClient.createServerLocatorWithoutHA(tc));
+      ServerLocator locator = addServerLocator(ActiveMQClient.createServerLocator("vm://0"));
       ClientSessionFactory sf = addSessionFactory(createSessionFactory(locator));
-      adminSession = sf.createSession(true, true, 1);
+      adminSession = sf.createSession("x", "x", false, true, true, false, 1);
       adminSession.start();
 
       adminSession.createQueue(QueueConfiguration.of(notifQueue).setAddress(ActiveMQDefaultConfiguration.getDefaultManagementNotificationAddress()).setDurable(false).setTemporary(true));
@@ -259,6 +268,4 @@ public class SSLSecurityNotificationTest extends ActiveMQTestBase {
 
       return messages;
    }
-
-
 }

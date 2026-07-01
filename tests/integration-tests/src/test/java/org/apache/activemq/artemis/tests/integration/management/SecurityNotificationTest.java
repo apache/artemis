@@ -91,6 +91,7 @@ public class SecurityNotificationTest extends ActiveMQTestBase {
       assertEquals(SECURITY_AUTHENTICATION_VIOLATION.toString(), notifications[0].getObjectProperty(ManagementHelper.HDR_NOTIFICATION_TYPE).toString());
       assertEquals(unknownUser, notifications[0].getObjectProperty(ManagementHelper.HDR_USER).toString());
       assertEquals("unavailable", notifications[0].getObjectProperty(ManagementHelper.HDR_CERT_SUBJECT_DN).toString());
+      assertEquals("unavailable", notifications[0].getObjectProperty(ManagementHelper.HDR_CERT_UPN).toString());
       assertEquals("invm:0", notifications[0].getObjectProperty(ManagementHelper.HDR_REMOTE_ADDRESS).toString());
       assertTrue(notifications[0].getTimestamp() >= start);
       assertTrue((long) notifications[0].getObjectProperty(ManagementHelper.HDR_NOTIFICATION_TIMESTAMP) >= start);
@@ -210,6 +211,7 @@ public class SecurityNotificationTest extends ActiveMQTestBase {
       assertEquals("guest", notifications[0].getObjectProperty(ManagementHelper.HDR_VALIDATED_USER).toString());
       assertEquals(address.toString(), notifications[0].getObjectProperty(ManagementHelper.HDR_ADDRESS).toString());
       assertEquals(SimpleString.of("unavailable"), notifications[0].getSimpleStringProperty(ManagementHelper.HDR_CERT_SUBJECT_DN));
+      assertEquals(SimpleString.of("unavailable"), notifications[0].getSimpleStringProperty(ManagementHelper.HDR_CERT_UPN));
       assertTrue(notifications[0].getTimestamp() >= start);
       assertTrue((long) notifications[0].getObjectProperty(ManagementHelper.HDR_NOTIFICATION_TIMESTAMP) >= start);
       assertEquals(notifications[0].getTimestamp(), (long) notifications[0].getObjectProperty(ManagementHelper.HDR_NOTIFICATION_TIMESTAMP));
