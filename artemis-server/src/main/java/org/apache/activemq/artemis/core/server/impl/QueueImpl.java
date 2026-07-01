@@ -123,7 +123,7 @@ import org.apache.activemq.artemis.utils.collections.PriorityLinkedList;
 import org.apache.activemq.artemis.utils.collections.PriorityLinkedListImpl;
 import org.apache.activemq.artemis.utils.collections.TypedProperties;
 import org.apache.activemq.artemis.utils.critical.CriticalComponentImpl;
-import org.jctools.queues.MpscUnboundedArrayQueue;
+import org.jctools.queues.varhandle.MpscUnboundedVarHandleArrayQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -201,7 +201,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
    // Messages will first enter intermediateMessageReferences before they are added to messageReferences. This is to
    // avoid locking the queue on the producer
-   private final MpscUnboundedArrayQueue<MessageReference> intermediateMessageReferences;
+   private final MpscUnboundedVarHandleArrayQueue<MessageReference> intermediateMessageReferences;
 
    // This is where messages are stored
    protected final PriorityLinkedList<MessageReference> messageReferences = new PriorityLinkedListImpl<>(QueueImpl.NUM_PRIORITIES, MessageReferenceImpl.getSequenceComparator());
@@ -456,7 +456,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       this.initialQueueBufferSize = this.cachedAddressSettings.getInitialQueueBufferSize() == null
          ? ActiveMQDefaultConfiguration.INITIAL_QUEUE_BUFFER_SIZE
          : this.cachedAddressSettings.getInitialQueueBufferSize();
-      this.intermediateMessageReferences = new MpscUnboundedArrayQueue<>(initialQueueBufferSize);
+      this.intermediateMessageReferences = new MpscUnboundedVarHandleArrayQueue<>(initialQueueBufferSize);
 
       verifyDisabledConfiguration();
    }

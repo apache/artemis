@@ -42,7 +42,7 @@ import org.apache.activemq.artemis.core.journal.EncodingSupport;
 import org.apache.activemq.artemis.core.journal.impl.SimpleWaitIOCallback;
 import org.apache.activemq.artemis.core.server.ActiveMQScheduledComponent;
 import org.apache.activemq.artemis.utils.ReusableLatch;
-import org.jctools.queues.MpscUnboundedArrayQueue;
+import org.jctools.queues.varhandle.MpscUnboundedVarHandleArrayQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,7 +75,7 @@ public class JDBCSequentialFile implements SequentialFile {
 
    private final JDBCSequentialFileFactoryDriver dbDriver;
 
-   MpscUnboundedArrayQueue<ScheduledWrite> writeQueue = new MpscUnboundedArrayQueue<>(8192);
+   MpscUnboundedVarHandleArrayQueue<ScheduledWrite> writeQueue = new MpscUnboundedVarHandleArrayQueue<>(8192);
 
    // Allows DB Drivers to cache meta data.
    private final Map<Object, Object> metaData = new ConcurrentHashMap<>();

@@ -413,7 +413,7 @@
          <!--needed to compile transport jar-->
          <dependency>
             <groupId>org.jctools</groupId>
-            <artifactId>jctools-core</artifactId>
+            <artifactId>jctools-core-jdk11</artifactId>
             <version>${jctools.version}</version>
             <!-- License: Apache 2.0 -->
          </dependency>
