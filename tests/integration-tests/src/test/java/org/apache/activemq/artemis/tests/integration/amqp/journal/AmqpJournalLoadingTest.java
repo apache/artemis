@@ -21,8 +21,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.protocol.amqp.broker.AMQPMessage;
@@ -38,10 +41,17 @@ import org.junit.jupiter.api.Test;
 public class AmqpJournalLoadingTest extends AmqpClientTestSupport {
 
    @Test
-   public void durableMessageDataNotScannedOnRestartTest() throws Exception {
-      sendMessages(getQueueName(), 1, true);
+   public void durableMessageDataAfterRestart() throws Exception {
+      Map<String, Object> properties = new HashMap<>();
+      properties.put("largeOne", "a".repeat(10 * 1024));
+      sendMessages(getQueueName(), 1, true, null, properties);
       final Queue queueView = getProxyToQueue(getQueueName());
       Wait.assertTrue("All messages should arrive", () -> queueView.getMessageCount() == 1);
+
+      AtomicInteger messageSize = new AtomicInteger(0);
+      queueView.forEach(r -> {
+         messageSize.addAndGet(r.getMessage().getMemoryEstimate());
+      });
 
       server.stop();
       server.start();
@@ -52,14 +62,21 @@ public class AmqpJournalLoadingTest extends AmqpClientTestSupport {
 
       List<AMQPMessage> messageReference = new ArrayList<>(1);
 
+      AtomicInteger messageSizeAfterRestart = new AtomicInteger(0);
+
       afterRestartQueueView.forEach((next) -> {
          final AMQPMessage message = (AMQPMessage)next.getMessage();
-         assertEquals(AMQPMessage.MessageDataScanningStatus.RELOAD_PERSISTENCE, message.getDataScanningStatus());
-         assertTrue(message.isDurable());
-         // Doing the check again in case isDurable messed up the scanning status. It should not change the status by definition
-         assertEquals(AMQPMessage.MessageDataScanningStatus.RELOAD_PERSISTENCE, message.getDataScanningStatus());
+         long memoryEstimate = message.getMemoryEstimate(); // it should not change it
+         assertEquals(AMQPMessage.MessageDataScanningStatus.NOT_SCANNED, message.getDataScanningStatus());
+         message.getApplicationProperties(); // this one should change it
+         assertEquals(AMQPMessage.MessageDataScanningStatus.SCANNED, message.getDataScanningStatus());
+         // the estimate should be the same even after scanning
+         assertEquals(memoryEstimate, message.getMemoryEstimate());
          messageReference.add(message);
+         messageSizeAfterRestart.addAndGet(next.getMessage().getMemoryEstimate());
       });
+
+      assertEquals(messageSize.get(), messageSizeAfterRestart.get());
 
       assertEquals(1, messageReference.size());
 

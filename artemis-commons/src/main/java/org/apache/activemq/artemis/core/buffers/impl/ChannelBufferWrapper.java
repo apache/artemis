@@ -640,6 +640,15 @@ public class ChannelBufferWrapper implements ActiveMQBuffer {
       buffer.writeShort(value);
    }
 
+   @Override
+   public void writeUnsignedShort(final int value) {
+      if (value < 0 || value > 65535) {
+         throw new IllegalArgumentException("Value must be in range 0-65535, got: " + value);
+      }
+      buffer.writeShort((short) value);
+   }
+
+
    /**
     * from {@link java.io.DataInput} interface
     */

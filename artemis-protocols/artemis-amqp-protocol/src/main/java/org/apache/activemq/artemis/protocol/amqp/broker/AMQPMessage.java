@@ -44,13 +44,13 @@ import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.message.openmbean.CompositeDataConstants;
 import org.apache.activemq.artemis.core.message.openmbean.MessageOpenTypeFactory;
-import org.apache.activemq.artemis.core.paging.PagingStore;
 import org.apache.activemq.artemis.core.persistence.CoreMessageObjectPools;
 import org.apache.activemq.artemis.core.persistence.Persister;
 import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.protocol.amqp.converter.AMQPMessageIdHelper;
 import org.apache.activemq.artemis.protocol.amqp.converter.AMQPMessageSupport;
 import org.apache.activemq.artemis.protocol.amqp.converter.AmqpCoreConverter;
+import org.apache.activemq.artemis.protocol.amqp.logger.ActiveMQAMQPProtocolLogger;
 import org.apache.activemq.artemis.protocol.amqp.util.NettyReadable;
 import org.apache.activemq.artemis.protocol.amqp.util.NettyWritable;
 import org.apache.activemq.artemis.protocol.amqp.util.TLSEncode;
@@ -82,6 +82,9 @@ import org.apache.qpid.proton.message.Message;
 import org.apache.qpid.proton.message.impl.MessageImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.proton.codec.EncodingCodes;
+
 
 import static org.apache.activemq.artemis.protocol.amqp.converter.AMQPMessageSupport.getCharsetForTextualContent;
 
@@ -119,6 +122,20 @@ import static org.apache.activemq.artemis.protocol.amqp.converter.AMQPMessageSup
  */
 public abstract class AMQPMessage extends RefCountMessage implements org.apache.activemq.artemis.api.core.Message {
 
+   /**
+    * Minimum memory footprint in bytes for any AMQP message instance.
+    * <p>
+    * This estimate accounts for the complete in-memory overhead including object instance size,
+    * member variables, and associated data structures (e.g., queue references, internal buffers).
+    * <p>
+    * The value is empirically derived from AMQPGlobalMaxTest#testValidateMemoryEstimateAMQP,
+    * which validates memory exhaustion behavior by sending minimal messages until OOM.
+    */
+   public static final int BASE_MEMORY_OVERHEAD = 1300;
+
+   private static final byte DURABLE = 1;
+   private static final byte NON_DURABLE = 0;
+
    private static final SimpleString ANNOTATION_AREA_PREFIX = SimpleString.of("m.");
 
    protected static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
@@ -146,7 +163,7 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
     * developing purposes.
     */
    public enum MessageDataScanningStatus {
-      NOT_SCANNED(0), RELOAD_PERSISTENCE(1), SCANNED(2);
+      NOT_SCANNED(0), SCANNED(1);
 
       private static final MessageDataScanningStatus[] STATES;
 
@@ -198,18 +215,23 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
    protected int messageAnnotationsPosition = VALUE_NOT_PRESENT;
    protected int propertiesPosition = VALUE_NOT_PRESENT;
    protected int applicationPropertiesPosition = VALUE_NOT_PRESENT;
+   protected int applicationPropertiesCount;
    protected int remainingBodyPosition = VALUE_NOT_PRESENT;
 
    // Message level meta data
    protected final long messageFormat;
    protected long messageID;
    protected SimpleString address;
-   protected volatile int memoryEstimate = -1;
-   protected volatile int originalEstimate = -1;
+   protected volatile int memoryEstimate = VALUE_NOT_PRESENT;
    protected long expiration;
    protected boolean expirationReload = false;
-   protected long scheduledTime = -1;
-   protected byte priority = DEFAULT_MESSAGE_PRIORITY;
+   protected long scheduledTime = VALUE_NOT_PRESENT;
+   protected byte priority = VALUE_NOT_PRESENT;
+
+   /**
+    * 0 = false, 1 = true, or VALUE_NOT_PRESENT
+    */
+   protected byte durable = VALUE_NOT_PRESENT;
 
    protected boolean isPaged;
    protected volatile boolean routed = false;
@@ -269,6 +291,11 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
       this.remainingBodyPosition = copy.remainingBodyPosition;
       this.messageDataScanned = copy.messageDataScanned;
    }
+
+   void setMemoryEstimate(int memoryEstimate) {
+      this.memoryEstimate = memoryEstimate;
+   }
+
 
    private static MessageAnnotations copyAnnotations(MessageAnnotations messageAnnotations) {
       if (messageAnnotations == null) {
@@ -546,36 +573,14 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
    // need to synchronize access to lazyDecodeApplicationProperties to avoid clashes with getMemoryEstimate
    protected synchronized ApplicationProperties lazyDecodeApplicationProperties(ReadableBuffer data) {
       if (applicationProperties == null && applicationPropertiesPosition != VALUE_NOT_PRESENT) {
-         applicationProperties = scanForMessageSection(data, applicationPropertiesPosition, ApplicationProperties.class);
-         if (owner != null && memoryEstimate != -1) {
-            // the memory has already been tracked and needs to be updated to reflect the new decoding
-            int addition = unmarshalledApplicationPropertiesMemoryEstimateFromData(data);
-
-            // it is difficult to track the updates for paged messages
-            // for that reason we won't do it if paged
-            // we also only do the update if the message was previously routed
-            // so if a debug method or an interceptor changed the size before routing we would get a different size
-            if (!isPaged && routed) {
-               ((PagingStore) owner).addSize(addition, false);
-               final int updatedEstimate = memoryEstimate + addition;
-               memoryEstimate = updatedEstimate;
-            }
-         }
+         this.applicationProperties = readApplicationProperties(data, applicationPropertiesPosition);
       }
 
       return applicationProperties;
    }
 
-   protected int unmarshalledApplicationPropertiesMemoryEstimateFromData(ReadableBuffer data) {
-      if (applicationProperties != null) {
-         // they have been unmarshalled, estimate memory usage based on their encoded size
-         if (remainingBodyPosition != VALUE_NOT_PRESENT) {
-            return remainingBodyPosition - applicationPropertiesPosition;
-         } else {
-            return data.capacity() - applicationPropertiesPosition;
-         }
-      }
-      return 0;
+   protected ApplicationProperties readApplicationProperties(ReadableBuffer data, int position) {
+      return scanForMessageSection(data, position, ApplicationProperties.class);
    }
 
    @SuppressWarnings("unchecked")
@@ -661,9 +666,6 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
          case NOT_SCANNED:
             scanMessageData();
             break;
-         case RELOAD_PERSISTENCE:
-            lazyScanAfterReloadPersistence();
-            break;
          case SCANNED:
             // NO-OP
             break;
@@ -677,17 +679,18 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
 
    protected synchronized void resetMessageData() {
       header = null;
+      applicationPropertiesCount = 0;
       messageAnnotations = null;
       properties = null;
       applicationProperties = null;
       if (!expirationReload) {
          expiration = 0;
       }
-      priority = DEFAULT_MESSAGE_PRIORITY;
+      priority = VALUE_NOT_PRESENT;
+      durable = VALUE_NOT_PRESENT;
       encodedHeaderSize = 0;
-      memoryEstimate = -1;
-      originalEstimate = -1;
-      scheduledTime = -1;
+      memoryEstimate = VALUE_NOT_PRESENT;
+      scheduledTime = VALUE_NOT_PRESENT;
       encodedDeliveryAnnotationsSize = 0;
       headerPosition = VALUE_NOT_PRESENT;
       deliveryAnnotationsPosition = VALUE_NOT_PRESENT;
@@ -742,7 +745,15 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
                // Lazy decoding will start at the TypeConstructor of these ApplicationProperties
                // but we scan past it to grab the location of the possible body and footer section.
                applicationPropertiesPosition = constructorPos;
-               constructor.skipValue();
+               int apCount = parseApCountAndSkip(data);
+               if (apCount >= 0) {
+                  this.applicationPropertiesCount = apCount;
+               } else {
+                  // if parseApCountAndSkip fails for an invalid message, we will try the skipValue from the original constructor
+                  this.applicationPropertiesCount = 0;
+                  data.position(constructorPos);
+                  constructor.skipValue();
+               }
                remainingBodyPosition = data.hasRemaining() ? data.position() : VALUE_NOT_PRESENT;
                break;
             } else {
@@ -757,6 +768,56 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
          data.rewind();
       }
       this.messageDataScanned = MessageDataScanningStatus.SCANNED.code;
+   }
+
+   public int getApplicationPropertiesCount() {
+      ensureScanning();
+      return applicationPropertiesCount;
+   }
+
+   /**
+    * @return the number of application properties in the encoding, or -1 if the encoding is invalid
+    */
+   private int parseApCountAndSkip(ReadableBuffer data) {
+      byte encodingCode = data.get();
+      int count;
+      int size;
+      switch (encodingCode) {
+         case EncodingCodes.MAP8 -> {
+            size = data.get() & 0xff;
+            if (size > data.limit()) {
+               ActiveMQAMQPProtocolLogger.LOGGER.invalidEncodingApplicationProperties(messageID, "Invalid size on encoding");
+               return -1;
+            }
+            int startPosition = data.position();
+            count = data.get() & 0xff;
+            data.position(startPosition + size);
+         }
+         case EncodingCodes.MAP32 -> {
+            size = data.getInt();
+            if (size < 0 || size > data.limit()) {
+               ActiveMQAMQPProtocolLogger.LOGGER.invalidEncodingApplicationProperties(messageID, "Invalid size on encoding");
+               return -1;
+            }
+            int startPosition = data.position();
+            count = data.getInt();
+            data.position(startPosition + size);
+         }
+         case EncodingCodes.NULL -> {
+            return 0;
+         }
+         default -> {
+            ActiveMQAMQPProtocolLogger.LOGGER.invalidEncodingApplicationProperties(messageID, "Invalid encoding type");
+            return -1;
+         }
+      }
+
+      if (count < 0 || count % 2 != 0) {
+         ActiveMQAMQPProtocolLogger.LOGGER.invalidEncodingApplicationProperties(messageID, "invalid properties count");
+         return -1;
+      }
+
+      return count / 2;
    }
 
    @Override
@@ -882,16 +943,6 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
 
    @Override
    public abstract int getMemoryEstimate();
-
-   @Override
-   public int getOriginalEstimate() {
-      if (originalEstimate < 0) {
-         // getMemoryEstimate should initialize originalEstimate
-         return getMemoryEstimate();
-      } else {
-         return originalEstimate;
-      }
-   }
 
    @Override
    public Map<String, Object> toPropertyMap(int valueSizeLimit) {
@@ -1031,16 +1082,6 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
 
    @Override
    public abstract void reloadPersistence(ActiveMQBuffer record, CoreMessageObjectPools pools);
-
-   protected synchronized void lazyScanAfterReloadPersistence() {
-      assert messageDataScanned == MessageDataScanningStatus.RELOAD_PERSISTENCE.code;
-      scanMessageData();
-      messageDataScanned = MessageDataScanningStatus.SCANNED.code;
-      modified = false;
-      // reinitialise memory estimate as message will already be on a queue
-      // and lazy decode will want to update
-      getMemoryEstimate();
-   }
 
    @Override
    public abstract long getPersistentSize() throws ActiveMQException;
@@ -1220,13 +1261,18 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
 
    @Override
    public boolean isDurable() {
-      if (header != null && header .getDurable() != null) {
-         return header.getDurable();
-      } else {
-         // if header == null and scanningStatus=RELOAD_PERSISTENCE, it means the message can only be durable
-         // even though the parsing hasn't happened yet
-         return getDataScanningStatus() == MessageDataScanningStatus.RELOAD_PERSISTENCE;
+      if (this.durable == VALUE_NOT_PRESENT) {
+         if (header != null && header.getDurable() != null) {
+            reloadSetDurable(header.getDurable());
+         } else {
+            this.durable = NON_DURABLE;
+         }
       }
+      return this.durable == DURABLE;
+   }
+
+   void reloadSetDurable(boolean booleanDurable) {
+      this.durable = booleanDurable ? DURABLE : NON_DURABLE;
    }
 
    @Override
@@ -1236,6 +1282,7 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
       }
 
       header.setDurable(durable);  // Message needs to be re-encoded following this action.
+      reloadSetDurable(durable);
 
       return this;
    }
@@ -1308,7 +1355,18 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
 
    @Override
    public final byte getPriority() {
+      if (priority == VALUE_NOT_PRESENT) {
+         ensureScanning();
+         // if still not present, it means it doesn't have it, so we use the default
+         if (priority == VALUE_NOT_PRESENT) {
+            priority = DEFAULT_MESSAGE_PRIORITY;
+         }
+      }
       return priority;
+   }
+
+   void reloadPriority(byte priority) {
+      this.priority = priority;
    }
 
    @Override
@@ -1322,6 +1380,7 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
          header = new Header();
       }
       header.setPriority(UnsignedByte.valueOf(priority));
+      this.priority = priority;
 
       return this;
    }

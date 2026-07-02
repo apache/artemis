@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.SimpleString;
@@ -255,6 +256,51 @@ public abstract class ActiveMQBufferTestBase extends ActiveMQTestBase {
       // / The max of an unsigned short
       // (http://en.wikipedia.org/wiki/Unsigned_short)
       assertEquals(65535, s2);
+   }
+
+   @Test
+   public void testWriteUnsignedShort() throws Exception {
+      // Test writing 0
+      wrapper.writeUnsignedShort(0);
+      assertEquals(0, wrapper.readUnsignedShort());
+
+      // Test writing max unsigned short value (65535)
+      wrapper.writeUnsignedShort(65535);
+      assertEquals(65535, wrapper.readUnsignedShort());
+
+      // Test writing mid-range value
+      wrapper.writeUnsignedShort(32768);
+      assertEquals(32768, wrapper.readUnsignedShort());
+
+      // Test writing value that would be negative as signed short
+      wrapper.writeUnsignedShort(40000);
+      assertEquals(40000, wrapper.readUnsignedShort());
+   }
+
+   @Test
+   public void testWriteUnsignedShortInvalidValues() throws Exception {
+      // Test that negative values throw IllegalArgumentException
+      try {
+         wrapper.writeUnsignedShort(-1);
+         fail("Expected IllegalArgumentException for negative value");
+      } catch (IllegalArgumentException e) {
+         // expected
+      }
+
+      // Test that values > 65535 throw IllegalArgumentException
+      try {
+         wrapper.writeUnsignedShort(65536);
+         fail("Expected IllegalArgumentException for value > 65535");
+      } catch (IllegalArgumentException e) {
+         // expected
+      }
+
+      try {
+         wrapper.writeUnsignedShort(100000);
+         fail("Expected IllegalArgumentException for value > 65535");
+      } catch (IllegalArgumentException e) {
+         // expected
+      }
    }
 
    @Test

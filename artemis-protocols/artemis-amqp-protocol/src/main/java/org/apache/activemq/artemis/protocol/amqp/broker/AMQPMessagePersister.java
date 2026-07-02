@@ -80,6 +80,17 @@ public class AMQPMessagePersister extends MessagePersister {
       if (address != null) {
          record.setAddress(address);
       }
+
+      if (ID == getID()) {
+         scanAfterReload((AMQPStandardMessage) record);
+      }
       return record;
+   }
+
+   // notice this is muted in AMQPMessagePersisterV4 and after
+   // we will scan the message after reloading for older versions, while in V4 and after we keep everything in the storage.
+   // this is to give the broker a chance to reload messages the first time it's moved through version upgrade
+   protected void scanAfterReload(AMQPStandardMessage message) {
+      message.scanMessageData();
    }
 }

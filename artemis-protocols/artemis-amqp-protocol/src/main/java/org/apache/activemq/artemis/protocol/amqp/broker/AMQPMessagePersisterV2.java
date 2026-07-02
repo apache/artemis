@@ -98,6 +98,9 @@ public class AMQPMessagePersisterV2 extends AMQPMessagePersister {
          extraProperties.decode(buffer.byteBuf(), pool != null ? pool.getPropertiesDecoderPools() : null);
       }
       record.reloadAddress(address);
+      if (ID == getID()) {
+         scanAfterReload((AMQPStandardMessage) record);
+      }
       return record;
    }
 

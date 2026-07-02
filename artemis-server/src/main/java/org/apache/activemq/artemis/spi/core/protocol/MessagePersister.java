@@ -108,6 +108,10 @@ public class MessagePersister implements Persister<Message> {
     */
    @Override
    public void encode(ActiveMQBuffer buffer, Message record) {
+      writePersisterID(buffer);
+   }
+
+   protected void writePersisterID(ActiveMQBuffer buffer) {
       buffer.writeByte(getID());
    }
 
