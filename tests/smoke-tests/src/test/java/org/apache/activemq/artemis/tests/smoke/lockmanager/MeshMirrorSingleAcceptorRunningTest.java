@@ -28,6 +28,8 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 import java.io.File;
 import java.lang.invoke.MethodHandles;
+import java.net.URL;
+import java.nio.file.Files;
 import java.util.function.Consumer;
 
 import org.apache.activemq.artemis.api.core.management.SimpleManagement;
@@ -36,28 +38,39 @@ import org.apache.activemq.artemis.tests.smoke.common.SmokeTestBase;
 import org.apache.activemq.artemis.tests.util.CFUtil;
 import org.apache.activemq.artemis.utils.FileUtil;
 import org.apache.activemq.artemis.utils.Wait;
+import org.apache.activemq.artemis.utils.kubernetes.KubernetesClient;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class StarMirrorSingleAcceptorRunningTest extends SmokeTestBase {
+public class MeshMirrorSingleAcceptorRunningTest extends SmokeTestBase {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-   public static final String SERVER_NAME_WITH_ZK_A = "lockmanager/starMirrorSingleAcceptor/ZK/A";
-   public static final String SERVER_NAME_WITH_ZK_B = "lockmanager/starMirrorSingleAcceptor/ZK/B";
-   public static final String SERVER_NAME_WITH_ZK_C = "lockmanager/starMirrorSingleAcceptor/ZK/C";
+   public static final String SERVER_NAME_WITH_FAKEKUBE_A = "lockmanager/meshMirrorSingleAcceptor/fakekube/A";
+   public static final String SERVER_NAME_WITH_FAKEKUBE_B = "lockmanager/meshMirrorSingleAcceptor/fakekube/B";
+   public static final String SERVER_NAME_WITH_FAKEKUBE_C = "lockmanager/meshMirrorSingleAcceptor/fakekube/C";
 
-   public static final String SERVER_NAME_WITH_FILE_A = "lockmanager/starMirrorSingleAcceptor/file/A";
-   public static final String SERVER_NAME_WITH_FILE_B = "lockmanager/starMirrorSingleAcceptor/file/B";
-   public static final String SERVER_NAME_WITH_FILE_C = "lockmanager/starMirrorSingleAcceptor/file/C";
+   public static final String SERVER_NAME_WITH_MINIKUBE_A = "lockmanager/meshMirrorSingleAcceptor/minikube/A";
+   public static final String SERVER_NAME_WITH_MINIKUBE_B = "lockmanager/meshMirrorSingleAcceptor/minikube/B";
+   public static final String SERVER_NAME_WITH_MINIKUBE_C = "lockmanager/meshMirrorSingleAcceptor/minikube/C";
+
+   public static final String SERVER_NAME_WITH_ZK_A = "lockmanager/meshMirrorSingleAcceptor/ZK/A";
+   public static final String SERVER_NAME_WITH_ZK_B = "lockmanager/meshMirrorSingleAcceptor/ZK/B";
+   public static final String SERVER_NAME_WITH_ZK_C = "lockmanager/meshMirrorSingleAcceptor/ZK/C";
+
+   public static final String SERVER_NAME_WITH_FILE_A = "lockmanager/meshMirrorSingleAcceptor/file/A";
+   public static final String SERVER_NAME_WITH_FILE_B = "lockmanager/meshMirrorSingleAcceptor/file/B";
+   public static final String SERVER_NAME_WITH_FILE_C = "lockmanager/meshMirrorSingleAcceptor/file/C";
 
 
-   public static final String SERVER_NAME_BRIDGE_TARGET = "lockmanager/starMirrorSingleAcceptor/bridgeTarget";
+   public static final String SERVER_NAME_BRIDGE_TARGET = "lockmanager/meshMirrorSingleAcceptor/bridgeTarget";
 
    // Test constants
    private static final int ALTERNATING_TEST_ITERATIONS = 3;
@@ -137,13 +150,92 @@ public class StarMirrorSingleAcceptorRunningTest extends SmokeTestBase {
 
    }
 
+   // This test will use minikube if available and running.
+   // To run this test locally, start minikube with: minikube start
+   // It will be ignored (with an assumption) if the configuration options provided by minikube cannot be found.
+   // See MinikubeSupport.supported for how this validation occurs.
+   // This test is important for development purposes. testAlternatingFakekube is provided for CI validations.
+   @Test
+   public void testAlternatingMinikube() throws Throwable {
+      Assumptions.assumeTrue(MinikubeSupport.supported());
+
+      {
+         createServers(SERVER_NAME_WITH_MINIKUBE_A, SERVER_NAME_WITH_MINIKUBE_B, SERVER_NAME_WITH_MINIKUBE_C,
+                       "./src/main/resources/servers/lockmanager/meshMirrorSingleAcceptor/kube/A",
+                       "./src/main/resources/servers/lockmanager/meshMirrorSingleAcceptor/kube/B",
+                       "./src/main/resources/servers/lockmanager/meshMirrorSingleAcceptor/kube/C",
+                       null);
+
+         cleanupData(SERVER_NAME_WITH_MINIKUBE_A);
+         cleanupData(SERVER_NAME_WITH_MINIKUBE_B);
+         cleanupData(SERVER_NAME_WITH_MINIKUBE_C);
+         cleanupData(SERVER_NAME_BRIDGE_TARGET);
+      }
+
+      MinikubeSupport.setupRBAC();
+      runAfter(MinikubeSupport::cleanupRBAC);
+
+      String apiURI = MinikubeSupport.getKubeconfigServer();
+
+      String token = MinikubeSupport.generateKubectlToken();
+      assertNotNull(token);
+
+      File tokenFile = new File(getServerLocation(SERVER_NAME_WITH_MINIKUBE_A), "token.cr");
+      Files.writeString(tokenFile.toPath(), token);
+
+      File caFile = new File(getServerLocation(SERVER_NAME_WITH_MINIKUBE_A), "ca.crt");
+      String caCert = MinikubeSupport.extractCACertificate();
+      Files.writeString(caFile.toPath(), caCert);
+
+      String properties = paramList(pairSystemD(KubernetesClient.KUBERNETES_API_URI, apiURI), pairSystemD(KubernetesClient.KUBERNETES_TOKEN_PATH, tokenFile.getAbsolutePath()), pairSystemD(KubernetesClient.KUBERNETES_CA_PATH, caFile.getAbsolutePath()));
+
+      assertTrue(FileUtil.append(new File(getServerLocation(SERVER_NAME_WITH_MINIKUBE_A), "etc/artemis.profile"), "\nJAVA_ARGS=\"$JAVA_ARGS " + properties + "\"\n"));
+      assertTrue(FileUtil.append(new File(getServerLocation(SERVER_NAME_WITH_MINIKUBE_B), "etc/artemis.profile"), "\nJAVA_ARGS=\"$JAVA_ARGS " + properties + "\"\n"));
+      assertTrue(FileUtil.append(new File(getServerLocation(SERVER_NAME_WITH_MINIKUBE_C), "etc/artemis.profile"), "\nJAVA_ARGS=\"$JAVA_ARGS " + properties + "\"\n"));
+
+      testAlternating(SERVER_NAME_WITH_MINIKUBE_A, SERVER_NAME_WITH_MINIKUBE_B, SERVER_NAME_WITH_MINIKUBE_C);
+   }
+
+   @Test
+   public void testAlternatingFakekube() throws Throwable {
+      disableCheckThread();
+      try (Fakekube fakekube = new Fakekube()) {
+         fakekube.start(getTestDirfile());
+
+         {
+            createServers(SERVER_NAME_WITH_FAKEKUBE_A, SERVER_NAME_WITH_FAKEKUBE_B, SERVER_NAME_WITH_FAKEKUBE_C,
+                          "./src/main/resources/servers/lockmanager/meshMirrorSingleAcceptor/kube/A",
+                          "./src/main/resources/servers/lockmanager/meshMirrorSingleAcceptor/kube/B",
+                          "./src/main/resources/servers/lockmanager/meshMirrorSingleAcceptor/kube/C",
+                          null);
+
+            cleanupData(SERVER_NAME_WITH_FAKEKUBE_A);
+            cleanupData(SERVER_NAME_WITH_FAKEKUBE_B);
+            cleanupData(SERVER_NAME_WITH_FAKEKUBE_C);
+            cleanupData(SERVER_NAME_BRIDGE_TARGET);
+         }
+
+         String clientToken = MeshMirrorSingleAcceptorRunningTest.class.getClassLoader().getResource("client_token").getPath();
+
+         URL caPath = LockCoordinatorTest.class.getClassLoader().getResource("client-and-server-ca-certs.pem");
+
+         String properties = paramList(pairSystemD(KubernetesClient.KUBERNETES_API_URI, fakekube.getApiUri()), pairSystemD(KubernetesClient.KUBERNETES_TOKEN_PATH, clientToken), pairSystemD(KubernetesClient.KUBERNETES_CA_PATH, caPath.getPath()));
+
+         assertTrue(FileUtil.append(new File(getServerLocation(SERVER_NAME_WITH_FAKEKUBE_A), "etc/artemis.profile"), "\nJAVA_ARGS=\"$JAVA_ARGS " + properties + "\"\n"));
+         assertTrue(FileUtil.append(new File(getServerLocation(SERVER_NAME_WITH_FAKEKUBE_B), "etc/artemis.profile"), "\nJAVA_ARGS=\"$JAVA_ARGS " + properties + "\"\n"));
+         assertTrue(FileUtil.append(new File(getServerLocation(SERVER_NAME_WITH_FAKEKUBE_C), "etc/artemis.profile"), "\nJAVA_ARGS=\"$JAVA_ARGS " + properties + "\"\n"));
+
+         testAlternating(SERVER_NAME_WITH_FAKEKUBE_A, SERVER_NAME_WITH_FAKEKUBE_B, SERVER_NAME_WITH_FAKEKUBE_C);
+      }
+   }
+
    @Test
    public void testAlternatingZK() throws Throwable {
       {
          createServers(SERVER_NAME_WITH_ZK_A, SERVER_NAME_WITH_ZK_B, SERVER_NAME_WITH_ZK_C,
-                          "./src/main/resources/servers/lockmanager/starMirrorSingleAcceptor/ZK/A",
-                          "./src/main/resources/servers/lockmanager/starMirrorSingleAcceptor/ZK/B",
-                          "./src/main/resources/servers/lockmanager/starMirrorSingleAcceptor/ZK/C",
+                          "./src/main/resources/servers/lockmanager/meshMirrorSingleAcceptor/ZK/A",
+                          "./src/main/resources/servers/lockmanager/meshMirrorSingleAcceptor/ZK/B",
+                          "./src/main/resources/servers/lockmanager/meshMirrorSingleAcceptor/ZK/C",
                           null);
 
          cleanupData(SERVER_NAME_WITH_ZK_A);
@@ -167,9 +259,9 @@ public class StarMirrorSingleAcceptorRunningTest extends SmokeTestBase {
 
       {
          createServers(SERVER_NAME_WITH_FILE_A, SERVER_NAME_WITH_FILE_B, SERVER_NAME_WITH_FILE_C,
-                          "./src/main/resources/servers/lockmanager/starMirrorSingleAcceptor/file/A",
-                          "./src/main/resources/servers/lockmanager/starMirrorSingleAcceptor/file/B",
-                          "./src/main/resources/servers/lockmanager/starMirrorSingleAcceptor/file/C",
+                          "./src/main/resources/servers/lockmanager/meshMirrorSingleAcceptor/file/A",
+                          "./src/main/resources/servers/lockmanager/meshMirrorSingleAcceptor/file/B",
+                          "./src/main/resources/servers/lockmanager/meshMirrorSingleAcceptor/file/C",
                           s -> customizeFileServer(s, fileLock));
 
          cleanupData(SERVER_NAME_WITH_FILE_A);
@@ -192,7 +284,7 @@ public class StarMirrorSingleAcceptorRunningTest extends SmokeTestBase {
       final String queueName = "myQueue";
       final String bridgeQueue = "bridgeQueue";
 
-      validateStar(cfX);
+      validateMesh(cfX);
 
       for (int i = 0; i < ALTERNATING_TEST_ITERATIONS; i++) {
          String activeServer = (i % 3 == 0) ? "A" : (i % 3 == 1) ? "B" : "C";
@@ -260,7 +352,7 @@ public class StarMirrorSingleAcceptorRunningTest extends SmokeTestBase {
       assertMessageCount("tcp://localhost:61002", queueName, 0);
       assertEmptySNFs();
 
-      validateStar(cfX);
+      validateMesh(cfX);
    }
 
    private void assertEmptySNFs() throws Exception {
@@ -274,7 +366,7 @@ public class StarMirrorSingleAcceptorRunningTest extends SmokeTestBase {
       assertMessageCount("tcp://localhost:61002", "$ACTIVEMQ_ARTEMIS_MIRROR_mirrorB", 0);
    }
 
-   private void validateStar(ConnectionFactory cfX) throws Exception {
+   private void validateMesh(ConnectionFactory cfX) throws Exception {
       // validate the star combination
       sendMessages(cfX, "myQueue", 1_000);
       assertMessageCount("tcp://localhost:61000", "myQueue", 1_000);

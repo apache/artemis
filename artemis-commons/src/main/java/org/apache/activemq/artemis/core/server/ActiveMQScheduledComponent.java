@@ -44,15 +44,15 @@ public abstract class ActiveMQScheduledComponent implements ActiveMQComponent, R
    /**
     * initialDelay < 0 would mean no initial delay, use the period instead
     */
-   private long initialDelay;
-   private long period;
-   private TimeUnit timeUnit;
+   protected long initialDelay;
+   protected long period;
+   protected TimeUnit timeUnit;
    protected final Executor executor;
-   private volatile boolean isStarted;
-   private ScheduledFuture future;
-   private final boolean onDemand;
+   protected volatile boolean isStarted;
+   protected ScheduledFuture future;
+   protected final boolean onDemand;
    // The start/stop actions shouldn't interact concurrently with delay so it doesn't need to be volatile
-   private AtomicBoolean bookedForRunning;
+   protected AtomicBoolean bookedForRunning;
 
    /**
     * It creates a scheduled component that can trigger {@link #run()} with a fixed {@code checkPeriod} on a configured
@@ -343,7 +343,7 @@ public abstract class ActiveMQScheduledComponent implements ActiveMQComponent, R
       }
    }
 
-   private void runForScheduler(AtomicBoolean booked) {
+   protected void runForScheduler(AtomicBoolean booked) {
       if (!booked.compareAndSet(false, true)) {
          // let's skip this execution because there is:
          // - a previously submitted period task yet to start -> executor is probably overbooked!

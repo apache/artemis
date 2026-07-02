@@ -89,7 +89,7 @@ import org.eclipse.jetty.util.thread.ThreadPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.activemq.artemis.core.remoting.impl.ssl.SSLSupport.checkPemProviderLoaded;
+import static org.apache.activemq.artemis.utils.ssl.KeyStoreSupport.checkPemProviderLoaded;
 
 public class WebServerComponent implements ExternalComponent, WebServerComponentMarker {
 

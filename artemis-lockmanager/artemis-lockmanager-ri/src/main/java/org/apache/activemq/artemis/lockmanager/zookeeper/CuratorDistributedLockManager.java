@@ -28,8 +28,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.activemq.artemis.lockmanager.AbstractDistributedLockManager;
 import org.apache.activemq.artemis.lockmanager.DistributedLock;
-import org.apache.activemq.artemis.lockmanager.DistributedLockManager;
 import org.apache.activemq.artemis.lockmanager.MutableLong;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -42,7 +42,6 @@ import org.apache.curator.retry.RetryNTimes;
 import org.apache.curator.utils.DebugUtils;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.joining;
 
 /**
  * ZooKeeper-based distributed lock manager using Apache Curator.
@@ -58,7 +57,7 @@ import static java.util.stream.Collectors.joining;
  *   <li><b>retries-ms</b> (optional, default: 1000): Delay in milliseconds between retry attempts</li>
  * </ul>
  */
-public class CuratorDistributedLockManager implements DistributedLockManager, ConnectionStateListener {
+public class CuratorDistributedLockManager extends AbstractDistributedLockManager implements ConnectionStateListener {
 
    enum PrimitiveType {
       lock, mutableLong;
@@ -111,6 +110,11 @@ public class CuratorDistributedLockManager implements DistributedLockManager, Co
       }
    }
 
+   @Override
+   protected Set<String> getValidParams() {
+      return VALID_PARAMS;
+   }
+
    private static final String CONNECT_STRING_PARAM = "connect-string";
    private static final String NAMESPACE_PARAM = "namespace";
    private static final String SESSION_MS_PARAM = "session-ms";
@@ -126,7 +130,6 @@ public class CuratorDistributedLockManager implements DistributedLockManager, Co
       CONNECTION_MS_PARAM,
       RETRIES_PARAM,
       RETRIES_MS_PARAM).collect(Collectors.toSet());
-   private static final String VALID_PARAMS_ON_ERROR = VALID_PARAMS.stream().collect(joining(","));
    // It's 9 times the default ZK tick time ie 2000 ms
    private static final String DEFAULT_SESSION_TIMEOUT_MS = Integer.toString(18_000);
    private static final String DEFAULT_CONNECTION_TIMEOUT_MS = Integer.toString(8_000);
@@ -134,17 +137,6 @@ public class CuratorDistributedLockManager implements DistributedLockManager, Co
    private static final String DEFAULT_RETRIES_MS = Integer.toString(1000);
    // why 1/3 of the session? https://cwiki.apache.org/confluence/display/CURATOR/TN14
    private static final String DEFAULT_SESSION_PERCENT = Integer.toString(33);
-
-   private static Map<String, String> validateParameters(Map<String, String> config) {
-      config.forEach((parameterName, ignore) -> validateParameter(parameterName));
-      return config;
-   }
-
-   private static void validateParameter(String parameterName) {
-      if (!VALID_PARAMS.contains(parameterName)) {
-         throw new IllegalArgumentException("non existent parameter " + parameterName + ": accepted list is " + VALID_PARAMS_ON_ERROR);
-      }
-   }
 
    private CuratorFramework client;
    private final Map<PrimitiveId, CuratorDistributedPrimitive> primitives;
@@ -161,10 +153,6 @@ public class CuratorDistributedLockManager implements DistributedLockManager, Co
    }
 
    public CuratorDistributedLockManager(Map<String, String> config) {
-      this(validateParameters(config), true);
-   }
-
-   private CuratorDistributedLockManager(Map<String, String> config, boolean ignore) {
       this(config.get(CONNECT_STRING_PARAM),
            config.get(NAMESPACE_PARAM),
            Integer.parseInt(config.getOrDefault(SESSION_MS_PARAM, DEFAULT_SESSION_TIMEOUT_MS)),
@@ -172,6 +160,7 @@ public class CuratorDistributedLockManager implements DistributedLockManager, Co
            Integer.parseInt(config.getOrDefault(CONNECTION_MS_PARAM, DEFAULT_CONNECTION_TIMEOUT_MS)),
            Integer.parseInt(config.getOrDefault(RETRIES_PARAM, DEFAULT_RETRIES)),
            Integer.parseInt(config.getOrDefault(RETRIES_MS_PARAM, DEFAULT_RETRIES_MS)));
+      validateParameters(config);
    }
 
    private CuratorDistributedLockManager(String connectString,

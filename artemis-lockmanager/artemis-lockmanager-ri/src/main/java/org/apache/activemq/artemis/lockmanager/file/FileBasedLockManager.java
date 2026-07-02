@@ -23,11 +23,14 @@ import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.apache.activemq.artemis.lockmanager.AbstractDistributedLockManager;
 import org.apache.activemq.artemis.lockmanager.DistributedLock;
-import org.apache.activemq.artemis.lockmanager.DistributedLockManager;
 import org.apache.activemq.artemis.lockmanager.MutableLong;
 import org.apache.activemq.artemis.lockmanager.UnavailableStateException;
 
@@ -42,14 +45,25 @@ import org.apache.activemq.artemis.lockmanager.UnavailableStateException;
  *   The directory must be created in advance before using this lock manager.</li>
  * </ul>
  */
-public class FileBasedLockManager implements DistributedLockManager {
+public class FileBasedLockManager extends AbstractDistributedLockManager {
 
    private final File locksFolder;
    private final Map<String, FileDistributedLock> locks;
    private boolean started;
 
+   private static final String LOCKS_FOLDER = "locks-folder";
+   private static final Set<String> VALID_PARAMS = Stream.of(
+      LOCKS_FOLDER).collect(Collectors.toSet());
+
+   @Override
+   protected Set<String> getValidParams() {
+      return VALID_PARAMS;
+   }
+
    public FileBasedLockManager(Map<String, String> args) {
       this(new File(args.get("locks-folder")));
+
+      validateParameters(args);
    }
 
    public FileBasedLockManager(File locksFolder) {

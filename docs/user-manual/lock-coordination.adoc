@@ -202,3 +202,85 @@ This is the recommended approach for production deployments as it provides bette
 |1000
 |Delay in milliseconds between retry attempts
 |===
+
+=== Kubernetes-Based Lock Manager
+
+The Kubernetes-based lock manager uses Kubernetes Lease resources to manage distributed locks.
+This implementation is designed for deployments running in Kubernetes environments and leverages the Kubernetes coordination API for leader election and distributed locking.
+
+The lock manager uses the Kubernetes Lease coordination mechanism, which automatically handles lease renewal and expiration.
+When running inside a Kubernetes cluster, the implementation can automatically detect the namespace from the service account configuration.
+
+**Class name:** `org.apache.artemis.lock.kube.KubeLockManager`
+
+**Properties:**
+
+[cols="1,1,1,3"]
+|===
+|Property |Required |Default |Description
+
+|hostname
+|No
+|HOSTNAME environment variable
+|The hostname identifier for this broker instance. Used to identify which pod currently holds the lock. When running in Kubernetes, this is typically set automatically by the cluster.
+
+|namespace
+|No
+|Auto-detected from `/var/run/secrets/kubernetes.io/serviceaccount/namespace`, falls back to "default"
+|The Kubernetes namespace where Lease resources will be created and managed. When running inside a Kubernetes cluster, this is automatically read from the service account configuration.
+
+|lease-timeout
+|No
+|30
+|The lease timeout in seconds. This determines how long a lease remains valid without renewal. If a broker crashes or loses connectivity, the lease will expire after this period, allowing another broker to acquire it.
+|===
+
+**Example Configuration:**
+
+[,xml]
+----
+<lock-coordinators>
+   <lock-coordinator name="kube-lock">
+      <class-name>org.apache.artemis.lock.kube.KubeLockManager</class-name>
+      <lock-id>artemis-ha-lock</lock-id>
+      <check-period>5000</check-period>
+
+      <properties>
+         <property key="namespace" value="artemis-namespace"/>
+         <property key="lease-timeout" value="30"/>
+      </properties>
+   </lock-coordinator>
+</lock-coordinators>
+----
+
+**Kubernetes RBAC Requirements:**
+
+The broker's service account requires permissions to create, read, update, and delete Lease resources in the coordination.k8s.io API group.
+A minimal RBAC configuration would include:
+
+[,yaml]
+----
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: artemis-lease-manager
+  namespace: artemis-namespace
+rules:
+- apiGroups: ["coordination.k8s.io"]
+  resources: ["leases"]
+  verbs: ["get", "create", "update", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: artemis-lease-manager-binding
+  namespace: artemis-namespace
+subjects:
+- kind: ServiceAccount
+  name: artemis
+  namespace: artemis-namespace
+roleRef:
+  kind: Role
+  name: artemis-lease-manager
+  apiGroup: rbac.authorization.k8s.io
+----

@@ -31,8 +31,8 @@ import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
 
 import org.apache.activemq.artemis.logs.AuditLogger;
-import org.apache.activemq.artemis.spi.core.security.jaas.kubernetes.client.KubernetesClient;
-import org.apache.activemq.artemis.spi.core.security.jaas.kubernetes.client.KubernetesClientImpl;
+import org.apache.activemq.artemis.spi.core.security.jaas.kubernetes.client.TokenReviewKubeClient;
+import org.apache.activemq.artemis.spi.core.security.jaas.kubernetes.client.TokenReviewKubeClientImpl;
 import org.apache.activemq.artemis.spi.core.security.jaas.kubernetes.model.TokenReview;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,14 +49,14 @@ public class KubernetesLoginModule extends PropertiesLoader implements AuditLogi
    private boolean ignoreTokenReviewRoles = false;
    private Map<String, Set<String>> roles;
    private final Set<Principal> principals = new LinkedHashSet<>();
-   private final KubernetesClient client;
+   private final TokenReviewKubeClient client;
 
-   public KubernetesLoginModule(KubernetesClient client) {
+   public KubernetesLoginModule(TokenReviewKubeClient client) {
       this.client = client;
    }
 
    public KubernetesLoginModule() {
-      this(new KubernetesClientImpl());
+      this(new TokenReviewKubeClientImpl());
    }
 
    @Override

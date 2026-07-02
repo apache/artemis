@@ -131,6 +131,15 @@ public class FileUtil {
       }
    }
 
+   public static boolean append(File file, String append) throws Exception {
+      if (!file.exists()) {
+         return false;
+      }
+
+      Files.writeString(file.toPath(), append, java.nio.file.StandardOpenOption.APPEND);
+      return true;
+   }
+
    public static String readFile(InputStream inputStream) throws Exception {
       BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
       String fileOutput = bufferedReader.lines().collect(Collectors.joining(System.lineSeparator()));

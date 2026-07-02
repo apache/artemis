@@ -52,12 +52,15 @@ public class TokenReview {
 
    public static TokenReview fromJsonString(String obj) {
       JsonObject json = JsonLoader.readObject(new StringReader(obj));
-      JsonObject status = json.getJsonObject("status");
-      return TokenReview.fromJson(status);
+      return TokenReview.fromJson(json);
    }
 
-   private static TokenReview fromJson(JsonObject obj) {
+   public static TokenReview fromJson(JsonObject obj) {
       TokenReview t = new TokenReview();
+      if (obj == null) {
+         return t;
+      }
+      obj = obj.getJsonObject("status");
       if (obj == null) {
          return t;
       }

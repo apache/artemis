@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.activemq.artemis.core.remoting.impl.ssl;
+package org.apache.activemq.artemis.utils.ssl;
 
 import java.security.Security;
 
