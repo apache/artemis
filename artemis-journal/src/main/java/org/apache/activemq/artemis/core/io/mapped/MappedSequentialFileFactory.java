@@ -98,6 +98,7 @@ public final class MappedSequentialFileFactory extends AbstractSequentialFileFac
       return this;
    }
 
+   @Override
    public MappedSequentialFileFactory disableBufferReuse() {
       this.bufferPooling = false;
       return this;

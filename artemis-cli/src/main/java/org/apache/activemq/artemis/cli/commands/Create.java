@@ -238,6 +238,9 @@ public class Create extends InstallAbstract {
    @Option(names = "--aio", description = "Set the journal as asyncio.")
    private boolean aio;
 
+   @Option(names = "--aio2", description = "Set the journal as asyncio 2 (Panama FFM).")
+   private boolean aio2;
+
    @Option(names = "--nio", description = "Set the journal as nio.")
    private boolean nio;
 
@@ -1010,7 +1013,7 @@ public class Create extends InstallAbstract {
             aio = false;
          }
       }
-      int countJournalTypes = countBoolean(aio, nio, mapped);
+      int countJournalTypes = countBoolean(aio2, aio, nio, mapped);
       if (countJournalTypes > 1) {
          throw new RuntimeException("You can only select one journal type (--nio | --aio | --mapped).");
       }
@@ -1023,7 +1026,9 @@ public class Create extends InstallAbstract {
          }
       }
 
-      if (aio) {
+      if (aio2) {
+         journalType = JournalType.ASYNCIO_2;
+      } else if (aio) {
          journalType = JournalType.ASYNCIO;
       } else if (nio) {
          journalType = JournalType.NIO;

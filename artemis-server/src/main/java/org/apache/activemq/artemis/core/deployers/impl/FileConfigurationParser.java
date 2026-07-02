@@ -91,6 +91,7 @@ import org.apache.activemq.artemis.core.config.routing.PoolConfiguration;
 import org.apache.activemq.artemis.core.config.storage.DatabaseStorageConfiguration;
 import org.apache.activemq.artemis.core.config.storage.FileStorageConfiguration;
 import org.apache.activemq.artemis.core.io.aio.AIOSequentialFileFactory;
+import org.apache.artemis.core.io.aio2.AIO2Helper;
 import org.apache.activemq.artemis.core.security.Role;
 import org.apache.activemq.artemis.core.server.ActiveMQMessageBundle;
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
@@ -803,6 +804,17 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
          // We do the check here to see if AIO is supported so we can use the correct defaults and/or use correct
          // settings in xml. If we fall back later on these settings can be ignored.
          boolean supportsAIO = AIOSequentialFileFactory.isSupported();
+
+         if (!supportsAIO) {
+            if (validateAIO) {
+               ActiveMQServerLogger.LOGGER.AIONotFound();
+            }
+            config.setJournalType(JournalType.NIO);
+         }
+      } else if (config.getJournalType() == JournalType.ASYNCIO_2) {
+         // We do the check here to see if AIO is supported so we can use the correct defaults and/or use correct
+         // settings in xml. If we fall back later on these settings can be ignored.
+         boolean supportsAIO = AIO2Helper.isSupported();
 
          if (!supportsAIO) {
             if (validateAIO) {

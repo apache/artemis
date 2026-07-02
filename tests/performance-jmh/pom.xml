@@ -57,6 +57,11 @@
             <artifactId>artemis-commons</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.apache.activemq</groupId>
+            <artifactId>activemq-artemis-native</artifactId>
+            <version>${activemq-artemis-native-version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.openjdk.jmh</groupId>
             <artifactId>jmh-core</artifactId>
             <version>${jmh.version}</version>
@@ -115,5 +120,39 @@
             </plugin>
         </plugins>
     </build>
+    <profiles>
+        <profile>
+            <id>jdk24onwards</id>
+            <activation>
+                <jdk>[24,)</jdk>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.artemis</groupId>
+                    <artifactId>artemis-journal</artifactId>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>java24-compile</id>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>compile</goal>
+                                </goals>
+                                <configuration>
+                                    <release>24</release>
+                                    <compileSourceRoots>${project.basedir}/src/main/java24</compileSourceRoots>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

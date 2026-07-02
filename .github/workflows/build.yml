@@ -55,6 +55,11 @@ jobs:
           java-version: ${{ matrix.java }}
           distribution: 'temurin'
 
+      - name: Install System libaio Packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libaio1 libaio-dev
+
       # use 'install' so smoke-tests will work
       # By setting anything to org.apache.activemq.artemis.core.io.aio.AIOSequentialFileFactory.DISABLED we are disabling libaio loading on the testsuite
       - name: Fast Tests
