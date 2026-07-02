@@ -37,10 +37,10 @@ public class QueueCheck extends CheckAbstract {
    @Option(names = "--up", description = "Check that the queue exists and is not paused. This check is executed by default if there are no other checks.")
    private boolean up;
 
-   @Option(names = "--browse", description = "Number of the messages to browse or -1 to check that the queue is browsable.")
+   @Option(names = "--browse", description = "Number of the messages to browse or -1 to browse at most 1 message only if it is immediately available (succeeding also if no messages are available).")
    private Integer browse;
 
-   @Option(names = "--consume", description = "Number of the messages to consume or -1 to check that the queue is consumable.")
+   @Option(names = "--consume", description = "Number of the messages to consume or -1 to consume at most 1 message only if it is immediately available (succeeding also if no messages are available).")
    private Integer consume;
 
    @Option(names = "--produce", description = "Number of the messages to produce.")
