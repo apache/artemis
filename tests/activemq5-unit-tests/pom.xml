@@ -86,12 +86,6 @@
       </dependency>
 
       <dependency>
-         <groupId>org.apache.activemq</groupId>
-         <artifactId>activemq-stomp</artifactId>
-         <version>${activemq5-version}</version>
-      </dependency>
-
-      <dependency>
          <groupId>junit</groupId>
          <artifactId>junit</artifactId>
          <scope>compile</scope>
