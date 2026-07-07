@@ -1302,8 +1302,14 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
 
    private synchronized void updateReadPropertiesStatus(String propsId, long adler32Hash, long fileAdler32) {
       JsonObjectBuilder propertiesReadStatusBuilder = JsonLoader.createObjectBuilder();
+
+      // keep "alder32" & "fileAlder32" for backwards compatibility
+      propertiesReadStatusBuilder.add("alder32", String.valueOf(adler32Hash));
+      propertiesReadStatusBuilder.add("fileAlder32", String.valueOf(fileAdler32));
+
       propertiesReadStatusBuilder.add("adler32", String.valueOf(adler32Hash));
       propertiesReadStatusBuilder.add("fileAdler32", String.valueOf(fileAdler32));
+
       JsonObjectBuilder jsonObjectBuilder = JsonUtil.objectBuilderWithValueAtPath("properties/" + propsId, propertiesReadStatusBuilder.build());
       JsonObject jsonStatus = getJsonStatus();
       this.jsonStatus = JsonUtil.mergeAndUpdate(jsonStatus, jsonObjectBuilder.build());

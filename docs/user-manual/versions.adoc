@@ -15,6 +15,18 @@ NOTE: Follow the general upgrade procedure outlined in the xref:upgrading.adoc#u
 
 :sectnums!:
 
+== Version 2.56.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=xxx[Full release notes]
+
+=== Highlights
+
+*
+
+=== Upgrading from 2.55.0
+
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-6128[ARTEMIS-6128] the `Alder32` and `fileAlder32` properties have been deprecated in favor of `Adler32` and `fileAdler32` respectively.
+
 == Version 2.55.0
 
 https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12357054[Full release notes]
