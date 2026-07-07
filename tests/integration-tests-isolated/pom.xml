@@ -233,6 +233,26 @@
             </exclusion>
          </exclusions>
       </dependency>
+      <dependency>
+         <groupId>org.mockito</groupId>
+         <artifactId>mockito-core</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.mock-server</groupId>
+         <artifactId>mockserver-netty</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.mock-server</groupId>
+         <artifactId>mockserver-core</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.mock-server</groupId>
+         <artifactId>mockserver-client-java</artifactId>
+         <scope>test</scope>
+      </dependency>
    </dependencies>
 
    <build>
@@ -270,12 +290,23 @@
          </plugin>
          <plugin>
             <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <executions>
+               <execution>
+                  <goals>
+                     <goal>properties</goal>
+                  </goals>
+               </execution>
+            </executions>
+         </plugin>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-surefire-plugin</artifactId>
             <configuration>
                <forkCount>1</forkCount>
                <reuseForks>false</reuseForks>
                <skipTests>${skipIsolatedIntegrationTests}</skipTests>
-               <argLine>-Djgroups.bind_addr=::1 ${activemq-surefire-argline} ${its-surefire-extra-args} -Dorg.apache.activemq.SERIALIZABLE_PACKAGES="java.lang,javax.security,java.util,org.apache.activemq,org.fusesource.hawtbuf"</argLine>
+               <argLine>-Djgroups.bind_addr=::1 ${activemq-surefire-argline} ${its-surefire-extra-args} -Dorg.apache.activemq.SERIALIZABLE_PACKAGES="java.lang,javax.security,java.util,org.apache.activemq,org.fusesource.hawtbuf" -javaagent:${org.mockito:mockito-core:jar}</argLine>
             </configuration>
          </plugin>
       </plugins>

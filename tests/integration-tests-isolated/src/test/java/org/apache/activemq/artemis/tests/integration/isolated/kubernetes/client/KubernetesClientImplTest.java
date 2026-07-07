@@ -14,13 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.activemq.artemis.spi.core.security.jaas.kubernetes.client;
+package org.apache.activemq.artemis.tests.integration.isolated.kubernetes.client;
 
 import static java.net.HttpURLConnection.HTTP_CREATED;
 import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
-import static org.apache.activemq.artemis.spi.core.security.jaas.KubernetesLoginModuleTest.AUTH_JSON;
-import static org.apache.activemq.artemis.spi.core.security.jaas.KubernetesLoginModuleTest.UNAUTH_JSON;
-import static org.apache.activemq.artemis.spi.core.security.jaas.KubernetesLoginModuleTest.USERNAME;
+import static org.apache.activemq.artemis.tests.integration.isolated.kubernetes.KubernetesLoginModuleTest.AUTH_JSON;
+import static org.apache.activemq.artemis.tests.integration.isolated.kubernetes.KubernetesLoginModuleTest.UNAUTH_JSON;
+import static org.apache.activemq.artemis.tests.integration.isolated.kubernetes.KubernetesLoginModuleTest.USERNAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -36,6 +36,9 @@ import java.net.URL;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.activemq.artemis.spi.core.security.jaas.kubernetes.client.KubernetesClient;
+import org.apache.activemq.artemis.spi.core.security.jaas.kubernetes.client.KubernetesClientAccessor;
+import org.apache.activemq.artemis.spi.core.security.jaas.kubernetes.client.KubernetesClientImpl;
 import org.apache.activemq.artemis.spi.core.security.jaas.kubernetes.model.TokenReview;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -206,6 +209,6 @@ public class KubernetesClientImplTest {
    public void testSingeltonHttpClient() throws Exception {
       KubernetesClientImpl clientImplFirst = new KubernetesClientImpl();
       KubernetesClientImpl clientImplSecond = new KubernetesClientImpl();
-      assertEquals(clientImplFirst.getHttpClient(), clientImplSecond.getHttpClient());
+      assertEquals(KubernetesClientAccessor.getHttpClient(clientImplFirst), KubernetesClientAccessor.getHttpClient(clientImplSecond));
    }
 }
