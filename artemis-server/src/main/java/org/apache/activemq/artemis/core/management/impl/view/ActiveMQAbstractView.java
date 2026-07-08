@@ -136,9 +136,14 @@ public abstract class ActiveMQAbstractView<T, V extends PredicateFilterPart<T>> 
          try {
             Object leftValue = fieldCache.get(left);
             Object rightValue = fieldCache.get(right);
-
-            if (leftValue instanceof Comparable l && rightValue instanceof Comparable r) {
-               return sortOrderDescending ? r.compareTo(leftValue) : l.compareTo(rightValue);
+            if (sortOrderDescending) {
+               if (rightValue instanceof Comparable r) {
+                  return r.compareTo(leftValue);
+               }
+            } else {
+               if (leftValue instanceof Comparable l) {
+                  return l.compareTo(rightValue);
+               }
             }
             return 0;
          } catch (Exception e) {
