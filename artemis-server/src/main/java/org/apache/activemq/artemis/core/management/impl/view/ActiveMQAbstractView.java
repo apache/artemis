@@ -19,7 +19,6 @@ package org.apache.activemq.artemis.core.management.impl.view;
 import org.apache.activemq.artemis.core.management.impl.view.predicate.PredicateFilterPart;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.IdentityHashMap;
@@ -121,11 +120,11 @@ public abstract class ActiveMQAbstractView<T, V extends PredicateFilterPart<T>> 
          return List.of();
       }
 
-      T[] array = (T[]) collection.toArray();
+      List<T> collectionList = new ArrayList<>(collection);
 
       // Pre-compute fields once per element
-      Map<Object, Object> fieldCache = new IdentityHashMap<>(array.length);
-      for (T item : array) {
+      Map<Object, Object> fieldCache = new IdentityHashMap<>(collectionList.size());
+      for (T item : collectionList) {
          if (item != null) {
             fieldCache.put(item, getField(item, sortField));
          }
@@ -147,19 +146,20 @@ public abstract class ActiveMQAbstractView<T, V extends PredicateFilterPart<T>> 
          }
       };
 
-      Arrays.sort(array, cachedComparator);
+      collectionList.sort(cachedComparator);
 
       if (page == -1 || pageSize == -1) {
-         return Arrays.asList(array);
+         return collectionList;
       }
 
       int start = (page - 1) * pageSize;
-      if (start >= array.length || start < 0) {
+      int size = collectionList.size();
+      if (start >= size || start < 0) {
          return List.of();
       }
-      int end = Math.min(page * pageSize, array.length);
+      int end = Math.min(page * pageSize, size);
 
-      return Arrays.asList(Arrays.copyOfRange(array, start, end));
+      return collectionList.subList(start, end);
    }
 
    public Predicate<T> getPredicate() {
