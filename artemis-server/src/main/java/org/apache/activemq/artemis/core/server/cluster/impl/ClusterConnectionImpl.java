@@ -142,7 +142,7 @@ public final class ClusterConnectionImpl implements ClusterConnection, AfterConn
     * Guard for the field {@link #records}. Note that the field is {@link ConcurrentHashMap}, however we need the guard
     * to synchronize multiple step operations during topology updates.
     */
-   private final Object recordsGuard = new Object();
+   final Object recordsGuard = new Object();
 
    private final Map<String, MessageFlowRecord> records = new ConcurrentHashMap<>();
 
@@ -1771,27 +1771,60 @@ public final class ClusterConnectionImpl implements ClusterConnection, AfterConn
 
    @Override
    public void removeRecord(String targetNodeID) {
-      logger.debug("Removing record for: {}", targetNodeID);
-      MessageFlowRecord record = records.remove(targetNodeID);
-      try {
-         if (record != null) {
-            record.close();
+      synchronized (recordsGuard) {
+         logger.debug("Removing record for: {}", targetNodeID);
+         MessageFlowRecord record = records.remove(targetNodeID);
+         Bridge oldBridge = null;
+         try {
+            if (record != null) {
+               oldBridge = record.getBridge();
+               record.close();
+            }
+         } catch (Exception e) {
+            ActiveMQServerLogger.LOGGER.failedToRemoveRecord(e);
          }
-      } catch (Exception e) {
-         ActiveMQServerLogger.LOGGER.failedToRemoveRecord(e);
+
+         // record.close() schedules async cleanup (StopRunnable + locator close) on the
+         // old bridge's executor.  Flush it so the old bridge is fully torn down before
+         // we potentially create a replacement — otherwise the async close can race with
+         // the new bridge's connection attempt.
+         if (oldBridge != null) {
+            oldBridge.flushExecutor();
+         }
+
+         TopologyMemberImpl member = topology.getMember(targetNodeID);
+         if (member != null && member.getPrimary() != null && !stopping) {
+            logger.debug("Node {} is already back in the topology after record removal; re-creating bridge", targetNodeID);
+            try {
+               SimpleString queueName = getSfQueueName(targetNodeID);
+               Binding queueBinding = postOffice.getBinding(queueName);
+               Queue queue;
+               if (queueBinding != null) {
+                  queue = (Queue) queueBinding.getBindable();
+               } else {
+                  queue = server.createQueue(QueueConfiguration.of(queueName).setRoutingType(RoutingType.MULTICAST).setAutoCreateAddress(true).setMaxConsumers(-1).setPurgeOnNoConsumers(false).setInternal(true));
+               }
+               queue.setInternalQueue(true);
+               createNewRecord(member.getUniqueEventID(), targetNodeID, member.getPrimary(), queueName, queue, true);
+            } catch (Exception e) {
+               ActiveMQServerLogger.LOGGER.errorUpdatingTopology(e);
+            }
+         }
       }
    }
 
    @Override
    public void disconnectRecord(String targetNodeID) {
-      logger.debug("Disconnecting record for: {}", targetNodeID);
-      MessageFlowRecord record = records.get(targetNodeID);
-      try {
-         if (record != null) {
-            record.disconnectBindings();
+      synchronized (recordsGuard) {
+         logger.debug("Disconnecting record for: {}", targetNodeID);
+         MessageFlowRecord record = records.get(targetNodeID);
+         try {
+            if (record != null) {
+               record.disconnectBindings();
+            }
+         } catch (Exception e) {
+            ActiveMQServerLogger.LOGGER.failedToDisconnectBindings(e);
          }
-      } catch (Exception e) {
-         ActiveMQServerLogger.LOGGER.failedToDisconnectBindings(e);
       }
    }
 
