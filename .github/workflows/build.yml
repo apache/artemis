@@ -30,6 +30,7 @@ jobs:
   test:
     name: Test (${{ matrix.java }})
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -75,6 +76,7 @@ jobs:
   checks:
     name: Checks (${{ matrix.java }})
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
