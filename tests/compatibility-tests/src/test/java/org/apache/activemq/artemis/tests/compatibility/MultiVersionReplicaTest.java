@@ -110,7 +110,9 @@ public class MultiVersionReplicaTest extends ClasspathBase {
    @TestTemplate
    public void testReplica() throws Throwable {
       System.out.println("Starting live");
-      evaluate(mainClassloader, "multiVersionReplica/mainServer.groovy", serverFolder.getAbsolutePath(), "1", "61000", "61001", String.valueOf(security));
+      // To ensure backward compatibility, core connection security must be disabled on newer live brokers so legacy backup brokers can connect.
+      boolean coreConnectionSecurity = security && (!SNAPSHOT.equals(main) || SNAPSHOT.equals(backup));
+      evaluate(mainClassloader, "multiVersionReplica/mainServer.groovy", serverFolder.getAbsolutePath(), "1", "61000", "61001", String.valueOf(security), String.valueOf(coreConnectionSecurity));
       System.out.println("Starting backup");
       evaluate(backupClassLoader, "multiVersionReplica/backupServer.groovy", serverFolder.getAbsolutePath(), "2", "61001", "61000", String.valueOf(security));
 

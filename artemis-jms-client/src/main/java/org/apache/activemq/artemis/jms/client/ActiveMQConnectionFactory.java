@@ -42,6 +42,7 @@ import java.security.PrivilegedAction;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.DiscoveryGroupConfiguration;
 import org.apache.activemq.artemis.api.core.Interceptor;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
@@ -837,6 +838,7 @@ public class ActiveMQConnectionFactory extends JNDIStorable implements Connectio
    public ActiveMQConnectionFactory setUser(String user) {
       checkWrite();
       this.user = user;
+      serverLocator.setConnectionCredentials(user, password);
       return this;
    }
 
@@ -851,6 +853,7 @@ public class ActiveMQConnectionFactory extends JNDIStorable implements Connectio
    public ActiveMQConnectionFactory setPassword(String password) {
       checkWrite();
       this.password = password;
+      serverLocator.setConnectionCredentials(user, password);
       return this;
    }
 
@@ -913,7 +916,9 @@ public class ActiveMQConnectionFactory extends JNDIStorable implements Connectio
       ClientSessionFactory factory;
 
       try {
-         factory = serverLocator.createSessionFactory();
+         factory = serverLocator.createSessionFactory(username, password);
+      } catch (ActiveMQException e) {
+         throw JMSExceptionHelper.convertFromActiveMQException(e);
       } catch (Exception e) {
          JMSException jmse = new JMSException("Failed to create session factory");
 

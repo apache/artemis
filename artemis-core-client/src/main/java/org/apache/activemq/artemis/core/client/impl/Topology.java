@@ -43,6 +43,9 @@ public final class Topology {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
+   public static final String PRE_AUTH_NODE_ID = "00000000-0000-0000-0000-000000000000";
+   public static final String PRE_AUTH_CONNECTOR_NAME = "PRE_AUTH_CONNECTOR";
+
    private final Set<ClusterTopologyListener> topologyListeners;
 
    private Executor executor;

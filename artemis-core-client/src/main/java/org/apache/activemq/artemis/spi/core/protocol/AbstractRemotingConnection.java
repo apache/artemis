@@ -18,6 +18,7 @@ package org.apache.activemq.artemis.spi.core.protocol;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
@@ -29,6 +30,7 @@ import org.apache.activemq.artemis.api.core.ActiveMQInterruptedException;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.client.ActiveMQClientLogger;
 import org.apache.activemq.artemis.core.client.ActiveMQClientMessageBundle;
+import org.apache.activemq.artemis.core.remoting.AuthenticationListener;
 import org.apache.activemq.artemis.core.remoting.CloseListener;
 import org.apache.activemq.artemis.core.remoting.FailureListener;
 import org.apache.activemq.artemis.spi.core.remoting.Connection;
@@ -45,6 +47,7 @@ public abstract class AbstractRemotingConnection implements RemotingConnection {
 
    protected final List<FailureListener> failureListeners = new CopyOnWriteArrayList<>();
    protected final List<CloseListener> closeListeners = new CopyOnWriteArrayList<>();
+   protected final List<AuthenticationListener> authenticationListeners = new CopyOnWriteArrayList<>();
    protected final Connection transportConnection;
    protected final Executor executor;
    protected final long creationTime;
@@ -52,6 +55,7 @@ public abstract class AbstractRemotingConnection implements RemotingConnection {
    protected volatile boolean dataReceived;
    private String clientId;
    private Subject subject;
+   private volatile boolean authenticated;
 
    public AbstractRemotingConnection(final Connection transportConnection, final Executor executor) {
       this.transportConnection = transportConnection;
@@ -280,6 +284,39 @@ public abstract class AbstractRemotingConnection implements RemotingConnection {
    @Override
    public Subject getSubject() {
       return subject;
+   }
+
+   @Override
+   public void setAuthenticated() {
+      if (!this.authenticated) {
+         this.authenticated = true;
+
+         final List<AuthenticationListener> listeners = new ArrayList<>(authenticationListeners);
+         for (final AuthenticationListener listener : listeners) {
+            try {
+               listener.connectionAuthenticated();
+            } catch (final Throwable t) {
+               ActiveMQClientLogger.LOGGER.errorCallingAuthenticationListener(t);
+            }
+         }
+      }
+   }
+
+   @Override
+   public boolean isAuthenticated() {
+      return authenticated;
+   }
+
+   @Override
+   public void addAuthenticationListener(final AuthenticationListener listener) {
+      Objects.requireNonNull(listener);
+      authenticationListeners.add(listener);
+   }
+
+   @Override
+   public boolean removeAuthenticationListener(final AuthenticationListener listener) {
+      Objects.requireNonNull(listener);
+      return authenticationListeners.remove(listener);
    }
 
    @Override

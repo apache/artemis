@@ -1551,6 +1551,12 @@ public interface ActiveMQServerLogger {
    @LogMessage(id = 224164, value = "Failed to recover stored configuration for divert named '{}': {}. To repair this record create a new divert with the same name via the management API.", level = LogMessage.Level.WARN)
    void failedToRecoverStoredDivertConfiguration(String divertName, String divert);
 
+   @LogMessage(id = 224165, value = "Unauthenticated cluster topology subscription request. Update the remote broker to authenticate the cluster connection from {}.", level = LogMessage.Level.WARN)
+   void unauthenticatedClusterTopologySubscriptionRequest(String remoteAddress);
+
+   @LogMessage(id = 224166, value = "Multiple topology subscriptions to connection from {}. Closing connection.", level = LogMessage.Level.WARN)
+   void multipleTopologySubscriptions(String remoteAddress);
+
    @LogMessage(id = 224170, value = "Server is stopping. Unable to process redelivery during rollback; ref: {}; transaction: {}; exception message: {}", level = LogMessage.Level.WARN)
    void unableToProcessRedeliveryDuringRollback(String messageRef, String transaction, String exceptionMessage);
 

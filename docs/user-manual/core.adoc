@@ -61,6 +61,74 @@ In JMS terms think of them as JMS Connections.
 
 `ClientSessionFactory` instances are created using the `ServerLocator` class.
 
+[[core-connection-handshake]]
+=== Connection handshake
+
+When a Core client connects to a broker it sends:
+
+* the expected node id in case of failover
+* the client's protocol version
+* optional connection-level username and password
+
+Core application clients can pass credentials when creating a session factory to authenticate the underlying connection:
+
+[,java]
+----
+ServerLocator locator = ...;
+locator.setConnectionCredentials(user, password);
+ClientSessionFactory factory = locator.createSessionFactory(user, password);
+----
+
+The JMS connection factory sets connection credentials automatically when `setUser` / `setPassword` are called.
+
+Cluster-internal components on current brokers (cluster connections, bridges, replicated backups, federation links, etc.) pass their configured `cluster-user` / `cluster-password` or bridge credentials in the connect handshake automatically.
+
+When security is enabled and no connection credentials are supplied, the broker responds to topology subscription with a placeholder entry so the client can complete its handshake, but real broker topology is sent only after authentication succeeds.
+
+==== Server-side configuration
+
+Core connection security applies only when broker security is enabled (`security-enabled` in `broker.xml`).
+It is configured per acceptor on the Core protocol manager using URL parameters, in the same way as other protocol-specific acceptor settings (see xref:configuring-transports.adoc#configuring-the-transport[Configuring the Transport]).
+
+The following parameters are supported on any acceptor that handles the Core protocol:
+
+`coreConnectionSecurityEnabled`::
+Whether connection-level security is enabled for Core on this acceptor.
+When `true` (the default) and broker security is enabled, the broker:
+
+* validates optional credentials in the connect packet
+* sends a placeholder topology response to unauthenticated clients
+* installs a reduced Netty frame size limit until the connection is authenticated
+
+`coreInitialMaxFrameSize`::
+Maximum Core frame size in bytes allowed on a Netty connection *before* authentication completes.
+Default: `4096` (4 KiB).
+Frames larger than this limit are rejected with a decoder error and the connection is closed.
+
+`coreMaxFrameSize`::
+Maximum Core frame size in bytes allowed on a Netty connection *after* authentication completes.
+Default: `131072` (128 KiB).
+The limit is raised automatically once the connection `Subject` is set (for example after a successful `CONNECT` with credentials or after `CREATE_SESSION`).
+
+Example disabling Core connection security on an acceptor:
+
+[,xml]
+----
+<acceptor name="artemis">tcp://0.0.0.0:61616?protocols=CORE,AMQP;coreConnectionSecurityEnabled=false</acceptor>
+----
+
+Example keeping Core connection security enabled but increasing the post-authentication frame limit:
+
+[,xml]
+----
+<acceptor name="artemis">tcp://0.0.0.0:61616?protocols=CORE,AMQP;coreInitialMaxFrameSize=4096;coreMaxFrameSize=1048576</acceptor>
+----
+
+NOTE: These frame size limits apply to Netty-based Core connections.
+In-VM Core connections do not use the size-limited decoder.
+
+For embedded brokers, the same settings can be applied programmatically on `CoreProtocolManager` via `setCoreConnectionSecurityEnabled`, `setCoreInitialMaxFrameSize`, and `setCoreMaxFrameSize`.
+
 === ClientSession
 
 A client uses a ``ClientSession``for consuming and producing messages and for grouping them in transactions.

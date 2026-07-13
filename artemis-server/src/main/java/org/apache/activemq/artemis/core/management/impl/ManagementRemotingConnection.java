@@ -24,6 +24,7 @@ import java.util.concurrent.Future;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.core.remoting.AuthenticationListener;
 import org.apache.activemq.artemis.core.remoting.CloseListener;
 import org.apache.activemq.artemis.core.remoting.FailureListener;
 import org.apache.activemq.artemis.core.server.MessageReference;
@@ -178,6 +179,24 @@ public class ManagementRemotingConnection implements RemotingConnection {
    @Override
    public Subject getSubject() {
       return subject;
+   }
+
+   @Override
+   public void setAuthenticated() {
+   }
+
+   @Override
+   public boolean isAuthenticated() {
+      return subject != null;
+   }
+
+   @Override
+   public void addAuthenticationListener(AuthenticationListener listener) {
+   }
+
+   @Override
+   public boolean removeAuthenticationListener(AuthenticationListener listener) {
+      return false;
    }
 
    @Override

@@ -62,7 +62,7 @@ public class SimpleManagement implements AutoCloseable {
    public SimpleManagement open() throws Exception {
       if (session == null) {
          locator = ServerLocatorImpl.newLocator(uri);
-         sessionFactory = locator.createSessionFactory();
+         sessionFactory = locator.createSessionFactory(user, password);
          session = sessionFactory.createSession(user, password, false, true, true, false, ActiveMQClient.DEFAULT_ACK_BATCH_SIZE);
       }
       return this;

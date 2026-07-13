@@ -147,11 +147,12 @@ public class PrimaryOnlyActivation extends Activation {
       try {
          scaleDownServerLocator = ScaleDownPolicy.getScaleDownConnector(scaleDownPolicy, activeMQServer);
          //use a Node Locator to connect to the cluster
+         scaleDownServerLocator.setConnectionCredentials(activeMQServer.getConfiguration().getClusterUser(), activeMQServer.getConfiguration().getClusterPassword());
          scaleDownServerLocator.setProtocolManagerFactory(ActiveMQServerSideProtocolManagerFactory.getInstance(scaleDownServerLocator, activeMQServer.getStorageManager()));
          NodeLocator nodeLocator = scaleDownPolicy.getGroupName() == null ? new AnyNodeLocatorForScaleDown(activeMQServer) : new NamedNodeLocatorForScaleDown(scaleDownPolicy.getGroupName(), activeMQServer);
          scaleDownServerLocator.addClusterTopologyListener(nodeLocator);
 
-         nodeLocator.connectToCluster(scaleDownServerLocator);
+         scaleDownServerLocator.connect();
          // a timeout is necessary here in case we use a NamedNodeLocatorForScaleDown and there's no matching node in the cluster
          // should the timeout be configurable?
          nodeLocator.locateNode(ActiveMQClient.DEFAULT_DISCOVERY_INITIAL_WAIT_TIMEOUT);

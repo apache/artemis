@@ -53,6 +53,10 @@ public class ServerLocatorConfig {
    public boolean compressLargeMessage = ActiveMQClient.DEFAULT_COMPRESS_LARGE_MESSAGES;
    public boolean useTopologyForLoadBalancing = ActiveMQClient.DEFAULT_USE_TOPOLOGY_FOR_LOADBALANCING;
 
+   public String connectionUser;
+
+   public String connectionPassword;
+
    public ServerLocatorConfig() {
    }
 
@@ -89,5 +93,7 @@ public class ServerLocatorConfig {
       initialMessagePacketSize = locator.initialMessagePacketSize;
       useTopologyForLoadBalancing = locator.useTopologyForLoadBalancing;
       compressionLevel = locator.compressionLevel;
+      connectionUser = locator.connectionUser;
+      connectionPassword = locator.connectionPassword;
    }
 }

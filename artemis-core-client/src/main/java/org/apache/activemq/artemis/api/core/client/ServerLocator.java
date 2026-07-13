@@ -59,6 +59,15 @@ public interface ServerLocator extends AutoCloseable {
    ClientSessionFactory createSessionFactory() throws Exception;
 
    /**
+    * Creates a ClientSessionFactory using whatever load balancing policy is in force
+    *
+    * @param connectionUser connection user
+    * @param connectionPassword connection password
+    * @return The ClientSessionFactory
+    */
+   ClientSessionFactory createSessionFactory(String connectionUser, String connectionPassword) throws Exception;
+
+   /**
     * Creates a {@link ClientSessionFactory} to a specific server. The server must already be known about by this
     * ServerLocator. This method allows the user to make a connection to a specific server bypassing any load balancing
     * policy in force
@@ -893,4 +902,11 @@ public interface ServerLocator extends AutoCloseable {
    ServerLocator setPasswordCodec(String passwordCodec);
 
    String getPasswordCodec();
+
+   /**
+    * Sets connection-level credentials sent in {@code CONNECT} after connecting.
+    *
+    * @return this
+    */
+   ServerLocator setConnectionCredentials(String connectionUser, String connectionPassword);
 }

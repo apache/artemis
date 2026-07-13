@@ -38,11 +38,12 @@ String id = arg[1];
 String port = arg[2];
 String backupPort = arg[3]
 boolean security = Boolean.valueOf(arg[4]);
+boolean coreConnectionSecurity = Boolean.valueOf(arg[5]);
 
 configuration = new ConfigurationImpl();
 configuration.setJournalType(JournalType.NIO);
 configuration.setBrokerInstance(new File(folder + "/" + id));
-configuration.addAcceptorConfiguration("artemis", "tcp://localhost:" + port);
+configuration.addAcceptorConfiguration("artemis", "tcp://localhost:" + port + "?coreConnectionSecurityEnabled=" + coreConnectionSecurity);
 configuration.addConnectorConfiguration("local", "tcp://localhost:" + port);
 configuration.setSecurityEnabled(security);
 if (security) {

@@ -19,16 +19,12 @@ package org.apache.activemq.artemis.tests.integration.cluster.failover;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.activemq.artemis.api.core.ActiveMQException;
-import org.apache.activemq.artemis.api.core.Interceptor;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
-import org.apache.activemq.artemis.core.protocol.core.Packet;
-import org.apache.activemq.artemis.core.protocol.core.impl.PacketImpl;
-import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
+import org.apache.activemq.artemis.core.server.ActiveMQServer;
+import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerBasePlugin;
 import org.apache.activemq.artemis.tests.util.TransportConfigurationUtils;
 import org.apache.activemq.artemis.tests.util.Wait;
 import org.junit.jupiter.api.BeforeEach;
@@ -53,11 +49,9 @@ public class BackupAuthenticationTest extends FailoverTestBase {
       waitForServerToStart(primaryServer.getServer());
       backupServer.start();
       backupServer.getServer().addExternalComponent(fakeServiceComponent, true);
+      // wait for the backup to register its broker plugins (server started) before
+      // asserting it stops due to the wrong cluster password
       assertTrue(latch.await(5, TimeUnit.SECONDS));
-      /*
-       * can't intercept the message at the backup, so we intercept the registration message at the
-       * live.
-       */
       Wait.waitFor(() -> !backupServer.isStarted());
       assertFalse(backupServer.isStarted(), "backup should have stopped");
       Wait.assertFalse(fakeServiceComponent::isStarted);
@@ -69,9 +63,14 @@ public class BackupAuthenticationTest extends FailoverTestBase {
    protected void createConfigs() throws Exception {
       createReplicatedConfigs();
       backupConfig.setClusterPassword("crocodile");
-      primaryConfig.setIncomingInterceptorClassNames(Arrays.asList(NotifyingInterceptor.class.getName()));
       backupConfig.setSecurityEnabled(true);
       primaryConfig.setSecurityEnabled(true);
+      backupConfig.registerBrokerPlugin(new ActiveMQServerBasePlugin() {
+         @Override
+         public void registered(ActiveMQServer server) {
+            latch.countDown();
+         }
+      });
    }
 
    @Override
@@ -82,18 +81,5 @@ public class BackupAuthenticationTest extends FailoverTestBase {
    @Override
    protected TransportConfiguration getConnectorTransportConfiguration(boolean live) {
       return TransportConfigurationUtils.getInVMConnector(live);
-   }
-
-   public static final class NotifyingInterceptor implements Interceptor {
-
-      @Override
-      public boolean intercept(Packet packet, RemotingConnection connection) throws ActiveMQException {
-         if (packet.getType() == PacketImpl.BACKUP_REGISTRATION) {
-            latch.countDown();
-         } else if (packet.getType() == PacketImpl.CLUSTER_CONNECT) {
-            latch.countDown();
-         }
-         return true;
-      }
    }
 }

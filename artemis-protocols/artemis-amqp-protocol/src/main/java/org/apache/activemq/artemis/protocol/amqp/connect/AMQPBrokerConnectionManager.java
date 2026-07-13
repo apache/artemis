@@ -348,7 +348,7 @@ public class AMQPBrokerConnectionManager implements ActiveMQComponent, ClientCon
       }
 
       @Override
-      public boolean checkForFailover(String nodeID) throws ActiveMQException {
+      public boolean sendConnect(String nodeID, String connectionUser, String connectionPassword) throws ActiveMQException {
          return false;
       }
 

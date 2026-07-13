@@ -222,7 +222,7 @@ public class ExceptionListenerForConnectionTimedOutExceptionTest extends JMSTest
       @Override
       public boolean intercept(Packet packet, RemotingConnection connection) throws ActiveMQException {
          // CheckForFailoverReply is ignored here, as this is simulating an issue where the server is completely not responding, the blocked call should throw an exception asynchrnously to the retry
-         if (packet.getType() == PacketImpl.CHECK_FOR_FAILOVER_REPLY) {
+         if (packet.getType() == PacketImpl.CONNECT_RESPONSE) {
             block();
             return true;
          }
@@ -239,7 +239,7 @@ public class ExceptionListenerForConnectionTimedOutExceptionTest extends JMSTest
       @Override
       public boolean intercept(Packet packet, RemotingConnection connection) throws ActiveMQException {
          // CheckForFailoverReply is ignored here, as this is simulating an issue where the server is completely not responding, the blocked call should throw an exception asynchrnously to the retry
-         if (packet.getType() == PacketImpl.CHECK_FOR_FAILOVER_REPLY) {
+         if (packet.getType() == PacketImpl.CONNECT_RESPONSE) {
             block();
             return true;
          }

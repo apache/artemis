@@ -30,6 +30,18 @@ See xref:persistence.adoc#configuring-the-message-journal[configuring the messag
 
 === Upgrading from 2.55.0
 
+* The Core protocol connect handshake packet was extended in a backward-compatible way on the wire (same packet type identifiers).
+When security is enabled, Core clients that authenticate at connection time should pass credentials via `ServerLocator.setConnectionCredentials(user, password)` or `ServerLocator.createSessionFactory(user, password)`.
+Cluster components on new brokers (cluster connections, bridges, backups, federation) do this automatically using the configured `cluster-user` / `cluster-password` or bridge `user` / `password`.
+See xref:core.adoc#core-connection-handshake[Core connection handshake] for details.
+* On secured Core connections the broker initially limits frame size to 4 KiB until the connection is authenticated, then raises the limit to 128 KiB.
+Unauthenticated clients no longer receive real cluster topology; they receive a placeholder response until authentication succeeds.
+Both behaviors can be tuned or disabled per acceptor; see xref:core.adoc#core-connection-handshake[Core connection handshake].
+* *Upgrade brokers before mixing old and new versions in a secured cluster.*
+An old broker connecting to a broker that has already been upgraded does not send connection-level credentials in the Core connect handshake.
+The upgraded broker therefore treats the connection as unauthenticated and responds with only the placeholder topology entry, not the real cluster view.
+Until that old broker is upgraded as well, it may be unable to discover or connect properly to the new brokers (cluster connections, bridges, replication, backup registration, and similar Core links can fail or stall).
+Upgrade every broker in the cluster, or temporarily disable `coreConnectionSecurityEnabled` on acceptors during a transitional window, before relying on cross-version cluster connectivity.
 * Due to https://issues.apache.org/jira/browse/ARTEMIS-6128[ARTEMIS-6128] the `Alder32` and `fileAlder32` properties have been deprecated in favor of `Adler32` and `fileAdler32` respectively.
 * Due to https://issues.apache.org/jira/browse/ARTEMIS-6172[ARTEMIS-6172] the HTTP-specific transport parameters deprecated by https://issues.apache.org/jira/browse/ARTEMIS-5819[ARTEMIS-5819] (`httpClientIdleTime`, `httpClientIdleScanPeriod`, `httpResponseTime`, `httpServerScanPeriod`) are restored.
 These are required so HTTP-tunneled Core connections can create response slots for server-initiated packets (for example cluster topology updates) without starving replies to client requests.
