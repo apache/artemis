@@ -98,7 +98,7 @@ public class ArtemisCLIPlugin extends ArtemisAbstractPlugin {
                while (System.currentTimeMillis() <= timeout) {
                   try (ServerLocator locator = ActiveMQClient.createServerLocator(testURI)) {
                      if (testUser != null || testPassword != null || testClientID != null) {
-                        locator.createSessionFactory().createSession(testUser, testPassword, false, false, false, false, 0, testClientID).close();
+                        locator.createSessionFactory(testUser, testPassword).createSession(testUser, testPassword, false, false, false, false, 0, testClientID).close();
                      } else {
                         locator.createSessionFactory().createSession().close();
                      }

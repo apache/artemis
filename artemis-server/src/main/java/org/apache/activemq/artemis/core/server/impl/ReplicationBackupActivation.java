@@ -212,7 +212,14 @@ public final class ReplicationBackupActivation extends Activation implements Dis
          logger.info("Apache ActiveMQ Artemis Backup Server version {} [{}] started, awaiting connection to a primary to start replication", activeMQServer.getVersion().getFullVersion(),
                       activeMQServer.toString());
 
-         clusterController.awaitConnectionToReplicationCluster();
+         try {
+            clusterController.awaitConnectionToReplicationCluster();
+         } catch (Exception e) {
+            logger.error("Stopping the broker because the connection to the replication cluster failed", e);
+            asyncRestartServer(activeMQServer, false);
+            return;
+         }
+
          activeMQServer.getBackupManager().start();
          final DistributedLock primaryLock = replicateAndFailover(clusterController);
          if (primaryLock == null) {

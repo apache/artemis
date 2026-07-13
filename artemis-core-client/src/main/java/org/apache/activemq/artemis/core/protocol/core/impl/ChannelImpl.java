@@ -241,7 +241,13 @@ public final class ChannelImpl implements Channel {
          if (responseAsyncCache != null) {
             responseAsyncCache.errorAll(activeMQException);
          }
-         response = new ActiveMQExceptionMessage(activeMQException);
+
+         // Preserve an already-delivered EXCEPTION (e.g. security failure that raced with connection
+         // close) over AMQ219016. Other packets could not unblock sendBlocking unless type and
+         // correlation match, so replacing them here is fine.
+         if (response == null || response.getType() != EXCEPTION) {
+            response = new ActiveMQExceptionMessage(activeMQException);
+         }
 
          sendCondition.signal();
       } finally {

@@ -312,6 +312,7 @@ public class SharedNothingPrimaryActivation extends PrimaryActivation {
       try (ServerLocatorInternal locator = getLocator(config)) {
          locator.addClusterTopologyListener(listener);
          locator.setReconnectAttempts(0);
+         locator.setConnectionCredentials(activeMQServer.getConfiguration().getClusterUser(), activeMQServer.getConfiguration().getClusterPassword());
          try (ClientSessionFactoryInternal factory = locator.connectNoWarnings()) {
             // Just try connecting
             listener.latch.await(5, TimeUnit.SECONDS);
@@ -417,7 +418,7 @@ public class SharedNothingPrimaryActivation extends PrimaryActivation {
          boolean result = false;
 
          try (ServerLocator serverLocator = ActiveMQClient.createServerLocator(false, transportConfiguration);
-              ClientSessionFactory clientSessionFactory = serverLocator.createSessionFactory();
+              ClientSessionFactory clientSessionFactory = serverLocator.createSessionFactory(user, password);
               ClientSession clientSession = clientSessionFactory.createSession(user, password, false, false, false, false, 0)) {
             result = true;
          } catch (Exception e) {

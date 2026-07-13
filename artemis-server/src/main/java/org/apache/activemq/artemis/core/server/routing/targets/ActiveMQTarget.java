@@ -61,7 +61,7 @@ public class ActiveMQTarget extends AbstractTarget implements FailureListener {
 
    @Override
    public void connect() throws Exception {
-      sessionFactory = serverLocator.createSessionFactory();
+      sessionFactory = serverLocator.createSessionFactory(getUsername(), getPassword());
 
       remotingConnection = sessionFactory.getConnection();
       remotingConnection.addFailureListener(this);

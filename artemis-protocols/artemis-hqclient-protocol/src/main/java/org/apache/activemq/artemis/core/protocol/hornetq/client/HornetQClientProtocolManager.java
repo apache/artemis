@@ -67,8 +67,8 @@ public class HornetQClientProtocolManager extends ActiveMQClientProtocolManager 
    }
 
    @Override
-   public boolean checkForFailover(String nodeID) throws ActiveMQException {
-      //HornetQ doesn't support CheckFailoverMessage packet
+   public boolean sendConnect(String nodeID, String connectionUser, String connectionPassword) throws ActiveMQException {
+      //HornetQ doesn't support connect handshake
       return true;
    }
 

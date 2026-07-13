@@ -95,7 +95,7 @@ public class BackupRecoveryJournalLoader extends PostOfficeJournalLoader {
       ScaleDownHandler scaleDownHandler = new ScaleDownHandler(pagingManager, postOffice, nodeManager, clusterController, parentServer != null ? parentServer.getStorageManager() : storageManager, parentServer != null ? parentServer.getHAPolicy().getScaleDownCommitInterval() : -1);
       locator.setProtocolManagerFactory(ActiveMQServerSideProtocolManagerFactory.getInstance(locator, storageManager));
 
-      try (ClientSessionFactory sessionFactory = locator.createSessionFactory()) {
+      try (ClientSessionFactory sessionFactory = locator.createSessionFactory(configuration.getClusterUser(), configuration.getClusterPassword())) {
          scaleDownHandler.scaleDown(sessionFactory, resourceManager, duplicateIDMap, parentServer != null ? parentServer.getConfiguration().getManagementAddress() : configuration.getManagementAddress(), parentServer != null ? parentServer.getNodeID() : null);
       }
    }

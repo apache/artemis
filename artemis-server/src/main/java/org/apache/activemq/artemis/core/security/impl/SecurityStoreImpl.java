@@ -241,6 +241,7 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
 
          if (connection != null) {
             connection.setSubject(subject);
+            connection.setAuthenticated();
          }
          if (AuditLogger.isResourceLoggingEnabled()) {
             if (connection != null) {
@@ -380,6 +381,9 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
 
       if (checkResult == ClusterCredentialsCheckResult.VALID) {
          AUTHENTICATION_SUCCESS_COUNT_UPDATER.incrementAndGet(this);
+         if (connection != null) {
+            connection.setAuthenticated();
+         }
          return user;
       } else if (checkResult == ClusterCredentialsCheckResult.INVALID) {
          AUTHENTICATION_FAILURE_COUNT_UPDATER.incrementAndGet(this);

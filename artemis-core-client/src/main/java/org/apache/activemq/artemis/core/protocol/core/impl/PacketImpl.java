@@ -272,9 +272,29 @@ public class PacketImpl implements Packet {
 
    public static final byte QUORUM_VOTE_REPLY = -3;
 
-   public static final byte CHECK_FOR_FAILOVER = -4;
+   /**
+    * Core connect handshake sent after the transport is established.
+    * Reuses wire packet ID {@code -4}, formerly {@link #CHECK_FOR_FAILOVER}.
+    */
+   public static final byte CONNECT = -4;
 
-   public static final byte CHECK_FOR_FAILOVER_REPLY = -5;
+   /**
+    * @deprecated Renamed to {@link #CONNECT}; retained for the same wire packet ID ({@code -4}).
+    */
+   @Deprecated
+   public static final byte CHECK_FOR_FAILOVER = CONNECT;
+
+   /**
+    * Response to a {@link #CONNECT} packet.
+    * Reuses wire packet ID {@code -5}, formerly {@link #CHECK_FOR_FAILOVER_REPLY}.
+    */
+   public static final byte CONNECT_RESPONSE = -5;
+
+   /**
+    * @deprecated Renamed to {@link #CONNECT_RESPONSE}; retained for the same wire packet ID ({@code -5}).
+    */
+   @Deprecated
+   public static final byte CHECK_FOR_FAILOVER_REPLY = CONNECT_RESPONSE;
 
    public static final byte SCALEDOWN_ANNOUNCEMENT = -6;
 

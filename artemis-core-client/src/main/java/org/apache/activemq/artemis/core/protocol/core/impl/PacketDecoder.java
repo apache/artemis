@@ -24,8 +24,8 @@ import org.apache.activemq.artemis.core.protocol.core.CoreRemotingConnection;
 import org.apache.activemq.artemis.core.protocol.core.Packet;
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.ActiveMQExceptionMessage;
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.ActiveMQExceptionMessage_V2;
-import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.CheckFailoverMessage;
-import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.CheckFailoverReplyMessage;
+import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.ConnectMessage;
+import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.ConnectResponseMessage;
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.ClusterTopologyChangeMessage;
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.ClusterTopologyChangeMessage_V2;
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.ClusterTopologyChangeMessage_V3;
@@ -100,7 +100,7 @@ import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.SessionXAS
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.SubscribeClusterTopologyUpdatesMessage;
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.SubscribeClusterTopologyUpdatesMessageV2;
 
-import static org.apache.activemq.artemis.core.protocol.core.impl.PacketImpl.CHECK_FOR_FAILOVER;
+import static org.apache.activemq.artemis.core.protocol.core.impl.PacketImpl.CONNECT;
 import static org.apache.activemq.artemis.core.protocol.core.impl.PacketImpl.CLUSTER_TOPOLOGY;
 import static org.apache.activemq.artemis.core.protocol.core.impl.PacketImpl.CLUSTER_TOPOLOGY_V2;
 import static org.apache.activemq.artemis.core.protocol.core.impl.PacketImpl.CLUSTER_TOPOLOGY_V3;
@@ -122,6 +122,7 @@ import static org.apache.activemq.artemis.core.protocol.core.impl.PacketImpl.EXC
 import static org.apache.activemq.artemis.core.protocol.core.impl.PacketImpl.FEDERATION_DOWNSTREAM_CONNECT;
 import static org.apache.activemq.artemis.core.protocol.core.impl.PacketImpl.NULL_RESPONSE;
 import static org.apache.activemq.artemis.core.protocol.core.impl.PacketImpl.PACKETS_CONFIRMED;
+import static org.apache.activemq.artemis.core.protocol.core.impl.PacketImpl.CONNECT_RESPONSE;
 import static org.apache.activemq.artemis.core.protocol.core.impl.PacketImpl.PING;
 import static org.apache.activemq.artemis.core.protocol.core.impl.PacketImpl.REATTACH_SESSION;
 import static org.apache.activemq.artemis.core.protocol.core.impl.PacketImpl.REATTACH_SESSION_RESP;
@@ -223,8 +224,8 @@ public abstract class PacketDecoder implements Serializable {
             packet = new CreateSessionMessage();
             break;
          }
-         case CHECK_FOR_FAILOVER: {
-            packet = new CheckFailoverMessage();
+         case CONNECT: {
+            packet = new ConnectMessage();
             break;
          }
          case CREATESESSION_RESP: {
@@ -485,8 +486,8 @@ public abstract class PacketDecoder implements Serializable {
             packet = new SessionUniqueAddMetaDataMessage();
             break;
          }
-         case PacketImpl.CHECK_FOR_FAILOVER_REPLY: {
-            packet = new CheckFailoverReplyMessage();
+         case CONNECT_RESPONSE: {
+            packet = new ConnectResponseMessage();
             break;
          }
          case PacketImpl.DISCONNECT_CONSUMER_KILL: {

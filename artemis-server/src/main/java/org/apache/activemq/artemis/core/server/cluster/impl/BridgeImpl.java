@@ -915,7 +915,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
          csf = reconnectOnOriginalNode();
       } else {
          serverLocator.resetToInitialConnectors();
-         csf = (ClientSessionFactoryInternal) serverLocator.createSessionFactory();
+         csf = (ClientSessionFactoryInternal) serverLocator.createSessionFactory(configuration.getUser(), configuration.getPassword());
       }
 
       // null here means the targetNodeIS is not available yet

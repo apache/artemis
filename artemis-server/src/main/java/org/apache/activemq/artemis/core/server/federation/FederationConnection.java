@@ -171,7 +171,7 @@ public class FederationConnection {
       if (clientSessionFactory != null && !clientSessionFactory.isClosed()) {
          return clientSessionFactory;
       } else {
-         clientSessionFactory = serverLocator.createSessionFactory();
+         clientSessionFactory = serverLocator.createSessionFactory(config.getUsername(), config.getPassword());
          this.clientSessionFactory = clientSessionFactory;
          return clientSessionFactory;
       }

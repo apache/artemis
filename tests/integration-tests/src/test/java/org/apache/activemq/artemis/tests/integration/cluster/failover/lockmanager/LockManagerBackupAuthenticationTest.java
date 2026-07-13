@@ -20,17 +20,13 @@ import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.activemq.artemis.api.core.ActiveMQException;
-import org.apache.activemq.artemis.api.core.Interceptor;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.core.config.ha.ReplicationBackupPolicyConfiguration;
-import org.apache.activemq.artemis.core.protocol.core.Packet;
-import org.apache.activemq.artemis.core.protocol.core.impl.PacketImpl;
-import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
+import org.apache.activemq.artemis.core.server.ActiveMQServer;
+import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerBasePlugin;
 import org.apache.activemq.artemis.tests.extensions.parameterized.Parameter;
 import org.apache.activemq.artemis.tests.extensions.parameterized.ParameterizedTestExtension;
 import org.apache.activemq.artemis.tests.extensions.parameterized.Parameters;
@@ -70,11 +66,9 @@ public class LockManagerBackupAuthenticationTest extends FailoverTestBase {
       waitForServerToStart(primaryServer.getServer());
       backupServer.start();
       backupServer.getServer().addExternalComponent(fakeServiceComponent, true);
-      assertTrue(registrationStarted .await(5, TimeUnit.SECONDS));
-      /*
-       * can't intercept the message at the backup, so we intercept the registration message at the
-       * live.
-       */
+      // wait for the backup to register its broker plugins (server started) before
+      // asserting it stops due to the wrong cluster password
+      assertTrue(registrationStarted.await(5, TimeUnit.SECONDS));
       Wait.waitFor(() -> !backupServer.isStarted());
       assertFalse(backupServer.isStarted(), "backup should have stopped");
       Wait.assertFalse(fakeServiceComponent::isStarted);
@@ -86,9 +80,14 @@ public class LockManagerBackupAuthenticationTest extends FailoverTestBase {
    protected void createConfigs() throws Exception {
       createPluggableReplicatedConfigs();
       backupConfig.setClusterPassword("crocodile");
-      primaryConfig.setIncomingInterceptorClassNames(Arrays.asList(NotifyingInterceptor.class.getName()));
       backupConfig.setSecurityEnabled(true);
       primaryConfig.setSecurityEnabled(true);
+      backupConfig.registerBrokerPlugin(new ActiveMQServerBasePlugin() {
+         @Override
+         public void registered(ActiveMQServer server) {
+            registrationStarted.countDown();
+         }
+      });
    }
 
    @Override
@@ -106,18 +105,5 @@ public class LockManagerBackupAuthenticationTest extends FailoverTestBase {
    protected TransportConfiguration getConnectorTransportConfiguration(final boolean live) {
       return useNetty ? getNettyConnectorTransportConfiguration(live) :
          TransportConfigurationUtils.getInVMConnector(live);
-   }
-
-   public static final class NotifyingInterceptor implements Interceptor {
-
-      @Override
-      public boolean intercept(Packet packet, RemotingConnection connection) throws ActiveMQException {
-         if (packet.getType() == PacketImpl.BACKUP_REGISTRATION) {
-            registrationStarted.countDown();
-         } else if (packet.getType() == PacketImpl.CLUSTER_CONNECT) {
-            registrationStarted.countDown();
-         }
-         return true;
-      }
    }
 }

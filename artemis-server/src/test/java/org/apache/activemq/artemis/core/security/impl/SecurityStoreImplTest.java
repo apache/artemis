@@ -875,6 +875,43 @@ public class SecurityStoreImplTest {
       }
    }
 
+   @Test
+   public void testAuthenticateCallsSetAuthenticatedOnConnection() throws Exception {
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, "", null, null, 10, 10);
+      RemotingConnection connection = Mockito.mock(RemotingConnection.class);
+
+      securityStore.authenticate("user", "password", connection, null);
+
+      Mockito.verify(connection, Mockito.times(1)).setAuthenticated();
+   }
+
+   @Test
+   public void testClusterAuthenticateCallsSetAuthenticatedOnConnection() throws Exception {
+      final String clusterUser = "clusterUser";
+      final String clusterPassword = "clusterPassword";
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, clusterUser, clusterPassword, null, 10, 10);
+      RemotingConnection connection = Mockito.mock(RemotingConnection.class);
+
+      securityStore.authenticate(clusterUser, clusterPassword, connection, null);
+
+      Mockito.verify(connection, Mockito.times(1)).setAuthenticated();
+   }
+
+   @Test
+   public void testAuthenticateDoesNotCallSetAuthenticatedOnFailure() throws Exception {
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), denyAll, 999, true, "", null, null, 10, 10);
+      RemotingConnection connection = Mockito.mock(RemotingConnection.class);
+
+      try {
+         securityStore.authenticate("user", "password", connection, null);
+         fail("Authentication must fail");
+      } catch (Exception ignored) {
+         // expected
+      }
+
+      Mockito.verify(connection, Mockito.never()).setAuthenticated();
+   }
+
    private static SecurityAuth getSecurityAuth(String user, String password) {
       SecurityAuth session = Mockito.mock(SecurityAuth.class);
       Mockito.when(session.getUsername()).thenReturn(user);

@@ -352,4 +352,7 @@ public interface ActiveMQClientLogger {
 
    @LogMessage(id = 214036, value = "Connection closure to {} has been detected: {} [code={}]", level = LogMessage.Level.INFO)
    void connectionClosureDetected(String remoteAddress, String message, ActiveMQExceptionType type);
+
+   @LogMessage(id = 214037, value = "Failed to execute authentication listener", level = LogMessage.Level.ERROR)
+   void errorCallingAuthenticationListener(Throwable e);
 }

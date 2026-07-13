@@ -24,6 +24,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.activemq.artemis.api.core.ActiveMQException;
+import org.apache.activemq.artemis.api.core.ActiveMQSecurityException;
 import org.apache.activemq.artemis.api.core.DiscoveryGroupConfiguration;
 import org.apache.activemq.artemis.api.core.Interceptor;
 import org.apache.activemq.artemis.api.core.Pair;
@@ -50,6 +51,7 @@ import org.apache.activemq.artemis.core.server.ActiveMQComponent;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.cluster.quorum.QuorumManager;
+import org.apache.activemq.artemis.core.server.cluster.ClusterManager.IncomingInterceptorLookingForExceptionMessage;
 import org.apache.activemq.artemis.core.server.impl.Activation;
 import org.apache.activemq.artemis.spi.core.remoting.Acceptor;
 import org.slf4j.Logger;
@@ -78,6 +80,7 @@ public class ClusterController implements ActiveMQComponent {
    private final Executor executor;
 
    private CountDownLatch replicationClusterConnectedLatch;
+   private Exception replicationClusterConnectingException;
 
    private boolean started;
    private SimpleString replicatedClusterName;
@@ -232,6 +235,7 @@ public class ClusterController implements ActiveMQComponent {
       //if the cluster isn't available we want to hang around until it is
       serverLocator.setReconnectAttempts(config.getReconnectAttempts());
       serverLocator.setInitialConnectAttempts(config.getInitialConnectAttempts());
+      serverLocator.setConnectionCredentials(server.getConfiguration().getClusterUser(), server.getConfiguration().getClusterPassword());
       serverLocator.setCallTimeout(config.getCallTimeout());
       serverLocator.setCallFailoverTimeout(config.getCallFailoverTimeout());
       serverLocator.setRetryInterval(config.getRetryInterval());
@@ -240,6 +244,7 @@ public class ClusterController implements ActiveMQComponent {
       //this is used for replication so need to use the server packet decoder
       serverLocator.setProtocolManagerFactory(ActiveMQServerSideProtocolManagerFactory.getInstance(serverLocator, server.getStorageManager()));
       serverLocator.setThreadPools(server.getThreadPool(), server.getScheduledPool(), server.getThreadPool());
+      serverLocator.addIncomingInterceptor(new IncomingInterceptorLookingForExceptionMessage(server.getClusterManager(), executor));
       if (connector != null) {
          serverLocator.setClusterTransportConfiguration(connector);
       }
@@ -318,8 +323,12 @@ public class ClusterController implements ActiveMQComponent {
    /**
     * wait until we have connected to the cluster.
     */
-   public void awaitConnectionToReplicationCluster() throws InterruptedException {
+   public void awaitConnectionToReplicationCluster() throws Exception {
       replicationClusterConnectedLatch.await();
+
+      if (replicationClusterConnectingException != null) {
+         throw replicationClusterConnectingException;
+      }
    }
 
    /**
@@ -409,7 +418,7 @@ public class ClusterController implements ActiveMQComponent {
 
                boolean userIsValid = false;
                try {
-                  server.validateUser(msg.getClusterUser(), msg.getClusterPassword(), null, null);
+                  server.validateUser(msg.getClusterUser(), msg.getClusterPassword(), remotingConnection, null);
                   userIsValid = true;
                } catch (Exception e) {
                   // cluster user isn't valid
@@ -489,6 +498,13 @@ public class ClusterController implements ActiveMQComponent {
                   replicationClusterConnectedLatch.countDown();
                }
             }
+         } catch (ActiveMQSecurityException e) {
+            if (serverLocator == replicationLocator) {
+               replicationClusterConnectingException = e;
+               replicationClusterConnectedLatch.countDown();
+            }
+
+            logger.warn("failed to connect with " + serverLocator);
          } catch (ActiveMQException e) {
             if (!started) {
                return;

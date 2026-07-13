@@ -89,7 +89,7 @@ public abstract class AbstractActiveMQClientDelegate {
    void start() {
       log.info("Starting {}", this.getClass().getSimpleName());
       try {
-         sessionFactory = serverLocator.createSessionFactory();
+         sessionFactory = serverLocator.createSessionFactory(username, password);
          session = sessionFactory.createSession(username, password, false, true, true, serverLocator.isPreAcknowledge(),
                                                 serverLocator.getAckBatchSize());
       } catch (RuntimeException runtimeEx) {

@@ -25,6 +25,7 @@ import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.DisconnectReason;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
+import org.apache.activemq.artemis.core.remoting.AuthenticationListener;
 import org.apache.activemq.artemis.core.remoting.CloseListener;
 import org.apache.activemq.artemis.core.remoting.FailureListener;
 import org.apache.activemq.artemis.spi.core.remoting.BufferHandler;
@@ -218,6 +219,33 @@ public interface RemotingConnection extends BufferHandler {
     * the possibly null subject associated with this connection
     */
    Subject getSubject();
+
+   /**
+    * marks this connection as authenticated
+    */
+   void setAuthenticated();
+
+   /**
+    * {@return true if the {@link RemotingConnection} is authenticated, otherwise false}
+    */
+   boolean isAuthenticated();
+
+   /**
+    * add a AuthenticationListener.
+    * <p>
+    * This will be called when the connection is authenticated.
+    *
+    * @param listener the listener to add
+    */
+   void addAuthenticationListener(AuthenticationListener listener);
+
+   /**
+    * remove a AuthenticationListener
+    *
+    * @param listener the listener to remove
+    * @return true if removed
+    */
+   boolean removeAuthenticationListener(AuthenticationListener listener);
 
    /**
     * {@return the name of the protocol for this Remoting Connection}

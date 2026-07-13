@@ -725,11 +725,13 @@ public final class ClusterConnectionImpl implements ClusterConnection, AfterConn
                try (ServerLocatorInternal targetLocator = new ServerLocatorImpl(topology, true, transportConfiguration)) {
                   targetLocator.setReconnectAttempts(0);
                   targetLocator.setInitialConnectAttempts(0);
+                  targetLocator.setConnectionCredentials(clusterUser, clusterPassword);
                   targetLocator.setConnectionTTL(connectionTTL);
                   targetLocator.setCallTimeout(callTimeout);
                   targetLocator.setNodeID(nodeManager.getNodeId().toString());
                   targetLocator.setClusterTransportConfiguration(connector);
                   targetLocator.setIdentity("(Cluster-topology-scanner::" + server.toString() + ")");
+                  targetLocator.addIncomingInterceptor(new IncomingInterceptorLookingForExceptionMessage(manager, executor));
 
                   try {
                      try (ClientSessionFactoryInternal targetClientSessionFactory = targetLocator.connect()) {
@@ -880,6 +882,7 @@ public final class ClusterConnectionImpl implements ClusterConnection, AfterConn
          serverLocator.setClusterConnection(true);
          serverLocator.setClusterTransportConfiguration(connector);
          serverLocator.setInitialConnectAttempts(-1);
+         serverLocator.setConnectionCredentials(clusterUser, clusterPassword);
          serverLocator.setClientFailureCheckPeriod(clientFailureCheckPeriod);
          serverLocator.setConnectionTTL(connectionTTL);
          serverLocator.setConfirmationWindowSize(confirmationWindowSize);
@@ -1065,6 +1068,7 @@ public final class ClusterConnectionImpl implements ClusterConnection, AfterConn
       targetLocator.setReconnectAttempts(0);
 
       targetLocator.setInitialConnectAttempts(0);
+      targetLocator.setConnectionCredentials(clusterUser, clusterPassword);
       targetLocator.setClientFailureCheckPeriod(clientFailureCheckPeriod);
       targetLocator.setConnectionTTL(connectionTTL);
 

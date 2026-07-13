@@ -150,7 +150,13 @@ public final class SharedNothingBackupActivation extends Activation implements R
          clusterController.addClusterTopologyListenerForReplication(nodeLocator);
 
          logger.trace("Waiting on cluster connection");
-         clusterController.awaitConnectionToReplicationCluster();
+         try {
+            clusterController.awaitConnectionToReplicationCluster();
+         } catch (Exception e) {
+            logger.error("Stopping the broker because the connection to the replication cluster failed", e);
+            asyncStopServer(activeMQServer, false);
+            return;
+         }
 
          logger.trace("Cluster Connected");
 
@@ -239,30 +245,7 @@ public final class SharedNothingBackupActivation extends Activation implements R
                break;
             } else if (signal == SharedNothingBackupQuorum.BACKUP_ACTIVATION.FAILURE_REPLICATING || signal == SharedNothingBackupQuorum.BACKUP_ACTIVATION.FAILURE_RETRY) {
                // something has gone badly run restart from scratch
-               logger.trace("Starting a new thread to stop the server!");
-
-               final SharedNothingBackupQuorum.BACKUP_ACTIVATION signalToStop = signal;
-
-               Thread startThread = new Thread(() -> {
-                  try {
-                     logger.trace("Calling activeMQServer.stop() as initialization failed");
-
-                     if (activeMQServer.getState() != ActiveMQServer.SERVER_STATE.STOPPED &&
-                         activeMQServer.getState() != ActiveMQServer.SERVER_STATE.STOPPING) {
-
-                        if (signalToStop == SharedNothingBackupQuorum.BACKUP_ACTIVATION.FAILURE_RETRY) {
-                           activeMQServer.stop(false);
-                           logger.trace("The server was shutdown for a network isolation, we keep retrying");
-                           activeMQServer.start();
-                        } else {
-                           activeMQServer.stop();
-                        }
-                     }
-                  } catch (Exception e) {
-                     ActiveMQServerLogger.LOGGER.errorRestartingBackupServer(activeMQServer, e);
-                  }
-               });
-               startThread.start();
+               asyncStopServer(activeMQServer, signal == SharedNothingBackupQuorum.BACKUP_ACTIVATION.FAILURE_RETRY);
                return;
             }
             //ok, this primary is no good, let's reset and try again
@@ -333,6 +316,35 @@ public final class SharedNothingBackupActivation extends Activation implements R
          }
          ActiveMQServerLogger.LOGGER.initializationError(e);
       }
+   }
+
+   private void asyncStopServer(final ActiveMQServer server, boolean restart) {
+      logger.trace("Starting a new thread to stop the server!");
+
+      Thread stopThread = new Thread(() -> {
+         try {
+            logger.trace("Calling activeMQServer.stop() as initialization failed");
+
+            if (server.getState() != ActiveMQServer.SERVER_STATE.STOPPED &&
+               server.getState() != ActiveMQServer.SERVER_STATE.STOPPING) {
+
+               if (restart) {
+                  server.stop(false);
+                  logger.trace("The server was shutdown for a network isolation, we keep retrying");
+                  server.start();
+               } else {
+                  server.stop();
+               }
+            }
+         } catch (Exception e) {
+            if (restart) {
+               ActiveMQServerLogger.LOGGER.errorRestartingBackupServer(activeMQServer, e);
+            } else {
+               ActiveMQServerLogger.LOGGER.errorStoppingServer(e);
+            }
+         }
+      });
+      stopThread.start();
    }
 
    private static ClusterControl tryConnectToNodeInReplicatedCluster(ClusterController clusterController, TransportConfiguration tc) {

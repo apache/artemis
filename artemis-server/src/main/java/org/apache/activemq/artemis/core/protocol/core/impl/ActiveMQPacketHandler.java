@@ -33,8 +33,8 @@ import org.apache.activemq.artemis.core.protocol.core.CoreRemotingConnection;
 import org.apache.activemq.artemis.core.protocol.core.Packet;
 import org.apache.activemq.artemis.core.protocol.core.ServerSessionPacketHandler;
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.ActiveMQExceptionMessage;
-import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.CheckFailoverMessage;
-import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.CheckFailoverReplyMessage;
+import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.ConnectMessage;
+import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.ConnectResponseMessage;
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.CreateQueueMessage;
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.CreateSessionMessage;
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.CreateSessionMessage_V2;
@@ -69,6 +69,8 @@ public class ActiveMQPacketHandler implements ChannelHandler {
    private final CoreProtocolManager protocolManager;
 
    private final Actor<Packet> packetActor;
+
+   private boolean connectReceived;
 
    public ActiveMQPacketHandler(final CoreProtocolManager protocolManager,
                                 final ActiveMQServer server,
@@ -107,10 +109,10 @@ public class ActiveMQPacketHandler implements ChannelHandler {
 
             break;
          }
-         case PacketImpl.CHECK_FOR_FAILOVER: {
-            CheckFailoverMessage request = (CheckFailoverMessage) packet;
+         case PacketImpl.CONNECT: {
+            ConnectMessage request = (ConnectMessage) packet;
 
-            handleCheckForFailover(request);
+            handleConnect(request);
 
             break;
          }
@@ -136,10 +138,42 @@ public class ActiveMQPacketHandler implements ChannelHandler {
       }
    }
 
-   private void handleCheckForFailover(CheckFailoverMessage failoverMessage) {
-      String nodeID = failoverMessage.getNodeID();
+   private void handleConnect(ConnectMessage connectMessage) {
+      if (connectReceived) {
+         ActiveMQServerLogger.LOGGER.invalidPacket(connectMessage);
+         connection.close();
+         return;
+      }
+      connectReceived = true;
+
+      connection.setChannelVersion(connectMessage.getClientVersion());
+
+      // Legacy clients omit authMechanism; skip connection auth and rely on session creation.
+      if (server.getSecurityStore().isSecurityEnabled() &&
+         protocolManager.isCoreConnectionSecurityEnabled() &&
+         connectMessage.getAuthMechanism() != null) {
+
+         try {
+            if (ConnectMessage.MECHANISM_PLAIN.equals(connectMessage.getAuthMechanism())) {
+               String[] credentials = connectMessage.decodePlainAuthData();
+               server.validateUser(credentials[0], credentials[1], connection, protocolManager.getSecurityDomain());
+            } else {
+               throw ActiveMQMessageBundle.BUNDLE.authenticationMechanismNotSupported(connectMessage.getAuthMechanism());
+            }
+         } catch (Exception e) {
+            // Flush before close so the exception is on the wire ahead of TCP FIN.
+            // ChannelImpl.returnBlocking preserves an already-delivered EXCEPTION to avoid AMQ219016.
+            ActiveMQException messageException = e instanceof ActiveMQException ? (ActiveMQException) e
+               : new ActiveMQInternalErrorException("Connection authentication failed", e);
+            channel1.sendAndFlush(new ActiveMQExceptionMessage(messageException));
+            connection.close();
+            return;
+         }
+      }
+
+      String nodeID = connectMessage.getNodeID();
       boolean okToFailover = nodeID == null || server.getNodeID().toString().equals(nodeID) || !(server.getHAPolicy().canScaleDown() && !server.hasScaledDown(SimpleString.of(nodeID)));
-      channel1.send(new CheckFailoverReplyMessage(okToFailover));
+      channel1.send(new ConnectResponseMessage(okToFailover, server.getVersion().getIncrementingVersion()));
    }
 
    private void handleCreateSession(final CreateSessionMessage request) {

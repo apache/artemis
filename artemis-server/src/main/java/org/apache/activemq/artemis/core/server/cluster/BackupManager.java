@@ -250,6 +250,7 @@ public class BackupManager implements ActiveMQComponent {
             backupServerLocator.setIdentity("backupLocatorFor='" + server + "'");
             backupServerLocator.setReconnectAttempts(-1);
             backupServerLocator.setInitialConnectAttempts(-1);
+            backupServerLocator.setConnectionCredentials(configuration.getClusterUser(), configuration.getClusterPassword());
             backupServerLocator.setCallTimeout(config.getCallTimeout());
             backupServerLocator.setProtocolManagerFactory(ActiveMQServerSideProtocolManagerFactory.getInstance(backupServerLocator, server.getStorageManager()));
          }

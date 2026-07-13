@@ -252,7 +252,7 @@ public class ActiveMQActivation {
 
          try {
             if (cf == null) {
-               cf = factory.getServerLocator().createSessionFactory();
+               cf = factory.getServerLocator().createSessionFactory(spec.getUser(), spec.getPassword());
             }
             session = setupSession(cf);
             ActiveMQMessageHandler handler = new ActiveMQMessageHandler(factory, this, ra.getTSR(), (ClientSessionInternal) session, cf, i);

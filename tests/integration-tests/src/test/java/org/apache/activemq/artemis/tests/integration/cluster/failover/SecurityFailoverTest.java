@@ -28,6 +28,7 @@ import org.apache.activemq.artemis.core.security.Role;
 import org.apache.activemq.artemis.core.server.impl.InVMNodeManager;
 import org.apache.activemq.artemis.spi.core.security.ActiveMQJAASSecurityManager;
 import org.apache.activemq.artemis.tests.integration.cluster.util.TestableServer;
+import org.junit.jupiter.api.BeforeEach;
 
 public class SecurityFailoverTest extends FailoverTest {
 
@@ -92,6 +93,14 @@ public class SecurityFailoverTest extends FailoverTest {
    @Override
    protected void beforeRestart(TestableServer primaryServer1) {
       installSecurity(primaryServer1);
+   }
+
+   @Override
+   @BeforeEach
+   public void setUp() throws Exception {
+      super.setUp();
+
+      locator.setConnectionCredentials("a", "b");
    }
 
    protected ActiveMQJAASSecurityManager installSecurity(TestableServer server) {

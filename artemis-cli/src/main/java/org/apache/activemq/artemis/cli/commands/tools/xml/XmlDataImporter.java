@@ -182,7 +182,7 @@ public final class XmlDataImporter extends ConnectionConfigurationAbtract {
       } else {
          serverLocator = ActiveMQClient.createServerLocator(brokerURL);
       }
-      ClientSessionFactory sf = serverLocator.createSessionFactory();
+      ClientSessionFactory sf = serverLocator.createSessionFactory(user, password);
 
       ClientSession session = null;
       ClientSession managementSession = null;

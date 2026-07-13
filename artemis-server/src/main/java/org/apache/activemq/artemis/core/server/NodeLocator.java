@@ -20,7 +20,6 @@ import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.api.core.client.ClusterTopologyListener;
-import org.apache.activemq.artemis.core.client.impl.ServerLocatorInternal;
 
 /**
  * A class that will locate a particular server running in a cluster. How this server is chosen is a job for the
@@ -76,12 +75,5 @@ public abstract class NodeLocator implements ClusterTopologyListener {
       if (backupRegistrationListener != null) {
          backupRegistrationListener.onBackupRegistrationFailed(alreadyReplicating);
       }
-   }
-
-   /**
-    * connects to the cluster
-    */
-   public void connectToCluster(ServerLocatorInternal serverLocator) throws ActiveMQException {
-      serverLocator.connect();
    }
 }

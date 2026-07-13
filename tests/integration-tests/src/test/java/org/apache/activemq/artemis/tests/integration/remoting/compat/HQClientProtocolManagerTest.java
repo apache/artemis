@@ -88,7 +88,7 @@ public class HQClientProtocolManagerTest extends ActiveMQTestBase {
       private static Set<Byte> receivedTypes = new HashSet<>();
       private static Set<Byte> unsupportedTypes = new HashSet<>();
       static {
-         unsupportedTypes.add(PacketImpl.CHECK_FOR_FAILOVER);
+         unsupportedTypes.add(PacketImpl.CONNECT);
       }
 
       @Override
