@@ -86,7 +86,7 @@ public class LargeMessageInterruptTest extends SoakTestBase {
    }
 
    private void killProcess(Process process) throws Exception {
-      Runtime.getRuntime().exec("kill -SIGINT " + process.pid());
+      process.destroy();
    }
 
    @Test

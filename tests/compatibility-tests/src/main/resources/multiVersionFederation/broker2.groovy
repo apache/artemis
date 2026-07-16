@@ -20,15 +20,20 @@ import org.apache.activemq.artemis.api.core.QueueConfiguration
 import org.apache.activemq.artemis.api.core.RoutingType
 import org.apache.activemq.artemis.core.config.CoreAddressConfiguration
 import org.apache.activemq.artemis.core.config.impl.ConfigurationImpl
+import org.apache.activemq.artemis.core.config.impl.SecurityConfiguration
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPBrokerConnectConfiguration
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPFederationQueuePolicyElement
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPFederatedBrokerConnectionElement
+import org.apache.activemq.artemis.core.security.Role
 import org.apache.activemq.artemis.core.server.JournalType
 import org.apache.activemq.artemis.core.server.embedded.EmbeddedActiveMQ
 import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings
+import org.apache.activemq.artemis.spi.core.security.ActiveMQJAASSecurityManager
+import org.apache.activemq.artemis.spi.core.security.jaas.InVMLoginModule
 
 String folder = arg[0];
+boolean security = Boolean.valueOf(arg[1]);
 
 id = 1;
 
@@ -36,7 +41,7 @@ configuration = new ConfigurationImpl();
 configuration.setJournalType(JournalType.NIO);
 configuration.setBrokerInstance(new File(folder + "/" + id));
 configuration.addAcceptorConfiguration("artemis", "tcp://localhost:61001");
-configuration.setSecurityEnabled(false);
+configuration.setSecurityEnabled(security);
 configuration.setPersistenceEnabled(true);
 
 if (configuration.metaClass.hasMetaProperty("globalMaxMessages")) {
@@ -48,6 +53,10 @@ if (configuration.metaClass.hasMetaProperty("globalMaxMessages")) {
 configuration.addAddressSetting("#", new AddressSettings()
     .setAddressFullMessagePolicy(AddressFullMessagePolicy.PAGE).setMaxSizeMessages(100_000).setMaxSizeMessages(100 * 1024 * 1024));
 
+if (security) {
+    configuration.putSecurityRoles("#", new HashSet<Role>(Arrays.asList(new Role("amq", true, true, true, true, true, true, true, true))))
+}
+
 configuration.addAddressConfiguration(new CoreAddressConfiguration().setName("MultiVersionFederationTestQueue"));
 configuration.addQueueConfiguration(new QueueConfiguration("MultiVersionFederationTestQueue")
     .setAddress("MultiVersionFederationTestQueue")
@@ -55,4 +64,14 @@ configuration.addQueueConfiguration(new QueueConfiguration("MultiVersionFederati
 
 theBroker2 = new EmbeddedActiveMQ();
 theBroker2.setConfiguration(configuration);
+
+if (security) {
+    SecurityConfiguration securityConfiguration = new SecurityConfiguration()
+    securityConfiguration.addUser("admin", "admin")
+    securityConfiguration.addRole("admin", "amq")
+    securityConfiguration.setDefaultUser("admin")
+    ActiveMQJAASSecurityManager securityManager = new ActiveMQJAASSecurityManager(InVMLoginModule.class.getName(), securityConfiguration)
+    theBroker2.setSecurityManager(securityManager);
+}
+
 theBroker2.start();

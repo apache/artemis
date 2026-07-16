@@ -43,6 +43,7 @@ import java.util.stream.Stream;
 import org.apache.activemq.artemis.cli.commands.ActionContext;
 import org.apache.activemq.artemis.cli.commands.Create;
 import org.apache.activemq.artemis.cli.commands.Upgrade;
+import org.apache.activemq.artemis.utils.BasedirSupport;
 import org.apache.activemq.artemis.utils.FileUtil;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -55,8 +56,7 @@ public class CompareUpgradeTest {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-   public static final String basedir = System.getProperty("basedir");
-
+   public static final String basedir = BasedirSupport.getBasedir();
 
    @Test
    public void testCompareWindowsFreshInstance() throws Exception {

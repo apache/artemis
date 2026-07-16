@@ -78,7 +78,7 @@ public class TransientQueueTest extends SingleServerTestBase {
 
       ServerLocator locator2 = createLocator();
       ClientSessionFactory sf2 = locator2.createSessionFactory();
-      ClientSession session2 = sf2.createSession(false, false);
+      ClientSession session2 = sf2.createSession(true, true);
 
       // At this point this has no effect, other than making sure the queue exists...
       // the JMS implementation will certainly create the queue again when dealing with

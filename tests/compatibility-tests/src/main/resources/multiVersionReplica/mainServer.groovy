@@ -22,24 +22,33 @@ import org.apache.activemq.artemis.core.config.ClusterConnectionConfiguration
 import org.apache.activemq.artemis.core.config.CoreAddressConfiguration
 import org.apache.activemq.artemis.core.config.ha.ReplicatedPolicyConfiguration
 import org.apache.activemq.artemis.core.config.impl.ConfigurationImpl
+import org.apache.activemq.artemis.core.config.impl.SecurityConfiguration
+import org.apache.activemq.artemis.core.security.Role
 
 // starts an artemis server
 import org.apache.activemq.artemis.core.server.JournalType
 import org.apache.activemq.artemis.core.server.embedded.EmbeddedActiveMQ
 import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings
+import org.apache.activemq.artemis.spi.core.security.ActiveMQJAASSecurityManager
+import org.apache.activemq.artemis.spi.core.security.jaas.InVMLoginModule
 
 String folder = arg[0];
 String id = arg[1];
 String port = arg[2];
 String backupPort = arg[3]
+boolean security = Boolean.valueOf(arg[4]);
 
 configuration = new ConfigurationImpl();
 configuration.setJournalType(JournalType.NIO);
 configuration.setBrokerInstance(new File(folder + "/" + id));
 configuration.addAcceptorConfiguration("artemis", "tcp://localhost:" + port);
 configuration.addConnectorConfiguration("local", "tcp://localhost:" + port);
-configuration.setSecurityEnabled(false);
+configuration.setSecurityEnabled(security);
+if (security) {
+    configuration.setClusterUser("cluster")
+    configuration.setClusterPassword("cluster")
+}
 configuration.setPersistenceEnabled(true);
 
 if (configuration.metaClass.hasMetaProperty("globalMaxMessages")) {
@@ -55,9 +64,23 @@ configuration.addAddressesSetting("#", new AddressSettings().setAddressFullMessa
 ClusterConnectionConfiguration backupConfiguration = new ClusterConnectionConfiguration(new URI("static://(tcp://localhost:" + backupPort + ")")).setName("main").setConnectorName("local")
 configuration.addClusterConfiguration(backupConfiguration)
 
+if (security) {
+    configuration.putSecurityRoles("#", new HashSet<Role>(Arrays.asList(new Role("amq", true, true, true, true, true, true, true, true))))
+}
+
 configuration.addAddressConfiguration(new CoreAddressConfiguration().setName("MultiVersionReplicaTestQueue"));
 configuration.addQueueConfiguration(new QueueConfiguration("MultiVersionReplicaTestQueue").setAddress("MultiVersionReplicaTestQueue").setRoutingType(RoutingType.ANYCAST));
 
 theMainServer = new EmbeddedActiveMQ();
 theMainServer.setConfiguration(configuration);
+
+if (security) {
+    SecurityConfiguration securityConfiguration = new SecurityConfiguration()
+    securityConfiguration.addUser("admin", "admin")
+    securityConfiguration.addRole("admin", "amq")
+    securityConfiguration.setDefaultUser("admin")
+    ActiveMQJAASSecurityManager securityManager = new ActiveMQJAASSecurityManager(InVMLoginModule.class.getName(), securityConfiguration)
+    theMainServer.setSecurityManager(securityManager);
+}
+
 theMainServer.start();

@@ -44,6 +44,10 @@ public class ClasspathBase {
 
    @AfterAll
    public static void cleanup() throws Exception {
+      clearClassLoaders();
+   }
+
+   public static void clearClassLoaders() {
       loaderMap.values().forEach((ClasspathBase::clearClassLoader));
       clearClassLoader(VersionedBase.class.getClassLoader());
       loaderMap.clear();

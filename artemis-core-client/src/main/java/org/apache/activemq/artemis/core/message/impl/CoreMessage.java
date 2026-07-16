@@ -117,12 +117,25 @@ public class CoreMessage extends RefCountMessage implements ICoreMessage {
 
    private volatile Object owner;
 
+   private boolean dropped;
+
    public CoreMessage(final CoreMessageObjectPools coreMessageObjectPools) {
       this.coreMessageObjectPools = coreMessageObjectPools;
    }
 
    public CoreMessage() {
       this.coreMessageObjectPools = null;
+   }
+
+   @Override
+   public CoreMessage setDropped(boolean dropped) {
+      this.dropped = dropped;
+      return this;
+   }
+
+   @Override
+   public boolean isDropped() {
+      return dropped;
    }
 
    @Override

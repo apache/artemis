@@ -19,10 +19,11 @@ package org.apache.activemq.artemis.tests.e2e.common;
 import org.apache.activemq.artemis.api.jms.ActiveMQJMSClient;
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
+import org.apache.activemq.artemis.utils.BasedirSupport;
 
 public class E2ETestBase extends ActiveMQTestBase {
 
-   public static final String basedir = System.getProperty("basedir");
+   public static final String basedir = BasedirSupport.getBasedir();
 
    protected static final void recreateBrokerDirectory(final String homeInstance) {
       recreateDirectory(homeInstance + "/data");

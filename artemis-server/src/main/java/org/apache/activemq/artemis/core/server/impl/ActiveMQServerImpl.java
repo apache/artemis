@@ -637,12 +637,12 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          } else if (haType == null || haType == HAPolicyConfiguration.TYPE.PRIMARY_ONLY) {
             logger.debug("Detected no Shared Store HA options on JDBC store");
             //PRIMARY_ONLY should be the default HA option when HA isn't configured
-            manager = new FileLockNodeManager(directory, replicatingBackup, configuration.getJournalLockAcquisitionTimeout(), scheduledPool);
+            manager = new FileLockNodeManager(directory, replicatingBackup, configuration, scheduledPool);
          } else {
             throw new IllegalArgumentException("JDBC persistence allows only Shared Store HA options");
          }
       } else {
-         manager = new FileLockNodeManager(directory, replicatingBackup, configuration.getJournalLockAcquisitionTimeout(), scheduledPool);
+         manager = new FileLockNodeManager(directory, replicatingBackup, configuration, scheduledPool);
       }
       return manager;
    }
@@ -884,7 +884,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       final CriticalAnalyzerPolicy criticalAnalyzerPolicy = configuration.getCriticalAnalyzerPolicy();
       CriticalAction criticalAction = switch (criticalAnalyzerPolicy) {
          case HALT -> criticalComponent -> {
-            if (ActiveMQServerImpl.this.state == SERVER_STATE.STARTING) {
+            if (!isActive()) {
                takingLongToStart(criticalComponent);
             } else {
                checkCriticalAnalyzerLogging();
@@ -897,7 +897,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
             }
          };
          case SHUTDOWN -> criticalComponent -> {
-            if (ActiveMQServerImpl.this.state == SERVER_STATE.STARTING) {
+            if (!isActive()) {
                takingLongToStart(criticalComponent);
             } else {
                checkCriticalAnalyzerLogging();
@@ -922,7 +922,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
             }
          };
          case LOG -> criticalComponent -> {
-            if (ActiveMQServerImpl.this.state == SERVER_STATE.STARTING) {
+            if (!isActive()) {
                takingLongToStart(criticalComponent);
             } else {
                checkCriticalAnalyzerLogging();
@@ -4887,6 +4887,8 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
          ActiveMQServerLogger.LOGGER.reloadingConfiguration("protocol services");
          updateProtocolServices();
+
+         ActiveMQServerLogger.LOGGER.configurationReloadCompleted();
       }
    }
 

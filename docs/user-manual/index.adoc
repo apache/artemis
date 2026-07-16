@@ -88,6 +88,7 @@ image::images/artemis_text_black_small.png[align="center"]
 
 == Security
 
+* xref:threat-model.adoc#threat-model[Threat Model]
 * xref:security.adoc#authentication-authorization[Authentication & Authorization]
 * xref:masking-passwords.adoc#masking-passwords[Masking Passwords]
 * xref:resource-limits.adoc#resource-limits[Limiting Resource Utilization]

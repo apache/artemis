@@ -79,6 +79,9 @@ public class ActiveMQMapMessage extends ActiveMQMessage implements MapMessage {
          Object obj = foreign.getObject(name);
          setObject(name, obj);
       }
+
+      // invalidate the message anyway. If the foreign is empty, we would otherwise not encode the message at all
+      invalid = true;
    }
 
 

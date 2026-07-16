@@ -356,6 +356,14 @@ Setting this to 0 means compacting is disabled.
 | how long (in ms) to wait to acquire a file lock on the journal.
 | -1
 
+| xref:persistence.adoc#configuring-the-message-journal[journal-lock-monitor-timeout]
+| how long (in ms) between journal lock health checks.
+| 2000
+
+| xref:persistence.adoc#configuring-the-message-journal[journal-lock-monitor-max-retries]
+| how many consecutive failed lock health checks to tolerate before declaring the lock lost.
+| 0
+
 | xref:persistence.adoc#configuring-the-message-journal[journal-max-io]
 | the maximum number of write requests that can be in the ASYNCIO queue at any one time.
 | 4096 for ASYNCIO;

@@ -1,0 +1,287 @@
+= Threat Model
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+This document defines the security boundaries, assumptions, and guarantees of Apache Artemis.
+It serves as the authoritative reference for triaging security reports, guiding secure deployments, and understanding which threats Artemis defends against versus which are the responsibility of operators and applications.
+
+Security researchers, operators deploying Artemis in production, and application developers integrating with the broker should consult this model to understand the security contract.
+
+Findings should be reported according to the link:https://artemis.apache.org/security-advisories[Artemis' security disclosure process].
+Findings that fall under <<security-properties-provided, claimed properties>> will be accepted.
+Findings that are <<out-of-scope,out of the scope>> or involve security properties <<security-properties-not-provided,explicitly not provided>> will be closed citing this document.
+
+== Scope and Intended Use
+
+=== Versioning
+
+This threat model is versioned alongside Artemis.
+A security report against project version _N_ is triaged against the model *as it stood at _N_*.
+
+=== Primary intended use cases
+
+* Multi-protocol message broker for enterprise messaging systems
+* Pub/sub and point-to-point messaging topologies
+* Integration hub for heterogeneous client environments (Java, C++, Python, JavaScript, .NET)
+
+=== Deployment contexts
+
+* Standalone
+* Embedded broker within another Java application
+
+=== Actors
+
+==== Client actors
+
+Artemis distinguishes between two main client actors (network/API callers):
+
+* *Messaging* — send and consume messages via supported messaging protocols
+* *Management* — invoke management operations via web console, JMX, Jolokia HTTP, or management messages
+
+==== Operator actor
+
+* *Operator* — has filesystem or physical access to the broker (can edit `broker.xml`, access journal files, restart the broker process).
+This is not a "client" actor because there is no network call; the operator interacts directly with the host system.
+
+=== Component-Family Table
+
+[cols="2,4,2,1"]
+|===
+| Family | Representative API/Entry Point | Touches External Resources? | In Model?
+
+| Broker Core
+| Core protocol handler, journal, paging, routing engine
+| Yes — filesystem (journal, paging), network (bridges, federation)
+| *Yes*
+
+| Protocol Adapters
+| AMQP, MQTT, STOMP, OpenWire, Core protocol implementations
+| Yes — network
+| *Yes*
+
+| Management APIs
+| JMX MBeans, Jolokia HTTP, Management messages
+| Yes — network (JMX/HTTP), local JMX
+| *Yes*
+
+| Client Libraries
+| Core client, JMS 2.0 client, Jakarta Messaging 3.1 client
+| Yes — network (to broker)
+| *Partial*
+|===
+
+== Out of Scope
+
+=== Use cases Artemis does not support
+
+* Message broker as a cryptographic confidentiality boundary — the broker has access to plaintext message payloads; end-to-end encryption between message producers and consumers must be implemented outside the broker.
+* Defense against malicious operators with filesystem or JVM access — an operator with filesystem access can read journal files, modify configuration, or attach a debugger.
+* Real-time guarantees or bounded latency — the broker is designed for reliability, not hard real-time performance.
+* Byzantine fault tolerance in clustered deployments beyond simple fail-stop failures — the clustering model assumes cluster nodes are honest or fail-stop, not adversarial.
+
+=== Threats Artemis does not attempt to defend against
+
+* Attacks requiring local JVM access (e.g., agent attachment, debugger, `-javaagent` instrumentation).
+* Physical or hypervisor-level attacks on the host.
+* Side-channel attacks (timing, speculative execution) on message metadata or routing decisions.
+* Denial-of-service via resource exhaustion at OS level (e.g., file descriptor limits, kernel OOM) — operators must configure OS limits.
+
+=== Code that ships but is not covered by this model
+
+* Third-party dependencies (Netty, JGroups, etc.) — threat-modeled separately by their respective projects.
+
+== Trust Boundaries and Data Flow
+
+=== Primary trust boundary
+
+Data enters the broker via:
+
+. *Network messaging protocols* (AMQP/MQTT/STOMP/OpenWire/Core) from messaging clients.
+HTTP connections can upgrade to Core protocol.
+AMQP, MQTT, and STOMP support WebSocket as a transport.
+Beyond these specific upgrade/transport paths, protocol switching is not allowed.
+. *Management interfaces* (JMX, Jolokia HTTP, management messages) from management clients
+. *Filesystem reads* (configuration files, journal replay, paged messages) by operator or broker process
+
+=== Trust transitions
+
+. *Messaging Client → Broker Core:* Messages from network clients (untrusted or authenticated) are parsed by protocol adapters and routed to the broker core.
+Authentication happens at connection establishment; authorization happens per operation (sending a message, creating a consumer, creating a queue, etc.).
+. *Management Client → Broker Core:* Management operations from management clients are subject to RBAC.
+. *Broker Core → Filesystem:* Broker writes to append-only journal and paging files; integrity of persisted data depends on filesystem and OS guarantees.
+
+=== Reachability preconditions per component
+
+* *Protocol Adapters:* A finding is in-model only if reachable from network input on the corresponding protocol port without requiring authenticated full management credentials.
+* *Broker Core:* A finding is in-model if reachable from messaging client-controlled payloads, headers, or addressing metadata.
+* *Management APIs:* A finding is in-model if reachable from an authenticated management client's request.
+
+== Assumptions About the Environment
+
+=== Operating system and runtime
+
+* The broker assumes a conformant JVM (Java 17 or later).
+* The broker assumes the OS provides standard filesystem semantics (atomicity of writes < page size, durability after fsync).
+* The broker assumes the OS enforces process isolation (no untrusted local processes can ptrace or inject code).
+
+=== Concurrency
+
+* The broker is designed to be thread-safe for concurrent client connections.
+* The broker assumes the JVM correctly implements Java's multi-threading semantics (thread synchronization, memory visibility between threads, safe publication of shared data).
+A JVM with broken concurrency primitives could cause race conditions in authentication, authorization, or message routing.
+* Runtime configuration reload (`broker.xml`, `security-settings`) is safe under load.
+Configuration changes do not cause inconsistent state or authorization bypass during reload.
+
+=== Filesystem assumptions
+
+* The broker assumes it has exclusive write access to its data directory (and all sub-directories).
+* The broker assumes the filesystem does not arbitrarily corrupt data (bit flips, silent data corruption). *Note:* The broker performs no strict integrity checks on persisted data (see <<security-properties-not-provided>>); tampering is not detected.
+Operators requiring such checks must use OS-level mechanisms (ZFS checksums, dm-integrity, etc.).
+* The broker uses libaio on Linux for high-performance journal writes; it assumes libaio behaves correctly.
+
+=== Network assumptions
+
+* The broker does not assume confidentiality or integrity of network traffic unless TLS/SSL is configured.
+* The broker assumes the network can deliver or drop packets but does not inject malicious packets from non-client sources (i.e., no on-path attacker at IP layer unless TLS mitigates).
+
+=== What Artemis does _not_ do to its host
+
+* Does not install signal handlers beyond standard JVM handlers
+* Does not spawn child processes in normal operation (CLI tools may spawn broker as child, but the broker itself does not spawn processes)
+* Does not mutate process-wide JVM state (locale, timezone, default charset) beyond standard JVM behavior
+* Does not modify system-wide state (iptables, kernel modules, global system properties)
+* Does not open listening sockets on ports other than those explicitly configured
+
+== Configuration Variants
+
+[cols="1,1,3"]
+|===
+| Knob | Default | Impact
+
+| `security-enabled`
+| `true`
+| When `false`, disables all authentication and authorization
+
+| `sslEnabled`
+| `false`
+| When `true`, provides transport confidentiality and integrity
+
+| `needClientAuth`
+| `false`
+| When `true`, enforces mutual TLS at the transport layer before any protocol interaction. Completely prevents unauthenticated network attackers from establishing connections. Stronger than protocol-level authentication as it operates at the TLS handshake.
+
+| Management RBAC
+| enabled
+| Enables fine-grained permissions on management operations
+|===
+
+== Adversary Model
+
+=== Adversaries in Scope
+
+. *Unauthenticated network attacker:*
+.. *When mutual TLS is enforced:* This threat is *completely eliminated*.
+The attacker cannot establish a network connection without a TLS certificate signed by a trusted CA.
+Enforcement happens at the transport layer during the TLS handshake, before any protocol interaction.
+.. *When authentication is enforced*: Cannot meaningfully interact without authentication.
+Unauthenticated connection attempts are rejected at the protocol level (e.g., MQTT `CONNECT` with invalid credentials) before any messaging operations are permitted.
+However, the attacker can still establish network connections and send protocol frames/packets up to the authentication step; attempt authentication with guessed credentials; attempt DoS via connection exhaustion or malformed input during connection or authentication phase.
+. *Authenticated messaging client (low-privilege):* Has valid credentials but limited authorization (e.g., can send to specific addresses but not manage the broker).
+Can attempt privilege escalation via protocol exploits or misuse of broker features.
+. *Authenticated management client (low-privilege):* Has valid credentials but limited authorization; connects via web console, JMX, Jolokia HTTP, or management messages.
+Can potentially read broker state and metrics, enumerate queues, addresses, connections, and consumers, view message counts, etc.; monitor broker performance.
+Can attempt to exploit management API vulnerabilities to gain elevated privileges; denial of service via management interface abuse.
+
+=== Adversaries Out of Scope
+
+. *Malicious operator with filesystem or JVM access:* An operator with filesystem write access to the data directory, ability to attach a debugger, or `kill -9` access can read/modify all data, bypass all security controls, and cause arbitrary behavior.
+The broker does not defend against malicious operators.
+. *Side-channel observers:* Timing attacks on message routing, cache-timing on authentication, speculative execution side channels.
+. *Co-tenant attackers in shared JVM:* If multiple applications share the same JVM and classpath, the broker does not defend against malicious code in the same JVM.
+. *On-path network attacker:* Physical access to network infrastructure; mitigated by TLS.
+. *Clients with full admin permissions:* Such a client can perform any management operation, including reading message content.
+Reports about admin capabilities (e.g., "admin can read messages") are triaged as `BY-DESIGN`.
+. *When `security-enabled=false`:* Can send arbitrary protocol messages and perform messaging or management operations without authentication.
+This configuration is not supported in production.
+Reports against such deployments with are triaged as `OUT-OF-SCOPE`.
+
+== Security Properties Provided
+
+. *Authentication of messaging & management clients:* When just `security-enabled=true` then protocol-level authentication is enforced (e.g. via username & password, JWT, etc.).
+However, when TLS client certificate authentication is also enabled then transport-layer authentication during TLS handshake is enforced.
+TLS client certificates provide stronger authentication as they prevent unauthenticated clients from establishing any connection.
+. *Authorization of messaging clients:* When `security-enabled=true` and `security-settings` are configured.
+. *Authorization for management clients:* When `management-message-rbac=true` *or* `management.xml` is configured appropriately and `security-settings` are in place.
+. *Confidentiality and integrity of messages in transit:* When `sslEnabled=true` on the relevant `acceptor`.
+
+== Security Properties Not Provided
+
+. *End-to-end confidentiality of message payloads:* The broker has access to plaintext message bodies.
+If message payloads must be kept confidential from the broker operator, the application must implement application-layer encryption.
+. *Authentication of message content origin:* The broker authenticates the _connection_ that sends a message, not the message itself.
+A compromised client or a client authorized to send to an address can claim to be any logical sender.
+Applications requiring non-repudiation must implement message signing.
+. *Comprehensive per-client message rate limiting across all protocols:* Message rate limiting is available for Core and MQTT 5 clients, but *not* for AMQP, STOMP, OpenWire, or MQTT 3.x clients.
+Clients using protocols without rate limiting can send messages at line rate until paging or disk space limits are enforced.
+Operators must use network-level controls for protocols that lack broker-side rate limiting.
+. *Memory growth within paging limits:* Memory consumption that grows with messages up to configured paging limits is expected behavior, not a DoS vulnerability.
+However, super-linear CPU consumption or hangs on pathological input *are* bugs.
+. *Byzantine fault tolerance in clustering:* Clustered deployments assume peer brokers are honest or fail-stop.
+If a peer broker is compromised and sends adversarial messages, the cluster may enter an inconsistent state.
+Byzantine fault tolerance is not provided.
+. *Protection against operator-level attacks:* An operator with filesystem access can read all persisted messages, modify configuration to grant themselves any role, or inject/modify messages in the journal.
+The broker does not validate journal or paging file integrity; tampering is not detected.
+
+== Downstream Responsibilities
+
+=== For operators deploying the broker
+
+. *Enable authentication and authorization:* Set `security-enabled=true`.
+. *Configure TLS for network exposure:* If the broker is exposed to an untrusted network, enable SSL/TLS on all protocol ports.
+Use strong cipher suites and disable weak protocols (SSLv3, TLS 1.0, TLS 1.1) to prevent protocol downgrade attacks.
+The broker inherits TLS configuration from the JVM; insecure TLS settings expose credentials and message content.
+. *Consider mutual TLS for high-security deployments:* Enable `needClientAuth=true` on acceptors to require clients to present valid certificates during the TLS handshake.
+This provides transport-layer authentication that completely eliminates unauthenticated network attackers since they cannot establish connections without valid certificates.
+This is stronger than protocol-level authentication because the TLS handshake is enforced before any messaging protocol interaction, preventing connection establishment attacks and protocol-level authentication bypass attempts.
+Recommended for internet-facing brokers or environments with untrusted networks.
+. *Restrict filesystem access:* Ensure read/write access to the broker's instance directory (and all sub-directories) is restricted to trusted operators.
+Among other things, the instance directory includes all configuration, message data, and logs for the broker so protecting it is critical for security.
+For example, an attacker who can write to `broker.xml` can reconfigure `security-settings` and bypass all authorization.
+. *Restrict management interface access:* JMX is not exposed on the network by default whereas Jolokia HTTP and the web console are exposed on localhost by default.
+Ensure authentication and TLS are enabled; prefer localhost-only binding for management interfaces exposed to untrusted networks.
+. *Review and harden JAAS configuration:* If using JAAS, ensure login modules are correctly configured and credentials are not embedded in cleartext files with world-readable permissions.
+. *Set resource limits at OS level:* Configure ulimits (file descriptors, memory) to prevent resource exhaustion.
+
+=== For applications using the broker
+
+. *Validate message content:* Applications must validate untrusted message content.
+. *Implement application-layer encryption if needed:* If message confidentiality from the broker operator is required, encrypt payloads before sending.
+
+== Conditions That Might Change This Model
+
+. A new protocol is added — new parser, new attack surface.
+. A new public API surface is exposed.
+. A new deployment mode is supported (e.g., multi-tenancy in a single JVM with untrusted co-tenants).
+. A default configuration value changes in a way that affects security (e.g., `security-enabled` default flips to `false`, or TLS ciphers change).
+. A security property in <<security-properties-provided>> is changed or disclaimed.
+. A vulnerability report cannot be cleanly routed to one of the <<triage-dispositions>> dispositions — this indicates a model gap.
+
+== Triage Dispositions
+
+[cols="2,4"]
+|===
+| Disposition | Meaning
+
+| `VALID`
+| Violates a <<security-properties-provided,security property Artemis provides>> and reachable via <<adversaries-in-scope,in-scope adversary>>. Requires fixing and CVE assignment.
+
+| `OUT-OF-SCOPE`
+| Requires an <<adversaries-out-of-scope,adversary>>, <<out-of-scope,use case, or threat>> outside the threat model.
+
+| `BY-DESIGN`
+| Concerns a property Artemis <<security-properties-not-provided,explicitly does not provide>>.
+Intentional behavior, not a vulnerability.
+|===
+
+*Note:* If a report cannot be cleanly assigned to one of these dispositions, the model has a gap and <<conditions-that-might-change-this-model,should be revised>>.

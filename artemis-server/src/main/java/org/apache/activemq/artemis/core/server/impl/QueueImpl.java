@@ -3895,6 +3895,11 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    }
 
    private boolean checkExpired(final MessageReference reference) {
+      if (isMirrorController()) {
+         // we don't expire through the MirrorSNF
+         return false;
+      }
+
       try {
          if (reference.getMessage().isExpired()) {
             logger.trace("Reference {} is expired", reference);

@@ -20,16 +20,20 @@ import org.apache.activemq.artemis.api.core.QueueConfiguration
 import org.apache.activemq.artemis.api.core.RoutingType
 import org.apache.activemq.artemis.core.config.CoreAddressConfiguration
 import org.apache.activemq.artemis.core.config.impl.ConfigurationImpl
+import org.apache.activemq.artemis.core.config.impl.SecurityConfiguration
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPBrokerConnectConfiguration
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPFederationQueuePolicyElement
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPFederatedBrokerConnectionElement
+import org.apache.activemq.artemis.core.security.Role
 import org.apache.activemq.artemis.core.server.JournalType
 import org.apache.activemq.artemis.core.server.embedded.EmbeddedActiveMQ
 import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings
+import org.apache.activemq.artemis.spi.core.security.ActiveMQJAASSecurityManager
+import org.apache.activemq.artemis.spi.core.security.jaas.InVMLoginModule
 
 String folder = arg[0];
-
+boolean security = Boolean.valueOf(arg[1]);
 
 id = 0;
 
@@ -37,7 +41,7 @@ configuration = new ConfigurationImpl();
 configuration.setJournalType(JournalType.NIO);
 configuration.setBrokerInstance(new File(folder + "/" + id));
 configuration.addAcceptorConfiguration("amqp", "tcp://localhost:" + 61000);
-configuration.setSecurityEnabled(false);
+configuration.setSecurityEnabled(security);
 configuration.setPersistenceEnabled(true);
 
 configuration.addAddressSetting("#", new AddressSettings()
@@ -50,6 +54,11 @@ AMQPBrokerConnectConfiguration amqpConnection = new AMQPBrokerConnectConfigurati
     .setUri("tcp://localhost:61001")
     .setReconnectAttempts(-1)
     .setRetryInterval(1000)
+
+if (security) {
+    amqpConnection.setUser("admin")
+    amqpConnection.setPassword("admin")
+}
 
 // Configure federation for queues
 AMQPFederatedBrokerConnectionElement federation = new AMQPFederatedBrokerConnectionElement();
@@ -64,6 +73,10 @@ amqpConnection.addFederation(federation)
 
 configuration.addAMQPConnection(amqpConnection)
 
+if (security) {
+    configuration.putSecurityRoles("#", new HashSet<Role>(Arrays.asList(new Role("amq", true, true, true, true, true, true, true, true))))
+}
+
 configuration.addAddressConfiguration(new CoreAddressConfiguration().setName("MultiVersionFederationTestQueue"));
 configuration.addQueueConfiguration(new QueueConfiguration("MultiVersionFederationTestQueue")
     .setAddress("MultiVersionFederationTestQueue")
@@ -71,4 +84,14 @@ configuration.addQueueConfiguration(new QueueConfiguration("MultiVersionFederati
 
 theBroker1 = new EmbeddedActiveMQ();
 theBroker1.setConfiguration(configuration);
+
+if (security) {
+    SecurityConfiguration securityConfiguration = new SecurityConfiguration()
+    securityConfiguration.addUser("admin", "admin")
+    securityConfiguration.addRole("admin", "amq")
+    securityConfiguration.setDefaultUser("admin")
+    ActiveMQJAASSecurityManager securityManager = new ActiveMQJAASSecurityManager(InVMLoginModule.class.getName(), securityConfiguration)
+    theBroker1.setSecurityManager(securityManager);
+}
+
 theBroker1.start();

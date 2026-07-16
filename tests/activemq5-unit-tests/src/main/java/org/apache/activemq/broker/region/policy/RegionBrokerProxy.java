@@ -408,6 +408,11 @@ public class RegionBrokerProxy implements Broker {
    }
 
    @Override
+   public void messageNoConsumers(ConnectionContext context, MessageReference messageReference) {
+      throw new UnsupportedOperationException("Not implemented yet");
+   }
+
+   @Override
    public void nowMasterBroker() {
       throw new UnsupportedOperationException("Not implemented yet");
    }

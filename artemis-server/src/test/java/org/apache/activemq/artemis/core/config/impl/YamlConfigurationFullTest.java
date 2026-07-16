@@ -14,20 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.activemq.artemis.tests.util;
+package org.apache.activemq.artemis.core.config.impl;
 
-public class JavaVersionUtil {
+import org.junit.jupiter.api.TestInstance;
 
-   private static boolean isJdk8;
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+public class YamlConfigurationFullTest extends AbstractConfigurationFullTest {
 
-   static {
-      String version = System.getProperty("java.version");
-      if (version != null && version.startsWith("1.8.")) {
-         isJdk8 = true;
-      }
+   @Override
+   protected String getConfigResource() {
+      return "/broker-full-config.yaml";
    }
 
-   public static boolean isJava8() {
-      return isJdk8;
+   @Override
+   protected String getConfigFileName() {
+      return "broker-full-config.yaml";
    }
 }

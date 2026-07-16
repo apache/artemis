@@ -65,7 +65,7 @@ public class ColocatedActiveMQServer extends ActiveMQServerImpl {
    @Override
    protected NodeManager createNodeManager(final File directory, boolean replicatingBackup) {
       if (replicatingBackup) {
-         return new FileLockNodeManager(directory, replicatingBackup, getConfiguration().getJournalLockAcquisitionTimeout(), null);
+         return new FileLockNodeManager(directory, replicatingBackup, getConfiguration(), null);
       } else {
          if (backup) {
             return nodeManagerBackup;

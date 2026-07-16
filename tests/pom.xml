@@ -18,7 +18,7 @@
    <parent>
       <groupId>org.apache.artemis</groupId>
       <artifactId>artemis-pom</artifactId>
-      <version>2.55.0-SNAPSHOT</version>
+      <version>2.56.0-SNAPSHOT</version>
       <relativePath>../artemis-pom/pom.xml</relativePath>
    </parent>
 
@@ -29,7 +29,7 @@
    <packaging>pom</packaging>
 
    <properties>
-      <byteman.version>4.0.26</byteman.version>
+      <byteman.version>4.0.27</byteman.version>
    </properties>
 
    <dependencyManagement>

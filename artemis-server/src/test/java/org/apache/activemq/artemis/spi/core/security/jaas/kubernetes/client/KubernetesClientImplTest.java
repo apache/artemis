@@ -30,6 +30,7 @@ import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 import static org.mockserver.model.JsonBody.json;
 
+import java.io.File;
 import java.lang.invoke.MethodHandles;
 import java.net.URL;
 import java.util.Map;
@@ -40,6 +41,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockserver.configuration.Configuration;
 import org.mockserver.configuration.ConfigurationProperties;
 import org.mockserver.integration.ClientAndServer;
@@ -58,6 +60,9 @@ public class KubernetesClientImplTest {
    private static final String host = "localhost";
    private static String port;
 
+   @TempDir
+   static File tempDir;
+
    private static final String BOB_REQUEST = """
          {"apiVersion": "authentication.k8s.io/v1",\
          "kind": "TokenReview", "spec": {"token": "bob_token"}}""";
@@ -68,6 +73,7 @@ public class KubernetesClientImplTest {
 
    @BeforeAll
    public static void startServer() {
+      ConfigurationProperties.directoryToSaveDynamicSSLCertificate(tempDir.getAbsolutePath());
       ConfigurationProperties.certificateAuthorityPrivateKey(KubernetesClientImplTest.class.getClassLoader().getResource("server-ca.pem").getPath());
       ConfigurationProperties.certificateAuthorityCertificate(KubernetesClientImplTest.class.getClassLoader().getResource("server-ca-cert.pem").getPath());
       ConfigurationProperties.preventCertificateDynamicUpdate(false);

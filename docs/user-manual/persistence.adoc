@@ -235,6 +235,16 @@ How long to wait (in milliseconds) to acquire a file lock on the journal before 
 +
 The default for this parameter is `-1` (i.e. indefinite))
 
+journal-lock-monitor-timeout::
+How long (in milliseconds) between journal lock health checks. The lock monitor periodically verifies that the journal lock is still held.
++
+The default for this parameter is `2000` (i.e. 2 seconds)
+
+journal-lock-monitor-max-retries::
+How many consecutive failed lock health checks to tolerate before declaring the lock lost. This is useful for tolerating transient storage outages.
++
+The default for this parameter is `0` (i.e. no retries - fail immediately on first check failure)
+
 journal-datasync::
 This will disable the use of fdatasync on journal writes.
 When enabled it ensures full power failure durability, otherwise  process failure durability on journal writes (OS guaranteed).

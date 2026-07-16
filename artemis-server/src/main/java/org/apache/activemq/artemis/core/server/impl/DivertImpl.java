@@ -153,7 +153,7 @@ public class DivertImpl implements Divert {
             copy = message;
          }
 
-         postOffice.route(copy, new RoutingContextImpl(context.getTransaction()).setReusable(false).setRoutingType(copy.getRoutingType()).setServerSession(context.getServerSession()), false);
+         postOffice.route(copy, new RoutingContextImpl(context.getTransaction()).setReusable(false).setMirrorOption(context.getMirrorOption()).setRoutingType(copy.getRoutingType()).setServerSession(context.getServerSession()), false);
       }
    }
 

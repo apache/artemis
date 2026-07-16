@@ -215,6 +215,14 @@ public interface Message {
    default void clearAMQPProperties() {
    }
 
+   default boolean isDropped() {
+      return false;
+   }
+
+   default Message setDropped(boolean dropped) {
+      return this;
+   }
+
    /**
     * Search for the existence of the property: an implementor can save the message to be decoded, if possible.
     */

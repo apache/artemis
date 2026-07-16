@@ -54,34 +54,44 @@ public class MultiVersionReplicaTest extends ClasspathBase {
    private final String backup;
    private final ClassLoader backupClassLoader;
 
+   private boolean security;
 
 
-   @Parameters(name = "main={0}, backup={1}")
+
+   @Parameters(name = "main={0}, backup={1}, security={2}")
    public static Collection getParameters() {
       List<Object[]> combinations = new ArrayList<>();
 
       if (getJavaVersion() <= 22) {
          // Old 2.x servers fail on JDK23+ without workarounds.
-         combinations.add(new Object[]{ARTEMIS_2_22_0, SNAPSHOT});
-         combinations.add(new Object[]{SNAPSHOT, ARTEMIS_2_22_0});
-         combinations.add(new Object[]{ARTEMIS_2_17_0, SNAPSHOT});
-         combinations.add(new Object[]{SNAPSHOT, ARTEMIS_2_17_0});
+         combinations.add(new Object[]{ARTEMIS_2_22_0, SNAPSHOT, true});
+         combinations.add(new Object[]{SNAPSHOT, ARTEMIS_2_22_0, true});
+         combinations.add(new Object[]{ARTEMIS_2_17_0, SNAPSHOT, true});
+         combinations.add(new Object[]{SNAPSHOT, ARTEMIS_2_17_0, true});
+         combinations.add(new Object[]{ARTEMIS_2_22_0, SNAPSHOT, false});
+         combinations.add(new Object[]{SNAPSHOT, ARTEMIS_2_22_0, false});
+         combinations.add(new Object[]{ARTEMIS_2_17_0, SNAPSHOT, false});
+         combinations.add(new Object[]{SNAPSHOT, ARTEMIS_2_17_0, false});
       }
 
-      combinations.add(new Object[]{ARTEMIS_2_44_0, SNAPSHOT});
-      combinations.add(new Object[]{SNAPSHOT, ARTEMIS_2_44_0});
+      combinations.add(new Object[]{ARTEMIS_2_44_0, SNAPSHOT, true});
+      combinations.add(new Object[]{SNAPSHOT, ARTEMIS_2_44_0, true});
+      combinations.add(new Object[]{ARTEMIS_2_44_0, SNAPSHOT, false});
+      combinations.add(new Object[]{SNAPSHOT, ARTEMIS_2_44_0, false});
 
       // The SNAPSHOT/SNAPSHOT is here as a test validation only, like in other cases where SNAPSHOT/SNAPSHOT is used.
-      combinations.add(new Object[]{SNAPSHOT, SNAPSHOT});
+      combinations.add(new Object[]{SNAPSHOT, SNAPSHOT, true});
+      combinations.add(new Object[]{SNAPSHOT, SNAPSHOT, false});
       return combinations;
    }
 
-   public MultiVersionReplicaTest(String main, String backup) throws Exception {
+   public MultiVersionReplicaTest(String main, String backup, boolean security) throws Exception {
       this.main = main;
       this.mainClassloader = getClasspath(main);
 
       this.backup = backup;
       this.backupClassLoader = getClasspath(backup);
+      this.security = security;
    }
 
    @AfterEach
@@ -100,9 +110,9 @@ public class MultiVersionReplicaTest extends ClasspathBase {
    @TestTemplate
    public void testReplica() throws Throwable {
       System.out.println("Starting live");
-      evaluate(mainClassloader, "multiVersionReplica/mainServer.groovy", serverFolder.getAbsolutePath(), "1", "61000", "61001");
+      evaluate(mainClassloader, "multiVersionReplica/mainServer.groovy", serverFolder.getAbsolutePath(), "1", "61000", "61001", String.valueOf(security));
       System.out.println("Starting backup");
-      evaluate(backupClassLoader, "multiVersionReplica/backupServer.groovy", serverFolder.getAbsolutePath(), "2", "61001", "61000");
+      evaluate(backupClassLoader, "multiVersionReplica/backupServer.groovy", serverFolder.getAbsolutePath(), "2", "61001", "61000", String.valueOf(security));
 
       evaluate(mainClassloader, "multiVersionReplica/mainServerIsReplicated.groovy");
 
@@ -120,7 +130,7 @@ public class MultiVersionReplicaTest extends ClasspathBase {
 
 
    private void send(ConnectionFactory factory, int numberOfMessagesTx, int numberOfMessagesNonTx) throws Throwable {
-      try (Connection connection = factory.createConnection()) {
+      try (Connection connection = factory.createConnection("admin", "admin")) {
          Queue queue;
 
          {
@@ -153,7 +163,7 @@ public class MultiVersionReplicaTest extends ClasspathBase {
    }
 
    private void receive(ConnectionFactory factory, int numberOfMessages) throws Throwable {
-      try (Connection connection = factory.createConnection()) {
+      try (Connection connection = factory.createConnection("admin", "admin")) {
          Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
          Queue queue = session.createQueue(QUEUE_NAME);
          connection.start();

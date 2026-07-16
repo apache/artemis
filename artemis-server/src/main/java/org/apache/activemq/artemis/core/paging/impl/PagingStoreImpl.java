@@ -1424,43 +1424,6 @@ public class PagingStoreImpl implements PagingStore {
    }
 
    @Override
-   public boolean checkFullPolicy(Message message) throws Exception {
-      if (pagingManager.isDiskFull() && (diskFullMessagePolicy == DiskFullMessagePolicy.DROP || diskFullMessagePolicy == DiskFullMessagePolicy.FAIL)) {
-         handleDrop(message, diskFullMessagePolicy == DiskFullMessagePolicy.FAIL);
-         return false;
-      }
-
-      if (isFull() && (addressFullMessagePolicy == AddressFullMessagePolicy.DROP || addressFullMessagePolicy == AddressFullMessagePolicy.FAIL)) {
-         handleDrop(message, addressFullMessagePolicy == AddressFullMessagePolicy.FAIL);
-         return false;
-      }
-
-      if (pageFull) {
-         handleDrop(message, pageFullMessagePolicy == PageFullMessagePolicy.FAIL);
-         return false;
-      }
-
-      return true;
-   }
-
-   // message will be dropped, we may throw an Exception if fail
-   private void handleDrop(Message message, boolean fail) throws Exception {
-      if (message.isLargeMessage()) {
-         ((LargeServerMessage) message).deleteFile();
-      }
-
-      if (fail) {
-         throw ActiveMQMessageBundle.BUNDLE.addressIsFull(address.toString());
-      }
-
-      // System is full, just drop the message
-      if (!printedDropMessagesWarning) {
-         printedDropMessagesWarning = true;
-         ActiveMQServerLogger.LOGGER.pageStoreDropMessages(storeName, getPageInfo());
-      }
-   }
-
-   @Override
    public int page(Message message,
                        final Transaction tx,
                        RouteContextList listCtx,
@@ -1471,10 +1434,84 @@ public class PagingStoreImpl implements PagingStore {
          return -1;
       }
 
-      if (addressFullMessagePolicy == AddressFullMessagePolicy.BLOCK) {
+      boolean diskFull = pagingManager.isDiskFull();
+
+      if (diskFullMessagePolicy == DiskFullMessagePolicy.DROP || diskFullMessagePolicy == DiskFullMessagePolicy.FAIL) {
+         if (diskFull) {
+            message.setDropped(true);
+
+            if (message.isLargeMessage()) {
+               ((LargeServerMessage) message).deleteFile();
+            }
+
+            if (diskFullMessagePolicy == DiskFullMessagePolicy.FAIL) {
+               throw ActiveMQMessageBundle.BUNDLE.addressIsFull(address.toString());
+            }
+
+            // Dist is full, just drop the data
+            if (!printedDropMessagesWarning) {
+               printedDropMessagesWarning = true;
+               ActiveMQServerLogger.LOGGER.pageStoreDropMessages(storeName, getPageInfo());
+            }
+
+            return 0;
+         }
+      }
+
+      boolean full = isFull();
+
+      if (addressFullMessagePolicy == AddressFullMessagePolicy.DROP || addressFullMessagePolicy == AddressFullMessagePolicy.FAIL) {
+         if (full) {
+            message.setDropped(true);
+
+            if (message.isLargeMessage()) {
+               ((LargeServerMessage) message).deleteFile();
+            }
+
+            if (addressFullMessagePolicy == AddressFullMessagePolicy.FAIL) {
+               throw ActiveMQMessageBundle.BUNDLE.addressIsFull(address.toString());
+            }
+
+            // Address is full, we just pretend we are paging, and drop the data
+            if (!printedDropMessagesWarning) {
+               printedDropMessagesWarning = true;
+               ActiveMQServerLogger.LOGGER.pageStoreDropMessages(storeName, getPageInfo());
+            }
+            return 0;
+         } else {
+            return -1;
+         }
+      } else if (addressFullMessagePolicy == AddressFullMessagePolicy.BLOCK) {
          return -1;
       }
 
+      if (pageFull) {
+         if (message.isLargeMessage()) {
+            ((LargeServerMessage) message).deleteFile();
+         }
+
+         if (pageFullMessagePolicy == PageFullMessagePolicy.FAIL) {
+            throw ActiveMQMessageBundle.BUNDLE.addressIsFull(address.toString());
+         }
+
+         if (!printedDropMessagesWarning) {
+            printedDropMessagesWarning = true;
+            ActiveMQServerLogger.LOGGER.pageStoreDropMessages(storeName, getPageInfo());
+         }
+
+         // we are in page mode, if we got to this point, we are dropping the message while still paging
+         // we return 0 as in the storage is in "page mode" however no credits are being taken.
+         return 0;
+      }
+
+      return writePage(message, tx, listCtx, pageDecorator, useFlowControl);
+   }
+
+   private int writePage(Message message,
+                             Transaction tx,
+                             RouteContextList listCtx,
+                             Function<Message, Message> pageDecorator,
+                             boolean useFlowControl) throws Exception {
       // We need to use a readLock as we need to keep paging until we scheduled a task
       // notice that to leave paging you need pending tasks done
       readLock();

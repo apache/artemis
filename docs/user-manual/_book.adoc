@@ -79,6 +79,7 @@ include::jms-bridge.adoc[leveloffset=1]
 
 //== Security
 
+include::threat-model.adoc[leveloffset=1]
 include::security.adoc[leveloffset=1]
 include::masking-passwords.adoc[leveloffset=1]
 include::resource-limits.adoc[leveloffset=1]

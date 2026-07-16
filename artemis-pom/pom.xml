@@ -20,7 +20,7 @@
    <parent>
       <groupId>org.apache.artemis</groupId>
       <artifactId>artemis-project</artifactId>
-      <version>2.55.0-SNAPSHOT</version>
+      <version>2.56.0-SNAPSHOT</version>
    </parent>
 
    <artifactId>artemis-pom</artifactId>
@@ -934,6 +934,13 @@
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
             <version>${apache.httpclient.version}</version>
+         </dependency>
+
+         <dependency>
+            <groupId>org.snakeyaml</groupId>
+            <artifactId>snakeyaml-engine</artifactId>
+            <version>${snakeyaml-engine.version}</version>
+            <!-- Apache 2.0 License -->
          </dependency>
 
          <dependency>

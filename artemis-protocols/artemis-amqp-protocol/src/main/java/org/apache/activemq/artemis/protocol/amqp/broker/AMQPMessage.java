@@ -211,12 +211,24 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
    protected long scheduledTime = -1;
    protected byte priority = DEFAULT_MESSAGE_PRIORITY;
 
+   protected boolean dropped;
    protected boolean isPaged;
    protected volatile boolean routed = false;
 
    @Override
    public void routed() {
       this.routed = true;
+   }
+
+   @Override
+   public boolean isDropped() {
+      return dropped;
+   }
+
+   @Override
+   public AMQPMessage setDropped(boolean dropped) {
+      this.dropped = dropped;
+      return this;
    }
 
    // The Proton based AMQP message section that are retained in memory, these are the

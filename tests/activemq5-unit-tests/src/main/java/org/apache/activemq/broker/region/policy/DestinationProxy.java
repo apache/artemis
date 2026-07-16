@@ -58,6 +58,11 @@ public class DestinationProxy implements Destination {
    // Destination
 
    @Override
+   public int getMaxInflatedDataSize() {
+      throw new UnsupportedOperationException("Not implemented yet");
+   }
+
+   @Override
    public void addSubscription(ConnectionContext context, Subscription sub) throws Exception {
       throw new UnsupportedOperationException("Not implemented yet");
    }

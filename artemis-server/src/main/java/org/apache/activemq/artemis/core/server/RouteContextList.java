@@ -18,14 +18,10 @@ package org.apache.activemq.artemis.core.server;
 
 import java.util.List;
 
-import org.apache.activemq.artemis.core.paging.PagingStore;
-
 /**
  * This is a simple datatype containing the list of a routing context
  */
 public interface RouteContextList {
-
-   PagingStore getAddressStore();
 
    int getNumberOfNonDurableQueues();
 

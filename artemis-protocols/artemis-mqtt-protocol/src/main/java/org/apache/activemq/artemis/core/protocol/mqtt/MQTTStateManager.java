@@ -137,14 +137,10 @@ public class MQTTStateManager {
 
    public MQTTSessionState getSessionState(String clientId) throws Exception {
       // [MQTT-3.1.2-4] Attach an existing session if one exists otherwise create a new one.
-      if (sessionStates.containsKey(clientId)) {
-         return sessionStates.get(clientId);
-      } else {
-         MQTTSessionState sessionState = new MQTTSessionState(clientId);
-         logger.debug("Adding MQTT session state for: {}", clientId);
-         sessionStates.put(clientId, sessionState);
-         return sessionState;
-      }
+      return sessionStates.computeIfAbsent(clientId, key -> {
+         logger.debug("Adding MQTT session state for: {}", key);
+         return new MQTTSessionState(key);
+      });
    }
 
    public MQTTSessionState removeSessionState(String clientId) throws Exception {

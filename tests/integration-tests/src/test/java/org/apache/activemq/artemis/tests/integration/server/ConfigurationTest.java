@@ -236,9 +236,9 @@ public class ConfigurationTest extends ActiveMQTestBase {
          assertTrue(updatedStatus.contains(propsFile.getName()));
          JsonObject jsonStarted = JsonLoader.readObject(new StringReader(startedStatus));
          JsonObject jsonUpdated = JsonLoader.readObject(new StringReader(updatedStatus));
-         String alder32Used = jsonStarted.getJsonObject("configuration").getJsonObject("properties").getJsonObject(propsFile.getName()).getString("fileAlder32");
-         String alder32Updated = jsonUpdated.getJsonObject("configuration").getJsonObject("properties").getJsonObject(propsFile.getName()).getString("fileAlder32");
-         assertNotEquals(alder32Used, alder32Updated);
+         String adler32Used = jsonStarted.getJsonObject("configuration").getJsonObject("properties").getJsonObject(propsFile.getName()).getString("fileAdler32");
+         String adler32Updated = jsonUpdated.getJsonObject("configuration").getJsonObject("properties").getJsonObject(propsFile.getName()).getString("fileAdler32");
+         assertNotEquals(adler32Used, adler32Updated);
 
       } finally {
          try {

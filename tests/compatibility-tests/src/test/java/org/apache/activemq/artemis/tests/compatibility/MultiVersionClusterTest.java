@@ -59,26 +59,32 @@ public class MultiVersionClusterTest extends ClasspathBase {
    private final String broker2Version;
    private final ClassLoader broker2Classloader;
 
-   @Parameters(name = "broker1={0}, broker2={1}")
+   private boolean security;
+
+   @Parameters(name = "broker1={0}, broker2={1}, security={2}")
    public static Collection getParameters() {
       List<Object[]> combinations = new ArrayList<>();
 
       // Test clustering with mixed versions
-      combinations.add(new Object[]{ARTEMIS_2_44_0, SNAPSHOT});
-      combinations.add(new Object[]{SNAPSHOT, ARTEMIS_2_44_0});
+      combinations.add(new Object[]{ARTEMIS_2_44_0, SNAPSHOT, true});
+      combinations.add(new Object[]{SNAPSHOT, ARTEMIS_2_44_0, true});
+      combinations.add(new Object[]{ARTEMIS_2_44_0, SNAPSHOT, false});
+      combinations.add(new Object[]{SNAPSHOT, ARTEMIS_2_44_0, false});
 
       // The SNAPSHOT/SNAPSHOT is here as a test validation only
-      combinations.add(new Object[]{SNAPSHOT, SNAPSHOT});
+      combinations.add(new Object[]{SNAPSHOT, SNAPSHOT, true});
+      combinations.add(new Object[]{SNAPSHOT, SNAPSHOT, false});
 
       return combinations;
    }
 
-   public MultiVersionClusterTest(String broker1Version, String broker2Version) throws Exception {
+   public MultiVersionClusterTest(String broker1Version, String broker2Version, boolean security) throws Exception {
       this.broker1Version = broker1Version;
       this.broker1Classloader = getClasspath(broker1Version);
 
       this.broker2Version = broker2Version;
       this.broker2Classloader = getClasspath(broker2Version);
+      this.security = security;
    }
 
    @AfterEach
@@ -99,10 +105,10 @@ public class MultiVersionClusterTest extends ClasspathBase {
    public void testCluster() throws Throwable {
       FileUtil.deleteDirectory(serverFolder.getAbsoluteFile());
       System.out.println("Starting broker1 with version " + broker1Version);
-      evaluate(broker1Classloader, "multiVersionCluster/broker1.groovy", serverFolder.getAbsolutePath(), "broker1", "61000", "61001");
+      evaluate(broker1Classloader, "multiVersionCluster/broker1.groovy", serverFolder.getAbsolutePath(), "broker1", "61000", "61001", String.valueOf(security));
 
       System.out.println("Starting broker2 with version " + broker2Version);
-      evaluate(broker2Classloader, "multiVersionCluster/broker2.groovy", serverFolder.getAbsolutePath(), "broker2", "61001", "61000");
+      evaluate(broker2Classloader, "multiVersionCluster/broker2.groovy", serverFolder.getAbsolutePath(), "broker2", "61001", "61000", String.valueOf(security));
 
       // Wait for cluster to form
       evaluate(broker1Classloader, "multiVersionCluster/broker1WaitForTopology.groovy");
@@ -133,7 +139,7 @@ public class MultiVersionClusterTest extends ClasspathBase {
    }
 
    private void send(ConnectionFactory factory, int numberOfMessages, int textSize) throws Throwable {
-      try (Connection connection = factory.createConnection()) {
+      try (Connection connection = factory.createConnection("admin", "admin")) {
          Queue queue;
 
          {
@@ -158,7 +164,7 @@ public class MultiVersionClusterTest extends ClasspathBase {
    }
 
    private void receive(ConnectionFactory factory, int numberOfMessages, int textSize) throws Throwable {
-      try (Connection connection = factory.createConnection()) {
+      try (Connection connection = factory.createConnection("admin", "admin")) {
          Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
          Queue queue = session.createQueue(QUEUE_NAME);
          connection.start();

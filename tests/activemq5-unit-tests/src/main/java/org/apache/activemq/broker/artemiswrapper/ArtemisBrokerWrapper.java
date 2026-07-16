@@ -183,6 +183,11 @@ public class ArtemisBrokerWrapper extends ArtemisBrokerBase {
 
    }
 
+   @Override
+   public void messageNoConsumers(ConnectionContext context, MessageReference messageReference) {
+
+   }
+
    private void addServerAcceptor(Configuration serverConfig, BrokerService.ConnectorInfo info) throws Exception {
       serverConfig.addAcceptorConfiguration("homePort" + info.uri.getPort(), info.uri.toString());
    }

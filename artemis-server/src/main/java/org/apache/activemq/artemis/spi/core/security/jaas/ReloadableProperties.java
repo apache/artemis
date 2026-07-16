@@ -112,7 +112,7 @@ public class ReloadableProperties {
 
    private void updateStatus() {
       Map<String, String> statusAttributes = new HashMap<>();
-      statusAttributes.put("Alder32", String.valueOf(checksum));
+      statusAttributes.put("Adler32", String.valueOf(checksum));
       statusAttributes.put("reloadTime", String.valueOf(reloadTime));
       ServerStatus.getInstance().update(JAAS_COMPONENT + "/properties/" + key.file.getName(), statusAttributes);
    }

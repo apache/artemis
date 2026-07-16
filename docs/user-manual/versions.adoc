@@ -15,6 +15,18 @@ NOTE: Follow the general upgrade procedure outlined in the xref:upgrading.adoc#u
 
 :sectnums!:
 
+== Version 2.55.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12357054[Full release notes]
+
+=== Highlights
+
+* The `exp` command from the xref:data-tools.adoc#data-tools[data tools] now supports exporting messages from a specific queue via the `--queue` switch.
+* The xref:security.adoc#oidcloginmodule[OIDCLoginModule] now supports configurable mandatory claims and role mapping via the `requiredClaims` and `roleMapping` parameters.
+* The value for `cluster-password` specified via `create` command is now masked in the resulting `broker.xml`.
+* The timeout for xref:configuring-transports.adoc#configuring-netty-ssl[SSL/TLS] handshake is now configurable on any `acceptor` via the `sslHandshakeTimeout` URL parameter.
+* On the documentation front, we added a comprehensive xref:threat-model.adoc#threat-model[threat model] and a basic https://github.com/apache/artemis/blob/main/SECURITY.md[SECURITY.md] to help both humans and AI agents provide higher quality security reports. We also added an https://github.com/apache/artemis/blob/main/AGENTS.md[AGENTS.md] to help improve the quality of AI-assisted contributions.
+
 == Version 2.54.0
 
 https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12356777[Full release notes]

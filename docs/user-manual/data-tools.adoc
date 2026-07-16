@@ -158,6 +158,7 @@ SYNOPSIS
                 [--bindings <binding>] [--jdbc] [--verbose]
                 [--jdbc-message-table-name <jdbcMessages>]
                 [--jdbc-node-manager-table-name <jdbcNodeManager>] [--output <output>]
+                [--queue <queue>]
         artemis data imp [--legacy-prefixes] [--password <password>]
                 [--transaction] [--verbose] [--port <port>] [--user <user>] [--sort]
                 --input <input> [--host <host>]
@@ -345,6 +346,9 @@ COMMANDS
             manager table
 
             With --output option, Output name for the file
+
+            With --queue option, Only export the specified queue(s). Repeatable.
+            When omitted, all queues are exported.
 
         imp
             Import all message-data using an XML that could be interpreted by

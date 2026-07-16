@@ -174,6 +174,8 @@ public class ConfigurationImplTest extends AbstractConfigurationTestBase {
       assertEquals(ActiveMQDefaultConfiguration.getDefaultLargeMessagesDir(), conf.getLargeMessagesDirectory());
       assertEquals(ActiveMQDefaultConfiguration.getDefaultJournalCompactPercentage(), conf.getJournalCompactPercentage());
       assertEquals(ActiveMQDefaultConfiguration.getDefaultJournalLockAcquisitionTimeout(), conf.getJournalLockAcquisitionTimeout());
+      assertEquals(ActiveMQDefaultConfiguration.getDefaultJournalLockMonitorTimeout(), conf.getJournalLockMonitorTimeout());
+      assertEquals(ActiveMQDefaultConfiguration.getDefaultJournalLockMonitorMaxRetries(), conf.getJournalLockMonitorMaxRetries());
       assertEquals(ArtemisConstants.DEFAULT_JOURNAL_BUFFER_TIMEOUT_AIO, conf.getJournalBufferTimeout_AIO());
       assertEquals(ArtemisConstants.DEFAULT_JOURNAL_BUFFER_TIMEOUT_NIO, conf.getJournalBufferTimeout_NIO());
       assertEquals(ArtemisConstants.DEFAULT_JOURNAL_BUFFER_SIZE_AIO, conf.getJournalBufferSize_AIO());
@@ -2453,7 +2455,7 @@ public class ConfigurationImplTest extends AbstractConfigurationTestBase {
       configuration.parseProperties(tmpFile.getAbsolutePath());
 
       testSimpleConfig(configuration);
-      assertTrue(configuration.getStatus().contains("\"fileAlder32\":\"2235122473\""));
+      assertTrue(configuration.getStatus().contains("\"fileAdler32\":\"2235122473\""));
    }
 
    @Test
@@ -2470,7 +2472,7 @@ public class ConfigurationImplTest extends AbstractConfigurationTestBase {
       configuration.parseProperties(tmpFile.getAbsolutePath());
 
       testSimpleConfig(configuration);
-      assertTrue(configuration.getStatus().contains("\"fileAlder32\":\"1145294432\""));
+      assertTrue(configuration.getStatus().contains("\"fileAdler32\":\"1145294432\""));
    }
 
    @Test
@@ -2587,6 +2589,147 @@ public class ConfigurationImplTest extends AbstractConfigurationTestBase {
       configuration.parseProperties(tmpFile.getAbsolutePath());
       assertTrue(configuration.getStatus().contains(".json\":{\"errors\":[]"), configuration.getStatus());
       assertEquals("$$", configuration.getBrokerPropertiesKeySurround());
+   }
+
+   @Test
+   public void testYamlSecurityRolesWithAnchors() throws Exception {
+
+      File tmpFile = File.createTempFile("yaml-security-roles-test", ".yaml", temporaryFolder);
+      try (FileOutputStream fileOutputStream = new FileOutputStream(tmpFile);
+           PrintWriter printWriter = new PrintWriter(fileOutputStream)) {
+         printWriter.write("""
+            securityRoles:
+              "TEMP.*":
+                role1: &base_perms
+                  createAddress: true
+                  send: true
+                  consume: true
+                  createNonDurableQueue: true
+                role2: *base_perms
+                role3: *base_perms
+            """);
+      }
+
+      ConfigurationImpl configuration = new ConfigurationImpl();
+      configuration.parseProperties(tmpFile.getAbsolutePath());
+
+      assertTrue(configuration.getStatus().contains("\"errors\":[]"), configuration.getStatus());
+
+      Set<Role> roles = configuration.getSecurityRoles().get("TEMP.*");
+      assertNotNull(roles, "Expected security roles for TEMP.*");
+      assertEquals(3, roles.size(), "Expected 3 roles under TEMP.*");
+
+      for (String roleName : new String[]{"role1", "role2", "role3"}) {
+         Role role = roles.stream()
+            .filter(r -> r.getName().equals(roleName))
+            .findFirst()
+            .orElse(null);
+         assertNotNull(role, "Missing role: " + roleName);
+         assertTrue(role.isCreateAddress(), roleName + " should have createAddress");
+         assertTrue(role.isSend(), roleName + " should have send");
+         assertTrue(role.isConsume(), roleName + " should have consume");
+         assertTrue(role.isCreateNonDurableQueue(), roleName + " should have createNonDurableQueue");
+      }
+   }
+
+   @Test
+   public void testYamlPropertiesReaderFromFile() throws Exception {
+
+      File tmpFile = File.createTempFile("yaml-props-test", ".yaml", temporaryFolder);
+      try (FileOutputStream fileOutputStream = new FileOutputStream(tmpFile);
+           PrintWriter printWriter = new PrintWriter(fileOutputStream)) {
+         printWriter.write("""
+            globalMaxSize: "25K"
+            gracefulShutdownEnabled: true
+            securityEnabled: false
+            """);
+      }
+
+      ConfigurationImpl configuration = new ConfigurationImpl();
+      configuration.parseProperties(tmpFile.getAbsolutePath());
+
+      assertTrue(configuration.getStatus().contains("\"errors\":[]"), configuration.getStatus());
+      assertEquals(25 * 1024, configuration.getGlobalMaxSize());
+      assertTrue(configuration.isGracefulShutdownEnabled());
+      assertFalse(configuration.isSecurityEnabled());
+   }
+
+   @Test
+   public void testInvalidYamlPropertiesReaderFromFile() throws Exception {
+
+      File tmpFile = File.createTempFile("yaml-props-test", ".yaml", temporaryFolder);
+      try (FileOutputStream fileOutputStream = new FileOutputStream(tmpFile);
+           PrintWriter printWriter = new PrintWriter(fileOutputStream)) {
+         printWriter.write("{ invalid yaml: [}");
+      }
+
+      ConfigurationImpl configuration = new ConfigurationImpl();
+      configuration.parseProperties(tmpFile.getAbsolutePath());
+
+      assertFalse(configuration.getStatus().contains(".yaml\":{\"errors\":[]"), configuration.getStatus());
+   }
+
+   @Test
+   public void testYamlBillionLaughsRejected() throws Exception {
+
+      File tmpFile = File.createTempFile("yaml-bomb-test", ".yaml", temporaryFolder);
+      try (FileOutputStream fileOutputStream = new FileOutputStream(tmpFile);
+           PrintWriter printWriter = new PrintWriter(fileOutputStream)) {
+         StringBuilder sb = new StringBuilder();
+         sb.append("a: &a [\"lol\"]\n");
+         for (int i = 1; i <= 60; i++) {
+            char prev = (char) ('a' + i - 1);
+            char curr = (char) ('a' + i);
+            sb.append(curr).append(": &").append(curr)
+               .append(" [*").append(prev).append(", *").append(prev)
+               .append(", *").append(prev).append("]\n");
+         }
+         printWriter.write(sb.toString());
+      }
+
+      ConfigurationImpl configuration = new ConfigurationImpl();
+      configuration.parseProperties(tmpFile.getAbsolutePath());
+
+      assertTrue(configuration.getStatus().contains("loadError"), configuration.getStatus());
+   }
+
+   @Test
+   public void testYamlPropertiesKeySurround() throws Exception {
+
+      File tmpFile = File.createTempFile("yaml-surround-props-test", ".yaml", temporaryFolder);
+      try (FileOutputStream fileOutputStream = new FileOutputStream(tmpFile);
+           PrintWriter printWriter = new PrintWriter(fileOutputStream)) {
+         printWriter.write("""
+            key.surround: "$$"
+            addressSettings:
+              $$a."with_quote".b$$:
+                maxDeliveryAttempts: 0
+            """);
+      }
+
+      ConfigurationImpl configuration = new ConfigurationImpl();
+      configuration.parseProperties(tmpFile.getAbsolutePath());
+
+      assertEquals(0, configuration.getAddressSettings().get("a.\"with_quote\".b").getMaxDeliveryAttempts());
+   }
+
+   @Test
+   public void testYamlPropertiesAutoSurround() throws Exception {
+
+      File tmpFile = File.createTempFile("yaml-auto-surround-props-test", ".yaml", temporaryFolder);
+      try (FileOutputStream fileOutputStream = new FileOutputStream(tmpFile);
+           PrintWriter printWriter = new PrintWriter(fileOutputStream)) {
+         printWriter.write("""
+            addressSettings:
+              a.b.c:
+                maxDeliveryAttempts: 2
+            """);
+      }
+
+      ConfigurationImpl configuration = new ConfigurationImpl();
+      configuration.parseProperties(tmpFile.getAbsolutePath());
+
+      assertEquals(2, configuration.getAddressSettings().get("a.b.c").getMaxDeliveryAttempts());
    }
 
    private JsonObject buildSimpleConfigJsonObject() {
@@ -2710,8 +2853,8 @@ public class ConfigurationImplTest extends AbstractConfigurationTestBase {
       assertEquals("va", configuration.getDivertConfigurations().get(0).getTransformerConfiguration().getProperties().get("a"));
       assertEquals("vbc", configuration.getDivertConfigurations().get(0).getTransformerConfiguration().getProperties().get("b.c"));
 
-      assertTrue(configuration.getStatus().contains("\"alder32"));
-      assertTrue(configuration.getStatus().contains("\"fileAlder32"));
+      assertTrue(configuration.getStatus().contains("\"adler32"));
+      assertTrue(configuration.getStatus().contains("\"fileAdler32"));
    }
 
    @Test
@@ -2912,7 +3055,7 @@ public class ConfigurationImplTest extends AbstractConfigurationTestBase {
 
       assertTrue(jsonStatus.contains(UPDATED_SHA));
       assertFalse(jsonStatus.contains(SHA));
-      assertTrue(jsonStatus.contains("alder32"));
+      assertTrue(jsonStatus.contains("adler32"));
    }
 
    @Test

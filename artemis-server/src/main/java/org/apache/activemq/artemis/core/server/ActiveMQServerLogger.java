@@ -323,6 +323,9 @@ public interface ActiveMQServerLogger {
    @LogMessage(id = 221086, value = "Cannot route {}", level = LogMessage.Level.INFO)
    void cannotRouteClientConnection(Connection connection);
 
+   @LogMessage(id = 221087, value = "Configuration reload completed", level = LogMessage.Level.INFO)
+   void configurationReloadCompleted();
+
    @LogMessage(id = 222000, value = "ActiveMQServer is being finalized and has not been stopped. Please remember to stop the server before letting it go out of scope", level = LogMessage.Level.WARN)
    void serverFinalisedWIthoutBeingSTopped();
 
@@ -1399,7 +1402,7 @@ public interface ActiveMQServerLogger {
    @LogMessage(id = 224115, value = "Address control unblock of address '{}'. Clients will be granted credit as normal.", level = LogMessage.Level.INFO)
    void unblockingViaControl(SimpleString addressName);
 
-   @LogMessage(id = 224116, value = "The component {} is not responsive during start up. The Server may be taking too long to start", level = LogMessage.Level.WARN)
+   @LogMessage(id = 224116, value = "The component {} is not responsive. The Server may be taking too long to activate", level = LogMessage.Level.WARN)
    void tooLongToStart(Object component);
 
    @LogMessage(id = 224117, value = "\"page-max-cache-size\" being used on broker.xml. This configuration attribute is no longer used and it will be ignored.", level = LogMessage.Level.INFO)
