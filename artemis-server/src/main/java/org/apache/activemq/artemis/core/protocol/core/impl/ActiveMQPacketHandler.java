@@ -23,7 +23,6 @@ import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.ActiveMQExceptionType;
 import org.apache.activemq.artemis.api.core.ActiveMQInternalErrorException;
 import org.apache.activemq.artemis.api.core.ActiveMQSecurityException;
-import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.persistence.OperationContext;
@@ -35,7 +34,6 @@ import org.apache.activemq.artemis.core.protocol.core.ServerSessionPacketHandler
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.ActiveMQExceptionMessage;
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.ConnectMessage;
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.ConnectResponseMessage;
-import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.CreateQueueMessage;
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.CreateSessionMessage;
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.CreateSessionMessage_V2;
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.CreateSessionResponseMessage;
@@ -118,15 +116,6 @@ public class ActiveMQPacketHandler implements ChannelHandler {
          case PacketImpl.REATTACH_SESSION: {
             // We no longer use reattachment
             channel1.send(new ReattachSessionResponseMessage(-1, false));
-            break;
-         }
-         case PacketImpl.CREATE_QUEUE: {
-            // Create queue can also be fielded here in the case of a replicated store and forward queue creation
-
-            CreateQueueMessage request = (CreateQueueMessage) packet;
-
-            handleCreateQueue(request);
-
             break;
          }
          default: {
@@ -260,15 +249,4 @@ public class ActiveMQPacketHandler implements ChannelHandler {
       }
    }
 
-   private void handleCreateQueue(final CreateQueueMessage request) {
-      try {
-         server.createQueue(QueueConfiguration.of(request.getQueueName())
-                               .setAddress(request.getAddress())
-                               .setFilterString(request.getFilterString())
-                               .setDurable(request.isDurable())
-                               .setTemporary(request.isTemporary()));
-      } catch (Exception e) {
-         ActiveMQServerLogger.LOGGER.failedToHandleCreateQueue(e);
-      }
-   }
 }
