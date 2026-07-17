@@ -328,7 +328,12 @@ public class LockCoordinator extends ActiveMQScheduledComponent {
       try {
          if (!locked) {
             if (!lockManager.isStarted()) {
-               lockManager.start();
+               // a bounded start: an unreachable lock manager must not hold this executor forever,
+               // it is simply retried on the next scheduled run
+               if (!lockManager.start(getPeriod(), getTimeUnit())) {
+                  logger.debug("Not able to start the lock manager for {}, lockID={}", name, lockID);
+                  return;
+               }
             }
             DistributedLock lock = lockManager.getDistributedLock(lockID);
             if (lock.tryLock(1, TimeUnit.SECONDS)) {
