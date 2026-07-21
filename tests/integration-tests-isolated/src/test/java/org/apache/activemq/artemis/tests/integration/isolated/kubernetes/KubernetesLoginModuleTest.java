@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.activemq.artemis.spi.core.security.jaas;
+package org.apache.activemq.artemis.tests.integration.isolated.kubernetes;
 
 import static org.apache.activemq.artemis.spi.core.security.jaas.KubernetesLoginModule.K8S_ROLE_FILE_PROP_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -37,7 +37,10 @@ import javax.security.auth.Subject;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.login.LoginException;
 
-import org.apache.activemq.artemis.spi.core.security.jaas.kubernetes.TokenCallbackHandler;
+import org.apache.activemq.artemis.spi.core.security.jaas.KubernetesLoginModule;
+import org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal;
+import org.apache.activemq.artemis.spi.core.security.jaas.ServiceAccountPrincipal;
+import org.apache.activemq.artemis.spi.core.security.jaas.UserPrincipal;
 import org.apache.activemq.artemis.spi.core.security.jaas.kubernetes.client.KubernetesClient;
 import org.apache.activemq.artemis.spi.core.security.jaas.kubernetes.model.TokenReview;
 import org.junit.jupiter.api.Test;

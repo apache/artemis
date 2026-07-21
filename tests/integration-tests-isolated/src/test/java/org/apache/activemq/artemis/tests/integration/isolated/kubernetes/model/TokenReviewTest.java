@@ -14,11 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.activemq.artemis.spi.core.security.jaas.kubernetes.model;
+package org.apache.activemq.artemis.tests.integration.isolated.kubernetes.model;
 
+import org.apache.activemq.artemis.spi.core.security.jaas.kubernetes.model.TokenReview;
 import org.junit.jupiter.api.Test;
 
-import static org.apache.activemq.artemis.spi.core.security.jaas.KubernetesLoginModuleTest.USERNAME;
+import static org.apache.activemq.artemis.tests.integration.isolated.kubernetes.KubernetesLoginModuleTest.USERNAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
