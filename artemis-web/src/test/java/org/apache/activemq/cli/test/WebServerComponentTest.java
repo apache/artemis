@@ -33,7 +33,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.http.HttpClient;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
@@ -103,6 +105,7 @@ import org.eclipse.jetty.ee9.webapp.WebAppContext;
 import org.eclipse.jetty.ee9.webapp.WebInfConfiguration;
 import org.eclipse.jetty.util.thread.ThreadPool;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -124,9 +127,18 @@ public class WebServerComponentTest extends ArtemisTestCase {
    static final String URL = System.getProperty("url", "http://localhost:8161/WebServerComponentTest.txt");
    static final String SECURE_URL = System.getProperty("url", "https://localhost:8448/WebServerComponentTest.txt");
 
-   static final String KEY_STORE_PATH = WebServerComponentTest.class.getClassLoader().getResource("server-keystore.p12").getFile();
+   private static String getResourcePath(String resourceName) {
+      try {
+         URI uri = WebServerComponentTest.class.getClassLoader().getResource(resourceName).toURI();
+         return Path.of(uri).toString();
+      } catch (Exception e) {
+         throw new RuntimeException(e);
+      }
+   }
 
-   static final String PEM_KEY_STORE_PATH = WebServerComponentTest.class.getClassLoader().getResource("server-keystore.pemcfg").getFile();
+   static final String KEY_STORE_PATH = getResourcePath("server-keystore.p12");
+
+   static final String PEM_KEY_STORE_PATH = getResourcePath("server-keystore.pemcfg");
 
    static final String KEY_STORE_PASSWORD = "securepass";
 
@@ -559,8 +571,16 @@ public class WebServerComponentTest extends ArtemisTestCase {
 
       String keyStorePath;
       if (useSymbolicLinks) {
-         keyStorePath = Files.createSymbolicLink(storeFolder.toPath().resolve(
-             "store-keystore.p12"), keyStoreFile.toPath()).toString();
+         try {
+            keyStorePath = Files.createSymbolicLink(storeFolder.toPath().resolve(
+                "store-keystore.p12"), keyStoreFile.toPath()).toString();
+         } catch (FileSystemException e) {
+            // Check if privileges are missing on Windows
+            if (e.getMessage() != null && e.getMessage().contains("A required privilege is not held by the client")) {
+               Assumptions.assumeTrue(false, "Skipping test: Windows account lacks the privilege to create symbolic links.");
+            }
+            throw e;
+         }
       } else {
          keyStorePath = keyStoreFile.getAbsolutePath();
       }
@@ -633,24 +653,40 @@ public class WebServerComponentTest extends ArtemisTestCase {
       String sourceKey;
       String sourceCert;
       if (useSymbolicLinks) {
-         sourceKey = Files.createSymbolicLink(storeFolder.toPath().resolve(
-             "store-key.pem"), serverKeyFile.toPath()).toString();
-         sourceCert = Files.createSymbolicLink(storeFolder.toPath().resolve(
-             "store-cert.pem"), serverCertFile.toPath()).toString();
+         try {
+            sourceKey = Files.createSymbolicLink(storeFolder.toPath().resolve(
+               "store-key.pem"), serverKeyFile.toPath()).toString();
+            sourceCert = Files.createSymbolicLink(storeFolder.toPath().resolve(
+               "store-cert.pem"), serverCertFile.toPath()).toString();
+         } catch (FileSystemException e) {
+            // Check if privileges are missing on Windows
+            if (e.getMessage() != null && e.getMessage().contains("A required privilege is not held by the client")) {
+               Assumptions.assumeTrue(false, "Skipping test: Windows account lacks the privilege to create symbolic links.");
+            }
+            throw e;
+         }
       } else {
          sourceKey = serverKeyFile.getAbsolutePath();
          sourceCert = serverCertFile.getAbsolutePath();
       }
 
       Files.write(serverPemConfigFile.toPath(), Arrays.asList(new String[]{
-         "source.key=" + sourceKey,
-         "source.cert=" + sourceCert
+         "source.key=" + sourceKey.replace("\\", "/"),
+         "source.cert=" + sourceCert.replace("\\", "/")
       }));
 
       String keyStorePath;
       if (useSymbolicLinks) {
-         keyStorePath = Files.createSymbolicLink(storeFolder.toPath().resolve(
-             "store-pem-config.properties"), serverPemConfigFile.toPath()).toString();
+         try {
+            keyStorePath = Files.createSymbolicLink(storeFolder.toPath().resolve(
+               "store-pem-config.properties"), serverPemConfigFile.toPath()).toString();
+         } catch (FileSystemException e) {
+            // Check if privileges are missing on Windows
+            if (e.getMessage() != null && e.getMessage().contains("A required privilege is not held by the client")) {
+               Assumptions.assumeTrue(false, "Skipping test: Windows account lacks the privilege to create symbolic links.");
+            }
+            throw e;
+         }
       } else {
          keyStorePath = serverPemConfigFile.getAbsolutePath();
       }
@@ -746,10 +782,11 @@ public class WebServerComponentTest extends ArtemisTestCase {
    public void simpleSecureServerWithClientAuth() throws Exception {
       BindingDTO bindingDTO = new BindingDTO();
       bindingDTO.uri = "https://localhost:0";
-      bindingDTO.setKeyStorePath(KEY_STORE_PATH);
+      String keyStorePath = KEY_STORE_PATH.replace("\\", "/");
+      bindingDTO.setKeyStorePath(keyStorePath);
       bindingDTO.setKeyStorePassword(KEY_STORE_PASSWORD);
       bindingDTO.setClientAuth(true);
-      bindingDTO.setTrustStorePath(KEY_STORE_PATH);
+      bindingDTO.setTrustStorePath(keyStorePath);
       bindingDTO.setTrustStorePassword(KEY_STORE_PASSWORD);
       WebServerDTO webServerDTO = new WebServerDTO();
       webServerDTO.setBindings(Collections.singletonList(bindingDTO));
