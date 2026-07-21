@@ -19,4 +19,15 @@ package org.apache.activemq.artemis.tests.smoke.common;
 import org.apache.activemq.artemis.utils.RealServerTestBase;
 
 public class SmokeTestBase extends RealServerTestBase {
+
+   protected String paramList(String... value) {
+      if (value == null || value.length == 0) {
+         return "";
+      }
+      return String.join(" ", value);
+   }
+
+   protected String pairSystemD(String key, String value) {
+      return "-D" + key + "=" + value;
+   }
 }

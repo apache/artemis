@@ -29,26 +29,40 @@ import javax.jms.TextMessage;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.lang.invoke.MethodHandles;
+import java.net.URL;
+import java.nio.file.Files;
 import java.util.Properties;
 import java.util.function.Consumer;
 
 import org.apache.activemq.artemis.api.core.management.SimpleManagement;
 import org.apache.activemq.artemis.cli.commands.helper.HelperCreate;
+import org.apache.activemq.artemis.json.JsonArray;
+import org.apache.activemq.artemis.json.JsonObject;
 import org.apache.activemq.artemis.tests.smoke.common.SmokeTestBase;
 import org.apache.activemq.artemis.tests.util.CFUtil;
 import org.apache.activemq.artemis.utils.FileUtil;
 import org.apache.activemq.artemis.utils.Wait;
+import org.apache.activemq.artemis.utils.kubernetes.KubernetesClient;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class DualMirrorSingleAcceptorRunningTest extends SmokeTestBase {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+   public static final String SERVER_NAME_WITH_FAKEKUBE_A = "lockmanager/dualMirrorSingleAcceptor/fakekube/A";
+   public static final String SERVER_NAME_WITH_FAKEKUBE_B = "lockmanager/dualMirrorSingleAcceptor/fakekube/B";
+
+   public static final String SERVER_NAME_WITH_MINIKUBE_A = "lockmanager/dualMirrorSingleAcceptor/minikube/A";
+   public static final String SERVER_NAME_WITH_MINIKUBE_B = "lockmanager/dualMirrorSingleAcceptor/minikube/B";
 
    public static final String SERVER_NAME_WITH_ZK_A = "lockmanager/dualMirrorSingleAcceptor/ZK/A";
    public static final String SERVER_NAME_WITH_ZK_B = "lockmanager/dualMirrorSingleAcceptor/ZK/B";
@@ -76,9 +90,11 @@ public class DualMirrorSingleAcceptorRunningTest extends SmokeTestBase {
       }
    }
 
-   private static void createServerPair(String serverNameA, String serverNameB,
-                                         String configPathA, String configPathB,
-                                         Consumer<File> customizeServer) throws Exception {
+   private static void createServerPair(String serverNameA,
+                                        String serverNameB,
+                                        String configPathA,
+                                        String configPathB,
+                                        Consumer<File> customizeServer) throws Exception {
       File serverLocationA = getFileServerLocation(serverNameA);
       File serverLocationB = getFileServerLocation(serverNameB);
       deleteDirectory(serverLocationB);
@@ -88,15 +104,12 @@ public class DualMirrorSingleAcceptorRunningTest extends SmokeTestBase {
       createSingleServer(serverLocationB, configPathB, "B", customizeServer);
    }
 
-   private static void createSingleServer(File serverLocation, String configPath,
-                                           String userAndPassword, Consumer<File> customizeServer) throws Exception {
+   private static void createSingleServer(File serverLocation,
+                                          String configPath,
+                                          String userAndPassword,
+                                          Consumer<File> customizeServer) throws Exception {
       HelperCreate cliCreateServer = helperCreate();
-      cliCreateServer.setAllowAnonymous(true)
-                     .setUser(userAndPassword)
-                     .setPassword(userAndPassword)
-                     .setNoWeb(true)
-                     .setConfiguration(configPath)
-                     .setArtemisInstance(serverLocation);
+      cliCreateServer.setAllowAnonymous(true).setUser(userAndPassword).setPassword(userAndPassword).setNoWeb(true).setConfiguration(configPath).setArtemisInstance(serverLocation);
       cliCreateServer.createServer();
 
       if (customizeServer != null) {
@@ -109,13 +122,75 @@ public class DualMirrorSingleAcceptorRunningTest extends SmokeTestBase {
 
    }
 
+   // This test will use minikube if available and running.
+   // To run this test locally, start minikube with: minikube start
+   // It will be ignored (with an assumption) if the configuration options provided by minikube cannot be found.
+   // See MinikubeSupport.supported for how this validation occurs.
+   // This test is important for development purposes. testAlternatingFakekube is provided for CI validations.
+   @Test
+   public void testAlternatingMinikube() throws Throwable {
+      Assumptions.assumeTrue(MinikubeSupport.supported());
+
+      {
+         createServerPair(SERVER_NAME_WITH_MINIKUBE_A, SERVER_NAME_WITH_MINIKUBE_B, "./src/main/resources/servers/lockmanager/dualMirrorSingleAcceptor/kube/A", "./src/main/resources/servers/lockmanager/dualMirrorSingleAcceptor/kube/B", null);
+
+         cleanupData(SERVER_NAME_WITH_MINIKUBE_A);
+         cleanupData(SERVER_NAME_WITH_MINIKUBE_B);
+      }
+
+      MinikubeSupport.setupRBAC();
+      runAfter(MinikubeSupport::cleanupRBAC);
+
+      String apiURI = MinikubeSupport.getKubeconfigServer();
+
+      String token = MinikubeSupport.generateKubectlToken();
+      assertNotNull(token);
+
+      File tokenFile = new File(getServerLocation(SERVER_NAME_WITH_MINIKUBE_A), "token.cr");
+      Files.writeString(tokenFile.toPath(), token);
+
+      File caFile = new File(getServerLocation(SERVER_NAME_WITH_MINIKUBE_A), "ca.crt");
+      String caCert = MinikubeSupport.extractCACertificate();
+      Files.writeString(caFile.toPath(), caCert);
+
+      String properties = paramList(pairSystemD(KubernetesClient.KUBERNETES_API_URI, apiURI), pairSystemD(KubernetesClient.KUBERNETES_TOKEN_PATH, tokenFile.getAbsolutePath()), pairSystemD(KubernetesClient.KUBERNETES_CA_PATH, caFile.getAbsolutePath()));
+
+      assertTrue(FileUtil.append(new File(getServerLocation(SERVER_NAME_WITH_MINIKUBE_A), "etc/artemis.profile"), "\nJAVA_ARGS=\"$JAVA_ARGS " + properties + "\"\n"));
+      assertTrue(FileUtil.append(new File(getServerLocation(SERVER_NAME_WITH_MINIKUBE_B), "etc/artemis.profile"), "\nJAVA_ARGS=\"$JAVA_ARGS " + properties + "\"\n"));
+
+      testAlternating(SERVER_NAME_WITH_MINIKUBE_A, SERVER_NAME_WITH_MINIKUBE_B, null, null);
+   }
+
+   @Test
+   public void testAlternatingFakekube() throws Throwable {
+      disableCheckThread(); // it's okay as we don't reuse forks on this module // Fakekube will leak an executor
+      try (Fakekube fakekube = new Fakekube()) {
+         fakekube.start(getTestDirfile());
+
+         {
+            createServerPair(SERVER_NAME_WITH_FAKEKUBE_A, SERVER_NAME_WITH_FAKEKUBE_B, "./src/main/resources/servers/lockmanager/dualMirrorSingleAcceptor/kube/A", "./src/main/resources/servers/lockmanager/dualMirrorSingleAcceptor/kube/B", null);
+
+            cleanupData(SERVER_NAME_WITH_FAKEKUBE_A);
+            cleanupData(SERVER_NAME_WITH_FAKEKUBE_B);
+         }
+
+         String clientToken = DualMirrorSingleAcceptorRunningTest.class.getClassLoader().getResource("client_token").getPath();
+
+         URL caPath = LockCoordinatorTest.class.getClassLoader().getResource("client-and-server-ca-certs.pem");
+
+         String properties = paramList(pairSystemD(KubernetesClient.KUBERNETES_API_URI, fakekube.getApiUri()), pairSystemD(KubernetesClient.KUBERNETES_TOKEN_PATH, clientToken), pairSystemD(KubernetesClient.KUBERNETES_CA_PATH, caPath.getPath()));
+
+         assertTrue(FileUtil.append(new File(getServerLocation(SERVER_NAME_WITH_FAKEKUBE_A), "etc/artemis.profile"), "\nJAVA_ARGS=\"$JAVA_ARGS " + properties + "\"\n"));
+         assertTrue(FileUtil.append(new File(getServerLocation(SERVER_NAME_WITH_FAKEKUBE_B), "etc/artemis.profile"), "\nJAVA_ARGS=\"$JAVA_ARGS " + properties + "\"\n"));
+
+         testAlternating(SERVER_NAME_WITH_FAKEKUBE_A, SERVER_NAME_WITH_FAKEKUBE_B, null, null);
+      }
+   }
+
    @Test
    public void testAlternatingZK() throws Throwable {
       {
-         createServerPair(SERVER_NAME_WITH_ZK_A, SERVER_NAME_WITH_ZK_B,
-                          "./src/main/resources/servers/lockmanager/dualMirrorSingleAcceptor/ZK/A",
-                          "./src/main/resources/servers/lockmanager/dualMirrorSingleAcceptor/ZK/B",
-                          null);
+         createServerPair(SERVER_NAME_WITH_ZK_A, SERVER_NAME_WITH_ZK_B, "./src/main/resources/servers/lockmanager/dualMirrorSingleAcceptor/ZK/A", "./src/main/resources/servers/lockmanager/dualMirrorSingleAcceptor/ZK/B", null);
 
          cleanupData(SERVER_NAME_WITH_ZK_A);
          cleanupData(SERVER_NAME_WITH_ZK_B);
@@ -135,10 +210,7 @@ public class DualMirrorSingleAcceptorRunningTest extends SmokeTestBase {
       fileLock.mkdirs();
 
       {
-         createServerPair(SERVER_NAME_WITH_FILE_A, SERVER_NAME_WITH_FILE_B,
-                          "./src/main/resources/servers/lockmanager/dualMirrorSingleAcceptor/file/A",
-                          "./src/main/resources/servers/lockmanager/dualMirrorSingleAcceptor/file/B",
-                          s -> customizeFileServer(s, fileLock));
+         createServerPair(SERVER_NAME_WITH_FILE_A, SERVER_NAME_WITH_FILE_B, "./src/main/resources/servers/lockmanager/dualMirrorSingleAcceptor/file/A", "./src/main/resources/servers/lockmanager/dualMirrorSingleAcceptor/file/B", s -> customizeFileServer(s, fileLock));
 
          cleanupData(SERVER_NAME_WITH_FILE_A);
          cleanupData(SERVER_NAME_WITH_FILE_B);
@@ -146,18 +218,18 @@ public class DualMirrorSingleAcceptorRunningTest extends SmokeTestBase {
 
       Properties properties = new Properties();
 
-      properties.put("acceptorConfigurations.artemis.extraParams.amqpCredits", "1000");
-      properties.put("acceptorConfigurations.artemis.extraParams.amqpLowCredits", "300");
-      properties.put("acceptorConfigurations.artemis.factoryClassName", "org.apache.activemq.artemis.core.remoting.impl.netty.NettyAcceptorFactory");
-      properties.put("acceptorConfigurations.artemis.lockCoordinator", "failover");
-      properties.put("acceptorConfigurations.artemis.name", "artemis");
-      properties.put("acceptorConfigurations.artemis.params.scheme", "tcp");
-      properties.put("acceptorConfigurations.artemis.params.tcpReceiveBufferSize", "1048576");
-      properties.put("acceptorConfigurations.artemis.params.port", "61616");
-      properties.put("acceptorConfigurations.artemis.params.host", "localhost");
-      properties.put("acceptorConfigurations.artemis.params.protocols", "CORE,AMQP,STOMP,HORNETQ,MQTT,OPENWIRE");
-      properties.put("acceptorConfigurations.artemis.params.useEpoll", "true");
-      properties.put("acceptorConfigurations.artemis.params.tcpSendBufferSize", "1048576");
+      properties.put("acceptorConfigurations.forClients.extraParams.amqpCredits", "1000");
+      properties.put("acceptorConfigurations.forClients.extraParams.amqpLowCredits", "300");
+      properties.put("acceptorConfigurations.forClients.factoryClassName", "org.apache.activemq.artemis.core.remoting.impl.netty.NettyAcceptorFactory");
+      properties.put("acceptorConfigurations.forClients.lockCoordinator", "failover");
+      properties.put("acceptorConfigurations.forClients.name", "forClients");
+      properties.put("acceptorConfigurations.forClients.params.scheme", "tcp");
+      properties.put("acceptorConfigurations.forClients.params.tcpReceiveBufferSize", "1048576");
+      properties.put("acceptorConfigurations.forClients.params.port", "61616");
+      properties.put("acceptorConfigurations.forClients.params.host", "localhost");
+      properties.put("acceptorConfigurations.forClients.params.protocols", "CORE,AMQP,STOMP,HORNETQ,MQTT,OPENWIRE");
+      properties.put("acceptorConfigurations.forClients.params.useEpoll", "true");
+      properties.put("acceptorConfigurations.forClients.params.tcpSendBufferSize", "1048576");
 
       properties.put("lockCoordinatorConfigurations.failover.checkPeriod", "5000");
       properties.put("lockCoordinatorConfigurations.failover.className", "org.apache.activemq.artemis.lockmanager.file.FileBasedLockManager");
@@ -173,17 +245,23 @@ public class DualMirrorSingleAcceptorRunningTest extends SmokeTestBase {
          properties.store(fileOutputStream, null);
       }
 
-         // I'm using broker properties in one of the tests, to help validating it
+      // I'm using broker properties in one of the tests, to help validating it
       File propertiesA = new File(getServerLocation(SERVER_NAME_WITH_FILE_A), "broker.properties");
       File propertiesB = new File(getServerLocation(SERVER_NAME_WITH_FILE_B), "broker.properties");
 
       testAlternating(SERVER_NAME_WITH_FILE_A, SERVER_NAME_WITH_FILE_B, propertiesA, propertiesB);
    }
 
-   public void testAlternating(String nameServerA, String nameServerB, File brokerPropertiesA, File brokerPropertiesB) throws Throwable {
+   public void testAlternating(String nameServerA,
+                               String nameServerB,
+                               File brokerPropertiesA,
+                               File brokerPropertiesB) throws Throwable {
       processA = startServer(nameServerA, 0, -1, brokerPropertiesA);
       processB = startServer(nameServerB, 0, -1, brokerPropertiesB);
       ConnectionFactory cfX = CFUtil.createConnectionFactory("amqp", "tcp://localhost:61616");
+
+      String uriManagementA = "tcp://localhost:61000";
+      String uriManagementB = "tcp://localhost:61001";
 
       for (int i = 0; i < ALTERNATING_TEST_ITERATIONS; i++) {
          logger.info("Iteration {}: Server {} active", i, (i % 2 == 0) ? "A" : "B");
@@ -191,9 +269,11 @@ public class DualMirrorSingleAcceptorRunningTest extends SmokeTestBase {
          if (i % 2 == 0) {
             // Even iteration: Server A active, kill Server B
             killServer(processB);
+            waitForLockStatus(uriManagementA, true);
          } else {
             // Odd iteration: Server B active, kill Server A
             killServer(processA);
+            waitForLockStatus(uriManagementB, true);
          }
 
          // Send messages through the shared acceptor
@@ -205,14 +285,36 @@ public class DualMirrorSingleAcceptorRunningTest extends SmokeTestBase {
          // Restart the killed server
          if (i % 2 == 0) {
             processB = startServer(nameServerB, 0, -1, brokerPropertiesB);
+            waitForLockStatus(uriManagementA, true);
+            waitForLockStatus(uriManagementB, false);
          } else {
             processA = startServer(nameServerA, 0, -1, brokerPropertiesA);
+            waitForLockStatus(uriManagementA, false);
+            waitForLockStatus(uriManagementB, true);
          }
       }
 
       // Verify they both have the expected message count (iterations × (sent - consumed))
-      assertMessageCount("tcp://localhost:61000", "myQueue", EXPECTED_FINAL_MESSAGE_COUNT);
-      assertMessageCount("tcp://localhost:61001", "myQueue", EXPECTED_FINAL_MESSAGE_COUNT);
+      assertMessageCount(uriManagementA, "myQueue", EXPECTED_FINAL_MESSAGE_COUNT);
+      assertMessageCount(uriManagementB, "myQueue", EXPECTED_FINAL_MESSAGE_COUNT);
+
+      int countActive = 0;
+
+      if (getLockedStatus(uriManagementA).getBoolean("locked")) {
+         logger.info("server 0 is locked");
+         countActive++;
+      } else {
+         logger.debug("server 0 is not locked");
+      }
+
+      if (getLockedStatus(uriManagementB).getBoolean("locked")) {
+         logger.info("server 1 is locked");
+         countActive++;
+      } else {
+         logger.info("server 1 is not locked");
+      }
+
+      assertEquals(1, countActive);
    }
 
    private static void sendMessages(ConnectionFactory cfX, int nmessages) throws JMSException {
@@ -258,15 +360,45 @@ public class DualMirrorSingleAcceptorRunningTest extends SmokeTestBase {
       }
    }
 
+   protected JsonObject getLockedStatus(String uri) throws Exception {
+      try (SimpleManagement simpleManagement = new SimpleManagement(uri, null, null)) {
+         return simpleManagement.listLockCoordinators().getJsonObject(0);
+      }
+   }
+
+   protected void waitForLockStatus(String uri, boolean expectedStatus) throws Exception {
+      try (SimpleManagement simpleManagement = new SimpleManagement(uri, null, null)) {
+         Wait.assertEquals(expectedStatus, () -> {
+            int retry = 0;
+
+            do {
+               try {
+                  JsonArray lockList = simpleManagement.listLockCoordinators();
+                  return lockList.getJsonObject(0).getBoolean("locked");
+               } catch (Exception e) {
+                  logger.info(e.getMessage(), e);
+               }
+               Thread.sleep(500);
+               retry++;
+            }
+            while (retry < 10);
+
+            throw new RuntimeException("could not execute lockStatus check");
+
+         });
+      }
+   }
+
    protected void assertMessageCount(String uri, String queueName, int count) throws Exception {
-      SimpleManagement simpleManagement = new SimpleManagement(uri, null, null);
-      Wait.assertEquals(count, () -> {
-         try {
-            return simpleManagement.getMessageCountOnQueue(queueName);
-         } catch (Throwable e) {
-            return -1;
-         }
-      });
+      try (SimpleManagement simpleManagement = new SimpleManagement(uri, null, null)) {
+         Wait.assertEquals(count, () -> {
+            try {
+               return simpleManagement.getMessageCountOnQueue(queueName);
+            } catch (Throwable e) {
+               return -1;
+            }
+         });
+      }
    }
 
 }

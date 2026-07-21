@@ -14,12 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.activemq.artemis.spi.core.security.jaas.kubernetes.client;
+package org.apache.activemq.artemis.tests.smoke.lockmanager.kubetimeskew;
 
-import org.apache.activemq.artemis.spi.core.security.jaas.kubernetes.model.TokenReview;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
-public interface KubernetesClient {
+import org.apache.artemis.lock.kube.KubeLock;
 
-   TokenReview getTokenReview(String token);
+public class KubeLockTimeSkew extends KubeLock {
 
+   private final int timeAdjustment;
+
+   public KubeLockTimeSkew(String hostname, String namespace, String id, int leasePeriodSeconds, int timeAdjustment) {
+      super(hostname, namespace, id, leasePeriodSeconds);
+      this.timeAdjustment = timeAdjustment;
+   }
+
+   @Override
+   protected OffsetDateTime currentTime() {
+      return OffsetDateTime.now(ZoneOffset.UTC).plusMinutes(timeAdjustment);
+   }
 }

@@ -47,6 +47,11 @@
       </dependency>
       <dependency>
          <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-kube-lock</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-server</artifactId>
          <scope>test</scope>
       </dependency>
@@ -177,6 +182,23 @@
       <dependency>
          <groupId>org.testcontainers</groupId>
          <artifactId>testcontainers</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+      <!-- mockserver for fake kubernetes tests -->
+      <dependency>
+         <groupId>org.mock-server</groupId>
+         <artifactId>mockserver-netty</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.mock-server</groupId>
+         <artifactId>mockserver-core</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.mock-server</groupId>
+         <artifactId>mockserver-client-java</artifactId>
          <scope>test</scope>
       </dependency>
 
@@ -450,7 +472,6 @@
             </pluginManagement>
          </build>
       </profile>
-
    </profiles>
 
 </project>

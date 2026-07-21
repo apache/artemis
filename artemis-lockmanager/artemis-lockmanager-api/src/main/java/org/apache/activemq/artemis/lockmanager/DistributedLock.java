@@ -19,12 +19,32 @@ package org.apache.activemq.artemis.lockmanager;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
+import java.util.function.Supplier;
 
 public interface DistributedLock extends AutoCloseable {
+
+   default String getDebugInfo() {
+      return null;
+   }
+
+   default DistributedLock setDebugInfoSupplier(Supplier<String> debugInfoSupplier) {
+      return this;
+   }
 
    String getLockId();
 
    boolean isHeldByCaller() throws UnavailableStateException;
+
+   /**
+    * Indicates whether this lock implementation requires re-creation after it becomes unavailable.
+    * Certain implementations (e.g., file-based locks) must create a new lock instance after losing the lock,
+    * while others (e.g., Kubernetes-based locks) can continue using the same instance.
+    *
+    * @return true if the lock must be closed and re-created after becoming unavailable, false otherwise
+    */
+   default boolean requiresRecreation() {
+      return true;
+   }
 
    boolean tryLock() throws UnavailableStateException, InterruptedException;
 

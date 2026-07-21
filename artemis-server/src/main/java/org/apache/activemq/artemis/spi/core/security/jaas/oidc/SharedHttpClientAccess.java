@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
-import org.apache.activemq.artemis.core.remoting.impl.ssl.SSLSupport;
+import org.apache.activemq.artemis.utils.ssl.KeyStoreSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,7 +95,7 @@ public class SharedHttpClientAccess implements HttpClientAccess {
                LOG.warn("The certificate file {} does not exist", caCertificate);
             } else {
                SSLContext sslContext = SSLContext.getInstance(tlsVersion);
-               KeyStore trustStore = SSLSupport.loadKeystore(null, "PEMCA", caCertificate, null);
+               KeyStore trustStore = KeyStoreSupport.loadKeystore(null, "PEMCA", caCertificate, null);
                TrustManagerFactory tmFactory = TrustManagerFactory
                      .getInstance(TrustManagerFactory.getDefaultAlgorithm());
                tmFactory.init(trustStore);

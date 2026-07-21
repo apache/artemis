@@ -18,6 +18,7 @@ package org.apache.activemq.artemis.core.remoting.impl.netty;
 
 import de.dentrassi.crypto.pem.PemKeyStoreProvider;
 import org.apache.activemq.artemis.core.remoting.impl.ssl.SSLSupport;
+import org.apache.activemq.artemis.utils.ssl.KeyStoreSupport;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -54,7 +55,7 @@ public class PemProviderTest {
       // ensure the PEM provider isn't already loaded (e.g. by another test)
       assertNull(ClassLoader.getSystemClassLoader().getDefinedPackage(PEM_PROVIDER_PACKAGE));
 
-      SSLSupport.loadKeystore(null, "JKS", "", "");
+      KeyStoreSupport.loadKeystore(null, "JKS", "", "");
 
       assertNull(ClassLoader.getSystemClassLoader().getDefinedPackage(PEM_PROVIDER_PACKAGE));
    }
@@ -65,7 +66,7 @@ public class PemProviderTest {
       // ensure the PEM provider isn't already loaded (e.g. by another test)
       assertNull(ClassLoader.getSystemClassLoader().getDefinedPackage(PEM_PROVIDER_PACKAGE));
 
-      SSLSupport.loadKeystore(null, "PEM", "", "");
+      KeyStoreSupport.loadKeystore(null, "PEM", "", "");
 
       assertNotNull(ClassLoader.getSystemClassLoader().getDefinedPackage(PEM_PROVIDER_PACKAGE));
    }
