@@ -60,6 +60,10 @@
       <mqtt-session-scan-interval>123456</mqtt-session-scan-interval>
       <mqtt-session-state-persistence-timeout>567890</mqtt-session-state-persistence-timeout>
       <mqtt-subscription-persistence-enabled>false</mqtt-subscription-persistence-enabled>
+      <authentication-cache-key>
+         <part>USER</part>
+         <part>PASS</part>
+      </authentication-cache-key>
       <connection-ttl-check-interval>98765</connection-ttl-check-interval>
       <configuration-file-refresh-period>1234567</configuration-file-refresh-period>
       <temporary-queue-namespace>TEMP</temporary-queue-namespace>

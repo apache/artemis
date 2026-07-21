@@ -46,4 +46,9 @@ public class StubCertificateLoginModule extends CertificateLoginModule {
       lastUserName = username;
       return this.groupNames;
    }
+
+   @Override
+   protected String getCertificateInfo(X509Certificate[] certificates) {
+      return userName;
+   }
 }

@@ -1,0 +1,9 @@
+This login module must be used in combination with SSL, and the clients must be configured with their own certificate.
+In this scenario, authentication is actually performed during the SSL/TLS handshake, not directly by the JAAS certificate authentication plug-in.
+The role of the plug-in is as follows:
+
+* To further constrain the set of acceptable users, because only the users explicitly listed in the relevant properties file are eligible to be authenticated.
+* To associate a list of roles with the received user identity, facilitating integration with the authorization.
+* To require the presence of an incoming certificate (by default, the SSL/TLS layer is configured to treat the presence of a client certificate as optional).
+
+It retrieves data from a pair of flat files.
