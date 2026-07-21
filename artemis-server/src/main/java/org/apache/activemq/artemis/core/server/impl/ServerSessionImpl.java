@@ -215,6 +215,10 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
 
    private Map<SimpleString, RoutingType> prefixes;
 
+   private boolean temporaryPrefixEnabled = false;
+
+   private Map<SimpleString, RoutingType> temporaryPrefixes;
+
    private Set<Closeable> closeables;
 
    private final Executor sessionExecutor;
@@ -235,6 +239,7 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
                             final SessionCallback callback,
                             final OperationContext context,
                             final Map<SimpleString, RoutingType> prefixes,
+                            final Map<SimpleString, RoutingType> temporaryPrefixes,
                             final String securityDomain,
                             boolean isLegacyProducer) throws Exception {
       super(server.getCriticalAnalyzer(), 1);
@@ -279,6 +284,11 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
       this.prefixes = prefixes;
       if (this.prefixes != null && !this.prefixes.isEmpty()) {
          prefixEnabled = true;
+      }
+
+      this.temporaryPrefixes = temporaryPrefixes;
+      if (this.temporaryPrefixes != null && !this.temporaryPrefixes.isEmpty()) {
+         temporaryPrefixEnabled = true;
       }
 
       this.managementAddress = managementService.getManagementAddress();
@@ -777,10 +787,17 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
          queueConfiguration.setInternal(true);
       }
 
+      SimpleString originalAddress = queueConfiguration.getAddress();
+      RoutingType temporaryRoutingType = getRoutingTypeFromTemporaryPrefix(originalAddress);
+
       queueConfiguration
-         .setRoutingType(getRoutingTypeFromPrefix(queueConfiguration.getAddress(), queueConfiguration.getRoutingType()))
-         .setAddress(removePrefix(queueConfiguration.getAddress()))
+         .setRoutingType(getRoutingTypeFromPrefix(originalAddress, queueConfiguration.getRoutingType()))
+         .setAddress(removePrefix(originalAddress))
          .setName(removePrefix(queueConfiguration.getName()));
+
+      if (temporaryRoutingType != null) {
+         queueConfiguration.setTemporary(true).setDurable(false);
+      }
 
       // make sure the user has privileges to create this queue
       securityCheck(queueConfiguration.getAddress(), queueConfiguration.getName(), queueConfiguration.isDurable() ? CheckType.CREATE_DURABLE_QUEUE : CheckType.CREATE_NON_DURABLE_QUEUE, this);
@@ -1008,10 +1025,13 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
       }
 
       AddressInfo art = getAddressAndRoutingType(addressInfo);
+      if (getRoutingTypeFromTemporaryPrefix(addressInfo.getName()) != null) {
+         art.setTemporary(true);
+      }
       securityCheck(art.getName(), CheckType.CREATE_ADDRESS, this);
       server.addOrUpdateAddressInfo(art.setAutoCreated(autoCreated));
       if (art.isTemporary()) {
-         handleTempResource(addressInfo.getName(), false);
+         handleTempResource(art.getName(), false);
       }
       return server.getAddressInfo(art.getName());
    }
@@ -1876,6 +1896,10 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
    @Override
    public AutoCreateResult checkAutoCreate(final QueueConfiguration queueConfig) throws Exception {
       AutoCreateResult result;
+      RoutingType temporaryRoutingType = getRoutingTypeFromTemporaryPrefix(queueConfig.getAddress());
+      if (temporaryRoutingType != null) {
+         queueConfig.setRoutingType(temporaryRoutingType).setTemporary(true).setDurable(false);
+      }
       SimpleString unPrefixedAddress = removePrefix(queueConfig.getAddress());
       SimpleString unPrefixedQueue = removePrefix(queueConfig.getName());
       AddressSettings addressSettings = server.getAddressSettingsRepository().getMatch(unPrefixedAddress.toString());
@@ -2586,6 +2610,25 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
          }
       }
       return defaultRoutingType;
+   }
+
+   /**
+    * Returns the routing type registered for {@code address} under one of this session's temporary prefixes
+    * (e.g. {@code temporaryAnycastPrefix}/{@code temporaryMulticastPrefix}), or {@code null} if {@code address}
+    * doesn't match any of them. A non-null result means the resource being created for this address should be
+    * forced temporary, regardless of what the client requested, mirroring how {@link #getRoutingTypeFromPrefix}
+    * forces the routing type for the plain anycast/multicast prefixes.
+    */
+   @Override
+   public RoutingType getRoutingTypeFromTemporaryPrefix(SimpleString address) {
+      if (temporaryPrefixEnabled && address != null) {
+         for (Map.Entry<SimpleString, RoutingType> entry : temporaryPrefixes.entrySet()) {
+            if (address.startsWith(entry.getKey())) {
+               return entry.getValue();
+            }
+         }
+      }
+      return null;
    }
 
    @Override

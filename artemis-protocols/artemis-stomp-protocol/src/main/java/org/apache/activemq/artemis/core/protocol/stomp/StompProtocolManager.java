@@ -29,7 +29,6 @@ import io.netty.channel.ChannelPipeline;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.ActiveMQExceptionType;
 import org.apache.activemq.artemis.api.core.BaseInterceptor;
-import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.client.ActiveMQClient;
 import org.apache.activemq.artemis.core.io.IOCallback;
@@ -246,7 +245,7 @@ public class StompProtocolManager extends AbstractProtocolManager<StompFrame, St
          stompSession = new StompSession(connection, this, server.getStorageManager().newContext(connection.getTransportConnection().getEventLoop()));
          String name = UUIDGenerator.getInstance().generateStringUUID();
          final String validatedUser = server.validateUser(connection.getLogin(), connection.getPasscode(), connection, getSecurityDomain());
-         ServerSession session = server.createSession(name, connection.getLogin(), connection.getPasscode(), ActiveMQClient.DEFAULT_MIN_LARGE_MESSAGE_SIZE, connection, !transacted, false, false, false, null, stompSession, true, server.newOperationContext(), getPrefixes(), getSecurityDomain(), validatedUser, false);
+         ServerSession session = server.createSession(name, connection.getLogin(), connection.getPasscode(), ActiveMQClient.DEFAULT_MIN_LARGE_MESSAGE_SIZE, connection, !transacted, false, false, false, null, stompSession, true, server.newOperationContext(), getPrefixes(), getTemporaryPrefixes(), getSecurityDomain(), validatedUser, false);
          stompSession.setServerSession(session);
          sessions.put(id, stompSession);
       }
@@ -359,15 +358,14 @@ public class StompProtocolManager extends AbstractProtocolManager<StompFrame, St
                                              String selector,
                                              String ack,
                                              boolean noLocal,
-                                             Integer consumerWindowSize,
-                                             RoutingType temporaryRoutingType) throws Exception {
+                                             Integer consumerWindowSize) throws Exception {
       StompSession stompSession = getSession(connection);
       if (stompSession.containsSubscription(subscriptionID)) {
          throw new ActiveMQStompException(connection, "There already is a subscription for: " + subscriptionID +
             ". Either use unique subscription IDs or do not create multiple subscriptions for the same destination");
       }
       long consumerID = server.getStorageManager().generateID();
-      return stompSession.addSubscription(consumerID, subscriptionID, connection.getClientID(), durableSubscriptionName, destination, selector, ack, noLocal, consumerWindowSize, temporaryRoutingType);
+      return stompSession.addSubscription(consumerID, subscriptionID, connection.getClientID(), durableSubscriptionName, destination, selector, ack, noLocal, consumerWindowSize);
    }
 
    public void unsubscribe(StompConnection connection,

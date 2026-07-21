@@ -168,6 +168,7 @@ public class MQTTConnectionManager {
                                                          MQTTUtil.SESSION_AUTO_CREATE_QUEUE,
                                                          session.getSessionContext(),
                                                          session.getProtocolManager().getPrefixes(),
+                                                         session.getProtocolManager().getTemporaryPrefixes(),
                                                          session.getProtocolManager().getSecurityDomain(),
                                                          validatedUser,
                                                          false);

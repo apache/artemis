@@ -1862,6 +1862,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
                                       final boolean autoCreateQueues,
                                       final OperationContext context,
                                       final Map<SimpleString, RoutingType> prefixes,
+                                      final Map<SimpleString, RoutingType> temporaryPrefixes,
                                       final String securityDomain,
                                       String validatedUser,
                                       boolean isLegacyProducer) throws Exception {
@@ -1876,7 +1877,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
                                        autoCommitAcks, preAcknowledge, xa, defaultAddress, callback, autoCreateQueues, prefixes);
       }
 
-      final ServerSessionImpl session = internalCreateSession(name, username, password, validatedUser, minLargeMessageSize, connection, autoCommitSends, autoCommitAcks, preAcknowledge, xa, defaultAddress, callback, context, autoCreateQueues, prefixes, securityDomain, isLegacyProducer);
+      final ServerSessionImpl session = internalCreateSession(name, username, password, validatedUser, minLargeMessageSize, connection, autoCommitSends, autoCommitAcks, preAcknowledge, xa, defaultAddress, callback, context, autoCreateQueues, prefixes, temporaryPrefixes, securityDomain, isLegacyProducer);
 
       return session;
    }
@@ -1904,9 +1905,10 @@ public class ActiveMQServerImpl implements ActiveMQServer {
                                        boolean autoCreateQueues,
                                        OperationContext context,
                                        Map<SimpleString, RoutingType> prefixes,
+                                       Map<SimpleString, RoutingType> temporaryPrefixes,
                                        String securityDomain,
                                        boolean isLegacyProducer) throws Exception {
-      ServerSessionImpl session = internalCreateSession(name, null, null, null, minLargeMessageSize, connection, autoCommitSends, autoCommitAcks, preAcknowledge, xa, defaultAddress, callback, context, autoCreateQueues, prefixes, securityDomain, isLegacyProducer);
+      ServerSessionImpl session = internalCreateSession(name, null, null, null, minLargeMessageSize, connection, autoCommitSends, autoCommitAcks, preAcknowledge, xa, defaultAddress, callback, context, autoCreateQueues, prefixes, temporaryPrefixes, securityDomain, isLegacyProducer);
       session.disableSecurity();
       return session;
    }
@@ -1982,6 +1984,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
                                                      OperationContext context,
                                                      boolean autoCreateQueues,
                                                      Map<SimpleString, RoutingType> prefixes,
+                                                     Map<SimpleString, RoutingType> temporaryPrefixes,
                                                      String securityDomain,
                                                      boolean isLegacyProducer) throws Exception {
 
@@ -1990,7 +1993,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
                                                                        autoCommitSends, autoCommitAcks, preAcknowledge, xa, defaultAddress, callback, autoCreateQueues, context, prefixes));
       }
 
-      ServerSessionImpl session = new ServerSessionImpl(name, username, password, validatedUser, minLargeMessageSize, autoCommitSends, autoCommitAcks, preAcknowledge, configuration.isPersistDeliveryCountBeforeDelivery(), xa, connection, this, defaultAddress == null ? null : SimpleString.of(defaultAddress), callback, context, prefixes, securityDomain, isLegacyProducer);
+      ServerSessionImpl session = new ServerSessionImpl(name, username, password, validatedUser, minLargeMessageSize, autoCommitSends, autoCommitAcks, preAcknowledge, configuration.isPersistDeliveryCountBeforeDelivery(), xa, connection, this, defaultAddress == null ? null : SimpleString.of(defaultAddress), callback, context, prefixes, temporaryPrefixes, securityDomain, isLegacyProducer);
 
       sessions.put(name, session);
       totalSessionCount.incrementAndGet();
