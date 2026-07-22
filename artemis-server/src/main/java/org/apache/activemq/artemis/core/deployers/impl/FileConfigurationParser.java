@@ -922,6 +922,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
       parseAddressSettings(e, config);
 
+      parseResourceQuotas(e, config);
+
       parseResourceLimits(e, config);
 
       parseQueues(e, config);
@@ -1204,6 +1206,51 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
             config.addResourceLimitSettings(parseResourceLimitSettings(list.item(i)));
          }
       }
+   }
+
+   private void parseResourceQuotas(final Element e, final Configuration config) {
+      NodeList elements = e.getElementsByTagName("resource-quotas");
+
+      if (elements.getLength() != 0) {
+         Element node = (Element) elements.item(0);
+         NodeList list = node.getElementsByTagName("resource-quota");
+         for (int i = 0; i < list.getLength(); i++) {
+            org.apache.activemq.artemis.core.settings.impl.ResourceQuotaConfig quotaConfig = parseResourceQuota(list.item(i));
+            if (config.getResourceQuotas().containsKey(quotaConfig.getName())) {
+               logger.warn("Duplicate resource quota name: {}", quotaConfig.getName());
+            } else {
+               config.addResourceQuota(quotaConfig.getName(), quotaConfig);
+            }
+         }
+      }
+   }
+
+   private org.apache.activemq.artemis.core.settings.impl.ResourceQuotaConfig parseResourceQuota(final Node node) {
+      String name = getAttributeValue(node, "name");
+      org.apache.activemq.artemis.core.settings.impl.ResourceQuotaConfig quotaConfig =
+         new org.apache.activemq.artemis.core.settings.impl.ResourceQuotaConfig(name);
+
+      String maxMessageBytes = getString((Element) node, "max-message-bytes", null, NO_CHECK);
+      if (maxMessageBytes != null && !maxMessageBytes.isEmpty()) {
+         quotaConfig.setMaxMessageBytes(org.apache.activemq.artemis.utils.ByteUtil.convertTextBytes(maxMessageBytes));
+      }
+
+      Integer maxAddresses = getInteger((Element) node, "max-addresses", null, MINUS_ONE_OR_GT_ZERO);
+      if (maxAddresses != null) {
+         quotaConfig.setMaxAddresses(maxAddresses);
+      }
+
+      Integer maxQueues = getInteger((Element) node, "max-queues", null, MINUS_ONE_OR_GT_ZERO);
+      if (maxQueues != null) {
+         quotaConfig.setMaxQueues(maxQueues);
+      }
+
+      String partOf = getString((Element) node, "part-of", null, NO_CHECK);
+      if (partOf != null && !partOf.isEmpty()) {
+         quotaConfig.setPartOf(partOf);
+      }
+
+      return quotaConfig;
    }
 
    protected Pair<String, Set<Role>> parseSecurityRoles(final Node node, final Map<String, Set<String>> roleMappings) {
@@ -1534,6 +1581,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
             addressSettings.setIDCacheSize(GE_ZERO.validate(ID_CACHE_SIZE, XMLUtil.parseInt(child)).intValue());
          } else if (INITIAL_QUEUE_BUFFER_SIZE.equalsIgnoreCase(name)) {
             addressSettings.setInitialQueueBufferSize(POSITIVE_POWER_OF_TWO.validate(INITIAL_QUEUE_BUFFER_SIZE, XMLUtil.parseInt(child)).intValue());
+         } else if ("resource-quota".equalsIgnoreCase(name)) {
+            addressSettings.setResourceQuota(getTrimmedTextContent(child));
          }
       }
       return setting;

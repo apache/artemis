@@ -1106,6 +1106,8 @@
 
          <xsd:element ref="address-settings" maxOccurs="1" minOccurs="0"/>
 
+         <xsd:element ref="resource-quotas" maxOccurs="1" minOccurs="0"/>
+
          <xsd:element ref="resource-limit-settings" maxOccurs="1" minOccurs="0"/>
 
          <xsd:element ref="connector-services" maxOccurs="1" minOccurs="0"/>
@@ -4881,6 +4883,16 @@
             </xsd:annotation>
          </xsd:element>
 
+         <xsd:element name="resource-quota" type="xsd:string" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  The name of the resource quota to apply to addresses matching this pattern.
+                  Resource quotas provide hierarchical limits on message bytes, address count, and queue count.
+                  Can use wildcards (e.g., "EU.*") to match quota templates.
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+
       </xsd:all>
 
       <xsd:attribute name="match" type="xsd:string" use="required">
@@ -4944,6 +4956,81 @@
          <xsd:annotation>
             <xsd:documentation>
                the name of the user to whom the limits should be applied
+            </xsd:documentation>
+         </xsd:annotation>
+      </xsd:attribute>
+      <xsd:attributeGroup ref="xml:specialAttrs"/>
+   </xsd:complexType>
+
+   <!-- RESOURCE QUOTA CONFIGURATION -->
+   <xsd:element name="resource-quotas">
+      <xsd:annotation>
+         <xsd:documentation>
+            A list of resource quotas for hierarchical resource management.
+            Quotas can be organized in parent-child hierarchies and support wildcard templates.
+         </xsd:documentation>
+      </xsd:annotation>
+      <xsd:complexType>
+         <xsd:sequence>
+            <xsd:element name="resource-quota" type="resourceQuotaType" maxOccurs="unbounded" minOccurs="0"/>
+         </xsd:sequence>
+         <xsd:attributeGroup ref="xml:specialAttrs"/>
+      </xsd:complexType>
+   </xsd:element>
+
+   <xsd:complexType name="resourceQuotaType">
+      <xsd:annotation>
+         <xsd:documentation>
+            Complex type element to configure a resource quota.
+            Resource quotas provide hierarchical limits on message bytes, address count, and queue count.
+            Quotas can be organized in parent-child hierarchies where child quotas count toward parent limits.
+         </xsd:documentation>
+      </xsd:annotation>
+      <xsd:all>
+         <xsd:element name="max-message-bytes" type="xsd:string" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  Maximum total bytes for all messages across all addresses in this quota.
+                  Supports size suffixes: B, K, M, G (e.g., "500M", "10G").
+                  -1 or not specified means no limit (default is -1).
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+
+         <xsd:element name="max-addresses" type="xsd:int" default="-1" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  Maximum number of addresses that can be created in this quota (-1 means no limit, default is -1).
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+
+         <xsd:element name="max-queues" type="xsd:int" default="-1" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  Maximum number of queues that can be created in this quota (-1 means no limit, default is -1).
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+
+         <xsd:element name="part-of" type="xsd:string" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  The name of the parent quota. This quota's usage will count toward the parent's limits.
+                  Creates a hierarchical quota structure (e.g., "EU.fr" part of "EU" part of "global").
+                  If not specified, this quota has no parent.
+                  NOTE: The parent name must NOT contain wildcards (*). Wildcards are only allowed in the quota name attribute.
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+      </xsd:all>
+
+      <xsd:attribute name="name" type="xsd:string" use="required">
+         <xsd:annotation>
+            <xsd:documentation>
+               The unique name of this resource quota.
+               Can include wildcards (e.g., "EU.*") to create a template that dynamically instantiates
+               quota instances when addresses match patterns in address-settings.
             </xsd:documentation>
          </xsd:annotation>
       </xsd:attribute>
