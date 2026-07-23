@@ -598,7 +598,7 @@ public class MQTTUtil {
          tx = new TransactionImpl(storageManager);
          tx.setAsync(true);
       }
-      RoutingContext context = new RoutingContextImpl(tx);
+      RoutingContext context = new RoutingContextImpl(tx).setMirrorOption(RoutingContext.MirrorOption.disabled);
       queue.route(message, context);
       postOffice.processRoute(message, context, false);
       if (incomingTx == null) {

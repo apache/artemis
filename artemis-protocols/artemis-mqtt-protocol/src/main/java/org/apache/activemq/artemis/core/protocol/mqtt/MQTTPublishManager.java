@@ -24,7 +24,6 @@ import java.util.Objects;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufUtil;
-import io.netty.buffer.EmptyByteBuf;
 import io.netty.handler.codec.mqtt.MqttFixedHeader;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttProperties;
@@ -79,7 +78,7 @@ public class MQTTPublishManager {
 
    private final Object lock = new Object();
 
-   private boolean closeMqttConnectionOnPublishAuthorizationFailure;
+   private final boolean closeMqttConnectionOnPublishAuthorizationFailure;
 
    public MQTTPublishManager(MQTTSession session, boolean closeMqttConnectionOnPublishAuthorizationFailure) {
       this.session = session;
@@ -188,7 +187,7 @@ public class MQTTPublishManager {
             serverMessage.setDurable(MQTTUtil.DURABLE_MESSAGES);
          }
 
-         // only start a transction if really necessary
+         // only start a transaction if really necessary
          Transaction tx = (qos == 2 && !internal) || message.fixedHeader().isRetain() ? session.getServerSession().newTransaction() : null;
 
          try {
@@ -207,11 +206,6 @@ public class MQTTPublishManager {
                session.getState().getPublishCache().add(message.variableHeader().packetId(), tx);
             }
 
-            if (message.fixedHeader().isRetain()) {
-               ByteBuf payload = message.payload();
-               boolean reset = payload instanceof EmptyByteBuf || payload.capacity() == 0;
-               session.getRetainMessageManager().handleRetainedMessage(serverMessage, topic, reset, tx);
-            }
             if (tx != null) {
                tx.commit();
             }

@@ -1252,6 +1252,10 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       final RoutingStatus finalStatus;
       try {
          if (status == RoutingStatus.NO_BINDINGS) {
+            if (mirrorControllerSource != null && !context.isMirrorDisabled() &&
+                addressInfo != null && addressInfo.getRoutingTypes().contains(RoutingType.MULTICAST)) {
+               mirrorControllerSource.sendMessage(context.getTransaction(), message, context);
+            }
             finalStatus = maybeSendToDLA(message, context, address, sendToDLA);
          } else {
             finalStatus = status;

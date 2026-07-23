@@ -69,6 +69,7 @@ public class MQTTProtocolManagerFactory extends AbstractProtocolManagerFactory<M
    public void loadProtocolServices(ActiveMQServer server, List<ActiveMQComponent> services) throws Exception {
       server.registerRecordsLoader(MQTTStateManager.getInstance(server)::reload);
       services.add(new MQTTPeriodicTasks(server, server.getScheduledPool()));
+      server.registerBrokerPlugin(new MQTTRetainMessagePlugin());
    }
 
    public class MQTTPeriodicTasks extends ActiveMQScheduledComponent {
