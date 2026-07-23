@@ -72,6 +72,10 @@ These resources can be automatically deleted via the following `address-setting`
 
 Keep in mind that it's also possible to automatically apply an xref:message-expiry.adoc#message-expiry[`expiry-delay`] to retained messages as well.
 
+=== Retain messages with AMQP xref:amqp-broker-connections.adoc#address-federation[address federation]
+If retain messages need to work across a group of brokers and those brokers are linked with an xref:amqp-broker-connections.adoc#federation[AMQPBrokerConnection], it is necessary to move the retain processing from the MQTT protocol head into the protocol independent routing layer of the Broker.
+There is a xref:broker-plugins.adoc#using-the-mqttretainmessageplugin[MQTTRetainMessagePlugin] for that. One example use case would be partitioned pub/sub, where consumers are partitioned across brokers and publishers can use any broker. To achieve the desired publishing fanout, all addresses are federated. The receiving end of the amqp federation will need to respect any retain header for its broker to store retained messages.
+
 == Will Messages
 
 A will message can be sent when a client initially connects to a broker.
