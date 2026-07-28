@@ -56,8 +56,10 @@ public final class Constants {
          return 0x10000;
       } else if ("ppc64le".equals(arch) || "ppc64".equals(arch) || "ppc".equals(arch)) {
          return 0x8000;
+      } else if ("s390x".equals(arch) || "s390".equals(arch)) {
+         return 0x4000;
       }
-      // amd64, x86_64
+      // amd64, x86_64 -- and any future arch that shares 0x4000
       return 0x4000;
    }
 }
