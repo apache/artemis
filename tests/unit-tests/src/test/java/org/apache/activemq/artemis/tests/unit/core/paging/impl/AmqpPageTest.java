@@ -52,10 +52,12 @@ public class AmqpPageTest extends PageTest {
                                                       SimpleString address,
                                                       long msgId,
                                                       byte[] content) throws Exception {
+      MessageImpl protonMessage = createProtonMessage(address.toString(), content);
+      byte[] messageContent = encodeProtonMessage(protonMessage, 1024);
       final AMQPLargeMessage amqpMessage = new AMQPLargeMessage(msgId, 0, null, null, storageManager);
       amqpMessage.setAddress(address);
       amqpMessage.setFileDurable(true);
-      amqpMessage.addBytes(content);
+      amqpMessage.addBytes(messageContent);
       amqpMessage.reloadExpiration(0);
       return amqpMessage;
    }
@@ -78,12 +80,16 @@ public class AmqpPageTest extends PageTest {
    }
 
    public static AMQPStandardMessage encodeAndDecodeMessage(int messageFormat, MessageImpl message, int expectedSize) {
-      ByteBuf nettyBuffer = Unpooled.buffer(expectedSize);
+      byte[] bytes = encodeProtonMessage(message, expectedSize);
 
+      return new AMQPStandardMessage(messageFormat, bytes, null);
+   }
+
+   private static byte[] encodeProtonMessage(MessageImpl message, int expectedSize) {
+      ByteBuf nettyBuffer = Unpooled.buffer(expectedSize);
       message.encode(new NettyWritable(nettyBuffer));
       byte[] bytes = new byte[nettyBuffer.writerIndex()];
       nettyBuffer.readBytes(bytes);
-
-      return new AMQPStandardMessage(messageFormat, bytes, null);
+      return bytes;
    }
 }

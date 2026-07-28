@@ -18,10 +18,24 @@ NOTE: Follow the general upgrade procedure outlined in the xref:upgrading.adoc#u
 == Version 2.58.0
 
 === Highlights
+
 * https://issues.apache.org/jira/browse/ARTEMIS-6242[ARTEMIS-6242] / https://issues.apache.org/jira/browse/ARTEMIS-6216[ARTEMIS-6216] - CLI table output (`queue stat`, `lock list`, `print-data`) now uses Unicode box-drawing characters by default.
   ** Use `--ascii` for plain ASCII output.
+* AMQP message size estimation has been improved to account for the full message metadata, fixing underestimates that occurred when messages carried large application properties.
 
 === Upgrading from 2.57.0
+
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-5573[ARTEMIS-5573] and https://issues.apache.org/jira/browse/ARTEMIS-5975[ARTEMIS-5975], AMQP message size calculations have been corrected.
+If you previously inflated your sizing configuration to compensate for the underestimation, you may want to revisit those settings after upgrading.
+* If using journal replication, we recommend following the xref:ha.adoc#rolling-upgrade[rolling upgrade procedure] to ensure the primary and backup brokers negotiate the correct wire format automatically.
++
+If a rolling upgrade is not possible, you can force the broker to use the previous AMQP embed wire format by setting the following to `1` (default is `2`):
++
+** System property: `org.apache.artemis.amqp.embed.wire.version`
+** Environment variable: `ARTEMIS_AMQP_EMBED_WIRE_VERSION`
++
+Remove this override once all brokers in the cluster have been upgraded.
+
 == Version 2.57.0
 
 === Highlights

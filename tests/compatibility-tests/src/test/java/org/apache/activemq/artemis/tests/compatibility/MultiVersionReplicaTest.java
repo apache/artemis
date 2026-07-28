@@ -30,22 +30,30 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
+import org.apache.activemq.artemis.spi.core.protocol.EmbedMessageUtil;
 import org.apache.activemq.artemis.tests.compatibility.base.ClasspathBase;
 import org.apache.activemq.artemis.tests.extensions.parameterized.ParameterizedTestExtension;
 import org.apache.activemq.artemis.tests.extensions.parameterized.Parameters;
 import org.apache.activemq.artemis.utils.FileUtil;
 import org.apache.qpid.jms.JmsConnectionFactory;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @ExtendWith(ParameterizedTestExtension.class)
 public class MultiVersionReplicaTest extends ClasspathBase {
+
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private static final String QUEUE_NAME = "MultiVersionReplicaTestQueue";
 
@@ -57,6 +65,18 @@ public class MultiVersionReplicaTest extends ClasspathBase {
 
    private boolean security;
 
+
+   @BeforeAll
+   public static void beforeAll() {
+      System.setProperty("org.apache.artemis.amqp.embed.wire.version", "1");
+      EmbedMessageUtil.setDefaultWireVersion(EmbedMessageUtil.EMBED_WIRE_VERSION_1);
+   }
+
+   @AfterAll
+   public static void afterAll() {
+      System.clearProperty("org.apache.artemis.amqp.embed.wire.version");
+      EmbedMessageUtil.setDefaultWireVersion(EmbedMessageUtil.EMBED_WIRE_VERSION_2);
+   }
 
 
    @Parameters(name = "main={0}, backup={1}, security={2}")

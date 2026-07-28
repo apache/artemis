@@ -34,6 +34,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import io.netty.buffer.ByteBuf;
+import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.ActiveMQPropertyConversionException;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.logs.ActiveMQUtilBundle;
@@ -657,6 +658,10 @@ public class TypedProperties {
 
    public void decode(final ByteBuf buffer) {
       decode(buffer, null);
+   }
+
+   public int encode(ActiveMQBuffer buffer) {
+      return encode(buffer.byteBuf());
    }
 
    public int encode(final ByteBuf buffer) {

@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.api.core.client.ClientSession;
@@ -51,7 +52,11 @@ public class ServerUtil {
    }
 
    public static Process startServer(String artemisInstance, String serverName, int id, int timeout, File brokerProperties) throws Exception {
-      final Process process = internalStartServer(artemisInstance, serverName, brokerProperties);
+      return startServer(artemisInstance, serverName, id, timeout, brokerProperties, null);
+   }
+
+   public static Process startServer(String artemisInstance, String serverName, int id, int timeout, File brokerProperties, Consumer<String> logCallback) throws Exception {
+      final Process process = internalStartServer(artemisInstance, serverName, brokerProperties, logCallback);
 
       // wait for start
       if (timeout > 0) {
@@ -66,7 +71,11 @@ public class ServerUtil {
    }
 
    public static Process startServer(String artemisInstance, String serverName, String uri, int timeout, File propertiesFile) throws Exception {
-      final Process process = internalStartServer(artemisInstance, serverName, propertiesFile);
+      return startServer(artemisInstance, serverName, uri, timeout, propertiesFile, null);
+   }
+
+   public static Process startServer(String artemisInstance, String serverName, String uri, int timeout, File propertiesFile, Consumer<String> logCallback) throws Exception {
+      final Process process = internalStartServer(artemisInstance, serverName, propertiesFile, logCallback);
 
       // wait for start
       if (timeout != 0) {
@@ -78,20 +87,30 @@ public class ServerUtil {
 
    private static Process internalStartServer(String artemisInstance,
                                               String serverName) throws IOException, ClassNotFoundException {
-      return internalStartServer(artemisInstance, serverName, null);
+      return internalStartServer(artemisInstance, serverName, null, null);
    }
    private static Process internalStartServer(String artemisInstance,
                                               String serverName,
                                               File propertiesFile) throws IOException, ClassNotFoundException {
+      return internalStartServer(artemisInstance, serverName, propertiesFile, null);
+   }
+   private static Process internalStartServer(String artemisInstance,
+                                              String serverName,
+                                              File propertiesFile,
+                                              Consumer<String> logCallback) throws IOException, ClassNotFoundException {
 
       if (propertiesFile != null) {
-         return execute(artemisInstance, serverName, "run", "--properties", propertiesFile.getAbsolutePath());
+         return execute(artemisInstance, serverName, logCallback, "run", "--properties", propertiesFile.getAbsolutePath());
       } else {
-         return execute(artemisInstance, serverName, "run");
+         return execute(artemisInstance, serverName, logCallback, "run");
       }
    }
 
    public static Process execute(String artemisInstance, String jobName, String...args) throws IOException, ClassNotFoundException {
+      return execute(artemisInstance, jobName, null, args);
+   }
+
+   public static Process execute(String artemisInstance, String jobName, Consumer<String> logCallback, String...args) throws IOException, ClassNotFoundException {
       try {
          boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().trim().startsWith("win");
 
@@ -117,11 +136,11 @@ public class ServerUtil {
          final Process process = builder.start();
          Runtime.getRuntime().addShutdownHook(new Thread(() -> process.destroy()));
 
-         ProcessLogger outputLogger = new ProcessLogger(true, process.getInputStream(), jobName, false);
+         ProcessLogger outputLogger = new ProcessLogger(logCallback == null, process.getInputStream(), jobName, false, logCallback);
          outputLogger.start();
 
          // Adding a reader to System.err, so the VM won't hang on a System.err.println
-         ProcessLogger errorLogger = new ProcessLogger(true, process.getErrorStream(), jobName, true);
+         ProcessLogger errorLogger = new ProcessLogger(logCallback == null, process.getErrorStream(), jobName, true, logCallback);
          errorLogger.start();
          return process;
       } catch (IOException e) {
@@ -215,14 +234,18 @@ public class ServerUtil {
 
       private final boolean sendToErr;
 
+      private final Consumer<String> logCallback;
+
       ProcessLogger(final boolean print,
                     final InputStream is,
                     final String logName,
-                    final boolean sendToErr) throws ClassNotFoundException {
+                    final boolean sendToErr,
+                    final Consumer<String> logCallback) throws ClassNotFoundException {
          this.is = is;
          this.print = print;
          this.logName = logName;
          this.sendToErr = sendToErr;
+         this.logCallback = logCallback;
          setDaemon(false);
       }
 
@@ -239,6 +262,9 @@ public class ServerUtil {
                   } else {
                      System.out.println(logName + "-out:" + line);
                   }
+               }
+               if (logCallback != null) {
+                  logCallback.accept((sendToErr ? logName + "-err:" : logName + "-out:") + line);
                }
             }
          } catch (IOException e) {

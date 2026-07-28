@@ -27,6 +27,7 @@ import org.apache.activemq.artemis.core.persistence.Persister;
 import org.apache.activemq.artemis.core.persistence.StorageManager;
 import org.apache.activemq.artemis.core.persistence.impl.journal.LargeServerMessageImpl;
 import org.apache.activemq.artemis.core.server.LargeServerMessage;
+import org.apache.activemq.artemis.utils.SystemPropertyHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
@@ -34,13 +35,27 @@ import java.lang.invoke.MethodHandles;
 public class EmbedMessageUtil {
 
 
+   private static int DEFAULT_WIRE_VERSION = Integer.parseInt(SystemPropertyHelper.getProperty("org.apache.artemis.amqp.embed.wire.version", "ARTEMIS_AMQP_EMBED_WIRE_VERSION", "2"));
+
+   public static int getDefaultWireVersion() {
+      return DEFAULT_WIRE_VERSION;
+   }
+
+   public static void setDefaultWireVersion(int wireVersion) {
+      DEFAULT_WIRE_VERSION = wireVersion;
+   }
+
    private static final String AMQP_ENCODE_PROPERTY = "_AMQP_EMBED_LARGE";
 
    private static final byte[] signature = new byte[]{(byte) 'E', (byte) 'M', (byte) 'B'};
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-   public static ICoreMessage embedAsCoreMessage(Message source) {
+   // EMBED_WIRE_VERSION_2 introduced AMQPMessagePersisterV4 with map-based metadata encoding
+   public static final int EMBED_WIRE_VERSION_2 = 2;
+   public static final int EMBED_WIRE_VERSION_1 = 1;
+
+   public static ICoreMessage embedAsCoreMessage(Message source, int embedWireVersion) {
 
       if (source instanceof ICoreMessage message) {
          return message;
@@ -51,16 +66,19 @@ public class EmbedMessageUtil {
 
             LargeServerMessageImpl largeServerMessage = new LargeServerMessageImpl(Message.LARGE_EMBEDDED_TYPE, source.getMessageID(), largeSource.getStorageManager(), largeSource.getLargeBody().createFile());
             largeServerMessage.setDurable(source.isDurable());
-            int size = source.getPersister().getEncodeSize(source);
+
+            Persister<Message> messagePersister = source.getWireCompatiblePersister(embedWireVersion);
+
+            int size = messagePersister.getEncodeSize(source);
             byte[] arrayByte = new byte[size];
             ActiveMQBuffer buffer = ActiveMQBuffers.wrappedBuffer(arrayByte);
             buffer.resetWriterIndex();
-            source.getPersister().encode(buffer, source);
+            messagePersister.encode(buffer, source);
             largeServerMessage.toMessage().putBytesProperty(AMQP_ENCODE_PROPERTY, arrayByte);
             largeServerMessage.setParentRef((RefCountMessage)source);
             return (ICoreMessage) largeServerMessage.toMessage();
          } else {
-            Persister persister = source.getPersister();
+            Persister persister = source.getWireCompatiblePersister(embedWireVersion);
 
             CoreMessage message = new CoreMessage(source.getMessageID(), persister.getEncodeSize(source) + signature.length + CoreMessage.BODY_OFFSET).setType(Message.EMBEDDED_TYPE);
             message.setDurable(source.isDurable());
