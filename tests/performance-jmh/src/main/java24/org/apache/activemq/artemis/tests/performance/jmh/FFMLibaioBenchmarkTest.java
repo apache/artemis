@@ -36,12 +36,9 @@ import org.openjdk.jmh.annotations.Warmup;
 import java.io.File;
 import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.LockSupport;
 
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.AverageTime)
@@ -53,7 +50,7 @@ public class FFMLibaioBenchmarkTest {
 
    private static final int FILE_SIZE = 10000 * 4096;
 
-   @Param({"1024","4096","16384"})
+   @Param({"1024", "4096", "16384"})
    private static int BLOCK_SIZE;
 
    @Param({"32", "64", "128", "512", "2048"})

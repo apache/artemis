@@ -74,9 +74,15 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
 
    private static final Logger logger = LoggerFactory.getLogger(FFMNativeHelper.class);
 
+   private static final boolean DEBUG = logger.isDebugEnabled();
+
+   private static final boolean TRACE = logger.isTraceEnabled();
+
+   private static final long EVENT_SIZE = IO_EVENT_LAYOUT.byteSize();
+
    private static volatile MemorySegment oneMegaBuffer;
 
-   private static final AtomicBoolean forceSysCall = new AtomicBoolean(false);
+   private static boolean forceSysCall = false;
 
    private static final ThreadLocal<SharedContext> SHARED_CONTEXT = ThreadLocal.withInitial(SharedContext::new);
 
@@ -94,7 +100,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
       try {
          Integer fd = DUMB_FD.get();
          if (fd != null && fd >= 0) {
-            if (logger.isTraceEnabled()) {
+            if (TRACE) {
                logger.trace("Dumb FD already initialized: {}", fd);
             }
             return fd;
@@ -114,7 +120,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
          }
 
          DUMB_FD.set(fd);
-         if (logger.isDebugEnabled()) {
+         if (DEBUG) {
             logger.debug("Dumb FD created: {}, path = {}", fd, DUMB_PATH);
          }
          return fd;
@@ -133,7 +139,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
                   Path path = Path.of(DUMB_PATH);
                   Files.deleteIfExists(path);
                }
-               if (logger.isDebugEnabled()) {
+               if (DEBUG) {
                   logger.debug("Dumb FD closed and file removed: fd={}, path={}", fd, DUMB_PATH);
                }
             } catch (IOException e) {
@@ -159,7 +165,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
                                int max,
                                MemorySegment timeout) throws Throwable {
       if (aioCtxAddr == null || aioCtxAddr.address() == 0) {
-         if (logger.isTraceEnabled()) {
+         if (TRACE) {
             logger.trace("ringioGetEvents: aioCtxAddr is null -> syscall");
          }
          return ioGetEvents(aioCtxAddr, events, min, max, timeout);
@@ -172,15 +178,15 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
 
       MemorySegment ring = toAioRing(aioCtxAddr);
       if (ring.address() == 0) {
-         if (logger.isTraceEnabled()) {
+         if (TRACE) {
             logger.trace("toAioRing failed -> syscall");
          }
          return ioGetEvents(aioCtxAddr, events, min, max, timeout);
       }
 
       //checks if it could be completed in user space, saving a sys call
-      if (!(RING_REAPER && !isForceSyscall() && hasUsableRing(ring))) {
-         if (logger.isTraceEnabled()) {
+      if (!(RING_REAPER && !forceSysCall && hasUsableRing(ring))) {
+         if (TRACE) {
             logger.trace("kernel not supporting ring buffer");
          }
          return ioGetEvents(aioCtxAddr, events, min, max, timeout);
@@ -188,7 +194,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
 
       int ringNr = (int) AIO_RING_NR_VH.getAcquire(ring, 0L);
       if (ringNr <= 0) {
-         if (logger.isTraceEnabled()) {
+         if (TRACE) {
             logger.trace("ringioGetEvents: invalid ring size {} -> syscall", ringNr);
          }
          return ioGetEvents(aioCtxAddr, events, min, max, timeout);
@@ -204,7 +210,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
          available += ringNr;
       }
 
-      if (logger.isTraceEnabled()) {
+      if (TRACE) {
          logger.trace("tail={}, head={} nr={} available={}", tail, head, ringNr, available);
       }
 
@@ -214,7 +220,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
       }
 
       if (available < min && !timeoutZero) {
-         if (logger.isTraceEnabled()) {
+         if (TRACE) {
             logger.trace("ringioGetEvents: not enough available events -> syscall");
          }
          return ioGetEvents(aioCtxAddr, events, min, max, timeout);
@@ -234,7 +240,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
          // while (ring->tail == tail) mem_barrier();
          //
          // however eventually we could have available==max in a legal situation what could lead to infinite loop here
-         if (logger.isTraceEnabled()) {
+         if (TRACE) {
             logger.trace("ringioGetEvents: ring full ({}>= {}) → syscall", available, max);
          }
          return ioGetEvents(aioCtxAddr, events, min, max, timeout);
@@ -252,12 +258,11 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
       //if isn't needed to wrap we can avoid % operations that are quite expansive
       int needMod = ((head + available) >= ringNr) ? 1 : 0;
 
-      long eventSize = IO_EVENT_LAYOUT.byteSize();
       long requiredBytes;
       try {
-         requiredBytes = Math.multiplyExact((long) max, eventSize);
+         requiredBytes = Math.multiplyExact((long) max, EVENT_SIZE);
       } catch (ArithmeticException e) {
-         logger.warn("ringioGetEvents: overflow computing required event bytes max={}, eventSize={}", max, eventSize);
+         logger.warn("ringioGetEvents: overflow computing required event bytes max={}, eventSize={}", max, EVENT_SIZE);
          return ioGetEvents(aioCtxAddr, events, min, max, timeout);
       }
 
@@ -268,27 +273,30 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
 
       // first contiguous chunk
       for (int i = 0; i < contiguous; i++) {
-         long eventOffset = AIO_RING_HEADER_SIZE + (long) (eventIdx + i) * eventSize;
-         MemorySegment srcEvent = ring.asSlice(eventOffset, eventSize);
-         MemorySegment dstEvent = usableEvents.asSlice((long) i * eventSize, eventSize);
+         long eventOffset = AIO_RING_HEADER_SIZE + (long) (eventIdx + i) * EVENT_SIZE;
+         MemorySegment srcEvent = ring.asSlice(eventOffset, EVENT_SIZE);
+         MemorySegment dstEvent = usableEvents.asSlice((long) i * EVENT_SIZE, EVENT_SIZE);
          dstEvent.copyFrom(srcEvent);
       }
 
       // wrap around chunk, if any
       if (contiguous < available) {
          for (int i = contiguous; i < available; i++) {
-            long eventOffset = AIO_RING_HEADER_SIZE + (long) (i - contiguous) * eventSize;
-            MemorySegment srcEvent = ring.asSlice(eventOffset, eventSize);
-            MemorySegment dstEvent = usableEvents.asSlice((long) i * eventSize, eventSize);
+            long eventOffset = AIO_RING_HEADER_SIZE + (long) (i - contiguous) * EVENT_SIZE;
+            MemorySegment srcEvent = ring.asSlice(eventOffset, EVENT_SIZE);
+            MemorySegment dstEvent = usableEvents.asSlice((long) i * EVENT_SIZE, EVENT_SIZE);
             dstEvent.copyFrom(srcEvent);
          }
       }
       //it allow the kernel to build its own view of the ring buffer size
       //and push new events if there are any
-      int newHead = (head + available) % ringNr;
+      int newHead = (head + available);
+      while (newHead >= ringNr) {
+         newHead -= ringNr;
+      }
       AIO_RING_HEAD_VH.setRelease(ring, 0L, newHead);
 
-      if (logger.isTraceEnabled()) {
+      if (TRACE) {
          logger.trace("consumed non sys-call = {}", available);
       }
       return available;
@@ -330,16 +338,16 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
    }
 
    public static void setForceSyscall(boolean value) {
-      forceSysCall.set(value);
+      forceSysCall = value;
       logger.info("forceSysCall={}", value);
    }
 
    public static boolean isForceSyscall() {
-      return forceSysCall.get() || !RING_REAPER;
+      return forceSysCall || !RING_REAPER;
    }
 
    public IOControl<Callback> newContext(int queueSize) {
-      if (logger.isDebugEnabled()) {
+      if (DEBUG) {
          logger.debug("Initializing context with QueueSize={}", queueSize);
       }
 
@@ -374,7 +382,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
          ioControl.setIocbPool(iocbPool);
          ioControl.setQueueSize(queueSize);
 
-         if (logger.isDebugEnabled()) {
+         if (DEBUG) {
             logger.debug("Context created successfully: queueSize={}, ioContext=0x{}", queueSize, Long.toHexString(ioContext.address()));
          }
          return ioControl;
@@ -394,7 +402,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
          if (result < 0) {
             logger.warn("io_queue_release(0x{}) failed: errno={}", Long.toHexString(ioContext.address()), ERRNO_VH.get(captureState, 0L));
          } else {
-            if (logger.isTraceEnabled()) {
+            if (TRACE) {
                logger.trace("io_queue_release(0x{}) successful", Long.toHexString(ioContext.address()));
             }
          }
@@ -426,7 +434,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
             throw new IOException("io_queue_init failed: " + ERRNO_VH.get(captureState, 0L));
          }
          long rawAddress = ctx.get(ValueLayout.JAVA_LONG, 0L);
-         if (logger.isTraceEnabled()) {
+         if (TRACE) {
             logger.trace("ioQueueInit({}) → 0x{} (result={})", queueSize, Long.toHexString(rawAddress), result);
          }
          return MemorySegment.ofAddress(rawAddress).reinterpret(1, Arena.global(), null);
@@ -437,7 +445,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
 
    public void deleteContext(IOControl ioControl) {
       if (ioControl == null) {
-         if (logger.isDebugEnabled()) {
+         if (DEBUG) {
             logger.debug("deleteContext: null ioControl");
          }
          return;
@@ -446,7 +454,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
          logger.warn("deleteContext: invalid ioControl");
          return;
       }
-      if (logger.isDebugEnabled()) {
+      if (DEBUG) {
          logger.debug("deleteContext: queueSize={}, ioContext=0x{}", ioControl.queueSize(), Long.toHexString(ioControl.ioContext().address()));
       }
       try {
@@ -462,7 +470,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
             logger.warn("deleteContext: submit failed: Continuing cleanup");
             return;
          } else {
-            if (logger.isDebugEnabled()) {
+            if (DEBUG) {
                logger.debug("deleteContext: dumb write submitted (fd={})", DUMB_WRITE_HANDLER);
             }
          }
@@ -477,18 +485,18 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
             try {
                int result = ringioGetEvents(ioControl.ioContext(), ioControl.events(), 0, 1, null);
                if (result <= 0) {
-                  if (logger.isTraceEnabled()) {
+                  if (TRACE) {
                      logger.trace("deleteContext: drain complete (result={})", result);
                   }
                   break;
                }
-               if (logger.isDebugEnabled()) {
+               if (DEBUG) {
                   logger.debug("deleteContext: drained {} pending IOCBs", result);
                }
                MemorySegment events = ioControl.events();
-               events = events.reinterpret((long) result * IO_EVENT_LAYOUT.byteSize());
+               events = events.reinterpret((long) result * EVENT_SIZE);
                for (int i = 0; i < result; i++) {
-                  MemorySegment event = events.asSlice(i * IO_EVENT_LAYOUT.byteSize(), IO_EVENT_LAYOUT.byteSize());
+                  MemorySegment event = events.asSlice(i * EVENT_SIZE, EVENT_SIZE);
                   MemorySegment iocbp = event.get(ValueLayout.ADDRESS, 8L);
                   if (iocbp != null && iocbp.address() != 0) {
                      ioControl.putIOCB(iocbp);
@@ -500,7 +508,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
                break;
             }
          }
-         if (logger.isTraceEnabled()) {
+         if (TRACE) {
             logger.trace("deleteContext: drained {} IOCBs under lock", drained);
          }
 
@@ -516,7 +524,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
          }
 
          freeBuffer(ioControl.events());
-         if (logger.isDebugEnabled()) {
+         if (DEBUG) {
             logger.debug("deleteContext completed successfully");
          }
       } catch (IOException e) {
@@ -530,7 +538,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
       int flags = O_RDWR | O_CREAT;
       if (direct) {
          flags |= O_DIRECT;
-         if (logger.isDebugEnabled()) {
+         if (DEBUG) {
             logger.debug("Opening with O_DIRECT= {}", Integer.toHexString(O_DIRECT));
          }
       }
@@ -546,7 +554,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
             logger.error("open failed: path={}, flags={}, direct={}, errno={}", filePath, Integer.toHexString(flags), direct, errorCode);
             throw new IOException("Open failed for filePath = " + filePath + " with fd errno = " + errorCode);
          }
-         if (logger.isDebugEnabled()) {
+         if (DEBUG) {
             logger.debug("Opened {} with fd = {}", direct ? "O_DIRECT" : "normal", fd);
          }
          return fd;
@@ -565,7 +573,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
             int errorCode = (int) ERRNO_VH.get(captureState, 0L);
             throw new IOException("Error during close for fd = " + fd + ", error code = " + errorCode);
          }
-         if (logger.isDebugEnabled()) {
+         if (DEBUG) {
             logger.debug("File with fd = {} is successfully closed", fd);
          }
       } catch (Throwable t) {
@@ -593,7 +601,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
          }
          //zero initialization
          MEMSET_HANDLE.invoke(memorySegment, 0, (long) size);
-         if (logger.isDebugEnabled()) {
+         if (DEBUG) {
             logger.debug("posix_memalign(addrs={}, size={}, align={})", Long.toHexString(memorySegment.address()), size, alignment);
          }
          return memorySegment;
@@ -604,12 +612,12 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
 
    public static void freeBuffer(MemorySegment memorySegment) {
       if (memorySegment == null || memorySegment.address() == 0) {
-         if (logger.isDebugEnabled()) {
+         if (DEBUG) {
             logger.debug("freeBuffer: memorySegment is null");
          }
       }
       try {
-         if (logger.isTraceEnabled()) {
+         if (TRACE) {
             logger.trace("freeing buffer at address: 0x{} with capacity={}", Long.toHexString(memorySegment.address()), memorySegment.asByteBuffer().capacity());
          }
          FREE_BUF_HANDLE.invoke(memorySegment);
@@ -625,7 +633,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
       try {
          ctx.getIocbArray().setAtIndex(ValueLayout.JAVA_LONG, 0, iocb.address());
 
-         if (logger.isTraceEnabled()) {
+         if (TRACE) {
             logger.trace("submit: ctx=0x{}, iocb=0x{}, iocbArray=0x{}", Long.toHexString(ioControl.ioContext().address()), Long.toHexString(iocb.address()), Long.toHexString(ctx.getIocbArray().address()));
          }
 
@@ -657,7 +665,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
          throw new IOException("IOCB pool exhausted (used=" + ioControl.used() + "/queueSize=" + ioControl.queueSize() + ")");
       }
       int callbackId = (int) IOCBInit.getAioData(iocb);
-      if (logger.isTraceEnabled()) {
+      if (TRACE) {
          logger.trace("submitWrite called! callbackId: {}", callbackId);
       }
       boolean submitted = false;
@@ -695,7 +703,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
     * */
    private void ioPrepPOp(MemorySegment iocb, int fd, MemorySegment buffer, long nbytes, long offset, int op) {
       if (iocb == null) {
-         if (logger.isTraceEnabled()) {
+         if (TRACE) {
             logger.trace("ioPrepPOp: iocb is null");
          }
          return;
@@ -720,7 +728,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
          throw new IOException("IOCB pool exhausted");
       }
 
-      if (logger.isTraceEnabled()) {
+      if (TRACE) {
          logger.trace("submitRead called!");
       }
       long callbackId = IOCBInit.getAioData(iocb);
@@ -751,7 +759,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
 
       try {
          int result = ringioGetEvents(ioControl.ioContext(), ioControl.events(), min, max, null);
-         if (logger.isTraceEnabled()) {
+         if (TRACE) {
             logger.trace("poll harvested {} events (min={}, max={})", result, min, max);
          }
          if (result <= 0) {
@@ -764,12 +772,12 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
             return 0;
          }
 
-         events = events.reinterpret((long) result * IO_EVENT_LAYOUT.byteSize());
+         events = events.reinterpret((long) result * EVENT_SIZE);
          for (int i = 0; i < result; i++) {
-            MemorySegment event = events.asSlice(i * IO_EVENT_LAYOUT.byteSize(), IO_EVENT_LAYOUT.byteSize());
+            MemorySegment event = events.asSlice(i * EVENT_SIZE, EVENT_SIZE);
             MemorySegment iocbp = event.get(ValueLayout.ADDRESS, 8L).reinterpret(64);
             int eventResult = (int) event.get(ValueLayout.JAVA_LONG, 16L);
-            if (logger.isTraceEnabled()) {
+            if (TRACE) {
                logger.trace("poll[{}]: res={}, iocbp=0x{}, AioData: {}", i, eventResult, Long.toHexString(iocbp.address()), IOCBInit.getAioData(iocbp));
             }
 
@@ -810,7 +818,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
    }
 
    public void blockedPoll(IOControl<Callback> ioControl, boolean useFdatasync) {
-      if (logger.isDebugEnabled()) {
+      if (DEBUG) {
          logger.debug("blockedPoll starting(useFdatasync={})", useFdatasync);
       }
       if (ioControl == null || !ioControl.isValid()) {
@@ -825,14 +833,14 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
 
             while (running) {
                if (!ioControl.isValid()) {
-                  if (logger.isDebugEnabled()) {
+                  if (DEBUG) {
                      logger.debug("blockedPoll: context destroyed - self-exit");
                   }
                   break;
                }
                int result = ringioGetEvents(ioControl.ioContext(), ioControl.events(), 1, ioControl.queueSize(), null);
                if (result == -4) {
-                  if (logger.isTraceEnabled()) {
+                  if (TRACE) {
                      logger.trace("blockedPoll: EINTR - ignoring (jmap?)");
                   }
                   continue;
@@ -843,21 +851,21 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
                   throw new IOException("blockedPoll: ringio_get_events failed:" + result);
                }
 
-               if (logger.isTraceEnabled()) {
+               if (TRACE) {
                   logger.trace("blockedPoll returned: {} events", result);
                }
                lastFile = -1;
 
-               MemorySegment harvestedEvents = ioControl.events().reinterpret((long) result * IO_EVENT_LAYOUT.byteSize());
+               MemorySegment harvestedEvents = ioControl.events().reinterpret((long) result * EVENT_SIZE);
 
                for (int i = 0; i < result; i++) {
 
-                  MemorySegment event = harvestedEvents.asSlice(i * IO_EVENT_LAYOUT.byteSize(), IO_EVENT_LAYOUT.byteSize());
+                  MemorySegment event = harvestedEvents.asSlice(i * EVENT_SIZE, EVENT_SIZE);
                   MemorySegment iocbp = IOEvent.getObj(event).reinterpret(IOCB_LAYOUT_SIZE);
 
                   int fd = IOCBInit.getAioFildes(iocbp);
                   if (fd == DUMB_WRITE_HANDLER) {
-                     if (logger.isTraceEnabled()) {
+                     if (TRACE) {
                         logger.trace("blockedPoll: shutdown signal detected (dumb fd={})", fd);
                      }
                      ioControl.putIOCB(iocbp);
@@ -877,7 +885,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
                   }
 
                   int callbackIdRaw = (int) IOCBInit.getAioData(iocbp);
-                  if (logger.isTraceEnabled()) {
+                  if (TRACE) {
                      logger.trace("blockedPoll: callbackIdRaw: {}", callbackIdRaw);
                   }
 
@@ -891,7 +899,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
                            callback.onError(eventResult, "I/O error in blockedPoll");
                         } else {
                            callback.done();
-                           if (logger.isTraceEnabled()) {
+                           if (TRACE) {
                               logger.trace("callback executed!");
                            }
                         }
@@ -900,10 +908,10 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
                         }
                      }
                   } else {
-                     if (!forceSysCall.get()) {
+                     if (!forceSysCall) {
                         logger.warn("blockedPoll: Warning from ActiveMQ Artemis Native Layer: Your system is hitting duplicate / invalid records from libaio, which is a bug on the Linux Kernel you are using.You should set property org.apache.activemq.artemis.native.jlibaio.FORCE_SYSCALL=1 or upgrade to a kernel version that contains a fix");
                      }
-                     setForceSyscall(true);
+                     forceSysCall = true;
                   }
                }
             }
@@ -911,7 +919,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
             logger.error("blockedPoll error", e);
          }
       });
-      if (logger.isDebugEnabled()) {
+      if (DEBUG) {
          logger.debug("blockedPoll completed");
       }
    }
@@ -956,13 +964,13 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
          dup.clear();
          MemorySegment seg = MemorySegment.ofBuffer(dup);
          long addr = seg.address();
-         if (logger.isTraceEnabled()) {
+         if (TRACE) {
             logger.trace("memset(buffer={}, size={})", buffer, size);
          }
          MemorySegment nativeSeg = MemorySegment.ofAddress(addr).reinterpret(buffer.capacity());
          // memset(buffer, 0, size)
          MemorySegment ignore = (MemorySegment) MEMSET_HANDLE.invokeExact(nativeSeg, 0, (long) size);
-         if (logger.isTraceEnabled()) {
+         if (TRACE) {
             logger.trace("memset completed!");
          }
       } catch (Throwable t) {
@@ -982,7 +990,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
          }
 
          long size = Stat.getSize(statbuf);
-         if (logger.isDebugEnabled()) {
+         if (DEBUG) {
             logger.debug("getSize(fd = {}): {} bytes", fd, size);
          }
          return size;
@@ -1006,7 +1014,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
             logger.warn("Invalid st_blksize={} for fd={}, using 4096", blksize, fd);
             return 4096;
          }
-         if (logger.isTraceEnabled()) {
+         if (TRACE) {
             logger.trace("getBlockSizeFD(fd = {}) = {} bytes", fd, blksize);
          }
          return blksize;
@@ -1030,7 +1038,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
             logger.warn("Invalid st_blksize={} for path={}, using 4096", blksize, path);
             return 4096;
          }
-         if (logger.isTraceEnabled()) {
+         if (TRACE) {
             logger.trace("getBlockSize(path = {}) = {} bytes", path, blksize);
          }
          return blksize;
@@ -1061,7 +1069,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
             int errno = (int) ERRNO_VH.get(captureState, 0L);
             logger.warn("lseek reset failed fd={}: errno={}", fd, errno);
          }
-         if (logger.isDebugEnabled()) {
+         if (DEBUG) {
             logger.debug("fallocate(fd={}, size={}) + fsync + lseek(reset)", fd, size);
          }
       } catch (Throwable t) {
@@ -1073,7 +1081,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
       oneMegaMutex.lock();
       try {
          if (oneMegaBuffer == null) {
-            if (logger.isDebugEnabled()) {
+            if (DEBUG) {
                logger.debug("Allocating 1MB shared buffer (align={})", alignment);
             }
             oneMegaBuffer = newAlignedBuffer((int) ONE_MEGA, alignment);
@@ -1085,7 +1093,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
    }
 
    public static void fill(int fd, int alignment, long size) throws IOException {
-      if (logger.isDebugEnabled()) {
+      if (DEBUG) {
          logger.debug("fill(fd={}, alignment={}, size={})", fd, alignment, size);
       }
 
@@ -1124,7 +1132,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
       } catch (Throwable t) {
          throw new IOException("fill failed fd=" + fd + " size=" + size, t);
       }
-      if (logger.isDebugEnabled()) {
+      if (DEBUG) {
          logger.debug("fill completed: {} bytes written.", size);
       }
    }
