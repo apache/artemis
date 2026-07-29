@@ -111,7 +111,9 @@ public class MQTTTest extends MQTTTestSupport {
    @Test
    public void testConnectWithLargePassword() throws Exception {
       for (String version : Arrays.asList("3.1", "3.1.1")) {
-         String longString = new String(new char[65535]);
+         // MQTT forbids U+0000 in UTF-8 Encoded Strings (MQTT-1.5.3-2 / MQTT-1.5.4-2).
+         // Netty enforces this more strictly since 4.1.136.
+         String longString = "x".repeat(65535);
 
          BlockingConnection connection = null;
          try {
