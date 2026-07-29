@@ -46,14 +46,16 @@ import java.util.concurrent.locks.LockSupport;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Fork(value = 2)
-@Warmup(iterations = 20, time = 200, timeUnit = TimeUnit.MILLISECONDS)
-@Measurement(iterations = 10, time = 200, timeUnit = TimeUnit.MILLISECONDS)
+@Warmup(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
+@Measurement(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
 public class NativeLibaioBenchmarkTest {
 
    private static final int FILE_SIZE = 10000 * 4096;
-   private static final int BLOCK_SIZE = 4096;
 
-   @Param({"2048"})
+   @Param({"1024","4096","16384"})
+   private static int BLOCK_SIZE;
+
+   @Param({"32", "64", "128", "512", "2048"})
    private static int LIBAIO_QUEUE_SIZE;
 
    @Param({"10000"})
@@ -95,7 +97,7 @@ public class NativeLibaioBenchmarkTest {
       control = new LibaioContext<>(LIBAIO_QUEUE_SIZE, true, true);
       libaioFile = control.openFile(file, true);
 
-      libaioFile.fallocate(FILE_SIZE);
+      libaioFile.fallocate(BLOCK_SIZE * recordCount);
 
       headerBuffer = LibaioContext.newAlignedBuffer(BLOCK_SIZE, BLOCK_SIZE);
       recordBuffer = LibaioContext.newAlignedBuffer(BLOCK_SIZE, BLOCK_SIZE);
@@ -117,40 +119,10 @@ public class NativeLibaioBenchmarkTest {
       }, "aio-jmh-jni-poll-thread");
       pollThread.setDaemon(true);
       pollThread.start();
-
-      generateGarbage();
-   }
-
-   // Garbage generator fields
-   private Thread garbageThread;
-   private volatile boolean garbage = true;
-
-   private void generateGarbage() {
-      garbage = true;
-      garbageThread = new Thread(() -> {
-         List<byte[]> list = new ArrayList<>();
-
-         while (garbage && !Thread.currentThread().isInterrupted()) {
-            byte[] garbageArray = new byte[256];
-
-            for (int i = 0; i < 1000; i++) {
-               list.add(garbageArray);
-            }
-
-            if (list.size() > 1000000) {
-               list.subList(0, list.size() / 2).clear();
-            }
-            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(1));
-         }
-      }, "aio-jmh-garbage-thread");
-      garbageThread.setDaemon(true);
-      garbageThread.start();
    }
 
    @TearDown(Level.Trial)
    public void tearDown() throws Exception {
-      stopGarbageGenerator();
-
       polling = false;
 
       if (pollThread != null) {
@@ -172,14 +144,6 @@ public class NativeLibaioBenchmarkTest {
       }
       if (file != null) {
          file.delete();
-      }
-   }
-
-   private void stopGarbageGenerator() throws InterruptedException {
-      garbage = false;
-      if (garbageThread != null) {
-         garbageThread.interrupt();
-         garbageThread.join(TimeUnit.SECONDS.toMillis(10));
       }
    }
 

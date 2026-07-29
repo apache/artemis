@@ -819,7 +819,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
       }
 
       ioControl.withPollLock(() -> {
-         try (Arena arena = Arena.ofConfined()) {
+         try {
             boolean running = true;
             int lastFile = -1;
 
@@ -869,7 +869,7 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
 
                   if (useFdatasync && lastFile != fd) {
                      try {
-                        fdatasync(arena, fd);
+                        fdatasync(fd);
                      } catch (Throwable t) {
                         String errorMessage = "fdatasync failed: " + t.getMessage();
                         logger.warn("blockedPoll: {}", errorMessage);
@@ -916,8 +916,9 @@ public class FFMNativeHelper<Callback extends SubmitInfo> {
       }
    }
 
-   private static void fdatasync(Arena arena, int fd) throws Throwable {
-      MemorySegment captureState = arena.allocate(CAPTURE_STATE_LAYOUT);
+   private static void fdatasync(int fd) throws Throwable {
+//      MemorySegment captureState = arena.allocate(CAPTURE_STATE_LAYOUT);
+      MemorySegment captureState = SHARED_CONTEXT.get().getStateCapture();
       int res = (int) FDATASYNC_HANDLE.invoke(captureState, fd);
       if (res < 0) {
          throw new IOException("fdatasync(fd = " + fd + ") failed, errno: " + ERRNO_VH.get(captureState, 0L));
