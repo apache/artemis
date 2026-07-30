@@ -88,4 +88,7 @@ public interface ActiveMQAMQPProtocolLogger {
 
    @LogMessage(id = 111014, value = "AMQP Federation target skipped federation of queue {}, reason={}", level = LogMessage.Level.WARN)
    void federationTargetSkippedQueueFederation(String address, String reason);
+
+   @LogMessage(id = 111015, value = "AMQP message {} has invalid application properties encoding. {}", level = LogMessage.Level.WARN)
+   void invalidEncodingApplicationProperties(long messageID, String description);
 }

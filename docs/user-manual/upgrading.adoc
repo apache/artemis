@@ -20,6 +20,8 @@ It also simplifies updating to newer versions.
 [IMPORTANT]
 ====
 Review the xref:versions.adoc#version-history[version] history for specific steps required for your upgrade before proceeding.
+
+If you are using journal replication for high availability, follow the xref:ha.adoc#rolling-upgrade[rolling upgrade procedure] to upgrade without downtime.
 ====
 
 In general, the process is as follows:

@@ -30,6 +30,7 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -38,13 +39,18 @@ import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
 import org.apache.activemq.artemis.tests.compatibility.base.ClasspathBase;
 import org.apache.activemq.artemis.tests.extensions.parameterized.ParameterizedTestExtension;
 import org.apache.activemq.artemis.tests.extensions.parameterized.Parameters;
+import org.apache.activemq.artemis.utils.FileUtil;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @ExtendWith(ParameterizedTestExtension.class)
 public class MultiVersionReplicaTest extends ClasspathBase {
+
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private static final String QUEUE_NAME = "MultiVersionReplicaTestQueue";
 
@@ -62,22 +68,20 @@ public class MultiVersionReplicaTest extends ClasspathBase {
    public static Collection getParameters() {
       List<Object[]> combinations = new ArrayList<>();
 
+      // Replication compatibility is tested FORWARD ONLY (older main -> newer backup).
+      // Artemis 2.56.0 introduced AMQPMessagePersisterV4, which breaks backward replication compatibility.
+      // This means 2.56.0+ servers cannot replicate to pre-2.56.0 backup servers.
+
       if (getJavaVersion() <= 22) {
          // Old 2.x servers fail on JDK23+ without workarounds.
          combinations.add(new Object[]{ARTEMIS_2_22_0, SNAPSHOT, true});
-         combinations.add(new Object[]{SNAPSHOT, ARTEMIS_2_22_0, true});
          combinations.add(new Object[]{ARTEMIS_2_17_0, SNAPSHOT, true});
-         combinations.add(new Object[]{SNAPSHOT, ARTEMIS_2_17_0, true});
          combinations.add(new Object[]{ARTEMIS_2_22_0, SNAPSHOT, false});
-         combinations.add(new Object[]{SNAPSHOT, ARTEMIS_2_22_0, false});
          combinations.add(new Object[]{ARTEMIS_2_17_0, SNAPSHOT, false});
-         combinations.add(new Object[]{SNAPSHOT, ARTEMIS_2_17_0, false});
       }
 
       combinations.add(new Object[]{ARTEMIS_2_44_0, SNAPSHOT, true});
-      combinations.add(new Object[]{SNAPSHOT, ARTEMIS_2_44_0, true});
       combinations.add(new Object[]{ARTEMIS_2_44_0, SNAPSHOT, false});
-      combinations.add(new Object[]{SNAPSHOT, ARTEMIS_2_44_0, false});
 
       // The SNAPSHOT/SNAPSHOT is here as a test validation only, like in other cases where SNAPSHOT/SNAPSHOT is used.
       combinations.add(new Object[]{SNAPSHOT, SNAPSHOT, true});
@@ -109,6 +113,7 @@ public class MultiVersionReplicaTest extends ClasspathBase {
 
    @TestTemplate
    public void testReplica() throws Throwable {
+      FileUtil.deleteDirectory(serverFolder.getAbsoluteFile());
       System.out.println("Starting live");
       evaluate(mainClassloader, "multiVersionReplica/mainServer.groovy", serverFolder.getAbsolutePath(), "1", "61000", "61001", String.valueOf(security));
       System.out.println("Starting backup");

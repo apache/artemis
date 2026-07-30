@@ -506,6 +506,11 @@ final class CompressedLargeMessageControllerImpl implements LargeMessageControll
    }
 
    @Override
+   public void writeUnsignedShort(final int value) {
+      throw new IllegalAccessError(OPERATION_NOT_SUPPORTED);
+   }
+
+   @Override
    public void writeInt(final int value) {
       throw new IllegalAccessError(OPERATION_NOT_SUPPORTED);
    }

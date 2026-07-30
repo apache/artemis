@@ -852,6 +852,11 @@ public class LargeMessageControllerImpl implements LargeMessageController {
       throw new IllegalAccessError(LargeMessageControllerImpl.READ_ONLY_ERROR_MESSAGE);
    }
 
+   @Override
+   public void writeUnsignedShort(final int value) {
+      throw new IllegalAccessError(LargeMessageControllerImpl.READ_ONLY_ERROR_MESSAGE);
+   }
+
    public void writeMedium(final int value) {
       throw new IllegalAccessError(LargeMessageControllerImpl.READ_ONLY_ERROR_MESSAGE);
    }

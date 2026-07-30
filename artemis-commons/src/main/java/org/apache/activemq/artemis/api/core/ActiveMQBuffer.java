@@ -823,6 +823,16 @@ public interface ActiveMQBuffer extends DataInput {
    void writeShort(short value);
 
    /**
+    * Sets the specified unsigned 16-bit short integer at the current {@code writerIndex} and increases the {@code writerIndex}
+    * by {@code 2} in this buffer.
+    *
+    * @param value The specified unsigned 16-bit short integer (0-65535)
+    * @throws IllegalArgumentException if {@code value} is less than 0 or greater than 65535
+    * @throws IndexOutOfBoundsException if {@code this.writableBytes} is less than {@code 2}
+    */
+   void writeUnsignedShort(int value);
+
+   /**
     * Sets the specified 32-bit integer at the current {@code writerIndex} and increases the {@code writerIndex} by
     * {@code 4} in this buffer.
     *

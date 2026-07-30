@@ -68,9 +68,6 @@ public class AMQPLargeMessagePersister extends MessagePersister {
       }
    }
 
-   /**
-    * Sub classes must add the first short as the protocol-id
-    */
    @Override
    public void encode(ActiveMQBuffer buffer, Message record) {
       super.encode(buffer, record);
@@ -105,11 +102,11 @@ public class AMQPLargeMessagePersister extends MessagePersister {
       long format = buffer.readLong();
       SimpleString address = buffer.readNullableSimpleString();
 
-      int size = buffer.readInt();
+      int extraPropertiesEncodingSize = buffer.readInt();
 
       TypedProperties properties;
 
-      if (size != 0) {
+      if (extraPropertiesEncodingSize != 0) {
          properties = new TypedProperties(Message.INTERNAL_PROPERTY_NAMES_PREDICATE);
          properties.decode(buffer.byteBuf());
       } else {
@@ -118,6 +115,7 @@ public class AMQPLargeMessagePersister extends MessagePersister {
 
       AMQPLargeMessage largeMessage = new AMQPLargeMessage(id, format, properties, null, null);
 
+      largeMessage.reloadSetDurable(durable);
       largeMessage.setFileDurable(durable);
       if (address != null) {
          largeMessage.setAddress(address);

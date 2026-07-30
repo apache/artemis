@@ -96,9 +96,7 @@ public abstract class AbstractMapPersister<T> {
 
    protected void writeHeader(ActiveMQBuffer buffer, int recordSize, int entries) {
       buffer.writeInt(recordSize);
-      // this is equivalent to writeUnsignedShort
-      // TODO: bring writeUnsignedShort to ActiveMQBuffer
-      buffer.writeShort((short)entries);
+      buffer.writeUnsignedShort((short)entries);
    }
 
    protected void writeBoolean(ActiveMQBuffer buffer, short key, boolean value) {
@@ -129,6 +127,13 @@ public abstract class AbstractMapPersister<T> {
       buffer.writeShort(key);
       buffer.writeByte(Datatypes.BYTE.getId());
       buffer.writeByte(value);
+   }
+
+   protected void writeByteArray(ActiveMQBuffer buffer, short key, byte[] byteArray) {
+      buffer.writeShort(key);
+      buffer.writeByte(Datatypes.BYTE_ARRAY.getId());
+      buffer.writeInt(byteArray.length);
+      buffer.writeBytes(byteArray);
    }
 
    protected void writeByteArray(ActiveMQBuffer buffer, short key, int size, Consumer<ActiveMQBuffer> consumer) {

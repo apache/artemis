@@ -52,7 +52,8 @@ public class ProtonProtocolManagerFactory extends AbstractProtocolManagerFactory
    @Override
    public Persister<Message>[] getPersister() {
 
-      Persister[] persisters = new Persister[]{AMQPMessagePersister.getInstance(), AMQPMessagePersisterV2.getInstance(), AMQPLargeMessagePersister.getInstance(), AMQPMessagePersisterV3.getInstance()};
+      Persister[] persisters = new Persister[]{AMQPMessagePersister.getInstance(), AMQPMessagePersisterV2.getInstance(), AMQPMessagePersisterV3.getInstance(),
+         AMQPMessagePersisterV4.getInstance(), AMQPLargeMessagePersister.getInstance(), AMQPLargeMessagePersisterV2.getInstance()};
       return persisters;
    }
 

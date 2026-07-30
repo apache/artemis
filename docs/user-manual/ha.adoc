@@ -469,6 +469,29 @@ Here's a simple example:
 </ha-policy>
 ----
 
+==== Rolling Upgrade
+
+If you need to upgrade the broker version in a journal replication setup, follow this procedure to avoid downtime:
+
+. **Stop the backup server**, upgrade it to the new version, and start it.
+At this point the backup will synchronize with the primary server.
+. **Wait for synchronization to complete**.
+The backup must be fully synchronized with the primary before proceeding.
+. **Stop the primary server**, upgrade it to the new version, and start it.
+The upgraded primary will now synchronize with the backup and then fail back to become active again.
+
+[NOTE]
+====
+This procedure ensures continuous availability during the upgrade process.
+The backup takes over when the primary is stopped for upgrade, and then the primary resumes its active role after synchronization is complete.
+====
+
+[IMPORTANT]
+====
+Always upgrade the backup server first.
+Upgrading the primary first could result in compatibility issues or data synchronization problems.
+====
+
 ==== Apache ZooKeeper Integration
 
 The default pluggable lock manager implementation uses https://curator.apache.org/[Apache Curator] to integrate with https://zookeeper.apache.org/[Apache ZooKeeper].
