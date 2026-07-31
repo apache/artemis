@@ -86,6 +86,15 @@ public class HttpAcceptorHandler extends ChannelDuplexHandler {
          responses.put(new ResponseHolder(System.currentTimeMillis() + responseTime, new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)));
          ReferenceCountUtil.release(msg);
          return;
+      } else if (method.equals(HttpMethod.GET) && !request.headers().contains(HttpHeaderNames.UPGRADE)) {
+         // HTTP tunnel poll for a pending response; do not consume protocol Upgrade GETs (e.g. WebSocket).
+         if (responses.isEmpty()) {
+            responses.put(new ResponseHolder(System.currentTimeMillis() + responseTime,
+               new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK)));
+         }
+         // Consumed here (not forwarded), so release; unlike POST we keep no content, so no retain.
+         ReferenceCountUtil.release(msg);
+         return;
       }
       super.channelRead(ctx, msg);
    }

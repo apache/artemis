@@ -33,6 +33,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpRequestDecoder;
@@ -154,7 +155,7 @@ public class ProtocolHandler {
       public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
          if (msg instanceof FullHttpRequest httpRequest) {
             HttpHeaders headers = httpRequest.headers();
-            String upgrade = headers.get("upgrade");
+            String upgrade = headers.get(HttpHeaderNames.UPGRADE);
 
             if (upgrade != null && upgrade.equalsIgnoreCase("websocket")) {
                int stompMaxFramePayloadLength = ConfigurationHelper.getIntProperty(TransportConstants.STOMP_MAX_FRAME_PAYLOAD_LENGTH, -1, nettyAcceptor.getConfiguration());
