@@ -836,6 +836,10 @@ public class NettyAcceptor extends AbstractAcceptor {
       }
       try {
 
+         if (protocolHandler != null) {
+            protocolHandler.close();
+         }
+
          if (batchFlusherFuture != null) {
             batchFlusherFuture.cancel(false);
 
