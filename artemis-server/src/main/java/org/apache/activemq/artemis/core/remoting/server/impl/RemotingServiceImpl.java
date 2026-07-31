@@ -811,7 +811,8 @@ public class RemotingServiceImpl implements RemotingService, ServerConnectionLif
    private void issueClose(Object connectionID) {
       ConnectionEntry conn = connections.get(connectionID);
 
-      if (conn != null && !conn.connection.isSupportReconnect()) {
+      // always remove connection on graceful close
+      if (conn != null) {
          RemotingConnection removedConnection = removeConnection(connectionID);
          if (removedConnection != null) {
             try {

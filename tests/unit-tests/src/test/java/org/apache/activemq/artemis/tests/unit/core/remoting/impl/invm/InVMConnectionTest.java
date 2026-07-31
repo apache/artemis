@@ -16,17 +16,25 @@
  */
 package org.apache.activemq.artemis.tests.unit.core.remoting.impl.invm;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.core.remoting.impl.invm.InVMConnection;
 import org.apache.activemq.artemis.core.remoting.impl.invm.InVMConnectorFactory;
 import org.apache.activemq.artemis.core.remoting.impl.invm.TransportConstants;
+import org.apache.activemq.artemis.core.server.ActiveMQComponent;
+import org.apache.activemq.artemis.spi.core.protocol.ProtocolManager;
+import org.apache.activemq.artemis.spi.core.remoting.BaseConnectionLifeCycleListener;
+import org.apache.activemq.artemis.spi.core.remoting.Connection;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class InVMConnectionTest {
 
@@ -54,5 +62,85 @@ public class InVMConnectionTest {
       assertTrue(conn.isSameTarget(tf0, tf1));
       assertTrue(conn.isSameTarget(tf2, tf0));
       assertFalse(conn.isSameTarget(tf2, tf1));
+   }
+
+   @Test
+   public void testConcurrentCloseFiresConnectionDestroyedExactlyOnce() throws Exception {
+      final int threads = 16;
+      // Repeat several rounds to widen the window for catching the race.
+      for (int round = 0; round < 50; round++) {
+         final CountingLifeCycleListener listener = new CountingLifeCycleListener();
+         final InVMConnection conn = new InVMConnection(0, null, listener, null);
+
+         final CyclicBarrier barrier = new CyclicBarrier(threads);
+         final Thread[] workers = new Thread[threads];
+         final AtomicInteger prematureReturns = new AtomicInteger();
+
+         for (int i = 0; i < threads; i++) {
+            final boolean disconnect = (i % 2 == 0);
+            workers[i] = new Thread(() -> {
+               try {
+                  // Line up all threads so they hit close()/disconnect() together.
+                  barrier.await();
+               } catch (Exception e) {
+                  throw new RuntimeException(e);
+               }
+               if (disconnect) {
+                  conn.disconnect();
+               } else {
+                  conn.close();
+               }
+               // by the time any close()/disconnect() call returns, connectionDestroyed must already have fired.
+               if (!listener.destroyFired) {
+                  prematureReturns.incrementAndGet();
+               }
+            });
+         }
+
+         for (Thread worker : workers) {
+            worker.start();
+         }
+         for (Thread worker : workers) {
+            worker.join();
+         }
+
+         assertEquals(1, listener.destroyedCount.get(),
+                      "connectionDestroyed must be fired exactly once per connection (round " + round + ")");
+         assertEquals(0, prematureReturns.get(),
+                      "close()/disconnect() must not return before connectionDestroyed has fired (round " + round + ")");
+      }
+   }
+
+   private static final class CountingLifeCycleListener implements BaseConnectionLifeCycleListener<ProtocolManager> {
+
+      private final AtomicInteger destroyedCount = new AtomicInteger();
+
+      private volatile boolean destroyFired;
+
+      @Override
+      public void connectionCreated(ActiveMQComponent component, Connection connection, ProtocolManager protocol) {
+      }
+
+      @Override
+      public void connectionDestroyed(Object connectionID, boolean failed) {
+         // Hold inside the callback for a moment to widen the window in which a
+         // concurrent, non-atomic close() could wrongly observe the connection
+         // as "closing" and return early before this callback completes.
+         try {
+            Thread.sleep(5);
+         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+         }
+         destroyedCount.incrementAndGet();
+         destroyFired = true;
+      }
+
+      @Override
+      public void connectionException(Object connectionID, ActiveMQException me) {
+      }
+
+      @Override
+      public void connectionReadyForWrites(Object connectionID, boolean ready) {
+      }
    }
 }

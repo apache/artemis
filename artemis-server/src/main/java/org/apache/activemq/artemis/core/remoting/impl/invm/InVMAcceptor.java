@@ -238,7 +238,7 @@ public final class InVMAcceptor extends AbstractAcceptor {
       connectionListener.connectionCreated(this, inVMConnection, protocolMap.get(ActiveMQClient.DEFAULT_CORE_PROTOCOL));
    }
 
-   public void disconnect(final String connectionID) {
+   public void disconnect(final String connectionID, final boolean failed) {
       if (!started) {
          return;
       }
@@ -246,7 +246,11 @@ public final class InVMAcceptor extends AbstractAcceptor {
       Connection conn = connections.get(connectionID);
 
       if (conn != null) {
-         conn.disconnect();
+         if (failed) {
+            conn.disconnect();
+         } else {
+            conn.close();
+         }
       }
    }
 
@@ -301,7 +305,7 @@ public final class InVMAcceptor extends AbstractAcceptor {
             // Execute on different thread after all the packets are sent, to avoid deadlocks
             connection.getExecutor().execute(() -> {
                // Remove on the other side too
-               connector.disconnect((String) connectionID);
+               connector.disconnect((String) connectionID, failed);
             });
          }
       }
