@@ -67,6 +67,7 @@ import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.core.client.impl.ClientSessionFactoryImpl;
 import org.apache.activemq.artemis.core.config.BridgeConfiguration;
+import org.apache.activemq.artemis.core.config.BrokerPluginConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.config.ConfigurationUtils;
 import org.apache.activemq.artemis.core.config.CoreAddressConfiguration;
@@ -4790,6 +4791,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       configuration.setPurgePageFolders(config.isPurgePageFolders());
       configuration.setConnectionRouters(config.getConnectionRouters());
       configuration.setJaasConfigs(config.getJaasConfigs());
+      configuration.setBrokerPluginConfigurations(config.getBrokerPluginConfigurations());
    }
 
    private static boolean hasReloadableConfig(Configuration configuration) {
@@ -4803,7 +4805,8 @@ public class ActiveMQServerImpl implements ActiveMQServer {
             !configuration.getAcceptorConfigurations().isEmpty() ||
             !configuration.getAMQPConnection().isEmpty() ||
             !configuration.getConnectionRouters().isEmpty() ||
-            !configuration.getJaasConfigs().isEmpty();
+            !configuration.getJaasConfigs().isEmpty() ||
+            !configuration.getBrokerPluginConfigurations().isEmpty();
    }
 
    private void deployReloadableConfigFromConfiguration() throws Exception {
@@ -4911,6 +4914,19 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
          ActiveMQServerLogger.LOGGER.reloadingConfiguration("protocol services");
          updateProtocolServices();
+
+         ActiveMQServerLogger.LOGGER.reloadingConfiguration("broker plugins");
+         for (BrokerPluginConfiguration pluginConfig : configuration.getBrokerPluginConfigurations()) {
+            getBrokerPlugins().stream()
+               .filter(p -> p.getClass().getName().equals(pluginConfig.getClassName()))
+               .forEach(p -> {
+                  try {
+                     p.propertiesReloaded(pluginConfig.getProperties());
+                  } catch (Throwable e) {
+                     logger.warn("Error notifying plugin {} of property reload", p, e);
+                  }
+               });
+         }
 
          ActiveMQServerLogger.LOGGER.configurationReloadCompleted();
       }
