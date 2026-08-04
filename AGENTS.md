@@ -213,6 +213,128 @@ Assisted-by: <AgentName>
 
 **Critical**: Dependencies must be Apache v2.0 compatible. Add to top-level `pom.xml` dependency management with version and license comment. Individual modules inherit version from parent.
 
+## Database Storage Architecture
+
+The database storage layer uses a **group commit** (write coalescing) architecture to maximize throughput. Instead of committing each write individually, operations are buffered and a single JDBC `commit` covers many operations. This is the same approach used by database engines internally (e.g. InnoDB group commit).
+
+### Core Design Patterns
+
+**Group commit** — `DataManager` extends `ActiveMQScheduledComponent`. Callers submit data into `pendingData`; a scheduled timer fires `flush()`, which hands the accumulated batch to a `DataWorker`. One `commit` covers all operations in the batch, amortizing the most expensive part (network round-trip + fsync).
+
+**Command pattern** — Each `DBData` subclass encapsulates a single operation and dispatches itself to the correct `BatchableStatement` via `store(DataWorker)`. This cleanly separates "what to persist" from "how to persist."
+
+**Heterogeneous batching** — A single transaction mixes inserts and deletes across different tables (messages, references, addresses, queues, pages). This provides atomicity for logical operations that touch multiple tables (e.g. routing a message creates a message row + reference rows).
+
+**Worker pool with dedicated connections** — Multiple `DataWorker` instances (each owning its own JDBC `Connection` and `PreparedStatement` set) cycle through a `LinkedBlockingDeque`. When a worker finishes, it returns itself to the pool.
+
+**Async write-behind with IOCompletion callbacks** — Callers don't block on commit. Each data item carries an `IOCompletion` callback: `storeLineUp()` is called on enqueue, `done()` after successful commit, `onError()` on failure. This mirrors the existing Artemis journal's async model.
+
+**Retry with reconnect** — `DataAgent.run()` retries up to 5 times on `SQLException`, rolling back and re-establishing the connection between attempts. The `commit` is outside the retry loop so a successful batch is committed exactly once.
+
+### Key Classes
+
+| Class | Role |
+|-------|------|
+| `DataManager` | Public API. Buffers `DBData` items, triggers flush on timer, dispatches to workers. |
+| `DataWorker` | Owns a JDBC connection + all `BatchableStatement` instances. Executes a batch: `doBeforeCommit` (flush all statements) → `commit` → `doAfterCommit` (fire callbacks). |
+| `DataAgent` | Abstract base for workers. Handles connection lifecycle, retry loop, commit/rollback. |
+| `BatchableStatement<E>` | Wraps a `PreparedStatement`. Accumulates items via `addData()`, executes via `executeBatch()`. |
+| `DBData<W>` | Abstract command. Each subclass holds entity fields and dispatches to the right statement. |
+| `DatabaseStoreTX` | Collects `DBData` items for a single broker transaction, flushed on commit. |
+
+## Adding a New Database Entity Type (Database Storage)
+
+When adding a new entity type to the database storage layer (e.g. Message, Address, Queue, Reference), follow the pattern established by existing types. Each entity requires up to 6 files across 4 packages, plus SQL in properties and wiring in `DataWorker` and `DataManager`.
+
+### Package Layout
+
+**`artemis-direct-db`** — SQL provider layer (under `org.apache.artemis.database`):
+```
+SQLProvider.java          # Abstract: table name getters + abstract create/insert/delete SQL methods
+OracleSQLProvider.java    # Oracle-specific SQL (NUMBER(19), BLOB, etc.)
+MySQLSqlProvider.java     # MySQL-specific SQL (BIGINT, LONGBLOB, etc.)
+DatabaseProvider.java     # createSchema() calls JDBCUtils.createTable for each entity
+```
+
+**`artemis-server`** — persistence layer (under `org.apache.activemq.artemis.core.persistence.impl.database`):
+```
+dbdata/          # Data carrier classes (extend DBData<DataWorker>)
+queries/         # JDBC read queries (SELECT, used at startup/reload)
+statements/      # Batched write statements (extend BatchableStatement<XxxData>)
+worker/          # DataWorker (owns statement instances) + DataManager (public API)
+```
+
+### Step-by-step Checklist
+
+Using `Foo` as the example entity name:
+
+#### 1. SQL provider — `artemis-direct-db`
+
+**`SQLProvider.java`** — add:
+- `public String getFoo() { return "DB_FOO"; }` — table name getter
+- `public abstract String createFoo(String tableName);` — CREATE TABLE
+- `public abstract String insertFoo(String tableName);` — INSERT
+- `public abstract String deleteFoo(String tableName);` — DELETE
+
+**`OracleSQLProvider.java`** — implement all three with Oracle types (`NUMBER(19)`, `BLOB`, etc.)
+
+**`MySQLSqlProvider.java`** — implement all three with MySQL types (`BIGINT`, `LONGBLOB`, etc.)
+
+**`DatabaseProvider.createSchema()`** — add:
+```java
+String fooTableName = sqlProvider.getFoo();
+JDBCUtils.createTable(connection, sqlProvider, fooTableName, sqlProvider.createFoo(fooTableName));
+```
+
+#### 2. Data classes — `dbdata/`
+- **`FooData.java`** — extends `DBData<DataWorker>`. Holds the entity's fields as public members. Constructor takes the domain fields + `IOCompletion context` (passed to `super`). Implement `store(DataWorker worker)` to call `worker.insertFooStatement.addData(this, context)`.
+- **`DeleteFooData.java`** — extends `DBData<DataWorker>`. Holds the key fields needed for deletion. Implement `store(DataWorker worker)` to call `worker.deleteFooStatement.addData(this, context)`.
+
+#### 3. Statements — `statements/`
+- **`InsertFooStatement.java`** — extends `BatchableStatement<FooData>`. Constructor takes `(DatabaseProvider, Connection, DatabaseStorageConfiguration, int expectedSize)`, calls `super(...)` with the INSERT SQL from a static `getSQL()` method. Override `doOne(FooData task)` to bind PreparedStatement parameters.
+- **`DeleteFooStatement.java`** — extends `BatchableStatement<DeleteFooData>`. Same constructor pattern. Override `doOne(DeleteFooData task)` with DELETE SQL parameter binding.
+
+#### 4. Query class — `queries/`
+- **`FooJDBCQuery.java`** — takes `Connection` in constructor. Has a `query(Consumer<FooData> consumer)` method that executes a SELECT, iterates the ResultSet, constructs `FooData` from each row, and passes it to the consumer.
+
+#### 5. SQL in properties — `artemis-direct-db/src/main/resources/journal-sql.properties`
+- Add `create-parallelDB-foo.mysql=CREATE TABLE %s(...)` and `create-parallelDB-foo.oracle=CREATE TABLE %s(...)` entries for table creation.
+
+#### 6. Wire into `DataWorker` — `worker/DataWorker.java`
+- Add a `public InsertFooStatement insertFooStatement` and `public DeleteFooStatement deleteFooStatement` field.
+- In `connect()`: instantiate both statements.
+- In `doBeforeCommit()`: call `insertFooStatement.flushPending(false)` and `deleteFooStatement.flushPending(false)`.
+- In `doAfterCommit()`: call `.confirmData()` on both.
+- In `doError()`: call `.onError(exception)` on both.
+- In `doCleanup()`: call `.clear()` on both.
+
+#### 7. Wire into `DataManager` — `worker/DataManager.java`
+- Add public methods like `storeFoo(StorageTX, ..., IOCompletion)` and `deleteFoo(...)` that create the data objects and call `castTX(storageTX).addData(...)` or `flushData(...)`.
+
+#### 8. Use from `DatabaseStorageManager`
+- Import the new query class and call it during data loading.
+- Call `DataManager` methods for store/delete operations.
+
+#### 9. Tests — `tests/db-tests`
+
+Statement-level tests go in `tests/db-tests/src/test/java/org/apache/activemq/artemis/tests/db/dbstorage/statements/`.
+
+- **`FooStatementTest.java`** — extends `AbstractStatementTest`. Uses `@DisabledIf("isNoDatabaseSelected")` and `@ExtendWith(ParameterizedTestExtension.class)`. Each test method uses `@TestTemplate`.
+- Pattern: create a `DatabaseStorageManager`, call `start()`, get a `Connection` from `storageConfiguration.getDatabaseProvider()`, create the statement directly, insert/delete data, assert row counts via `selectCount(connection, "TABLE_NAME")`.
+- Use `CountDownCompletion` as the `IOCompletion` callback and assert `latch.await(...)` to verify callbacks fired.
+- Test both insert-only and insert-then-delete flows.
+- See `MessagesStatementTest`, `AddressInfoTest`, `QueueInfoTest`, `PageStatementTest` for examples.
+
+### Existing Entity Examples
+| Entity    | Data classes                          | Insert statement             | Delete statement              | Query class           | Test class              |
+|-----------|---------------------------------------|------------------------------|-------------------------------|-----------------------|-------------------------|
+| Message   | `MessageData`, `DeleteMessageData`    | `InsertMessageStatement`     | `DeleteMessageStatement`      | `MessagesJDBCQuery`   | `MessagesStatementTest` |
+| Address   | `AddressData`, `DeleteAddressData`    | `InsertAddressStatement`     | `DeleteAddressStatement`      | `AddressJDBCQuery`    | `AddressInfoTest`       |
+| Queue     | `QueueData`                           | `InsertQueueStatement`       | *(not yet)*                   | `QueueJDBCQuery`      | `QueueInfoTest`         |
+| Reference | `MessageReferenceData`, `DeleteReferenceData` | `InsertReferencesStatement` | `DeleteReferenceStatement` | `ReferencesJDBCQuery` | `MessagesStatementTest` |
+| Page      | `PageData`, `DeletePageData`          | `InsertPageStatement`        | `DeletePageStatement`         | `PageJDBCQuery`       | `PageStatementTest`     |
+| PageRef   | `PageRefData`, `DeletePageRefData`    | `InsertPageRefStatement`     | `DeletePageRefStatement`      | `PageRefJDBCQuery`    | `PageStatementTest`     |
+
 ## Links
 - https://artemis.apache.org/
 - https://github.com/apache/artemis
