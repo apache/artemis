@@ -44,7 +44,9 @@ import org.apache.activemq.artemis.utils.Wait;
 import org.apache.curator.test.InstanceSpec;
 import org.apache.curator.test.TestingCluster;
 import org.apache.curator.test.TestingZooKeeperServer;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -55,34 +57,61 @@ public class CuratorDistributedLockTest extends DistributedLockTest {
    private static final int ZK_NODES = Boolean.getBoolean("fast-tests") ? 1 : 3;
 
    private static final int BASE_SERVER_PORT = 6666;
-   private static final int CONNECTION_MS = 2000;
+   private static final int CONNECTION_MS = 500;
    // Beware: the server tick must be small enough that to let the session to be correctly expired
-   private static final int SESSION_MS = 6000;
-   private static final int SERVER_TICK_MS = 2000;
+   private static final int SESSION_MS = 1000;
+   private static final int SERVER_TICK_MS = 100;
    private static final int RETRIES_MS = 100;
    private static final int RETRIES = 1;
 
    public int zkNodes;
-   private TestingCluster testingServer;
-   private InstanceSpec[] clusterSpecs;
-   private String connectString;
+   private static TestingCluster testingServer;
+   private static InstanceSpec[] clusterSpecs;
+   private static String connectString;
+   private boolean clusterDirty;
 
    // Temp folder at ./target/tmp/<TestClassName>/<generated>
    @TempDir(factory = TargetTempDirFactory.class)
-   public File tmpFolder;
+   public static File tmpFolder;
 
-   @BeforeEach
-   @Override
-   public void setupEnv() throws Throwable {
-      zkNodes = ZK_NODES; // The number of nodes to use, based on test profile.
+   @BeforeAll
+   static void startCluster() throws Exception {
+      createCluster();
+   }
 
-      clusterSpecs = new InstanceSpec[zkNodes];
-      for (int i = 0; i < zkNodes; i++) {
+   @AfterAll
+   static void tearDownCluster() throws Exception {
+      destroyCluster();
+   }
+
+   private static void createCluster() throws Exception {
+      clusterSpecs = new InstanceSpec[ZK_NODES];
+      for (int i = 0; i < ZK_NODES; i++) {
          clusterSpecs[i] = new InstanceSpec(newFolder(tmpFolder, "node" + i), BASE_SERVER_PORT + i, -1, -1, true, i, SERVER_TICK_MS, -1);
       }
       testingServer = new TestingCluster(clusterSpecs);
       testingServer.start();
       connectString = testingServer.getConnectString();
+   }
+
+   private static void destroyCluster() {
+      if (testingServer != null) {
+         try {
+            testingServer.stop();
+         } catch (Exception e) {
+         }
+         try {
+            testingServer.close();
+         } catch (Exception e) {
+         }
+      }
+   }
+
+   @BeforeEach
+   @Override
+   public void setupEnv() throws Throwable {
+      zkNodes = ZK_NODES;
+      clusterDirty = false;
       super.setupEnv();
    }
 
@@ -90,8 +119,10 @@ public class CuratorDistributedLockTest extends DistributedLockTest {
    @Override
    public void tearDownEnv() throws Throwable {
       super.tearDownEnv();
-      testingServer.stop();
-      testingServer.close();
+      if (clusterDirty) {
+         destroyCluster();
+         createCluster();
+      }
    }
 
    @Override
@@ -128,7 +159,7 @@ public class CuratorDistributedLockTest extends DistributedLockTest {
    @Test
    public void cannotStartManagerWithDisconnectedServer() throws Exception {
       final DistributedLockManager manager = createManagedDistributeManager();
-      testingServer.close();
+      closeCluster();
       assertFalse(manager.start(1, TimeUnit.SECONDS));
    }
 
@@ -141,7 +172,7 @@ public class CuratorDistributedLockTest extends DistributedLockTest {
          final CountDownLatch notAvailable = new CountDownLatch(1);
          final DistributedLock.UnavailableLockListener listener = notAvailable::countDown;
          lock.addListener(listener);
-         testingServer.close();
+         closeCluster();
          assertTrue(notAvailable.await(30, TimeUnit.SECONDS));
          lock.tryLock();
       });
@@ -153,7 +184,7 @@ public class CuratorDistributedLockTest extends DistributedLockTest {
          final DistributedLockManager manager = createManagedDistributeManager();
          manager.start();
          final DistributedLock lock = manager.getDistributedLock("a");
-         testingServer.close();
+         closeCluster();
          lock.tryLock();
       });
    }
@@ -166,7 +197,7 @@ public class CuratorDistributedLockTest extends DistributedLockTest {
          final DistributedLock lock = manager.getDistributedLock("a");
          assertFalse(lock.isHeldByCaller());
          assertTrue(lock.tryLock());
-         testingServer.close();
+         closeCluster();
          lock.isHeldByCaller();
       });
    }
@@ -182,7 +213,7 @@ public class CuratorDistributedLockTest extends DistributedLockTest {
          final DistributedLock.UnavailableLockListener listener = notAvailable::countDown;
          lock.addListener(listener);
          assertEquals(1, notAvailable.getCount());
-         testingServer.close();
+         closeCluster();
          assertTrue(notAvailable.await(30, TimeUnit.SECONDS));
          lock.isHeldByCaller();
       });
@@ -200,7 +231,7 @@ public class CuratorDistributedLockTest extends DistributedLockTest {
       final DistributedLock.UnavailableLockListener listener = notAvailable::countDown;
       lock.addListener(listener);
       assertEquals(1, notAvailable.getCount());
-      testingServer.stop();
+      stopCluster();
       notAvailable.await();
       manager.stop();
       restartMajorityNodes(true);
@@ -316,8 +347,8 @@ public class CuratorDistributedLockTest extends DistributedLockTest {
       assertTrue(startedTimedLock.await(10, TimeUnit.SECONDS));
       TimeUnit.SECONDS.sleep(1);
       stopMajority(true);
-      TimeUnit.MILLISECONDS.sleep(SESSION_MS + CONNECTION_MS);
-      Wait.waitFor(() -> unavailableLock.get() > 0, SERVER_TICK_MS);
+      Wait.waitFor(() -> unavailableLock.get() > 0, SESSION_MS + CONNECTION_MS + SERVER_TICK_MS);
+      Wait.waitFor(() -> unavailableManager.get() > 0, SESSION_MS + CONNECTION_MS);
       assertEquals(1, unavailableManager.get());
       Boolean result = unavailableTimedLock.get();
       assertNotNull(result);
@@ -348,7 +379,18 @@ public class CuratorDistributedLockTest extends DistributedLockTest {
       }
    }
 
+   private void stopCluster() throws Exception {
+      clusterDirty = true;
+      testingServer.stop();
+   }
+
+   private void closeCluster() throws IOException {
+      clusterDirty = true;
+      testingServer.close();
+   }
+
    private void stopMajority(boolean fromLast) throws Exception {
+      clusterDirty = true;
       List<TestingZooKeeperServer> followers = testingServer.getServers();
       final int quorum = (zkNodes / 2) + 1;
       for (int i = 0; i < quorum; i++) {
@@ -369,7 +411,7 @@ public class CuratorDistributedLockTest extends DistributedLockTest {
 
    private static File newFolder(File root, String subFolder) throws IOException {
       File result = new File(root, subFolder);
-      if (!result.mkdirs()) {
+      if (!result.mkdirs() && !result.isDirectory()) {
          throw new IOException("Couldn't create folders " + root);
       }
       return result;
