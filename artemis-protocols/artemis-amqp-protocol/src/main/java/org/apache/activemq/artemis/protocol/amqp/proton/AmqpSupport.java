@@ -98,6 +98,26 @@ public class AmqpSupport {
    static final Symbol FAILOVER_SERVER_LIST = Symbol.valueOf("failover-server-list");
 
    public static final int MAX_FRAME_SIZE_DEFAULT = 128 * 1024;
+   public static final int INITIAL_REMOTE_MAX_FRAME_SIZE_DEFAULT = 4 * 1024;
+
+   /**
+    * Default for the number of allowed transfers for a given incoming delivery. This does govern
+    * the maximum message size to an extent when combined with the maximum frame size.
+    */
+   public static final int DEFAULT_MAX_TRANSFERS_PER_DELIVERY = 65535;
+
+   /**
+    * The default maximum depth the decoder will allow before triggering a decoding error when
+    * the depth is increased during decode of complex types that can nest objects.
+    */
+   public static final int DEFAULT_MAX_DECODE_DEPTH = 32;
+
+   /**
+    * Default for the allowed number of elements that can be decoded when an array encoding is one of
+    * the zero width type (e.g. UINT0). We allow only zero sized zero width array encodings by default
+    * as the this is not generally expected in normal encodings.
+    */
+   public static final int DEFAULT_ZERO_WIDTH_ARRAY_ELEMENT_LIMIT = 0;
 
    // Symbols used in configuration of newly opened links.
    public static final Symbol COPY = Symbol.getSymbol("copy");

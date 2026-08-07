@@ -16,33 +16,73 @@
  */
 package org.apache.activemq.artemis.protocol.amqp.util;
 
+import org.apache.activemq.artemis.protocol.amqp.proton.AmqpSupport;
 import org.apache.qpid.proton.codec.AMQPDefinedTypes;
 import org.apache.qpid.proton.codec.DecoderImpl;
 import org.apache.qpid.proton.codec.EncoderImpl;
 
 /**
- * This can go away if Proton provides this feature.
+ * Thread local codec support class that manages the Qpid proton Encoder and Decoder types.
  */
 public class TLSEncode {
 
-   // For now Proton requires that we create a decoder to create an encoder
-   private static class EncoderDecoderPair {
-      DecoderImpl decoder = new DecoderImpl();
-      EncoderImpl encoder = new EncoderImpl(decoder);
-      {
+   public static final String MAX_DECODE_DEPTH_PROPERTY = "artemis.amqp.maxDecodeDepth";
+   public static final String ZERO_WIDTH_ARRAY_ELEMENT_LIMIT_PROPERTY = "artemis.amqp.zeroWidthArrayElementLimit";
+
+   public static class EncoderDecoderPair {
+
+      // Static configuration options created once for the broker instance to ensure
+      // all decoders are using the same values at all times during a given run so that
+      // a mix of values cannot exist for incoming messages or for a journal reader etc.
+
+      private static final int MAX_DECODE_DEPTH =
+         Integer.getInteger(MAX_DECODE_DEPTH_PROPERTY, AmqpSupport.DEFAULT_MAX_DECODE_DEPTH);
+      private static final int ZERO_WIDTH_ARRAY_ELEMENT_LIMIT =
+         Integer.getInteger(ZERO_WIDTH_ARRAY_ELEMENT_LIMIT_PROPERTY, AmqpSupport.DEFAULT_ZERO_WIDTH_ARRAY_ELEMENT_LIMIT);
+
+      private final DecoderImpl decoder = new DecoderImpl();
+      private final EncoderImpl encoder = new EncoderImpl(decoder);
+
+      EncoderDecoderPair() {
          AMQPDefinedTypes.registerAllTypes(decoder, encoder);
+      }
+
+      public EncoderImpl getEncoder() {
+         return encoder;
+      }
+
+      public int getMaxDecodeDepth() {
+         return MAX_DECODE_DEPTH;
+      }
+
+      public int getZeroWidthArrayElementLimit() {
+         return ZERO_WIDTH_ARRAY_ELEMENT_LIMIT;
+      }
+
+      public DecoderImpl getDecoder() {
+         final DecoderImpl decoder = this.decoder;
+
+         // Each returned decoder is reset to configured or assigned defaults to ensure a
+         // consistent starting point, the caller can assign new values which we don't want
+         // to be sticky between calls.
+         decoder.setMaxDecodeDepth(MAX_DECODE_DEPTH);
+         decoder.setZeroWidthArrayElementLimit(ZERO_WIDTH_ARRAY_ELEMENT_LIMIT);
+
+         return decoder;
       }
    }
 
    private static final ThreadLocal<EncoderDecoderPair> tlsCodec = ThreadLocal.withInitial(() -> new EncoderDecoderPair());
 
+   public static EncoderDecoderPair getCodec() {
+      return tlsCodec.get();
+   }
+
    public static EncoderImpl getEncoder() {
-      return tlsCodec.get().encoder;
+      return tlsCodec.get().getEncoder();
    }
 
    public static DecoderImpl getDecoder() {
-      return tlsCodec.get().decoder;
+      return tlsCodec.get().getDecoder();
    }
-
-
 }

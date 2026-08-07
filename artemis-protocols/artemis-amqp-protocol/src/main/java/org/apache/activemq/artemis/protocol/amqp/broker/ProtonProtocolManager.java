@@ -102,7 +102,7 @@ public class ProtonProtocolManager extends AbstractProtocolManager<AMQPMessage, 
    // delivery-failed flag set true.
    private boolean amqpTreatRejectAsUnmodifiedDeliveryFailed = AmqpSupport.AMQP_TREAT_REJECT_AS_UNMODIFIED_DELIVERY_FAILURE;
 
-   private int initialRemoteMaxFrameSize = 4 * 1024;
+   private int initialRemoteMaxFrameSize = AmqpSupport.INITIAL_REMOTE_MAX_FRAME_SIZE_DEFAULT;
 
    private String[] saslMechanisms = MechanismFinder.getDefaultMechanisms();
 
@@ -127,6 +127,8 @@ public class ProtonProtocolManager extends AbstractProtocolManager<AMQPMessage, 
    private String pubSubPrefix = DestinationUtil.TOPIC_QUALIFIED_PREFIX;
 
    private int maxFrameSize = AmqpSupport.MAX_FRAME_SIZE_DEFAULT;
+
+   private int maxTransfersPerDelivery = AmqpSupport.DEFAULT_MAX_TRANSFERS_PER_DELIVERY;
 
    public ProtonProtocolManager(ProtonProtocolManagerFactory factory, ActiveMQServer server, List<BaseInterceptor> incomingInterceptors, List<BaseInterceptor> outgoingInterceptors) {
       this.factory = factory;
@@ -359,6 +361,14 @@ public class ProtonProtocolManager extends AbstractProtocolManager<AMQPMessage, 
 
    public void setMaxFrameSize(int maxFrameSize) {
       this.maxFrameSize = maxFrameSize;
+   }
+
+   public int getMaxTransfersPerDelivery() {
+      return maxTransfersPerDelivery;
+   }
+
+   public void setMaxTransfersPerDelivery(int maxTransfersPerDelivery) {
+      this.maxTransfersPerDelivery = maxTransfersPerDelivery;
    }
 
    public String[] getSaslMechanisms() {
