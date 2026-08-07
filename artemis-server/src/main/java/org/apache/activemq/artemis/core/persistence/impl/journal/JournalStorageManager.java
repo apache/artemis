@@ -44,6 +44,7 @@ import org.apache.activemq.artemis.core.io.IOCriticalErrorListener;
 import org.apache.activemq.artemis.core.io.SequentialFile;
 import org.apache.activemq.artemis.core.io.SequentialFileFactory;
 import org.apache.activemq.artemis.core.io.aio.AIOSequentialFileFactory;
+import org.apache.artemis.core.io.aio2.AIO2Helper;
 import org.apache.activemq.artemis.core.io.mapped.MappedSequentialFileFactory;
 import org.apache.activemq.artemis.core.io.nio.NIOSequentialFileFactory;
 import org.apache.activemq.artemis.core.journal.EncoderPersister;
@@ -166,6 +167,16 @@ public class JournalStorageManager extends AbstractJournalStorageManager {
                ActiveMQServerLogger.LOGGER.journalUseAIO();
             }
             journalFF = new AIOSequentialFileFactory(config.getJournalLocation(), config.getJournalBufferSize_AIO(), config.getJournalBufferTimeout_AIO(), config.getJournalMaxIO_AIO(), config.isLogJournalWriteRate(), criticalErrorListener, getCriticalAnalyzer());
+
+            if (config.getJournalDeviceBlockSize() != null) {
+               journalFF.setAlignment(config.getJournalDeviceBlockSize());
+            }
+            break;
+         case ASYNCIO_2:
+            if (criticalErrorListener != null) {
+               ActiveMQServerLogger.LOGGER.journalUseAIO_2();
+            }
+            journalFF = AIO2Helper.getAIO2SequentialFileFactory(config.getJournalLocation(), config.getJournalBufferSize_AIO(), config.getJournalBufferTimeout_AIO(), config.getJournalMaxIO_AIO(), config.isLogJournalWriteRate(), criticalErrorListener, getCriticalAnalyzer());
 
             if (config.getJournalDeviceBlockSize() != null) {
                journalFF.setAlignment(config.getJournalDeviceBlockSize());

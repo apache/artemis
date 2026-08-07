@@ -99,6 +99,7 @@ import org.apache.activemq.artemis.core.config.storage.DatabaseStorageConfigurat
 import org.apache.activemq.artemis.core.io.IOCallback;
 import org.apache.activemq.artemis.core.io.SequentialFileFactory;
 import org.apache.activemq.artemis.core.io.aio.AIOSequentialFileFactory;
+import org.apache.artemis.core.io.aio2.AIO2Helper;
 import org.apache.activemq.artemis.core.io.nio.NIOSequentialFileFactory;
 import org.apache.activemq.artemis.core.journal.PreparedTransactionInfo;
 import org.apache.activemq.artemis.core.journal.RecordInfo;
@@ -597,7 +598,9 @@ public abstract class ActiveMQTestBase extends ArtemisTestCase {
    }
 
    public static JournalType getDefaultJournalType() {
-      if (AIOSequentialFileFactory.isSupported()) {
+      if (AIO2Helper.isSupported()) {
+         return JournalType.ASYNCIO_2;
+      } else if (AIOSequentialFileFactory.isSupported()) {
          return JournalType.ASYNCIO;
       } else {
          return JournalType.NIO;
