@@ -30,6 +30,7 @@ import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.HORNETQ_
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.SNAPSHOT;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -43,6 +44,7 @@ import org.apache.activemq.artemis.core.server.ActiveMQServers;
 import org.apache.activemq.artemis.core.server.JournalType;
 import org.apache.activemq.artemis.spi.core.security.ActiveMQJAASSecurityManager;
 import org.apache.activemq.artemis.tests.compatibility.base.ClasspathBase;
+import org.apache.activemq.artemis.utils.Wait;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,6 +52,7 @@ import org.junit.jupiter.api.Test;
 public class LegacyClientTopologyTest extends ClasspathBase {
 
    private ActiveMQServer server;
+   private ActiveMQServer server2;
 
    @BeforeEach
    public void setUp() throws Exception {
@@ -58,25 +61,58 @@ public class LegacyClientTopologyTest extends ClasspathBase {
       configuration.addAcceptorConfiguration("artemis", "tcp://0.0.0.0:61616?anycastPrefix=jms.queue.&multicastPrefix=jms.topic.");
       configuration.setSecurityEnabled(true);
       configuration.setPersistenceEnabled(false);
+      configuration.setClusterPassword("guest");
       configuration.addConnectorConfiguration("netty-connector", "tcp://localhost:61616");
-      configuration.addClusterConfiguration(new ClusterConnectionConfiguration().setName("my-cluster").setConnectorName("netty-connector"));
+      configuration.addConnectorConfiguration("netty-connector-2", "tcp://localhost:61617");
+      configuration.addClusterConfiguration(new ClusterConnectionConfiguration().setName("my-cluster").setConnectorName("netty-connector").setStaticConnectors(Arrays.asList("netty-connector-2")));
 
       server = ActiveMQServers.newActiveMQServer(configuration, false);
       server.start();
 
-      ActiveMQJAASSecurityManager securityManager = (ActiveMQJAASSecurityManager) server.getSecurityManager();
+      ConfigurationImpl configuration2 = new ConfigurationImpl();
+      configuration2.setJournalType(JournalType.NIO);
+      configuration2.addAcceptorConfiguration("artemis", "tcp://0.0.0.0:61617?anycastPrefix=jms.queue.&multicastPrefix=jms.topic.");
+      configuration2.setSecurityEnabled(true);
+      configuration2.setPersistenceEnabled(false);
+      configuration2.setClusterPassword("guest");
+      configuration2.addConnectorConfiguration("netty-connector", "tcp://localhost:61616");
+      configuration2.addConnectorConfiguration("netty-connector-2", "tcp://localhost:61617");
+      configuration2.addClusterConfiguration(new ClusterConnectionConfiguration().setName("my-cluster").setConnectorName("netty-connector-2").setStaticConnectors(Arrays.asList("netty-connector")));
+
+      server2 = ActiveMQServers.newActiveMQServer(configuration2, false);
+      server2.start();
+
+      setupSecurity(server);
+      setupSecurity(server2);
+
+
+      Wait.assertTrue(() -> {
+         for (org.apache.activemq.artemis.core.server.cluster.ClusterConnection cc : server.getClusterManager().getClusterConnections()) {
+            if (cc.getTopology().getMembers().size() == 2) {
+               return true;
+            }
+         }
+         return false;
+      }, 10000, 100);
+
+      server.createQueue(QueueConfiguration.of("jms.queue.testQueue").setRoutingType(RoutingType.ANYCAST).setDurable(false));
+   }
+
+   private void setupSecurity(ActiveMQServer srv) {
+      ActiveMQJAASSecurityManager securityManager = (ActiveMQJAASSecurityManager) srv.getSecurityManager();
       securityManager.getConfiguration().addUser("guest", "guest");
       securityManager.getConfiguration().addRole("guest", "guest");
 
       Set<Role> roles = new HashSet<>();
       roles.add(new Role("guest", true, true, true, true, true, true, true, true, true, true, false, false));
-      server.getSecurityRepository().addMatch("#", roles);
-
-      server.createQueue(QueueConfiguration.of("jms.queue.testQueue").setRoutingType(RoutingType.ANYCAST).setDurable(false));
+      srv.getSecurityRepository().addMatch("#", roles);
    }
 
    @AfterEach
    public void tearDown() throws Exception {
+      if (server2 != null) {
+         server2.stop();
+      }
       if (server != null) {
          server.stop();
       }

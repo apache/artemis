@@ -381,12 +381,28 @@ public class CoreProtocolManager implements ProtocolManager<Interceptor, ActiveM
 
       // Send a single dummy topology response to unblock the client's isLast=true wait (the client blocks
       // until it receives a topology message before proceeding to CREATE_SESSION). The dummy response
-      // uses PRE_AUTH_NODE_ID and an empty connector pair so no real broker identity or connectivity
+      // uses PRE_AUTH_NODE_ID. The current connector is sent so older clients wouldn't fail and would have something they can connect to.
       // information is disclosed to unauthenticated callers.
+      // Notice that this PRE_AUTH node is removed once the node is connected
       private void sendPreAuthTopology() {
          preAuthTopologySent = true;
-         Pair<TransportConfiguration, TransportConfiguration> preAuthConfig = new Pair<>(null, new TransportConfiguration(
-            rc.getTransportConnection().getConnectorConfig().getFactoryClassName(), null, Topology.PRE_AUTH_CONNECTOR_NAME));
+         TransportConfiguration connectorConfig = rc.getTransportConnection().getConnectorConfig();
+         Map<String, Object> connectorParams = new HashMap<>();
+         if (connectorConfig != null && connectorConfig.getParams() != null) {
+            Object host = connectorConfig.getParams().get(org.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants.HOST_PROP_NAME);
+            Object port = connectorConfig.getParams().get(org.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants.PORT_PROP_NAME);
+            if (host != null) {
+               connectorParams.put(org.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants.HOST_PROP_NAME, host);
+            }
+            if (port != null) {
+               connectorParams.put(org.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants.PORT_PROP_NAME, port);
+            }
+         }
+         String factoryClassName = connectorConfig != null ? connectorConfig.getFactoryClassName() : org.apache.activemq.artemis.core.remoting.impl.netty.NettyConnectorFactory.class.getName();
+         TransportConfiguration liveConnector = new TransportConfiguration(factoryClassName, connectorParams);
+         Pair<TransportConfiguration, TransportConfiguration> preAuthConfig = BackwardsCompatibilityUtils.checkTCPPairConversion(
+            channel0.getConnection().getChannelVersion(),
+            new Pair<>(liveConnector, new TransportConfiguration(factoryClassName, null, Topology.PRE_AUTH_CONNECTOR_NAME)));
 
          logger.debug("Sending pre-authentication topology to unauthenticated connection from {}.", rc.getRemoteAddress());
 

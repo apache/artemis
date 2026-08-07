@@ -19,27 +19,48 @@ package legacyclient
 
 import org.apache.activemq.artemis.api.core.TransportConfiguration
 import org.apache.activemq.artemis.api.core.client.ActiveMQClient
+import org.apache.activemq.artemis.api.core.client.ClientSession
 import org.apache.activemq.artemis.core.remoting.impl.netty.NettyConnectorFactory
 import org.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants
 
 import java.lang.reflect.Field
 
-def printTopology(locator, String label) {
+def getLiveConnector(member) {
    try {
-      Field topologyField = locator.getClass().getDeclaredField("topologyArray")
-      topologyField.setAccessible(true)
-      def topologyArray = topologyField.get(locator)
-      if (topologyArray != null) {
-         println(label + " topologyArray length: " + topologyArray.length)
-         for (int t = 0; t < topologyArray.length; t++) {
-            def pair = topologyArray[t]
-            println("  [" + t + "] A=" + pair.getA() + " B=" + pair.getB())
-         }
-      } else {
-         println(label + " topologyArray is null")
-      }
+      return member.getPrimary()
    } catch (Exception e) {
+      return member.getLive()
+   }
+}
+
+def printTopology(locator, String label, boolean failIfPreAuth) {
+   String preAuthError = null
+   try {
+      def topology = locator.getTopology()
+      def members = topology.getMembers()
+      println(label + " topology members: " + members.size())
+      for (def member : members) {
+         def live = getLiveConnector(member)
+         println("  nodeID=" + member.getNodeId() + " live=" + live + " backup=" + member.getBackup())
+         if (failIfPreAuth) {
+            if (live != null && "PRE_AUTH_CONNECTOR".equals(live.getName())) {
+               preAuthError = "PRE_AUTH_CONNECTOR found in live for nodeID=" + member.getNodeId()
+            }
+            if (member.getBackup() != null && "PRE_AUTH_CONNECTOR".equals(member.getBackup().getName())) {
+               preAuthError = "PRE_AUTH_CONNECTOR found in backup for nodeID=" + member.getNodeId()
+            }
+         }
+      }
+      if (preAuthError != null) {
+         throw new Exception(preAuthError)
+      }
+      return members.size()
+   } catch (Exception e) {
+      if (preAuthError != null) {
+         throw e
+      }
       println(label + " Could not inspect topology: " + e.getMessage())
+      throw e
    }
 }
 
@@ -50,29 +71,39 @@ def tc = new TransportConfiguration(NettyConnectorFactory.class.getName(), param
 
 def locator = ActiveMQClient.createServerLocatorWithHA(tc)
 
-printTopology(locator, "Before first createSessionFactory:")
+printTopology(locator, "Before first createSessionFactory:", false)
 
 println("=== Attempting first createSessionFactory ===")
 
-try {
-   def sf = locator.createSessionFactory()
-   println("first createSessionFactory succeeded")
+def sf = locator.createSessionFactory()
+println("first createSessionFactory succeeded")
 
-   printTopology(locator, "After first createSessionFactory:")
 
-   println("=== Attempting second createSessionFactory ===")
-   def sf2 = locator.createSessionFactory()
-   println("second createSessionFactory succeeded")
 
-   printTopology(locator, "After second createSessionFactory:")
-
-   sf2.close()
-   sf.close()
-   locator.close()
-   return true
-} catch (Exception e) {
-   println("Exception: " + e.getClass().getName() + " - " + e.getMessage())
-   e.printStackTrace()
-   locator.close()
-   return false
+def count = printTopology(locator, "After first createSessionFactory:", false)
+if (count > 1) {
+   throw new Exception("Topology after first createSessionFactory has " + count1 + " elements, expected at most 1")
 }
+
+println("=== Attempting second createSessionFactory ===")
+def sf2 = locator.createSessionFactory()
+println("second createSessionFactory succeeded")
+
+count = printTopology(locator, "After second createSessionFactory:", false)
+if (count > 1) {
+   throw new Exception("Topology after second createSessionFactory has " + count2 + " elements, expected at most 1")
+}
+
+ClientSession session = sf.createSession("guest", "guest", false, true, true, false, 0)
+
+Thread.sleep(1000);
+
+count = printTopology(locator, "After authorization:", true)
+if (count != 2) {
+   throw new Exception("Cluster topology is not correctly informed to the client")
+}
+session.close();
+sf2.close()
+sf.close()
+locator.close()
+return true

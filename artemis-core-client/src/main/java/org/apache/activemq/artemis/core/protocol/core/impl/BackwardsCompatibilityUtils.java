@@ -168,6 +168,14 @@ public class BackwardsCompatibilityUtils {
       return new Pair<>(member.getPrimary(), member.getBackup());
    }
 
+   public static Pair<TransportConfiguration, TransportConfiguration> checkTCPPairConversion(int clientIncrementingVersion,
+                                                                                             Pair<TransportConfiguration, TransportConfiguration> pair) {
+      if (clientIncrementingVersion < INITIAL_ACTIVEMQ_INCREMENTING_VERSION) {
+         return new Pair<>(convertTransport(pair.getA()), convertTransport(pair.getB()));
+      }
+      return pair;
+   }
+
    /**
     * Replaces class name and parameter names to HornetQ values.
     */
