@@ -18,28 +18,40 @@ package legacyclient
  */
 
 import org.hornetq.api.core.TransportConfiguration
+import org.hornetq.api.core.client.ClientSession
 import org.hornetq.api.core.client.HornetQClient
 import org.hornetq.core.remoting.impl.netty.NettyConnectorFactory
 import org.hornetq.core.remoting.impl.netty.TransportConstants
 
 import java.lang.reflect.Field
 
-def printTopology(locator, String label) {
+def printTopology(locator, String label, boolean failIfPreAuth) {
+   String preAuthError = null
    try {
-      Field topologyField = locator.getClass().getDeclaredField("topologyArray")
-      topologyField.setAccessible(true)
-      def topologyArray = topologyField.get(locator)
-      if (topologyArray != null) {
-         println(label + " topologyArray length: " + topologyArray.length)
-         for (int t = 0; t < topologyArray.length; t++) {
-            def pair = topologyArray[t]
-            println("  [" + t + "] A=" + pair.getA() + " B=" + pair.getB())
+      def topology = locator.getTopology()
+      def members = topology.getMembers()
+      println(label + " topology members: " + members.size())
+      for (def member : members) {
+         println("  nodeID=" + member.getNodeId() + " live=" + member.getLive() + " backup=" + member.getBackup())
+         if (failIfPreAuth) {
+            if (member.getLive() != null && "PRE_AUTH_CONNECTOR".equals(member.getLive().getName())) {
+               preAuthError = "PRE_AUTH_CONNECTOR found in live for nodeID=" + member.getNodeId()
+            }
+            if (member.getBackup() != null && "PRE_AUTH_CONNECTOR".equals(member.getBackup().getName())) {
+               preAuthError = "PRE_AUTH_CONNECTOR found in backup for nodeID=" + member.getNodeId()
+            }
          }
-      } else {
-         println(label + " topologyArray is null")
       }
+      if (preAuthError != null) {
+         throw new Exception(preAuthError)
+      }
+      return members.size()
    } catch (Exception e) {
+      if (preAuthError != null) {
+         throw e
+      }
       println(label + " Could not inspect topology: " + e.getMessage())
+      return 0
    }
 }
 
@@ -50,29 +62,39 @@ def tc = new TransportConfiguration(NettyConnectorFactory.class.getName(), param
 
 def locator = HornetQClient.createServerLocatorWithHA(tc)
 
-printTopology(locator, "Before first createSessionFactory:")
+printTopology(locator, "Before first createSessionFactory:", false)
 
 println("=== Attempting createSessionFactory (subscribes to topology before auth) ===")
 
-try {
-   def sf = locator.createSessionFactory()
-   println("createSessionFactory succeeded")
+def sf = locator.createSessionFactory()
+println("createSessionFactory succeeded")
 
-   printTopology(locator, "After first createSessionFactory:")
-
-   println("=== Attempting second createSessionFactory (should use topologyArray) ===")
-   def sf2 = locator.createSessionFactory()
-   println("second createSessionFactory succeeded")
-
-   printTopology(locator, "After second createSessionFactory:")
-
-   sf2.close()
-
-   locator.close()
-   return true
-} catch (Exception e) {
-   println("Exception: " + e.getClass().getName() + " - " + e.getMessage())
-   e.printStackTrace()
-   locator.close()
-   return false
+def count = printTopology(locator, "After first createSessionFactory:", false)
+if (count > 1) {
+   throw new Exception("Topology after first createSessionFactory has " + count1 + " elements, expected at most 1")
 }
+
+println("=== Attempting second createSessionFactory (should use topologyArray) ===")
+def sf2 = locator.createSessionFactory()
+println("second createSessionFactory succeeded")
+
+count = printTopology(locator, "After second createSessionFactory:", false)
+if (count > 1) {
+   throw new Exception("Topology after second createSessionFactory has " + count2 + " elements, expected at most 1")
+}
+
+ClientSession session = sf.createSession("guest", "guest", false, true, true, false, 0)
+
+
+Thread.sleep(1000);
+
+count = printTopology(locator, "After authorization:", true)
+if (count != 2) {
+   throw new Exception("Cluster topology is not correctly informed to the client")
+}
+session.close();
+System.out.println("count : " + count)
+sf2.close()
+sf.close()
+locator.close()
+return true
