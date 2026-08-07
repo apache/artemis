@@ -24,7 +24,6 @@ import java.util.Objects;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufUtil;
-import io.netty.buffer.EmptyByteBuf;
 import io.netty.handler.codec.mqtt.MqttFixedHeader;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttProperties;
@@ -224,11 +223,6 @@ public class MQTTPublishManager {
                   state.getPubRec().add(packetId);
                }
 
-               if (message.fixedHeader().isRetain()) {
-                  ByteBuf payload = message.payload();
-                  boolean reset = payload instanceof EmptyByteBuf || payload.capacity() == 0;
-                  session.getRetainMessageManager().handleRetainedMessage(serverMessage, topic, reset, tx);
-               }
                tx.commit();
             } catch (ActiveMQSecurityException e) {
                tx.rollback();
