@@ -441,7 +441,7 @@
                      <configuration>
                         <forkCount>1</forkCount>
                         <reuseForks>false</reuseForks>
-                        <includes combine.children="merge">
+                        <includes combine.children="override">
                            <include>**/smoke/upgradeTest/*Test.java</include>
                         </includes>
                      </configuration>
