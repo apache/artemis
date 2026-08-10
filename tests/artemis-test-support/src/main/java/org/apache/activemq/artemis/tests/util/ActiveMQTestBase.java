@@ -176,7 +176,7 @@ import java.lang.invoke.MethodHandles;
 @ExtendWith(LibaioContextCheckExtension.class)
 public abstract class ActiveMQTestBase extends ArtemisTestCase {
 
-  protected static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    static {
       Env.setTestEnv(true);

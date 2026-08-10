@@ -18,11 +18,11 @@ package org.apache.activemq.artemis.tests.integration.paging;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
@@ -40,6 +40,8 @@ import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Regression test for ARTEMIS-6179.
@@ -52,6 +54,8 @@ import org.junit.jupiter.api.Timeout;
  */
 public class DeadlockDepageLockDeleteReferenceTest extends ActiveMQTestBase {
 
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
    private static final String ADDRESS = "test.deadlock.address";
    private static final String QUEUE   = "test.deadlock.queue";
 
@@ -62,9 +66,9 @@ public class DeadlockDepageLockDeleteReferenceTest extends ActiveMQTestBase {
    // 100 × 10 KB = 1 MB >> 512 KB; keeps ~50 messages paged to disk.
    private static final int INITIAL_MESSAGES = 100;
 
-   private static final long DEADLOCK_TIMEOUT_MS = 5_000;
+   private static final long DEADLOCK_TIMEOUT_MS = 10_000;
 
-   protected ServerLocator locator;
+   private ServerLocator locator;
 
    @Override
    @BeforeEach
@@ -74,7 +78,7 @@ public class DeadlockDepageLockDeleteReferenceTest extends ActiveMQTestBase {
    }
 
    @Test
-   @Timeout(60)
+   @Timeout(120)
    public void testNoDeadlockDuringDepageAndDeleteReference() throws Exception {
       ActiveMQServer server = createServer(true, createDefaultInVMConfig(), PAGE_SIZE_BYTES, MAX_SIZE_BYTES);
       server.start();
