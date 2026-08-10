@@ -159,8 +159,6 @@ public class OpenWireConnectionTest {
          sessionInfoBuffer.resetReaderIndex();
          producerInfoBuffer.resetReaderIndex();
          removeInfoBuffer.resetReaderIndex();
-
       }
    }
-
 }
