@@ -20,12 +20,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.json.JsonArray;
 import org.apache.activemq.artemis.json.JsonNumber;
 import org.apache.activemq.artemis.json.JsonObject;
 import org.apache.activemq.artemis.json.JsonValue;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,6 +52,7 @@ import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ActiveMQServers;
 import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
+import org.apache.activemq.artemis.tests.util.Wait;
 import org.apache.activemq.artemis.utils.RandomUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -322,6 +327,72 @@ public class ManagementWithPagingServerTest extends ManagementTestBase {
       assertEquals(messages.length, console.copiedMessages);
    }
 
+   /**
+    * Reproduction for ARTEMIS-6179: QueueImpl#deleteReference() is still {@code synchronized} and calls
+    * iterQueue(), which locks depageLock -- while QueueImpl#depage() locks depageLock first and then enters a
+    * synchronized(this) block. Racing QueueControl#removeMessage() (-> deleteReference()) against depaging
+    * (triggered here by the ReceiverThread acking messages) can deadlock the two threads against each other.
+    * This mirrors testMoveMessageWhilstPagingAndConsuming(), which caught the equivalent bug for copyReference()
+    * (ARTEMIS-5376), replacing copyMessage with removeMessage. Detection uses the JVM's own deadlock detector
+    * (ThreadMXBean) instead of a fixed timeout, since a hang here is the failure itself.
+    */
+   @Test
+   public void testRemoveMessageWhilstPagingAndConsuming() throws Exception {
+      final int messagesPerIteration = 2000;
+      final int maxIterations = 20;
+      final long iterationTimeoutMillis = 5000;
+      final long pollIntervalMillis = 20;
+
+      SimpleString address = RandomUtil.randomUUIDSimpleString();
+      SimpleString queue = RandomUtil.randomUUIDSimpleString();
+
+      session1.createQueue(QueueConfiguration.of(queue).setAddress(address));
+
+      QueueControl queueControl = createManagementControl(address, queue);
+
+      ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
+
+      // A single remover is sufficient: QueueControlImpl#removeMessage() is serialized broker-wide through
+      // ActiveMQServerImpl's managementLock, so extra concurrent removers would just contend on that lock
+      // without increasing the odds of racing depage().
+      ManagementRemoveThread remover = new ManagementRemoveThread(queueControl);
+      remover.setDaemon(true);
+      remover.start();
+
+      long[] deadlockedIds = null;
+
+      for (int iteration = 0; iteration < maxIterations; iteration++) {
+         SenderThread sender = new SenderThread(address, messagesPerIteration, 0);
+         ReceiverThread receiver = new ReceiverThread(queue, messagesPerIteration, 0);
+         sender.setDaemon(true);
+         receiver.setDaemon(true);
+
+         sender.start();
+         receiver.start();
+
+         Wait.waitFor(() -> !receiver.isAlive() || threadMXBean.findDeadlockedThreads() != null,
+                      iterationTimeoutMillis, pollIntervalMillis);
+
+         deadlockedIds = threadMXBean.findDeadlockedThreads();
+         if (deadlockedIds != null) {
+            break;
+         }
+      }
+
+      remover.exit();
+      remover.join(iterationTimeoutMillis);
+      assertNull(remover.getError());
+
+      if (deadlockedIds != null) {
+         StringBuilder sb = new StringBuilder("Deadlock detected between removeMessage() and depage():\n");
+         for (long id : deadlockedIds) {
+            ThreadInfo info = threadMXBean.getThreadInfo(id, Integer.MAX_VALUE);
+            sb.append(info).append('\n');
+         }
+         fail(sb.toString());
+      }
+   }
+
    @Override
    @BeforeEach
    public void setUp() throws Exception {
@@ -493,6 +564,38 @@ public class ManagementWithPagingServerTest extends ManagementTestBase {
                if (copied) {
                   copiedMessages++;
                }
+            }
+         } catch (Exception e) {
+            error = e;
+         }
+      }
+
+      public Exception getError() {
+         return error;
+      }
+
+      public void exit() {
+         stop = true;
+      }
+   }
+
+   private class ManagementRemoveThread extends Thread {
+
+      private QueueControl queueControl;
+      private volatile boolean stop = false;
+      private Exception error = null;
+
+      private ManagementRemoveThread(QueueControl queueControl) {
+         this.queueControl = queueControl;
+      }
+
+      @Override
+      public void run() {
+         try {
+            Random random = new Random(System.currentTimeMillis());
+            while (!stop) {
+               long messageID = random.nextInt(5000);
+               queueControl.removeMessage(messageID);
             }
          } catch (Exception e) {
             error = e;
