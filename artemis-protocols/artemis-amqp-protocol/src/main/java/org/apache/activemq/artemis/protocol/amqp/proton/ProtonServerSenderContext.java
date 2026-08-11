@@ -16,6 +16,7 @@
  */
 package org.apache.activemq.artemis.protocol.amqp.proton;
 
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -44,6 +45,7 @@ import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.amqp.messaging.Modified;
 import org.apache.qpid.proton.amqp.messaging.Outcome;
 import org.apache.qpid.proton.amqp.transaction.TransactionalState;
+import org.apache.qpid.proton.amqp.transport.AmqpError;
 import org.apache.qpid.proton.amqp.transport.DeliveryState;
 import org.apache.qpid.proton.amqp.transport.DeliveryState.DeliveryStateType;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
@@ -292,10 +294,24 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
                   sessionSPI.closeSender(brokerConsumer);
                }
                // if this is a link close rather than a connection close or detach, we need to delete
-               // any durable resources for say pub subs
+               // any durable resources for say pub subs, if the action fails we set the error condition
                controller.close(remoteLinkClose);
             } catch (Exception e) {
                logger.warn(e.getMessage(), e);
+               final ErrorCondition error = new ErrorCondition();
+
+               error.setDescription("Error on link close: " +
+                  (Objects.requireNonNullElse(e.getMessage(), e.getClass().getSimpleName())));
+
+               if (e instanceof ActiveMQAMQPException amqpEx) {
+                  error.setCondition(amqpEx.getAmqpError());
+               } else if (e instanceof ActiveMQSecurityException) {
+                  error.setCondition(AmqpError.UNAUTHORIZED_ACCESS);
+               } else {
+                  error.setCondition(AmqpError.INTERNAL_ERROR);
+               }
+
+               sender.setCondition(error);
             } finally {
                messageWriter.close();
             }
