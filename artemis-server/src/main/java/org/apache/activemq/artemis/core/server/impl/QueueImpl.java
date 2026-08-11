@@ -2223,7 +2223,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    }
 
    @Override
-   public synchronized boolean deleteReference(final long messageID) throws Exception {
+   public boolean deleteReference(final long messageID) throws Exception {
       return iterQueue("deleteReference", DEFAULT_FLUSH_LIMIT, null, new QueueIterateAction(messageID) {
          @Override
          public boolean actMessage(Transaction tx, MessageReference ref) throws Exception {
