@@ -22,7 +22,7 @@ import org.apache.activemq.artemis.core.persistence.CoreMessageObjectPools;
 import org.apache.activemq.artemis.core.persistence.Persister;
 import org.apache.activemq.artemis.utils.DataConstants;
 
-public abstract class AbstractHashMapPersister<K, V> implements Persister<JournalHashMap.MapRecord<K, V>> {
+public abstract class AbstractHashMapPersister<I, K, V> implements Persister<JournalHashMap.MapRecord<I, K, V>> {
 
    private final byte VERSION = 0;
 
@@ -32,13 +32,19 @@ public abstract class AbstractHashMapPersister<K, V> implements Persister<Journa
    }
 
    @Override
-   public final int getEncodeSize(JournalHashMap.MapRecord<K, V> record) {
+   public final int getEncodeSize(JournalHashMap.MapRecord<I, K, V> record) {
       return DataConstants.SIZE_LONG + // recordID
              DataConstants.SIZE_BYTE + // Version
-             DataConstants.SIZE_LONG + // collectionID
+             getCollectionIdSize(record.collectionID) +
              getKeySize(record.key) +
              getValueSize(record.value);
    }
+
+   protected abstract int getCollectionIdSize(I collectionID);
+
+   protected abstract void encodeCollectionId(ActiveMQBuffer buffer, I collectionID);
+
+   protected abstract I decodeCollectionId(ActiveMQBuffer buffer);
 
    protected abstract int getKeySize(K key);
 
@@ -53,28 +59,28 @@ public abstract class AbstractHashMapPersister<K, V> implements Persister<Journa
    protected abstract V decodeValue(ActiveMQBuffer buffer, K key);
 
    @Override
-   public final void encode(ActiveMQBuffer buffer, JournalHashMap.MapRecord<K, V> record) {
+   public final void encode(ActiveMQBuffer buffer, JournalHashMap.MapRecord<I, K, V> record) {
       buffer.writeLong(record.id);
       buffer.writeByte(VERSION);
-      buffer.writeLong(record.collectionID);
+      encodeCollectionId(buffer, record.collectionID);
       encodeKey(buffer, record.key);
       encodeValue(buffer, record.value);
    }
 
    @Override
-   public final JournalHashMap.MapRecord<K, V> decode(ActiveMQBuffer buffer,
-                                                JournalHashMap.MapRecord<K, V> record,
+   public final JournalHashMap.MapRecord<I, K, V> decode(ActiveMQBuffer buffer,
+                                                JournalHashMap.MapRecord<I, K, V> record,
                                                 CoreMessageObjectPools pool) {
       long id = buffer.readLong();
 
       byte version = buffer.readByte();
       assert version == VERSION;
 
-      long collectionID = buffer.readLong();
+      I collectionID = decodeCollectionId(buffer);
       K key = decodeKey(buffer);
       V value = decodeValue(buffer, key);
 
-      JournalHashMap.MapRecord<K, V> mapRecord = new JournalHashMap.MapRecord<>(collectionID, id, key, value);
+      JournalHashMap.MapRecord<I, K, V> mapRecord = new JournalHashMap.MapRecord<>(collectionID, id, key, value);
       return mapRecord;
    }
 }

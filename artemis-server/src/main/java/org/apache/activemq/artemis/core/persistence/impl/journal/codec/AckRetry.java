@@ -131,9 +131,24 @@ public final class AckRetry {
       return Objects.hash(nodeID, messageID);
    }
 
-   public static class Persister extends AbstractHashMapPersister<AckRetry, AckRetry> {
+   public static class Persister extends AbstractHashMapPersister<Long, AckRetry, AckRetry> {
 
       private Persister() {
+      }
+
+      @Override
+      protected int getCollectionIdSize(Long collectionID) {
+         return DataConstants.SIZE_LONG;
+      }
+
+      @Override
+      protected void encodeCollectionId(ActiveMQBuffer buffer, Long collectionID) {
+         buffer.writeLong(collectionID);
+      }
+
+      @Override
+      protected Long decodeCollectionId(ActiveMQBuffer buffer) {
+         return buffer.readLong();
       }
 
       @Override

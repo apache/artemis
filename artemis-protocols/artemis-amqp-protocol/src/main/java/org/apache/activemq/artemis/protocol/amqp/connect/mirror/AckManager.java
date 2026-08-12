@@ -72,7 +72,7 @@ public class AckManager implements ActiveMQComponent {
 
    final Set<AMQPMirrorControllerTarget> mirrorControllerTargets = new HashSet<>();
    final LongSupplier sequenceGenerator;
-   final JournalHashMapProvider<AckRetry, AckRetry, Queue> journalHashMapProvider;
+   final JournalHashMapProvider<Long, AckRetry, AckRetry, Queue> journalHashMapProvider;
    final ActiveMQServer server;
    final Configuration configuration;
    final ReferenceIDSupplier referenceIDSupplier;
@@ -94,13 +94,15 @@ public class AckManager implements ActiveMQComponent {
       this.sequenceGenerator = server.getStorageManager()::generateID;
       this.mirrorRegistry = server.getMirrorRegistry();
       // The JournalHashMap has to use the storage manager to guarantee we are using the Replicated Journal Wrapper in case this is a replicated journal
-      journalHashMapProvider = new JournalHashMapProvider<>(sequenceGenerator, server.getStorageManager(), AckRetry.getPersister(), JournalRecordIds.ACK_RETRY, OperationContextImpl::getContext, server.getPostOffice()::findQueue, server.getIoCriticalErrorListener());
+      journalHashMapProvider = new JournalHashMapProvider<>(sequenceGenerator, server.getStorageManager(), AckRetry.getPersister(), JournalRecordIds.ACK_RETRY, OperationContextImpl::getContext, id -> server.getPostOffice().findQueue(id), server.getIoCriticalErrorListener());
       this.referenceIDSupplier = new ReferenceIDSupplier(server);
    }
 
    public void reload(RecordInfo recordInfo) {
-      journalHashMapProvider.reload(recordInfo);
-      mirrorRegistry.incrementMirrorAckSize();
+      if (recordInfo.userRecordType == JournalRecordIds.ACK_RETRY) {
+         journalHashMapProvider.reload(recordInfo);
+         mirrorRegistry.incrementMirrorAckSize();
+      }
    }
 
    @Override
@@ -177,7 +179,7 @@ public class AckManager implements ActiveMQComponent {
          return false;
       }
 
-      Map<SimpleString, LongObjectHashMap<JournalHashMap<AckRetry, AckRetry, Queue>>> retries = sortRetries();
+      Map<SimpleString, LongObjectHashMap<JournalHashMap<Long, AckRetry, AckRetry, Queue>>> retries = sortRetries();
 
       flushMirrorTargets();
 
@@ -216,20 +218,20 @@ public class AckManager implements ActiveMQComponent {
    // Sort the ACK list by address
    // We have the retries by queue, we need to sort them by address
    // as we will perform all the retries on the same addresses at the same time (in the Multicast case with multiple queues acking)
-   public Map<SimpleString, LongObjectHashMap<JournalHashMap<AckRetry, AckRetry, Queue>>> sortRetries() {
+   public Map<SimpleString, LongObjectHashMap<JournalHashMap<Long, AckRetry, AckRetry, Queue>>> sortRetries() {
       // We will group the retries by address,
       // so we perform all of the queues in the same address at once
-      Map<SimpleString, LongObjectHashMap<JournalHashMap<AckRetry, AckRetry, Queue>>> retriesByAddress = new HashMap<>();
+      Map<SimpleString, LongObjectHashMap<JournalHashMap<Long, AckRetry, AckRetry, Queue>>> retriesByAddress = new HashMap<>();
 
-      Iterator<JournalHashMap<AckRetry, AckRetry, Queue>> queueRetriesIterator = journalHashMapProvider.getMaps().iterator();
+      Iterator<JournalHashMap<Long, AckRetry, AckRetry, Queue>> queueRetriesIterator = journalHashMapProvider.getMaps().iterator();
 
       while (queueRetriesIterator.hasNext()) {
-         JournalHashMap<AckRetry, AckRetry, Queue> ackRetries = queueRetriesIterator.next();
+         JournalHashMap<Long, AckRetry, AckRetry, Queue> ackRetries = queueRetriesIterator.next();
          if (!ackRetries.isEmpty()) {
             Queue queue = ackRetries.getContext();
             if (queue != null) {
                SimpleString address = queue.getAddress();
-               LongObjectHashMap<JournalHashMap<AckRetry, AckRetry, Queue>> queueRetriesOnAddress = retriesByAddress.get(address);
+               LongObjectHashMap<JournalHashMap<Long, AckRetry, AckRetry, Queue>> queueRetriesOnAddress = retriesByAddress.get(address);
                if (queueRetriesOnAddress == null) {
                   queueRetriesOnAddress = new LongObjectHashMap<>();
                   retriesByAddress.put(address, queueRetriesOnAddress);
@@ -254,7 +256,7 @@ public class AckManager implements ActiveMQComponent {
    }
 
    // to be used with the same executor as the PagingStore executor
-   public void retryAddress(SimpleString address, LongObjectHashMap<JournalHashMap<AckRetry, AckRetry, Queue>> acksToRetry) {
+   public void retryAddress(SimpleString address, LongObjectHashMap<JournalHashMap<Long, AckRetry, AckRetry, Queue>> acksToRetry) {
 
 
       // This is an optimization:
@@ -329,7 +331,7 @@ public class AckManager implements ActiveMQComponent {
       }
    }
 
-   private static LongObjectHashMap<AtomicInteger> buildCounterSnapshot(LongObjectHashMap<JournalHashMap<AckRetry, AckRetry, Queue>> acksToRetry) {
+   private static LongObjectHashMap<AtomicInteger> buildCounterSnapshot(LongObjectHashMap<JournalHashMap<Long, AckRetry, AckRetry, Queue>> acksToRetry) {
       LongObjectHashMap<AtomicInteger> snapshotCount = new LongObjectHashMap<>();
       acksToRetry.forEach((l, map) -> {
          AtomicInteger recordCount = new AtomicInteger(0);
@@ -354,11 +356,11 @@ public class AckManager implements ActiveMQComponent {
 
    }
 
-   private void validateExpiredSet(SimpleString address, LongObjectHashMap<JournalHashMap<AckRetry, AckRetry, Queue>> queuesToRetry) {
+   private void validateExpiredSet(SimpleString address, LongObjectHashMap<JournalHashMap<Long, AckRetry, AckRetry, Queue>> queuesToRetry) {
       queuesToRetry.forEach((q, r) -> this.validateExpireSet(address, q, r));
    }
 
-   private void validateExpireSet(SimpleString address, long queueID, JournalHashMap<AckRetry, AckRetry, Queue> retries) {
+   private void validateExpireSet(SimpleString address, long queueID, JournalHashMap<Long, AckRetry, AckRetry, Queue> retries) {
       for (AckRetry retry : retries.valuesCopy()) {
          // we only remove or configure to be removed if the retry was initially seen on the start of the process
          // this is to avoid a race where an ACK entered the list after the scan been through where the element was supposed to be
@@ -385,7 +387,7 @@ public class AckManager implements ActiveMQComponent {
    }
 
    private void retryPage(LongObjectHashMap<AtomicInteger> snapshotCount,
-                          LongObjectHashMap<JournalHashMap<AckRetry, AckRetry, Queue>> queuesToRetry,
+                          LongObjectHashMap<JournalHashMap<Long, AckRetry, AckRetry, Queue>> queuesToRetry,
                           SimpleString address,
                           Page page) throws Exception {
 
@@ -395,7 +397,7 @@ public class AckManager implements ActiveMQComponent {
       page.getMessages().forEach(pagedMessage -> {
          for (int i = 0; i < pagedMessage.getQueueIDs().length; i++) {
             long queueID = pagedMessage.getQueueIDs()[i];
-            JournalHashMap<AckRetry, AckRetry, Queue> retries = queuesToRetry.get(queueID);
+            JournalHashMap<Long, AckRetry, AckRetry, Queue> retries = queuesToRetry.get(queueID);
             AtomicInteger snapshotOnQueue = snapshotCount.get(queueID);
             if (retries != null) {
                String serverID = referenceIDSupplier.getServerID(pagedMessage.getMessage());
@@ -468,13 +470,13 @@ public class AckManager implements ActiveMQComponent {
    /**
     * {@return {@code true} if there are retries ready to be scanned on paging}
     */
-   private boolean checkRetriesAndPaging(LongObjectHashMap<JournalHashMap<AckRetry, AckRetry, Queue>> queuesToRetry, LongObjectHashMap<AtomicInteger> snapshotCount) {
+   private boolean checkRetriesAndPaging(LongObjectHashMap<JournalHashMap<Long, AckRetry, AckRetry, Queue>> queuesToRetry, LongObjectHashMap<AtomicInteger> snapshotCount) {
       boolean needScanOnPaging = false;
-      Iterator<Map.Entry<Long, JournalHashMap<AckRetry, AckRetry, Queue>>> iter = queuesToRetry.entrySet().iterator();
+      Iterator<Map.Entry<Long, JournalHashMap<Long, AckRetry, AckRetry, Queue>>> iter = queuesToRetry.entrySet().iterator();
 
       while (iter.hasNext()) {
-         Map.Entry<Long, JournalHashMap<AckRetry, AckRetry, Queue>> entry = iter.next();
-         JournalHashMap<AckRetry, AckRetry, Queue> queueRetries = entry.getValue();
+         Map.Entry<Long, JournalHashMap<Long, AckRetry, AckRetry, Queue>> entry = iter.next();
+         JournalHashMap<Long, AckRetry, AckRetry, Queue> queueRetries = entry.getValue();
          Queue queue = queueRetries.getContext();
          AtomicInteger queueSnapshotCount = snapshotCount.get(queue.getID());
          for (AckRetry retry : queueRetries.valuesCopy()) {
@@ -571,12 +573,12 @@ public class AckManager implements ActiveMQComponent {
     * It will perform each address individually, one by one.
     */
    class MultiStepProgress {
-      Map<SimpleString, LongObjectHashMap<JournalHashMap<AckRetry, AckRetry, Queue>>> retryList;
+      Map<SimpleString, LongObjectHashMap<JournalHashMap<Long, AckRetry, AckRetry, Queue>>> retryList;
 
-      Iterator<Map.Entry<SimpleString, LongObjectHashMap<JournalHashMap<AckRetry, AckRetry, Queue>>>> retryIterator;
+      Iterator<Map.Entry<SimpleString, LongObjectHashMap<JournalHashMap<Long, AckRetry, AckRetry, Queue>>>> retryIterator;
 
 
-      MultiStepProgress(Map<SimpleString, LongObjectHashMap<JournalHashMap<AckRetry, AckRetry, Queue>>> retryList) {
+      MultiStepProgress(Map<SimpleString, LongObjectHashMap<JournalHashMap<Long, AckRetry, AckRetry, Queue>>> retryList) {
          this.retryList = retryList;
          retryIterator = retryList.entrySet().iterator();
       }
@@ -587,7 +589,7 @@ public class AckManager implements ActiveMQComponent {
                logger.trace("Iterator is done on retry, server={}", server);
                AckManager.this.endRetry();
             } else {
-               Map.Entry<SimpleString, LongObjectHashMap<JournalHashMap<AckRetry, AckRetry, Queue>>> entry = retryIterator.next();
+               Map.Entry<SimpleString, LongObjectHashMap<JournalHashMap<Long, AckRetry, AckRetry, Queue>>> entry = retryIterator.next();
 
                //////////////////////////////////////////////////////////////////////
                // Issue a deliverAsync on each queue before doing the retries
@@ -607,7 +609,7 @@ public class AckManager implements ActiveMQComponent {
          }
       }
 
-      private void deliveryAsync(JournalHashMap<AckRetry, AckRetry, Queue> map) {
+      private void deliveryAsync(JournalHashMap<Long, AckRetry, AckRetry, Queue> map) {
          Queue queue = map.getContext();
          if (queue != null) {
             queue.deliverAsync();

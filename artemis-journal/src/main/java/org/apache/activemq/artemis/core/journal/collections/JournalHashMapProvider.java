@@ -18,30 +18,31 @@
 package org.apache.activemq.artemis.core.journal.collections;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.function.LongFunction;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
-import io.netty.util.collection.LongObjectHashMap;
 import org.apache.activemq.artemis.core.io.IOCriticalErrorListener;
 import org.apache.activemq.artemis.core.journal.IOCompletion;
 import org.apache.activemq.artemis.core.journal.RecordInfo;
 import org.apache.activemq.artemis.core.persistence.Persister;
 
-public class JournalHashMapProvider<K, V, C> {
+public class JournalHashMapProvider<I, K, V, C> {
 
    final MapStorageManager journal;
-   final Persister<JournalHashMap.MapRecord<K, V>> persister;
-   final LongObjectHashMap<JournalHashMap<K, V, C>> journalMaps = new LongObjectHashMap<>();
+   final Persister<JournalHashMap.MapRecord<I, K, V>> persister;
+   final Map<I, JournalHashMap<I, K, V, C>> journalMaps = new HashMap<>();
    final LongSupplier idSupplier;
    final byte recordType;
    final IOCriticalErrorListener ioExceptionListener;
    final Supplier<IOCompletion> ioCompletionSupplier;
-   final LongFunction<C> contextProvider;
+   final Function<I, C> contextProvider;
 
-   public JournalHashMapProvider(LongSupplier idSupplier, MapStorageManager journal, AbstractHashMapPersister<K, V> persister, byte recordType, Supplier<IOCompletion> ioCompletionSupplier, LongFunction<C> contextProvider, IOCriticalErrorListener ioExceptionListener) {
+   public JournalHashMapProvider(LongSupplier idSupplier, MapStorageManager journal, AbstractHashMapPersister<I, K, V> persister, byte recordType, Supplier<IOCompletion> ioCompletionSupplier, Function<I, C> contextProvider, IOCriticalErrorListener ioExceptionListener) {
       this.idSupplier = idSupplier;
       this.persister = persister;
       this.journal = journal;
@@ -51,10 +52,8 @@ public class JournalHashMapProvider<K, V, C> {
       this.ioCompletionSupplier = ioCompletionSupplier;
    }
 
-   public List<JournalHashMap<K, V, C>> getMaps() {
-      List<JournalHashMap<K, V, C>> maps = new ArrayList<>();
-      journalMaps.values().forEach(maps::add);
-      return maps;
+   public List<JournalHashMap<I, K, V, C>> getMaps() {
+      return new ArrayList<>(journalMaps.values());
    }
 
    public void clear() {
@@ -62,16 +61,16 @@ public class JournalHashMapProvider<K, V, C> {
    }
 
    public void reload(RecordInfo recordInfo) {
-      JournalHashMap.MapRecord<K, V> mapRecord = persister.decode(recordInfo.wrapData(), null, null);
+      JournalHashMap.MapRecord<I, K, V> mapRecord = persister.decode(recordInfo.wrapData(), null, null);
       getMap(mapRecord.collectionID, null).reload(mapRecord);
    }
 
-   public Iterator<JournalHashMap<K, V, C>> iterMaps() {
+   public Iterator<JournalHashMap<I, K, V, C>> iterMaps() {
       return journalMaps.values().iterator();
    }
 
-   public synchronized JournalHashMap<K, V, C> getMap(long collectionID, C context) {
-      JournalHashMap<K, V, C> journalHashMap = journalMaps.get(collectionID);
+   public synchronized JournalHashMap<I, K, V, C> getMap(I collectionID, C context) {
+      JournalHashMap<I, K, V, C> journalHashMap = journalMaps.get(collectionID);
       if (journalHashMap == null) {
          journalHashMap = new JournalHashMap<>(collectionID, journal, idSupplier, persister, recordType, ioCompletionSupplier, contextProvider, ioExceptionListener).setContext(context);
          journalMaps.put(collectionID, journalHashMap);
@@ -79,7 +78,11 @@ public class JournalHashMapProvider<K, V, C> {
       return journalHashMap;
    }
 
-   public JournalHashMap<K, V, C> getMap(long collectionID) {
+   public JournalHashMap<I, K, V, C> getMap(I collectionID) {
       return getMap(collectionID, null);
+   }
+
+   public boolean containsMap(I collectionID) {
+      return journalMaps.containsKey(collectionID);
    }
 }

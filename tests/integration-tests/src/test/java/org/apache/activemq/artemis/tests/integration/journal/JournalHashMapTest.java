@@ -24,8 +24,11 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.IntFunction;
+import java.util.function.Supplier;
 
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
+import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.io.nio.NIOSequentialFileFactory;
 import org.apache.activemq.artemis.core.journal.IOCompletion;
 import org.apache.activemq.artemis.core.journal.Journal;
@@ -87,6 +90,18 @@ public class JournalHashMapTest extends ActiveMQTestBase {
 
    @Test
    public void testHashMap() throws Exception {
+      doTestHashMap(new LongPersister(), 1L, i -> (long) i, RandomUtil::randomLong);
+   }
+
+   @Test
+   public void testHashMapString() throws Exception {
+      doTestHashMap(new StringPersister(), "collection-1", i -> "key-" + i, () -> RandomUtil.randomAlphaNumericString(10));
+   }
+
+   private <I, K, V> void doTestHashMap(AbstractHashMapPersister<I, K, V> persister,
+                                         I collectionId,
+                                         IntFunction<K> keyProducer,
+                                         Supplier<V> valueProducer) throws Exception {
       ExecutorService service = Executors.newFixedThreadPool(10);
       runAfter(service::shutdownNow);
       OrderedExecutorFactory executorFactory = new OrderedExecutorFactory(service);
@@ -102,21 +117,20 @@ public class JournalHashMapTest extends ActiveMQTestBase {
 
       AtomicLong sequence = new AtomicLong(1);
 
-      JournalHashMapProvider<Long, Long, Object> journalHashMapProvider = new JournalHashMapProvider(sequence::incrementAndGet, new JournalManager(journal), new LongPersister(), (byte)3, OperationContextImpl::getContext, l -> null, (e, m, f) -> {
+      JournalHashMapProvider<I, K, V, Object> journalHashMapProvider = new JournalHashMapProvider<>(sequence::incrementAndGet, new JournalManager(journal), persister, (byte)3, OperationContextImpl::getContext, l -> null, (e, m, f) -> {
          e.printStackTrace();
       });
 
-      JournalHashMap<Long, Long, Object> journalHashMap = journalHashMapProvider.getMap(1);
+      JournalHashMap<I, K, V, Object> journalHashMap = journalHashMapProvider.getMap(collectionId);
 
-      for (long i = 0; i < 1000; i++) {
-         journalHashMap.put(i, RandomUtil.randomLong());
+      for (int i = 0; i < 1000; i++) {
+         journalHashMap.put(keyProducer.apply(i), valueProducer.get());
       }
 
-      /// repeating to make sure the remove works fine
-      for (long i = 0; i < 1000; i++) {
-         journalHashMap.put(i, RandomUtil.randomLong());
+      // repeating to make sure the remove works fine
+      for (int i = 0; i < 1000; i++) {
+         journalHashMap.put(keyProducer.apply(i), valueProducer.get());
       }
-
 
       journal.flush();
 
@@ -126,33 +140,44 @@ public class JournalHashMapTest extends ActiveMQTestBase {
 
       journal.start();
 
-
       List<RecordInfo> recordInfos = new ArrayList<>();
       List<PreparedTransactionInfo> preparedTransactions = new ArrayList<>();
       journal.load(recordInfos, preparedTransactions, (a, b, c) -> { }, true);
 
-      List<JournalHashMap.MapRecord<Long, Long>> records = new ArrayList<>();
       recordInfos.forEach(r -> {
          assertEquals((byte)3, r.userRecordType);
          journalHashMapProvider.reload(r);
       });
 
-      List<JournalHashMap<Long, Long, Object>> existingLists = journalHashMapProvider.getMaps();
+      List<JournalHashMap<I, K, V, Object>> existingLists = journalHashMapProvider.getMaps();
       assertEquals(1, existingLists.size());
-      JournalHashMap<Long, Long, Object> reloadedList = existingLists.get(0);
+      JournalHashMap<I, K, V, Object> reloadedList = existingLists.get(0);
 
       assertEquals(journalHashMap.size(), reloadedList.size());
 
       journalHashMap.forEach((a, b) -> assertEquals(b, reloadedList.get(a)));
-
    }
 
-
-   private static class LongPersister extends AbstractHashMapPersister<Long, Long> {
+   private static class LongPersister extends AbstractHashMapPersister<Long, Long, Long> {
 
       @Override
       public byte getID() {
          return 0;
+      }
+
+      @Override
+      protected int getCollectionIdSize(Long collectionID) {
+         return DataConstants.SIZE_LONG;
+      }
+
+      @Override
+      protected void encodeCollectionId(ActiveMQBuffer buffer, Long collectionID) {
+         buffer.writeLong(collectionID);
+      }
+
+      @Override
+      protected Long decodeCollectionId(ActiveMQBuffer buffer) {
+         return buffer.readLong();
       }
 
       @Override
@@ -184,6 +209,63 @@ public class JournalHashMapTest extends ActiveMQTestBase {
       @Override
       protected Long decodeValue(ActiveMQBuffer buffer, Long key) {
          return buffer.readLong();
+      }
+   }
+
+   private static class StringPersister extends AbstractHashMapPersister<String, String, String> {
+
+      @Override
+      public byte getID() {
+         return 0;
+      }
+
+      private int sizeOfString(String s) {
+         return DataConstants.SIZE_INT + s.length() * DataConstants.SIZE_CHAR;
+      }
+
+      @Override
+      protected int getCollectionIdSize(String collectionID) {
+         return sizeOfString(collectionID);
+      }
+
+      @Override
+      protected void encodeCollectionId(ActiveMQBuffer buffer, String collectionID) {
+         buffer.writeSimpleString(SimpleString.of(collectionID));
+      }
+
+      @Override
+      protected String decodeCollectionId(ActiveMQBuffer buffer) {
+         return buffer.readSimpleString().toString();
+      }
+
+      @Override
+      protected int getKeySize(String key) {
+         return sizeOfString(key);
+      }
+
+      @Override
+      protected void encodeKey(ActiveMQBuffer buffer, String key) {
+         buffer.writeSimpleString(SimpleString.of(key));
+      }
+
+      @Override
+      protected String decodeKey(ActiveMQBuffer buffer) {
+         return buffer.readSimpleString().toString();
+      }
+
+      @Override
+      protected int getValueSize(String value) {
+         return sizeOfString(value);
+      }
+
+      @Override
+      protected void encodeValue(ActiveMQBuffer buffer, String value) {
+         buffer.writeSimpleString(SimpleString.of(value));
+      }
+
+      @Override
+      protected String decodeValue(ActiveMQBuffer buffer, String key) {
+         return buffer.readSimpleString().toString();
       }
    }
 }

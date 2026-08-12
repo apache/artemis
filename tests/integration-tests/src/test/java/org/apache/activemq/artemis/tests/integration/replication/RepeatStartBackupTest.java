@@ -277,11 +277,11 @@ public class RepeatStartBackupTest extends ActiveMQTestBase {
                                    long queueIdOnServerLive,
                                    int messagesSent) {
       AckManager liveManager = AckManagerProvider.getManager(server);
-      Map<SimpleString, LongObjectHashMap<JournalHashMap<AckRetry, AckRetry, Queue>>> sortedRetries = liveManager.sortRetries();
+      Map<SimpleString, LongObjectHashMap<JournalHashMap<Long, AckRetry, AckRetry, Queue>>> sortedRetries = liveManager.sortRetries();
       assertEquals(1, sortedRetries.size());
 
-      LongObjectHashMap<JournalHashMap<AckRetry, AckRetry, Queue>> retryAddress = sortedRetries.get(SimpleString.of(queueName));
-      JournalHashMap<AckRetry, AckRetry, Queue> journalHashMapBackup = retryAddress.get(queueIdOnServerLive);
+      LongObjectHashMap<JournalHashMap<Long, AckRetry, AckRetry, Queue>> retryAddress = sortedRetries.get(SimpleString.of(queueName));
+      JournalHashMap<Long, AckRetry, AckRetry, Queue> journalHashMapBackup = retryAddress.get(queueIdOnServerLive);
       assertEquals(messagesSent, journalHashMapBackup.size());
    }
 

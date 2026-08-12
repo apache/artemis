@@ -184,16 +184,16 @@ public class AckManagerTest extends ActiveMQTestBase {
          logger.info("Repeating {}", repeat);
          AckManager ackManager = AckManagerProvider.getManager(server1);
 
-         Map<SimpleString, LongObjectHashMap<JournalHashMap<AckRetry, AckRetry, Queue>>> sortedRetries = ackManager.sortRetries();
+         Map<SimpleString, LongObjectHashMap<JournalHashMap<Long, AckRetry, AckRetry, Queue>>> sortedRetries = ackManager.sortRetries();
 
          assertEquals(1, sortedRetries.size());
 
-         LongObjectHashMap<JournalHashMap<AckRetry, AckRetry, Queue>> acksOnAddress = sortedRetries.get(c1s1.getAddress());
+         LongObjectHashMap<JournalHashMap<Long, AckRetry, AckRetry, Queue>> acksOnAddress = sortedRetries.get(c1s1.getAddress());
 
          assertEquals(2, acksOnAddress.size());
 
-         JournalHashMap<AckRetry, AckRetry, Queue> acksOnc1s1 = acksOnAddress.get(c1s1.getID());
-         JournalHashMap<AckRetry, AckRetry, Queue> acksOnc2s2 = acksOnAddress.get(c2s2.getID());
+         JournalHashMap<Long, AckRetry, AckRetry, Queue> acksOnc1s1 = acksOnAddress.get(c1s1.getID());
+         JournalHashMap<Long, AckRetry, AckRetry, Queue> acksOnc2s2 = acksOnAddress.get(c2s2.getID());
          assertEquals(numberOfAcksC1, acksOnc1s1.size());
          assertEquals(numberOfAcksC2, acksOnc2s2.size());
 
@@ -217,11 +217,11 @@ public class AckManagerTest extends ActiveMQTestBase {
 
       AckManager ackManager = AckManagerProvider.getManager(server1);
       ackManager.start();
-      Map<SimpleString, LongObjectHashMap<JournalHashMap<AckRetry, AckRetry, Queue>>> sortedRetries = ackManager.sortRetries();
+      Map<SimpleString, LongObjectHashMap<JournalHashMap<Long, AckRetry, AckRetry, Queue>>> sortedRetries = ackManager.sortRetries();
       assertEquals(1, sortedRetries.size());
-      LongObjectHashMap<JournalHashMap<AckRetry, AckRetry, Queue>> acksOnAddress = sortedRetries.get(c1s1.getAddress());
-      JournalHashMap<AckRetry, AckRetry, Queue> acksOnc1s1 = acksOnAddress.get(c1s1.getID());
-      JournalHashMap<AckRetry, AckRetry, Queue> acksOnc2s2 = acksOnAddress.get(c2s2.getID());
+      LongObjectHashMap<JournalHashMap<Long, AckRetry, AckRetry, Queue>> acksOnAddress = sortedRetries.get(c1s1.getAddress());
+      JournalHashMap<Long, AckRetry, AckRetry, Queue> acksOnc1s1 = acksOnAddress.get(c1s1.getID());
+      JournalHashMap<Long, AckRetry, AckRetry, Queue> acksOnc2s2 = acksOnAddress.get(c2s2.getID());
 
       Wait.assertEquals(0, () -> acksOnc1s1.size());
       Wait.assertEquals(0, () -> acksOnc2s2.size());

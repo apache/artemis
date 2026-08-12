@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
-import java.util.function.LongFunction;
+import java.util.function.Function;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
@@ -38,21 +38,22 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * I = Collection ID type
  * K = Key
  * V = Value
  * C = Context
  */
-public class JournalHashMap<K, V, C> implements Map<K, V> {
+public class JournalHashMap<I, K, V, C> implements Map<K, V> {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-   public static class MapRecord<K, V> implements Entry<K, V> {
-      final long collectionID;
+   public static class MapRecord<I, K, V> implements Entry<K, V> {
+      final I collectionID;
       final long id;
       final K key;
       V value;
 
-      MapRecord(long collectionID, long id, K key, V value) {
+      MapRecord(I collectionID, long id, K key, V value) {
          this.collectionID = collectionID;
          this.id = id;
          this.key = key;
@@ -86,11 +87,11 @@ public class JournalHashMap<K, V, C> implements Map<K, V> {
          if (this == obj) {
             return true;
          }
-         if (!(obj instanceof MapRecord<?, ?> other)) {
+         if (!(obj instanceof MapRecord<?, ?, ?> other)) {
             return false;
          }
 
-         return collectionID == other.collectionID &&
+         return Objects.equals(collectionID, other.collectionID) &&
                 id == other.id &&
                 Objects.equals(key, other.key) &&
                 Objects.equals(value, other.value);
@@ -102,7 +103,7 @@ public class JournalHashMap<K, V, C> implements Map<K, V> {
       }
    }
 
-   public JournalHashMap(long collectionId, MapStorageManager journal, LongSupplier idGenerator, Persister<MapRecord<K, V>> persister, byte recordType, Supplier<IOCompletion> completionSupplier, LongFunction<C> contextProvider, IOCriticalErrorListener ioExceptionListener) {
+   public JournalHashMap(I collectionId, MapStorageManager journal, LongSupplier idGenerator, Persister<MapRecord<I, K, V>> persister, byte recordType, Supplier<IOCompletion> completionSupplier, Function<I, C> contextProvider, IOCriticalErrorListener ioExceptionListener) {
       this.collectionId = collectionId;
       this.journal = journal;
       this.idGenerator = idGenerator;
@@ -115,13 +116,13 @@ public class JournalHashMap<K, V, C> implements Map<K, V> {
 
    C context;
 
-   LongFunction<C> contextProvider;
+   Function<I, C> contextProvider;
 
-   private final Persister<MapRecord<K, V>> persister;
+   private final Persister<MapRecord<I, K, V>> persister;
 
    private final MapStorageManager journal;
 
-   private final long collectionId;
+   private final I collectionId;
 
    private final byte recordType;
 
@@ -131,9 +132,9 @@ public class JournalHashMap<K, V, C> implements Map<K, V> {
 
    private final IOCriticalErrorListener exceptionListener;
 
-   private final Map<K, MapRecord<K, V>> map = new HashMap<>();
+   private final Map<K, MapRecord<I, K, V>> map = new HashMap<>();
 
-   public long getCollectionId() {
+   public I getCollectionId() {
       return collectionId;
    }
 
@@ -149,7 +150,7 @@ public class JournalHashMap<K, V, C> implements Map<K, V> {
       return context;
    }
 
-   public JournalHashMap<K, V, C> setContext(C context) {
+   public JournalHashMap<I, K, V, C> setContext(C context) {
       this.context = context;
       return this;
    }
@@ -166,7 +167,7 @@ public class JournalHashMap<K, V, C> implements Map<K, V> {
 
    @Override
    public synchronized boolean containsValue(Object value) {
-      for (Entry<K, MapRecord<K, V>> entry : map.entrySet()) {
+      for (Entry<K, MapRecord<I, K, V>> entry : map.entrySet()) {
          if (value.equals(entry.getValue().value)) {
             return true;
          }
@@ -176,7 +177,7 @@ public class JournalHashMap<K, V, C> implements Map<K, V> {
 
    @Override
    public synchronized V get(Object key) {
-      MapRecord<K, V> record = map.get(key);
+      MapRecord<I, K, V> record = map.get(key);
       if (record == null) {
          return null;
       } else {
@@ -187,7 +188,7 @@ public class JournalHashMap<K, V, C> implements Map<K, V> {
    /**
     * This is to be called from a single thread during reload, no need to be synchronized
     */
-   public void reload(MapRecord<K, V> reloadValue) {
+   public void reload(MapRecord<I, K, V> reloadValue) {
       map.put(reloadValue.getKey(), reloadValue);
    }
 
@@ -195,9 +196,9 @@ public class JournalHashMap<K, V, C> implements Map<K, V> {
    public synchronized V put(K key, V value) {
       logger.debug("adding {} = {}", key, value);
       long id = idGenerator.getAsLong();
-      MapRecord<K, V> record = new MapRecord<>(collectionId, id, key, value);
+      MapRecord<I, K, V> record = new MapRecord<>(collectionId, id, key, value);
       store(record);
-      MapRecord<K, V> oldRecord = map.put(key, record);
+      MapRecord<I, K, V> oldRecord = map.put(key, record);
 
       if (oldRecord != null) {
          removed(oldRecord);
@@ -208,13 +209,12 @@ public class JournalHashMap<K, V, C> implements Map<K, V> {
 
    }
 
-   private synchronized void store(MapRecord<K, V> record) {
+   private synchronized void store(MapRecord<I, K, V> record) {
       try {
          IOCompletion callback = null;
          if (completionSupplier != null) {
             callback = completionSupplier.get();
          }
-
          if (callback == null) {
             journal.storeMapRecord(record.id, recordType, persister, record, false);
          } else {
@@ -227,7 +227,7 @@ public class JournalHashMap<K, V, C> implements Map<K, V> {
    }
 
    // callers must be synchronized
-   private void removed(MapRecord<K, V> record) {
+   private void removed(MapRecord<I, K, V> record) {
       if (logger.isTraceEnabled()) {
          logger.trace("Removing record {}", record);
       }
@@ -239,7 +239,7 @@ public class JournalHashMap<K, V, C> implements Map<K, V> {
    }
 
    // callers must be synchronized
-   private void removed(MapRecord<K, V> record, long txid) {
+   private void removed(MapRecord<I, K, V> record, long txid) {
       try {
          journal.deleteMapRecordTx(txid, record.id);
       } catch (Exception e) {
@@ -249,7 +249,10 @@ public class JournalHashMap<K, V, C> implements Map<K, V> {
 
    @Override
    public synchronized V remove(Object key) {
-      MapRecord<K, V> record = map.remove(key);
+      MapRecord<I, K, V> record = map.remove(key);
+      if (record == null) {
+         return null;
+      }
       this.removed(record);
       return record.value;
    }
@@ -261,7 +264,10 @@ public class JournalHashMap<K, V, C> implements Map<K, V> {
     * not expected.
     */
    public synchronized V remove(Object key, long transactionID) {
-      MapRecord<K, V> record = map.remove(key);
+      MapRecord<I, K, V> record = map.remove(key);
+      if (record == null) {
+         return null;
+      }
       this.removed(record, transactionID);
       return record.value;
    }
