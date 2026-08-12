@@ -28,23 +28,26 @@ import org.apache.activemq.artemis.utils.critical.CriticalAnalyzerAccessor;
 import org.apache.activemq.artemis.utils.critical.CriticalAnalyzerPolicy;
 import org.apache.activemq.artemis.utils.critical.CriticalComponentImpl;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 
 public class ActiveMQServerStartupTest extends ServerTestBase {
 
    @Test
+   @Timeout(10)
    public void testTooLongToStartHalt() throws Exception {
       testTooLongToStart(CriticalAnalyzerPolicy.HALT);
    }
 
    @Test
+   @Timeout(10)
    public void testTooLongToStartShutdown() throws Exception {
       testTooLongToStart(CriticalAnalyzerPolicy.SHUTDOWN);
    }
 
    @Test
+   @Timeout(10)
    public void testTooLongToStartLOG() throws Exception {
       testTooLongToStart(CriticalAnalyzerPolicy.LOG);
    }
@@ -70,18 +73,22 @@ public class ActiveMQServerStartupTest extends ServerTestBase {
                }
             }
          });
-         CompletableFuture.runAsync(() -> {
+         Thread startThread = new Thread(() -> {
             try {
                server.start();
             } catch (Exception e) {
                e.printStackTrace();
             }
          });
-         Wait.waitFor(() -> server.getCriticalAnalyzer() != null);
-         CriticalAnalyzerAccessor.fireActions(server.getCriticalAnalyzer(), new CriticalComponentImpl(server.getCriticalAnalyzer(), 2));
-         assertTrue(loggerHandler.findText("AMQ224116"));
-         assertFalse(server.isActive()); // should not be changed
-         latch.countDown();
+         startThread.start();
+         try {
+            assertTrue(Wait.waitFor(() -> server.getCriticalAnalyzer() != null));
+            CriticalAnalyzerAccessor.fireActions(server.getCriticalAnalyzer(), new CriticalComponentImpl(server.getCriticalAnalyzer(), 2));
+            assertTrue(loggerHandler.findText("AMQ224116"));
+            assertFalse(server.isActive()); // should not be changed
+         } finally {
+            latch.countDown();
+         }
          server.stop();
       }
    }

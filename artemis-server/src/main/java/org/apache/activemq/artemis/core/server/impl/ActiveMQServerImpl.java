@@ -392,7 +392,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
    private final ActiveMQServer parentServer;
 
-   private CriticalAnalyzer analyzer;
+   private volatile CriticalAnalyzer analyzer;
 
    // This is a callback to be called right before an activation is created
    private Runnable afterActivationCreated;

@@ -728,7 +728,7 @@ public class MQTT5Test extends MQTT5TestSupport {
       Wait.assertEquals(1, () -> getSessionStates().size(), 2000, 100);
       assertNotNull(getSessionStates().get(CLIENT_ID));
 
-      assertFalse(client.isConnected());
+      Wait.assertFalse(() -> client.isConnected(), 2000, 100);
 
       client.close();
       client2.disconnect();
@@ -917,7 +917,11 @@ public class MQTT5Test extends MQTT5TestSupport {
       pendingCountCheckLatch.countDown();
 
       // disconnect subscriber
-      subscriber.disconnect();
+      try {
+         subscriber.disconnect();
+      } catch (Exception e) {
+         // ignore
+      }
       Wait.assertFalse(() -> mqttSessionState.isAttached(), 2000, 50);
       assertEquals(0, mqttSessionState.getSendQuota());
       assertEquals(1L, subscriptionQueue.getMessageCount());

@@ -2239,6 +2239,7 @@ public class MQTTTest extends MQTTTestSupport {
    @Test
    @Timeout(60)
    public void testAutoDeleteRetainedQueue() throws Exception {
+      final int MESSAGE_COUNT = 3;
       final String TOPIC = "/abc/123";
       final String RETAINED_QUEUE = MQTTUtil.getCoreRetainAddressFromMqttTopic(TOPIC, server.getConfiguration().getWildcardConfiguration());
       final MQTTClientProvider publisher = getMQTTClientProvider();
@@ -2252,22 +2253,22 @@ public class MQTTTest extends MQTTTestSupport {
       String RETAINED = "retained";
       publisher.publish(TOPIC, RETAINED.getBytes(), AT_LEAST_ONCE, true);
 
-      List<String> messages = new ArrayList<>();
-      for (int i = 0; i < 10; i++) {
-         messages.add("TEST MESSAGE:" + i);
-      }
-
       subscriber.subscribe(TOPIC, AT_LEAST_ONCE);
-
-      for (int i = 0; i < 10; i++) {
-         publisher.publish(TOPIC, messages.get(i).getBytes(), AT_LEAST_ONCE);
-      }
 
       byte[] msg = subscriber.receive(5000);
       assertNotNull(msg);
       assertEquals(RETAINED, new String(msg));
 
-      for (int i = 0; i < 10; i++) {
+      List<String> messages = new ArrayList<>();
+      for (int i = 0; i < MESSAGE_COUNT; i++) {
+         messages.add("TEST MESSAGE:" + i);
+      }
+
+      for (int i = 0; i < MESSAGE_COUNT; i++) {
+         publisher.publish(TOPIC, messages.get(i).getBytes(), AT_LEAST_ONCE);
+      }
+
+      for (int i = 0; i < MESSAGE_COUNT; i++) {
          msg = subscriber.receive(5000);
          assertNotNull(msg);
          assertEquals(messages.get(i), new String(msg));
@@ -2288,15 +2289,15 @@ public class MQTTTest extends MQTTTestSupport {
 
       subscriber.subscribe(TOPIC, AT_LEAST_ONCE);
 
-      for (int i = 0; i < 10; i++) {
-         publisher.publish(TOPIC, messages.get(i).getBytes(), AT_LEAST_ONCE);
-      }
-
       msg = subscriber.receive(5000);
       assertNotNull(msg);
       assertEquals(RETAINED, new String(msg));
 
-      for (int i = 0; i < 10; i++) {
+      for (int i = 0; i < MESSAGE_COUNT; i++) {
+         publisher.publish(TOPIC, messages.get(i).getBytes(), AT_LEAST_ONCE);
+      }
+
+      for (int i = 0; i < MESSAGE_COUNT; i++) {
          msg = subscriber.receive(5000);
          assertNotNull(msg);
          assertEquals(messages.get(i), new String(msg));

@@ -16,14 +16,21 @@
  */
 package org.apache.activemq.artemis.tests.integration.mqtt;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
+import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.api.core.client.ActiveMQClient;
+import org.apache.activemq.artemis.api.core.client.ClientConsumer;
+import org.apache.activemq.artemis.api.core.client.ClientMessage;
+import org.apache.activemq.artemis.api.core.client.ClientSession;
+import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
+import org.apache.activemq.artemis.api.core.client.MessageHandler;
+import org.apache.activemq.artemis.api.core.client.ServerLocator;
+import org.apache.activemq.artemis.api.core.management.CoreNotificationType;
+import org.apache.activemq.artemis.api.core.management.ManagementHelper;
 import org.apache.activemq.artemis.core.config.CoreAddressConfiguration;
 import org.apache.activemq.artemis.core.config.WildcardConfiguration;
 import org.apache.activemq.artemis.core.protocol.mqtt.MQTTProtocolManager;
@@ -42,6 +49,10 @@ import org.fusesource.mqtt.client.Message;
 import org.fusesource.mqtt.client.QoS;
 import org.fusesource.mqtt.client.Topic;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MqttClusterRemoteSubscribeTest extends ClusterTestBase {
 
@@ -248,10 +259,29 @@ public class MqttClusterRemoteSubscribeTest extends ClusterTestBase {
       final String ANYCAST_TOPIC = "anycast/test/1/some/la";
       final String subClientId = "subClientId";
       final String pubClientId = "pubClientId";
+      final String notifications = "notifications";
 
       setupServers(ANYCAST_TOPIC);
 
       startServers(0, 1);
+
+      ServerLocator locator = addServerLocator(ActiveMQClient.createServerLocator("tcp://localhost:61617"));
+      ClientSessionFactory sf = createSessionFactory(locator);
+      ClientSession session = addClientSession(sf.createSession(false, true, true));
+      servers[1].createQueue(QueueConfiguration.of(notifications).setAddress(servers[1].getConfiguration().getManagementNotificationAddress()).setRoutingType(RoutingType.MULTICAST));
+      ClientConsumer consumer = session.createConsumer(notifications);
+      AtomicInteger notificationCount = new AtomicInteger(0);
+      consumer.setMessageHandler(new MessageHandler() {
+         @Override
+         public void onMessage(ClientMessage message) {
+            CoreNotificationType type = CoreNotificationType.valueOf(message.getSimpleStringProperty(ManagementHelper.HDR_NOTIFICATION_TYPE).toString());
+            SimpleString protocol = message.getSimpleStringProperty(ManagementHelper.HDR_PROTOCOL_NAME);
+            if (type == CoreNotificationType.SESSION_CREATED && protocol.equals(SimpleString.of("MQTT"))) {
+               notificationCount.incrementAndGet();
+            }
+         }
+      });
+      session.start();
 
       BlockingConnection subConnection1 = null;
       BlockingConnection subConnection2 = null;
@@ -263,6 +293,7 @@ public class MqttClusterRemoteSubscribeTest extends ClusterTestBase {
          subConnection1 = retrieveMQTTConnection("tcp://localhost:61616", subClientId);
 
          Wait.assertEquals(1, locateMQTTPM(servers[0]).getStateManager().getConnectedClients()::size);
+         Wait.assertEquals(1, () -> notificationCount.get());
 
          subConnection2 = retrieveMQTTConnection("tcp://localhost:61617", subClientId);
          pubConnection = retrieveMQTTConnection("tcp://localhost:61616", pubClientId);
