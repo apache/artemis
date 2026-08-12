@@ -188,7 +188,11 @@
          <artifactId>spring-jms</artifactId>
          <scope>test</scope>
       </dependency>
-
+      <dependency>
+         <groupId>com.hivemq</groupId>
+         <artifactId>hivemq-mqtt-client</artifactId>
+         <scope>test</scope>
+      </dependency>
    </dependencies>
 
    <build>

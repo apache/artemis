@@ -18,6 +18,7 @@ package org.apache.activemq.artemis.tests.integration.mqtt5.spec;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -27,6 +28,19 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.hivemq.client.mqtt.MqttGlobalPublishFilter;
+import com.hivemq.client.mqtt.datatypes.MqttQos;
+import com.hivemq.client.mqtt.mqtt5.Mqtt5BlockingClient;
+import com.hivemq.client.mqtt.mqtt5.Mqtt5Client;
+import com.hivemq.client.mqtt.mqtt5.Mqtt5ClientConfig;
+import com.hivemq.client.mqtt.mqtt5.advanced.interceptor.qos2.Mqtt5IncomingQos2Interceptor;
+import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish;
+import com.hivemq.client.mqtt.mqtt5.message.publish.pubcomp.Mqtt5PubCompBuilder;
+import com.hivemq.client.mqtt.mqtt5.message.publish.pubrec.Mqtt5PubRecBuilder;
+import com.hivemq.client.mqtt.mqtt5.message.publish.pubrec.Mqtt5PubRecReasonCode;
+import com.hivemq.client.mqtt.mqtt5.message.publish.pubrel.Mqtt5PubRel;
+import io.reactivex.schedulers.Schedulers;
+import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttPubAckMessage;
 import io.netty.handler.codec.mqtt.MqttPubReplyMessageVariableHeader;
@@ -38,6 +52,7 @@ import org.apache.activemq.artemis.core.protocol.mqtt.MQTTReasonCodes;
 import org.apache.activemq.artemis.core.protocol.mqtt.MQTTUtil;
 import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.tests.integration.mqtt5.MQTT5TestSupport;
+import org.apache.activemq.artemis.utils.ByteUtil;
 import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.artemis.tests.util.Wait;
 import org.eclipse.paho.mqttv5.client.MqttClient;
@@ -368,13 +383,8 @@ public class QoSTests extends MQTT5TestSupport {
 
       MQTTInterceptor incomingInterceptor = (packet, connection) -> {
          if (packet.fixedHeader().messageType() == MqttMessageType.PUBCOMP) {
-            try {
-               // ensure the message is still in the management queue before we get the PUBCOMP from the client
-               Wait.assertEquals(1L, () -> server.locateQueue(MQTTUtil.QOS2_MANAGEMENT_QUEUE_PREFIX + CONSUMER_ID).getMessageCount(), 2000, 100);
-               Wait.assertEquals(1L, () -> server.locateQueue(MQTTUtil.QOS2_MANAGEMENT_QUEUE_PREFIX + CONSUMER_ID).getDeliveringCount(), 2000, 100);
-            } catch (Exception e) {
-               return false;
-            }
+            // ensure the packet ID is stored in the PUBREC cache before we get the PUBCOMP from the client
+            assertTrue(getPubRecCache(CONSUMER_ID).contains(ByteUtil.intToBytes(packetId.get())));
 
             // ensure the ids match so we know this is the "corresponding" PUBCOMP for the previous PUBLISH
             assertEquals(packetId.get(), ((MqttPubReplyMessageVariableHeader)packet.variableHeader()).messageId());
@@ -690,5 +700,97 @@ public class QoSTests extends MQTT5TestSupport {
 
       assertTrue(ackLatch.await(messageExpiryInterval * 2, TimeUnit.SECONDS));
       Wait.assertEquals(1, () -> getSubscriptionQueue(TOPIC, CONSUMER_ID).getMessagesExpired());
+   }
+
+   /*
+    * [MQTT-4.3.3-4] In the QoS 2 delivery protocol, the sender MUST send a PUBREL packet when it receives a PUBREC
+    * packet from the receiver with a Reason Code value less than 0x80.
+    *
+    * The converse: when the broker (sender) receives a PUBREC with Reason Code >= 0x80, it MUST NOT send PUBREL.
+    * Instead, it should treat the PUBLISH as acknowledged (i.e. discard it without sending PUBREL).
+    *
+    * This test uses the HiveMQ MQTT client as the Paho client doesn't support the ability to simulate a PUBREC with
+    * a reason code greater than 0x80.
+    */
+   @Test
+   @Timeout(DEFAULT_TIMEOUT_SEC)
+   public void testQoS2PubRecError() throws Exception {
+      final String TOPIC = RandomUtil.randomUUIDString();
+      final String CONSUMER_ID = "consumer";
+      final AtomicBoolean pubRelSent = new AtomicBoolean(false);
+      final CountDownLatch pubRecReceived = new CountDownLatch(1);
+      final AtomicBoolean correlationExistedDuringDelivery = new AtomicBoolean(false);
+
+      MQTTInterceptor incomingInterceptor = (packet, connection) -> {
+         if (packet.fixedHeader().messageType() == MqttMessageType.PUBREC) {
+            pubRecReceived.countDown();
+         }
+         return true;
+      };
+
+      MQTTInterceptor outgoingInterceptor = (packet, connection) -> {
+         if (packet.fixedHeader().messageType() == MqttMessageType.PUBLISH) {
+            correlationExistedDuringDelivery.set(getProtocolManager().getStateManager().getPacketIdCorrelationSize(CONSUMER_ID) > 0);
+         }
+         if (packet.fixedHeader().messageType() == MqttMessageType.PUBREL) {
+            pubRelSent.set(true);
+         }
+         return true;
+      };
+
+      server.getRemotingService().addIncomingInterceptor(incomingInterceptor);
+      server.getRemotingService().addOutgoingInterceptor(outgoingInterceptor);
+
+      EpollEventLoopGroup hivemqEventLoop = new EpollEventLoopGroup();
+      try {
+         Mqtt5BlockingClient consumer = Mqtt5Client.builder()
+            .identifier(CONSUMER_ID)
+            .serverHost("localhost")
+            .serverPort(getPort())
+            .executorConfig()
+               .nettyExecutor(hivemqEventLoop)
+            .applyExecutorConfig()
+            .advancedConfig()
+               .interceptors()
+                  .incomingQos2Interceptor(new Mqtt5IncomingQos2Interceptor() {
+                     @Override
+                     public void onPublish(Mqtt5ClientConfig clientConfig, Mqtt5Publish publish, Mqtt5PubRecBuilder pubRecBuilder) {
+                        pubRecBuilder.reasonCode(Mqtt5PubRecReasonCode.UNSPECIFIED_ERROR);
+                     }
+
+                     @Override
+                     public void onPubRel(Mqtt5ClientConfig clientConfig, Mqtt5PubRel pubRel, Mqtt5PubCompBuilder pubCompBuilder) {
+                     }
+                  })
+               .applyInterceptors()
+            .applyAdvancedConfig()
+            .buildBlocking();
+         consumer.connect();
+         Mqtt5BlockingClient.Mqtt5Publishes publishes = consumer.publishes(MqttGlobalPublishFilter.ALL);
+         consumer.subscribeWith()
+            .topicFilter(TOPIC)
+            .qos(MqttQos.EXACTLY_ONCE)
+            .send();
+
+         MqttClient producer = createPahoClient("producer");
+         producer.connect();
+         producer.publish(TOPIC, RandomUtil.randomUUIDString().getBytes(), 2, false);
+         producer.disconnect();
+         producer.close();
+
+         assertTrue(pubRecReceived.await(5, TimeUnit.SECONDS), "PUBREC was not received by the broker");
+         assertTrue(correlationExistedDuringDelivery.get(), "Packet ID correlation should exist during delivery");
+         Wait.assertEquals(0L, () -> getSubscriptionQueue(TOPIC, CONSUMER_ID).getMessageCount(), 2000, 100);
+         Wait.assertEquals(1L, () -> getSubscriptionQueue(TOPIC, CONSUMER_ID).getMessagesAcknowledged(), 2000, 100);
+         Wait.assertEquals(0, () -> getProtocolManager().getStateManager().getPacketIdCorrelationSize(CONSUMER_ID), 2000, 100);
+         assertFalse(pubRelSent.get(), "PUBREL should not be sent in response to an error PUBREC");
+         assertNull(getPubRecCache(CONSUMER_ID));
+
+         publishes.close();
+         consumer.disconnect();
+      } finally {
+         hivemqEventLoop.shutdownGracefully(0, 0, TimeUnit.MILLISECONDS).sync();
+         Schedulers.shutdown();
+      }
    }
 }

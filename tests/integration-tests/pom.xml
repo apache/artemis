@@ -196,6 +196,11 @@
          <scope>test</scope>
       </dependency>
       <dependency>
+         <groupId>com.hivemq</groupId>
+         <artifactId>hivemq-mqtt-client</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
          <groupId>jakarta.resource</groupId>
          <artifactId>jakarta.resource-api</artifactId>
          <scope>test</scope>

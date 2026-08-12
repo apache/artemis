@@ -112,6 +112,11 @@
             <version>${paho.client.mqtt.version}</version>
          </dependency>
          <dependency>
+            <groupId>com.hivemq</groupId>
+            <artifactId>hivemq-mqtt-client</artifactId>
+            <version>${hive.client.mqtt.version}</version>
+         </dependency>
+         <dependency>
             <groupId>org.fusesource.mqtt-client</groupId>
             <artifactId>mqtt-client</artifactId>
             <version>${fuse.mqtt.client.version}</version>
