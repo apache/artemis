@@ -45,6 +45,8 @@ import io.netty.util.ReferenceCountUtil;
 import org.apache.activemq.artemis.api.core.ActiveMQSecurityException;
 import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.core.io.IOCallback;
+import org.apache.activemq.artemis.core.persistence.OperationContext;
+import org.apache.activemq.artemis.core.persistence.StorageManager;
 import org.apache.activemq.artemis.core.protocol.mqtt.exceptions.DisconnectException;
 import org.apache.activemq.artemis.core.protocol.mqtt.exceptions.InvalidClientIdException;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
@@ -91,11 +93,10 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
       this.mqttMessageActor = new Actor<>(server.getThreadPool(), this::act);
    }
 
-   void setConnection(MQTTConnection connection, ConnectionEntry entry) throws Exception {
+   void setConnection(MQTTConnection connection, ConnectionEntry entry) {
       this.connectionEntry = entry;
       this.connection = connection;
       this.session = new MQTTSession(this, connection, protocolManager, server.getConfiguration().getWildcardConfiguration(), server.newOperationContext());
-      server.getStorageManager().setContext(session.getSessionContext());
    }
 
    void stop() {
@@ -119,6 +120,15 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
          logger.debug("Disconnecting client due to message decoding failure.", message.decoderResult().cause());
          if (session.getVersion() == MQTTVersion.MQTT_5) {
             sendDisconnect(MQTTReasonCodes.MALFORMED_PACKET);
+         }
+         disconnect(true);
+         return;
+      }
+
+      if (session.getServerSession() != null && session.getServerSession().isClosed()) {
+         MQTTLogger.LOGGER.internalSessionClosed(MQTTUtil.getMessageForLogging(message, session.getVersion()), session.getState().getClientId());
+         if (session.getVersion() == MQTTVersion.MQTT_5) {
+            sendDisconnect(MQTTReasonCodes.IMPLEMENTATION_SPECIFIC_ERROR);
          }
          disconnect(true);
          return;
@@ -151,7 +161,18 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
       }
    }
 
+   private OperationContext recoverContext() {
+      OperationContext oldContext = server.getStorageManager().getContext();
+      server.getStorageManager().setContext(session.getSessionContext());
+      return oldContext;
+   }
+
+   private void resetContext(OperationContext oldContext) {
+      server.getStorageManager().setContext(oldContext);
+   }
+
    public void act(MqttMessage message) {
+      OperationContext oldContext = recoverContext();
       try {
          switch (message.fixedHeader().messageType()) {
             case AUTH:
@@ -193,13 +214,14 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
                disconnect(true);
          }
       } catch (Exception e) {
-         MQTTLogger.LOGGER.errorProcessingControlPacket(message.toString(), e);
+         MQTTLogger.LOGGER.errorProcessingPacket(session.getState().getClientId(), MQTTUtil.getMessageForLogging(message, session.getVersion()), e.getMessage(), e);
          if (session.getVersion() == MQTTVersion.MQTT_5) {
             sendDisconnect(MQTTReasonCodes.IMPLEMENTATION_SPECIFIC_ERROR);
          }
          disconnect(true);
       } finally {
          ReferenceCountUtil.release(message);
+         resetContext(oldContext);
       }
    }
 
@@ -273,8 +295,8 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
    }
 
    void disconnect(boolean error, MqttMessage disconnect) {
-      if (disconnect != null && disconnect.variableHeader() instanceof MqttReasonCodeAndPropertiesVariableHeader) {
-         Integer sessionExpiryInterval = MQTTUtil.getProperty(Integer.class, ((MqttReasonCodeAndPropertiesVariableHeader)disconnect.variableHeader()).properties(), SESSION_EXPIRY_INTERVAL, null);
+      if (disconnect != null && disconnect.variableHeader() instanceof MqttReasonCodeAndPropertiesVariableHeader variableHeader) {
+         Integer sessionExpiryInterval = MQTTUtil.getProperty(Integer.class, variableHeader.properties(), SESSION_EXPIRY_INTERVAL, null);
          if (sessionExpiryInterval != null) {
             session.getState().setClientSessionExpiryInterval(sessionExpiryInterval);
          }
@@ -318,6 +340,12 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
          return;
       }
 
+      if (message.fixedHeader().qosLevel().value() == 2 && session.getState().getPublishCache().contains(message.variableHeader().packetId())) {
+         MQTTLogger.LOGGER.ignoringQoS2Publish(message.variableHeader().packetId(), session.getState().getClientId());
+         sendPubRec(message.variableHeader().packetId(), MQTTReasonCodes.SUCCESS);
+         return;
+      }
+
       try {
          session.getMqttPublishManager().sendToQueue(message, false);
       } catch (DisconnectException e) {
@@ -332,8 +360,8 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
       sendPublishProtocolControlMessage(messageId, MqttMessageType.PUBACK, reasonCode);
    }
 
-   void sendPubRel(int messageId) {
-      sendPublishProtocolControlMessage(messageId, MqttMessageType.PUBREL);
+   void sendPubRel(int messageId, byte reasonCode) {
+      sendPublishProtocolControlMessage(messageId, MqttMessageType.PUBREL, reasonCode);
    }
 
    void sendPubRec(int messageId, byte reasonCode) {
@@ -341,11 +369,7 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
    }
 
    void sendPubComp(int messageId) {
-      sendPublishProtocolControlMessage(messageId, MqttMessageType.PUBCOMP);
-   }
-
-   void sendPublishProtocolControlMessage(int messageId, MqttMessageType messageType) {
-      sendPublishProtocolControlMessage(messageId, messageType, MQTTReasonCodes.SUCCESS);
+      sendPublishProtocolControlMessage(messageId, MqttMessageType.PUBCOMP, MQTTReasonCodes.SUCCESS);
    }
 
    void sendPublishProtocolControlMessage(int messageId, MqttMessageType messageType, byte reasonCode) {
@@ -364,19 +388,27 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
 
    void handlePuback(MqttPubAckMessage message) throws Exception {
       // ((MqttPubReplyMessageVariableHeader)message.variableHeader()).reasonCode();
-      session.getMqttPublishManager().handlePubAck(getMessageId(message));
+      session.getMqttPublishManager().handlePubAck(getPacketId(message));
    }
 
    void handlePubrec(MqttMessage message) throws Exception {
-      session.getMqttPublishManager().handlePubRec(getMessageId(message));
+      byte reasonCode = MQTTReasonCodes.SUCCESS;
+      if (message.variableHeader() instanceof MqttPubReplyMessageVariableHeader header) {
+         reasonCode = header.reasonCode();
+      }
+      if ((reasonCode & 0xFF) >= 0x80) {
+         session.getMqttPublishManager().handlePubRecError(getPacketId(message));
+      } else {
+         session.getMqttPublishManager().handlePubRec(getPacketId(message));
+      }
    }
 
-   void handlePubrel(MqttMessage message) {
-      session.getMqttPublishManager().handlePubRel(getMessageId(message));
+   void handlePubrel(MqttMessage message) throws Exception {
+      session.getMqttPublishManager().handlePubRel(getPacketId(message));
    }
 
    void handlePubcomp(MqttMessage message) throws Exception {
-      session.getMqttPublishManager().handlePubComp(getMessageId(message));
+      session.getMqttPublishManager().handlePubComp(getPacketId(message));
    }
 
    void handleSubscribe(MqttSubscribeMessage message) throws Exception {
@@ -410,19 +442,28 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
          return;
       }
       MQTTUtil.logMessage(session.getState(), message, false, session.getVersion());
-      server.getStorageManager().afterCompleteOperations(new IOCallback() {
+      runAfterStorageOperations(() -> ctx.writeAndFlush(message, ctx.voidPromise()));
+   }
+
+   void runAfterStorageOperations(Runnable runnable) {
+      StorageManager storageManager = server.getStorageManager();
+      if (storageManager == null) {
+         throw MQTTBundle.BUNDLE.storageManagerIsNull();
+      }
+      storageManager.afterCompleteOperations(new IOCallback() {
          @Override
          public void done() {
-            ctx.writeAndFlush(message, ctx.voidPromise());
+            runnable.run();
          }
 
          @Override
          public void onError(int errorCode, String errorMessage) {
+            MQTTLogger.LOGGER.storageOperationError(errorCode, errorMessage);
          }
       });
    }
 
-   private int getMessageId(MqttMessage message) {
+   private int getPacketId(MqttMessage message) {
       return ((MqttMessageIdVariableHeader) message.variableHeader()).messageId();
    }
 
@@ -528,16 +569,7 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
             session.getProtocolHandler().sendConnack(MQTTReasonCodes.NOT_AUTHORIZED_3);
          }
          // avoid a race with sending the CONNACK packet and disconnecting the client
-         server.getStorageManager().afterCompleteOperations(new IOCallback() {
-            @Override
-            public void done() {
-               disconnect(true);
-            }
-
-            @Override
-            public void onError(int errorCode, String errorMessage) {
-            }
-         });
+         runAfterStorageOperations(() -> disconnect(true));
          result = Boolean.FALSE;
       }
 

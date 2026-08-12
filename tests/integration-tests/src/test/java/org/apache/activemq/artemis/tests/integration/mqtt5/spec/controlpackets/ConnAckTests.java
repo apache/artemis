@@ -151,6 +151,17 @@ public class ConnAckTests extends MQTT5TestSupport {
       result = consumer.connectWithResult(options);
       assertTrue(result.getSessionPresent());
       assertTrue(getListOfCodes(result.getResponse().getReasonCodes()).contains(MqttReturnCode.RETURN_CODE_SUCCESS));
+      consumer.disconnect();
+
+      server.stop();
+      waitForServerToStop(server);
+      server.start();
+      waitForServerToStart(server);
+
+      result = consumer.connectWithResult(options);
+      assertTrue(result.getSessionPresent());
+      assertTrue(getListOfCodes(result.getResponse().getReasonCodes()).contains(MqttReturnCode.RETURN_CODE_SUCCESS));
+      consumer.disconnect();
    }
 
    /*

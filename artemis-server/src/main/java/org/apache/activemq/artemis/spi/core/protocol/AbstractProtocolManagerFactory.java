@@ -46,7 +46,7 @@ public abstract class AbstractProtocolManagerFactory<P extends BaseInterceptor> 
    }
 
    @Override
-   public void loadProtocolServices(ActiveMQServer server, List<ActiveMQComponent> services) {
+   public void loadProtocolServices(ActiveMQServer server, List<ActiveMQComponent> services) throws Exception {
    }
 
    @Override

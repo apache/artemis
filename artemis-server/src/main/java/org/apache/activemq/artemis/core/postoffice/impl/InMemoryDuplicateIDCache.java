@@ -77,11 +77,11 @@ final class InMemoryDuplicateIDCache implements DuplicateIDCache {
    }
 
    @Override
-   public void deleteFromCache(byte[] duplicateID) {
-      deleteFromCache(new ByteArray(duplicateID));
+   public boolean deleteFromCache(byte[] duplicateID) {
+      return deleteFromCache(new ByteArray(duplicateID));
    }
 
-   private void deleteFromCache(final ByteArray duplicateID) {
+   private boolean deleteFromCache(final ByteArray duplicateID) {
       if (logger.isTraceEnabled()) {
          logger.trace("deleting id = {}", describeID(duplicateID.bytes));
       }
@@ -102,8 +102,10 @@ final class InMemoryDuplicateIDCache implements DuplicateIDCache {
                }
             }
          }
+         return true;
       }
 
+      return false;
    }
 
    private static String describeID(byte[] duplicateID) {

@@ -205,6 +205,10 @@ public class FakePostOffice implements PostOffice {
    }
 
    @Override
+   public void deleteDuplicateCache(SimpleString address) throws Exception {
+   }
+
+   @Override
    public Collection<Binding> getMatchingBindings(final SimpleString address) {
 
       return null;
@@ -291,6 +295,11 @@ public class FakePostOffice implements PostOffice {
 
    @Override
    public void processRoute(Message message, RoutingContext context, boolean direct) throws Exception {
+   }
+
+   @Override
+   public boolean duplicateIDCacheExists(SimpleString address) {
+      return false;
    }
 
    @Override

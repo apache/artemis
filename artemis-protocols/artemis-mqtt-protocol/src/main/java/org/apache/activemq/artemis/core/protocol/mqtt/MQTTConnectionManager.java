@@ -123,10 +123,21 @@ public class MQTTConnectionManager {
          connackProperties = MqttProperties.NO_PROPERTIES;
       }
 
+      if (sessionState.getClientSessionExpiryInterval() == -1 || sessionState.getClientSessionExpiryInterval() > 0) {
+         session.getStateManager().storeDurableState(sessionState);
+      }
+
       session.getConnection().setConnected(true);
       session.getProtocolHandler().sendConnack(MQTTReasonCodes.SUCCESS, sessionPresent && !cleanStart, connackProperties);
-      // ensure we don't publish before the CONNACK
-      session.start();
+      // [MQTT-3.2.0-1] the CONNACK is sent via IO callback so the session should be started the same way to avoid a race
+      session.getProtocolHandler().runAfterStorageOperations(() -> {
+         try {
+            session.start();
+         } catch (Exception e) {
+            MQTTLogger.LOGGER.errorDisconnectingClient(e);
+            disconnect(true);
+         }
+      });
    }
 
    private MqttProperties getConnackProperties() {

@@ -513,10 +513,11 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
          props.putSimpleStringProperty(ManagementHelper.HDR_PROTOCOL_NAME, SimpleString.of(stableRemotingConnection.getProtocolName()));
          props.putSimpleStringProperty(ManagementHelper.HDR_ADDRESS, managementService.getManagementNotificationAddress());
          props.putIntProperty(ManagementHelper.HDR_DISTANCE, 0);
+         Notification notification = new Notification(null, type, props);
          try {
-            managementService.sendNotification(new Notification(null, type, props));
+            managementService.sendNotification(notification);
          } catch (Exception e) {
-            ActiveMQServerLogger.LOGGER.failedToSendNotification(e);
+            ActiveMQServerLogger.LOGGER.failedToSendNotification(notification.toString(), e.getMessage());
          }
       });
    }

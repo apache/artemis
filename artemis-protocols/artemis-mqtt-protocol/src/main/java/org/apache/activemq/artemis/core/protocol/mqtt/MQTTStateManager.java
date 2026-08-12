@@ -32,8 +32,12 @@ import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.core.filter.impl.FilterImpl;
+import org.apache.activemq.artemis.core.journal.RecordInfo;
+import org.apache.activemq.artemis.core.journal.collections.JournalHashMapProvider;
 import org.apache.activemq.artemis.core.message.impl.CoreMessage;
 import org.apache.activemq.artemis.core.persistence.StorageManager;
+import org.apache.activemq.artemis.core.persistence.impl.journal.JournalRecordIds;
+import org.apache.activemq.artemis.core.persistence.impl.journal.OperationContextImpl;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.server.Queue;
@@ -44,12 +48,13 @@ import org.slf4j.LoggerFactory;
 public class MQTTStateManager {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+   private static final Map<Integer, MQTTStateManager> INSTANCES = new HashMap<>();
    private final ActiveMQServer server;
    private final Map<String, MQTTSessionState> sessionStates = new ConcurrentHashMap<>();
-   private final Queue sessionStore;
-   private static final Map<Integer, MQTTStateManager> INSTANCES = new HashMap<>();
+   private Queue sessionStore;
    private final Map<String, MQTTConnection> connectedClients = new ConcurrentHashMap<>();
    private final boolean subscriptionPersistenceEnabled;
+   private final JournalHashMapProvider<String, PacketIdCorrelationKey, Integer, Object> journalHashMapProvider;
 
    /*
     * Even though there may be multiple instances of MQTTProtocolManager (e.g. for MQTT on different ports) we only want
@@ -73,37 +78,7 @@ public class MQTTStateManager {
    private MQTTStateManager(ActiveMQServer server) throws Exception {
       this.server = server;
       this.subscriptionPersistenceEnabled = server.getConfiguration().isMqttSubscriptionPersistenceEnabled();
-      if (subscriptionPersistenceEnabled) {
-         this.sessionStore = server.createQueue(QueueConfiguration.of(MQTTUtil.MQTT_SESSION_STORE).setRoutingType(RoutingType.ANYCAST).setLastValue(true).setDurable(true).setInternal(true).setAutoCreateAddress(true), true);
-
-         // load subscription data from queue
-         try (LinkedListIterator<MessageReference> iterator = sessionStore.browserIterator()) {
-            while (iterator.hasNext()) {
-               Message message = iterator.next().getMessage();
-               if (!(message instanceof CoreMessage)) {
-                  MQTTLogger.LOGGER.sessionStateMessageIncorrectType(message.getClass().getName());
-                  continue;
-               }
-               String clientId = message.getStringProperty(Message.HDR_LAST_VALUE_NAME);
-               if (clientId == null || clientId.isEmpty()) {
-                  MQTTLogger.LOGGER.sessionStateMessageBadClientId();
-                  continue;
-               }
-               MQTTSessionState sessionState;
-               try {
-                  sessionState = new MQTTSessionState((CoreMessage) message);
-               } catch (Exception e) {
-                  MQTTLogger.LOGGER.errorDeserializingStateMessage(e);
-                  continue;
-               }
-               sessionStates.put(clientId, sessionState);
-            }
-         } catch (NoSuchElementException ignored) {
-            // this could happen through paging browsing
-         }
-      } else {
-         this.sessionStore = null;
-      }
+      this.journalHashMapProvider = new JournalHashMapProvider<>(server.getStorageManager()::generateID, server.getStorageManager(), PacketIdCorrelationKey.getPersister(), JournalRecordIds.MQTT_PACKET_ID_CORRELATION, OperationContextImpl::getContext, null, server.getIoCriticalErrorListener());
    }
 
    public void scanSessions() {
@@ -149,9 +124,6 @@ public class MQTTStateManager {
          return null;
       }
       MQTTSessionState removed = sessionStates.remove(clientId);
-      if (removed != null && removed.getSubscriptions().size() > 0) {
-         removeDurableSubscriptionState(clientId);
-      }
       return removed;
    }
 
@@ -171,9 +143,9 @@ public class MQTTStateManager {
       return "MQTTSessionStateManager@" + Integer.toHexString(System.identityHashCode(this));
    }
 
-   public void storeDurableSubscriptionState(MQTTSessionState state) throws Exception {
+   public void storeDurableState(MQTTSessionState state) throws Exception {
       if (subscriptionPersistenceEnabled) {
-         logger.debug("Adding durable MQTT subscription record for: {}", state.getClientId());
+         logger.debug("Adding durable MQTT record for: {}", state.getClientId());
          StorageManager storageManager = server.getStorageManager();
          MQTTUtil.sendMessageDirectlyToQueue(storageManager, server.getPostOffice(), serializeState(state, storageManager.generateID()), sessionStore, null);
       }
@@ -184,7 +156,7 @@ public class MQTTStateManager {
       message.setAddress(MQTTUtil.MQTT_SESSION_STORE);
       message.setDurable(true);
       message.putStringProperty(Message.HDR_LAST_VALUE_NAME, state.getClientId());
-      Map<String, MQTTSessionState.SubscriptionItem> subscriptions = state.getSubscriptionsPlusID();
+      Map<String, SubscriptionItem> subscriptions = state.getSubscriptionsPlusID();
       ActiveMQBuffer buf = message.getBodyBuffer();
 
       /*
@@ -195,7 +167,7 @@ public class MQTTStateManager {
 
       buf.writeInt(subscriptions.size());
       logger.debug("Serializing {} subscriptions", subscriptions.size());
-      for (MQTTSessionState.SubscriptionItem item : subscriptions.values()) {
+      for (SubscriptionItem item : subscriptions.values()) {
          MqttTopicSubscription sub = item.getSubscription();
          buf.writeString(sub.topicFilter());
          buf.writeInt(sub.option().qos().value());
@@ -204,6 +176,8 @@ public class MQTTStateManager {
          buf.writeInt(sub.option().retainHandling().value());
          buf.writeNullableInt(item.getId());
       }
+
+      buf.writeInt(state.getClientSessionExpiryInterval());
 
       return message;
    }
@@ -243,5 +217,71 @@ public class MQTTStateManager {
     */
    public Map<String, MQTTConnection> getConnectedClients() {
       return connectedClients;
+   }
+
+   public void reload(RecordInfo recordInfo) {
+      if (recordInfo.userRecordType == JournalRecordIds.MQTT_PACKET_ID_CORRELATION) {
+         journalHashMapProvider.reload(recordInfo);
+      }
+   }
+
+   public void putPacketIdCorrelation(String clientId, PacketIdCorrelationKey key, Integer packetId) {
+      journalHashMapProvider.getMap(clientId).put(key, packetId);
+   }
+
+   public Integer getPacketIdCorrelation(String clientId, PacketIdCorrelationKey key) {
+      return journalHashMapProvider.getMap(clientId).get(key);
+   }
+
+   public Integer removePacketIdCorrelation(String clientId, PacketIdCorrelationKey key, long transactionId) {
+      return journalHashMapProvider.getMap(clientId).remove(key, transactionId);
+   }
+
+   public void clearPacketIdCorrelation(String clientId) {
+      journalHashMapProvider.getMap(clientId).clear();
+   }
+
+   public boolean packetIdCorrelationExists(String clientId, int packetId) {
+      return journalHashMapProvider.getMap(clientId).containsValue(packetId);
+   }
+
+   public boolean packetIdCorrelationExistsForClient(String clientId) {
+      return journalHashMapProvider.containsMap(clientId);
+   }
+
+   public int getPacketIdCorrelationSize(String clientId) {
+      return journalHashMapProvider.getMap(clientId).size();
+   }
+
+   public void init() throws Exception {
+      if (subscriptionPersistenceEnabled) {
+         this.sessionStore = server.createQueue(QueueConfiguration.of(MQTTUtil.MQTT_SESSION_STORE).setRoutingType(RoutingType.ANYCAST).setLastValue(true).setDurable(true).setInternal(true).setAutoCreateAddress(true), true);
+
+         // load subscription data from queue
+         try (LinkedListIterator<MessageReference> iterator = sessionStore.browserIterator()) {
+            while (iterator.hasNext()) {
+               Message message = iterator.next().getMessage();
+               if (!(message instanceof CoreMessage)) {
+                  MQTTLogger.LOGGER.sessionStateMessageIncorrectType(message.getClass().getName());
+                  continue;
+               }
+               String clientId = message.getStringProperty(Message.HDR_LAST_VALUE_NAME);
+               if (clientId == null || clientId.isEmpty()) {
+                  MQTTLogger.LOGGER.sessionStateMessageBadClientId();
+                  continue;
+               }
+               MQTTSessionState sessionState;
+               try {
+                  sessionState = new MQTTSessionState((CoreMessage) message);
+               } catch (Exception e) {
+                  MQTTLogger.LOGGER.errorDeserializingStateMessage(e);
+                  continue;
+               }
+               sessionStates.put(clientId, sessionState);
+            }
+         } catch (NoSuchElementException ignored) {
+            // this could happen through paging browsing
+         }
+      }
    }
 }

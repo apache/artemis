@@ -28,7 +28,7 @@ public class MQTTSessionCallback implements SessionCallback {
    private final MQTTConnection connection;
    private final int defaultMaximumInFlightPublishMessages;
 
-   public MQTTSessionCallback(MQTTSession session, MQTTConnection connection, int defaultMaximumInFlightPublishMessages) throws Exception {
+   public MQTTSessionCallback(MQTTSession session, MQTTConnection connection, int defaultMaximumInFlightPublishMessages) {
       this.session = session;
       this.connection = connection;
       this.defaultMaximumInFlightPublishMessages = defaultMaximumInFlightPublishMessages;
@@ -49,9 +49,9 @@ public class MQTTSessionCallback implements SessionCallback {
                           ServerConsumer consumer,
                           int deliveryCount) {
       try {
-         session.getMqttPublishManager().sendMessage(ref.getMessage().toCore(), consumer, deliveryCount);
+         session.getMqttPublishManager().publishToClient(ref.getMessage().toCore(), consumer);
       } catch (Exception e) {
-         MQTTLogger.LOGGER.unableToSendMessage(ref, e);
+         MQTTLogger.LOGGER.unableToSendMessage(session.getState().getClientId(), ref, e);
       }
       return 1;
    }
@@ -110,7 +110,7 @@ public class MQTTSessionCallback implements SessionCallback {
        * Therefore, enforce flow-control based on the number of pending QoS 1 & 2 messages
        */
       int maxInFlightPublishMessages = connection.getReceiveMaximum() > 0 ? connection.getReceiveMaximum() : defaultMaximumInFlightPublishMessages;
-      if (ref != null && ref.isDurable() == true && maxInFlightPublishMessages > 0 && session.getState().getOutboundStore().getSendQuota() >= maxInFlightPublishMessages) {
+      if (ref != null && ref.isDurable() == true && maxInFlightPublishMessages > 0 && session.getState().getSendQuota() >= maxInFlightPublishMessages) {
          return false;
       } else {
          return true;

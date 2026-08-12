@@ -40,7 +40,7 @@ public class MQTTConnection extends AbstractRemotingConnection {
 
    private boolean clientIdAssignedByBroker = false;
 
-   public MQTTConnection(Connection transportConnection) throws Exception {
+   public MQTTConnection(Connection transportConnection) {
       super(transportConnection, null);
       this.destroyed = false;
    }

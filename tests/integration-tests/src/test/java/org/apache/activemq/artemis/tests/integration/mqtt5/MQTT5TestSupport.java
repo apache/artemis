@@ -37,7 +37,9 @@ import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
+import org.apache.activemq.artemis.core.postoffice.DuplicateIDCache;
 import org.apache.activemq.artemis.core.protocol.mqtt.MQTTInterceptor;
+import org.apache.activemq.artemis.core.protocol.mqtt.PacketIdCache;
 import org.apache.activemq.artemis.core.protocol.mqtt.MQTTProtocolManager;
 import org.apache.activemq.artemis.core.protocol.mqtt.MQTTSessionState;
 import org.apache.activemq.artemis.core.protocol.mqtt.MQTTUtil;
@@ -55,6 +57,11 @@ import org.apache.activemq.artemis.spi.core.remoting.Acceptor;
 import org.apache.activemq.artemis.spi.core.security.ActiveMQJAASSecurityManager;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.utils.ClassloadingUtil;
+import org.apache.activemq.artemis.utils.Wait;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.eclipse.paho.mqttv5.client.IMqttToken;
 import org.eclipse.paho.mqttv5.client.MqttAsyncClient;
 import org.eclipse.paho.mqttv5.client.MqttCallback;
@@ -73,6 +80,14 @@ import static java.util.Collections.singletonList;
 import static org.apache.activemq.artemis.core.protocol.mqtt.MQTTProtocolManagerFactory.MQTT_PROTOCOL_NAME;
 
 public class MQTT5TestSupport extends ActiveMQTestBase {
+
+   // The Paho MQTT client logging adds noise during QoS2 operations
+   private static final java.util.logging.Logger PAHO_LOGGER;
+   static {
+      PAHO_LOGGER = java.util.logging.Logger.getLogger("org.eclipse.paho.mqttv5.client.internal.ClientState");
+      PAHO_LOGGER.setLevel(java.util.logging.Level.WARNING);
+   }
+
    protected static final String TCP = "tcp";
    protected static final String WS = "ws";
    protected static final String SSL = "ssl";
@@ -158,13 +173,34 @@ public class MQTT5TestSupport extends ActiveMQTestBase {
       exceptions.clear();
       startBroker();
       createJMSConnection();
+      if (isProtocolLoggingEnabled()) {
+         enableProtocolLogging();
+      }
    }
 
    @Override
    @AfterEach
    public void tearDown() throws Exception {
       stopBroker();
+      if (isProtocolLoggingEnabled()) {
+         disableProtocolLogging();
+      }
       super.tearDown();
+   }
+
+   public void enableProtocolLogging() {
+      LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+      org.apache.logging.log4j.core.config.Configuration config = ctx.getConfiguration();
+      LoggerConfig loggerConfig = new LoggerConfig(MQTTUtil.class.getName(), Level.TRACE, true);
+      config.addLogger(MQTTUtil.class.getName(), loggerConfig);
+      ctx.updateLoggers();
+   }
+
+   public void disableProtocolLogging() {
+      LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+      org.apache.logging.log4j.core.config.Configuration config = ctx.getConfiguration();
+      config.removeLogger(MQTTUtil.class.getName());
+      ctx.updateLoggers();
    }
 
    public void configureBroker() throws Exception {
@@ -305,6 +341,10 @@ public class MQTT5TestSupport extends ActiveMQTestBase {
       return false;
    }
 
+   public boolean isProtocolLoggingEnabled() {
+      return false;
+   }
+
    protected interface Task {
 
       void run() throws Exception;
@@ -349,6 +389,46 @@ public class MQTT5TestSupport extends ActiveMQTestBase {
    protected void setAcceptorProperty(String property) throws Exception {
       server.getRemotingService().getAcceptor(MQTT_PROTOCOL_NAME).stop();
       server.getRemotingService().createAcceptor(MQTT_PROTOCOL_NAME, "tcp://localhost:" + port + "?protocols=MQTT;" + property).start();
+   }
+
+   protected DuplicateIDCache getPubCache(String clientId) {
+      return getCache(clientId, PacketIdCache.TYPE.PUBLISH);
+   }
+
+   protected int getPubCacheSize(String clientId) {
+      return getCacheSize(getPubCache(clientId));
+   }
+
+   protected DuplicateIDCache getPubRecCache(String clientId) {
+      return getCache(clientId, PacketIdCache.TYPE.PUBREC);
+   }
+
+   protected int getPubRecCacheSize(String clientId) {
+      return getCacheSize(getPubRecCache(clientId));
+   }
+
+   private int getCacheSize(DuplicateIDCache cache) {
+      return cache == null ? 0 : cache.getMap().size();
+   }
+
+   private DuplicateIDCache getCache(String clientId, PacketIdCache.TYPE type) {
+      SimpleString cacheName = PacketIdCache.getCacheName(server.getInternalNamingPrefix(), clientId, type);
+      if (server.getPostOffice().duplicateIDCacheExists(cacheName)) {
+         return server.getPostOffice().getDuplicateIDCache(cacheName);
+      } else {
+         return null;
+      }
+   }
+
+   protected static void reconnectSafely(MqttClient subscriber) throws Exception {
+      Wait.waitFor(() -> {
+         try {
+            subscriber.reconnect();
+            return true;
+         } catch (MqttException e) {
+            return false;
+         }
+      });
    }
 
    /*

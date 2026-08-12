@@ -33,17 +33,12 @@ import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttTopicSubscription;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
-import org.apache.activemq.artemis.api.core.ActiveMQIllegalStateException;
 import org.apache.activemq.artemis.api.core.ActiveMQSecurityException;
 import org.apache.activemq.artemis.api.core.ICoreMessage;
 import org.apache.activemq.artemis.api.core.Message;
-import org.apache.activemq.artemis.api.core.Pair;
-import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
-import org.apache.activemq.artemis.core.io.IOCallback;
 import org.apache.activemq.artemis.core.protocol.mqtt.exceptions.DisconnectException;
-import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.ServerConsumer;
 import org.apache.activemq.artemis.core.server.ServerProducer;
 import org.apache.activemq.artemis.core.server.impl.AddressInfo;
@@ -68,7 +63,6 @@ import static org.apache.activemq.artemis.core.protocol.mqtt.MQTTUtil.MQTT_PAYLO
 import static org.apache.activemq.artemis.core.protocol.mqtt.MQTTUtil.MQTT_RESPONSE_TOPIC_KEY;
 import static org.apache.activemq.artemis.core.protocol.mqtt.MQTTUtil.MQTT_USER_PROPERTY_EXISTS_KEY;
 import static org.apache.activemq.artemis.core.protocol.mqtt.MQTTUtil.MQTT_USER_PROPERTY_KEY_PREFIX_SIMPLE;
-import static org.apache.activemq.artemis.core.protocol.mqtt.MQTTUtil.createServerMessage;
 
 /**
  * Handles MQTT Exactly Once (QoS level 2) Protocol.
@@ -77,23 +71,13 @@ public class MQTTPublishManager {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-   private SimpleString qos2ManagementAddress;
-
-   private Queue qos2ManagementQueue;
-
    private final String senderName = UUIDGenerator.getInstance().generateUUID().toString();
 
    private boolean createProducer = true;
 
-   private ServerConsumer qos2ManagementConsumer;
-
    private final MQTTSession session;
 
    private final Object lock = new Object();
-
-   private MQTTSessionState state;
-
-   private MQTTSessionState.OutboundStore outboundStore;
 
    private boolean closeMqttConnectionOnPublishAuthorizationFailure;
 
@@ -102,58 +86,56 @@ public class MQTTPublishManager {
       this.closeMqttConnectionOnPublishAuthorizationFailure = closeMqttConnectionOnPublishAuthorizationFailure;
    }
 
-   synchronized void start() {
-      this.state = session.getState();
-      this.outboundStore = state.getOutboundStore();
-   }
-
-   synchronized void stop() throws Exception {
+   void stop() throws Exception {
       ServerSessionImpl serversession = session.getServerSession();
       if (serversession != null) {
          serversession.removeProducer(serversession.getName());
       }
-      if (qos2ManagementConsumer != null) {
-         qos2ManagementConsumer.removeItself();
-         qos2ManagementConsumer.setStarted(false);
-         qos2ManagementConsumer.close(false);
-      }
-   }
-
-   void clean() throws Exception {
-      if (qos2ManagementQueue != null) {
-         qos2ManagementQueue.deleteQueue();
-      }
-   }
-
-   boolean isQos2ManagementConsumer(ServerConsumer consumer) {
-      return consumer == qos2ManagementConsumer;
    }
 
    /**
-    * Since MQTT Subscriptions can overlap, a client may receive the same message twice. When this happens the client
-    * returns a PubRec or PubAck with ID.  But we need to know which consumer to ack, since we only have the ID to go on
-    * we are not able to decide which consumer to ack. Instead we send MQTT messages with different IDs and store a
-    * reference to original ID and consumer in the Session state. This way we can look up the consumer Id and the
-    * message Id from the PubAck or PubRec message id.
+    * Delivers a message to the MQTT client at the appropriate QoS level. For QoS 1 and 2, each delivery is tracked by a
+    * journal-persisted {@link PacketIdCorrelationKey} that pairs the core message ID and subscription address to an
+    * MQTT packet ID. This ensures the same packet ID is reused when a message is redelivered after a broker restart, as
+    * required by the MQTT specification. The address component of the key allows overlapping subscriptions to receive
+    * the same message with distinct packet IDs.
+    * <p>
+    * A {@link CoreDeliveryInfo} is also stored in-memory for each in-flight packet ID, mapping it back to the consumer
+    * ID and correlation key so the correct consumer can be acknowledged when the client responds with PUBACK or
+    * PUBCOMP.
     */
-   protected void sendMessage(ICoreMessage message, ServerConsumer consumer, int deliveryCount) throws Exception {
-      // This is to allow retries of PubRel.
-      if (isQos2ManagementConsumer(consumer)) {
-         sendPubRelMessage(message);
-      } else {
-         int qos = decideQoS(message, consumer);
-         if (qos == 0) {
-            if (publishToClient((int) message.getMessageID(), message, deliveryCount, qos, consumer.getID())) {
-               session.getServerSession().individualAcknowledge(consumer.getID(), message.getMessageID());
-            }
-         } else if (qos == 1 || qos == 2) {
-            int mqttid = outboundStore.generateMqttId(message.getMessageID(), consumer.getID());
-            outboundStore.publish(mqttid, message.getMessageID(), consumer.getID());
-            publishToClient(mqttid, message, deliveryCount, qos, consumer.getID());
-         } else {
-            // Client must have disconnected and it's Subscription QoS cleared
-            consumer.individualCancel(message.getMessageID(), false);
+   protected void publishToClient(ICoreMessage message, ServerConsumer consumer) throws Exception {
+      MQTTSessionState state = session.getState();
+      int qos = decideQoS(message, consumer);
+      if (qos == 0) {
+         // [MQTT-2.2.1-2] Hard-code the packet ID to 0 as QoS0 PUBLISH packets don't have a packet ID
+         // [MQTT-3.3.1-2] The DUP flag MUST be set to 0 for all QoS 0 messages.
+         if (publishToClient(0, message, false, qos)) {
+            consumer.individualAcknowledge(null, message.getMessageID());
          }
+      } else if (qos == 1 || qos == 2) {
+         Integer existingPacketId;
+         final int packetIdToUse;
+         boolean redelivery = false;
+         synchronized (this) {
+            PacketIdCorrelationKey correlationKey = PacketIdCorrelationKey.of(message.getMessageID(), message.getAddressSimpleString());
+            existingPacketId = session.getStateManager().getPacketIdCorrelation(state.getClientId(), correlationKey);
+            if (existingPacketId != null && !state.coreDeliveryInfoExists(existingPacketId)) {
+               // re-delivery after reconnect or restart; reuse persisted packet ID
+               packetIdToUse = existingPacketId;
+               redelivery = true;
+            } else {
+               // first delivery, or same message via a different subscription
+               packetIdToUse = state.generatePacketId();
+               session.getStateManager().putPacketIdCorrelation(state.getClientId(), correlationKey, packetIdToUse);
+            }
+            state.putCoreDeliveryInfo(packetIdToUse, CoreDeliveryInfo.of(consumer.getID(), correlationKey));
+            state.incrementSendQuota();
+         }
+         publishToClient(packetIdToUse, message, redelivery, qos);
+      } else {
+         // Client must have disconnected and it's Subscription QoS cleared
+         consumer.individualCancel(message.getMessageID(), false);
       }
    }
 
@@ -205,77 +187,81 @@ public class MQTTPublishManager {
          if (qos > 0) {
             serverMessage.setDurable(MQTTUtil.DURABLE_MESSAGES);
          }
-         int packetId = message.variableHeader().packetId();
-         boolean qos2PublishAlreadyReceived = state.getPubRec().contains(packetId);
-         if (qos < 2 || !qos2PublishAlreadyReceived) {
-            Transaction tx = session.getServerSession().newTransaction();
-            try {
-               AddressInfo addressInfo = session.getServer().getAddressInfo(address);
-               if (addressInfo == null && session.getServer().getAddressSettingsRepository().getMatch(coreAddress).isAutoCreateAddresses()) {
-                  session.getServerSession().createAddress(address, RoutingType.MULTICAST, true);
-                  serverMessage.setRoutingType(RoutingType.MULTICAST);
-               }
-               if (addressInfo != null) {
-                  serverMessage.setRoutingType(addressInfo.getRoutingType());
-               }
-               session.getServerSession().send(tx, serverMessage, true, senderName, false);
 
-               if (qos == 2 && !internal) {
-                  state.getPubRec().add(packetId);
-               }
+         // only start a transction if really necessary
+         Transaction tx = (qos == 2 && !internal) || message.fixedHeader().isRetain() ? session.getServerSession().newTransaction() : null;
 
-               if (message.fixedHeader().isRetain()) {
-                  ByteBuf payload = message.payload();
-                  boolean reset = payload instanceof EmptyByteBuf || payload.capacity() == 0;
-                  session.getRetainMessageManager().handleRetainedMessage(serverMessage, topic, reset, tx);
-               }
-               tx.commit();
-            } catch (ActiveMQSecurityException e) {
-               tx.rollback();
-               if (internal) {
-                  throw e;
-               }
-               if (session.getVersion() == MQTTVersion.MQTT_5) {
-                  sendMessageAck(internal, qos, packetId, MQTTReasonCodes.NOT_AUTHORIZED);
-                  return;
-               } else if (session.getVersion() == MQTTVersion.MQTT_3_1_1) {
-                  /*
-                   * For MQTT 3.1.1 clients:
-                   *
-                   * [MQTT-3.3.5-2] If a Server implementation does not authorize a PUBLISH to be performed by a Client;
-                   * it has no way of informing that Client. It MUST either make a positive acknowledgement, according
-                   * to the normal QoS rules, or close the Network Connection
-                   *
-                   * Throwing an exception here will ultimately close the connection. This is the default behavior.
-                   */
-                  if (closeMqttConnectionOnPublishAuthorizationFailure) {
-                     throw new DisconnectException();
-                  } else {
-                     logger.debug("MQTT 3.1.1 client not authorized to publish message.");
-                  }
-               } else {
-                  /*
-                   * For MQTT 3.1 clients:
-                   *
-                   * Note that if a server implementation does not authorize a PUBLISH to be made by a client, it has no
-                   * way of informing that client. It must therefore make a positive acknowledgement, according to the
-                   * normal QoS rules, and the client will *not* be informed that it was not authorized to publish the
-                   * message.
-                   *
-                   * Log the failure since we have to just swallow it.
-                   */
-                  logger.debug("MQTT 3.1 client not authorized to publish message.");
-               }
-            } catch (Throwable t) {
-               MQTTLogger.LOGGER.failedToPublishMqttMessage(t.getMessage(), t);
-               tx.rollback();
-               throw t;
+         try {
+            AddressInfo addressInfo = session.getServer().getAddressInfo(address);
+            if (addressInfo == null && session.getServer().getAddressSettingsRepository().getMatch(coreAddress).isAutoCreateAddresses()) {
+               session.getServerSession().createAddress(address, RoutingType.MULTICAST, true);
+               serverMessage.setRoutingType(RoutingType.MULTICAST);
             }
-         } else if (qos2PublishAlreadyReceived) {
-            MQTTLogger.LOGGER.ignoringQoS2Publish(state.getClientId(), packetId);
+            if (addressInfo != null) {
+               serverMessage.setRoutingType(addressInfo.getRoutingType());
+            }
+
+            session.getServerSession().send(tx, serverMessage, true, senderName, false);
+
+            if (qos == 2 && !internal) {
+               session.getState().getPublishCache().add(message.variableHeader().packetId(), tx);
+            }
+
+            if (message.fixedHeader().isRetain()) {
+               ByteBuf payload = message.payload();
+               boolean reset = payload instanceof EmptyByteBuf || payload.capacity() == 0;
+               session.getRetainMessageManager().handleRetainedMessage(serverMessage, topic, reset, tx);
+            }
+            if (tx != null) {
+               tx.commit();
+            }
+         } catch (ActiveMQSecurityException e) {
+            if (tx != null) {
+               tx.rollback();
+            }
+            if (internal) {
+               throw e;
+            }
+            if (session.getVersion() == MQTTVersion.MQTT_5) {
+               sendMessageAck(internal, qos, message.variableHeader().packetId(), MQTTReasonCodes.NOT_AUTHORIZED);
+               return;
+            } else if (session.getVersion() == MQTTVersion.MQTT_3_1_1) {
+               /*
+                * For MQTT 3.1.1 clients:
+                *
+                * [MQTT-3.3.5-2] If a Server implementation does not authorize a PUBLISH to be performed by a Client;
+                * it has no way of informing that Client. It MUST either make a positive acknowledgement, according
+                * to the normal QoS rules, or close the Network Connection
+                *
+                * Throwing an exception here will ultimately close the connection. This is the default behavior.
+                */
+               if (closeMqttConnectionOnPublishAuthorizationFailure) {
+                  throw new DisconnectException();
+               } else {
+                  logger.debug("MQTT 3.1.1 client not authorized to publish message.");
+               }
+            } else {
+               /*
+                * For MQTT 3.1 clients:
+                *
+                * Note that if a server implementation does not authorize a PUBLISH to be made by a client, it has no
+                * way of informing that client. It must therefore make a positive acknowledgement, according to the
+                * normal QoS rules, and the client will *not* be informed that it was not authorized to publish the
+                * message.
+                *
+                * Log the failure since we have to just swallow it.
+                */
+               logger.debug("MQTT 3.1 client not authorized to publish message.");
+            }
+         } catch (Throwable t) {
+            MQTTLogger.LOGGER.failedToPublishMqttMessage(session.getState().getClientId(), message.variableHeader().packetId(), t.getMessage(), t);
+            if (tx != null) {
+               tx.rollback();
+            }
+            throw t;
          }
 
-         createMessageAck(packetId, qos, internal);
+         session.getProtocolHandler().runAfterStorageOperations(() -> sendMessageAck(internal, qos, message.variableHeader().packetId(), MQTTReasonCodes.SUCCESS));
       }
    }
 
@@ -289,52 +275,17 @@ public class MQTTPublishManager {
       }
    }
 
-   void sendPubRelMessage(Message message) {
-      int messageId = message.getIntProperty(MQTTUtil.MQTT_MESSAGE_ID_KEY);
-      session.getState().getOutboundStore().publishReleasedSent(messageId, message.getMessageID());
-      session.getProtocolHandler().sendPubRel(messageId);
+   synchronized void handlePubRecError(int packetId) throws Exception {
+      acknowledgeDelivery(packetId, false);
    }
 
-   void handlePubRec(int messageId) throws Exception {
-      try {
-         Pair<Long, Long> ref = outboundStore.publishReceived(messageId);
-         if (ref != null) {
-            initQos2Resources();
-            MQTTUtil.sendMessageDirectlyToQueue(session.getServer().getStorageManager(), session.getServer().getPostOffice(), createPubRelMessage(session, messageId), qos2ManagementQueue, null);
-            session.getServerSession().individualAcknowledge(ref.getB(), ref.getA());
-            releaseFlowControl(ref.getB());
-         } else {
-            session.getProtocolHandler().sendPubRel(messageId);
-         }
-      } catch (ActiveMQIllegalStateException e) {
-         MQTTLogger.LOGGER.failedToAckMessage(session.getState().getClientId(), e);
+   synchronized void handlePubRec(int packetId) throws Exception {
+      MQTTSessionState state = session.getState();
+      if (state.getPubRecCache().contains(packetId)) {
+         sendAcknowledgementReply(packetId, MQTTReasonCodes.SUCCESS, true);
+      } else {
+         acknowledgeDelivery(packetId, true);
       }
-   }
-
-   /*
-    * Only create these resources if we actually need them (i.e. we're sending a message to a subscriber via QoS 2)
-    */
-   private void initQos2Resources() throws Exception {
-      if (qos2ManagementAddress == null) {
-         qos2ManagementAddress = SimpleString.of(MQTTUtil.QOS2_MANAGEMENT_QUEUE_PREFIX + session.getState().getClientId());
-      }
-      if (qos2ManagementQueue == null) {
-         qos2ManagementQueue = session.getServer().createQueue(QueueConfiguration.of(qos2ManagementAddress)
-                                                                  .setRoutingType(RoutingType.ANYCAST)
-                                                                  .setDurable(MQTTUtil.DURABLE_MESSAGES),
-                                                               true);
-         qos2ManagementConsumer = session.getServerSession().createInternalConsumer(qos2ManagementAddress);
-         qos2ManagementConsumer.setStarted(true);
-      }
-   }
-
-   private Message createPubRelMessage(MQTTSession session, int messageId) {
-      MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBREL, false, MqttQoS.AT_LEAST_ONCE, false, 0);
-      MqttPublishMessage publishMessage = new MqttPublishMessage(fixedHeader, null, null);
-      Message message = createServerMessage(session, qos2ManagementAddress, publishMessage)
-         .putIntProperty(MQTTUtil.MQTT_MESSAGE_ID_KEY, messageId)
-         .putIntProperty(MQTTUtil.MQTT_MESSAGE_TYPE_KEY, MqttMessageType.PUBREL.value());
-      return message;
    }
 
    /**
@@ -347,76 +298,105 @@ public class MQTTPublishManager {
       }
    }
 
-   void handlePubComp(int messageId) throws Exception {
-      Pair<Long, Long> ref = session.getState().getOutboundStore().publishComplete(messageId);
-      if (ref != null) {
-         // ack the message via the internal server session to bypass security.
-         session.getServerSession().individualAcknowledge(qos2ManagementConsumer.getID(), ref.getA());
+   synchronized void handlePubComp(int packetId) throws Exception {
+      session.getState().getPubRecCache().remove(packetId);
+   }
+
+   synchronized void handlePubRel(int packetId) throws Exception {
+      boolean deleted = session.getState().getPublishCache().remove(packetId);
+      if (!deleted) {
+         logger.debug("MQTT client {} sent PUBREL for packet {} but no corresponding PUBLISH was found in the cache", session.getState().getClientId(), packetId);
       }
+      session.getProtocolHandler().sendPubComp(packetId);
    }
 
-   private void createMessageAck(final int messageId, final int qos, final boolean internal) {
-      session.getServer().getStorageManager().afterCompleteOperations(new IOCallback() {
-         @Override
-         public void done() {
-            sendMessageAck(internal, qos, messageId, MQTTReasonCodes.SUCCESS);
-         }
-
-         @Override
-         public void onError(int errorCode, String errorMessage) {
-            logger.error("Pub Sync Failed");
-         }
-      });
+   synchronized void handlePubAck(int packetId) throws Exception {
+      acknowledgeDelivery(packetId, false);
    }
 
-   void handlePubRel(int messageId) {
-      // We don't check to see if a PubRel existed for this message.  We assume it did and so send PubComp.
-      state.getPubRec().remove(messageId);
-      session.getProtocolHandler().sendPubComp(messageId);
-      state.removeMessageRef(messageId);
-   }
-
-   void handlePubAck(int messageId) throws Exception {
+   /**
+    * Acknowledges an outbound QoS 1 or QoS 2 delivery when the client confirms receipt.
+    * <p>
+    * For <b>QoS 1</b> no reply is sent since the flow is complete.
+    * <p>
+    * For <b>QoS 2</b> the packet ID is recorded in the PUBREC cache and a PUBREL is sent to continue the handshake. It
+    * is also called when the client's PUBREC carries an error reason code, in which case the delivery is simply cleaned
+    * up with no reply.
+    * <p>
+    * The Core message acknowledgement, packet ID correlation removal, and (for QoS 2) PUBREC cache insertion are
+    * performed atomically in a single transaction.
+    *
+    * @param packetId    the MQTT packet identifier for the in-flight delivery
+    * @param needsPubRel {@code true} to record the PUBREC and reply with PUBREL (QoS 2 normal path); {@code false} to
+    *                    acknowledge silently (QoS 1 or QoS 2 error path)
+    */
+   private void acknowledgeDelivery(int packetId, boolean needsPubRel) throws Exception {
+      MQTTSessionState state = session.getState();
+      Transaction tx = null;
       try {
-         Pair<Long, Long> ref = outboundStore.publishAckd(messageId);
-         if (ref != null) {
-            session.getServerSession().individualAcknowledge(ref.getB(), ref.getA());
-            releaseFlowControl(ref.getB());
+         CoreDeliveryInfo delivery = state.getCoreDeliveryInfo(packetId);
+         if (delivery != null) {
+            ServerConsumer consumer = session.getServerSession().locateConsumer(delivery.getConsumerId());
+            if (consumer == null) {
+               MQTTLogger.LOGGER.failedToAckMessageConsumerNotFound(state.getClientId(), packetId, delivery.getConsumerId(), session.getServerSession().isClosed() ? "closed" : "not closed");
+               sendAcknowledgementReply(packetId, MQTTReasonCodes.PACKET_IDENTIFIER_NOT_FOUND, needsPubRel);
+               return;
+            }
+            tx = session.getServerSession().newTransaction();
+            if (needsPubRel) {
+               state.getPubRecCache().add(packetId, tx);
+            }
+            session.getStateManager().removePacketIdCorrelation(state.getClientId(), delivery.getPacketIdCorrelationKey(), tx.getID());
+            consumer.individualAcknowledge(tx, delivery.getCoreMessageId());
+            tx.commit();
+            state.removeCoreDeliveryInfo(packetId);
+            state.decrementSendQuota();
+            releaseFlowControl(delivery.getConsumerId());
+            sendAcknowledgementReply(packetId, MQTTReasonCodes.SUCCESS, needsPubRel);
+         } else {
+            sendAcknowledgementReply(packetId, MQTTReasonCodes.PACKET_IDENTIFIER_NOT_FOUND, needsPubRel);
          }
-      } catch (ActiveMQIllegalStateException e) {
-         logger.warn("MQTT Client({}) attempted to Ack already Ack'd message", session.getState().getClientId());
+      } catch (Exception e) {
+         if (tx != null) {
+            tx.rollback();
+         }
+         MQTTLogger.LOGGER.failedToAckMessage(state.getClientId(), e.getMessage());
+         sendAcknowledgementReply(packetId, MQTTReasonCodes.PACKET_IDENTIFIER_NOT_FOUND, needsPubRel);
       }
    }
 
-   private boolean publishToClient(int messageId, ICoreMessage message, int deliveryCount, int qos, long consumerId) throws Exception {
-      String topic = MQTTUtil.getMqttTopicFromCoreAddress(Objects.requireNonNullElse(message.getAddress(), ""), session.getWildcardConfiguration());
+   private void sendAcknowledgementReply(int packetId, byte reasonCode, boolean needsPubRel) throws Exception {
+      if (needsPubRel) {
+         session.getProtocolHandler().sendPubRel(packetId, reasonCode);
+      }
+   }
+
+   private boolean publishToClient(int packetId, ICoreMessage coreMessage, boolean redelivery, int qos) throws Exception {
+      String topic = MQTTUtil.getMqttTopicFromCoreAddress(Objects.requireNonNullElse(coreMessage.getAddress(), ""), session.getWildcardConfiguration());
 
       ByteBuf payload;
-      switch (message.getType()) {
+      switch (coreMessage.getType()) {
          case Message.TEXT_TYPE:
-            SimpleString text = message.getDataBuffer().readNullableSimpleString();
+            SimpleString text = coreMessage.getDataBuffer().readNullableSimpleString();
             final int utf8Bytes = ByteBufUtil.utf8Bytes(text);
             payload = ByteBufAllocator.DEFAULT.directBuffer(utf8Bytes);
             // IMPORTANT: this one won't enlarge ByteBuf by ByteBufUtil.maxUtf8Bytes(text), but just utf8Bytes
             ByteBufUtil.reserveAndWriteUtf8(payload, text, utf8Bytes);
             break;
          default:
-            ActiveMQBuffer bodyBuffer = message.getDataBuffer();
+            ActiveMQBuffer bodyBuffer = coreMessage.getDataBuffer();
             payload = ByteBufAllocator.DEFAULT.directBuffer(bodyBuffer.writerIndex());
             payload.writeBytes(bodyBuffer.byteBuf());
             break;
       }
 
-      // [MQTT-3.3.1-2] The DUP flag MUST be set to 0 for all QoS 0 messages.
-      boolean redelivery = qos == 0 ? false : (deliveryCount > 1);
-
-      boolean isRetain = message.containsProperty(MQTT_MESSAGE_RETAIN_INITIAL_DISTRIBUTION_KEY);
+      boolean isRetain = coreMessage.containsProperty(MQTT_MESSAGE_RETAIN_INITIAL_DISTRIBUTION_KEY);
       MqttProperties mqttProperties = null;
 
       if (session.getVersion() == MQTTVersion.MQTT_5) {
-         mqttProperties = getPublishProperties(message);
-         if (!isRetain && message.getBooleanProperty(MQTT_MESSAGE_RETAIN_KEY)) {
-            MqttTopicSubscription sub = session.getState().getSubscription(topic);
+         mqttProperties = getPublishProperties(coreMessage);
+         if (!isRetain && coreMessage.getBooleanProperty(MQTT_MESSAGE_RETAIN_KEY)) {
+            MqttTopicSubscription sub = session.getState().getSubscriptionItem(topic).getSubscription();
             if (sub != null && sub.option().isRetainAsPublished()) {
                isRetain = true;
             }
@@ -437,8 +417,8 @@ public class MQTTPublishManager {
       }
 
       int remainingLength = MQTTUtil.calculateRemainingLength(topic, mqttProperties, payload);
-      MqttFixedHeader header = new MqttFixedHeader(MqttMessageType.PUBLISH, redelivery, MqttQoS.valueOf(qos), isRetain, remainingLength);
-      MqttPublishVariableHeader varHeader = new MqttPublishVariableHeader(topic, messageId, mqttProperties);
+      MqttFixedHeader header = new MqttFixedHeader(MqttMessageType.PUBLISH, qos == 0 ? false : redelivery, MqttQoS.valueOf(qos), isRetain, remainingLength);
+      MqttPublishVariableHeader varHeader = new MqttPublishVariableHeader(topic, packetId, mqttProperties);
       MqttPublishMessage publish = new MqttPublishMessage(header, varHeader, payload);
 
       int maxSize = session.getState().getClientMaxPacketSize();
@@ -449,8 +429,12 @@ public class MQTTPublishManager {
              * [MQTT-3.1.2-25] Where a Packet is too large to send, the Server MUST discard it without sending it and then
              * behave as if it had completed sending that Application Message
              */
-            logger.debug("Not sending message {} to client as its size ({}) exceeds the max ({})", message, size, maxSize);
-            session.getServerSession().individualAcknowledge(consumerId, message.getMessageID());
+            logger.debug("Not sending message {} to client as its size ({}) exceeds the max ({})", coreMessage, size, maxSize);
+            if (qos == 0) {
+               return true;
+            } else if (qos == 1 || qos == 2) {
+               acknowledgeDelivery(packetId, false);
+            }
             return false;
          }
       }

@@ -74,9 +74,9 @@ public class MQTTUtil {
 
    public static final boolean DURABLE_MESSAGES = true;
 
-   public static final boolean SESSION_AUTO_COMMIT_SENDS = true;
+   public static final boolean SESSION_AUTO_COMMIT_SENDS = false;
 
-   public static final boolean SESSION_AUTO_COMMIT_ACKS = true;
+   public static final boolean SESSION_AUTO_COMMIT_ACKS = false;
 
    public static final boolean SESSION_PREACKNOWLEDGE = false;
 
@@ -98,10 +98,6 @@ public class MQTTUtil {
 
    public static final SimpleString MQTT_QOS_LEVEL_KEY = SimpleString.of("mqtt.qos.level");
 
-   public static final SimpleString MQTT_MESSAGE_ID_KEY = SimpleString.of("mqtt.message.id");
-
-   public static final SimpleString MQTT_MESSAGE_TYPE_KEY = SimpleString.of("mqtt.message.type");
-
    public static final SimpleString MQTT_MESSAGE_RETAIN_KEY = SimpleString.of("mqtt.message.retain");
 
    public static final SimpleString MQTT_MESSAGE_RETAIN_INITIAL_DISTRIBUTION_KEY = SimpleString.of("mqtt.message.retain.initial.distribution");
@@ -119,8 +115,6 @@ public class MQTTUtil {
    public static final SimpleString MQTT_USER_PROPERTY_KEY_PREFIX_SIMPLE = SimpleString.of(MQTT_USER_PROPERTY_KEY_PREFIX);
 
    public static final SimpleString MQTT_CONTENT_TYPE_KEY = SimpleString.of("mqtt.content.type");
-
-   public static final String QOS2_MANAGEMENT_QUEUE_PREFIX = DOLLAR + "sys.mqtt.queue.qos2.";
 
    public static final String SHARED_SUBSCRIPTION_PREFIX = DOLLAR + "share/";
 
@@ -303,118 +297,130 @@ public class MQTTUtil {
             log.append("): OUT >> ");
          }
 
-         if (message.fixedHeader() != null) {
-            log.append(message.fixedHeader().messageType().toString());
+         String messageForLogging = getMessageForLogging(message, version);
 
-            if (message.variableHeader() instanceof MqttMessageIdVariableHeader) {
-               log.append("(" + ((MqttMessageIdVariableHeader) message.variableHeader()).messageId() + ")");
-            }
-
-            switch (message.fixedHeader().messageType()) {
-               case PUBLISH:
-                  MqttPublishVariableHeader publishHeader = (MqttPublishVariableHeader) message.variableHeader();
-                  String topicName = publishHeader.topicName();
-                  if (topicName == null || topicName.isEmpty()) {
-                     topicName = "<empty>";
-                  }
-                  log.append("(" + publishHeader.packetId() + ")")
-                     .append(" topic=" + topicName)
-                     .append(", qos=" + message.fixedHeader().qosLevel().value())
-                     .append(", retain=" + message.fixedHeader().isRetain())
-                     .append(", dup=" + message.fixedHeader().isDup())
-                     .append(", remainingLength=" + message.fixedHeader().remainingLength());
-                  for (MqttProperties.MqttProperty property : ((MqttPublishMessage)message).variableHeader().properties().listAll()) {
-                     Object value = property.value();
-                     if (value != null) {
-                        if (value instanceof byte[] bytes) {
-                           value = new String(bytes, StandardCharsets.UTF_8);
-                        } else if (value instanceof ArrayList<?> list && !list.isEmpty() && list.get(0) instanceof MqttProperties.StringPair) {
-                           StringBuilder userProperties = new StringBuilder();
-                           userProperties.append("[");
-                           for (MqttProperties.StringPair pair : (ArrayList<MqttProperties.StringPair>) value) {
-                              userProperties.append(pair.key).append(": ").append(pair.value).append(", ");
-                           }
-                           userProperties.delete(userProperties.length() - 2, userProperties.length());
-                           userProperties.append("]");
-                           value = userProperties.toString();
-                        }
-                     }
-                     log.append(", " + formatCase(MqttPropertyType.valueOf(property.propertyId()).name()) + "=" + value);
-                  }
-                  log.append(", payload=" + getPayloadForLogging((MqttPublishMessage) message, 256));
-                  break;
-               case CONNECT:
-                  // intentionally omit the username & password from the log
-                  MqttConnectVariableHeader connectHeader = (MqttConnectVariableHeader) message.variableHeader();
-                  MqttConnectPayload payload = ((MqttConnectMessage)message).payload();
-                  log.append(" protocol=(").append(connectHeader.name()).append(", ").append(connectHeader.version()).append(")")
-                     .append(", hasPassword=").append(connectHeader.hasPassword())
-                     .append(", isCleanStart=").append(connectHeader.isCleanSession())
-                     .append(", keepAliveTimeSeconds=").append(connectHeader.keepAliveTimeSeconds())
-                     .append(", clientIdentifier=").append(payload.clientIdentifier())
-                     .append(", hasUserName=").append(connectHeader.hasUserName())
-                     .append(", isWillFlag=").append(connectHeader.isWillFlag());
-                  if (connectHeader.isWillFlag()) {
-                     log.append(", willQos=").append(connectHeader.willQos())
-                        .append(", isWillRetain=").append(connectHeader.isWillRetain())
-                        .append(", willTopic=").append(payload.willTopic());
-                  }
-                  for (MqttProperties.MqttProperty property : connectHeader.properties().listAll()) {
-                     log.append(", " + formatCase(MqttPropertyType.valueOf(property.propertyId()).name()) + "=" + property.value());
-                  }
-                  break;
-               case CONNACK:
-                  MqttConnAckVariableHeader connackHeader = (MqttConnAckVariableHeader) message.variableHeader();
-                  log.append(" connectReasonCode=").append(formatByte(connackHeader.connectReturnCode().byteValue()))
-                     .append(", sessionPresent=").append(connackHeader.isSessionPresent());
-                  for (MqttProperties.MqttProperty property : connackHeader.properties().listAll()) {
-                     log.append(", " + formatCase(MqttPropertyType.valueOf(property.propertyId()).name()) + "=" + property.value());
-                  }
-                  break;
-               case SUBSCRIBE:
-                  for (MqttTopicSubscription sub : ((MqttSubscribeMessage) message).payload().topicSubscriptions()) {
-                     log.append("\n\ttopic: ").append(sub.topicName())
-                        .append(", qos: ").append(sub.qualityOfService())
-                        .append(", nolocal: ").append(sub.option().isNoLocal())
-                        .append(", retainHandling: ").append(sub.option().retainHandling())
-                        .append(", isRetainAsPublished: ").append(sub.option().isRetainAsPublished());
-                  }
-                  break;
-               case SUBACK:
-                  for (Integer qos : ((MqttSubAckMessage) message).payload().grantedQoSLevels()) {
-                     log.append("\n\t" + qos);
-                  }
-                  break;
-               case UNSUBSCRIBE:
-                  for (String topic : ((MqttUnsubscribeMessage) message).payload().topics()) {
-                     log.append("\n\t" + topic);
-                  }
-                  break;
-               case PUBACK:
-                  break;
-               case PUBREC:
-               case PUBREL:
-               case PUBCOMP:
-                  if (version == MQTTVersion.MQTT_5) {
-                     MqttPubReplyMessageVariableHeader pubReplyVariableHeader = (MqttPubReplyMessageVariableHeader) message.variableHeader();
-                     log.append(" reasonCode=").append(formatByte(pubReplyVariableHeader.reasonCode()));
-                  }
-                  break;
-               case DISCONNECT:
-                  if (version == MQTTVersion.MQTT_5) {
-                     MqttReasonCodeAndPropertiesVariableHeader disconnectVariableHeader = (MqttReasonCodeAndPropertiesVariableHeader) message.variableHeader();
-                     log.append(" reasonCode=").append(formatByte(disconnectVariableHeader.reasonCode()));
-                  }
-                  break;
-            }
-
-            logger.trace(log.toString());
+         if (messageForLogging != null) {
+            logger.trace(log.append(messageForLogging).toString());
          }
       }
    }
 
+   public static String getMessageForLogging(MqttMessage message, MQTTVersion version) {
+      String result = null;
+
+      if (message.fixedHeader() != null) {
+         StringBuilder log = new StringBuilder();
+         log.append(message.fixedHeader().messageType().toString());
+
+         if (message.variableHeader() instanceof MqttMessageIdVariableHeader) {
+            log.append("(" + ((MqttMessageIdVariableHeader) message.variableHeader()).messageId() + ")");
+         }
+
+         switch (message.fixedHeader().messageType()) {
+            case PUBLISH:
+               MqttPublishVariableHeader publishHeader = (MqttPublishVariableHeader) message.variableHeader();
+               String topicName = publishHeader.topicName();
+               if (topicName == null || topicName.isEmpty()) {
+                  topicName = "<empty>";
+               }
+               log.append("(" + publishHeader.packetId() + ")")
+                  .append(" topic=" + topicName)
+                  .append(", qos=" + message.fixedHeader().qosLevel().value())
+                  .append(", retain=" + message.fixedHeader().isRetain())
+                  .append(", dup=" + message.fixedHeader().isDup())
+                  .append(", remainingLength=" + message.fixedHeader().remainingLength());
+               for (MqttProperties.MqttProperty property : ((MqttPublishMessage) message).variableHeader().properties().listAll()) {
+                  Object value = property.value();
+                  if (value != null) {
+                     if (value instanceof byte[] bytes) {
+                        value = new String(bytes, StandardCharsets.UTF_8);
+                     } else if (value instanceof ArrayList<?> list && !list.isEmpty() && list.get(0) instanceof MqttProperties.StringPair) {
+                        StringBuilder userProperties = new StringBuilder();
+                        userProperties.append("[");
+                        for (MqttProperties.StringPair pair : (ArrayList<MqttProperties.StringPair>) value) {
+                           userProperties.append(pair.key).append(": ").append(pair.value).append(", ");
+                        }
+                        userProperties.delete(userProperties.length() - 2, userProperties.length());
+                        userProperties.append("]");
+                        value = userProperties.toString();
+                     }
+                  }
+                  log.append(", " + formatCase(MqttPropertyType.valueOf(property.propertyId()).name()) + "=" + value);
+               }
+               log.append(", payload=" + getPayloadForLogging((MqttPublishMessage) message, 256));
+               break;
+            case CONNECT:
+               // intentionally omit the username & password from the log
+               MqttConnectVariableHeader connectHeader = (MqttConnectVariableHeader) message.variableHeader();
+               MqttConnectPayload payload = ((MqttConnectMessage) message).payload();
+               log.append(" protocol=(").append(connectHeader.name()).append(", ").append(connectHeader.version()).append(")")
+                  .append(", hasPassword=").append(connectHeader.hasPassword())
+                  .append(", isCleanStart=").append(connectHeader.isCleanSession())
+                  .append(", keepAliveTimeSeconds=").append(connectHeader.keepAliveTimeSeconds())
+                  .append(", clientIdentifier=").append(payload.clientIdentifier())
+                  .append(", hasUserName=").append(connectHeader.hasUserName())
+                  .append(", isWillFlag=").append(connectHeader.isWillFlag());
+               if (connectHeader.isWillFlag()) {
+                  log.append(", willQos=").append(connectHeader.willQos())
+                     .append(", isWillRetain=").append(connectHeader.isWillRetain())
+                     .append(", willTopic=").append(payload.willTopic());
+               }
+               for (MqttProperties.MqttProperty property : connectHeader.properties().listAll()) {
+                  log.append(", " + formatCase(MqttPropertyType.valueOf(property.propertyId()).name()) + "=" + property.value());
+               }
+               break;
+            case CONNACK:
+               MqttConnAckVariableHeader connackHeader = (MqttConnAckVariableHeader) message.variableHeader();
+               log.append(" connectReasonCode=").append(formatByte(connackHeader.connectReturnCode().byteValue()))
+                  .append(", sessionPresent=").append(connackHeader.isSessionPresent());
+               for (MqttProperties.MqttProperty property : connackHeader.properties().listAll()) {
+                  log.append(", " + formatCase(MqttPropertyType.valueOf(property.propertyId()).name()) + "=" + property.value());
+               }
+               break;
+            case SUBSCRIBE:
+               for (MqttTopicSubscription sub : ((MqttSubscribeMessage) message).payload().topicSubscriptions()) {
+                  log.append("\n\ttopic: ").append(sub.topicName())
+                     .append(", qos: ").append(sub.qualityOfService())
+                     .append(", nolocal: ").append(sub.option().isNoLocal())
+                     .append(", retainHandling: ").append(sub.option().retainHandling())
+                     .append(", isRetainAsPublished: ").append(sub.option().isRetainAsPublished());
+               }
+               break;
+            case SUBACK:
+               for (Integer qos : ((MqttSubAckMessage) message).payload().grantedQoSLevels()) {
+                  log.append("\n\t" + qos);
+               }
+               break;
+            case UNSUBSCRIBE:
+               for (String topic : ((MqttUnsubscribeMessage) message).payload().topics()) {
+                  log.append("\n\t" + topic);
+               }
+               break;
+            case PUBACK:
+               break;
+            case PUBREC:
+            case PUBREL:
+            case PUBCOMP:
+               if (version == MQTTVersion.MQTT_5) {
+                  MqttPubReplyMessageVariableHeader pubReplyVariableHeader = (MqttPubReplyMessageVariableHeader) message.variableHeader();
+                  log.append(" reasonCode=").append(formatByte(pubReplyVariableHeader.reasonCode()));
+               }
+               break;
+            case DISCONNECT:
+               if (version == MQTTVersion.MQTT_5) {
+                  MqttReasonCodeAndPropertiesVariableHeader disconnectVariableHeader = (MqttReasonCodeAndPropertiesVariableHeader) message.variableHeader();
+                  log.append(" reasonCode=").append(formatByte(disconnectVariableHeader.reasonCode()));
+               }
+               break;
+         }
+         result = log.toString();
+      }
+
+      return result;
+   }
+
    private static String formatByte(byte bite) {
-      return String.format("0x%02X ", bite);
+      return String.format("0x%02X", bite);
    }
 
    private static String formatCase(String string) {

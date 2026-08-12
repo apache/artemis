@@ -3711,7 +3711,11 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
    private void startProtocolServices() throws Exception {
       for (ProtocolManagerFactory protocolManagerFactory : protocolManagerFactories) {
-         protocolManagerFactory.loadProtocolServices(this, protocolServices);
+         try {
+            protocolManagerFactory.loadProtocolServices(this, protocolServices);
+         } catch (Exception e) {
+            logger.warn("Unable to load protocol services for: {}", protocolManagerFactory.getProtocols(), e);
+         }
       }
 
       for (ActiveMQComponent protocolComponent : protocolServices) {

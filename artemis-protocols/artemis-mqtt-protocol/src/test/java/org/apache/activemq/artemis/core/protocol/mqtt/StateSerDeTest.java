@@ -44,17 +44,17 @@ public class StateSerDeTest {
                                                                                              RandomUtil.randomBoolean(),
                                                                                              RandomUtil.randomBoolean(),
                                                                                              MqttSubscriptionOption.RetainedHandlingPolicy.valueOf(RandomUtil.randomInterval(0, 3))));
-            unserialized.addSubscription(sub, MQTTUtil.MQTT_WILDCARD, subscriptionIdentifier);
+            unserialized.addSubscription(SubscriptionItem.of(sub, subscriptionIdentifier));
          }
 
          CoreMessage serializedState = MQTTStateManager.serializeState(unserialized, 0);
          MQTTSessionState deserialized = new MQTTSessionState(serializedState);
 
          assertEquals(unserialized.getClientId(), deserialized.getClientId());
-         for (MQTTSessionState.SubscriptionItem unserializedItem : unserialized.getSubscriptionsPlusID().values()) {
+         for (SubscriptionItem unserializedItem : unserialized.getSubscriptionsPlusID().values()) {
             MqttTopicSubscription unserializedSub = unserializedItem.getSubscription();
             Integer unserializedSubId = unserializedItem.getId();
-            MQTTSessionState.SubscriptionItem deserializedEntry = deserialized.getSubscriptionPlusID(unserializedSub.topicFilter());
+            SubscriptionItem deserializedEntry = deserialized.getSubscriptionItem(unserializedSub.topicFilter());
             MqttTopicSubscription deserializedSub = deserializedEntry.getSubscription();
             Integer deserializedSubId = deserializedEntry.getId();
 

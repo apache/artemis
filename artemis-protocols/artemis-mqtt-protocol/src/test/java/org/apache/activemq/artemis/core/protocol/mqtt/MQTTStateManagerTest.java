@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.activemq.artemis.core.config.Configuration;
+import org.apache.activemq.artemis.core.persistence.StorageManager;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -43,8 +44,10 @@ public class MQTTStateManagerTest {
    public void testGetSessionStateNeverReturnsNullUnderConcurrentRemoval() throws Exception {
       final ActiveMQServer server = mock(ActiveMQServer.class);
       final Configuration configuration = mock(Configuration.class);
+      final StorageManager storageManager = mock(StorageManager.class);
       when(server.getConfiguration()).thenReturn(configuration);
       when(configuration.isMqttSubscriptionPersistenceEnabled()).thenReturn(false);
+      when(server.getStorageManager()).thenReturn(storageManager);
 
       final MQTTStateManager manager = MQTTStateManager.getInstance(server);
       try {

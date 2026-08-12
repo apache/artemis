@@ -28,6 +28,18 @@ https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&versio
 * Due to https://issues.apache.org/jira/browse/ARTEMIS-6128[ARTEMIS-6128] the `Alder32` and `fileAlder32` properties have been deprecated in favor of `Adler32` and `fileAdler32` respectively.
 * Due to https://issues.apache.org/jira/browse/ARTEMIS-6172[ARTEMIS-6172] the HTTP-specific transport parameters deprecated by https://issues.apache.org/jira/browse/ARTEMIS-5819[ARTEMIS-5819] (`httpClientIdleTime`, `httpClientIdleScanPeriod`, `httpResponseTime`, `httpServerScanPeriod`) are restored.
 These are required so HTTP-tunneled Core connections can create response slots for server-initiated packets (for example cluster topology updates) without starving replies to client requests.
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-6189[ARTEMIS-6189] MQTT QoS 1 and QoS 2 message delivery has been redesigned for resiliency across broker restarts and client reconnects.
+Additional persistent state is now tracked via duplicate ID caches (named `mqtt.qos.publish.<clientId>` and `mqtt.qos.pubrec.<clientId>`) and packet ID correlation records.
+These are internal implementation details, but they will be visible in data tool output.
++
+The per-client internal management queues previously used for QoS 2 PUBREL persistence (named `$sys.mqtt.queue.qos2.<clientId>`) are no longer used.
+It is recommended to allow all in-flight QoS 1 and QoS 2 flows to complete before upgrading so that QoS flow state information is not orphaned in the existing management queues.
+Manual clean-up of these queues may be required after upgrading.
++
+Due to the additional persistent state there will be a performance impact.
+Of course, this is a traditional trade-off for increased reliability.
+The exact impact will depend on your specific use-case.
+Generally speaking, the recommendation is to use the lowest QoS possible to avoid unnecessary overhead.
 
 == Version 2.55.0
 

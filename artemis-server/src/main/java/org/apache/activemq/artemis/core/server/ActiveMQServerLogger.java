@@ -882,8 +882,8 @@ public interface ActiveMQServerLogger {
    @LogMessage(id = 222229, value = "Failed to perform rollback", level = LogMessage.Level.WARN)
    void failedToPerformRollback(IllegalStateException e);
 
-   @LogMessage(id = 222230, value = "Failed to send notification", level = LogMessage.Level.WARN)
-   void failedToSendNotification(Exception e);
+   @LogMessage(id = 222230, value = "Failed to send notification: {}; Exception message: {}", level = LogMessage.Level.WARN)
+   void failedToSendNotification(String notification, String exceptionMessage);
 
    @LogMessage(id = 222231, value = "Failed to flush outstanding data from the connection", level = LogMessage.Level.WARN)
    void failedToFlushOutstandingDataFromTheConnection(Throwable e);
@@ -1550,4 +1550,10 @@ public interface ActiveMQServerLogger {
 
    @LogMessage(id = 224164, value = "Failed to recover stored configuration for divert named '{}': {}. To repair this record create a new divert with the same name via the management API.", level = LogMessage.Level.WARN)
    void failedToRecoverStoredDivertConfiguration(String divertName, String divert);
+
+   @LogMessage(id = 224165, value = "Server is stopping. Unable to process redelivery during rollback; ref: {}; transaction: {}; exception message: {}", level = LogMessage.Level.WARN)
+   void unableToProcessRedeliveryDuringRollback(String messageRef, String transaction, String exceptionMessage);
+
+   @LogMessage(id = 224166, value = "Server is stopping. Unable to delete unreferenced message with id={}.", level = LogMessage.Level.WARN)
+   void unableToDeleteMessageDuringShutdown(long messageId);
 }

@@ -33,4 +33,7 @@ public interface MQTTBundle {
 
    @Message(id = 850001, value = "Unable to generate MQTT packet ID. All valid values between 1 and 65535 are in use. IDs will become available as messages are acknowledged by the client that has received them.")
    IllegalStateException unableToGenerateID();
+
+   @Message(id = 850002, value = "StorageManager is null")
+   IllegalStateException storageManagerIsNull();
 }

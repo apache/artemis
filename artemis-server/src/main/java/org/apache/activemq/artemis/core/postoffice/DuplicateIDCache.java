@@ -39,7 +39,7 @@ public interface DuplicateIDCache {
     */
    void addToCache(byte[] duplicateID, Transaction tx, boolean instantAdd) throws Exception;
 
-   void deleteFromCache(byte[] duplicateID) throws Exception;
+   boolean deleteFromCache(byte[] duplicateID) throws Exception;
 
    void load(List<Pair<byte[], Long>> ids) throws Exception;
 

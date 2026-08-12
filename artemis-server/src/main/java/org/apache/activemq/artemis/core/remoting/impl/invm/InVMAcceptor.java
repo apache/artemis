@@ -180,7 +180,7 @@ public final class InVMAcceptor extends AbstractAcceptor {
          try {
             notificationService.sendNotification(notification);
          } catch (Exception e) {
-            ActiveMQServerLogger.LOGGER.failedToSendNotification(e);
+            ActiveMQServerLogger.LOGGER.failedToSendNotification(notification.toString(), e.getMessage());
          }
       }
    }

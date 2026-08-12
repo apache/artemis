@@ -191,9 +191,13 @@ public interface PostOffice extends ActiveMQComponent {
 
    void processRoute(Message message, RoutingContext context, boolean direct) throws Exception;
 
+   boolean duplicateIDCacheExists(SimpleString address);
+
    DuplicateIDCache getDuplicateIDCache(SimpleString address);
 
    DuplicateIDCache getDuplicateIDCache(SimpleString address, int idCacheSize);
+
+   void deleteDuplicateCache(SimpleString address) throws Exception;
 
    void sendQueueInfoToQueue(SimpleString queueName, SimpleString address) throws Exception;
 

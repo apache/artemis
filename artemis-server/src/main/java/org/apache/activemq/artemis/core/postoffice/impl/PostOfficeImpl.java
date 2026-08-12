@@ -1051,7 +1051,8 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       }
    }
 
-   private void deleteDuplicateCache(SimpleString address) throws Exception {
+   @Override
+   public void deleteDuplicateCache(SimpleString address) throws Exception {
       DuplicateIDCache cache = duplicateIDCaches.remove(address);
 
       if (cache != null) {
@@ -1474,6 +1475,11 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
    private int resolveIdCacheSize(SimpleString address) {
       return Objects.requireNonNullElse(addressSettingsRepository.getMatch(address.toString()).getIDCacheSize(), idCacheSize);
+   }
+
+   @Override
+   public boolean duplicateIDCacheExists(final SimpleString address) {
+      return duplicateIDCaches.containsKey(address);
    }
 
    @Override

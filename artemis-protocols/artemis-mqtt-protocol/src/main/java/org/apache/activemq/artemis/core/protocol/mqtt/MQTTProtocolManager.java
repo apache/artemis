@@ -29,6 +29,7 @@ import io.netty.handler.codec.mqtt.MqttEncoder;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.BaseInterceptor;
+import org.apache.activemq.artemis.api.core.FilterConstants;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.management.CoreNotificationType;
 import org.apache.activemq.artemis.api.core.management.ManagementHelper;
@@ -76,6 +77,10 @@ public class MQTTProtocolManager extends AbstractProtocolManager<MqttMessage, MQ
 
    private final MQTTRoutingHandler routingHandler;
 
+   private final SimpleString messageFilter;
+
+   private final SimpleString messageFilterNoDollar;
+
    private MQTTStateManager sessionStateManager;
 
    MQTTProtocolManager(ActiveMQServer server,
@@ -84,8 +89,14 @@ public class MQTTProtocolManager extends AbstractProtocolManager<MqttMessage, MQ
       this.server = server;
       this.updateInterceptors(incomingInterceptors, outgoingInterceptors);
       server.getManagementService().addNotificationListener(this);
+
+      StringBuilder baseFilter = getBaseFilter(server);
+      this.messageFilter = getMessageFilter(baseFilter);
+      this.messageFilterNoDollar = getMessageFilterNoDollar(baseFilter);
+
       routingHandler = new MQTTRoutingHandler(server);
       sessionStateManager = MQTTStateManager.getInstance(server);
+      sessionStateManager.init();
       server.registerActivateCallback(new CleaningActivateCallback() {
          @Override
          public void deActivate() {
@@ -93,6 +104,30 @@ public class MQTTProtocolManager extends AbstractProtocolManager<MqttMessage, MQ
             sessionStateManager = null;
          }
       });
+   }
+
+   static StringBuilder getBaseFilter(ActiveMQServer server) {
+      StringBuilder baseFilter = new StringBuilder();
+      baseFilter.append("NOT (");
+      baseFilter.append("(").append(FilterConstants.ACTIVEMQ_ADDRESS).append(" = '").append(server.getConfiguration().getManagementAddress()).append("')");
+      baseFilter.append(" OR ");
+      baseFilter.append("(").append(FilterConstants.ACTIVEMQ_ADDRESS).append(" = '").append(server.getConfiguration().getManagementNotificationAddress()).append("')");
+      return baseFilter;
+   }
+
+   static SimpleString getMessageFilter(StringBuilder baseFilter) {
+      StringBuilder messageFilter = new StringBuilder(baseFilter);
+      messageFilter.append(")");
+      return SimpleString.of(messageFilter.toString());
+   }
+
+   static SimpleString getMessageFilterNoDollar(StringBuilder baseFilter) {
+      // [MQTT-4.7.2-1]
+      StringBuilder messageFilterNoDollar = new StringBuilder(baseFilter);
+      messageFilterNoDollar.append(" OR ");
+      messageFilterNoDollar.append("(").append(FilterConstants.ACTIVEMQ_ADDRESS).append(" LIKE '").append(MQTTUtil.DOLLAR).append("%')");
+      messageFilterNoDollar.append(")");
+      return SimpleString.of(messageFilterNoDollar.toString());
    }
 
    public int getDefaultMqttSessionExpiryInterval() {
@@ -120,6 +155,14 @@ public class MQTTProtocolManager extends AbstractProtocolManager<MqttMessage, MQ
    public MQTTProtocolManager setReceiveMaximum(int receiveMaximum) {
       this.receiveMaximum = receiveMaximum;
       return this;
+   }
+
+   public SimpleString getMessageFilter() {
+      return messageFilter;
+   }
+
+   public SimpleString getMessageFilterNoDollar() {
+      return messageFilterNoDollar;
    }
 
    public int getMaximumPacketSize() {
@@ -216,23 +259,18 @@ public class MQTTProtocolManager extends AbstractProtocolManager<MqttMessage, MQ
 
    @Override
    public ConnectionEntry createConnectionEntry(Acceptor acceptorUsed, Connection connection) {
-      try {
-         MQTTConnection mqttConnection = new MQTTConnection(connection);
-         /*
-          * We must adjust the keep-alive because MQTT communicates keep-alive values in *seconds*, but the broker uses
-          * *milliseconds*. Also, the connection keep-alive is effectively "one and a half times" the configured
-          * keep-alive value. See [MQTT-3.1.2-22].
-          */
-         ConnectionEntry entry = new ConnectionEntry(mqttConnection, null, System.currentTimeMillis(), getServerKeepAlive() == -1 || getServerKeepAlive() == 0 ? -1 : getServerKeepAlive() * MQTTUtil.KEEP_ALIVE_ADJUSTMENT);
+      MQTTConnection mqttConnection = new MQTTConnection(connection);
+      /*
+       * We must adjust the keep-alive because MQTT communicates keep-alive values in *seconds*, but the broker uses
+       * *milliseconds*. Also, the connection keep-alive is effectively "one and a half times" the configured
+       * keep-alive value. See [MQTT-3.1.2-22].
+       */
+      ConnectionEntry entry = new ConnectionEntry(mqttConnection, null, System.currentTimeMillis(), getServerKeepAlive() == -1 || getServerKeepAlive() == 0 ? -1 : getServerKeepAlive() * MQTTUtil.KEEP_ALIVE_ADJUSTMENT);
 
-         NettyServerConnection nettyConnection = ((NettyServerConnection) connection);
-         MQTTProtocolHandler protocolHandler = nettyConnection.getChannel().pipeline().get(MQTTProtocolHandler.class);
-         protocolHandler.setConnection(mqttConnection, entry);
-         return entry;
-      } catch (Exception e) {
-         logger.error("Error creating connection entry", e);
-         return null;
-      }
+      NettyServerConnection nettyConnection = ((NettyServerConnection) connection);
+      MQTTProtocolHandler protocolHandler = nettyConnection.getChannel().pipeline().get(MQTTProtocolHandler.class);
+      protocolHandler.setConnection(mqttConnection, entry);
+      return entry;
    }
 
    @Override
@@ -336,6 +374,9 @@ public class MQTTProtocolManager extends AbstractProtocolManager<MqttMessage, MQ
    }
 
    public MQTTStateManager getStateManager() {
+      if (sessionStateManager == null) {
+         throw new IllegalStateException("Broker has been deactivated");
+      }
       return sessionStateManager;
    }
 }

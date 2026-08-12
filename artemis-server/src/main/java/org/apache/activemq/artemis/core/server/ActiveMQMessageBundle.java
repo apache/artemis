@@ -130,7 +130,7 @@ public interface ActiveMQMessageBundle {
    @Message(id = 229026, value = "Backup Server was not yet in sync with live")
    ActiveMQIllegalStateException backupServerNotInSync();
 
-   @Message(id = 229027, value = "Could not find reference on consumer ID={}, messageId = {} queue = {}")
+   @Message(id = 229027, value = "Could not find reference on consumerId = {}, messageId = {} queue = {}")
    ActiveMQIllegalStateException consumerNoReference(Long id, Long messageID, SimpleString name);
 
    @Message(id = 229028, value = "Consumer {} doesn't exist on the server")

@@ -105,4 +105,6 @@ public final class JournalRecordIds {
    public static final byte ADDRESS_SETTING_RECORD_JSON = 52;
 
    public static final byte ACK_RETRY = 53;
+
+   public static final byte MQTT_PACKET_ID_CORRELATION = 54;
 }

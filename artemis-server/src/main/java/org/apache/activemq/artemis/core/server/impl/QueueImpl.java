@@ -49,6 +49,7 @@ import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.ActiveMQNullRefException;
 import org.apache.activemq.artemis.api.core.ActiveMQQueueExistsException;
+import org.apache.activemq.artemis.api.core.ActiveMQShutdownException;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
@@ -4021,6 +4022,8 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
                // There is a startup check to remove non referenced messages case these deletes fail
                try {
                   storageManager.deleteMessage(message.getMessageID());
+               } catch (ActiveMQShutdownException e) {
+                  ActiveMQServerLogger.LOGGER.unableToDeleteMessageDuringShutdown(message.getMessageID());
                } catch (Exception e) {
                   ActiveMQServerLogger.LOGGER.cannotFindMessageOnJournal(message.getMessageID(), e);
                }

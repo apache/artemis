@@ -145,11 +145,11 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
    }
 
    @Override
-   public void deleteFromCache(byte[] duplicateID) throws Exception {
-      deleteFromCache(new ByteArray(duplicateID));
+   public boolean deleteFromCache(byte[] duplicateID) throws Exception {
+      return deleteFromCache(new ByteArray(duplicateID));
    }
 
-   private void deleteFromCache(final ByteArray duplicateID) throws Exception {
+   private boolean deleteFromCache(final ByteArray duplicateID) throws Exception {
       if (logger.isTraceEnabled()) {
          logger.trace("deleting id = {}", describeID(duplicateID.bytes));
       }
@@ -170,8 +170,10 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
                storageManager.deleteDuplicateID(recordID);
             }
          }
+         return true;
       }
 
+      return false;
    }
 
    private static String describeID(byte[] duplicateID) {
@@ -322,15 +324,19 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
       logger.debug("address = {} removing duplicate ID data", address);
       final int idsSize = ids.size();
       if (idsSize > 0) {
+         boolean deleted = false;
          long tx = storageManager.generateID();
          for (int i = 0; i < idsSize; i++) {
             final ObjLongPair<ByteArray> id = ids.get(i);
             if (id.getA() != null) {
                assert id.getB() != NIL;
                storageManager.deleteDuplicateIDTransactional(tx, id.getB());
+               deleted = true;
             }
          }
-         storageManager.commit(tx);
+         if (deleted) {
+            storageManager.commit(tx);
+         }
       }
 
       ids.clear();

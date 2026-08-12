@@ -30,8 +30,8 @@ public class MQTTSessionStateTest {
    public void testGenerateMqttIdOrder() {
       MQTTSessionState mqttSessionState = new MQTTSessionState(RandomUtil.randomUUIDString());
       for (int i = 1; i <= MQTTUtil.TWO_BYTE_INT_MAX; i++) {
-         assertEquals(i, mqttSessionState.getOutboundStore().generateMqttId(RandomUtil.randomLong(), RandomUtil.randomLong()));
-         mqttSessionState.getOutboundStore().publish(i, RandomUtil.randomLong(), RandomUtil.randomLong());
+         assertEquals(i, mqttSessionState.generatePacketId());
+         mqttSessionState.putCoreDeliveryInfo(i, CoreDeliveryInfo.of(RandomUtil.randomLong(), PacketIdCorrelationKey.of(RandomUtil.randomLong(), RandomUtil.randomUUIDSimpleString())));
       }
    }
 
@@ -41,11 +41,11 @@ public class MQTTSessionStateTest {
       for (int i = 0; i < 10_000; i++) {
          int random = RandomUtil.randomInterval(1, MQTTUtil.TWO_BYTE_INT_MAX);
          // acknowledge a random ID
-         mqttSessionState.getOutboundStore().publishAckd(random);
+         mqttSessionState.removeCoreDeliveryInfo(random);
          // the ID that was acked is now the only one available so ensure generator finds it
-         assertEquals(random, mqttSessionState.getOutboundStore().generateMqttId(RandomUtil.randomLong(), RandomUtil.randomLong()));
+         assertEquals(random, mqttSessionState.generatePacketId());
          // "publish" a new message with the ID to ensure the store is full for the next loop
-         mqttSessionState.getOutboundStore().publish(random, RandomUtil.randomLong(), RandomUtil.randomLong());
+         mqttSessionState.putCoreDeliveryInfo(random, CoreDeliveryInfo.of(RandomUtil.randomLong(), PacketIdCorrelationKey.of(RandomUtil.randomLong(), RandomUtil.randomUUIDSimpleString())));
       }
    }
 
@@ -53,13 +53,13 @@ public class MQTTSessionStateTest {
    public void testGenerateMqttIdExhausted() {
       MQTTSessionState mqttSessionState = createMqttSessionStateWithFullOutboundStore();
       // ensure we throw an exception when we try generate a new ID once the store is full
-      assertThrows(IllegalStateException.class, () -> mqttSessionState.getOutboundStore().generateMqttId(RandomUtil.randomLong(), RandomUtil.randomLong()));
+      assertThrows(IllegalStateException.class, () -> mqttSessionState.generatePacketId());
    }
 
    private static MQTTSessionState createMqttSessionStateWithFullOutboundStore() {
       MQTTSessionState mqttSessionState = new MQTTSessionState(RandomUtil.randomUUIDString());
       for (int i = 1; i <= MQTTUtil.TWO_BYTE_INT_MAX; i++) {
-         mqttSessionState.getOutboundStore().publish(i, RandomUtil.randomLong(), RandomUtil.randomLong());
+         mqttSessionState.putCoreDeliveryInfo(i, CoreDeliveryInfo.of(RandomUtil.randomLong(), PacketIdCorrelationKey.of(RandomUtil.randomLong(), RandomUtil.randomUUIDSimpleString())));
       }
       return mqttSessionState;
    }

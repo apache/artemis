@@ -66,7 +66,8 @@ public class MQTTProtocolManagerFactory extends AbstractProtocolManagerFactory<M
    }
 
    @Override
-   public void loadProtocolServices(ActiveMQServer server, List<ActiveMQComponent> services) {
+   public void loadProtocolServices(ActiveMQServer server, List<ActiveMQComponent> services) throws Exception {
+      server.registerRecordsLoader(MQTTStateManager.getInstance(server)::reload);
       services.add(new MQTTPeriodicTasks(server, server.getScheduledPool()));
    }
 

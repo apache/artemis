@@ -62,7 +62,6 @@ import org.apache.activemq.artemis.core.postoffice.Binding;
 import org.apache.activemq.artemis.core.postoffice.QueueBinding;
 import org.apache.activemq.artemis.core.protocol.mqtt.MQTTUtil;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
-import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.impl.AddressInfo;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.json.JsonArray;
@@ -99,7 +98,6 @@ public class MQTTTest extends MQTTTestSupport {
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private static final String AMQP_URI = "tcp://localhost:61616";
-
 
    @Override
    public void configureBroker() throws Exception {
@@ -317,30 +315,6 @@ public class MQTTTest extends MQTTTestSupport {
          assertNotNull(message, "Should get a message");
          assertEquals(payload, new String(message));
       }
-      provider.disconnect();
-   }
-
-   @Test
-   @Timeout(120)
-   public void testManagementQueueMessagesAreAckd() throws Exception {
-      String clientId = "test.client.id";
-      final MQTTClientProvider provider = getMQTTClientProvider();
-      provider.setClientId(clientId);
-      initializeConnection(provider);
-      provider.subscribe("foo", EXACTLY_ONCE);
-      for (int i = 0; i < NUM_MESSAGES; i++) {
-         String payload = "Test Message: " + i;
-         provider.publish("foo", payload.getBytes(), EXACTLY_ONCE);
-         byte[] message = provider.receive(5000);
-         assertNotNull(message, "Should get a message");
-         assertEquals(payload, new String(message));
-      }
-
-      final Queue queue = server.locateQueue(SimpleString.of(MQTTUtil.QOS2_MANAGEMENT_QUEUE_PREFIX + clientId));
-
-      Wait.waitFor(() -> queue.getMessageCount() == 0, 1000, 100);
-
-      assertEquals(0, queue.getMessageCount());
       provider.disconnect();
    }
 

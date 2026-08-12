@@ -16,8 +16,9 @@
  */
 package org.apache.activemq.artemis.tests.integration.mqtt;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 
 import org.apache.activemq.artemis.core.protocol.mqtt.MQTTUtil;
 import org.apache.activemq.artemis.core.security.Role;
@@ -34,9 +35,8 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class PahoMQTTQOS2SecurityTest extends MQTTTestSupport {
 
@@ -134,7 +134,7 @@ public class PahoMQTTQOS2SecurityTest extends MQTTTestSupport {
       } catch (MqttException e) {
          // ignore
       }
-      assertEquals(0, getSessions().get(clientID).getPubRec().size());
+      assertEquals(0, getSessions().get(clientID).getPublishCache().size());
       producer.close();
    }
 

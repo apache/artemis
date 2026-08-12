@@ -913,13 +913,13 @@ public class MQTT5Test extends MQTT5TestSupport {
       // ensure subscriber got message and ack was blocked
       assertTrue(subscriberLatch.await(500, TimeUnit.MILLISECONDS));
       assertTrue(interceptorBlockedLatch.await(500, TimeUnit.MILLISECONDS));
-      Wait.assertEquals(1L, () -> mqttSessionState.getOutboundStore().getSendQuota(), 2000, 10);
+      Wait.assertEquals(1L, () -> mqttSessionState.getSendQuota(), 2000, 10);
       pendingCountCheckLatch.countDown();
 
       // disconnect subscriber
       subscriber.disconnect();
       Wait.assertFalse(() -> mqttSessionState.isAttached(), 2000, 50);
-      assertEquals(0, mqttSessionState.getOutboundStore().getSendQuota());
+      assertEquals(0, mqttSessionState.getSendQuota());
       assertEquals(1L, subscriptionQueue.getMessageCount());
       assertEquals(0L, subscriptionQueue.getMessagesAcknowledged());
       assertEquals(0L, subscriptionQueue.getConsumerCount());
@@ -1000,6 +1000,65 @@ public class MQTT5Test extends MQTT5TestSupport {
       subscriber.subscribe(topic, AT_LEAST_ONCE);
       // ensure the subscription queue uses multicast even though the default is anycast
       assertEquals(RoutingType.MULTICAST, getSubscriptionQueue(topic, clientID).getRoutingType());
+   }
+
+   /**
+    * This test stresses the synchronization between the broker sending the CONNACK and starting the SubscriptionManager
+    * and the client sending a SUBSCRIBE.
+    */
+   @Test
+   @Timeout(DEFAULT_TIMEOUT_SEC)
+   public void testConcurrentReconnectAndResubscribe() throws Exception {
+      final int clientCount = 100;
+      final int subsPerClient = 100;
+      final int resubscribeCount = 10;
+      AtomicBoolean failed = new AtomicBoolean(false);
+      ExecutorService executorService = Executors.newFixedThreadPool(clientCount);
+      runAfter(executorService::shutdownNow);
+      CountDownLatch latch = new CountDownLatch(clientCount);
+
+      for (int c = 0; c < clientCount; c++) {
+         final String clientId = "client-" + c;
+         final int clientIndex = c;
+         executorService.submit(() -> {
+            MqttClient client = null;
+            try {
+               client = createPahoClient(clientId);
+               MqttConnectionOptions options = new MqttConnectionOptionsBuilder()
+                  .cleanStart(false)
+                  .sessionExpiryInterval(300L)
+                  .build();
+
+               MqttSubscription[] subs = new MqttSubscription[subsPerClient];
+               for (int s = 0; s < subsPerClient; s++) {
+                  subs[s] = new MqttSubscription("topic/" + clientIndex + "/" + s, AT_LEAST_ONCE);
+               }
+
+               for (int i = 0; i < resubscribeCount; i++) {
+                  client.connect(options);
+                  client.subscribe(subs);
+                  client.disconnect();
+               }
+               client.close();
+            } catch (Exception e) {
+               logger.error("Client {} failed: {}", clientId, e.getMessage(), e);
+               failed.set(true);
+            } finally {
+               if (client != null) {
+                  try {
+                     client.disconnect();
+                     client.close();
+                  } catch (MqttException e) {
+                     // ignore
+                  }
+               }
+               latch.countDown();
+            }
+         });
+      }
+
+      latch.await();
+      assertFalse(failed.get());
    }
 
    @Test

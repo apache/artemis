@@ -485,7 +485,35 @@ public class ConnectTests extends MQTT5TestSupport {
     */
    @Test
    @Timeout(DEFAULT_TIMEOUT_SEC)
-   public void testMaxPacketSize() throws Exception {
+   public void testMaxPacketSizeQoS2() throws Exception {
+      testMaxPacketSize(2);
+   }
+
+   /*
+    * [MQTT-3.1.2-24] The Server MUST NOT send packets exceeding Maximum Packet Size to the Client.
+    *
+    * [MQTT-3.1.2-25] Where a Packet is too large to send, the Server MUST discard it without sending it and then behave
+    * as if it had completed sending that Application Message.
+    */
+   @Test
+   @Timeout(DEFAULT_TIMEOUT_SEC)
+   public void testMaxPacketSizeQoS1() throws Exception {
+      testMaxPacketSize(1);
+   }
+
+   /*
+    * [MQTT-3.1.2-24] The Server MUST NOT send packets exceeding Maximum Packet Size to the Client.
+    *
+    * [MQTT-3.1.2-25] Where a Packet is too large to send, the Server MUST discard it without sending it and then behave
+    * as if it had completed sending that Application Message.
+    */
+   @Test
+   @Timeout(DEFAULT_TIMEOUT_SEC)
+   public void testMaxPacketSizeQoS0() throws Exception {
+      testMaxPacketSize(0);
+   }
+
+   private void testMaxPacketSize(int qos) throws Exception {
       final String CONSUMER_ID = RandomUtil.randomUUIDString();
       final String TOPIC = this.getTopicName();
       final long SIZE = 1500;
@@ -502,11 +530,11 @@ public class ConnectTests extends MQTT5TestSupport {
          .build();
       consumer.setCallback(new LatchedMqttCallback(latch));
       consumer.connect(options);
-      consumer.subscribe(TOPIC, 2);
+      consumer.subscribe(TOPIC, qos);
 
       MqttClient producer = createPahoClient(RandomUtil.randomUUIDString());
       producer.connect();
-      producer.publish(TOPIC, bytes, 2, false);
+      producer.publish(TOPIC, bytes, qos, false);
       producer.disconnect();
       producer.close();
       Wait.assertEquals(1L, () -> getSubscriptionQueue(TOPIC, CONSUMER_ID).getMessagesAdded(), 2000, 100);
@@ -516,6 +544,9 @@ public class ConnectTests extends MQTT5TestSupport {
 
       // the broker should acknowledge the message since it exceeded the client's max packet size
       Wait.assertEquals(1L, () -> getSubscriptionQueue(TOPIC, CONSUMER_ID).getMessagesAcknowledged(), 2000, 100);
+      Wait.assertEquals(0L, () -> getSubscriptionQueue(TOPIC, CONSUMER_ID).getMessageCount(), 2000, 100);
+      Wait.assertEquals(0, () -> getProtocolManager().getStateManager().getPacketIdCorrelationSize(CONSUMER_ID), 2000, 100);
+      Wait.assertNull(() -> getPubRecCache(CONSUMER_ID), 2000, 100);
       consumer.disconnect();
       consumer.close();
    }
