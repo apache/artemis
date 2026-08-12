@@ -17,7 +17,10 @@
 package org.apache.activemq.artemis.core.security.impl;
 
 import javax.security.auth.Subject;
+import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
+import java.security.cert.X509Certificate;
+import java.util.EnumSet;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
@@ -26,18 +29,22 @@ import org.apache.activemq.artemis.api.core.ActiveMQSecurityException;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.management.CoreNotificationType;
 import org.apache.activemq.artemis.api.core.management.ManagementHelper;
+import org.apache.activemq.artemis.core.config.impl.ConfigurationImpl;
 import org.apache.activemq.artemis.core.management.impl.ManagementRemotingConnection;
+import org.apache.activemq.artemis.core.remoting.impl.netty.NettyServerConnection;
 import org.apache.activemq.artemis.core.security.CheckType;
 import org.apache.activemq.artemis.core.security.Role;
 import org.apache.activemq.artemis.core.security.SecurityAuth;
 import org.apache.activemq.artemis.core.server.management.Notification;
 import org.apache.activemq.artemis.core.server.management.NotificationService;
+import org.apache.activemq.artemis.core.settings.impl.AuthenticationCacheKeyConfig;
 import org.apache.activemq.artemis.core.settings.impl.HierarchicalObjectRepository;
 import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
 import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
 import org.apache.activemq.artemis.spi.core.security.ActiveMQSecurityManager5;
 import org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal;
 import org.apache.activemq.artemis.spi.core.security.jaas.UserPrincipal;
+import org.apache.activemq.artemis.utils.CertificateUtilTest;
 import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.artemis.utils.sm.SecurityManagerShim;
 import org.junit.jupiter.api.Test;
@@ -49,6 +56,7 @@ import static org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguratio
 import static org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration.getDefaultClusterUser;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -141,7 +149,7 @@ public class SecurityStoreImplTest {
    @Test
    public void zeroCacheSizeTest() throws Exception {
       final String user = RandomUtil.randomUUIDString();
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, "", null, null, 0, 0);
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, "", null, null, 0, 0, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
       assertNull(securityStore.getAuthenticationCache());
       assertEquals(user, securityStore.authenticate(user, RandomUtil.randomUUIDString(), null));
       assertEquals(0, securityStore.getAuthenticationCacheSize());
@@ -155,7 +163,7 @@ public class SecurityStoreImplTest {
 
    @Test
    public void getCaller() throws Exception {
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, "", null, null, 0, 0);
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, "", null, null, 0, 0, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
 
       assertNull(securityStore.getCaller(null, null));
       assertEquals("joe", securityStore.getCaller("joe", null));
@@ -187,7 +195,8 @@ public class SecurityStoreImplTest {
           null,
           null,
           1000,
-          1000);
+          1000,
+          ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
 
       try {
          securityStore.authenticate(null, null, Mockito.mock(RemotingConnection.class), null);
@@ -218,7 +227,7 @@ public class SecurityStoreImplTest {
 
    @Test
    public void testWrongPrincipal() throws Exception {
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), wrongPrincipalSecurityManager, 999, true, "", null, null, 10, 0);
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), wrongPrincipalSecurityManager, 999, true, "", null, null, 10, 0, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
       try {
          securityStore.authenticate(null, null, Mockito.mock(RemotingConnection.class), null);
          fail();
@@ -231,9 +240,9 @@ public class SecurityStoreImplTest {
    }
 
    @Test
-   public void testCacheAlgorithm() throws Exception {
+   public void testPresenceOfCacheAlgorithm() throws Exception {
       final String user = RandomUtil.randomUUIDString();
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, "", null, null, 0, 0);
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, "", null, null, 0, 0, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
       try (AssertionLoggerHandler handler = new AssertionLoggerHandler()) {
          securityStore.createAuthenticationCacheKey(user, RandomUtil.randomUUIDString(), null);
          assertFalse(handler.findText("AMQ224163"));
@@ -242,7 +251,7 @@ public class SecurityStoreImplTest {
 
    @Test
    public void testHasPermissionSecurityDisabled() throws Exception {
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), denyAll, 999, false, "", null, null, 0, 0);
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), denyAll, 999, false, "", null, null, 0, 0, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
       SecurityAuth session = getSecurityAuth("user", "pass");
       assertTrue(securityStore.hasPermission(SimpleString.of("test.address"), null, CheckType.SEND, session));
    }
@@ -251,7 +260,7 @@ public class SecurityStoreImplTest {
    public void testHasPermissionClusterUser() throws Exception {
       final String clusterUser = "clusterUser";
       final String clusterPassword = "clusterPassword";
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, clusterUser, clusterPassword, null, 0, 0);
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, clusterUser, clusterPassword, null, 0, 0, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
       SecurityAuth session = getSecurityAuth(clusterUser, clusterPassword);
       assertTrue(securityStore.hasPermission(SimpleString.of("test.address"), null, CheckType.SEND, session));
    }
@@ -280,7 +289,7 @@ public class SecurityStoreImplTest {
          }
       };
 
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), nullSubjectManager, 999, true, "", null, null, 0, 0);
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), nullSubjectManager, 999, true, "", null, null, 0, 0, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
 
       SecurityAuth session = getSecurityAuth("user", "pass");
 
@@ -295,7 +304,7 @@ public class SecurityStoreImplTest {
 
    @Test
    public void testHasPermissionAuthorized() throws Exception {
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, "", null, null, 10, 10);
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, "", null, null, 10, 10, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
 
       final String user = "authorizedUser";
       final String password = "password";
@@ -330,7 +339,7 @@ public class SecurityStoreImplTest {
          }
       };
 
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), denyingManager, 999, true, "", null, null, 10, 10);
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), denyingManager, 999, true, "", null, null, 10, 10, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
 
       final String user = "unauthorizedUser";
       final String password = "password";
@@ -343,7 +352,7 @@ public class SecurityStoreImplTest {
 
    @Test
    public void testHasPermissionUsesCache() throws Exception {
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, "", null, null, 10, 10);
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, "", null, null, 10, 10, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
 
       final String user = "cachedUser";
       final String password = "password";
@@ -386,7 +395,7 @@ public class SecurityStoreImplTest {
          }
       };
 
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), denyingManager, 999, true, "", null, null, 10, 10);
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), denyingManager, 999, true, "", null, null, 10, 10, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
 
       final String user = "deniedUser";
       securityStore.authenticate(user, "password", Mockito.mock(RemotingConnection.class));
@@ -401,7 +410,7 @@ public class SecurityStoreImplTest {
 
    @Test
    public void testCheckSecurityDisabled() throws Exception {
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, false, "", null, null, 0, 0);
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, false, "", null, null, 0, 0, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
 
       SecurityAuth session = getSecurityAuth("user", "password");
 
@@ -413,7 +422,7 @@ public class SecurityStoreImplTest {
 
    @Test
    public void testCheckAuthorizedIncrementsSuccessCounter() throws Exception {
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, "", null, null, 10, 10);
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, "", null, null, 10, 10, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
 
       final String user = "authorizedUser";
       final String password = "password";
@@ -451,7 +460,7 @@ public class SecurityStoreImplTest {
          }
       };
 
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), denyingManager, 999, true, "", null, null, 10, 10);
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), denyingManager, 999, true, "", null, null, 10, 10, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
 
       final String user = "deniedUser";
       final String password = "password";
@@ -499,7 +508,7 @@ public class SecurityStoreImplTest {
          }
       };
 
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), denyingManager, 999, true, "", null, null, 10, 10);
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), denyingManager, 999, true, "", null, null, 10, 10, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
 
       final String user = "deniedUser";
       final String password = "password";
@@ -526,7 +535,7 @@ public class SecurityStoreImplTest {
    public void testCheckDelegatesClusterUserBypass() throws Exception {
       final String clusterUser = "clusterUser";
       final String clusterPassword = "clusterPassword";
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, clusterUser, clusterPassword, null, 0, 0);
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, clusterUser, clusterPassword, null, 0, 0, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
 
       SecurityAuth session = getSecurityAuth(clusterUser, clusterPassword);
 
@@ -537,7 +546,7 @@ public class SecurityStoreImplTest {
 
    @Test
    public void testCheckCachesSuccessfulAuthorization() throws Exception {
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, "", null, null, 10, 10);
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, "", null, null, 10, 10, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
 
       final String user = "cachedUser";
       final String password = "password";
@@ -581,7 +590,7 @@ public class SecurityStoreImplTest {
       };
 
       NotificationService notificationService = Mockito.mock(NotificationService.class);
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), denyingManager, 999, true, "", null, notificationService, 10, 10);
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), denyingManager, 999, true, "", null, notificationService, 10, 10, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
 
       final String user = "deniedUser";
       final String password = "password";
@@ -634,7 +643,7 @@ public class SecurityStoreImplTest {
       };
 
       NotificationService notificationService = Mockito.mock(NotificationService.class);
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), denyingManager, 999, true, "", null, notificationService, 10, 10);
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), denyingManager, 999, true, "", null, notificationService, 10, 10, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
 
       final String user = "deniedUser";
       final String password = "password";
@@ -685,7 +694,7 @@ public class SecurityStoreImplTest {
       };
 
       // notificationService is null
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), denyingManager, 999, true, "", null, null, 10, 10);
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), denyingManager, 999, true, "", null, null, 10, 10, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
 
       final String user = "deniedUser";
       final String password = "password";
@@ -733,7 +742,7 @@ public class SecurityStoreImplTest {
       };
 
       NotificationService notificationService = Mockito.mock(NotificationService.class);
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), denyingManager, 999, true, "", null, notificationService, 10, 10);
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), denyingManager, 999, true, "", null, notificationService, 10, 10, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
 
       final String user = "deniedUser";
       final String password = "password";
@@ -751,7 +760,7 @@ public class SecurityStoreImplTest {
    @Test
    public void testCheckNoNotificationOnSuccess() throws Exception {
       NotificationService notificationService = Mockito.mock(NotificationService.class);
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, "", null, notificationService, 10, 10);
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, "", null, notificationService, 10, 10, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
 
       final String user = "authorizedUser";
       final String password = "password";
@@ -768,7 +777,7 @@ public class SecurityStoreImplTest {
 
    @Test
    public void testAuthenticateWithDefaultClusterCredentialsFails() throws Exception {
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, getDefaultClusterUser(), getDefaultClusterPassword(), null, 10, 10);
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, getDefaultClusterUser(), getDefaultClusterPassword(), null, 10, 10, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
 
       try {
          securityStore.authenticate(getDefaultClusterUser(), getDefaultClusterPassword(), Mockito.mock(RemotingConnection.class), null);
@@ -782,7 +791,7 @@ public class SecurityStoreImplTest {
    public void testAuthenticateWithCorrectClusterCredentialsSucceeds() throws Exception {
       final String clusterUser = "customClusterUser";
       final String clusterPassword = "customClusterPassword";
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, clusterUser, clusterPassword, null, 10, 10);
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, clusterUser, clusterPassword, null, 10, 10, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
 
       String result = securityStore.authenticate(clusterUser, clusterPassword, Mockito.mock(RemotingConnection.class), null);
       assertEquals(clusterUser, result);
@@ -793,7 +802,7 @@ public class SecurityStoreImplTest {
    public void testAuthenticateWithCorrectClusterUserButWrongPasswordFails() throws Exception {
       final String clusterUser = "customClusterUser";
       final String clusterPassword = "customClusterPassword";
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, clusterUser, clusterPassword, null, 10, 10);
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, clusterUser, clusterPassword, null, 10, 10, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
 
       try {
          securityStore.authenticate(clusterUser, "wrongPassword", Mockito.mock(RemotingConnection.class), null);
@@ -807,7 +816,7 @@ public class SecurityStoreImplTest {
    public void testAuthenticateNonClusterUserFallsThrough() throws Exception {
       final String clusterUser = "customClusterUser";
       final String clusterPassword = "customClusterPassword";
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, clusterUser, clusterPassword, null, 10, 10);
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, clusterUser, clusterPassword, null, 10, 10, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
 
       String normalUser = "normalUser";
       String normalPassword = "normalPassword";
@@ -820,7 +829,7 @@ public class SecurityStoreImplTest {
    public void testClusterUserWithWrongPasswordDenied() throws Exception {
       final String clusterUser = "customClusterUser";
       final String clusterPassword = "customClusterPassword";
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, clusterUser, clusterPassword, null, 10, 10);
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, clusterUser, clusterPassword, null, 10, 10, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
 
       SecurityAuth session = getSecurityAuth(clusterUser, "wrongPassword");
 
@@ -832,7 +841,7 @@ public class SecurityStoreImplTest {
 
    @Test
    public void testClusterUserWithDefaultCredentialsDenied() throws Exception {
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, getDefaultClusterUser(), getDefaultClusterPassword(), null, 10, 10);
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, getDefaultClusterUser(), getDefaultClusterPassword(), null, 10, 10, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
 
       SecurityAuth session = getSecurityAuth(ActiveMQDefaultConfiguration.getDefaultClusterUser(),
                                              ActiveMQDefaultConfiguration.getDefaultClusterPassword());
@@ -847,7 +856,7 @@ public class SecurityStoreImplTest {
    public void testCheckWithClusterUserAllowedPermission() throws Exception {
       final String clusterUser = "customClusterUser";
       final String clusterPassword = "customClusterPassword";
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, clusterUser, clusterPassword, null, 10, 10);
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, clusterUser, clusterPassword, null, 10, 10, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
 
       SecurityAuth session = getSecurityAuth(clusterUser, clusterPassword);
 
@@ -862,7 +871,7 @@ public class SecurityStoreImplTest {
 
    @Test
    public void testCheckWithDefaultClusterCredentialsThrowsException() throws Exception {
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, getDefaultClusterUser(), getDefaultClusterPassword(), null, 10, 10);
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, getDefaultClusterUser(), getDefaultClusterPassword(), null, 10, 10, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
 
       SecurityAuth session = getSecurityAuth(ActiveMQDefaultConfiguration.getDefaultClusterUser(),
                                              ActiveMQDefaultConfiguration.getDefaultClusterPassword());
@@ -881,5 +890,102 @@ public class SecurityStoreImplTest {
       Mockito.when(session.getPassword()).thenReturn(password);
       Mockito.when(session.getRemotingConnection()).thenReturn(Mockito.mock(RemotingConnection.class));
       return session;
+   }
+
+   @Test
+   // There's no way to conclusively prove a String is a SHA-256 hash, but we can at least check that it's the right length and has the correct format
+   public void testVerifySha256() throws Exception {
+      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, "", null, null, 0, 0, ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
+      assertTrue(securityStore.createAuthenticationCacheKey(RandomUtil.randomUUIDString(), RandomUtil.randomUUIDString(), null).matches("^[a-fA-F0-9]{64}$"));
+   }
+
+   @Test
+   public void testIncludeUpnInAuthenticationCacheKeyEnabledWithDifferentUpns() throws Exception {
+      final String user = RandomUtil.randomUUIDString();
+      final String password = RandomUtil.randomUUIDString();
+      SecurityStoreImpl securityStore = createSecurityStore(true);
+      String keyOne = securityStore.createAuthenticationCacheKey(user, password, getConnectionWithUpn("user1@domain.com"));
+      String keyTwo = securityStore.createAuthenticationCacheKey(user, password, getConnectionWithUpn("user2@domain.com"));
+      assertNotEquals(keyOne, keyTwo);
+   }
+
+   @Test
+   public void testIncludeUpnInAuthenticationCacheKeyEnabledWithAndWithoutUpn() throws Exception {
+      final String user = RandomUtil.randomUUIDString();
+      final String password = RandomUtil.randomUUIDString();
+      SecurityStoreImpl securityStore = createSecurityStore(true);
+      String keyOne = securityStore.createAuthenticationCacheKey(user, password, getConnectionWithUpn("user@domain.com"));
+      String keyTwo = securityStore.createAuthenticationCacheKey(user, password, getConnectionWithUpn(null));
+      assertNotEquals(keyOne, keyTwo);
+   }
+
+   @Test
+   public void testIncludeUpnInAuthenticationCacheKeyEnabledWithIdenticalUpns() throws Exception {
+      final String user = RandomUtil.randomUUIDString();
+      final String password = RandomUtil.randomUUIDString();
+      final String upn = "user@domain.com";
+      SecurityStoreImpl securityStore = createSecurityStore(true);
+      String keyOne = securityStore.createAuthenticationCacheKey(user, password, getConnectionWithUpn(upn));
+      String keyTwo = securityStore.createAuthenticationCacheKey(user, password, getConnectionWithUpn(upn));
+      assertEquals(keyOne, keyTwo);
+   }
+
+   @Test
+   public void testIncludeUpnInAuthenticationCacheKeyEnabledWithNulls() throws Exception {
+      SecurityStoreImpl securityStore = createSecurityStore(true);
+      assertNull(securityStore.createAuthenticationCacheKey(null, null, null));
+   }
+
+   @Test
+   public void testIncludeUpnInAuthenticationCacheKeyDisabledWithDifferentUpns() throws Exception {
+      final String user = RandomUtil.randomUUIDString();
+      final String password = RandomUtil.randomUUIDString();
+      SecurityStoreImpl securityStore = createSecurityStore(false);
+      String keyOne = securityStore.createAuthenticationCacheKey(user, password, getConnectionWithUpn("user1@domain.com"));
+      String keyTwo = securityStore.createAuthenticationCacheKey(user, password, getConnectionWithUpn("user2@domain.com"));
+      assertEquals(keyOne, keyTwo);
+   }
+
+   @Test
+   public void testIncludeUpnInAuthenticationCacheKeyDisabledWithAndWithoutUpn() throws Exception {
+      final String user = RandomUtil.randomUUIDString();
+      final String password = RandomUtil.randomUUIDString();
+      SecurityStoreImpl securityStore = createSecurityStore(false);
+      String keyOne = securityStore.createAuthenticationCacheKey(user, password, getConnectionWithUpn("user@domain.com"));
+      String keyTwo = securityStore.createAuthenticationCacheKey(user, password, getConnectionWithUpn(null));
+      assertEquals(keyOne, keyTwo);
+   }
+
+   @Test
+   public void testIncludeUpnInAuthenticationCacheKeyDisabledWithIdenticalUpns() throws Exception {
+      final String user = RandomUtil.randomUUIDString();
+      final String password = RandomUtil.randomUUIDString();
+      final String upn = "user@domain.com";
+      SecurityStoreImpl securityStore = createSecurityStore(false);
+      String keyOne = securityStore.createAuthenticationCacheKey(user, password, getConnectionWithUpn(upn));
+      String keyTwo = securityStore.createAuthenticationCacheKey(user, password, getConnectionWithUpn(upn));
+      assertEquals(keyOne, keyTwo);
+   }
+
+   @Test
+   public void testIncludeUpnInAuthenticationCacheKeyDisabledWithNulls() throws Exception {
+      SecurityStoreImpl securityStore = createSecurityStore(false);
+      assertNull(securityStore.createAuthenticationCacheKey(null, null, null));
+   }
+
+   private static RemotingConnection getConnectionWithUpn(String upn) throws Exception {
+      RemotingConnection remotingConnection = Mockito.mock(RemotingConnection.class);
+      NettyServerConnection serverConnection = Mockito.mock(NettyServerConnection.class);
+      Mockito.when(serverConnection.getPeerCertificates()).thenReturn(new X509Certificate[]{CertificateUtilTest.generateCertificateWithUPN(upn)});
+      Mockito.when(remotingConnection.getTransportConnection()).thenReturn(serverConnection);
+      return remotingConnection;
+   }
+
+   private SecurityStoreImpl createSecurityStore(boolean includeUpnInAuthenticationCacheKey) throws NoSuchAlgorithmException {
+      EnumSet<AuthenticationCacheKeyConfig> authenticationCacheKey = EnumSet.copyOf(ConfigurationImpl.DEFAULT_AUTHENTICATION_CACHE_KEY);
+      if (includeUpnInAuthenticationCacheKey) {
+         authenticationCacheKey.add(AuthenticationCacheKeyConfig.TLS_SAN_UPN);
+      }
+      return new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, "", null, null, 1, 0, authenticationCacheKey);
    }
 }
