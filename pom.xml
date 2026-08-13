@@ -137,7 +137,7 @@
       <!-- this is basically for tests -->
       <netty-tcnative-version>2.0.81.Final</netty-tcnative-version>
       <proton.version>0.35.0</proton.version>
-      <protonj2.version>1.1.0</protonj2.version>
+      <protonj2.version>1.2.0</protonj2.version>
       <slf4j.version>2.0.18</slf4j.version>
       <log4j.version>2.26.1</log4j.version>
       <qpid.jms.version>1.17.0</qpid.jms.version>
