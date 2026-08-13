@@ -132,8 +132,10 @@ public final class AIOSequentialFileFactory extends AbstractSequentialFileFactor
       this.reuseBuffers = true;
    }
 
-   public void disableBufferReuse() {
+   @Override
+   public AIOSequentialFileFactory disableBufferReuse() {
       this.reuseBuffers = false;
+      return this;
    }
 
    @Override

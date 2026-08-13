@@ -137,6 +137,7 @@
                      *
                   </Import-Package>
                   <_exportcontents>org.apache.activemq.artemis.*;-noimport:=true</_exportcontents>
+                  <_noee>true</_noee>
                </instructions>
             </configuration>
          </plugin>
