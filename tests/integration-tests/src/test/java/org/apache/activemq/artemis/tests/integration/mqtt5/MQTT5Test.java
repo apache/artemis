@@ -68,6 +68,7 @@ import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -272,13 +273,16 @@ public class MQTT5Test extends MQTT5TestSupport {
    }
 
    /**
-    * There is no normative statement in the spec about supporting user properties on will messages, but it is implied
-    * in various places.
+    * Verifies that the Application Message properties in Will Properties are included in the published Will Message.
     */
    @Test
    @Timeout(DEFAULT_TIMEOUT_SEC)
    public void testWillMessageProperties() throws Exception {
       final byte[] WILL = RandomUtil.randomBytes();
+      final long MESSAGE_EXPIRY_INTERVAL = 60;
+      final String CONTENT_TYPE = "application/octet-stream";
+      final String RESPONSE_TOPIC = "/topic/reply";
+      final byte[] CORRELATION_DATA = RandomUtil.randomBytes();
       final String[][] properties = new String[10][2];
       for (String[] property : properties) {
          property[0] = RandomUtil.randomUUIDString();
@@ -287,16 +291,18 @@ public class MQTT5Test extends MQTT5TestSupport {
 
       // consumer of the will message
       MqttClient client1 = createPahoClient("willConsumer");
+      runAfter(() -> {
+         if (client1.isConnected()) {
+            client1.disconnect();
+         }
+         client1.close();
+      });
       CountDownLatch latch = new CountDownLatch(1);
+      AtomicReference<MqttProperties> receivedProperties = new AtomicReference<>();
       client1.setCallback(new DefaultMqttCallback() {
          @Override
          public void messageArrived(String topic, MqttMessage message) {
-            int i = 0;
-            for (UserProperty property : message.getProperties().getUserProperties()) {
-               assertEquals(properties[i][0], property.getKey());
-               assertEquals(properties[i][1], property.getValue());
-               i++;
-            }
+            receivedProperties.set(message.getProperties());
             latch.countDown();
          }
       });
@@ -305,7 +311,18 @@ public class MQTT5Test extends MQTT5TestSupport {
 
       // consumer to generate the will
       MqttClient client2 = createPahoClient("willGenerator");
+      runAfter(() -> {
+         if (client2.isConnected()) {
+            client2.disconnectForcibly(0, 0, false);
+         }
+         client2.close();
+      });
       MqttProperties willMessageProperties = new MqttProperties();
+      willMessageProperties.setPayloadFormat(true);
+      willMessageProperties.setMessageExpiryInterval(MESSAGE_EXPIRY_INTERVAL);
+      willMessageProperties.setContentType(CONTENT_TYPE);
+      willMessageProperties.setResponseTopic(RESPONSE_TOPIC);
+      willMessageProperties.setCorrelationData(CORRELATION_DATA);
       List<UserProperty> userProperties = new ArrayList<>();
       for (String[] property : properties) {
          userProperties.add(new UserProperty(property[0], property[1]));
@@ -318,6 +335,19 @@ public class MQTT5Test extends MQTT5TestSupport {
       client2.connect(options);
       client2.disconnectForcibly(0, 0, false);
       assertTrue(latch.await(2, TimeUnit.SECONDS));
+
+      MqttProperties actualProperties = receivedProperties.get();
+      assertTrue(actualProperties.getPayloadFormat());
+      assertTrue(actualProperties.getMessageExpiryInterval() > 0);
+      assertTrue(actualProperties.getMessageExpiryInterval() <= MESSAGE_EXPIRY_INTERVAL);
+      assertEquals(CONTENT_TYPE, actualProperties.getContentType());
+      assertEquals(RESPONSE_TOPIC, actualProperties.getResponseTopic());
+      assertArrayEquals(CORRELATION_DATA, actualProperties.getCorrelationData());
+      assertEquals(properties.length, actualProperties.getUserProperties().size());
+      for (int i = 0; i < properties.length; i++) {
+         assertEquals(properties[i][0], actualProperties.getUserProperties().get(i).getKey());
+         assertEquals(properties[i][1], actualProperties.getUserProperties().get(i).getValue());
+      }
    }
 
    /**
