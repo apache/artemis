@@ -1551,6 +1551,9 @@ public interface ActiveMQServerLogger {
    @LogMessage(id = 224166, value = "Multiple topology subscriptions to connection from {}. Closing connection.", level = LogMessage.Level.WARN)
    void multipleTopologySubscriptions(String remoteAddress);
 
+   @LogMessage(id = 224169, value = "Queue {} has an invalid filter expression persisted in the journal: {}. The server cannot load this journal unless this filter is allowed. To allow it, increase the wildcard limit using the system property 'org.apache.activemq.artemis.selector.maxWildcards' or environment variable 'ARTEMIS_SELECTOR_MAX_WILDCARDS'.", level = LogMessage.Level.WARN)
+   void invalidFilterExpressionOnJournalReload(String queueName, String filterString);
+
    @LogMessage(id = 224170, value = "Server is stopping. Unable to process redelivery during rollback; ref: {}; transaction: {}; exception message: {}", level = LogMessage.Level.WARN)
    void unableToProcessRedeliveryDuringRollback(String messageRef, String transaction, String exceptionMessage);
 

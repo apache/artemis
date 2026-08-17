@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.activemq.artemis.api.core.ActiveMQInvalidFilterExpressionException;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
@@ -122,7 +123,15 @@ public class PostOfficeJournalLoader implements JournalLoader {
       for (final QueueBindingInfo queueBindingInfo : queueBindingInfos) {
          QueueConfiguration queueConfig = queueBindingInfo.getQueueConfiguration();
          queueBindingInfosMap.put(queueConfig.getId(), queueBindingInfo);
-         Filter filter = FilterImpl.createFilter(queueConfig.getFilterString());
+
+         Filter filter = null;
+
+         try {
+            filter = FilterImpl.createFilter(queueConfig.getFilterString());
+         } catch (ActiveMQInvalidFilterExpressionException e) {
+            ActiveMQServerLogger.LOGGER.invalidFilterExpressionOnJournalReload(String.valueOf(queueConfig.getName()), queueConfig.getFilterString() != null ? queueConfig.getFilterString().toString() : "null");
+            throw e;
+         }
 
          if (postOffice.getBinding(queueConfig.getName()) != null) {
 
