@@ -68,6 +68,7 @@ public class MQTTProtocolManagerFactory extends AbstractProtocolManagerFactory<M
    @Override
    public void loadProtocolServices(ActiveMQServer server, List<ActiveMQComponent> services) {
       services.add(new MQTTPeriodicTasks(server, server.getScheduledPool()));
+      server.registerBrokerPlugin(new MQTTRetainMessagePlugin());
    }
 
    public class MQTTPeriodicTasks extends ActiveMQScheduledComponent {
