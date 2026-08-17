@@ -17,6 +17,7 @@
 package org.apache.activemq.artemis.api.config;
 
 import org.apache.activemq.artemis.api.core.client.ActiveMQClient;
+import org.apache.activemq.artemis.utils.SystemPropertyHelper;
 
 public class ServerLocatorConfig {
 
@@ -29,11 +30,7 @@ public class ServerLocatorConfig {
    public static boolean isDiscoveryEnabled() {
       Boolean enabled = discoveryEnabled;
       if (enabled == null) {
-         String value = System.getProperty(DISCOVERY_ENABLED_PROPERTY);
-         if (value == null) {
-            value = System.getenv(DISCOVERY_ENABLED_ENV_VAR);
-         }
-         enabled = Boolean.parseBoolean(value);
+         enabled = Boolean.parseBoolean(SystemPropertyHelper.getProperty(DISCOVERY_ENABLED_PROPERTY, DISCOVERY_ENABLED_ENV_VAR, "false"));
          discoveryEnabled = enabled;
       }
       return enabled;

@@ -41,6 +41,7 @@ import org.apache.activemq.artemis.utils.Base64;
 import org.apache.activemq.artemis.utils.JsonLoader;
 import org.apache.activemq.artemis.utils.ObjectInputStreamWithClassLoader;
 import org.apache.activemq.artemis.utils.StringEscapeUtils;
+import org.apache.activemq.artemis.utils.SystemPropertyHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,45 +53,40 @@ public final class JsonUtil {
 
    private static final String SERIAL_FILTER;
 
+   // this is the minimal necessary to deserialize a CompositeData
+   private static final String DEFAULT_SERIAL_FILTER = "maxdepth=10;" +
+      "javax.management.openmbean.CompositeType;" +
+      "javax.management.openmbean.CompositeDataSupport;" +
+      "javax.management.openmbean.OpenType;" +
+      "javax.management.openmbean.ArrayType;" +
+      "javax.management.openmbean.SimpleType;" +
+      "javax.management.openmbean.TabularType;" +
+      "javax.management.openmbean.TabularDataSupport;" +
+      "java.util.TreeMap;" +
+      "java.util.Collections;" +
+      "java.util.Collections$UnmodifiableList;" +
+      "java.util.Collections$UnmodifiableCollection;" +
+      "java.util.Collections$UnmodifiableRandomAccessList;" +
+      "java.util.ArrayList;" +
+      "java.util.LinkedHashMap;" +
+      "java.util.HashMap;" +
+      "java.util.Map$Entry;" +
+      "java.util.Arrays;" +
+      "java.util.Arrays$ArrayList;" +
+      "java.lang.Object;" +
+      "java.lang.String;" +
+      "java.lang.Boolean;" +
+      "java.lang.Long;" +
+      "java.lang.Number;" +
+      "java.lang.Byte;" +
+      "java.lang.Double;" +
+      "java.lang.Float;" +
+      "java.lang.Integer;" +
+      "java.lang.Short;" +
+      "!*";
+
    static {
-      String filter = System.getProperty("artemis.json.composite.data.serial.filter");
-      if (filter == null) {
-         filter = System.getenv("ARTEMIS_JSON_COMPOSITE_DATA_SERIAL_FILTER");
-      }
-      if (filter == null) {
-         // this is the minimal necessary to deserialize a CompositeData
-         filter = "maxdepth=10;" +
-            "javax.management.openmbean.CompositeType;" +
-            "javax.management.openmbean.CompositeDataSupport;" +
-            "javax.management.openmbean.OpenType;" +
-            "javax.management.openmbean.ArrayType;" +
-            "javax.management.openmbean.SimpleType;" +
-            "javax.management.openmbean.TabularType;" +
-            "javax.management.openmbean.TabularDataSupport;" +
-            "java.util.TreeMap;" +
-            "java.util.Collections;" +
-            "java.util.Collections$UnmodifiableList;" +
-            "java.util.Collections$UnmodifiableCollection;" +
-            "java.util.Collections$UnmodifiableRandomAccessList;" +
-            "java.util.ArrayList;" +
-            "java.util.LinkedHashMap;" +
-            "java.util.HashMap;" +
-            "java.util.Map$Entry;" +
-            "java.util.Arrays;" +
-            "java.util.Arrays$ArrayList;" +
-            "java.lang.Object;" +
-            "java.lang.String;" +
-            "java.lang.Boolean;" +
-            "java.lang.Long;" +
-            "java.lang.Number;" +
-            "java.lang.Byte;" +
-            "java.lang.Double;" +
-            "java.lang.Float;" +
-            "java.lang.Integer;" +
-            "java.lang.Short;" +
-            "!*";
-      }
-      SERIAL_FILTER = filter;
+      SERIAL_FILTER = SystemPropertyHelper.getProperty("artemis.json.composite.data.serial.filter", "ARTEMIS_JSON_COMPOSITE_DATA_SERIAL_FILTER", DEFAULT_SERIAL_FILTER);
    }
 
    public static JsonArray toJSONArray(final Object[] array) throws Exception {
