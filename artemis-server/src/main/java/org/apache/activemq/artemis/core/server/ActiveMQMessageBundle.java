@@ -38,6 +38,7 @@ import org.apache.activemq.artemis.api.core.ActiveMQNonExistentQueueException;
 import org.apache.activemq.artemis.api.core.ActiveMQQueueExistsException;
 import org.apache.activemq.artemis.api.core.ActiveMQQueueMaxConsumerLimitReached;
 import org.apache.activemq.artemis.api.core.ActiveMQRemoteDisconnectException;
+import org.apache.activemq.artemis.api.core.ActiveMQResourceQuotaExceededException;
 import org.apache.activemq.artemis.api.core.ActiveMQReplicationTimeooutException;
 import org.apache.activemq.artemis.api.core.ActiveMQRoutingException;
 import org.apache.activemq.artemis.api.core.ActiveMQSecurityException;
@@ -316,6 +317,9 @@ public interface ActiveMQMessageBundle {
 
    @Message(id = 229102, value = "Address \"{}\" is full.")
    ActiveMQAddressFullException addressIsFull(String addressName);
+
+   @Message(id = 229261, value = "Resource quota exceeded: {}")
+   ActiveMQResourceQuotaExceededException resourceQuotaExceeded(String details);
 
    @Message(id = 229103, value = "No Connectors or Discovery Groups configured for Scale Down")
    ActiveMQException noConfigurationFoundForScaleDown();
