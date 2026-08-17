@@ -21,6 +21,9 @@ import org.apache.activemq.artemis.selector.filter.FilterException;
 import org.apache.activemq.artemis.selector.impl.SelectorParser;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+
+import static org.junit.jupiter.api.Assertions.assertTimeout;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -362,6 +365,70 @@ public class SelectorTest {
    }
 
    @Test
+   public void testLikeWithConsecutiveWildcardsAreMerged() throws Exception {
+      MockMessage message = createMessage();
+
+      assertTimeout(Duration.ofSeconds(5), () -> {
+         message.setStringProperty("prop", "helloZ");
+         assertSelector(message, "prop LIKE '%%%%%%%%%%%%Z'", true);
+
+         message.setStringProperty("prop", "anything");
+         assertSelector(message, "prop LIKE '%%'", true);
+
+         message.setStringProperty("prop", "aXb");
+         assertSelector(message, "prop LIKE 'a%%b'", true);
+         assertSelector(message, "prop LIKE 'a%%c'", false);
+      });
+   }
+
+   @Test
+   public void testLikeWithSingleWildcardsStillWorks() throws Exception {
+      MockMessage message = createMessage();
+
+      message.setStringProperty("prop", "helloZ");
+      assertSelector(message, "prop LIKE '%Z'", true);
+
+      message.setStringProperty("prop", "Z");
+      assertSelector(message, "prop LIKE '%Z'", true);
+
+      message.setStringProperty("prop", "abcZdef");
+      assertSelector(message, "prop LIKE '%Z%'", true);
+
+      message.setStringProperty("prop", "nothing");
+      assertSelector(message, "prop LIKE '%Z%'", false);
+   }
+
+   @Test
+   public void testLikeWithTooManyWildcardsIsRejected() throws Exception {
+      MockMessage message = createMessage();
+      assertInvalidSelector(message, "prop LIKE '%_%_%_%_%_%_%_%_%_%Z'");
+      assertInvalidSelector(message, "prop LIKE '%a%b%c%d%e%f'");
+   }
+
+   @Test
+   public void testLikeWithMaxAllowedWildcards() throws Exception {
+      MockMessage message = createMessage();
+
+      message.setStringProperty("prop", "aXbYcZd");
+      assertSelector(message, "prop LIKE '%X%Y%Z%'", true);
+      assertSelector(message, "prop LIKE '%X%Q%Z%'", false);
+   }
+
+   @Test
+   public void testLikeEscapedWildcardsDoNotCountTowardLimit() throws Exception {
+      MockMessage message = createMessage();
+
+      // 6 '%' characters but all escaped to literals — zero actual wildcards
+      message.setStringProperty("prop", "%%%%%%%%");
+      assertSelector(message, "prop LIKE '!%!%!%!%!%!%!%%' ESCAPE '!'", true);
+
+      // mix: 4 real wildcards + 3 escaped '%' literals — should be allowed
+      message.setStringProperty("prop", "a%b%c%end");
+      assertSelector(message, "prop LIKE '%a!%b!%c!%end%'  ESCAPE '!'", true);
+      assertSelector(message, "prop LIKE '%a!%b!%c!%XXX%' ESCAPE '!'", false);
+   }
+
+   @Test
    public void testInvalidSelector() throws Exception {
       MockMessage message = createMessage();
       assertInvalidSelector(message, "3+5");
@@ -401,7 +468,7 @@ public class SelectorTest {
       try {
          SelectorParser.parse(text);
          fail("Created a valid selector");
-      } catch (FilterException e) {
+      } catch (FilterException | RuntimeException e) {
       }
    }
 

@@ -21,12 +21,20 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.apache.activemq.artemis.utils.SystemPropertyHelper;
+
 /**
  * A filter performing a comparison of two objects
  */
 public abstract class ComparisonExpression extends BinaryExpression implements BooleanExpression {
 
    public static final ThreadLocal<Boolean> CONVERT_STRING_EXPRESSIONS = new ThreadLocal<>();
+
+   public static int MAX_WILDCARDS = Integer.parseInt(SystemPropertyHelper.getProperty("org.apache.activemq.artemis.selector.maxWildcards", "ARTEMIS_SELECTOR_MAX_WILDCARDS", "5"));
+
+   static void setMaxWildcards(int maxWildcards) {
+      MAX_WILDCARDS = maxWildcards;
+   }
 
    boolean convertStringExpressions = false;
    private static final Set<Character> REGEXP_CONTROL_CHARS = new HashSet<>();
@@ -157,6 +165,35 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
       int c = -1;
       if (escape != null) {
          c = 0xFFFF & escape.charAt(0);
+      }
+
+      // Merge consecutive unescaped '%' wildcards into a single '%'
+      StringBuilder merged = new StringBuilder();
+      boolean lastWasWildcard = false;
+      int wildcardCount = 0;
+      for (int i = 0; i < right.length(); i++) {
+         char ch = right.charAt(i);
+         if (c == (0xFFFF & ch) && i + 1 < right.length()) {
+            merged.append(ch);
+            i++;
+            merged.append(right.charAt(i));
+            lastWasWildcard = false;
+         } else if (ch == '%') {
+            if (!lastWasWildcard) {
+               wildcardCount++;
+               merged.append(ch);
+            }
+            lastWasWildcard = true;
+         } else {
+            merged.append(ch);
+            lastWasWildcard = false;
+         }
+      }
+
+      right = String.valueOf(merged);
+
+      if (wildcardCount > MAX_WILDCARDS) {
+         throw new RuntimeException("Invalid LIKE pattern: too many '%' wildcards (max " + MAX_WILDCARDS + ", found " + wildcardCount + ").");
       }
 
       return new LikeExpression(left, right, c);
