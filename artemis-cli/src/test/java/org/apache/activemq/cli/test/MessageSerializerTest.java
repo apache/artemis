@@ -152,24 +152,34 @@ public class MessageSerializerTest extends CliTestBase {
    }
 
    private void exportMessages(String address, int messageCount, boolean durable, String clientId, File output) throws Exception {
-      new Consumer()
-         .setFile(output.getAbsolutePath())
-         .setDurable(durable)
-         .setDestination(address)
-         .setMessageCount(messageCount)
-         .setClientID(clientId)
-         .setUser("admin")
-         .setPassword("admin")
-         .execute(new TestActionContext());
+      try {
+         new Consumer()
+            .setFile(output.getAbsolutePath())
+            .setDurable(durable)
+            .setDestination(address)
+            .setMessageCount(messageCount)
+            .setClientID(clientId)
+            .setUser("admin")
+            .setPassword("admin")
+            .execute(new TestActionContext());
+      } finally {
+         // release file handles
+         System.gc();
+      }
    }
 
    private void importMessages(String address, File input) throws Exception {
-      new Producer()
-         .setFile(input.getAbsolutePath())
-         .setDestination(address)
-         .setUser("admin")
-         .setPassword("admin")
-         .execute(new TestActionContext());
+      try {
+         new Producer()
+            .setFile(input.getAbsolutePath())
+            .setDestination(address)
+            .setUser("admin")
+            .setPassword("admin")
+            .execute(new TestActionContext());
+      } finally {
+         // release file handles
+         System.gc();
+      }
    }
 
    private void createBothTypeAddress(String address) throws Exception {

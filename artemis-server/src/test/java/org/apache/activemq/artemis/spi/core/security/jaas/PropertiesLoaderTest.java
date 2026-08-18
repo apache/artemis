@@ -40,8 +40,9 @@ class PropertiesLoaderTest {
       properties.put("p2", "b");
       properties.put("p3", "/b/"); // regexp
 
-      FileWriter fileWriter = new FileWriter(file.toFile());
-      properties.store(fileWriter, "");
+      try (FileWriter fileWriter = new FileWriter(file.toFile())) {
+         properties.store(fileWriter, "");
+      }
 
       PropertiesLoader underTest = new PropertiesLoader();
       Map options = new HashMap();

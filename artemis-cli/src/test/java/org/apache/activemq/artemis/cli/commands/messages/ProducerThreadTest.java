@@ -225,7 +225,7 @@ public class ProducerThreadTest {
       producer.setProperties(createJsonProperty("myType", "myKey", "myValue"));
       producer.applyProperties(mockMessage);
 
-      assertEquals("Unable to set property: myKey. Did not recognize type: myType. Supported types are: boolean, int, long, byte, short, float, double, string.\n", context.getStderr());
+      assertEquals("Unable to set property: myKey. Did not recognize type: myType. Supported types are: boolean, int, long, byte, short, float, double, string." + System.lineSeparator(), context.getStderr());
    }
 
    private static String createJsonProperty(String type, String key, String value) {

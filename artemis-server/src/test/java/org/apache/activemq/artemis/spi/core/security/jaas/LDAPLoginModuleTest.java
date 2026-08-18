@@ -33,6 +33,8 @@ import javax.security.auth.spi.LoginModule;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.net.URL;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -99,9 +101,10 @@ public class LDAPLoginModuleTest extends AbstractLdapTestUnit {
          directoryService.setAllowAnonymousAccess(true);
          ldapServer.setDirectoryService(directoryService);
 
-         String keystore = Objects.requireNonNull(this.getClass().getClassLoader().
-            getResource("server-keystore-without-ca.p12")).getFile();
-         ldapServer.setKeystoreFile(keystore);
+         URL keystore = Objects.requireNonNull(this.getClass().getClassLoader().
+            getResource("server-keystore-without-ca.p12"));
+         String keystorePath = Paths.get(keystore.toURI()).toString();
+         ldapServer.setKeystoreFile(keystorePath);
          ldapServer.setCertificatePassword("securepass");
 
          ldapServer.start();

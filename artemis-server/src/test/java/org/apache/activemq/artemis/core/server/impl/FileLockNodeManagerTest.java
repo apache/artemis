@@ -43,14 +43,17 @@ public class FileLockNodeManagerTest {
    @Timeout(3)
    public void testChannelClosed() throws Exception {
       FileLockNodeManager manager = new FileLockNodeManager(temporaryFolder, false);
+      try {
+         // calling this method sets up the internal FileChannel as it would be in normal usage
+         manager.pausePrimaryServer();
 
-      // calling this method sets up the internal FileChannel as it would be in normal usage
-      manager.pausePrimaryServer();
+         // now close the channel so we can ensure it throws
+         manager.getChannel().close();
 
-      // now close the channel so we can ensure it throws
-      manager.getChannel().close();
-
-      assertThrows(ClosedChannelException.class, () -> manager.lock(0));
+         assertThrows(ClosedChannelException.class, () -> manager.lock(0));
+      } finally {
+         manager.stop();
+      }
    }
 
    @Test

@@ -33,6 +33,7 @@ import static org.mockserver.model.JsonBody.json;
 import java.io.File;
 import java.lang.invoke.MethodHandles;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Set;
 
@@ -72,7 +73,7 @@ public class KubernetesClientImplTest {
          "kind": "TokenReview", "spec": {"token": "kermit_token"}}""";
 
    @BeforeAll
-   public static void startServer() {
+   public static void startServer() throws Exception {
       ConfigurationProperties.directoryToSaveDynamicSSLCertificate(tempDir.getAbsolutePath());
       ConfigurationProperties.certificateAuthorityPrivateKey(KubernetesClientImplTest.class.getClassLoader().getResource("server-ca.pem").getPath());
       ConfigurationProperties.certificateAuthorityCertificate(KubernetesClientImplTest.class.getClassLoader().getResource("server-ca-cert.pem").getPath());
@@ -86,10 +87,13 @@ public class KubernetesClientImplTest {
 
       assertNotNull(mockServer);
       assertTrue(mockServer.hasStarted());
+
+      URL token = KubernetesClientImplTest.class.getClassLoader().getResource("client_token");
+      String tokenPath = Paths.get(token.toURI()).toString();
+
       System.setProperty("KUBERNETES_SERVICE_HOST", host);
       System.setProperty("KUBERNETES_SERVICE_PORT", port);
-      System.setProperty("KUBERNETES_TOKEN_PATH",
-            KubernetesClientImplTest.class.getClassLoader().getResource("client_token").getPath());
+      System.setProperty("KUBERNETES_TOKEN_PATH", tokenPath);
 
       URL caPath = KubernetesClientImplTest.class.getClassLoader()
          .getResource("client-and-server-ca-certs.pem");

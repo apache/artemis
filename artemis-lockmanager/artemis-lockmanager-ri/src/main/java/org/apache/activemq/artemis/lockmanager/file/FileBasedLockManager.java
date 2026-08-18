@@ -137,7 +137,7 @@ public class FileBasedLockManager implements DistributedLockManager {
    @Override
    public MutableLong getMutableLong(final String mutableLongId) throws ExecutionException {
       // use a lock file - but with a prefix
-      final FileDistributedLock fileDistributedLock = (FileDistributedLock) getDistributedLock("ML:" + mutableLongId);
+      final FileDistributedLock fileDistributedLock = (FileDistributedLock) getDistributedLock("ML_" + mutableLongId);
       return new MutableLong() {
          @Override
          public String getMutableLongId() {
