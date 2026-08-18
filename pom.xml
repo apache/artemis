@@ -202,7 +202,7 @@
       <hadoop.minikdc.version>3.5.0</hadoop.minikdc.version>
       <mockserver.version>7.2.0</mockserver.version>
 
-      <owasp.version>12.2.2</owasp.version>
+      <owasp.version>13.0.0</owasp.version>
       <spring.version>5.3.39</spring.version>
 
       <jackson.version>2.22.1</jackson.version>
