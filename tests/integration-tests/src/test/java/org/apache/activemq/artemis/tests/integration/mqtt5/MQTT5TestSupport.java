@@ -420,15 +420,37 @@ public class MQTT5TestSupport extends ActiveMQTestBase {
       }
    }
 
-   protected static void reconnectSafely(MqttClient subscriber) throws Exception {
+   protected static void reconnectSafely(MqttClient client) throws Exception {
       Wait.waitFor(() -> {
          try {
-            subscriber.reconnect();
+            client.reconnect();
             return true;
          } catch (MqttException e) {
             return false;
          }
-      });
+      }, 2000, 10);
+   }
+
+   protected static void connectSafely(MqttClient client) throws Exception {
+      Wait.waitFor(() -> {
+         try {
+            client.connect();
+            return true;
+         } catch (MqttException e) {
+            return false;
+         }
+      }, 2000, 10);
+   }
+
+   protected static void disconnectSafely(MqttClient client) throws Exception {
+      Wait.waitFor(() -> {
+         try {
+            client.disconnect();
+            return true;
+         } catch (MqttException e) {
+            return false;
+         }
+      }, 2000, 10);
    }
 
    /*

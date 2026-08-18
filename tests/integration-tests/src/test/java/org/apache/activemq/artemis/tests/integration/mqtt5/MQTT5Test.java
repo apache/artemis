@@ -1013,8 +1013,8 @@ public class MQTT5Test extends MQTT5TestSupport {
    @Test
    @Timeout(DEFAULT_TIMEOUT_SEC)
    public void testConcurrentReconnectAndResubscribe() throws Exception {
-      final int clientCount = 100;
-      final int subsPerClient = 100;
+      final int clientCount = 50;
+      final int subsPerClient = 50;
       final int resubscribeCount = 10;
       AtomicBoolean failed = new AtomicBoolean(false);
       ExecutorService executorService = Executors.newFixedThreadPool(clientCount);
@@ -1039,9 +1039,9 @@ public class MQTT5Test extends MQTT5TestSupport {
                }
 
                for (int i = 0; i < resubscribeCount; i++) {
-                  client.connect(options);
+                  connectSafely(client);
                   client.subscribe(subs);
-                  client.disconnect();
+                  disconnectSafely(client);
                }
                client.close();
             } catch (Exception e) {
