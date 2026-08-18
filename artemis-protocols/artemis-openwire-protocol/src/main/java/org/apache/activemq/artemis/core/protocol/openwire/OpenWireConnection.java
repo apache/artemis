@@ -1360,6 +1360,14 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
             throw new IllegalStateException("Cannot remove a subscription on a connection that had not been registered");
          }
 
+         if (!Objects.equals(cs.getInfo().getConnectionId(), subInfo.getConnectionId())) {
+            throw new IllegalStateException("Rejecting remove subscription command with invalid data");
+         }
+
+         if (!Objects.equals(cs.getInfo().getClientId(), subInfo.getClientId())) {
+            throw new IllegalStateException("Rejecting remove subscription command with invalid data");
+         }
+
          final SimpleString subQueueName = org.apache.activemq.artemis.jms.client.ActiveMQDestination.createQueueNameForSubscription(true, subInfo.getClientId(), subInfo.getSubscriptionName());
 
          ss.deleteQueue(subQueueName);

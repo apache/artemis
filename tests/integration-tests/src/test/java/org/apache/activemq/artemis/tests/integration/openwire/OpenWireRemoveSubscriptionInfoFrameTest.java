@@ -41,6 +41,7 @@ import java.util.function.Consumer;
 
 import javax.jms.Connection;
 import javax.jms.DeliveryMode;
+import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
@@ -105,7 +106,7 @@ public class OpenWireRemoveSubscriptionInfoFrameTest extends BasicOpenWireTest {
    protected void extraServerConfig(Configuration configuration) {
       super.extraServerConfig(configuration);
 
-      final Role allowed = new Role(ALLOWED_ROLE, true, true, true, true, false, false, false, false, true, false, false, false);
+      final Role allowed = new Role(ALLOWED_ROLE, true, true, true, true, false, false, false, false, true, true, false, false);
       final Role denied = new Role(DENIED_ROLE, false, false, false, false, false, false, false, false, false, false, false, false);
 
       final ActiveMQJAASSecurityManager securityManager = (ActiveMQJAASSecurityManager) server.getSecurityManager();
@@ -175,11 +176,72 @@ public class OpenWireRemoveSubscriptionInfoFrameTest extends BasicOpenWireTest {
    }
 
    @Test
+   public void testConnectionWithAuthorizationCannotDeleteSubscriptionQueueUsingAlternateClientId() throws Exception {
+      final String CLIENT_ID = "test-id";
+      final String SUBSCRIPTION_NAME = getTestMethodName();
+      final SimpleString SUBSCRIPTION_QUEUE =
+         org.apache.activemq.artemis.jms.client.ActiveMQDestination.createQueueNameForSubscription(true, CLIENT_ID, SUBSCRIPTION_NAME);
+
+      try (Connection connection = factory.createConnection(ALLOWED_USER, PASS)) {
+
+         connection.setClientID(CLIENT_ID);
+
+         final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+         final Topic destination = session.createTopic(ADDRESS);
+
+         final MessageProducer producer = session.createProducer(destination);
+         final MessageConsumer consumer = session.createDurableConsumer(destination, SUBSCRIPTION_NAME);
+
+         consumer.close();
+
+         producer.setDeliveryMode(DeliveryMode.PERSISTENT); // ALLOWED USER
+         producer.send(session.createTextMessage("durable-message"));
+
+         Wait.assertTrue(() -> server.queueQuery(SUBSCRIPTION_QUEUE).isExists(), 1_000, 50);
+
+         final Queue subscriptionQueue = server.locateQueue(SUBSCRIPTION_QUEUE);
+
+         assertEquals(1, subscriptionQueue.getMessageCount());
+
+         final ConnectionInfo connectionInfo = new ConnectionInfo();
+         connectionInfo.setConnectionId(new ConnectionId("test:1"));
+         connectionInfo.setClientId(UUID.randomUUID().toString());
+         connectionInfo.setUserName(ALLOWED_USER);
+         connectionInfo.setPassword(PASS);
+         connectionInfo.setResponseRequired(true);
+
+         final RemoveSubscriptionInfo removeSubscription = new RemoveSubscriptionInfo();
+         removeSubscription.setClientId(CLIENT_ID);
+         removeSubscription.setConnectionId(new ConnectionId("test:1"));
+         removeSubscription.setResponseRequired(true);
+         removeSubscription.setSubcriptionName(SUBSCRIPTION_NAME);
+
+         try (OpenwireTestClient client = new OpenwireTestClient(OWHOST, OWPORT)) {
+            client.connect().get(2, TimeUnit.SECONDS);
+            client.send(connectionInfo).get(20, TimeUnit.SECONDS);
+
+            final Response response = client.send(removeSubscription).get(10, TimeUnit.SECONDS);
+
+            assertTrue(response.isException());
+            assertNull(client.getLastError());
+
+            final ExceptionResponse exResponse = (ExceptionResponse) response;
+
+            assertTrue(exResponse.getException() instanceof JMSException);
+         }
+
+         Thread.sleep(50); // Bit of buffer to allow the command to be handled.
+
+         Wait.assertTrue(() -> server.queueQuery(SUBSCRIPTION_QUEUE).isExists(), 1_000, 50);
+      }
+   }
+
+   @Test
    public void testConnectionWithoutAuthorizationCannotDeleteSubscriptionQueue() throws Exception {
       final String CLIENT_ID = "test-id";
       final String SUBSCRIPTION_NAME = getTestMethodName();
-      final SimpleString SUBSCRIPTION_QUEUE = org.apache.activemq.artemis.jms.client.ActiveMQDestination.createQueueNameForSubscription(true, CLIENT_ID,
-         SUBSCRIPTION_NAME);
+      final SimpleString SUBSCRIPTION_QUEUE =
+         org.apache.activemq.artemis.jms.client.ActiveMQDestination.createQueueNameForSubscription(true, CLIENT_ID, SUBSCRIPTION_NAME);
 
       try (Connection connection = factory.createConnection(ALLOWED_USER, PASS)) {
 
@@ -206,7 +268,7 @@ public class OpenWireRemoveSubscriptionInfoFrameTest extends BasicOpenWireTest {
 
          final ConnectionInfo connectionInfo = new ConnectionInfo();
          connectionInfo.setConnectionId(new ConnectionId("test:1"));
-         connectionInfo.setClientId(UUID.randomUUID().toString());
+         connectionInfo.setClientId(CLIENT_ID);
          connectionInfo.setUserName(DENIED_USER);
          connectionInfo.setPassword(PASS);
          connectionInfo.setResponseRequired(true);
