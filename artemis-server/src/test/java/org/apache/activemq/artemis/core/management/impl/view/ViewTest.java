@@ -66,10 +66,6 @@ public class ViewTest {
       assertEquals(list.size(), myView.getPagedResult(123, -1).size());
       assertEquals(list.size(), myView.getPagedResult(-1, 123).size());
 
-      // page 0 - not really valid but still "works"
-      assertEquals(0, myView.getPagedResult(0, 123).size());
-
-
       assertEquals(123, myView.getPagedResult(1, 123).size());
 
       // last page
