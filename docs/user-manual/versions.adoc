@@ -17,11 +17,16 @@ NOTE: Follow the general upgrade procedure outlined in the xref:upgrading.adoc#u
 
 == Version 2.56.0
 
-https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=xxx[Full release notes]
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12357208[Full release notes]
 
 === Highlights
 
-*
+* The xref:lock-coordination.adoc#lock-coordination-ha-with-mirroring[lock coordinators] now support a new `auto-start` attribute to control whether a coordinator begins polling for the distributed lock on broker activation, plus new `startLockCoordinator` / `stopLockCoordinator` management operations and matching `lock start` / `lock stop` CLI commands.
+* A lock coordinator that cannot reach its distributed lock store (e.g. ZooKeeper is unreachable) no longer hangs broker shutdown indefinitely.
+* The AMQP protocol module has been updated to proton-j 0.35.0 with a new `maxTransfersPerDelivery` configuration option.
+* The journal file lock health-check behavior is now configurable via the new `journal-lock-monitor-timeout` and `journal-lock-monitor-max-retries` parameters in `broker.xml`.
+See xref:persistence.adoc#configuring-the-message-journal[configuring the message journal] for details.
+* MQTT QoS 1 and QoS 2 message delivery has been redesigned for resiliency across broker restarts and client reconnects.
 
 === Upgrading from 2.55.0
 
