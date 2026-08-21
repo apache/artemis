@@ -150,6 +150,8 @@ public class TransportConstants {
 
    public static final String TRUST_MANAGER_FACTORY_PLUGIN_PROP_NAME = "trustManagerFactoryPlugin";
 
+   public static final String CLIENT_FAILOVER_ADVERTISING_ENABLED_PROP_NAME = "clientFailoverAdvertisingEnabled";
+
    public static final String NETTY_VERSION;
 
    /**

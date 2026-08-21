@@ -23,10 +23,18 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.activemq.artemis.api.core.ActiveMQSecurityException;
+import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.api.core.TransportConfiguration;
+import org.apache.activemq.artemis.core.client.impl.Topology;
+import org.apache.activemq.artemis.core.client.impl.TopologyMemberImpl;
 import org.apache.activemq.artemis.core.remoting.impl.invm.InVMConnection;
 import org.apache.activemq.artemis.core.remoting.impl.netty.NettyConnection;
+import org.apache.activemq.artemis.core.remoting.impl.netty.NettyConnectorFactory;
+import org.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants;
 import org.apache.activemq.artemis.core.security.SecurityStore;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
+import org.apache.activemq.artemis.core.server.cluster.ClusterConnection;
+import org.apache.activemq.artemis.core.server.cluster.ClusterManager;
 import org.apache.activemq.artemis.core.server.impl.ActiveMQServerImpl;
 import org.apache.activemq.artemis.protocol.amqp.sasl.AnonymousServerSASL;
 import org.apache.activemq.artemis.protocol.amqp.sasl.GSSAPIServerSASL;
@@ -35,6 +43,10 @@ import org.apache.activemq.artemis.utils.ExecutorFactory;
 import org.apache.activemq.artemis.utils.actors.ArtemisExecutor;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 
 public class AMQPConnectionCallbackTest {
 
@@ -92,5 +104,123 @@ public class AMQPConnectionCallbackTest {
       // Verify result and expected args are passed
       assertFalse(callback.isSupportsAnonymous());
       Mockito.verify(securityStore).authenticate(Mockito.any(), Mockito.any(), Mockito.same(connectionDelegate));
+   }
+
+   @Test
+   public void testGetFailoverListFailoverEnabled() throws Exception {
+      ActiveMQServer server = Mockito.mock(ActiveMQServer.class);
+
+      TransportConfiguration backup = createBackupTransportConfiguration();
+      backup.getParams().put(TransportConstants.CLIENT_FAILOVER_ADVERTISING_ENABLED_PROP_NAME, true);
+
+      AMQPConnectionCallback callback = createCallback(server, backup);
+
+      URI failoverList = callback.getFailoverList();
+
+      assertNotNull(failoverList);
+      assertEquals("tcp", failoverList.getScheme());
+      assertEquals("backup", failoverList.getHost());
+      assertEquals(61617, failoverList.getPort());
+      assertEquals("sslEnabled=false", failoverList.getQuery());
+   }
+
+   @Test
+   public void testGetFailoverListFailoverDisabled() throws Exception {
+      ActiveMQServer server = Mockito.mock(ActiveMQServer.class);
+
+      TransportConfiguration backup = createBackupTransportConfiguration();
+      backup.getParams().put(TransportConstants.CLIENT_FAILOVER_ADVERTISING_ENABLED_PROP_NAME, false);
+
+      AMQPConnectionCallback callback = createCallback(server, backup);
+
+      assertNull(callback.getFailoverList());
+   }
+
+   @Test
+   public void testGetFailoverListFailoverEnabledByDefault() throws Exception {
+      ActiveMQServer server = Mockito.mock(ActiveMQServer.class);
+
+      TransportConfiguration backup = createBackupTransportConfiguration();
+
+      // CLIENT_FAILOVER_ADVERTISING_ENABLED_PROP_NAME is intentionally not set.
+      // The default value is true.
+      AMQPConnectionCallback callback = createCallback(server, backup);
+
+      URI failoverList = callback.getFailoverList();
+
+      assertNotNull(failoverList);
+      assertEquals("tcp", failoverList.getScheme());
+      assertEquals("backup", failoverList.getHost());
+      assertEquals(61617, failoverList.getPort());
+      assertEquals("sslEnabled=false", failoverList.getQuery());
+   }
+
+   @Test
+   public void testGetFailoverListIncludesSslEnabled() throws Exception {
+      ActiveMQServer server = Mockito.mock(ActiveMQServer.class);
+
+      TransportConfiguration backup = createBackupTransportConfiguration();
+      backup.getParams().put(
+         TransportConstants.SSL_ENABLED_PROP_NAME,
+         true);
+      backup.getParams().put(
+         TransportConstants.CLIENT_FAILOVER_ADVERTISING_ENABLED_PROP_NAME,
+         true);
+
+      AMQPConnectionCallback callback = createCallback(server, backup);
+
+      URI failoverList = callback.getFailoverList();
+
+      assertNotNull(failoverList);
+      assertEquals("tcp", failoverList.getScheme());
+      assertEquals("backup", failoverList.getHost());
+      assertEquals(61617, failoverList.getPort());
+      assertEquals("sslEnabled=true", failoverList.getQuery());
+   }
+
+   private TransportConfiguration createBackupTransportConfiguration() {
+      Map<String, Object> params = new HashMap<>();
+      params.put(TransportConstants.HOST_PROP_NAME, "backup");
+      params.put(TransportConstants.PORT_PROP_NAME, 61617);
+
+      return new TransportConfiguration(
+         NettyConnectorFactory.class.getName(),
+         params);
+   }
+
+
+   private AMQPConnectionCallback createCallback(
+      ActiveMQServer server,
+      TransportConfiguration backup) throws Exception {
+
+      String nodeId = "test-node";
+
+      Mockito.when(server.getNodeID()).thenReturn(SimpleString.of(nodeId));
+
+      ClusterManager clusterManager = Mockito.mock(ClusterManager.class);
+      ClusterConnection clusterConnection = Mockito.mock(ClusterConnection.class);
+      Topology topology = Mockito.mock(Topology.class);
+
+      Mockito.when(server.getClusterManager()).thenReturn(clusterManager);
+      Mockito.when(clusterManager.getDefaultConnection(null)).thenReturn(clusterConnection);
+      Mockito.when(clusterConnection.getTopology()).thenReturn(topology);
+
+      TopologyMemberImpl member = new TopologyMemberImpl(
+         nodeId,
+         null,
+         null,
+         null,
+         backup);
+
+      Mockito.when(topology.getMember(nodeId)).thenReturn(member);
+
+      ProtonProtocolManager protocolManager = Mockito.mock(ProtonProtocolManager.class);
+      Mockito.when(protocolManager.getServer()).thenReturn(server);
+
+      return new AMQPConnectionCallback(
+         protocolManager,
+         null,
+         null,
+         server);
    }
 }
