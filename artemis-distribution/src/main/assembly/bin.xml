@@ -26,6 +26,22 @@
    </formats>
    <includeBaseDirectory>true</includeBaseDirectory>
 
+   <containerDescriptorHandlers>
+      <containerDescriptorHandler>
+         <handlerName>sbom</handlerName>
+         <configuration>
+             <!-- Pritty-print the SBOM JSON, defaults to false
+             <prettyPrint>true</prettyPrint -->
+             <!-- Whether to embed the SBOM in the archive or generate it next to it: embedded - default, external, all
+             <outputMode>all</outputMode -->
+             <!-- Whether to manifest only library components or all the files in a distribution, defaults to false
+             <librariesOnly>true</librariesOnly -->
+             <!-- Whether to attach an external SBOM as a Maven artifact, defaults to false
+             <attach>true</attach -->
+         </configuration>
+      </containerDescriptorHandler>
+   </containerDescriptorHandlers>
+
    <componentDescriptors>
        <componentDescriptor>dep.xml</componentDescriptor>
    </componentDescriptors>

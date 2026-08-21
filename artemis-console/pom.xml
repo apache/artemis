@@ -83,6 +83,14 @@
                 <!-- include any other file types you want to filter -->
               </includes>
             </resource>
+            <resource>
+              <filtering>false</filtering>
+              <directory>${project.build.directory}</directory>
+              <targetPath>META-INF/sbom</targetPath>
+              <includes>
+                <include>bom.cdx.json</include>
+              </includes>
+            </resource>
           </webResources>
           <overlays>
             <overlay>
@@ -136,6 +144,22 @@
             </replacement>
           </replacements>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>dev.cyberstamp.maven.assembly.sbom</groupId>
+        <artifactId>assembly-sbom-maven-plugin</artifactId>
+        <version>0.1.1</version>
+        <executions>
+          <execution>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <outputFile>${project.build.directory}/bom.cdx.json</outputFile>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <artifactId>maven-clean-plugin</artifactId>
