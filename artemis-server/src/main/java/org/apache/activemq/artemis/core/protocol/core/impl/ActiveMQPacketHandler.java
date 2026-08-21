@@ -191,7 +191,7 @@ public class ActiveMQPacketHandler implements ChannelHandler {
 
          CoreSessionCallback sessionCallback = new CoreSessionCallback(request.getName(), protocolManager, channel, connection);
          boolean isLegacyProducer = request.getVersion() < PacketImpl.ARTEMIS_2_28_0_VERSION;
-         ServerSession session = server.createSession(request.getName(), activeMQPrincipal == null ? request.getUsername() : activeMQPrincipal.getUserName(), activeMQPrincipal == null ? request.getPassword() : activeMQPrincipal.getPassword(), request.getMinLargeMessageSize(), connection, request.isAutoCommitSends(), request.isAutoCommitAcks(), request.isPreAcknowledge(), request.isXA(), request.getDefaultAddress(), sessionCallback, true, sessionOperationContext, routingTypeMap, protocolManager.getSecurityDomain(), validatedUser, isLegacyProducer);
+         ServerSession session = server.createSession(request.getName(), activeMQPrincipal == null ? request.getUsername() : activeMQPrincipal.getUserName(), activeMQPrincipal == null ? request.getPassword() : activeMQPrincipal.getPassword(), request.getMinLargeMessageSize(), connection, request.isAutoCommitSends(), request.isAutoCommitAcks(), request.isPreAcknowledge(), request.isXA(), request.getDefaultAddress(), sessionCallback, true, sessionOperationContext, routingTypeMap, protocolManager.getTemporaryPrefixes(), protocolManager.getSecurityDomain(), validatedUser, isLegacyProducer);
          ServerSessionPacketHandler handler = new ServerSessionPacketHandler(server, session, channel);
          channel.setHandler(handler);
          sessionCallback.setSessionHandler(handler);
