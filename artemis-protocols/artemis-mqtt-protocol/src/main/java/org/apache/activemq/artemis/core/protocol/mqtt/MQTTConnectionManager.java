@@ -16,8 +16,6 @@
  */
 package org.apache.activemq.artemis.core.protocol.mqtt;
 
-import java.util.List;
-
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttProperties;
@@ -93,18 +91,21 @@ public class MQTTConnectionManager {
          session.getState().setWillRetain(connect.variableHeader().isWillRetain());
          session.getState().setWillTopic(connect.payload().willTopic());
          session.getState().setWillStatus(MQTTSessionState.WillStatus.NOT_SENT);
+         session.getState().setWillDelayInterval(0);
+         session.getState().setWillPublishProperties(MqttProperties.NO_PROPERTIES);
 
          if (session.getVersion() == MQTTVersion.MQTT_5) {
             MqttProperties willProperties = connect.payload().willProperties();
             if (willProperties != null) {
-               MqttProperties.MqttProperty willDelayInterval = willProperties.getProperty(WILL_DELAY_INTERVAL.value());
-               if (willDelayInterval != null) {
-                  session.getState().setWillDelayInterval((int) willDelayInterval.value());
+               MqttProperties publishProperties = new MqttProperties();
+               for (MqttProperties.MqttProperty property : willProperties.listAll()) {
+                  if (property.propertyId() == WILL_DELAY_INTERVAL.value()) {
+                     session.getState().setWillDelayInterval((int) property.value());
+                  } else {
+                     publishProperties.add(property);
+                  }
                }
-               List<? extends MqttProperties.MqttProperty> userProperties = willProperties.getProperties(MqttProperties.MqttPropertyType.USER_PROPERTY.value());
-               if (userProperties != null) {
-                  session.getState().setWillUserProperties(userProperties);
-               }
+               session.getState().setWillPublishProperties(publishProperties);
             }
          }
       }

@@ -88,7 +88,7 @@ public class MQTTSessionState {
 
    private long willDelayInterval = 0;
 
-   private List<? extends MqttProperties.MqttProperty> willUserProperties;
+   private MqttProperties willPublishProperties = MqttProperties.NO_PROPERTIES;
 
    private WillStatus willStatus = WillStatus.NOT_SENT;
 
@@ -183,6 +183,7 @@ public class MQTTSessionState {
       willStatus = WillStatus.NOT_SENT;
       failed = false;
       willDelayInterval = 0;
+      willPublishProperties = MqttProperties.NO_PROPERTIES;
       willRetain = false;
       willTopic = null;
       clientMaxPacketSize = 0;
@@ -310,12 +311,12 @@ public class MQTTSessionState {
       this.willDelayInterval = willDelayInterval;
    }
 
-   public void setWillUserProperties(List<? extends MqttProperties.MqttProperty> userProperties) {
-      this.willUserProperties = userProperties;
+   public void setWillPublishProperties(MqttProperties willPublishProperties) {
+      this.willPublishProperties = willPublishProperties;
    }
 
-   public List<? extends MqttProperties.MqttProperty> getWillUserProperties() {
-      return willUserProperties;
+   public MqttProperties getWillPublishProperties() {
+      return willPublishProperties;
    }
 
    public WillStatus getWillStatus() {

@@ -22,7 +22,6 @@ import java.util.UUID;
 import io.netty.buffer.EmptyByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.handler.codec.mqtt.MqttMessageBuilders;
-import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import org.apache.activemq.artemis.api.core.ActiveMQSecurityException;
@@ -270,16 +269,14 @@ public class MQTTSession {
       if (state.getWillStatus() == MQTTSessionState.WillStatus.NOT_SENT) {
          try {
             state.setWillStatus(MQTTSessionState.WillStatus.SENDING);
-            MqttProperties properties;
-            if (state.getWillUserProperties() == null) {
-               properties = MqttProperties.NO_PROPERTIES;
-            } else {
-               properties = new MqttProperties();
-               for (MqttProperties.MqttProperty userProperty : state.getWillUserProperties()) {
-                  properties.add(userProperty);
-               }
-            }
-            MqttPublishMessage publishMessage = MqttMessageBuilders.publish().messageId(0).qos(MqttQoS.valueOf(state.getWillQoSLevel())).retained(state.isWillRetain()).topicName(state.getWillTopic()).payload(state.getWillMessage() == null ? new EmptyByteBuf(PooledByteBufAllocator.DEFAULT) : state.getWillMessage()).properties(properties).build();
+            MqttPublishMessage publishMessage = MqttMessageBuilders
+                .publish()
+                .messageId(0)
+                .qos(MqttQoS.valueOf(state.getWillQoSLevel()))
+                .retained(state.isWillRetain())
+                .topicName(state.getWillTopic())
+                .payload(state.getWillMessage() == null ? new EmptyByteBuf(PooledByteBufAllocator.DEFAULT) : state.getWillMessage())
+                .properties(state.getWillPublishProperties()).build();
             logger.debug("{} sending will message: {}", this, publishMessage);
             getMqttPublishManager().sendToQueue(publishMessage, true);
             state.setWillStatus(MQTTSessionState.WillStatus.SENT);
