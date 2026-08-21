@@ -131,6 +131,9 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
     */
    private volatile boolean disableDiscoveryRetries = false;
 
+   // set when connect() is called, meaning this locator is used for clustering or topology discovery
+   private volatile boolean connected = false;
+
    // if the system should shutdown the pool when shutting down
    private transient boolean shutdownPool;
 
@@ -552,6 +555,7 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
       // if we used connect, we should control UDP reconnections at a different path.
       // and this belongs to a cluster connection, not client
       disableDiscoveryRetries = true;
+      connected = true;
       ClientSessionFactoryInternal returnFactory = null;
 
       synchronized (this) {
@@ -1380,6 +1384,11 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
    @Override
    public boolean isClusterConnection() {
       return clusterConnection;
+   }
+
+   @Override
+   public boolean isConnected() {
+      return connected;
    }
 
    @Override

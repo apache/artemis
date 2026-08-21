@@ -1201,6 +1201,8 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
             connector.close();
          } catch (Throwable t) {
          }
+      } else if (serverLocator.isConnected() || serverLocator.isHA()) {
+         transportConnection.setConnected();
       }
 
       return transportConnection;

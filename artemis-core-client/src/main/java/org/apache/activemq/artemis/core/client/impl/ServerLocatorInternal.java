@@ -99,4 +99,6 @@ public interface ServerLocatorInternal extends ServerLocator {
    Pair<TransportConfiguration, TransportConfiguration> selectNextConnectorPair();
 
    long getNextRetryInterval(long retryInterval, double retryIntervalMultiplier, long maxRetryInterval);
+
+   boolean isConnected();
 }
