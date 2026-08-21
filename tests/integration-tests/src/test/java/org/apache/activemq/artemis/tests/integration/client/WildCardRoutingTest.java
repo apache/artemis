@@ -17,6 +17,12 @@
 package org.apache.activemq.artemis.tests.integration.client;
 
 import java.lang.invoke.MethodHandles;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
@@ -33,6 +39,7 @@ import org.apache.activemq.artemis.core.server.ActiveMQServers;
 import org.apache.activemq.artemis.core.server.impl.AddressInfo;
 import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
+import org.apache.activemq.artemis.utils.Wait;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -786,6 +793,64 @@ public class WildCardRoutingTest extends ActiveMQTestBase {
       }
    }
 
+
+   /**
+    * Exercises the race between message routing (getBindingsForRoutingAddress, no PostOffice lock) and wildcard queue
+    * create/delete (addBinding/removeBinding, under the PostOffice lock).
+    */
+   @Test
+   public void testConcurrentWildcardBindingChangesDuringRouting() throws Exception {
+      SimpleString wildcardAddress = SimpleString.of("test.#");
+      server.addAddressInfo(new AddressInfo(wildcardAddress, RoutingType.MULTICAST));
+
+      AtomicReference<Throwable> error = new AtomicReference<>();
+      AtomicBoolean running = new AtomicBoolean(true);
+      AtomicInteger addressCounter = new AtomicInteger();
+
+      int bindingThreads = 4;
+      int producerThreads = 8;
+      ExecutorService executor = Executors.newFixedThreadPool(bindingThreads + producerThreads);
+      runAfter(executor::shutdownNow);
+
+      for (int i = 0; i < bindingThreads; i++) {
+         final int id = i;
+         ClientSession bindingSession = addClientSession(sf.createSession(false, true, true));
+         executor.submit(() -> {
+            try {
+               for (int j = 0; running.get() && error.get() == null; j++) {
+                  String queueName = "wc-" + id + "-" + j;
+                  bindingSession.createQueue(QueueConfiguration.of(queueName).setAddress(wildcardAddress).setDurable(false).setAutoDelete(false));
+                  bindingSession.deleteQueue(queueName);
+               }
+            } catch (Throwable t) {
+               error.set(t);
+               running.set(false);
+            }
+         });
+      }
+
+      for (int i = 0; i < producerThreads; i++) {
+         ClientSession producerSession = addClientSession(sf.createSession(false, true, true));
+         executor.submit(() -> {
+            try (ClientProducer producer = producerSession.createProducer()) {
+               while (running.get() && error.get() == null) {
+                  SimpleString address = SimpleString.of("test.addr." + addressCounter.incrementAndGet());
+                  producer.send(address, producerSession.createMessage(false));
+               }
+            } catch (Throwable t) {
+               error.set(t);
+               running.set(false);
+            }
+         });
+      }
+
+      Wait.waitFor(() -> error.get() != null, 10_000);
+      running.set(false);
+
+      executor.shutdown();
+      assertTrue(executor.awaitTermination(30, TimeUnit.SECONDS), "finished on time");
+      assertNull(error.get(), "no exceptions");
+   }
 
    @Override
    @BeforeEach

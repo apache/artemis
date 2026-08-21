@@ -23,6 +23,7 @@ import org.apache.activemq.artemis.core.postoffice.Binding;
 import org.apache.activemq.artemis.core.postoffice.Bindings;
 import org.apache.activemq.artemis.core.postoffice.BindingsFactory;
 import org.apache.activemq.artemis.core.server.ActiveMQMessageBundle;
+import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.impl.AddressInfo;
 import org.apache.activemq.artemis.core.server.metrics.MetricsManager;
 import org.apache.activemq.artemis.core.transaction.Transaction;
@@ -34,6 +35,11 @@ import org.apache.activemq.artemis.utils.CompositeAddress;
 public class WildcardAddressManager extends SimpleAddressManager {
 
    private final AddressMap<Bindings> addressMap = new AddressMap<>(wildcardConfiguration.getAnyWordsString(), wildcardConfiguration.getSingleWordString(), wildcardConfiguration.getDelimiter());
+
+   /**
+    * Guards consistency between {@link #addressMap} and {@link #mappings} when adding or removing bindings for wildcard addresses
+    */
+   private final Object addressMapLock = new Object();
 
    public WildcardAddressManager(final BindingsFactory bindingsFactory,
                                  final WildcardConfiguration wildcardConfiguration,
@@ -50,32 +56,36 @@ public class WildcardAddressManager extends SimpleAddressManager {
          throw ActiveMQMessageBundle.BUNDLE.wildcardOnProducerNotSupported(String.valueOf(address));
       }
 
+      // initial, unsynchronized check for bindings; optimized for the normal case (i.e., existing Bindings)
       Bindings bindings = super.getBindingsForRoutingAddress(address);
 
       if (bindings == null) {
+         synchronized (addressMapLock) {
+            // subsequent, synchronized check for bindings; only used when creating a new Bindings
+            bindings = super.getBindingsForRoutingAddress(address);
+            if (bindings == null) {
+               final Bindings[] lazyCreateResult = new Bindings[1];
 
-         final Bindings[] lazyCreateResult = new Bindings[1];
-
-         addressMap.visitMatchingWildcards(address, new AddressMapVisitor<>() {
-
-            Bindings newBindings = null;
-            @Override
-            public void visit(Bindings matchingBindings) throws Exception {
-               if (newBindings == null) {
-                  newBindings = addMappingsInternal(address, matchingBindings.getBindings());
-                  lazyCreateResult[0] = newBindings;
-               } else {
-                  for (Binding binding : matchingBindings.getBindings()) {
-                     newBindings.addBinding(binding);
+               addressMap.visitMatchingWildcards(address, new AddressMapVisitor<>() {
+                  Bindings newBindings = null;
+                  @Override
+                  public void visit(Bindings matchingBindings) throws Exception {
+                     if (newBindings == null) {
+                        newBindings = addMappingsInternal(address, matchingBindings.getBindings());
+                        lazyCreateResult[0] = newBindings;
+                     } else {
+                        for (Binding binding : matchingBindings.getBindings()) {
+                           newBindings.addBinding(binding);
+                        }
+                     }
                   }
+               });
+
+               bindings = lazyCreateResult[0];
+               if (bindings != null) {
+                  addressMap.put(address, bindings);
                }
             }
-         });
-
-         bindings = lazyCreateResult[0];
-         if (bindings != null) {
-            // record such that any new wildcard bindings can join
-            addressMap.put(address, bindings);
          }
       }
       return bindings;
@@ -91,45 +101,56 @@ public class WildcardAddressManager extends SimpleAddressManager {
     */
    @Override
    public boolean addBinding(final Binding binding) throws Exception {
-      final boolean bindingsForANewAddress = super.addBinding(binding);
-      final SimpleString address = binding.getAddress();
-      final Bindings bindingsForRoutingAddress = mappings.get(binding.getAddress());
+      synchronized (addressMapLock) {
+         final boolean bindingsForANewAddress = super.addBinding(binding);
+         final SimpleString address = binding.getAddress();
+         final Bindings bindingsForRoutingAddress = mappings.get(binding.getAddress());
 
-      if (wildcardConfiguration.isWild(address)) {
+         if (wildcardConfiguration.isWild(address)) {
 
-         addressMap.visitMatching(address, bindings -> {
-            // this wildcard binding needs to be added to matching addresses
-            bindings.addBinding(binding);
-         });
+            addressMap.visitMatching(address, bindings -> {
+               // this wildcard binding needs to be added to matching addresses
+               bindings.addBinding(binding);
+            });
 
-      } else if (bindingsForANewAddress) {
-         // existing wildcards may match this new simple address
-         addressMap.visitMatchingWildcards(address, bindings -> {
-            // apply existing bindings from matching wildcards
-            for (Binding toAdd : bindings.getBindings()) {
-               bindingsForRoutingAddress.addBinding(toAdd);
-            }
-         });
+         } else if (bindingsForANewAddress) {
+            // existing wildcards may match this new simple address
+            addressMap.visitMatchingWildcards(address, bindings -> {
+               // apply existing bindings from matching wildcards
+               for (Binding toAdd : bindings.getBindings()) {
+                  bindingsForRoutingAddress.addBinding(toAdd);
+               }
+            });
+         }
+
+         if (bindingsForANewAddress) {
+            addressMap.put(address, bindingsForRoutingAddress);
+         }
+         return bindingsForANewAddress;
       }
-
-      if (bindingsForANewAddress) {
-         addressMap.put(address, bindingsForRoutingAddress);
-      }
-      return bindingsForANewAddress;
    }
 
    @Override
    public Binding removeBinding(final SimpleString uniqueName, Transaction tx) throws Exception {
-      Binding binding = super.removeBinding(uniqueName, tx);
-      if (binding != null) {
-         SimpleString address = binding.getAddress();
-         if (wildcardConfiguration.isWild(address)) {
-
-            addressMap.visitMatching(address, bindings -> removeBindingInternal(bindings.getName(), uniqueName));
-
+      synchronized (addressMapLock) {
+         Binding binding = super.removeBinding(uniqueName, tx);
+         if (binding != null) {
+            SimpleString address = binding.getAddress();
+            if (wildcardConfiguration.isWild(address)) {
+               addressMap.visitMatching(address, bindings -> {
+                  try {
+                     removeBindingInternal(bindings.getName(), uniqueName);
+                  } catch (IllegalStateException e) {
+                     // The addressMapLock should prevent this IllegalStateException, but we explicitly catch it here
+                     // for additional safety since it would abort the visitor traversal and skip cleanup of remaining
+                     // addresses, leaking their entries in mappings and addressMap.
+                     ActiveMQServerLogger.LOGGER.failedToRemoveBindingDuringWildcardCleanup(uniqueName.toString(), bindings.getName().toString(), e);
+                  }
+               });
+            }
          }
+         return binding;
       }
-      return binding;
    }
 
    @Override
@@ -139,8 +160,10 @@ public class WildcardAddressManager extends SimpleAddressManager {
 
    @Override
    public void clear() {
-      super.clear();
-      addressMap.reset();
+      synchronized (addressMapLock) {
+         super.clear();
+         addressMap.reset();
+      }
    }
 
    public AddressMap<Bindings> getAddressMap() {
@@ -149,8 +172,10 @@ public class WildcardAddressManager extends SimpleAddressManager {
 
    @Override
    public AddressInfo removeAddressInfo(SimpleString address) throws Exception {
-      SimpleString realAddress = CompositeAddress.extractAddressName(address);
-      addressMap.remove(realAddress, super.getBindingsForRoutingAddress(realAddress));
-      return super.removeAddressInfo(address);
+      synchronized (addressMapLock) {
+         SimpleString realAddress = CompositeAddress.extractAddressName(address);
+         addressMap.remove(realAddress, super.getBindingsForRoutingAddress(realAddress));
+         return super.removeAddressInfo(address);
+      }
    }
 }

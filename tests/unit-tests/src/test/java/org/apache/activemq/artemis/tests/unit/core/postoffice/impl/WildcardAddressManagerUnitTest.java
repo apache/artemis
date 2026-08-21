@@ -365,6 +365,46 @@ public class WildcardAddressManagerUnitTest extends ActiveMQTestBase {
 
    }
 
+   /**
+    * This test simulates the end state of a race by manually removing a binding from the lazily-created Bindings, then
+    * verifies that removeBinding handles the missing binding without leaking entries in mappings/addressMap.
+    */
+   @Test
+   public void testRemoveWildcardBindingAfterConcurrentGetBindingsForRoutingAddress() throws Exception {
+      final String permanent = "permanent";
+      final String temporary = "temporary";
+      final String myAddress = "myAddress.";
+
+      WildcardAddressManager ad = getTestWildcardAddressManager();
+
+      // Two wildcard bindings that both match "myAddress.foo" and "myAddress.bar"
+      ad.addBinding(new BindingFake("#", permanent));
+      ad.addBinding(new BindingFake(myAddress + "#", temporary));
+
+      // Lazily create Bindings for two addresses; both copy the wildcard bindings
+      Bindings fooBindings = ad.getBindingsForRoutingAddress(SimpleString.of(myAddress + "foo"));
+      Bindings barBindings = ad.getBindingsForRoutingAddress(SimpleString.of(myAddress + "bar"));
+      assertEquals(2, fooBindings.getBindings().size());
+      assertEquals(2, barBindings.getBindings().size());
+
+      // Simulate the race on one address: the "temporary" binding was never copied
+      fooBindings.removeBindingByUniqueName(SimpleString.of(temporary));
+      assertEquals(1, fooBindings.getBindings().size());
+
+      // removeBinding must handle the missing binding on "myAddress.foo" without aborting the visitor traversal. If the
+      // ISE is not caught, the visitor traversal will short-circuit and skip the cleanup of "myAddress.bar", leaking
+      // its "temporary" binding in mappings and addressMap.
+      ad.removeBinding(SimpleString.of(temporary), null);
+
+      // Verify no leaked bindings: "permanent" should be the only binding remaining on each address
+      fooBindings = ad.getBindingsForRoutingAddress(SimpleString.of(myAddress + "foo"));
+      barBindings = ad.getBindingsForRoutingAddress(SimpleString.of(myAddress + "bar"));
+      assertEquals(1, fooBindings.getBindings().size());
+      assertEquals(1, barBindings.getBindings().size());
+      assertEquals(permanent, fooBindings.getBindings().iterator().next().getUniqueName().toString());
+      assertEquals(permanent, barBindings.getBindings().iterator().next().getUniqueName().toString());
+   }
+
    @Test
    public void testConcurrentCalls() throws Exception {
       final WildcardConfiguration configuration = new WildcardConfiguration();

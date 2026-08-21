@@ -1556,4 +1556,7 @@ public interface ActiveMQServerLogger {
 
    @LogMessage(id = 224166, value = "Server is stopping. Unable to delete unreferenced message with id={}.", level = LogMessage.Level.WARN)
    void unableToDeleteMessageDuringShutdown(long messageId);
+
+   @LogMessage(id = 224167, value = "Failed to remove binding {} from address {} during wildcard address cleanup", level = LogMessage.Level.WARN)
+   void failedToRemoveBindingDuringWildcardCleanup(String binding, String address, Exception e);
 }

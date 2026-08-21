@@ -251,7 +251,7 @@ public class SimpleAddressManager implements AddressManager {
          final SimpleString bindableQueueName = CompositeAddress.extractQueueName(bindableName);
          final Binding binding = bindings.removeBindingByUniqueName(bindableQueueName);
          if (binding == null) {
-            throw new IllegalStateException("Cannot find binding " + bindableName);
+            throw new IllegalStateException("Cannot find binding " + bindableName + " on " + realAddress);
          } else {
             if (binding instanceof LocalQueueBinding) {
                localBindingsMap.remove(binding.getID());
