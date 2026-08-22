@@ -42,7 +42,7 @@ import org.apache.activemq.artemis.utils.critical.CriticalAnalyzer;
 import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 import org.slf4j.Logger;
-import org.jctools.queues.MpmcArrayQueue;
+import org.jctools.queues.varhandle.MpmcVarHandleArrayQueue;
 import org.jctools.queues.atomic.MpmcAtomicArrayQueue;
 
 public final class AIOSequentialFileFactory extends AbstractSequentialFileFactory {
@@ -115,7 +115,7 @@ public final class AIOSequentialFileFactory extends AbstractSequentialFileFactor
          logger.warn("Using journal-max-io 1 isn't a proper use of ASYNCIO journal: consider rise this value or use NIO.");
       }
       final int adjustedMaxIO = Math.max(2, maxIO);
-      callbackPool = PlatformDependent.hasUnsafe() ? new MpmcArrayQueue<>(adjustedMaxIO) : new MpmcAtomicArrayQueue<>(adjustedMaxIO);
+      callbackPool = PlatformDependent.hasUnsafe() ? new MpmcVarHandleArrayQueue<>(adjustedMaxIO) : new MpmcAtomicArrayQueue<>(adjustedMaxIO);
       logger.trace("New AIO File Created");
    }
 
