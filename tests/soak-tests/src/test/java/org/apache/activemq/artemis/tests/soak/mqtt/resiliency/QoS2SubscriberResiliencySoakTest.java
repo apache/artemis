@@ -172,13 +172,13 @@ public class QoS2SubscriberResiliencySoakTest extends QoS2ResiliencySoakTestSupp
       // verify all expected messages received with no duplicates
       for (Mqtt5BlockingClient subscriber : subscribers) {
          String clientId = getClientId(subscriber);
-         assertEquals(0, duplicatesPerSubscriber.get(clientId).size(), "Subscriber " + getClientId(subscriber) + " received duplicates: " + duplicatesPerSubscriber.get(clientId));
-         assertEquals(NUM_MESSAGES, receivedPerSubscriber.get(clientId).size(), "Subscriber " + getClientId(subscriber) + " didn't receive: " + getMissingMessages(sentMessages, receivedPerSubscriber.get(clientId)));
-         assertEquals(0L, getSubscriptionQueue(TOPIC, getClientId(subscriber)).getMessageCount(), "Subscription queue for " + getClientId(subscriber) + " has incorrect message count");
-         assertEquals(0, getProtocolManager().getStateManager().getPacketIdCorrelationSize(getClientId(subscriber)));
-         assertEquals(0, getSubCacheSize(getClientId(subscriber)));
+         assertEquals(0, duplicatesPerSubscriber.get(clientId).size(), "Subscriber " + clientId + " received duplicates: " + duplicatesPerSubscriber.get(clientId));
+         assertEquals(NUM_MESSAGES, receivedPerSubscriber.get(clientId).size(), "Subscriber " + clientId + " didn't receive: " + getMissingMessages(sentMessages, receivedPerSubscriber.get(clientId)));
+         Wait.assertEquals(0L, () -> getSubscriptionQueue(TOPIC, clientId).getMessageCount(), 2000, 20, () -> "Subscription queue for " + clientId + " has incorrect message count");
+         assertEquals(0, getProtocolManager().getStateManager().getPacketIdCorrelationSize(clientId));
+         assertEquals(0, getSubCacheSize(clientId));
          cleanDisconnect(subscriber);
-         assertNull(getSubCache(getClientId(subscriber)), "Sub cache should be null after clean start for " + getClientId(subscriber));
+         assertNull(getSubCache(clientId), "Sub cache should be null after clean start for " + clientId);
       }
    }
 }

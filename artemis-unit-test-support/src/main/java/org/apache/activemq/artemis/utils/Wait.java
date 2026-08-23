@@ -78,7 +78,7 @@ public class Wait {
    }
 
    public static void assertEquals(Object obj, ObjectCondition condition) throws Exception {
-      assertEquals(obj, condition, MAX_WAIT_MILLIS, SLEEP_MILLIS);
+      assertEquals(obj, condition, MAX_WAIT_MILLIS, SLEEP_MILLIS, null);
    }
 
 
@@ -117,10 +117,14 @@ public class Wait {
 
 
    public static void assertEquals(Object obj, ObjectCondition condition, long timeout, long sleepMillis) throws Exception {
+      assertEquals(obj, condition, timeout, sleepMillis, null);
+   }
+
+   public static void assertEquals(Object obj, ObjectCondition condition, long timeout, long sleepMillis, Supplier<String> messageSupplier) throws Exception {
       boolean result = waitFor(() -> (obj == condition || (obj != null && obj.equals(condition.getObject()))), timeout, sleepMillis);
 
       if (!result) {
-         Assertions.assertEquals(obj, condition.getObject());
+         Assertions.assertEquals(obj, condition.getObject(), messageSupplier);
       }
    }
 
