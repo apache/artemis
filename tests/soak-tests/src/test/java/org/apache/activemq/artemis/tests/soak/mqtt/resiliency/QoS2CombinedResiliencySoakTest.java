@@ -171,7 +171,7 @@ public class QoS2CombinedResiliencySoakTest extends QoS2ResiliencySoakTestSuppor
          String clientId = getClientId(subscriber);
          assertEquals(0, duplicatesPerSubscriber.get(clientId).size(), "Subscriber " + clientId + " received duplicates: " + duplicatesPerSubscriber.get(clientId));
          assertEquals(NUM_PUBLISHERS * NUM_MESSAGES, receivedPerSubscriber.get(clientId).size(), "Subscriber " + clientId + " didn't receive: " + getMissingMessages(publishResult.sentMessages(), receivedPerSubscriber.get(clientId)));
-         assertEquals(0L, getSubscriptionQueue(TOPIC, clientId).getMessageCount(), "Subscription queue for " + clientId + " has incorrect message count");
+         Wait.assertEquals(0L, () -> getSubscriptionQueue(TOPIC, clientId).getMessageCount(), 2000, 20, () -> "Subscription queue for " + clientId + " has incorrect message count");
          assertEquals(0, getProtocolManager().getStateManager().getPacketIdCorrelationSize(clientId));
          assertEquals(0, getSubCacheSize(clientId));
          cleanDisconnect(subscriber);
