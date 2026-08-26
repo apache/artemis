@@ -62,8 +62,8 @@ public interface MQTTLogger {
    @LogMessage(id = 834008, value = "Failed to remove session state for client with ID: {}", level = LogMessage.Level.ERROR)
    void failedToRemoveSessionState(String clientID, Exception e);
 
-   @LogMessage(id = 834009, value = "Ignoring duplicate MQTT QoS2 PUBLISH; packet ID: {}; client ID: {}.", level = LogMessage.Level.WARN)
-   void ignoringQoS2Publish(long packetId, String clientId);
+   @LogMessage(id = 834009, value = "Ignoring duplicate MQTT QoS2 PUBLISH (DUP flag not set); packet ID: {}; client ID: {}. Unexpected reuse of an in-flight packet ID.", level = LogMessage.Level.WARN)
+   void ignoringUnexpectedDuplicatePacketId(long packetId, String clientId);
 
    @LogMessage(id = 834010, value = "Unable to scan MQTT sessions", level = LogMessage.Level.ERROR)
    void unableToScanSessions(Exception e);
@@ -85,4 +85,7 @@ public interface MQTTLogger {
 
    @LogMessage(id = 834016, value = "Storage operation failed. Error code: {}; message: {}", level = LogMessage.Level.ERROR)
    void storageOperationError(int errorCode, String errorMessage);
+
+   @LogMessage(id = 834017, value = "Ignoring duplicate MQTT QoS2 PUBLISH (DUP flag set); packet ID: {}; client ID: {}. Expected reuse of an in-flight packet ID.", level = LogMessage.Level.INFO)
+   void ignoringExpectedDuplicatePacketId(long packetId, String clientId);
 }

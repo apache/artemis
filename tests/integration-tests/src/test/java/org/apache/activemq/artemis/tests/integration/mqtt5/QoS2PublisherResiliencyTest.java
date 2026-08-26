@@ -24,6 +24,7 @@ import io.netty.handler.codec.mqtt.MqttMessageType;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.core.protocol.mqtt.MQTTInterceptor;
+import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
 import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.artemis.utils.ReusableLatch;
 import org.apache.activemq.artemis.utils.Wait;
@@ -36,6 +37,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -201,6 +203,7 @@ public class QoS2PublisherResiliencyTest extends MQTT5TestSupport {
    }
 
    public void testQoS2FailureAfterPubRecSent(boolean restart) throws Exception {
+      final String MQTT_LOGGER_NAME = "org.apache.activemq.artemis.core.protocol.mqtt";
       final String TOPIC = RandomUtil.randomUUIDString();
       final String CLIENTID = "publisher";
       final CountDownLatch pubRecLatch = new CountDownLatch(1);
@@ -272,11 +275,20 @@ public class QoS2PublisherResiliencyTest extends MQTT5TestSupport {
 
       assertEquals(1, getPubCacheSize(CLIENTID));
 
-      // The client will automatically re-initiate the QoS2 protocol after reconnecting since it never got a PUBREC
-      reconnectSafely(publisher);
+      AssertionLoggerHandler.LogLevel previousLevel = AssertionLoggerHandler.setLevel(MQTT_LOGGER_NAME, AssertionLoggerHandler.LogLevel.INFO);
+      try (AssertionLoggerHandler loggerHandler = new AssertionLoggerHandler()) {
+         // The client will automatically re-initiate the QoS2 protocol after reconnecting since it never got a PUBREC.
+         // The retransmitted PUBLISH has the DUP flag set, so the broker recognizes the expected duplicate and logs at INFO.
+         reconnectSafely(publisher);
 
-      // Wait for the PUBCOMP to confirm QoS2 protocol is done
-      assertTrue(pubCompLatch.await(5, TimeUnit.SECONDS));
+         // Wait for the PUBCOMP to confirm QoS2 protocol is done
+         assertTrue(pubCompLatch.await(5, TimeUnit.SECONDS));
+
+         assertTrue(loggerHandler.findText("AMQ834017"), "expected INFO log for the QoS2 PUBLISH retransmission");
+         assertFalse(loggerHandler.findText("AMQ834009"), "did not expect WARN for reused packet ID");
+      } finally {
+         AssertionLoggerHandler.setLevel(MQTT_LOGGER_NAME, previousLevel);
+      }
 
       // Verify only one message is in the queue despite the QoS2 interruption
       Wait.assertEquals(1L, () -> server.locateQueue(TOPIC).getMessageCount(), 500, 25);

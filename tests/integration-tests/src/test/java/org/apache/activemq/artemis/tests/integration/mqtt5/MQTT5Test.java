@@ -37,6 +37,7 @@ import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.paging.impl.PagingManagerImpl;
 import org.apache.activemq.artemis.core.paging.impl.PagingManagerImplAccessor;
+import org.apache.activemq.artemis.core.postoffice.DuplicateIDCache;
 import org.apache.activemq.artemis.core.postoffice.impl.PostOfficeImpl;
 import org.apache.activemq.artemis.core.postoffice.impl.PostOfficeTestAccessor;
 import org.apache.activemq.artemis.core.protocol.mqtt.MQTTInterceptor;
@@ -45,11 +46,13 @@ import org.apache.activemq.artemis.core.protocol.mqtt.MQTTReasonCodes;
 import org.apache.activemq.artemis.core.protocol.mqtt.MQTTSessionAccessor;
 import org.apache.activemq.artemis.core.protocol.mqtt.MQTTSessionState;
 import org.apache.activemq.artemis.core.protocol.mqtt.MQTTUtil;
+import org.apache.activemq.artemis.core.protocol.mqtt.PacketIdCache;
 import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.ServerSession;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerSessionPlugin;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
+import org.apache.activemq.artemis.utils.ByteUtil;
 import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.artemis.utils.ReusableLatch;
 import org.apache.activemq.artemis.utils.Wait;
@@ -1109,5 +1112,48 @@ public class MQTT5Test extends MQTT5TestSupport {
       producer.publish("prefix/a.b", "myMessage".getBytes(StandardCharsets.UTF_8), 1, false);
 
       assertTrue(latch.await(500, TimeUnit.MILLISECONDS));
+   }
+
+   /**
+    * A spec-compliant client can never reuse a packet ID whose QoS 2 handshake is still in-flight, so the "reused packet
+    * ID" path (DUP flag not set) can't be reproduced with a normal client. Instead, seed the broker's PUBLISH cache with
+    * the packet ID the client is about to use to simulate a non-compliant client that resumed its session without
+    * preserving its outgoing QoS 2 state. The broker must treat the fresh (DUP=0) PUBLISH as a duplicate and log a WARN
+    * because the new message is silently dropped.
+    */
+   @Test
+   @Timeout(DEFAULT_TIMEOUT_SEC)
+   public void testDuplicateQoS2PublishWithReusedPacketIdLogsWarning() throws Exception {
+      final String TOPIC = RandomUtil.randomUUIDString();
+      final String CLIENT_ID = "publisher";
+      // Paho assigns packet ID 1 to the first QoS > 0 message sent on a fresh connection
+      final int PACKET_ID = 1;
+
+      server.createQueue(QueueConfiguration.of(TOPIC)
+                            .setAddress(TOPIC)
+                            .setRoutingType(RoutingType.MULTICAST)
+                            .setDurable(true));
+
+      MqttClient publisher = createPahoClient(CLIENT_ID);
+      publisher.connect(new MqttConnectionOptionsBuilder().cleanStart(false).sessionExpiryInterval(300L).build());
+
+      // Seed the broker's PUBLISH cache with the packet ID the client is about to use.
+      SimpleString cacheName = PacketIdCache.getCacheName(server.getInternalNamingPrefix(), CLIENT_ID, PacketIdCache.TYPE.PUBLISH);
+      DuplicateIDCache pubCache = server.getPostOffice().getDuplicateIDCache(cacheName, MQTTUtil.TWO_BYTE_INT_MAX);
+      pubCache.addToCache(ByteUtil.intToBytes(PACKET_ID), null);
+
+      try (AssertionLoggerHandler loggerHandler = new AssertionLoggerHandler()) {
+         // Fresh (DUP=0) PUBLISH reusing the cached packet ID; blocks until the QoS 2 handshake completes
+         publisher.publish(TOPIC, RandomUtil.randomBytes(), EXACTLY_ONCE, false);
+
+         assertTrue(loggerHandler.findText("AMQ834009"), "expected WARN for reused packet ID");
+         assertFalse(loggerHandler.findText("AMQ834017"), "did not expect the retransmit INFO message");
+      }
+
+      // The "new" message was silently dropped as a duplicate; nothing was delivered to the queue
+      assertEquals(0L, server.locateQueue(TOPIC).getMessageCount());
+
+      publisher.disconnect();
+      publisher.close();
    }
 }
