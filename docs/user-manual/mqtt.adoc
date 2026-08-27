@@ -307,3 +307,35 @@ However if you'd rather have the broker make a positive acknowledgement then set
 ----
 <acceptor name="mqtt">tcp://0.0.0:1883?protocols=MQTT;closeMqttConnectionOnPublishAuthorizationFailure=false</acceptor>
 ----
+
+== QoS 2 Packet Identifier Reuse
+
+A QoS 2 `PUBLISH` from a client uses a packet identifier which the MQTT specification considers "in use" from the moment the `PUBLISH` is sent until the corresponding `PUBCOMP` completes the exactly-once flow.
+A well-behaved client will never send a _new_ `PUBLISH` with a packet identifier that is still in use.
+If a client loses its outgoing session state but resumes an existing session it may reuse a packet identifier that the broker still considers in use.
+
+When the broker receives a QoS 2 `PUBLISH` whose packet identifier is already in use it inspects the `DUP` flag to distinguish two cases:
+
+* `DUP=1`: an expected retransmission of the original in-flight message. The broker does not deliver the message to subscribers and logs `AMQ834017` at `INFO`.
+* `DUP=0`: an unexpected reuse of an in-flight packet identifier. The broker does not deliver the message to subscribers and logs `AMQ834009` at `WARN`.
+
+By default the broker responds to the client in both cases with a `PUBREC` reason code of `0x00` (i.e. "Success") in order to allow the QoS 2 flow to complete.
+For MQTT 5 clients you can instead have the broker reject the `DUP=0` case with a `PUBREC` reason code of https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901147[`0x91` (i.e. "Packet Identifier in use")] by setting the URL parameter `rejectUnexpectedDuplicatePacketId` to `true` on the relevant MQTT `acceptor` in `broker.xml`, e.g.:
+
+[,xml]
+----
+<acceptor name="mqtt">tcp://0.0.0:1883?protocols=MQTT;rejectUnexpectedDuplicatePacketId=true</acceptor>
+----
+
+By default `rejectUnexpectedDuplicatePacketId` is `false`.
+This setting has no effect on MQTT 3.x clients as those versions don't support `PUBREC` reason codes.
+The MQTT 5 specification doesn't require this behavior, but it allows it.
+It is provided as an option to detect and alert non-compliant clients.
+A `PUBREC` reason code >= `0x80` terminates the QoS 2 flow, so the affected client's publish will fail.
+
+Regarding the `0x91` reason code, https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901031[section 2.4 of the MQTT 5 specification] states:
+
+[quote,]
+____
+For Reason Code 0x91 (Packet identifier in use), the response to this is either to try to fix the state, or to reset the Session state by connecting using Clean Start set to 1, or to decide if the Client or Server implementations are defective.
+____

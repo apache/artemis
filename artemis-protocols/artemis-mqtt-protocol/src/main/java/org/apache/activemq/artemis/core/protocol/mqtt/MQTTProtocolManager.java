@@ -73,6 +73,8 @@ public class MQTTProtocolManager extends AbstractProtocolManager<MqttMessage, MQ
 
    private boolean allowLinkStealing = true;
 
+   private boolean rejectUnexpectedDuplicatePacketId = false;
+
    private int defaultMaximumInFlightPublishMessages = MQTTUtil.DEFAULT_MAXIMUM_IN_FLIGHT_PUBLISH_MESSAGES;
 
    private final MQTTRoutingHandler routingHandler;
@@ -197,6 +199,15 @@ public class MQTTProtocolManager extends AbstractProtocolManager<MqttMessage, MQ
 
    public void setAllowLinkStealing(boolean allowLinkStealing) {
       this.allowLinkStealing = allowLinkStealing;
+   }
+
+   public boolean isRejectUnexpectedDuplicatePacketId() {
+      return rejectUnexpectedDuplicatePacketId;
+   }
+
+   public MQTTProtocolManager setRejectUnexpectedDuplicatePacketId(boolean rejectUnexpectedDuplicatePacketId) {
+      this.rejectUnexpectedDuplicatePacketId = rejectUnexpectedDuplicatePacketId;
+      return this;
    }
 
    public int getDefaultMaximumInFlightPublishMessages() {

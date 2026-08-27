@@ -28,9 +28,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttPubReplyMessageVariableHeader;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
@@ -1154,6 +1156,73 @@ public class MQTT5Test extends MQTT5TestSupport {
       assertEquals(0L, server.locateQueue(TOPIC).getMessageCount());
 
       publisher.disconnect();
+      publisher.close();
+   }
+
+   /**
+    * Companion to {@link #testDuplicateQoS2PublishWithReusedPacketIdLogsWarning()}. With the
+    * {@code rejectQoS2PublishWithReusedPacketId} setting enabled the broker must respond to the DUP=0 reused-packet-ID
+    * case with a {@code PUBREC} reason code of {@code 0x91} (i.e. "Packet Identifier in use") instead of {@code 0x00}
+    * (i.e. "Success").
+    */
+   @Test
+   @Timeout(DEFAULT_TIMEOUT_SEC)
+   public void testDuplicateQoS2PublishWithReusedPacketIdRejected() throws Exception {
+      setAcceptorProperty("rejectQoS2PublishWithReusedPacketId=true");
+
+      final String TOPIC = RandomUtil.randomUUIDString();
+      final String CLIENT_ID = "publisher";
+      // Paho assigns packet ID 1 to the first QoS > 0 message sent on a fresh connection
+      final int PACKET_ID = 1;
+
+      server.createQueue(QueueConfiguration.of(TOPIC)
+                            .setAddress(TOPIC)
+                            .setRoutingType(RoutingType.MULTICAST)
+                            .setDurable(true));
+
+      // capture the reason code of the outgoing PUBREC
+      AtomicInteger pubRecReasonCode = new AtomicInteger(-1);
+      CountDownLatch pubRecLatch = new CountDownLatch(1);
+      MQTTInterceptor outgoingInterceptor = (packet, connection) -> {
+         if (packet.fixedHeader().messageType() == MqttMessageType.PUBREC && packet.variableHeader() instanceof MqttPubReplyMessageVariableHeader header) {
+            pubRecReasonCode.set(header.reasonCode() & 0xFF);
+            pubRecLatch.countDown();
+         }
+         return true;
+      };
+      server.getRemotingService().addOutgoingInterceptor(outgoingInterceptor);
+
+      MqttClient publisher = createPahoClient(CLIENT_ID);
+      publisher.connect(new MqttConnectionOptionsBuilder().cleanStart(false).sessionExpiryInterval(300L).build());
+
+      // Seed the broker's PUBLISH cache with the packet ID the client is about to use.
+      SimpleString cacheName = PacketIdCache.getCacheName(server.getInternalNamingPrefix(), CLIENT_ID, PacketIdCache.TYPE.PUBLISH);
+      DuplicateIDCache pubCache = server.getPostOffice().getDuplicateIDCache(cacheName, MQTTUtil.TWO_BYTE_INT_MAX);
+      pubCache.addToCache(ByteUtil.intToBytes(PACKET_ID), null);
+
+      try (AssertionLoggerHandler loggerHandler = new AssertionLoggerHandler()) {
+         // Fresh (DUP=0) PUBLISH reusing the cached packet ID; the broker rejects it so Paho reports the reason code
+         try {
+            publisher.publish(TOPIC, RandomUtil.randomBytes(), EXACTLY_ONCE, false);
+            fail("expected the publish to fail with a 'packet identifier in use' reason code");
+         } catch (MqttException e) {
+            assertEquals(MQTTReasonCodes.PACKET_IDENTIFIER_IN_USE & 0xFF, e.getReasonCode(), "expected reason code 0x91");
+         }
+
+         assertTrue(loggerHandler.findText("AMQ834009"), "expected WARN for reused packet ID");
+      }
+
+      assertTrue(pubRecLatch.await(2, TimeUnit.SECONDS), "expected a PUBREC to be sent");
+      assertEquals(MQTTReasonCodes.PACKET_IDENTIFIER_IN_USE & 0xFF, pubRecReasonCode.get(), "expected PUBREC reason code 0x91");
+
+      // The "new" message was silently dropped as a duplicate; nothing was delivered to the queue
+      assertEquals(0L, server.locateQueue(TOPIC).getMessageCount());
+
+      try {
+         publisher.disconnect();
+      } catch (MqttException e) {
+         // the client may already be disconnected as a result of the rejected publish
+      }
       publisher.close();
    }
 }
