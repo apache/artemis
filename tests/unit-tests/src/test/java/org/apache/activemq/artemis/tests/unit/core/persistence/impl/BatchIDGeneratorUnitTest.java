@@ -16,11 +16,6 @@
  */
 package org.apache.activemq.artemis.tests.unit.core.persistence.impl;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,11 +28,18 @@ import org.apache.activemq.artemis.core.journal.PreparedTransactionInfo;
 import org.apache.activemq.artemis.core.journal.RecordInfo;
 import org.apache.activemq.artemis.core.journal.impl.JournalImpl;
 import org.apache.activemq.artemis.core.persistence.StorageManager;
+import org.apache.activemq.artemis.core.persistence.impl.journal.ActiveMQIDGeneratorStoppedException;
 import org.apache.activemq.artemis.core.persistence.impl.journal.BatchingIDGenerator;
 import org.apache.activemq.artemis.core.persistence.impl.journal.JournalRecordIds;
 import org.apache.activemq.artemis.core.persistence.impl.nullpm.NullStorageManager;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class BatchIDGeneratorUnitTest extends ActiveMQTestBase {
 
@@ -120,7 +122,8 @@ public class BatchIDGeneratorUnitTest extends ActiveMQTestBase {
    }
 
    private void validateStoppedGenerator(BatchingIDGenerator stoppedGenerator) {
-      assertThrowsExactly(RuntimeException.class, stoppedGenerator::generateID);
+      assertThrowsExactly(ActiveMQIDGeneratorStoppedException.class, stoppedGenerator::generateID);
+      assertThrows(RuntimeException.class, stoppedGenerator::generateID);
    }
 
    protected void loadIDs(final Journal journal, final BatchingIDGenerator batch) throws Exception {

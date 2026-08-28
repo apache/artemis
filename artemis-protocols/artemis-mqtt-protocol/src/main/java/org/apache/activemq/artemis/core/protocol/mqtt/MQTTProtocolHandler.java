@@ -43,6 +43,7 @@ import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCountUtil;
 import org.apache.activemq.artemis.api.core.ActiveMQSecurityException;
+import org.apache.activemq.artemis.api.core.ActiveMQShutdownException;
 import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.core.io.IOCallback;
 import org.apache.activemq.artemis.core.persistence.OperationContext;
@@ -126,7 +127,8 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
       }
 
       if (session.getServerSession() != null && session.getServerSession().isClosed()) {
-         MQTTLogger.LOGGER.internalSessionClosed(MQTTUtil.getMessageForLogging(message, session.getVersion()), session.getState().getClientId());
+         // the client sent a packet after its session was closed (e.g. during shutdown or disconnect)
+         logger.debug("Unable to handle MQTT packet [{}] from {}. Internal session is closed.", MQTTUtil.getMessageForLogging(message, session.getVersion()), session.getState().getClientId());
          if (session.getVersion() == MQTTVersion.MQTT_5) {
             sendDisconnect(MQTTReasonCodes.IMPLEMENTATION_SPECIFIC_ERROR);
          }
@@ -214,7 +216,11 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
                disconnect(true);
          }
       } catch (Exception e) {
-         MQTTLogger.LOGGER.errorProcessingPacket(session.getState().getClientId(), MQTTUtil.getMessageForLogging(message, session.getVersion()), e.getMessage(), e);
+         if (e instanceof ActiveMQShutdownException ignored) {
+            logger.debug("Unable to process MQTT packet for client {} because the broker is shutting down; packet: {}", session.getState().getClientId(), MQTTUtil.getMessageForLogging(message, session.getVersion()), ignored);
+         } else {
+            MQTTLogger.LOGGER.errorProcessingPacket(session.getState().getClientId(), MQTTUtil.getMessageForLogging(message, session.getVersion()), e.getMessage(), e);
+         }
          if (session.getVersion() == MQTTVersion.MQTT_5) {
             sendDisconnect(MQTTReasonCodes.IMPLEMENTATION_SPECIFIC_ERROR);
          }

@@ -24,7 +24,7 @@ import org.apache.activemq.artemis.logs.annotation.LogMessage;
 /**
  * Logger Codes 830000 - 839999
  */
-@LogBundle(projectCode = "AMQ", regexID = "83[0-9]{4}")
+@LogBundle(projectCode = "AMQ", regexID = "83[0-9]{4}", retiredIDs = {834015})
 public interface MQTTLogger {
 
    MQTTLogger LOGGER = BundleFactory.newBundle(MQTTLogger.class, MQTTLogger.class.getPackage().getName());
@@ -77,11 +77,8 @@ public interface MQTTLogger {
    @LogMessage(id = 834013, value = "Invalid MQTT session state message. Will not load this state into memory.", level = LogMessage.Level.WARN)
    void errorDeserializingStateMessage(Exception e);
 
-   @LogMessage(id = 834014, value = "MQTT client {} sent PUBREC for packet {}, but acknowledgement failed. Internal consumer {} not found. Internal session is {}.", level = LogMessage.Level.WARN)
-   void failedToAckMessageConsumerNotFound(String clientId, int packetId, long consumerId, String closed);
-
-   @LogMessage(id = 834015, value = "Unable to handle MQTT packet [{}] from {}. Internal session is closed.", level = LogMessage.Level.ERROR)
-   void internalSessionClosed(String packet, String clientId);
+   @LogMessage(id = 834014, value = "MQTT client {} sent PUBREC for packet {}, but acknowledgement failed. Internal consumer {} not found.", level = LogMessage.Level.WARN)
+   void failedToAckMessageConsumerNotFound(String clientId, int packetId, long consumerId);
 
    @LogMessage(id = 834016, value = "Storage operation failed. Error code: {}; message: {}", level = LogMessage.Level.ERROR)
    void storageOperationError(int errorCode, String errorMessage);

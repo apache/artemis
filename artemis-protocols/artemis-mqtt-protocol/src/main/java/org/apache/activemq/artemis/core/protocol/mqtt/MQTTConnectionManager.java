@@ -16,15 +16,20 @@
  */
 package org.apache.activemq.artemis.core.protocol.mqtt;
 
+import java.lang.invoke.MethodHandles;
+
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import org.apache.activemq.artemis.api.core.client.ActiveMQClient;
+import org.apache.activemq.artemis.core.persistence.impl.journal.ActiveMQIDGeneratorStoppedException;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ServerSession;
 import org.apache.activemq.artemis.core.server.impl.ServerSessionImpl;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static io.netty.handler.codec.mqtt.MqttProperties.MqttPropertyType.ASSIGNED_CLIENT_IDENTIFIER;
 import static io.netty.handler.codec.mqtt.MqttProperties.MqttPropertyType.AUTHENTICATION_METHOD;
@@ -40,6 +45,8 @@ import static io.netty.handler.codec.mqtt.MqttProperties.MqttPropertyType.WILL_D
  * events.
  */
 public class MQTTConnectionManager {
+
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private MQTTSession session;
 
@@ -194,6 +201,8 @@ public class MQTTConnectionManager {
       try {
          session.stop(failure);
          session.getConnection().destroy();
+      } catch (ActiveMQIDGeneratorStoppedException ignored) {
+         logger.debug("Unable to cleanly disconnect MQTT client {} because the storage manager is stopping", session.getState().getClientId(), ignored);
       } catch (Exception e) {
          MQTTLogger.LOGGER.errorDisconnectingClient(e);
       } finally {

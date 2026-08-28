@@ -48,6 +48,7 @@ import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.core.io.SequentialFile;
+import org.apache.activemq.artemis.core.persistence.impl.journal.ActiveMQIDGeneratorStoppedException;
 import org.apache.activemq.artemis.core.postoffice.Binding;
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.ReplicationSyncFileMessage;
 import org.apache.activemq.artemis.core.security.CheckType;
@@ -533,7 +534,7 @@ public interface ActiveMQMessageBundle {
    IllegalArgumentException positivePowerOfTwo(String name, Number val);
 
    @Message(id = 229257, value = "IDGenerator has been stopped")
-   RuntimeException idGeneratorStopped();
+   ActiveMQIDGeneratorStoppedException idGeneratorStopped();
 
    @Message(id = 229258, value = "Invalid cluster bridge message! No queue IDs defined in the property {}")
    ActiveMQIllegalStateException noQueueIdsDefined(SimpleString idsHeaderName);

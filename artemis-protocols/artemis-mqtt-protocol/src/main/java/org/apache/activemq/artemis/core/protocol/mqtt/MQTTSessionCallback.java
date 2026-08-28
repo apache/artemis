@@ -16,13 +16,20 @@
  */
 package org.apache.activemq.artemis.core.protocol.mqtt;
 
+import java.lang.invoke.MethodHandles;
+
 import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.core.persistence.impl.journal.ActiveMQIDGeneratorStoppedException;
 import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.server.ServerConsumer;
 import org.apache.activemq.artemis.spi.core.protocol.SessionCallback;
 import org.apache.activemq.artemis.spi.core.remoting.ReadyListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MQTTSessionCallback implements SessionCallback {
+
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private final MQTTSession session;
    private final MQTTConnection connection;
@@ -50,6 +57,8 @@ public class MQTTSessionCallback implements SessionCallback {
                           int deliveryCount) {
       try {
          session.getMqttPublishManager().publishToClient(ref.getMessage().toCore(), consumer);
+      } catch (ActiveMQIDGeneratorStoppedException ignored) {
+         logger.debug("Unable to send message to MQTT client because the storage manager is stopping; consumer: {}; message: {}", consumer, ref, ignored);
       } catch (Exception e) {
          MQTTLogger.LOGGER.unableToSendMessage(session.getState().getClientId(), ref, e);
       }

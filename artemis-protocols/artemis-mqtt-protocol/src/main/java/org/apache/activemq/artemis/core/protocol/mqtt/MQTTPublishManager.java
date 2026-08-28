@@ -38,6 +38,7 @@ import org.apache.activemq.artemis.api.core.ICoreMessage;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.core.persistence.impl.journal.ActiveMQIDGeneratorStoppedException;
 import org.apache.activemq.artemis.core.protocol.mqtt.exceptions.DisconnectException;
 import org.apache.activemq.artemis.core.server.ServerConsumer;
 import org.apache.activemq.artemis.core.server.ServerProducer;
@@ -338,7 +339,11 @@ public class MQTTPublishManager {
          if (delivery != null) {
             ServerConsumer consumer = session.getServerSession().locateConsumer(delivery.getConsumerId());
             if (consumer == null) {
-               MQTTLogger.LOGGER.failedToAckMessageConsumerNotFound(state.getClientId(), packetId, delivery.getConsumerId(), session.getServerSession().isClosed() ? "closed" : "not closed");
+               if (session.getServerSession().isClosed()) {
+                  logger.debug("MQTT client {} sent an acknowledgement for packet {}, but internal consumer {} was not found because the session is closed.", state.getClientId(), packetId, delivery.getConsumerId());
+               } else {
+                  MQTTLogger.LOGGER.failedToAckMessageConsumerNotFound(state.getClientId(), packetId, delivery.getConsumerId());
+               }
                sendAcknowledgementReply(packetId, MQTTReasonCodes.PACKET_IDENTIFIER_NOT_FOUND, needsPubRel);
                return;
             }
@@ -360,7 +365,11 @@ public class MQTTPublishManager {
          if (tx != null) {
             tx.rollback();
          }
-         MQTTLogger.LOGGER.failedToAckMessage(state.getClientId(), e.getMessage());
+         if (e instanceof ActiveMQIDGeneratorStoppedException ignored) {
+            logger.debug("MQTT client {} failed to acknowledge message because the storage manager is stopping", state.getClientId(), ignored);
+         } else {
+            MQTTLogger.LOGGER.failedToAckMessage(state.getClientId(), e.getMessage());
+         }
          sendAcknowledgementReply(packetId, MQTTReasonCodes.PACKET_IDENTIFIER_NOT_FOUND, needsPubRel);
       }
    }
