@@ -176,7 +176,7 @@ public class QoS2SubscriberResiliencySoakTest extends QoS2ResiliencySoakTestSupp
          assertEquals(NUM_MESSAGES, receivedPerSubscriber.get(clientId).size(), "Subscriber " + clientId + " didn't receive: " + getMissingMessages(sentMessages, receivedPerSubscriber.get(clientId)));
          Wait.assertEquals(0L, () -> getSubscriptionQueue(TOPIC, clientId).getMessageCount(), 2000, 20, () -> "Subscription queue for " + clientId + " has incorrect message count");
          assertEquals(0, getProtocolManager().getStateManager().getPacketIdCorrelationSize(clientId));
-         assertEquals(0, getSubCacheSize(clientId));
+         Wait.assertEquals(0, () -> getSubCacheSize(clientId), 2000, 20, () -> "Sub cache for " + clientId + " has incorrect size");
          cleanDisconnect(subscriber);
          assertNull(getSubCache(clientId), "Sub cache should be null after clean start for " + clientId);
       }
