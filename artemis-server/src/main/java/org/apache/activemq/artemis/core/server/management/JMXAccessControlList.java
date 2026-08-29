@@ -20,11 +20,13 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import javax.management.ObjectName;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -37,6 +39,15 @@ public class JMXAccessControlList {
 
    private final Cache<ObjectName, Boolean> allowListCache = Caffeine.newBuilder().maximumSize(10000).build();
    private final Cache<String, Map<String, String>> keyPropertyCache = Caffeine.newBuilder().maximumSize(10000).build();
+   private final Cache<String, Map<String, Bucket>> bucketedDomainCache = Caffeine.newBuilder().maximumSize(32).build();
+
+   private static final String REGEX_METACHARACTERS = ".?*+^$[](){}|\\";
+
+   private record AccessEntry(Access access) {}
+   private record Bucket(
+      Map<String, AccessEntry> exactMatches,
+      List<AccessEntry> regexPatterns
+   ) {}
 
    private Access defaultAccess = new Access(WILDCARD);
    private ConcurrentMap<String, TreeMap<String, Access>> domainAccess = new ConcurrentHashMap<>();
@@ -95,27 +106,65 @@ public class JMXAccessControlList {
    }
 
    public boolean authorizeUserForMethod(ObjectName objectName, String methodName, Set<String> userRoles) {
+      String domainKey = objectName.getDomain();
+
       TreeMap<String, Access> domainMap = domainAccess.get(objectName.getDomain());
 
-      if (domainMap != null) {
+      Map<String, Bucket> bucketedMap = bucketedDomainCache.get(domainKey, d -> {
+         TreeMap<String, Access> rawMap = domainAccess.get(d);
+         if (rawMap == null) {
+            return null;
+         }
 
+         Map<String, Bucket> grouped = new HashMap<>();
+         for (Access access : rawMap.values()) {
+            String rawPattern = access.getKeyPattern().pattern();
+            int eqIndex = rawPattern.indexOf('=');
+            String prefix = (eqIndex != -1) ? rawPattern.substring(0, eqIndex) : "";
+
+            // Initialize the Bucket (Map + List)
+            Bucket bucket = grouped.computeIfAbsent(prefix, k ->
+                  new Bucket(new HashMap<>(), new ArrayList<>())
+            );
+
+            AccessEntry entry = new AccessEntry(access);
+
+            /*
+             * A key is only safe to match by string equality when it has no regex metacharacters
+             * at all. Anything else has to keep going through the Pattern so that matching stays
+             * identical to evaluating the key as a regex against the whole "name=value" string.
+             */
+            if (containsRegexMetacharacter(rawPattern)) {
+               bucket.regexPatterns().add(entry);
+            } else {
+               bucket.exactMatches().put(rawPattern, entry);
+            }
+         }
+         return grouped;
+      });
+
+      if (bucketedMap != null) {
          String cacheKey = objectName.getCanonicalName();
          Map<String, String> keyPropertyList = keyPropertyCache.get(cacheKey, key ->
             objectName.getKeyPropertyList()
          );
 
-         for (Map.Entry<String, String> keyEntry : keyPropertyList.entrySet()) {
-            String prefixFilter = keyEntry.getKey() + "=";
-            String key = normalizeKey(keyEntry.getKey() + "=" + keyEntry.getValue());
-            for (Access accessEntry : domainMap.values()) {
-               String rawPattern = accessEntry.getKeyPattern().pattern();
-               if (rawPattern.startsWith(prefixFilter)) {
-                  if (key.equals(rawPattern)) {
-                     return accessEntry.authorizeUserForMethod(methodName, userRoles);
-                  }
-                  // regexp check if previous did not return true
-                  if (accessEntry.getKeyPattern().matcher(key).matches()) {
-                     return accessEntry.authorizeUserForMethod(methodName, userRoles);
+         for (Map.Entry<String, String> entry : keyPropertyList.entrySet()) {
+            String propKey = entry.getKey();
+            Bucket bucket = bucketedMap.get(propKey);
+
+            if (bucket != null) {
+               String normalizedValue = normalizeKey(propKey + "=" + entry.getValue());
+
+               // exact match check first
+               if (bucket.exactMatches().containsKey(normalizedValue)) {
+                  return bucket.exactMatches().get(normalizedValue).access().authorizeUserForMethod(methodName, userRoles);
+               }
+
+               // regex matching
+               for (AccessEntry regexEntry : bucket.regexPatterns()) {
+                  if (regexEntry.access().getKeyPattern().matcher(normalizedValue).matches()) {
+                     return regexEntry.access().authorizeUserForMethod(methodName, userRoles);
                   }
                }
             }
@@ -198,6 +247,15 @@ public class JMXAccessControlList {
       } else {
          access.addMethods(method, roles);
       }
+   }
+
+   private static boolean containsRegexMetacharacter(final String pattern) {
+      for (int i = 0; i < pattern.length(); i++) {
+         if (REGEX_METACHARACTERS.indexOf(pattern.charAt(i)) != -1) {
+            return true;
+         }
+      }
+      return false;
    }
 
    private String normalizeKey(final String key) {

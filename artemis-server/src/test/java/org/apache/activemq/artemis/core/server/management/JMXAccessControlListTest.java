@@ -164,6 +164,36 @@ public class JMXAccessControlListTest {
    }
 
    @Test
+   public void testAuthorize_RegexMetacharactersInKeyKeepRegexSemantics() throws MalformedObjectNameException {
+      /*
+       * A configured key is evaluated as a regex against the whole "name=value" string, so regex
+       * metacharacters in it stay live. Bucketing must not quietly turn these into literals.
+       */
+      JMXAccessControlList dot = new JMXAccessControlList();
+      dot.addToRoleAccess("org.myDomain", "type=a.b", "listSomething", "admin");
+      assertTrue(dot.authorizeUserForMethod(new ObjectName("org.myDomain:type=axb"), "listSomething", Set.of("admin")));
+      assertTrue(dot.authorizeUserForMethod(new ObjectName("org.myDomain:type=a.b"), "listSomething", Set.of("admin")));
+
+      JMXAccessControlList alternation = new JMXAccessControlList();
+      alternation.addToRoleAccess("org.myDomain", "type=(foo|bar)", "listSomething", "admin");
+      assertTrue(alternation.authorizeUserForMethod(new ObjectName("org.myDomain:type=foo"), "listSomething", Set.of("admin")));
+      assertTrue(alternation.authorizeUserForMethod(new ObjectName("org.myDomain:type=bar"), "listSomething", Set.of("admin")));
+
+      JMXAccessControlList plus = new JMXAccessControlList();
+      plus.addToRoleAccess("org.myDomain", "type=ab+", "listSomething", "admin");
+      assertTrue(plus.authorizeUserForMethod(new ObjectName("org.myDomain:type=abbb"), "listSomething", Set.of("admin")));
+   }
+
+   @Test
+   public void testAuthorize_LiteralKeyStillMatchesExactly() throws MalformedObjectNameException {
+      JMXAccessControlList controlList = new JMXAccessControlList();
+      controlList.addToRoleAccess("org.myDomain", "type=foo", "listSomething", "admin");
+
+      assertTrue(controlList.authorizeUserForMethod(new ObjectName("org.myDomain:type=foo"), "listSomething", Set.of("admin")));
+      assertFalse(controlList.authorizeUserForMethod(new ObjectName("org.myDomain:type=bar"), "listSomething", Set.of("admin")));
+   }
+
+   @Test
    public void testMutipleBasicRoles() throws MalformedObjectNameException {
       JMXAccessControlList controlList = new JMXAccessControlList();
       controlList.addToRoleAccess("org.myDomain", null, "listSomething", "admin", "view", "update");
