@@ -2626,6 +2626,43 @@ public class ConfigurationImplTest extends AbstractConfigurationTestBase {
    }
 
    @Test
+   public void testJsonAMQPConnectionUriOrderIndependent() throws Exception {
+      // transportConfigurations appears BEFORE uri in JSON — this simulates what happens
+      // when a JSON serializer sorts keys alphabetically (e.g., Go's json.Marshal),
+      // since "transportConfigurations" < "uri" lexically.
+      // Without the scalars-before-objects fix, getTransportConfigurations() lazily calls
+      // parseURI() before uri is set, causing trustStorePassword to be silently lost.
+      File tmpFile = File.createTempFile("amqp-uri-order-test", ".json", temporaryFolder);
+      try (FileOutputStream fileOutputStream = new FileOutputStream(tmpFile);
+           PrintWriter printWriter = new PrintWriter(fileOutputStream)) {
+
+         printWriter.write("{\n");
+         printWriter.write("  \"AMQPConnections\" : {\n");
+         printWriter.write("    \"target\" : {\n");
+         printWriter.write("      \"transportConfigurations\" : {\n");
+         printWriter.write("        \"target\" : {\n");
+         printWriter.write("          \"params\" : { \"trustStorePassword\" : \"pass\"\n }\n");
+         printWriter.write("        }\n");
+         printWriter.write("      },\n");
+         printWriter.write("      \"uri\" : \"tcp://host:6449?trustStorePath=/client.ts\"\n");
+         printWriter.write("    }\n");
+         printWriter.write("  }\n");
+         printWriter.write("}\n");
+      }
+
+      ConfigurationImpl configuration = new ConfigurationImpl();
+      configuration.parseProperties(tmpFile.getAbsolutePath());
+
+      String matchNoErrors = "\"errors\":\\[]";
+      assertEquals(3, configuration.getStatus().split(matchNoErrors, 10).length, configuration.getStatus());
+
+      Map<String, Object> params = configuration.getAMQPConnections().get(0).getTransportConfigurations().get(0).getParams();
+      assertEquals(4, params.size(), "Expected 4 params: host, port, trustStorePath (from URI), trustStorePassword (explicit)");
+      assertEquals("/client.ts", params.get("trustStorePath"));
+      assertEquals("pass", params.get("trustStorePassword"));
+   }
+
+   @Test
    public void testTextPropertiesReaderFromFile() throws Exception {
       List<String> textProperties = buildSimpleConfigTextList();
       File tmpFile = File.createTempFile("text-props-test", "", temporaryFolder);

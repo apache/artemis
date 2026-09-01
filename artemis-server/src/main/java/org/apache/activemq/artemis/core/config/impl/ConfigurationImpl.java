@@ -3950,15 +3950,29 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
             put(discriminatorKey, String.valueOf(classDiscriminator));
          }
 
+         // process scalar entries before nested maps — scalar setters must complete
+         // before nested property resolution triggers getters that may lazily depend on
+         // sibling scalar values (e.g., uri must be set before transportConfigurations
+         // is accessed, because getTransportConfigurations() lazily calls parseURI())
+         loadYamlEntries(keySurroundString, parentKey, map, false);
+         loadYamlEntries(keySurroundString, parentKey, map, true);
+      }
+
+      @SuppressWarnings("unchecked")
+      private void loadYamlEntries(String keySurroundString, String parentKey, Map<String, Object> map, boolean parseMaps) {
          for (Map.Entry<String, Object> entry : map.entrySet()) {
+            Object value = entry.getValue();
+            boolean isMap = value instanceof Map;
+            if (isMap != parseMaps) {
+               continue;
+            }
             String key = entry.getKey();
             if (JSON_CLASS_DISCRIMINATOR_KEY.equals(key)) {
                continue;
             }
             key = autoSurroundIfNecessary(key, keySurroundString);
             String propertyKey = parentKey + key;
-            Object value = entry.getValue();
-            if (value instanceof Map) {
+            if (isMap) {
                loadYamlMap(keySurroundString, propertyKey + ".", (Map<String, Object>) value);
             } else if (value instanceof List<?> list) {
                put(propertyKey, list.stream()
@@ -3990,6 +4004,15 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
             put(discriminatorKey, jsonObject.getString(JSON_CLASS_DISCRIMINATOR_KEY));
          }
 
+         // process scalar entries before nested objects — scalar setters must complete
+         // before nested property resolution triggers getters that may lazily depend on
+         // sibling scalar values (e.g., uri must be set before transportConfigurations
+         // is accessed, because getTransportConfigurations() lazily calls parseURI())
+         loadJsonEntries(keySurroundString, parentKey, jsonObject, false);
+         loadJsonEntries(keySurroundString, parentKey, jsonObject, true);
+      }
+
+      private void loadJsonEntries(String keySurroundString, String parentKey, JsonObject jsonObject, boolean parseObjects) {
          jsonObject.entrySet().stream().forEach(jsonEntry -> {
             String jsonKey = jsonEntry.getKey();
             if (JSON_CLASS_DISCRIMINATOR_KEY.equals(jsonKey)) {
@@ -3997,6 +4020,10 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
             }
             JsonValue jsonValue = jsonEntry.getValue();
             JsonValue.ValueType jsonValueType = jsonValue.getValueType();
+            boolean isObject = jsonValueType == JsonValue.ValueType.OBJECT;
+            if (isObject != parseObjects) {
+               return;
+            }
             jsonKey = autoSurroundIfNecessary(jsonKey, keySurroundString);
             String propertyKey = parentKey + jsonKey;
             switch (jsonValueType) {

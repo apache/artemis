@@ -343,6 +343,27 @@
           }
         }
       }
+    },
+    "reversed-order-target": {
+      "mirrors": {
+        "mirror-reversed": {
+          "properties": {
+            "reversedProp1": "reversedVal1"
+          },
+          "type": "MIRROR",
+          "messageAcknowledgements": false,
+          "queueCreation": true,
+          "queueRemoval": true,
+          "addressFilter": "events",
+          "sync": false
+        }
+      },
+      "uri": "tcp://reversed-host:5672",
+      "retryInterval": 10000,
+      "reconnectAttempts": 5,
+      "user": "reversed-user",
+      "password": "reversed-password",
+      "autostart": true
     }
   },
 
