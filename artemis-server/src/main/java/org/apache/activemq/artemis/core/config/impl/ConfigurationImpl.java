@@ -177,6 +177,8 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
 
    public static final String PROPERTY_CLASS_SUFFIX = ".class";
 
+   public static final String JSON_CLASS_DISCRIMINATOR_KEY = "_class";
+
    public static final String REDACTED = "**redacted**";
 
    private static final String FILTER_QUERY_PARAMETER_KEY = "filter";
@@ -3940,8 +3942,19 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
 
       @SuppressWarnings("unchecked")
       private void loadYamlMap(String keySurroundString, String parentKey, Map<String, Object> map) {
+         // emit _class discriminator first so the interface-typed field gets instantiated
+         // before any sub-properties attempt to set values on it
+         Object classDiscriminator = map.get(JSON_CLASS_DISCRIMINATOR_KEY);
+         if (classDiscriminator != null) {
+            String discriminatorKey = parentKey.endsWith(".") ? parentKey.substring(0, parentKey.length() - 1) : parentKey;
+            put(discriminatorKey, String.valueOf(classDiscriminator));
+         }
+
          for (Map.Entry<String, Object> entry : map.entrySet()) {
             String key = entry.getKey();
+            if (JSON_CLASS_DISCRIMINATOR_KEY.equals(key)) {
+               continue;
+            }
             key = autoSurroundIfNecessary(key, keySurroundString);
             String propertyKey = parentKey + key;
             Object value = entry.getValue();
@@ -3970,10 +3983,20 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
       }
 
       private void loadJsonObject(String keySurroundString, String parentKey, JsonObject jsonObject) {
+         // emit _class discriminator first so the interface-typed field gets instantiated
+         // before any sub-properties attempt to set values on it
+         if (jsonObject.containsKey(JSON_CLASS_DISCRIMINATOR_KEY)) {
+            String discriminatorKey = parentKey.endsWith(".") ? parentKey.substring(0, parentKey.length() - 1) : parentKey;
+            put(discriminatorKey, jsonObject.getString(JSON_CLASS_DISCRIMINATOR_KEY));
+         }
+
          jsonObject.entrySet().stream().forEach(jsonEntry -> {
+            String jsonKey = jsonEntry.getKey();
+            if (JSON_CLASS_DISCRIMINATOR_KEY.equals(jsonKey)) {
+               return;
+            }
             JsonValue jsonValue = jsonEntry.getValue();
             JsonValue.ValueType jsonValueType = jsonValue.getValueType();
-            String jsonKey = jsonEntry.getKey();
             jsonKey = autoSurroundIfNecessary(jsonKey, keySurroundString);
             String propertyKey = parentKey + jsonKey;
             switch (jsonValueType) {

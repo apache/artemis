@@ -348,6 +348,20 @@
 
   "HAPolicyConfiguration": "PRIMARY_ONLY",
 
+  "storeConfiguration": {
+    "_class": "DATABASE",
+    "messageTableName": "FULL_MESSAGES",
+    "bindingsTableName": "FULL_BINDINGS",
+    "largeMessageTableName": "FULL_LARGE_MESSAGES",
+    "pageStoreTableName": "FULL_PAGE_STORE",
+    "nodeManagerStoreTableName": "FULL_NODE_MANAGER",
+    "jdbcConnectionUrl": "jdbc:derby:target/full-test-store;create=true",
+    "jdbcDriverClassName": "org.apache.derby.jdbc.EmbeddedDriver",
+    "jdbcNetworkTimeout": 30000,
+    "jdbcLockRenewPeriodMillis": 3000,
+    "jdbcLockExpirationMillis": 20000
+  },
+
   "resourceLimitSettings": {
     "user1": {
       "maxConnections": 100,

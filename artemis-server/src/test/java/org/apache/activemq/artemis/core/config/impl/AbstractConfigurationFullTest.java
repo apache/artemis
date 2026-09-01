@@ -42,6 +42,8 @@ import org.apache.activemq.artemis.core.config.HAPolicyConfiguration;
 import org.apache.activemq.artemis.core.config.JaasAppConfiguration;
 import org.apache.activemq.artemis.core.config.JaasAppConfigurationEntry;
 import org.apache.activemq.artemis.core.config.MetricsConfiguration;
+import org.apache.activemq.artemis.core.config.StoreConfiguration;
+import org.apache.activemq.artemis.core.config.storage.DatabaseStorageConfiguration;
 import org.apache.activemq.artemis.core.config.WildcardConfiguration;
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPBrokerConnectConfiguration;
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPMirrorBrokerConnectionElement;
@@ -483,6 +485,24 @@ public abstract class AbstractConfigurationFullTest {
    }
 
    @Test
+   public void testStoreConfiguration() {
+      StoreConfiguration store = configuration.getStoreConfiguration();
+      assertNotNull(store, "storeConfiguration via _class discriminator must be populated");
+      assertTrue(store instanceof DatabaseStorageConfiguration);
+      DatabaseStorageConfiguration dbStore = (DatabaseStorageConfiguration) store;
+      assertEquals("FULL_MESSAGES", dbStore.getMessageTableName());
+      assertEquals("FULL_BINDINGS", dbStore.getBindingsTableName());
+      assertEquals("FULL_LARGE_MESSAGES", dbStore.getLargeMessageTableName());
+      assertEquals("FULL_PAGE_STORE", dbStore.getPageStoreTableName());
+      assertEquals("FULL_NODE_MANAGER", dbStore.getNodeManagerStoreTableName());
+      assertEquals("jdbc:derby:target/full-test-store;create=true", dbStore.getJdbcConnectionUrl());
+      assertEquals("org.apache.derby.jdbc.EmbeddedDriver", dbStore.getJdbcDriverClassName());
+      assertEquals(30000, dbStore.getJdbcNetworkTimeout());
+      assertEquals(3000, dbStore.getJdbcLockRenewPeriodMillis());
+      assertEquals(20000, dbStore.getJdbcLockExpirationMillis());
+   }
+
+   @Test
    public void testResourceLimitSettings() {
       Map<String, ResourceLimitSettings> limits = configuration.getResourceLimitSettings();
       assertEquals(1, limits.size());
@@ -690,6 +710,8 @@ public abstract class AbstractConfigurationFullTest {
       assertEquals(configuration.getAMQPConnections().size(), reloaded.getAMQPConnections().size());
       assertNotNull(reloaded.getHAPolicyConfiguration());
       assertEquals(configuration.getHAPolicyConfiguration().getType(), reloaded.getHAPolicyConfiguration().getType());
+      assertNotNull(reloaded.getStoreConfiguration());
+      assertEquals(configuration.getStoreConfiguration().getStoreType(), reloaded.getStoreConfiguration().getStoreType());
       assertEquals(configuration.getResourceLimitSettings().size(), reloaded.getResourceLimitSettings().size());
       assertEquals(configuration.getJaasConfigs().size(), reloaded.getJaasConfigs().size());
       assertEquals(configuration.getFederationDownstreamAuthorization(), reloaded.getFederationDownstreamAuthorization());

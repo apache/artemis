@@ -61,10 +61,13 @@ import java.util.stream.Collectors;
 
 import org.apache.activemq.artemis.ArtemisConstants;
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
+import org.apache.activemq.artemis.api.core.BroadcastGroupConfiguration;
+import org.apache.activemq.artemis.api.core.DiscoveryGroupConfiguration;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
+import org.apache.activemq.artemis.api.core.UDPBroadcastEndpointFactory;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.config.ConfigurationUtils;
 import org.apache.activemq.artemis.core.config.CoreAddressConfiguration;
@@ -104,6 +107,7 @@ import org.apache.activemq.artemis.core.security.Role;
 import org.apache.activemq.artemis.core.server.ComponentConfigurationRoutingType;
 import org.apache.activemq.artemis.core.server.cluster.impl.MessageLoadBalancingType;
 import org.apache.activemq.artemis.core.server.impl.LegacyLDAPSecuritySettingPlugin;
+import org.apache.activemq.artemis.core.server.metrics.plugins.SimpleMetricsPlugin;
 import org.apache.activemq.artemis.core.server.plugin.impl.ConnectionPeriodicExpiryPlugin;
 import org.apache.activemq.artemis.core.server.plugin.impl.LoggingActiveMQServerPlugin;
 import org.apache.activemq.artemis.core.server.routing.KeyType;
@@ -2373,6 +2377,187 @@ public class ConfigurationImplTest extends AbstractConfigurationTestBase {
       String status = configuration.getStatus();
       //test for exception code
       assertTrue(status.contains("AMQ229249"));
+   }
+
+   @Test
+   public void testDatabaseStoreConfigurationJsonClassDiscriminator() throws Exception {
+      File tmpFile = File.createTempFile("store-config-json-class-test", ".json", temporaryFolder);
+      try (FileOutputStream fileOutputStream = new FileOutputStream(tmpFile);
+           PrintWriter printWriter = new PrintWriter(fileOutputStream)) {
+         printWriter.write("{\n");
+         printWriter.write("  \"storeConfiguration\": {\n");
+         printWriter.write("    \"_class\": \"DATABASE\",\n");
+         printWriter.write("    \"largeMessageTableName\": \"lmtn\",\n");
+         printWriter.write("    \"messageTableName\": \"mtn\",\n");
+         printWriter.write("    \"bindingsTableName\": \"btn\",\n");
+         printWriter.write("    \"jdbcConnectionUrl\": \"url\",\n");
+         printWriter.write("    \"jdbcDriverClassName\": \"dcn\",\n");
+         printWriter.write("    \"jdbcUser\": \"user\"\n");
+         printWriter.write("  }\n");
+         printWriter.write("}\n");
+      }
+
+      ConfigurationImpl configuration = new ConfigurationImpl();
+      configuration.parseProperties(tmpFile.getAbsolutePath());
+
+      assertTrue(configuration.getStatus().contains("\"errors\":[]"));
+
+      assertInstanceOf(DatabaseStorageConfiguration.class, configuration.getStoreConfiguration());
+      DatabaseStorageConfiguration dsc = (DatabaseStorageConfiguration) configuration.getStoreConfiguration();
+      assertEquals("lmtn", dsc.getLargeMessageTableName());
+      assertEquals("mtn", dsc.getMessageTableName());
+      assertEquals("btn", dsc.getBindingsTableName());
+      assertEquals("url", dsc.getJdbcConnectionUrl());
+      assertEquals("dcn", dsc.getJdbcDriverClassName());
+      assertEquals("user", dsc.getJdbcUser());
+   }
+
+   @Test
+   public void testHAPolicyConfigurationJsonClassDiscriminator() throws Exception {
+      File tmpFile = File.createTempFile("ha-config-json-class-test", ".json", temporaryFolder);
+      try (FileOutputStream fileOutputStream = new FileOutputStream(tmpFile);
+           PrintWriter printWriter = new PrintWriter(fileOutputStream)) {
+         printWriter.write("{\n");
+         printWriter.write("  \"HAPolicyConfiguration\": {\n");
+         printWriter.write("    \"_class\": \"SHARED_STORE_PRIMARY\",\n");
+         printWriter.write("    \"failoverOnServerShutdown\": true,\n");
+         printWriter.write("    \"waitForActivation\": false\n");
+         printWriter.write("  }\n");
+         printWriter.write("}\n");
+      }
+
+      ConfigurationImpl configuration = new ConfigurationImpl();
+      configuration.parseProperties(tmpFile.getAbsolutePath());
+
+      assertTrue(configuration.getStatus().contains("\"errors\":[]"));
+
+      HAPolicyConfiguration haPolicyConfiguration = configuration.getHAPolicyConfiguration();
+      assertEquals(SharedStorePrimaryPolicyConfiguration.class, haPolicyConfiguration.getClass());
+
+      SharedStorePrimaryPolicyConfiguration sharedStorePrimaryPolicyConfiguration =
+         (SharedStorePrimaryPolicyConfiguration) haPolicyConfiguration;
+      assertTrue(sharedStorePrimaryPolicyConfiguration.isFailoverOnServerShutdown());
+      assertFalse(sharedStorePrimaryPolicyConfiguration.isWaitForActivation());
+   }
+
+   @Test
+   public void testJsonClassDiscriminatorOrderIndependent() throws Exception {
+      // _class appears AFTER sub-properties — must still work
+      File tmpFile = File.createTempFile("class-order-test", ".json", temporaryFolder);
+      try (FileOutputStream fileOutputStream = new FileOutputStream(tmpFile);
+           PrintWriter printWriter = new PrintWriter(fileOutputStream)) {
+         printWriter.write("{\n");
+         printWriter.write("  \"storeConfiguration\": {\n");
+         printWriter.write("    \"largeMessageTableName\": \"lmtn\",\n");
+         printWriter.write("    \"jdbcConnectionUrl\": \"url\",\n");
+         printWriter.write("    \"_class\": \"DATABASE\"\n");
+         printWriter.write("  }\n");
+         printWriter.write("}\n");
+      }
+
+      ConfigurationImpl configuration = new ConfigurationImpl();
+      configuration.parseProperties(tmpFile.getAbsolutePath());
+
+      assertTrue(configuration.getStatus().contains("\"errors\":[]"));
+
+      assertInstanceOf(DatabaseStorageConfiguration.class, configuration.getStoreConfiguration());
+      DatabaseStorageConfiguration dsc = (DatabaseStorageConfiguration) configuration.getStoreConfiguration();
+      assertEquals("lmtn", dsc.getLargeMessageTableName());
+      assertEquals("url", dsc.getJdbcConnectionUrl());
+   }
+
+   @Test
+   public void testMetricsPluginJsonClassDiscriminator() throws Exception {
+      File tmpFile = File.createTempFile("metrics-json-class-test", ".json", temporaryFolder);
+      try (FileOutputStream fileOutputStream = new FileOutputStream(tmpFile);
+           PrintWriter printWriter = new PrintWriter(fileOutputStream)) {
+         printWriter.write("{\n");
+         printWriter.write("  \"metricsConfiguration\": {\n");
+         printWriter.write("    \"plugin\": {\n");
+         printWriter.write("      \"_class\": \"org.apache.activemq.artemis.core.server.metrics.plugins.SimpleMetricsPlugin.class\",\n");
+         printWriter.write("      \"init\": \"\"\n");
+         printWriter.write("    },\n");
+         printWriter.write("    \"jvmMemory\": false\n");
+         printWriter.write("  }\n");
+         printWriter.write("}\n");
+      }
+
+      ConfigurationImpl configuration = new ConfigurationImpl();
+      configuration.parseProperties(tmpFile.getAbsolutePath());
+
+      assertTrue(configuration.getStatus().contains("\"errors\":[]"), configuration.getStatus());
+
+      assertNotNull(configuration.getMetricsConfiguration());
+      assertNotNull(configuration.getMetricsConfiguration().getPlugin());
+      assertInstanceOf(SimpleMetricsPlugin.class, configuration.getMetricsConfiguration().getPlugin());
+      assertFalse(configuration.getMetricsConfiguration().isJvmMemory());
+   }
+
+   @Test
+   public void testBroadcastEndpointFactoryJsonClassDiscriminator() throws Exception {
+      File tmpFile = File.createTempFile("broadcast-json-class-test", ".json", temporaryFolder);
+      try (FileOutputStream fileOutputStream = new FileOutputStream(tmpFile);
+           PrintWriter printWriter = new PrintWriter(fileOutputStream)) {
+         printWriter.write("{\n");
+         printWriter.write("  \"broadcastGroupConfigurations\": {\n");
+         printWriter.write("    \"bg1\": {\n");
+         printWriter.write("      \"broadcastPeriod\": 1234,\n");
+         printWriter.write("      \"endpointFactory\": {\n");
+         printWriter.write("        \"_class\": \"org.apache.activemq.artemis.api.core.UDPBroadcastEndpointFactory.class\",\n");
+         printWriter.write("        \"groupAddress\": \"231.7.7.7\",\n");
+         printWriter.write("        \"groupPort\": 9876\n");
+         printWriter.write("      }\n");
+         printWriter.write("    }\n");
+         printWriter.write("  }\n");
+         printWriter.write("}\n");
+      }
+
+      ConfigurationImpl configuration = new ConfigurationImpl();
+      configuration.parseProperties(tmpFile.getAbsolutePath());
+
+      assertTrue(configuration.getStatus().contains("\"errors\":[]"), configuration.getStatus());
+
+      assertEquals(1, configuration.getBroadcastGroupConfigurations().size());
+      BroadcastGroupConfiguration bg = configuration.getBroadcastGroupConfigurations().get(0);
+      assertEquals(1234, bg.getBroadcastPeriod());
+      assertInstanceOf(UDPBroadcastEndpointFactory.class, bg.getEndpointFactory());
+      UDPBroadcastEndpointFactory udp = (UDPBroadcastEndpointFactory) bg.getEndpointFactory();
+      assertEquals("231.7.7.7", udp.getGroupAddress());
+      assertEquals(9876, udp.getGroupPort());
+   }
+
+   @Test
+   public void testDiscoveryEndpointFactoryJsonClassDiscriminator() throws Exception {
+      File tmpFile = File.createTempFile("discovery-json-class-test", ".json", temporaryFolder);
+      try (FileOutputStream fileOutputStream = new FileOutputStream(tmpFile);
+           PrintWriter printWriter = new PrintWriter(fileOutputStream)) {
+         printWriter.write("{\n");
+         printWriter.write("  \"discoveryGroupConfigurations\": {\n");
+         printWriter.write("    \"dg1\": {\n");
+         printWriter.write("      \"refreshTimeout\": 5000,\n");
+         printWriter.write("      \"broadcastEndpointFactory\": {\n");
+         printWriter.write("        \"_class\": \"org.apache.activemq.artemis.api.core.UDPBroadcastEndpointFactory.class\",\n");
+         printWriter.write("        \"groupAddress\": \"231.7.7.7\",\n");
+         printWriter.write("        \"groupPort\": 9877\n");
+         printWriter.write("      }\n");
+         printWriter.write("    }\n");
+         printWriter.write("  }\n");
+         printWriter.write("}\n");
+      }
+
+      ConfigurationImpl configuration = new ConfigurationImpl();
+      configuration.parseProperties(tmpFile.getAbsolutePath());
+
+      assertTrue(configuration.getStatus().contains("\"errors\":[]"), configuration.getStatus());
+
+      assertEquals(1, configuration.getDiscoveryGroupConfigurations().size());
+      DiscoveryGroupConfiguration dg = configuration.getDiscoveryGroupConfigurations().get("dg1");
+      assertNotNull(dg);
+      assertEquals(5000, dg.getRefreshTimeout());
+      assertInstanceOf(UDPBroadcastEndpointFactory.class, dg.getBroadcastEndpointFactory());
+      UDPBroadcastEndpointFactory udp = (UDPBroadcastEndpointFactory) dg.getBroadcastEndpointFactory();
+      assertEquals("231.7.7.7", udp.getGroupAddress());
+      assertEquals(9877, udp.getGroupPort());
    }
 
    @Test
