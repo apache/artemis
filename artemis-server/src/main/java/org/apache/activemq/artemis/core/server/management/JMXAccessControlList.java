@@ -120,6 +120,20 @@ public class JMXAccessControlList {
             int eqIndex = rawPattern.indexOf('=');
             String prefix = (eqIndex != -1) ? rawPattern.substring(0, eqIndex) : "";
 
+            /*
+             * A pattern can only be bucketed under a literal property name when the part before
+             * the equal sign is itself a literal. If it holds any regex metacharacter it may match
+             * more than one property name, so it goes to the wildcard bucket and is tried against
+             * every property.
+             */
+            if (eqIndex == -1) {
+               if (containsRegexMetacharacter(rawPattern)) {
+                  prefix = WILDCARD;
+               }
+            } else if (containsRegexMetacharacter(prefix)) {
+               prefix = WILDCARD;
+            }
+
             // Initialize the Bucket (Map + List)
             Bucket bucket = grouped.computeIfAbsent(prefix, k ->
                   new Bucket(new HashMap<>(), new ArrayList<>())
@@ -138,6 +152,19 @@ public class JMXAccessControlList {
                bucket.exactMatches().put(rawPattern, entry);
             }
          }
+
+         // merge wildcard patterns into every property bucket
+         Bucket wildcardBucket = grouped.get(WILDCARD);
+         if (wildcardBucket != null) {
+            for (Map.Entry<String, Bucket> groupedEntry : grouped.entrySet()) {
+               if (!groupedEntry.getKey().equals(WILDCARD)) {
+                  List<AccessEntry> regexPatterns = groupedEntry.getValue().regexPatterns();
+                  regexPatterns.addAll(wildcardBucket.regexPatterns());
+                  // sort the regex patterns by key length and then alphabetically
+                  regexPatterns.sort(Comparator.comparing((AccessEntry accessEntry) -> accessEntry.access().getKey(), keyComparator));
+               }
+            }
+         }
          return grouped;
       });
 
@@ -149,19 +176,19 @@ public class JMXAccessControlList {
 
          for (Map.Entry<String, String> entry : keyPropertyList.entrySet()) {
             String propKey = entry.getKey();
-            Bucket bucket = bucketedMap.get(propKey);
+            Bucket bucket = bucketedMap.getOrDefault(propKey, bucketedMap.get(WILDCARD));
 
+            String key = normalizeKey(propKey + "=" + entry.getValue());
             if (bucket != null) {
-               String normalizedValue = normalizeKey(propKey + "=" + entry.getValue());
 
                // exact match check first
-               if (bucket.exactMatches().containsKey(normalizedValue)) {
-                  return bucket.exactMatches().get(normalizedValue).access().authorizeUserForMethod(methodName, userRoles);
+               if (bucket.exactMatches().containsKey(key)) {
+                  return bucket.exactMatches().get(key).access().authorizeUserForMethod(methodName, userRoles);
                }
 
                // regex matching
                for (AccessEntry regexEntry : bucket.regexPatterns()) {
-                  if (regexEntry.access().getKeyPattern().matcher(normalizedValue).matches()) {
+                  if (regexEntry.access().getKeyPattern().matcher(key).matches()) {
                      return regexEntry.access().authorizeUserForMethod(methodName, userRoles);
                   }
                }
