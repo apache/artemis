@@ -27,9 +27,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.hivemq.client.mqtt.MqttGlobalPublishFilter;
 import com.hivemq.client.mqtt.datatypes.MqttQos;
-import com.hivemq.client.mqtt.mqtt5.Mqtt5BlockingClient;
+import org.apache.activemq.artemis.tests.soak.mqtt.resiliency.client.MqttTestClient;
+import org.apache.activemq.artemis.tests.soak.mqtt.resiliency.client.MqttVersion;
 import org.apache.activemq.artemis.utils.TestParameters;
 import org.apache.activemq.artemis.utils.Wait;
 import org.junit.jupiter.api.Test;
@@ -56,21 +56,25 @@ public class QoS2CombinedResiliencySoakTest extends QoS2ResiliencySoakTestSuppor
 
    @Test
    @Timeout(value = 5, unit = TimeUnit.MINUTES)
-   public void testQoS2CombinedResiliency() throws Exception {
+   public void testQoS2CombinedResiliencyMqtt3() throws Exception {
+      testQoS2CombinedResiliency(MqttVersion.MQTT3);
+   }
+
+   @Test
+   @Timeout(value = 5, unit = TimeUnit.MINUTES)
+   public void testQoS2CombinedResiliencyMqtt5() throws Exception {
+      testQoS2CombinedResiliency(MqttVersion.MQTT5);
+   }
+
+   private void testQoS2CombinedResiliency(MqttVersion version) throws Exception {
       disableProtocolLogging();
       final String PUB_CLIENT_ID_PREFIX = "pub-";
       final String SUB_CLIENT_ID_PREFIX = "sub-";
 
-      logger.info("{} publishers, {} subscribers, {} messages/publisher, {} total expected per subscriber", NUM_PUBLISHERS, NUM_SUBSCRIBERS, NUM_MESSAGES, NUM_PUBLISHERS * NUM_MESSAGES);
+      logger.info("{} {} publishers, {} subscribers, {} messages/publisher, {} total expected per subscriber", version, NUM_PUBLISHERS, NUM_SUBSCRIBERS, NUM_MESSAGES, NUM_PUBLISHERS * NUM_MESSAGES);
 
-      // create and subscribe all subscribers
-      final List<Mqtt5BlockingClient> subscribers = new ArrayList<>(NUM_SUBSCRIBERS);
-      runAfter(() -> subscribers.forEach(c -> {
-         try {
-            c.disconnect();
-         } catch (Exception ignored) {
-         }
-      }));
+      // create and subscribe all subscribers (disconnection is handled centrally in tearDown)
+      final List<MqttTestClient> subscribers = new ArrayList<>(NUM_SUBSCRIBERS);
 
       final Map<String, Set<String>> receivedPerSubscriber = new HashMap<>();
       final Map<String, Set<String>> duplicatesPerSubscriber = new HashMap<>();
@@ -78,47 +82,32 @@ public class QoS2CombinedResiliencySoakTest extends QoS2ResiliencySoakTestSuppor
 
       for (int i = 0; i < NUM_SUBSCRIBERS; i++) {
          String clientId = SUB_CLIENT_ID_PREFIX + i;
-         Mqtt5BlockingClient subscriber = createHiveMQClient(clientId, true);
+         MqttTestClient subscriber = createClient(version, clientId, true);
          final Set<String> received = ConcurrentHashMap.newKeySet(NUM_PUBLISHERS * NUM_MESSAGES);
          receivedPerSubscriber.put(clientId, received);
          final Set<String> duplicates = ConcurrentHashMap.newKeySet();
          duplicatesPerSubscriber.put(clientId, duplicates);
-         subscriber.toAsync().publishes(MqttGlobalPublishFilter.ALL, publish -> {
-            String payload = new String(publish.getPayloadAsBytes(), StandardCharsets.UTF_8);
+         subscriber.onMessage(bytes -> {
+            String payload = new String(bytes, StandardCharsets.UTF_8);
             if (!received.add(payload)) {
                logger.warn("Subscriber {} received duplicate: {}", clientId, payload);
                duplicates.add(payload);
             }
             lastReceiveTime.set(System.currentTimeMillis());
          });
-         subscriber.connectWith()
-            .cleanStart(false)
-            .sessionExpiryInterval(300)
-            .send();
-         subscriber.subscribeWith()
-            .topicFilter(TOPIC)
-            .qos(MqttQos.EXACTLY_ONCE)
-            .send();
+         subscriber.connect();
+         subscriber.subscribe(TOPIC, MqttQos.EXACTLY_ONCE);
          subscribers.add(subscriber);
          assertNotNull(getSubscriptionQueue(TOPIC, clientId));
          logger.info("Subscriber {} connected and subscribed", clientId);
       }
 
-      // create and connect publishers
-      final List<Mqtt5BlockingClient> publishers = new ArrayList<>();
-      runAfter(() -> publishers.forEach(c -> {
-         try {
-            c.disconnect();
-         } catch (Exception ignored) {
-         }
-      }));
+      // create and connect publishers (disconnection is handled centrally in tearDown)
+      final List<MqttTestClient> publishers = new ArrayList<>();
       for (int i = 0; i < NUM_PUBLISHERS; i++) {
          String clientId = PUB_CLIENT_ID_PREFIX + i;
-         Mqtt5BlockingClient publisher = createHiveMQClient(clientId, true);
-         publisher.connectWith()
-            .cleanStart(false)
-            .sessionExpiryInterval(300)
-            .send();
+         MqttTestClient publisher = createClient(version, clientId, true);
+         publisher.connect();
          publishers.add(publisher);
          logger.info("Publisher {} connected", clientId);
       }
@@ -167,8 +156,8 @@ public class QoS2CombinedResiliencySoakTest extends QoS2ResiliencySoakTestSuppor
       stopBrokerRestartTask(restartTask);
 
       // verify all expected messages received with no duplicates
-      for (Mqtt5BlockingClient subscriber : subscribers) {
-         String clientId = getClientId(subscriber);
+      for (MqttTestClient subscriber : subscribers) {
+         String clientId = subscriber.getClientId();
          assertEquals(0, duplicatesPerSubscriber.get(clientId).size(), "Subscriber " + clientId + " received duplicates: " + duplicatesPerSubscriber.get(clientId));
          assertEquals(NUM_PUBLISHERS * NUM_MESSAGES, receivedPerSubscriber.get(clientId).size(), "Subscriber " + clientId + " didn't receive: " + getMissingMessages(publishResult.sentMessages(), receivedPerSubscriber.get(clientId)));
          Wait.assertEquals(0L, () -> getSubscriptionQueue(TOPIC, clientId).getMessageCount(), 2000, 20, () -> "Subscription queue for " + clientId + " has incorrect message count");
@@ -178,8 +167,8 @@ public class QoS2CombinedResiliencySoakTest extends QoS2ResiliencySoakTestSuppor
          assertNull(getSubCache(clientId), "Sub cache should be null after clean start for " + clientId);
       }
 
-      for (Mqtt5BlockingClient publisher : publishers) {
-         String clientId = getClientId(publisher);
+      for (MqttTestClient publisher : publishers) {
+         String clientId = publisher.getClientId();
          Wait.assertEquals(0, () -> getPubCacheSize(clientId), 5000, 100);
          cleanDisconnect(publisher);
          assertNull(getPubCache(clientId), "Pub cache should be null after clean start for " + clientId);

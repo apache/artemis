@@ -28,9 +28,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.hivemq.client.mqtt.MqttGlobalPublishFilter;
 import com.hivemq.client.mqtt.datatypes.MqttQos;
-import com.hivemq.client.mqtt.mqtt5.Mqtt5BlockingClient;
+import org.apache.activemq.artemis.tests.soak.mqtt.resiliency.client.MqttTestClient;
+import org.apache.activemq.artemis.tests.soak.mqtt.resiliency.client.MqttVersion;
 import org.apache.activemq.artemis.utils.TestParameters;
 import org.apache.activemq.artemis.utils.Wait;
 import org.junit.jupiter.api.Test;
@@ -55,79 +55,69 @@ public class QoS2SubscriberResiliencySoakTest extends QoS2ResiliencySoakTestSupp
 
    @Test
    @Timeout(value = 5, unit = TimeUnit.MINUTES)
-   public void testQoS2SubscriberResiliency() throws Exception {
+   public void testQoS2SubscriberResiliencyMqtt3() throws Exception {
+      testQoS2SubscriberResiliency(MqttVersion.MQTT3);
+   }
+
+   @Test
+   @Timeout(value = 5, unit = TimeUnit.MINUTES)
+   public void testQoS2SubscriberResiliencyMqtt5() throws Exception {
+      testQoS2SubscriberResiliency(MqttVersion.MQTT5);
+   }
+
+   private void testQoS2SubscriberResiliency(MqttVersion version) throws Exception {
       disableProtocolLogging();
-      logger.info("{} subscribers, {} messages/subscriber", NUM_SUBSCRIBERS, NUM_MESSAGES);
+      logger.info("{} {} subscribers, {} messages/subscriber", version, NUM_SUBSCRIBERS, NUM_MESSAGES);
 
       // create and subscribe then disconnect to leave idle subscriptions on the broker
-      final List<Mqtt5BlockingClient> subscribers = new ArrayList<>(NUM_SUBSCRIBERS);
-      runAfter(() -> subscribers.forEach(c -> {
-         try {
-            c.disconnect();
-         } catch (Exception ignored) {
-         }
-      }));
+      // (disconnection is handled centrally in tearDown)
+      final List<MqttTestClient> subscribers = new ArrayList<>(NUM_SUBSCRIBERS);
       for (int i = 0; i < NUM_SUBSCRIBERS; i++) {
          String clientId = "sub-" + i;
-         Mqtt5BlockingClient subscriber = createHiveMQClient(clientId, true);
-         subscriber.connectWith()
-            .cleanStart(false)
-            .sessionExpiryInterval(300)
-            .send();
-         subscriber.subscribeWith()
-            .topicFilter(TOPIC)
-            .qos(MqttQos.EXACTLY_ONCE)
-            .send();
+         MqttTestClient subscriber = createClient(version, clientId, true);
+         subscriber.connect();
+         subscriber.subscribe(TOPIC, MqttQos.EXACTLY_ONCE);
          subscriber.disconnect();
          subscribers.add(subscriber);
-         assertNotNull(getSubscriptionQueue(TOPIC, getClientId(subscriber)));
+         assertNotNull(getSubscriptionQueue(TOPIC, subscriber.getClientId()));
       }
 
       // send messages using QoS 2
       final Set<String> sentMessages = new HashSet<>(NUM_MESSAGES);
-      Mqtt5BlockingClient publisher = createHiveMQClient("pub", false);
-      publisher.connectWith().cleanStart(true).send();
+      MqttTestClient publisher = createClient(version, "pub", false);
+      publisher.connectClean();
       logger.info("Publishing {} messages...", NUM_MESSAGES);
       for (int seq = 0; seq < NUM_MESSAGES; seq++) {
          String payload = String.valueOf(seq);
          sentMessages.add(payload);
-         publisher.publishWith()
-            .topic(TOPIC)
-            .qos(MqttQos.EXACTLY_ONCE)
-            .payload(payload.getBytes(StandardCharsets.UTF_8))
-            .send();
+         publisher.publish(TOPIC, MqttQos.EXACTLY_ONCE, payload.getBytes(StandardCharsets.UTF_8));
       }
       logger.info("Published {} messages.", NUM_MESSAGES);
       cleanDisconnect(publisher);
 
-      for (Mqtt5BlockingClient subscriber : subscribers) {
-         assertEquals(NUM_MESSAGES, getSubscriptionQueue(TOPIC, getClientId(subscriber)).getMessageCount());
+      for (MqttTestClient subscriber : subscribers) {
+         assertEquals(NUM_MESSAGES, getSubscriptionQueue(TOPIC, subscriber.getClientId()).getMessageCount());
       }
-
-      // enableProtocolLogging();
 
       final Map<String, Set<String>> receivedPerSubscriber = new HashMap<>();
       final Map<String, Set<String>> duplicatesPerSubscriber = new HashMap<>();
       final AtomicLong lastReceiveTime = new AtomicLong(System.currentTimeMillis());
 
-      for (Mqtt5BlockingClient subscriber : subscribers) {
-         final String clientId = getClientId(subscriber);
+      for (MqttTestClient subscriber : subscribers) {
+         final String clientId = subscriber.getClientId();
          final Set<String> received = ConcurrentHashMap.newKeySet(NUM_MESSAGES);
          receivedPerSubscriber.put(clientId, received);
          final Set<String> duplicates = ConcurrentHashMap.newKeySet();
          duplicatesPerSubscriber.put(clientId, duplicates);
-         subscriber.toAsync().publishes(MqttGlobalPublishFilter.ALL, publish -> {
-            String payload = new String(publish.getPayloadAsBytes(), StandardCharsets.UTF_8);
+         subscriber.onMessage(bytes -> {
+            String payload = new String(bytes, StandardCharsets.UTF_8);
             if (!received.add(payload)) {
                logger.warn("Subscriber {} received duplicate: {}", clientId, payload);
                duplicates.add(payload);
             }
             lastReceiveTime.set(System.currentTimeMillis());
          });
-         subscriber.connectWith()
-            .cleanStart(false)
-            .sessionExpiryInterval(300)
-            .send();
+         subscriber.connect();
          logger.info("Subscriber {} reconnected", clientId);
       }
 
@@ -167,11 +157,9 @@ public class QoS2SubscriberResiliencySoakTest extends QoS2ResiliencySoakTestSupp
       // stop reconnection task, ensure broker is running
       stopBrokerRestartTask(restartTask);
 
-      // enableProtocolLogging();
-
       // verify all expected messages received with no duplicates
-      for (Mqtt5BlockingClient subscriber : subscribers) {
-         String clientId = getClientId(subscriber);
+      for (MqttTestClient subscriber : subscribers) {
+         String clientId = subscriber.getClientId();
          assertEquals(0, duplicatesPerSubscriber.get(clientId).size(), "Subscriber " + clientId + " received duplicates: " + duplicatesPerSubscriber.get(clientId));
          assertEquals(NUM_MESSAGES, receivedPerSubscriber.get(clientId).size(), "Subscriber " + clientId + " didn't receive: " + getMissingMessages(sentMessages, receivedPerSubscriber.get(clientId)));
          Wait.assertEquals(0L, () -> getSubscriptionQueue(TOPIC, clientId).getMessageCount(), 2000, 20, () -> "Subscription queue for " + clientId + " has incorrect message count");

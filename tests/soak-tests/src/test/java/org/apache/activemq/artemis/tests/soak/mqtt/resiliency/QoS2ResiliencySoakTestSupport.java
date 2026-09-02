@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -30,9 +31,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.hivemq.client.mqtt.datatypes.MqttQos;
-import com.hivemq.client.mqtt.mqtt5.Mqtt5BlockingClient;
+import com.hivemq.client.mqtt.mqtt3.Mqtt3Client;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5Client;
-import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5PublishResult;
 import io.reactivex.schedulers.Schedulers;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.persistence.impl.journal.JournalRecordIds;
@@ -45,6 +45,10 @@ import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.spi.core.protocol.ProtocolManager;
 import org.apache.activemq.artemis.spi.core.remoting.Acceptor;
+import org.apache.activemq.artemis.tests.soak.mqtt.resiliency.client.Mqtt3TestClient;
+import org.apache.activemq.artemis.tests.soak.mqtt.resiliency.client.Mqtt5TestClient;
+import org.apache.activemq.artemis.tests.soak.mqtt.resiliency.client.MqttTestClient;
+import org.apache.activemq.artemis.tests.soak.mqtt.resiliency.client.MqttVersion;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.utils.Wait;
 import org.apache.logging.log4j.Level;
@@ -72,6 +76,11 @@ public class QoS2ResiliencySoakTestSupport extends ActiveMQTestBase {
 
    protected ActiveMQServer server;
 
+   // every client created via createClient() is tracked here so tearDown() can disconnect them
+   // while the broker and RxJava schedulers are still alive, preventing auto-reconnect clients
+   // from lingering and contaminating the next test (they share port 1883 and client-id prefixes)
+   private final List<MqttTestClient> createdClients = new CopyOnWriteArrayList<>();
+
    @BeforeEach
    @Override
    public void setUp() throws Exception {
@@ -89,6 +98,15 @@ public class QoS2ResiliencySoakTestSupport extends ActiveMQTestBase {
    @AfterEach
    @Override
    public void tearDown() throws Exception {
+      // disconnect all clients first, while the broker and RxJava schedulers are still alive, so
+      // auto-reconnect clients don't linger in a reconnect loop and latch onto the next test's broker
+      for (MqttTestClient client : createdClients) {
+         try {
+            client.disconnect();
+         } catch (Exception ignored) {
+         }
+      }
+      createdClients.clear();
       if (server != null && server.isStarted()) {
          server.stop();
       }
@@ -117,35 +135,50 @@ public class QoS2ResiliencySoakTestSupport extends ActiveMQTestBase {
       return missing;
    }
 
-   protected static String getClientId(Mqtt5BlockingClient subscriber) {
-      return subscriber.getConfig().getClientIdentifier().get().toString();
+   protected MqttTestClient createClient(MqttVersion version, String clientId, boolean autoReconnect) {
+      MqttTestClient client = switch (version) {
+         case MQTT3 -> {
+            var builder = Mqtt3Client.builder()
+               .identifier(clientId)
+               .serverHost("localhost")
+               .serverPort(MQTT_PORT);
+            if (autoReconnect) {
+               builder.automaticReconnect()
+                  .initialDelay(500, TimeUnit.MILLISECONDS)
+                  .maxDelay(500, TimeUnit.MILLISECONDS)
+                  .applyAutomaticReconnect();
+            }
+            yield new Mqtt3TestClient(builder.buildBlocking());
+         }
+         case MQTT5 -> {
+            var builder = Mqtt5Client.builder()
+               .identifier(clientId)
+               .serverHost("localhost")
+               .serverPort(MQTT_PORT);
+            if (autoReconnect) {
+               builder.automaticReconnect()
+                  .initialDelay(500, TimeUnit.MILLISECONDS)
+                  .maxDelay(500, TimeUnit.MILLISECONDS)
+                  .applyAutomaticReconnect();
+            }
+            yield new Mqtt5TestClient(builder.buildBlocking());
+         }
+      };
+      createdClients.add(client);
+      return client;
    }
 
-   protected Mqtt5BlockingClient createHiveMQClient(String clientId, boolean autoReconnect) {
-      var builder = Mqtt5Client.builder()
-         .identifier(clientId)
-         .serverHost("localhost")
-         .serverPort(MQTT_PORT);
-      if (autoReconnect) {
-         builder.automaticReconnect()
-            .initialDelay(500, TimeUnit.MILLISECONDS)
-            .maxDelay(500, TimeUnit.MILLISECONDS)
-            .applyAutomaticReconnect();
-      }
-      return builder.buildBlocking();
+   protected static void waitForClientConnected(MqttTestClient client) {
+      Wait.waitFor(client::isConnected, 30_000, 500);
    }
 
-   protected static void waitForClientConnected(Mqtt5BlockingClient client) {
-      Wait.waitFor(() -> client.getConfig().getState().isConnected(), 30_000, 500);
-   }
-
-   protected static void cleanDisconnect(Mqtt5BlockingClient client) {
-      logger.info("cleanDisconnect for {}", getClientId(client));
+   protected static void cleanDisconnect(MqttTestClient client) {
+      logger.info("cleanDisconnect for {}", client.getClientId());
       try {
-         if (client.getConfig().getState().isConnected()) {
+         if (client.isConnected()) {
             client.disconnect();
          }
-         client.connectWith().cleanStart(true).sessionExpiryInterval(0).send();
+         client.connectClean();
          client.disconnect();
       } catch (Exception e) {
          logger.debug("Error disconnecting: {}", e.getMessage());
@@ -233,7 +266,7 @@ public class QoS2ResiliencySoakTestSupport extends ActiveMQTestBase {
 
    protected record PublishResult(ExecutorService executor, Set<String> sentMessages, AtomicInteger publishErrors) {}
 
-   protected PublishResult startPublishing(List<Mqtt5BlockingClient> publishers, int numMessages) {
+   protected PublishResult startPublishing(List<MqttTestClient> publishers, int numMessages) {
       final ExecutorService publisherExecutor = Executors.newFixedThreadPool(publishers.size());
       runAfter(() -> {
          publisherExecutor.shutdownNow();
@@ -246,20 +279,13 @@ public class QoS2ResiliencySoakTestSupport extends ActiveMQTestBase {
       final AtomicInteger publishErrors = new AtomicInteger(0);
       for (int i = 0; i < publishers.size(); i++) {
          final int pubId = i;
-         final Mqtt5BlockingClient publisher = publishers.get(i);
+         final MqttTestClient publisher = publishers.get(i);
          publisherExecutor.execute(() -> {
             for (int seq = 0; seq < numMessages; seq++) {
                String payload = pubId + "-" + seq;
                try {
                   waitForClientConnected(publisher);
-                  Mqtt5PublishResult result = publisher.publishWith()
-                     .topic(TOPIC)
-                     .qos(MqttQos.EXACTLY_ONCE)
-                     .payload(payload.getBytes(StandardCharsets.UTF_8))
-                     .send();
-                  if (result.getError().isPresent()) {
-                     throw result.getError().get();
-                  }
+                  publisher.publish(TOPIC, MqttQos.EXACTLY_ONCE, payload.getBytes(StandardCharsets.UTF_8));
                } catch (Throwable e) {
                   publishErrors.incrementAndGet();
                   logger.info("Pub failed: {}; in-flight QoS 2 state will be resumed on reconnect", payload, e);
