@@ -94,7 +94,8 @@ public class MQTTSession {
       subscriptionManager = new MQTTSubscriptionManager(this);
       retainMessageManager = new MQTTRetainMessageManager(this);
 
-      state = MQTTSessionState.DEFAULT;
+      // placeholder state until CONNECT is processed and the real state is installed via setSessionState()
+      state = new MQTTSessionState((String) null);
 
       logger.debug("MQTT session created: {}", id);
    }

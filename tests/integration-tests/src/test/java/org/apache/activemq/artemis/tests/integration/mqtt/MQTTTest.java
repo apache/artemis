@@ -59,8 +59,10 @@ import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.config.CoreAddressConfiguration;
 import org.apache.activemq.artemis.core.management.impl.view.ProducerField;
 import org.apache.activemq.artemis.core.postoffice.Binding;
+import org.apache.activemq.artemis.core.postoffice.PostOffice;
 import org.apache.activemq.artemis.core.postoffice.QueueBinding;
 import org.apache.activemq.artemis.core.protocol.mqtt.MQTTUtil;
+import org.apache.activemq.artemis.core.protocol.mqtt.PacketIdCache;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.impl.AddressInfo;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
@@ -68,6 +70,7 @@ import org.apache.activemq.artemis.json.JsonArray;
 import org.apache.activemq.artemis.json.JsonObject;
 import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
 import org.apache.activemq.artemis.tests.util.Wait;
+import org.apache.activemq.artemis.utils.ByteUtil;
 import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.transport.amqp.client.AmqpClient;
 import org.apache.activemq.transport.amqp.client.AmqpConnection;
@@ -75,6 +78,7 @@ import org.apache.activemq.transport.amqp.client.AmqpMessage;
 import org.apache.activemq.transport.amqp.client.AmqpSender;
 import org.apache.activemq.transport.amqp.client.AmqpSession;
 import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.fusesource.mqtt.client.BlockingConnection;
 import org.fusesource.mqtt.client.MQTT;
@@ -2377,5 +2381,42 @@ public class MQTTTest extends MQTTTestSupport {
 
       subscriber.disconnect();
       subscriber.close();
+   }
+
+   /**
+    * A clean session/start MUST discard any previous session state. The durable PUBLISH/PUBREC caches live in the
+    * PostOffice and can exist there (e.g. recovered from the journal after a broker restart) even when the
+    * freshly-created {@code MQTTSessionState} for the connecting client id has not lazily loaded its in-memory
+    * {@code PacketIdCache} field.
+    */
+   @Test
+   @Timeout(60)
+   public void testCleanStartDeletesDurableQoS2Caches() throws Exception {
+      final String clientId = "qos2-clean-start";
+
+      PostOffice postOffice = server.getPostOffice();
+      SimpleString publishCacheName = PacketIdCache.getCacheName(server.getInternalNamingPrefix(), clientId, PacketIdCache.TYPE.PUBLISH);
+      SimpleString pubRecCacheName = PacketIdCache.getCacheName(server.getInternalNamingPrefix(), clientId, PacketIdCache.TYPE.PUBREC);
+
+      // seed durable caches directly, simulating state recovered from the journal
+      postOffice.getDuplicateIDCache(publishCacheName, MQTTUtil.TWO_BYTE_INT_MAX).addToCache(ByteUtil.intToBytes(1));
+      postOffice.getDuplicateIDCache(pubRecCacheName, MQTTUtil.TWO_BYTE_INT_MAX).addToCache(ByteUtil.intToBytes(1));
+
+      assertTrue(postOffice.duplicateIDCacheExists(publishCacheName), "PUBLISH cache should exist before clean start");
+      assertTrue(postOffice.duplicateIDCacheExists(pubRecCacheName), "PUBREC cache should exist before clean start");
+      // the session state for this client id must not exist yet, so its in-memory cache field is null
+      assertNull(getSessions().get(clientId), "No session state should exist before connecting");
+
+      MqttClient client = createPaho3_1_1Client(clientId);
+      MqttConnectOptions options = new MqttConnectOptions();
+      options.setCleanSession(true);
+      client.connect(options);
+
+      // once connect() returns the durable caches must be gone
+      assertFalse(postOffice.duplicateIDCacheExists(publishCacheName), "PUBLISH cache should be deleted after clean start");
+      assertFalse(postOffice.duplicateIDCacheExists(pubRecCacheName), "PUBREC cache should be deleted after clean start");
+
+      client.disconnect();
+      client.close();
    }
 }

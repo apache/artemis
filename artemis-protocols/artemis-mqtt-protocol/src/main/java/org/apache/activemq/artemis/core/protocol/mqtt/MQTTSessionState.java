@@ -46,8 +46,6 @@ public class MQTTSessionState {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-   public static final MQTTSessionState DEFAULT = new MQTTSessionState((String) null);
-
    private MQTTSession session;
 
    private final String clientId;
@@ -166,11 +164,9 @@ public class MQTTSessionState {
 
    public synchronized void clear() throws Exception {
       subscriptionItems.clear();
-      if (publishCache != null) {
-         publishCache.clear();
-      }
-      if (pubRecCache != null) {
-         pubRecCache.clear();
+      if (session != null) {
+         getPublishCache().clear();
+         getPubRecCache().clear();
       }
       if (packetIdGenerator != null) {
          packetIdGenerator.clear();
