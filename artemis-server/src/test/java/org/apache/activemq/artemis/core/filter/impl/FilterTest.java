@@ -703,6 +703,25 @@ public class FilterTest extends SilentTestCase {
       assertTrue(filter.match(message));
    }
 
+   @Test
+   public void testAMQFullSize() throws Exception {
+      message.setAddress(RandomUtil.randomUUIDSimpleString());
+
+      long wholeSize = message.getWholeMessageSize();
+
+      Filter moreThanSmall = FilterImpl.createFilter(SimpleString.of("AMQFullSize > " + (wholeSize - 1)));
+      Filter lessThanLarge = FilterImpl.createFilter(SimpleString.of("AMQFullSize < " + (wholeSize + 1)));
+
+      Filter lessThanSmall = FilterImpl.createFilter(SimpleString.of("AMQFullSize < " + wholeSize));
+      Filter moreThanLarge = FilterImpl.createFilter(SimpleString.of("AMQFullSize > " + wholeSize));
+
+      assertTrue(moreThanSmall.match(message));
+      assertTrue(lessThanLarge.match(message));
+
+      assertFalse(lessThanSmall.match(message));
+      assertFalse(moreThanLarge.match(message));
+   }
+
    // TODO: re-implement this.
    //
    //   @Test
