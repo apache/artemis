@@ -210,6 +210,15 @@ public final class ObjectNameBuilder {
       return String.format("%s:broker=%s", domain, (jmxUseBrokerName && brokerName != null) ? ObjectName.quote(brokerName) : "artemis");
    }
 
+   /**
+    * {@return the ObjectName used by ResourceQuotaControl}
+    *
+    * @see ResourceQuotaControl
+    */
+   public ObjectName getResourceQuotaObjectName(final String quotaName) throws Exception {
+      return createObjectName("quota", quotaName);
+   }
+
    @Deprecated()
    public ObjectName getManagementContextObjectName() throws Exception {
       return getSecurityObjectName();
