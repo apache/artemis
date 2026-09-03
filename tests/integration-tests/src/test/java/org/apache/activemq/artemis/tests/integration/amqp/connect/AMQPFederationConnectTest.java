@@ -63,14 +63,15 @@ import org.slf4j.LoggerFactory;
 import static org.apache.activemq.artemis.protocol.amqp.connect.AMQPBrokerConnectionConstants.BROKER_CONNECTION_INFO;
 import static org.apache.activemq.artemis.protocol.amqp.connect.AMQPBrokerConnectionConstants.CONNECTION_NAME;
 import static org.apache.activemq.artemis.protocol.amqp.connect.AMQPBrokerConnectionConstants.NODE_ID;
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_AUTO_DELETE;
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_AUTO_DELETE_DELAY;
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_AUTO_DELETE_MSG_COUNT;
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_ENABLE_DIVERT_BINDINGS;
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_ALLOW_WILDCARD_GROUPINGS;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_CREATE;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_DELETE;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_DELETE_DELAY;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_DELETE_MSG_COUNT;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ENABLE_DIVERT_BINDINGS;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ALLOW_WILDCARD_GROUPINGS;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_EXCLUDES;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_INCLUDES;
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_MAX_HOPS;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.MAX_HOPS;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_RECEIVER_IDLE_TIMEOUT;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADD_ADDRESS_POLICY;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADD_QUEUE_POLICY;
@@ -564,6 +565,10 @@ public class AMQPFederationConnectTest extends AmqpClientTestSupport {
       excludes.add("h");
 
       policyMap.put(POLICY_NAME, "test-policy");
+      policyMap.put(AUTO_CREATE, false);
+      policyMap.put(AUTO_DELETE, false);
+      policyMap.put(AUTO_DELETE_DELAY, 0L);
+      policyMap.put(AUTO_DELETE_MSG_COUNT, 0L);
       policyMap.put(QUEUE_INCLUDE_FEDERATED, true);
       policyMap.put(QUEUE_PRIORITY_ADJUSTMENT, 42);
       policyMap.put(QUEUE_INCLUDES, includes);
@@ -639,6 +644,10 @@ public class AMQPFederationConnectTest extends AmqpClientTestSupport {
       excludes.add("h");
 
       policyMap.put(POLICY_NAME, "test-policy");
+      policyMap.put(AUTO_CREATE, false);
+      policyMap.put(AUTO_DELETE, false);
+      policyMap.put(AUTO_DELETE_DELAY, 0L);
+      policyMap.put(AUTO_DELETE_MSG_COUNT, 0L);
       policyMap.put(QUEUE_INCLUDE_FEDERATED, true);
       policyMap.put(QUEUE_PRIORITY_ADJUSTMENT, 42);
       policyMap.put(QUEUE_INCLUDES, includes);
@@ -709,12 +718,13 @@ public class AMQPFederationConnectTest extends AmqpClientTestSupport {
       excludes.add("exclude");
 
       policyMap.put(POLICY_NAME, "test-policy");
-      policyMap.put(ADDRESS_AUTO_DELETE, true);
-      policyMap.put(ADDRESS_AUTO_DELETE_DELAY, 42L);
-      policyMap.put(ADDRESS_AUTO_DELETE_MSG_COUNT, 314L);
-      policyMap.put(ADDRESS_MAX_HOPS, 5);
-      policyMap.put(ADDRESS_ENABLE_DIVERT_BINDINGS, false);
-      policyMap.put(ADDRESS_ALLOW_WILDCARD_GROUPINGS, false);
+      policyMap.put(AUTO_CREATE, true);
+      policyMap.put(AUTO_DELETE, true);
+      policyMap.put(AUTO_DELETE_DELAY, 42L);
+      policyMap.put(AUTO_DELETE_MSG_COUNT, 314L);
+      policyMap.put(MAX_HOPS, 5);
+      policyMap.put(ENABLE_DIVERT_BINDINGS, false);
+      policyMap.put(ALLOW_WILDCARD_GROUPINGS, false);
       policyMap.put(ADDRESS_INCLUDES, includes);
       policyMap.put(ADDRESS_EXCLUDES, excludes);
 
@@ -783,12 +793,13 @@ public class AMQPFederationConnectTest extends AmqpClientTestSupport {
       excludes.add("exclude");
 
       policyMap.put(POLICY_NAME, "test-policy");
-      policyMap.put(ADDRESS_AUTO_DELETE, true);
-      policyMap.put(ADDRESS_AUTO_DELETE_DELAY, 42L);
-      policyMap.put(ADDRESS_AUTO_DELETE_MSG_COUNT, 314L);
-      policyMap.put(ADDRESS_MAX_HOPS, 5);
-      policyMap.put(ADDRESS_ENABLE_DIVERT_BINDINGS, false);
-      policyMap.put(ADDRESS_ALLOW_WILDCARD_GROUPINGS, false);
+      policyMap.put(AUTO_CREATE, true);
+      policyMap.put(AUTO_DELETE, true);
+      policyMap.put(AUTO_DELETE_DELAY, 42L);
+      policyMap.put(AUTO_DELETE_MSG_COUNT, 314L);
+      policyMap.put(MAX_HOPS, 5);
+      policyMap.put(ENABLE_DIVERT_BINDINGS, false);
+      policyMap.put(ALLOW_WILDCARD_GROUPINGS, false);
       policyMap.put(ADDRESS_INCLUDES, includes);
       policyMap.put(ADDRESS_EXCLUDES, excludes);
 

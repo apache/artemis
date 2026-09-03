@@ -34,6 +34,10 @@ public final class AMQPFederationQueuePolicyElement implements Serializable {
    private final Map<String, Object> properties = new HashMap<>();
 
    private String name;
+   private Boolean autoCreate;
+   private Boolean autoDelete;
+   private Long autoDeleteDelay;
+   private Long autoDeleteMessageCount;
    private boolean includeFederated;
    private Integer priorityAdjustment;
    private TransformerConfiguration transformerConfig;
@@ -116,6 +120,42 @@ public final class AMQPFederationQueuePolicyElement implements Serializable {
       return this;
    }
 
+   public Long getAutoDeleteMessageCount() {
+      return autoDeleteMessageCount;
+   }
+
+   public AMQPFederationQueuePolicyElement setAutoDeleteMessageCount(Long autoDeleteMessageCount) {
+      this.autoDeleteMessageCount = autoDeleteMessageCount;
+      return this;
+   }
+
+   public Long getAutoDeleteDelay() {
+      return autoDeleteDelay;
+   }
+
+   public AMQPFederationQueuePolicyElement setAutoDeleteDelay(Long autoDeleteDelay) {
+      this.autoDeleteDelay = autoDeleteDelay;
+      return this;
+   }
+
+   public Boolean getAutoDelete() {
+      return autoDelete;
+   }
+
+   public AMQPFederationQueuePolicyElement setAutoDelete(Boolean autoDelete) {
+      this.autoDelete = autoDelete;
+      return this;
+   }
+
+   public Boolean getAutoCreate() {
+      return autoCreate;
+   }
+
+   public AMQPFederationQueuePolicyElement setAutoCreate(Boolean autoCreate) {
+      this.autoCreate = autoCreate;
+      return this;
+   }
+
    public boolean isIncludeFederated() {
       return includeFederated;
    }
@@ -154,6 +194,10 @@ public final class AMQPFederationQueuePolicyElement implements Serializable {
 
       return includeFederated == other.includeFederated &&
              Objects.equals(name, other.name) &&
+             Objects.equals(autoCreate, other.autoCreate) &&
+             Objects.equals(autoDelete, other.autoDelete) &&
+             Objects.equals(autoDeleteDelay, other.autoDeleteDelay) &&
+             Objects.equals(autoDeleteMessageCount, other.autoDeleteMessageCount) &&
              Objects.equals(includes, other.includes) &&
              Objects.equals(excludes, other.excludes) &&
              Objects.equals(properties, other.properties) &&
@@ -163,7 +207,9 @@ public final class AMQPFederationQueuePolicyElement implements Serializable {
 
    @Override
    public int hashCode() {
-      return Objects.hash(name, includeFederated, includes, excludes, properties, priorityAdjustment, transformerConfig);
+      return Objects.hash(name, includeFederated, includes, excludes, properties,
+                          autoCreate, autoDelete, autoDeleteDelay, autoDeleteMessageCount,
+                          priorityAdjustment, transformerConfig);
    }
 
    // We are required to implement a named match type so that we can perform this configuration

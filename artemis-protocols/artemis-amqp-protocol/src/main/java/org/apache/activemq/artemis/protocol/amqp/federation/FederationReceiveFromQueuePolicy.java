@@ -44,12 +44,18 @@ public class FederationReceiveFromQueuePolicy implements FederationReceiveFromRe
    private final Collection<Map.Entry<String, String>> excludes;
 
    private final String policyName;
+   private final boolean autoCreate;
+   private final boolean autoDelete;
+   private final long autoDeleteDelay;
+   private final long autoDeleteMessageCount;
    private final boolean includeFederated;
    private final int priorityAdjustment;
    private final Map<String, Object> properties;
    private final TransformerConfiguration transformerConfig;
 
-   public FederationReceiveFromQueuePolicy(String name, boolean includeFederated, int priorotyAdjustment,
+   public FederationReceiveFromQueuePolicy(String name, boolean autoCreate, boolean autoDelete,
+                                           long autoDeleteDelay, long autoDeleteMessageCount,
+                                           boolean includeFederated, int priorotyAdjustment,
                                            Collection<Map.Entry<String, String>> includeQueues,
                                            Collection<Map.Entry<String, String>> excludeQueues,
                                            Map<String, Object> properties, TransformerConfiguration transformerConfig,
@@ -58,6 +64,10 @@ public class FederationReceiveFromQueuePolicy implements FederationReceiveFromRe
       Objects.requireNonNull(wildcardConfig, "The provided wild card configuration cannot be null");
 
       this.policyName = name;
+      this.autoCreate = autoCreate;
+      this.autoDelete = autoDelete;
+      this.autoDeleteDelay = autoDeleteDelay;
+      this.autoDeleteMessageCount = autoDeleteMessageCount;
       this.includeFederated = includeFederated;
       this.priorityAdjustment = priorotyAdjustment;
       this.transformerConfig = transformerConfig;
@@ -83,6 +93,22 @@ public class FederationReceiveFromQueuePolicy implements FederationReceiveFromRe
    @Override
    public String getPolicyName() {
       return policyName;
+   }
+
+   public boolean isAutoCreate() {
+      return autoCreate;
+   }
+
+   public boolean isAutoDelete() {
+      return autoDelete;
+   }
+
+   public long getAutoDeleteDelay() {
+      return autoDeleteDelay;
+   }
+
+   public long getAutoDeleteMessageCount() {
+      return autoDeleteMessageCount;
    }
 
    public boolean isIncludeFederated() {

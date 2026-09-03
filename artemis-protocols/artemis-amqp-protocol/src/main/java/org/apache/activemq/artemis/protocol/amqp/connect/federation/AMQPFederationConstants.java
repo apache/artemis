@@ -274,29 +274,34 @@ public final class AMQPFederationConstants {
    public static final String ADDRESS_EXCLUDES = "address-excludes";
 
    /**
+    * Encodes a boolean value that indicates if federated resource auto creation should be enabled.
+    */
+   public static final String AUTO_CREATE = "auto-create";
+
+   /**
     * Encodes a boolean value that indicates if queue auto delete option should be enabled.
     */
-   public static final String ADDRESS_AUTO_DELETE = "auto-delete";
+   public static final String AUTO_DELETE = "auto-delete";
 
    /**
     * Encodes a signed long value that controls the delay before auto deletion if auto delete is enabled.
     */
-   public static final String ADDRESS_AUTO_DELETE_DELAY = "auto-delete-delay";
+   public static final String AUTO_DELETE_DELAY = "auto-delete-delay";
 
    /**
-    * Encodes a signed long value that controls the message count value that allows for address auto delete.
+    * Encodes a signed long value that controls the message count value that allows for auto delete when enabled.
     */
-   public static final String ADDRESS_AUTO_DELETE_MSG_COUNT = "auto-delete-msg-count";
+   public static final String AUTO_DELETE_MSG_COUNT = "auto-delete-msg-count";
 
    /**
     * Encodes a signed integer value that controls the maximum number of hops allowed for federated messages.
     */
-   public static final String ADDRESS_MAX_HOPS = "max-hops";
+   public static final String MAX_HOPS = "max-hops";
 
    /**
     * Encodes boolean value that controls if the address federation should include divert bindings.
     */
-   public static final String ADDRESS_ENABLE_DIVERT_BINDINGS = "enable-divert-bindings";
+   public static final String ENABLE_DIVERT_BINDINGS = "enable-divert-bindings";
 
    /**
     * Encodes a boolean value that controls if the address federation should check the matcher value in the
@@ -304,7 +309,7 @@ public final class AMQPFederationConstants {
     * the matcher and place the normal address binding under that wildcard but add a filter to prevent any
     * messages other than those of its target address from being routed to it.
     */
-   public static final String ADDRESS_ALLOW_WILDCARD_GROUPINGS = "allow-wildcard-groupings";
+   public static final String ALLOW_WILDCARD_GROUPINGS = "allow-wildcard-groupings";
 
    /**
     * Encodes a {@link Map} of String keys and values that are carried along in the federation policy (address or
@@ -387,5 +392,41 @@ public final class AMQPFederationConstants {
     * remote policy as links or connections are torn down and re-estabilished.
     */
    public static final Symbol FEDERATION_POLICY_NAME = Symbol.valueOf("federationPolicyName");
+
+   /**
+    * Default for configuring a federation address receiver to request that the address resource be auto created on the remote
+    * if not already in existence. This can allow for multi-hop federation topologies to work in cases where the brokers
+    * are not configured with static addresses. The default will be to allow auto creation these as has always been done
+    * prior to adding this configuration option. Users can disable this now which will cause the federation to wait for
+    * an event indicating the target address has been created and attempt to attach again if local demand is still present.
+    */
+   public static final boolean DEFAULT_ADDRESS_AUTO_CREATE = true;
+
+   /**
+    * Default for configuring a federation queue receiver to request that the queue resource (and possibly its associated address)
+    * be auto created on the remote if not already in existence. This can allow for multi-hop federation topologies to work in
+    * cases where the brokers are not configured with static addresses and queues. The default is to never auto create queues on
+    * the remote target and instead simply await notification that the remote queue has been created and attempt to attach if
+    * local demand is still present.
+    */
+   public static final boolean DEFAULT_QUEUE_AUTO_CREATE = false;
+
+   /**
+    * Default auto deletion setting applied when a federation resource auto creates the queue from which messages are
+    * federated from on the remote peer.
+    */
+   public static final boolean DEFAULT_AUTO_DELETE = false;
+
+   /**
+    * Default auto deletion delay setting applied when a federation resource auto creates the queue from which messages are
+    * federated from on the remote peer.
+    */
+   public static final long DEFAULT_AUTO_DELETE_DELAY = 0L;
+
+   /**
+    * Default auto deletion message count setting applied when a federation resource auto creates the queue from which messages
+    * are federated from on the remote peer.
+    */
+   public static final long DEFAULT_AUTO_DELETE_MSG_COUNT = 0L;
 
 }

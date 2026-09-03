@@ -47,6 +47,7 @@ public class FederationReceiveFromAddressPolicy implements FederationReceiveFrom
    private final Collection<String> excludes;
 
    private final String policyName;
+   private final boolean autoCreate;
    private final boolean autoDelete;
    private final long autoDeleteDelay;
    private final long autoDeleteMessageCount;
@@ -56,8 +57,8 @@ public class FederationReceiveFromAddressPolicy implements FederationReceiveFrom
    private final Map<String, Object> properties;
    private final TransformerConfiguration transformerConfig;
 
-   public FederationReceiveFromAddressPolicy(String name, boolean autoDelete, long autoDeleteDelay, long autoDeleteMessageCount,
-                                             int maxHops, boolean enableDivertBindings, boolean allowWildcardGroupings,
+   public FederationReceiveFromAddressPolicy(String name, boolean autoCreate, boolean autoDelete, long autoDeleteDelay,
+                                             long autoDeleteMessageCount, int maxHops, boolean enableDivertBindings, boolean allowWildcardGroupings,
                                              Collection<String> includeAddresses, Collection<String> excludeAddresses,
                                              Map<String, Object> properties, TransformerConfiguration transformerConfig,
                                              WildcardConfiguration wildcardConfig) {
@@ -65,6 +66,7 @@ public class FederationReceiveFromAddressPolicy implements FederationReceiveFrom
       Objects.requireNonNull(wildcardConfig, "The provided wild card configuration cannot be null");
 
       this.policyName = name;
+      this.autoCreate = autoCreate;
       this.autoDelete = autoDelete;
       this.autoDeleteDelay = autoDeleteDelay;
       this.autoDeleteMessageCount = autoDeleteMessageCount;
@@ -94,6 +96,10 @@ public class FederationReceiveFromAddressPolicy implements FederationReceiveFrom
    @Override
    public String getPolicyName() {
       return policyName;
+   }
+
+   public boolean isAutoCreate() {
+      return autoCreate;
    }
 
    public boolean isAutoDelete() {

@@ -520,6 +520,21 @@
                      <property key="key2" value="value2"/>
                   </transformer>
                </remote-address-policy>
+               <local-address-policy name="lap2" auto-create="false">
+                  <include address-match="orders" />
+                  <exclude address-match="all.#" />
+               </local-address-policy>
+               <local-queue-policy name="lqp3" auto-create="true">
+                  <include address-match="address" queue-match="theQueue" />
+               </local-queue-policy>
+               <remote-address-policy name="rap2" auto-create="false">
+                  <include address-match="support" />
+               </remote-address-policy>
+                <remote-queue-policy name="rqp2" auto-create="true" auto-delete="true" auto-delete-delay="2" auto-delete-message-count="42"  >
+                  <include address-match="#" queue-match="tracking" />
+                  <property key="amqpCredits" value="2"/>
+                  <property key="amqpLowCredits" value="1"/>
+               </remote-queue-policy>
                <property key="amqpCredits" value="7"/>
                <property key="amqpLowCredits" value="1"/>
             </federation>
