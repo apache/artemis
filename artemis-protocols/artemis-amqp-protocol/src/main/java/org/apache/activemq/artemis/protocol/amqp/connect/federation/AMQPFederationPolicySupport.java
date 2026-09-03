@@ -17,14 +17,15 @@
 
 package org.apache.activemq.artemis.protocol.amqp.connect.federation;
 
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_AUTO_DELETE;
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_AUTO_DELETE_DELAY;
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_AUTO_DELETE_MSG_COUNT;
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_ENABLE_DIVERT_BINDINGS;
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_ALLOW_WILDCARD_GROUPINGS;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_CREATE;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_DELETE;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_DELETE_DELAY;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_DELETE_MSG_COUNT;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ENABLE_DIVERT_BINDINGS;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ALLOW_WILDCARD_GROUPINGS;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_EXCLUDES;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_INCLUDES;
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_MAX_HOPS;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.MAX_HOPS;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADD_ADDRESS_POLICY;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADD_QUEUE_POLICY;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.OPERATION_TYPE;
@@ -36,6 +37,11 @@ import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPF
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.QUEUE_PRIORITY_ADJUSTMENT;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.TRANSFORMER_CLASS_NAME;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.TRANSFORMER_PROPERTIES_MAP;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.DEFAULT_ADDRESS_AUTO_CREATE;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.DEFAULT_QUEUE_AUTO_CREATE;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.DEFAULT_AUTO_DELETE;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.DEFAULT_AUTO_DELETE_DELAY;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.DEFAULT_AUTO_DELETE_MSG_COUNT;
 
 import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
@@ -96,9 +102,16 @@ public final class AMQPFederationPolicySupport {
 
    /**
     * Property name used to embed a nested map of properties meant to be applied if the address indicated in an
-    * federation address receiver auto creates the federated address.
+    * federation address receiver should be auto created and also the management of the associated durable
+    * subscription queue for the federation receiver.
     */
    public static final Symbol FEDERATED_ADDRESS_SOURCE_PROPERTIES = Symbol.valueOf("federated-address-source-properties");
+
+   /**
+    * Property name used to embed a nested map of properties meant to be applied if the queue indicated in an
+    * federation queue receiver if actions such as auto create should be configured on the queue.
+    */
+   public static final Symbol FEDERATED_QUEUE_SOURCE_PROPERTIES = Symbol.valueOf("federated-queue-source-properties");
 
    /**
     * Constructs an address filter for a federated address receiver link that deals with both AMQP messages and
@@ -140,8 +153,13 @@ public final class AMQPFederationPolicySupport {
       annotations.put(OPERATION_TYPE, ADD_QUEUE_POLICY);
 
       policyMap.put(POLICY_NAME, policy.getPolicyName());
+      policyMap.put(POLICY_NAME, policy.getPolicyName());
       policyMap.put(QUEUE_INCLUDE_FEDERATED, policy.isIncludeFederated());
       policyMap.put(QUEUE_PRIORITY_ADJUSTMENT, policy.getPriorityAjustment());
+      policyMap.put(AUTO_CREATE, policy.isAutoCreate());
+      policyMap.put(AUTO_DELETE, policy.isAutoDelete());
+      policyMap.put(AUTO_DELETE_DELAY, policy.getAutoDeleteDelay());
+      policyMap.put(AUTO_DELETE_MSG_COUNT, policy.getAutoDeleteMessageCount());
 
       if (!policy.getIncludes().isEmpty()) {
          final List<String> flattenedIncludes = new ArrayList<>(policy.getIncludes().size() * 2);
@@ -210,12 +228,13 @@ public final class AMQPFederationPolicySupport {
       annotations.put(OPERATION_TYPE, ADD_ADDRESS_POLICY);
 
       policyMap.put(POLICY_NAME, policy.getPolicyName());
-      policyMap.put(ADDRESS_AUTO_DELETE, policy.isAutoDelete());
-      policyMap.put(ADDRESS_AUTO_DELETE_DELAY, policy.getAutoDeleteDelay());
-      policyMap.put(ADDRESS_AUTO_DELETE_MSG_COUNT, policy.getAutoDeleteMessageCount());
-      policyMap.put(ADDRESS_MAX_HOPS, policy.getMaxHops());
-      policyMap.put(ADDRESS_ENABLE_DIVERT_BINDINGS, policy.isEnableDivertBindings());
-      policyMap.put(ADDRESS_ALLOW_WILDCARD_GROUPINGS, policy.isAllowWildcardGroupings());
+      policyMap.put(AUTO_CREATE, policy.isAutoCreate());
+      policyMap.put(AUTO_DELETE, policy.isAutoDelete());
+      policyMap.put(AUTO_DELETE_DELAY, policy.getAutoDeleteDelay());
+      policyMap.put(AUTO_DELETE_MSG_COUNT, policy.getAutoDeleteMessageCount());
+      policyMap.put(MAX_HOPS, policy.getMaxHops());
+      policyMap.put(ENABLE_DIVERT_BINDINGS, policy.isEnableDivertBindings());
+      policyMap.put(ALLOW_WILDCARD_GROUPINGS, policy.isAllowWildcardGroupings());
       if (!policy.getIncludes().isEmpty()) {
          policyMap.put(ADDRESS_INCLUDES, new ArrayList<>(policy.getIncludes()));
       }
@@ -290,6 +309,10 @@ public final class AMQPFederationPolicySupport {
          }
 
          final String policyName = (String) policyMap.get(POLICY_NAME);
+         final boolean autoCreate = (Boolean) policyMap.getOrDefault(AUTO_CREATE, DEFAULT_QUEUE_AUTO_CREATE);
+         final boolean autoDelete = (Boolean) policyMap.getOrDefault(AUTO_DELETE, DEFAULT_AUTO_DELETE);
+         final long autoDeleteDelay = ((Number) policyMap.getOrDefault(AUTO_DELETE_DELAY, DEFAULT_AUTO_DELETE_DELAY)).longValue();
+         final long autoDeleteMsgCount = ((Number) policyMap.getOrDefault(AUTO_DELETE_MSG_COUNT, DEFAULT_AUTO_DELETE_MSG_COUNT)).longValue();
          final boolean includeFederated = (boolean) policyMap.getOrDefault(QUEUE_INCLUDE_FEDERATED, false);
          final int priorityAdjustment = ((Number) policyMap.getOrDefault(QUEUE_PRIORITY_ADJUSTMENT, DEFAULT_QUEUE_RECEIVER_PRIORITY_ADJUSTMENT)).intValue();
          final Set<Map.Entry<String, String>> includes = decodeFlattenedFilterSet(policyMap, QUEUE_INCLUDES);
@@ -312,7 +335,8 @@ public final class AMQPFederationPolicySupport {
             properties = null;
          }
 
-         return new FederationReceiveFromQueuePolicy(policyName, includeFederated, priorityAdjustment,
+         return new FederationReceiveFromQueuePolicy(policyName, autoCreate, autoDelete, autoDeleteDelay,
+                                                     autoDeleteMsgCount, includeFederated, priorityAdjustment,
                                                      includes, excludes, properties, transformerConfig,
                                                      wildcardConfig);
       } catch (ActiveMQException amqEx) {
@@ -403,18 +427,19 @@ public final class AMQPFederationPolicySupport {
                "Message body did not carry the required policy name");
          }
 
-         if (!policyMap.containsKey(ADDRESS_MAX_HOPS)) {
+         if (!policyMap.containsKey(MAX_HOPS)) {
             throw ActiveMQAMQPProtocolMessageBundle.BUNDLE.malformedFederationControlMessage(
                "Message body did not carry the required max hops configuration");
          }
 
          final String policyName = (String) policyMap.get(POLICY_NAME);
-         final boolean autoDelete = (Boolean) policyMap.getOrDefault(ADDRESS_AUTO_DELETE, false);
-         final long autoDeleteDelay = ((Number) policyMap.getOrDefault(ADDRESS_AUTO_DELETE_DELAY, 0L)).longValue();
-         final long autoDeleteMsgCount = ((Number) policyMap.getOrDefault(ADDRESS_AUTO_DELETE_MSG_COUNT, 0L)).longValue();
-         final int maxHops = ((Number) policyMap.get(ADDRESS_MAX_HOPS)).intValue();
-         final boolean enableDiverts = (Boolean) policyMap.getOrDefault(ADDRESS_ENABLE_DIVERT_BINDINGS, false);
-         final boolean allowWildcardGroupings = (Boolean) policyMap.getOrDefault(ADDRESS_ALLOW_WILDCARD_GROUPINGS, false);
+         final boolean autoCreate = (Boolean) policyMap.getOrDefault(AUTO_CREATE, DEFAULT_ADDRESS_AUTO_CREATE);
+         final boolean autoDelete = (Boolean) policyMap.getOrDefault(AUTO_DELETE, DEFAULT_AUTO_DELETE);
+         final long autoDeleteDelay = ((Number) policyMap.getOrDefault(AUTO_DELETE_DELAY, DEFAULT_AUTO_DELETE_DELAY)).longValue();
+         final long autoDeleteMsgCount = ((Number) policyMap.getOrDefault(AUTO_DELETE_MSG_COUNT, DEFAULT_AUTO_DELETE_MSG_COUNT)).longValue();
+         final int maxHops = ((Number) policyMap.get(MAX_HOPS)).intValue();
+         final boolean enableDiverts = (Boolean) policyMap.getOrDefault(ENABLE_DIVERT_BINDINGS, false);
+         final boolean allowWildcardGroupings = (Boolean) policyMap.getOrDefault(ALLOW_WILDCARD_GROUPINGS, false);
 
          final Set<String> includes;
          final Set<String> excludes;
@@ -449,7 +474,7 @@ public final class AMQPFederationPolicySupport {
             properties = null;
          }
 
-         return new FederationReceiveFromAddressPolicy(policyName, autoDelete, autoDeleteDelay,
+         return new FederationReceiveFromAddressPolicy(policyName, autoCreate, autoDelete, autoDeleteDelay,
                                                        autoDeleteMsgCount, maxHops, enableDiverts,
                                                        allowWildcardGroupings, includes, excludes,
                                                        properties, transformerConfig, wildcardConfig);
@@ -495,9 +520,10 @@ public final class AMQPFederationPolicySupport {
 
       final FederationReceiveFromAddressPolicy policy = new FederationReceiveFromAddressPolicy(
          element.getName(),
-         Objects.requireNonNullElse(element.getAutoDelete(), false),
-         Objects.requireNonNullElse(element.getAutoDeleteDelay(), 0L),
-         Objects.requireNonNullElse(element.getAutoDeleteMessageCount(), 0L),
+         Objects.requireNonNullElse(element.getAutoCreate(), DEFAULT_ADDRESS_AUTO_CREATE),
+         Objects.requireNonNullElse(element.getAutoDelete(), DEFAULT_AUTO_DELETE),
+         Objects.requireNonNullElse(element.getAutoDeleteDelay(), DEFAULT_AUTO_DELETE_DELAY),
+         Objects.requireNonNullElse(element.getAutoDeleteMessageCount(), DEFAULT_AUTO_DELETE_MSG_COUNT),
          element.getMaxHops(),
          Objects.requireNonNullElse(element.isEnableDivertBindings(), false),
          Objects.requireNonNullElse(element.isAllowWildcardGroupings(), false),
@@ -550,6 +576,10 @@ public final class AMQPFederationPolicySupport {
 
       final FederationReceiveFromQueuePolicy policy = new FederationReceiveFromQueuePolicy(
          element.getName(),
+         Objects.requireNonNullElse(element.getAutoCreate(), DEFAULT_QUEUE_AUTO_CREATE),
+         Objects.requireNonNullElse(element.getAutoDelete(), DEFAULT_AUTO_DELETE),
+         Objects.requireNonNullElse(element.getAutoDeleteDelay(), DEFAULT_AUTO_DELETE_DELAY),
+         Objects.requireNonNullElse(element.getAutoDeleteMessageCount(), DEFAULT_AUTO_DELETE_MSG_COUNT),
          element.isIncludeFederated(),
          Objects.requireNonNullElse(element.getPriorityAdjustment(), DEFAULT_QUEUE_RECEIVER_PRIORITY_ADJUSTMENT),
          includes,

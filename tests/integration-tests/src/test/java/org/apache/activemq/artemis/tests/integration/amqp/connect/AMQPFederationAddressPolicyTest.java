@@ -18,14 +18,15 @@
 package org.apache.activemq.artemis.tests.integration.amqp.connect;
 
 import static org.apache.activemq.artemis.core.config.WildcardConfiguration.DEFAULT_WILDCARD_CONFIGURATION;
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_AUTO_DELETE;
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_AUTO_DELETE_DELAY;
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_AUTO_DELETE_MSG_COUNT;
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_ENABLE_DIVERT_BINDINGS;
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_ALLOW_WILDCARD_GROUPINGS;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_CREATE;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_DELETE;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_DELETE_DELAY;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_DELETE_MSG_COUNT;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ENABLE_DIVERT_BINDINGS;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ALLOW_WILDCARD_GROUPINGS;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_EXCLUDES;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_INCLUDES;
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_MAX_HOPS;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.MAX_HOPS;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_RECEIVER_IDLE_TIMEOUT;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADD_ADDRESS_POLICY;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.EVENT_TYPE;
@@ -229,9 +230,10 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
 
          final Map<String, Object> expectedSourceProperties = new HashMap<>();
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE, false);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, -1L);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
+         expectedSourceProperties.put(AUTO_CREATE, true);
+         expectedSourceProperties.put(AUTO_DELETE, false);
+         expectedSourceProperties.put(AUTO_DELETE_DELAY, -1L);
+         expectedSourceProperties.put(AUTO_DELETE_MSG_COUNT, -1L);
 
          peer.expectAttach().ofReceiver()
                             .withDesiredCapability(FEDERATION_ADDRESS_RECEIVER.toString())
@@ -333,9 +335,10 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
 
          final Map<String, Object> expectedSourceProperties = new HashMap<>();
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE, false);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, -1L);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
+         expectedSourceProperties.put(AUTO_CREATE, true);
+         expectedSourceProperties.put(AUTO_DELETE, false);
+         expectedSourceProperties.put(AUTO_DELETE_DELAY, -1L);
+         expectedSourceProperties.put(AUTO_DELETE_MSG_COUNT, -1L);
 
          peer.expectAttach().ofReceiver()
                             .withDesiredCapability(FEDERATION_ADDRESS_RECEIVER.toString())
@@ -413,9 +416,10 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
 
          final Map<String, Object> expectedSourceProperties = new HashMap<>();
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE, false);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, -1L);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
+         expectedSourceProperties.put(AUTO_CREATE, true);
+         expectedSourceProperties.put(AUTO_DELETE, false);
+         expectedSourceProperties.put(AUTO_DELETE_DELAY, -1L);
+         expectedSourceProperties.put(AUTO_DELETE_MSG_COUNT, -1L);
 
          final AtomicReference<String> capturedSourceAddress1 = new AtomicReference<>();
          final AtomicReference<String> capturedSourceAddress2 = new AtomicReference<>();
@@ -670,9 +674,10 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
          server.addAddressInfo(new AddressInfo(SimpleString.of("test"), RoutingType.MULTICAST));
 
          final Map<String, Object> expectedSourceProperties = new HashMap<>();
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE, true);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, 10_000L);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
+         expectedSourceProperties.put(AUTO_CREATE, true);
+         expectedSourceProperties.put(AUTO_DELETE, true);
+         expectedSourceProperties.put(AUTO_DELETE_DELAY, 10_000L);
+         expectedSourceProperties.put(AUTO_DELETE_MSG_COUNT, -1L);
 
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
          peer.expectAttach().ofReceiver()
@@ -746,9 +751,10 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
          server.addAddressInfo(new AddressInfo(SimpleString.of("test"), RoutingType.MULTICAST));
 
          final Map<String, Object> expectedSourceProperties = new HashMap<>();
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE, true);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, 10_000L);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
+         expectedSourceProperties.put(AUTO_CREATE, true);
+         expectedSourceProperties.put(AUTO_DELETE, true);
+         expectedSourceProperties.put(AUTO_DELETE_DELAY, 10_000L);
+         expectedSourceProperties.put(AUTO_DELETE_MSG_COUNT, -1L);
 
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
          peer.expectAttach().ofReceiver()
@@ -847,9 +853,10 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
          selectors.put(AmqpSupport.NO_LOCAL_NAME.toString(), new AmqpNoLocalFilter());
 
          final Map<String, Object> expectedSourceProperties = new HashMap<>();
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE, true);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, 10_000L);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
+         expectedSourceProperties.put(AUTO_CREATE, true);
+         expectedSourceProperties.put(AUTO_DELETE, true);
+         expectedSourceProperties.put(AUTO_DELETE_DELAY, 10_000L);
+         expectedSourceProperties.put(AUTO_DELETE_MSG_COUNT, -1L);
 
          final AtomicReference<Attach> capturedAttach = new AtomicReference<>();
 
@@ -996,9 +1003,10 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
          server.addAddressInfo(new AddressInfo(SimpleString.of("test"), RoutingType.MULTICAST));
 
          final Map<String, Object> expectedSourceProperties = new HashMap<>();
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE, false);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, -1L);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
+         expectedSourceProperties.put(AUTO_CREATE, true);
+         expectedSourceProperties.put(AUTO_DELETE, false);
+         expectedSourceProperties.put(AUTO_DELETE_DELAY, -1L);
+         expectedSourceProperties.put(AUTO_DELETE_MSG_COUNT, -1L);
 
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
          peer.expectAttach().ofReceiver()
@@ -1080,9 +1088,10 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
          server.addAddressInfo(new AddressInfo(SimpleString.of("test"), RoutingType.MULTICAST));
 
          final Map<String, Object> expectedSourceProperties = new HashMap<>();
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE, false);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, -1L);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
+         expectedSourceProperties.put(AUTO_CREATE, true);
+         expectedSourceProperties.put(AUTO_DELETE, false);
+         expectedSourceProperties.put(AUTO_DELETE_DELAY, -1L);
+         expectedSourceProperties.put(AUTO_DELETE_MSG_COUNT, -1L);
 
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
          peer.expectAttach().ofReceiver()
@@ -1171,9 +1180,10 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
          server.addAddressInfo(new AddressInfo(SimpleString.of("test"), RoutingType.MULTICAST));
 
          final Map<String, Object> expectedSourceProperties = new HashMap<>();
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE, false);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, -1L);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
+         expectedSourceProperties.put(AUTO_CREATE, true);
+         expectedSourceProperties.put(AUTO_DELETE, false);
+         expectedSourceProperties.put(AUTO_DELETE_DELAY, -1L);
+         expectedSourceProperties.put(AUTO_DELETE_MSG_COUNT, -1L);
 
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
          peer.expectAttach().ofReceiver()
@@ -1353,9 +1363,10 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
          server.addAddressInfo(new AddressInfo(SimpleString.of("test"), RoutingType.MULTICAST));
 
          final Map<String, Object> expectedSourceProperties = new HashMap<>();
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE, false);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, -1L);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
+         expectedSourceProperties.put(AUTO_CREATE, true);
+         expectedSourceProperties.put(AUTO_DELETE, false);
+         expectedSourceProperties.put(AUTO_DELETE_DELAY, -1L);
+         expectedSourceProperties.put(AUTO_DELETE_MSG_COUNT, -1L);
 
          // Demand on the forwarding address should create a remote consumer for the forwarded address.
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
@@ -1440,9 +1451,10 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
          server.addAddressInfo(new AddressInfo(SimpleString.of("test"), RoutingType.MULTICAST));
 
          final Map<String, Object> expectedSourceProperties = new HashMap<>();
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE, false);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, -1L);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
+         expectedSourceProperties.put(AUTO_CREATE, true);
+         expectedSourceProperties.put(AUTO_DELETE, false);
+         expectedSourceProperties.put(AUTO_DELETE_DELAY, -1L);
+         expectedSourceProperties.put(AUTO_DELETE_MSG_COUNT, -1L);
 
          // Demand on the forwarding address should create a remote consumer for the forwarded address.
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
@@ -1535,9 +1547,10 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
          server.addAddressInfo(new AddressInfo(SimpleString.of("test"), RoutingType.MULTICAST));
 
          final Map<String, Object> expectedSourceProperties = new HashMap<>();
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE, false);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, -1L);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
+         expectedSourceProperties.put(AUTO_CREATE, true);
+         expectedSourceProperties.put(AUTO_DELETE, false);
+         expectedSourceProperties.put(AUTO_DELETE_DELAY, -1L);
+         expectedSourceProperties.put(AUTO_DELETE_MSG_COUNT, -1L);
 
          // Demand on the forwarding address should create a remote consumer for the forwarded address.
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
@@ -1628,9 +1641,10 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
          server.addAddressInfo(new AddressInfo(SimpleString.of("source"), RoutingType.MULTICAST));
 
          final Map<String, Object> expectedSourceProperties = new HashMap<>();
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE, false);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, -1L);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
+         expectedSourceProperties.put(AUTO_CREATE, true);
+         expectedSourceProperties.put(AUTO_DELETE, false);
+         expectedSourceProperties.put(AUTO_DELETE_DELAY, -1L);
+         expectedSourceProperties.put(AUTO_DELETE_MSG_COUNT, -1L);
 
          // Demand on the forwarding address should create a remote consumer for the forwarded address.
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
@@ -1719,9 +1733,10 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
          server.addAddressInfo(new AddressInfo(SimpleString.of("source"), RoutingType.MULTICAST));
 
          final Map<String, Object> expectedSourceProperties = new HashMap<>();
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE, false);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, -1L);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
+         expectedSourceProperties.put(AUTO_CREATE, true);
+         expectedSourceProperties.put(AUTO_DELETE, false);
+         expectedSourceProperties.put(AUTO_DELETE_DELAY, -1L);
+         expectedSourceProperties.put(AUTO_DELETE_MSG_COUNT, -1L);
 
          // Demand on the forwarding address should create a remote consumer for the forwarded address.
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
@@ -1810,9 +1825,10 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
          server.addAddressInfo(new AddressInfo(SimpleString.of("source"), RoutingType.MULTICAST));
 
          final Map<String, Object> expectedSourceProperties = new HashMap<>();
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE, false);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, -1L);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
+         expectedSourceProperties.put(AUTO_CREATE, true);
+         expectedSourceProperties.put(AUTO_DELETE, false);
+         expectedSourceProperties.put(AUTO_DELETE_DELAY, -1L);
+         expectedSourceProperties.put(AUTO_DELETE_MSG_COUNT, -1L);
 
          // Demand on the forwarding address should create a remote consumer for the forwarding address.
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
@@ -1897,9 +1913,10 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
          server.addAddressInfo(new AddressInfo(SimpleString.of("test"), RoutingType.MULTICAST));
 
          final Map<String, Object> expectedSourceProperties = new HashMap<>();
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE, false);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, -1L);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
+         expectedSourceProperties.put(AUTO_CREATE, true);
+         expectedSourceProperties.put(AUTO_DELETE, false);
+         expectedSourceProperties.put(AUTO_DELETE_DELAY, -1L);
+         expectedSourceProperties.put(AUTO_DELETE_MSG_COUNT, -1L);
 
          // Demand on the main address creates demand on the same address remotely and then the diverts
          // should just be tracked under that original demand.
@@ -2037,7 +2054,7 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
 
       final FederationReceiveFromAddressPolicy policy =
          new FederationReceiveFromAddressPolicy("test-address-policy",
-                                                true, 30_000L, 1000L, 1, true, false,
+                                                true, true, 30_000L, 1000L, 1, true, false,
                                                 includes, excludes, null, null,
                                                 DEFAULT_WILDCARD_CONFIGURATION);
 
@@ -2083,7 +2100,7 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
 
       final FederationReceiveFromAddressPolicy policy =
          new FederationReceiveFromAddressPolicy("test-address-policy",
-                                                true, 30_000L, 1000L, 1, true, false,
+                                                true, true, 30_000L, 1000L, 1, true, false,
                                                 includes, excludes, null, transformerConfiguration,
                                                 DEFAULT_WILDCARD_CONFIGURATION);
 
@@ -2121,7 +2138,7 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
 
       final FederationReceiveFromAddressPolicy policy =
          new FederationReceiveFromAddressPolicy("test-address-policy",
-                                                true, 30_000L, 1000L, 1, true, false,
+                                                true, true, 30_000L, 1000L, 1, true, false,
                                                 includes, null, properties, null,
                                                 DEFAULT_WILDCARD_CONFIGURATION);
 
@@ -2191,7 +2208,7 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
 
       final FederationReceiveFromAddressPolicy policy =
          new FederationReceiveFromAddressPolicy("test-address-policy",
-                                                true, 30_000L, 1000L, 1, true, false,
+                                                true, true, 30_000L, 1000L, 1, true, false,
                                                 includes, null, properties, null,
                                                 DEFAULT_WILDCARD_CONFIGURATION);
 
@@ -2263,7 +2280,7 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
 
       final FederationReceiveFromAddressPolicy policy =
          new FederationReceiveFromAddressPolicy("test-address-policy",
-                                                true, 30_000L, 1000L, 1, true, false,
+                                                true, true, 30_000L, 1000L, 1, true, false,
                                                 includes, null, properties, null,
                                                 DEFAULT_WILDCARD_CONFIGURATION);
 
@@ -2337,7 +2354,7 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
 
       final FederationReceiveFromAddressPolicy policy =
          new FederationReceiveFromAddressPolicy("test-address-policy",
-                                                true, 30_000L, 1000L, 1, true, false,
+                                                true, true, 30_000L, 1000L, 1, true, false,
                                                 includes, null, properties, null,
                                                 DEFAULT_WILDCARD_CONFIGURATION);
 
@@ -2416,7 +2433,7 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
 
       final FederationReceiveFromAddressPolicy policy =
          new FederationReceiveFromAddressPolicy("test-address-policy",
-                                                true, 30_000L, 1000L, 1, true, false,
+                                                true, true, 30_000L, 1000L, 1, true, false,
                                                 includes, null, properties, transformerConfiguration,
                                                 DEFAULT_WILDCARD_CONFIGURATION);
 
@@ -2481,9 +2498,9 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
       server.start();
 
       final Map<String, Object> remoteSourceProperties = new HashMap<>();
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE, true);
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, 10_000L);
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, 1L);
+      remoteSourceProperties.put(AUTO_DELETE, true);
+      remoteSourceProperties.put(AUTO_DELETE_DELAY, 10_000L);
+      remoteSourceProperties.put(AUTO_DELETE_MSG_COUNT, 1L);
 
       try (ProtonTestClient peer = new ProtonTestClient()) {
          scriptFederationConnectToRemote(peer, "test");
@@ -3528,12 +3545,13 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
       includes.add("test");
 
       policyMap.put(POLICY_NAME, "remote-address-policy");
-      policyMap.put(ADDRESS_AUTO_DELETE, false);
-      policyMap.put(ADDRESS_AUTO_DELETE_DELAY, -1L);
-      policyMap.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
-      policyMap.put(ADDRESS_MAX_HOPS, 5);
-      policyMap.put(ADDRESS_ENABLE_DIVERT_BINDINGS, false);
-      policyMap.put(ADDRESS_ALLOW_WILDCARD_GROUPINGS, false);
+      policyMap.put(AUTO_CREATE, true);
+      policyMap.put(AUTO_DELETE, false);
+      policyMap.put(AUTO_DELETE_DELAY, -1L);
+      policyMap.put(AUTO_DELETE_MSG_COUNT, -1L);
+      policyMap.put(MAX_HOPS, 5);
+      policyMap.put(ENABLE_DIVERT_BINDINGS, false);
+      policyMap.put(ALLOW_WILDCARD_GROUPINGS, false);
       policyMap.put(ADDRESS_INCLUDES, includes);
 
       final EncodedAmqpValueMatcher bodyMatcher = new EncodedAmqpValueMatcher(policyMap);
@@ -3615,12 +3633,13 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
       includes.add("test");
 
       policyMap.put(POLICY_NAME, "remote-address-policy");
-      policyMap.put(ADDRESS_AUTO_DELETE, false);
-      policyMap.put(ADDRESS_AUTO_DELETE_DELAY, -1L);
-      policyMap.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
-      policyMap.put(ADDRESS_MAX_HOPS, 5);
-      policyMap.put(ADDRESS_ENABLE_DIVERT_BINDINGS, false);
-      policyMap.put(ADDRESS_ALLOW_WILDCARD_GROUPINGS, false);
+      policyMap.put(AUTO_CREATE, true);
+      policyMap.put(AUTO_DELETE, false);
+      policyMap.put(AUTO_DELETE_DELAY, -1L);
+      policyMap.put(AUTO_DELETE_MSG_COUNT, -1L);
+      policyMap.put(MAX_HOPS, 5);
+      policyMap.put(ENABLE_DIVERT_BINDINGS, false);
+      policyMap.put(ALLOW_WILDCARD_GROUPINGS, false);
       policyMap.put(ADDRESS_INCLUDES, includes);
 
       final EncodedAmqpValueMatcher bodyMatcher = new EncodedAmqpValueMatcher(policyMap);
@@ -3686,9 +3705,9 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
       server.start();
 
       final Map<String, Object> remoteSourceProperties = new HashMap<>();
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE, true);
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, 10_000L);
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, 1L);
+      remoteSourceProperties.put(AUTO_DELETE, true);
+      remoteSourceProperties.put(AUTO_DELETE_DELAY, 10_000L);
+      remoteSourceProperties.put(AUTO_DELETE_MSG_COUNT, 1L);
 
       final MessageAnnotationsMatcher maMatcher = new MessageAnnotationsMatcher(true);
       maMatcher.withEntry(EVENT_TYPE.toString(), Matchers.is(REQUESTED_ADDRESS_ADDED));
@@ -3795,9 +3814,10 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
 
          final Map<String, Object> expectedSourceProperties = new HashMap<>();
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE, false);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, -1L);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
+         expectedSourceProperties.put(AUTO_CREATE, true);
+         expectedSourceProperties.put(AUTO_DELETE, false);
+         expectedSourceProperties.put(AUTO_DELETE_DELAY, -1L);
+         expectedSourceProperties.put(AUTO_DELETE_MSG_COUNT, -1L);
 
          // Reject the initial attempt
          peer.expectAttach().ofReceiver()
@@ -4205,7 +4225,7 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
       server.start();
 
       final Map<String, Object> remoteSourceProperties = new HashMap<>();
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE, false);
+      remoteSourceProperties.put(AUTO_DELETE, false);
 
       try (ProtonTestClient peer = new ProtonTestClient()) {
          scriptFederationConnectToRemote(peer, "test");
@@ -4317,9 +4337,10 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
          server.addAddressInfo(new AddressInfo(SimpleString.of("test"), RoutingType.MULTICAST));
 
          final Map<String, Object> expectedSourceProperties = new HashMap<>();
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE, true);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, 10_000L);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
+         expectedSourceProperties.put(AUTO_CREATE, true);
+         expectedSourceProperties.put(AUTO_DELETE, true);
+         expectedSourceProperties.put(AUTO_DELETE_DELAY, 10_000L);
+         expectedSourceProperties.put(AUTO_DELETE_MSG_COUNT, -1L);
 
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
          peer.expectAttach().ofReceiver()
@@ -4353,9 +4374,9 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
       server.start();
 
       final Map<String, Object> remoteSourceProperties = new HashMap<>();
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE, true);
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, 1_000L);
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, 1L);
+      remoteSourceProperties.put(AUTO_DELETE, true);
+      remoteSourceProperties.put(AUTO_DELETE_DELAY, 1_000L);
+      remoteSourceProperties.put(AUTO_DELETE_MSG_COUNT, 1L);
 
       try (ProtonTestClient peer = new ProtonTestClient()) {
          scriptFederationConnectToRemote(peer, "test");
@@ -4440,9 +4461,9 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
       server.start();
 
       final Map<String, Object> remoteSourceProperties = new HashMap<>();
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE, true);
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, 1_000L);
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, 1L);
+      remoteSourceProperties.put(AUTO_DELETE, true);
+      remoteSourceProperties.put(AUTO_DELETE_DELAY, 1_000L);
+      remoteSourceProperties.put(AUTO_DELETE_MSG_COUNT, 1L);
 
       try (ProtonTestClient peer = new ProtonTestClient()) {
          scriptFederationConnectToRemote(peer, "test");
@@ -4509,9 +4530,9 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
       server.addAddressInfo(new AddressInfo(SimpleString.of("test"), RoutingType.MULTICAST));
 
       final Map<String, Object> remoteSourceProperties = new HashMap<>();
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE, false);
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, 1_000L);
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
+      remoteSourceProperties.put(AUTO_DELETE, false);
+      remoteSourceProperties.put(AUTO_DELETE_DELAY, 1_000L);
+      remoteSourceProperties.put(AUTO_DELETE_MSG_COUNT, -1L);
 
       try (ProtonTestClient peer = new ProtonTestClient()) {
          scriptFederationConnectToRemote(peer, "test");
@@ -4588,9 +4609,9 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
       server.addAddressInfo(new AddressInfo(SimpleString.of("test"), RoutingType.MULTICAST));
 
       final Map<String, Object> remoteSourceProperties = new HashMap<>();
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE, false);
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, 1_000L);
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
+      remoteSourceProperties.put(AUTO_DELETE, false);
+      remoteSourceProperties.put(AUTO_DELETE_DELAY, 1_000L);
+      remoteSourceProperties.put(AUTO_DELETE_MSG_COUNT, -1L);
 
       try (ProtonTestClient peer = new ProtonTestClient()) {
          scriptFederationConnectToRemote(peer, "test", true);
@@ -4667,7 +4688,7 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
       server.addAddressInfo(new AddressInfo(SimpleString.of("test"), RoutingType.MULTICAST));
 
       final Map<String, Object> remoteSourceProperties = new HashMap<>();
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE, false);
+      remoteSourceProperties.put(AUTO_DELETE, false);
 
       try (ProtonTestClient peer = new ProtonTestClient()) {
          scriptFederationConnectToRemote(peer, "test");
@@ -4812,13 +4833,13 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
 
       final Map<String, Object> remoteSourceProperties = new HashMap<>();
       if (autoDelete) {
-         remoteSourceProperties.put(ADDRESS_AUTO_DELETE, true);
-         remoteSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, 200L);
-         remoteSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
+         remoteSourceProperties.put(AUTO_DELETE, true);
+         remoteSourceProperties.put(AUTO_DELETE_DELAY, 200L);
+         remoteSourceProperties.put(AUTO_DELETE_MSG_COUNT, -1L);
       } else {
-         remoteSourceProperties.put(ADDRESS_AUTO_DELETE, false);
-         remoteSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, -1L);
-         remoteSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
+         remoteSourceProperties.put(AUTO_DELETE, false);
+         remoteSourceProperties.put(AUTO_DELETE_DELAY, -1L);
+         remoteSourceProperties.put(AUTO_DELETE_MSG_COUNT, -1L);
       }
 
       try (ProtonTestClient peer = new ProtonTestClient()) {
@@ -5647,9 +5668,10 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
 
          final Map<String, Object> expectedSourceProperties = new HashMap<>();
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE, false);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, -1L);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
+         expectedSourceProperties.put(AUTO_CREATE, true);
+         expectedSourceProperties.put(AUTO_DELETE, false);
+         expectedSourceProperties.put(AUTO_DELETE_DELAY, -1L);
+         expectedSourceProperties.put(AUTO_DELETE_MSG_COUNT, -1L);
 
          final String expectedJMSFilter1 = "color='red'";
          final String expectedJMSFilter2 = "color='blue'";
@@ -5815,9 +5837,10 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
 
          final Map<String, Object> expectedSourceProperties = new HashMap<>();
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE, false);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, -1L);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
+         expectedSourceProperties.put(AUTO_CREATE, true);
+         expectedSourceProperties.put(AUTO_DELETE, false);
+         expectedSourceProperties.put(AUTO_DELETE_DELAY, -1L);
+         expectedSourceProperties.put(AUTO_DELETE_MSG_COUNT, -1L);
 
          final String expectedJMSFilter = "color='red'";
          final AtomicReference<Attach> capturedAttach = new AtomicReference<>();
@@ -6022,9 +6045,10 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
 
          final Map<String, Object> expectedSourceProperties = new HashMap<>();
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE, false);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, -1L);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
+         expectedSourceProperties.put(AUTO_CREATE, true);
+         expectedSourceProperties.put(AUTO_DELETE, false);
+         expectedSourceProperties.put(AUTO_DELETE_DELAY, -1L);
+         expectedSourceProperties.put(AUTO_DELETE_MSG_COUNT, -1L);
 
          final String jmsFilterQueue1 = "color='red'";
          final String jmsFilterQueue2 = "color='blue'";
@@ -6488,9 +6512,9 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
       server.start();
 
       final Map<String, Object> remoteSourceProperties = new HashMap<>();
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE, true);
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, 100_000L);
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, 1L);
+      remoteSourceProperties.put(AUTO_DELETE, true);
+      remoteSourceProperties.put(AUTO_DELETE_DELAY, 100_000L);
+      remoteSourceProperties.put(AUTO_DELETE_MSG_COUNT, 1L);
 
       try (ProtonTestClient peer = new ProtonTestClient()) {
          scriptFederationConnectToRemote(peer, "test", true);
@@ -6709,7 +6733,7 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
 
       final FederationReceiveFromAddressPolicy policy =
          new FederationReceiveFromAddressPolicy("test-address-policy",
-                                                true, 30_000L, 1000L, -1, true, false,
+                                                true, true, 30_000L, 1000L, -1, true, false,
                                                 includes, null, properties, null,
                                                 DEFAULT_WILDCARD_CONFIGURATION);
 
@@ -6910,9 +6934,9 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
 
    private void doTestFederationSourceDoesNotTreatTargetFederationReceiversAsLocalDemand(boolean includeFilterId) throws Exception {
       final Map<String, Object> remoteSourceProperties = new HashMap<>();
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE, true);
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, 100_000L);
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, 1L);
+      remoteSourceProperties.put(AUTO_DELETE, true);
+      remoteSourceProperties.put(AUTO_DELETE_DELAY, 100_000L);
+      remoteSourceProperties.put(AUTO_DELETE_MSG_COUNT, 1L);
 
       final String remoteNodeID = UUID.randomUUID().toString();
       final String federationBindingName;
@@ -7067,7 +7091,7 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
 
       final FederationReceiveFromAddressPolicy policy =
          new FederationReceiveFromAddressPolicy("test-address-policy",
-                                                true, 30_000L, 1000L, 1, false, false,
+                                                true, true, 30_000L, 1000L, 1, false, false,
                                                 includes, null, properties, null,
                                                 DEFAULT_WILDCARD_CONFIGURATION);
 
@@ -7173,7 +7197,7 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
 
       final FederationReceiveFromAddressPolicy policy =
          new FederationReceiveFromAddressPolicy("test-address-policy",
-                                                true, 30_000L, 1000L, 1, true, false,
+                                                true, true, 30_000L, 1000L, 1, true, false,
                                                 includes, null, properties, null,
                                                 DEFAULT_WILDCARD_CONFIGURATION);
 
@@ -7900,9 +7924,9 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
       final String actualAddress = getTestName() + ".A";
 
       final Map<String, Object> remoteSourceProperties = new HashMap<>();
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE, true);
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, 10_000L);
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, 1L);
+      remoteSourceProperties.put(AUTO_DELETE, true);
+      remoteSourceProperties.put(AUTO_DELETE_DELAY, 10_000L);
+      remoteSourceProperties.put(AUTO_DELETE_MSG_COUNT, 1L);
 
       try (ProtonTestClient peer = new ProtonTestClient()) {
          scriptFederationConnectToRemote(peer, "test", true);
@@ -7975,9 +7999,9 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
       server.addAddressInfo(new AddressInfo(SimpleString.of(actualAddress), RoutingType.MULTICAST));
 
       final Map<String, Object> remoteSourceProperties = new HashMap<>();
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE, true);
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, 10_000L);
-      remoteSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, 1L);
+      remoteSourceProperties.put(AUTO_DELETE, true);
+      remoteSourceProperties.put(AUTO_DELETE_DELAY, 10_000L);
+      remoteSourceProperties.put(AUTO_DELETE_MSG_COUNT, 1L);
 
       try (ProtonTestClient peer = new ProtonTestClient()) {
          scriptFederationConnectToRemote(peer, "test", true);
@@ -8035,6 +8059,314 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
 
          server.stop();
       }
+   }
+
+   @Test
+   @Timeout(20)
+   public void testFederationAddressReceiverIndicatesNoAutoCreateWhenConfiguredNotToRequestIt() throws Exception {
+      try (ProtonTestServer peer = new ProtonTestServer()) {
+         peer.expectSASLAnonymousConnect();
+         peer.expectOpen().respond();
+         peer.expectBegin().respond();
+         peer.expectAttach().ofSender()
+                            .withProperty(FEDERATION_VERSION.toString(), FEDERATION_V2)
+                            .withDesiredCapability(FEDERATION_CONTROL_LINK.toString())
+                            .respond()
+                            .withProperty(FEDERATION_VERSION.toString(), FEDERATION_V2)
+                            .withOfferedCapabilities(FEDERATION_CONTROL_LINK.toString());
+         peer.expectAttach().ofReceiver()
+                            .withSenderSettleModeSettled()
+                            .withSource().withDynamic(true)
+                            .and()
+                            .withDesiredCapability(FEDERATION_EVENT_LINK.toString())
+                            .respondInKind()
+                            .withTarget().withAddress("test-dynamic-events");
+         peer.expectFlow().withLinkCredit(10);
+         peer.start();
+
+         final URI remoteURI = peer.getServerURI();
+         logger.info("Test started, peer listening on: {}", remoteURI);
+
+         final AMQPFederationAddressPolicyElement receiveFromAddress = new AMQPFederationAddressPolicyElement();
+         receiveFromAddress.setName("address-policy");
+         receiveFromAddress.addToIncludes("test");
+         receiveFromAddress.setAutoCreate(false);
+         receiveFromAddress.setAutoDelete(false);
+         receiveFromAddress.setAutoDeleteDelay(-1L);
+         receiveFromAddress.setAutoDeleteMessageCount(-1L);
+
+         final AMQPFederatedBrokerConnectionElement element = new AMQPFederatedBrokerConnectionElement();
+         element.setName(getTestName());
+         element.addLocalAddressPolicy(receiveFromAddress);
+         element.addProperty(ADDRESS_RECEIVER_IDLE_TIMEOUT, 0);
+
+         final AMQPBrokerConnectConfiguration amqpConnection =
+            new AMQPBrokerConnectConfiguration(getTestName(), "tcp://" + remoteURI.getHost() + ":" + remoteURI.getPort());
+         amqpConnection.setReconnectAttempts(0);// No reconnects
+         amqpConnection.addElement(element);
+
+         server.getConfiguration().addAMQPConnection(amqpConnection);
+         server.start();
+
+         peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+
+         final Map<String, Object> expectedSourceProperties = new HashMap<>();
+         expectedSourceProperties.put(AUTO_CREATE, false);
+         expectedSourceProperties.put(AUTO_DELETE, false);
+         expectedSourceProperties.put(AUTO_DELETE_DELAY, -1L);
+         expectedSourceProperties.put(AUTO_DELETE_MSG_COUNT, -1L);
+
+         peer.expectAttach().ofReceiver()
+                            .withDesiredCapability(FEDERATION_ADDRESS_RECEIVER.toString())
+                            .withName(allOf(containsString(getTestName()),
+                                            containsString("test"),
+                                            containsString("address-receiver"),
+                                            containsString(server.getNodeID().toString())))
+                            .withProperty(FEDERATED_ADDRESS_SOURCE_PROPERTIES.toString(), expectedSourceProperties)
+                            .withProperty(FEDERATION_POLICY_NAME.toString(), "address-policy")
+                            .withSource().withAddress(startsWith("test::federation." + getTestName() + ".policy.address-policy.")).and()
+                            .respond()
+                            .withOfferedCapabilities(FEDERATION_ADDRESS_RECEIVER.toString());
+         peer.expectFlow().withLinkCredit(1000);
+
+         server.createQueue(QueueConfiguration.of("test").setRoutingType(RoutingType.MULTICAST)
+                                                         .setAddress("test")
+                                                         .setAutoCreated(false));
+
+         Wait.assertTrue(() -> server.queueQuery(SimpleString.of("test")).isExists(), 5000, 100);
+
+         peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+         peer.expectFlow().withLinkCredit(1000).withDrain(true)
+                          .respond()
+                          .withLinkCredit(0).withDeliveryCount(1000).withDrain(true);
+         peer.expectDetach().respond();
+
+         // This should trigger the federation consumer to be shutdown as the statically defined queue
+         // should be the only remaining demand on the address.
+         logger.info("Removing Queues from federated address to eliminate demand");
+         server.destroyQueue(SimpleString.of("test"));
+         Wait.assertFalse(() -> server.queueQuery(SimpleString.of("test")).isExists());
+
+         peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+         peer.expectClose();
+         peer.remoteClose().now();
+         peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+         peer.close();
+      }
+   }
+
+   @Test
+   @Timeout(20)
+   public void testRemoteBrokerAcceptsAddressPolicyWithAutoCreateDisabledAndRequestsItForReceivers() throws Exception {
+      server.start();
+
+      final ArrayList<String> includes = new ArrayList<>();
+      includes.add(getTestName());
+      final ArrayList<String> excludes = new ArrayList<>();
+      includes.add("address3");
+
+      final FederationReceiveFromAddressPolicy policy =
+         new FederationReceiveFromAddressPolicy("test-address-policy",
+                                                false, false, 0L, 0L, 1, true, false,
+                                                includes, excludes, null, null,
+                                                DEFAULT_WILDCARD_CONFIGURATION);
+
+
+      final Map<String, Object> expectedSourceProperties = new HashMap<>();
+      expectedSourceProperties.put(AUTO_CREATE, false);
+      expectedSourceProperties.put(AUTO_DELETE, false);
+      expectedSourceProperties.put(AUTO_DELETE_DELAY, 0L);
+      expectedSourceProperties.put(AUTO_DELETE_MSG_COUNT, 0L);
+
+      try (ProtonTestClient peer = new ProtonTestClient()) {
+         scriptFederationConnectToRemote(peer, "test", true);
+         peer.connect("localhost", AMQP_PORT);
+
+         peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+         peer.expectDisposition().withSettled(true).withState().accepted();
+
+         sendAddresPolicyToRemote(peer, policy);
+
+         peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+         peer.expectAttach().ofReceiver()
+                            .withDesiredCapability(FEDERATION_ADDRESS_RECEIVER.toString())
+                            .withName(allOf(containsString(getTestName()),
+                                            containsString("test"),
+                                            containsString("address-receiver"),
+                                            containsString(server.getNodeID().toString())))
+                            .withProperty(FEDERATED_ADDRESS_SOURCE_PROPERTIES.toString(), expectedSourceProperties)
+                            .withProperty(FEDERATION_POLICY_NAME.toString(), "test-address-policy")
+                            .withSource().withAddress(startsWith(getTestName() + "::federation.test.policy.test-address-policy.")).and()
+                            .respond()
+                            .withOfferedCapabilities(FEDERATION_ADDRESS_RECEIVER.toString());
+         peer.expectFlow().withLinkCredit(1000);
+
+         final ConnectionFactory factory = CFUtil.createConnectionFactory("AMQP", "tcp://localhost:" + AMQP_PORT);
+
+         try (Connection connection = factory.createConnection()) {
+            final Session session = connection.createSession(Session.AUTO_ACKNOWLEDGE);
+            session.createConsumer(session.createTopic(getTestName()));
+
+            connection.start();
+
+            peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+            peer.expectClose();
+            peer.remoteClose().now();
+
+            peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+            peer.close();
+         }
+
+         server.stop();
+      }
+   }
+
+   @Test
+   @Timeout(20)
+   public void testReceiverWithoutCreateAddressGetsEventWhenQueueAppearsLater() throws Exception {
+      final String addressName = getTestName();
+
+      // Don't allow the user to create so that we know the no-create option is acted on as
+      // the attach would fail otherwise
+      addFedUser(server, addressName, false, true);
+      server.start();
+
+      final Map<String, Object> addressSourceProperties = new HashMap<>();
+      addressSourceProperties.put(AUTO_CREATE, false);
+      addressSourceProperties.put(AUTO_DELETE, false);
+      addressSourceProperties.put(AUTO_DELETE_DELAY, 0L);
+      addressSourceProperties.put(AUTO_DELETE_MSG_COUNT, 0L);
+
+      final MessageAnnotationsMatcher maMatcher = new MessageAnnotationsMatcher(true);
+      maMatcher.withEntry(EVENT_TYPE.toString(), Matchers.is(REQUESTED_ADDRESS_ADDED));
+      final Map<String, Object> eventMap = new LinkedHashMap<>();
+      eventMap.put(REQUESTED_ADDRESS_NAME, addressName);
+
+      final EncodedAmqpValueMatcher bodyMatcher = new EncodedAmqpValueMatcher(eventMap);
+      final TransferPayloadCompositeMatcher payloadMatcher = new TransferPayloadCompositeMatcher();
+      payloadMatcher.setMessageAnnotationsMatcher(maMatcher);
+      payloadMatcher.addMessageContentMatcher(bodyMatcher);
+
+      try (ProtonTestClient peer = new ProtonTestClient()) {
+         scriptFederationConnectToRemote(peer, federationUser, federationPass, "test", false, true, true);
+         peer.connect("localhost", AMQP_PORT);
+
+         peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+         peer.expectAttach().ofSender().withName(addressName)
+                                       .withOfferedCapabilities(FEDERATION_ADDRESS_RECEIVER.toString())
+                                       .withNullSource(); // Pending close
+         peer.expectDetach().withError(AmqpError.NOT_FOUND.toString()).respond();
+
+         // Connect to remote as if an address had demand and matched our federation policy
+         // This uses the allowed address so it should attach without issue.
+         peer.remoteAttach().ofReceiver()
+                            .withDesiredCapabilities(FEDERATION_ADDRESS_RECEIVER.toString())
+                            .withName(addressName)
+                            .withSenderSettleModeUnsettled()
+                            .withReceivervSettlesFirst()
+                            .withProperty(FEDERATION_POLICY_NAME.toString(), "test-address-policy")
+                            .withProperty(FEDERATED_ADDRESS_SOURCE_PROPERTIES.toString(), addressSourceProperties)
+                            .withSource().withDurabilityOfNone()
+                                         .withExpiryPolicyOnLinkDetach()
+                                         .withAddress(addressName)
+                                         .withCapabilities("topic")
+                                         .and()
+                            .withTarget().and()
+                            .now();
+
+         peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+         peer.expectTransfer().withPayload(payloadMatcher).accept(); // Address added event
+
+         // Manually add the address and a queue binding to trigger event to notify the peer.
+         server.addAddressInfo(new AddressInfo(SimpleString.of(addressName), RoutingType.MULTICAST));
+         server.createQueue(QueueConfiguration.of(addressName).setRoutingType(RoutingType.MULTICAST)
+                                                              .setAddress(addressName)
+                                                              .setAutoCreated(false));
+
+         peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+         peer.expectClose();
+         peer.remoteClose().now();
+
+         peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+         peer.close();
+
+         server.stop();
+      }
+   }
+
+   @Test
+   @Timeout(20)
+   public void testRemoteBrokerAcceptsAddressPolicyWithoutSomeConfigurationAndNewOptionsThatItIgnores() throws Exception {
+      server.start();
+
+      final Map<String, Object> expectedSourceProperties = new HashMap<>();
+      expectedSourceProperties.put(AUTO_CREATE, true);
+      expectedSourceProperties.put(AUTO_DELETE, false);
+      expectedSourceProperties.put(AUTO_DELETE_DELAY, 0L);
+      expectedSourceProperties.put(AUTO_DELETE_MSG_COUNT, 0L);
+
+      try (ProtonTestClient peer = new ProtonTestClient()) {
+         scriptFederationConnectToRemote(peer, "test", true);
+         peer.connect("localhost", AMQP_PORT);
+
+         peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+         peer.expectDisposition().withSettled(true).withState().accepted();
+
+         sendNonStandardAddresPolicyToRemote(peer, "test-address-policy", getTestName());
+
+         peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+         peer.expectAttach().ofReceiver()
+                            .withDesiredCapability(FEDERATION_ADDRESS_RECEIVER.toString())
+                            .withName(allOf(containsString(getTestName()),
+                                            containsString("test"),
+                                            containsString("address-receiver"),
+                                            containsString(server.getNodeID().toString())))
+                            .withProperty(FEDERATED_ADDRESS_SOURCE_PROPERTIES.toString(), expectedSourceProperties)
+                            .withProperty(FEDERATION_POLICY_NAME.toString(), "test-address-policy")
+                            .withSource().withAddress(startsWith(getTestName() + "::federation.test.policy.test-address-policy.")).and()
+                            .respond()
+                            .withOfferedCapabilities(FEDERATION_ADDRESS_RECEIVER.toString());
+         peer.expectFlow().withLinkCredit(1000);
+
+         final ConnectionFactory factory = CFUtil.createConnectionFactory("AMQP", "tcp://localhost:" + AMQP_PORT);
+
+         try (Connection connection = factory.createConnection()) {
+            final Session session = connection.createSession(Session.AUTO_ACKNOWLEDGE);
+            session.createConsumer(session.createTopic(getTestName()));
+
+            connection.start();
+
+            peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+            peer.expectClose();
+            peer.remoteClose().now();
+
+            peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+            peer.close();
+         }
+
+         server.stop();
+      }
+   }
+
+   protected void addFedUser(ActiveMQServer server, String address, boolean createAddress, boolean createQueue) {
+      ActiveMQJAASSecurityManager securityManager = (ActiveMQJAASSecurityManager) server.getSecurityManager();
+
+      securityManager.getConfiguration().addUser(federationUser, federationPass);
+      securityManager.getConfiguration().addRole(federationUser, getTestName());
+
+      HierarchicalRepository<Set<Role>> securityRepository = server.getSecurityRepository();
+      Set<Role> userRoles = new HashSet<>();
+      userRoles.add(new Role(getTestName(),
+         true, true, createQueue, false, createQueue, false, true, true, createAddress, false, false, false));
+
+      Set<Role> federateRoles = new HashSet<>();
+      federateRoles.add(new Role(getTestName(),
+         true, true, true, true, true, true, true, true, true, true, false, false));
+
+      securityRepository.addMatch(address, userRoles);
+      securityRepository.addMatch(FEDERATION_BASE_VALIDATION_ADDRESS + ".#", federateRoles); // Allow federation operations
+
+      server.getConfiguration().setSecurityEnabled(true);
    }
 
    protected void configureSecurity(ActiveMQServer server, String allowed, String restricted, String... userAllowedOnly) {
@@ -8114,11 +8446,12 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
       final Map<String, Object> policyMap = new LinkedHashMap<>();
 
       policyMap.put(POLICY_NAME, policy.getPolicyName());
-      policyMap.put(ADDRESS_AUTO_DELETE, policy.isAutoDelete());
-      policyMap.put(ADDRESS_AUTO_DELETE_DELAY, policy.getAutoDeleteDelay());
-      policyMap.put(ADDRESS_AUTO_DELETE_MSG_COUNT, policy.getAutoDeleteMessageCount());
-      policyMap.put(ADDRESS_MAX_HOPS, policy.getMaxHops());
-      policyMap.put(ADDRESS_ENABLE_DIVERT_BINDINGS, policy.isEnableDivertBindings());
+      policyMap.put(AUTO_CREATE, policy.isAutoCreate());
+      policyMap.put(AUTO_DELETE, policy.isAutoDelete());
+      policyMap.put(AUTO_DELETE_DELAY, policy.getAutoDeleteDelay());
+      policyMap.put(AUTO_DELETE_MSG_COUNT, policy.getAutoDeleteMessageCount());
+      policyMap.put(MAX_HOPS, policy.getMaxHops());
+      policyMap.put(ENABLE_DIVERT_BINDINGS, policy.isEnableDivertBindings());
 
       if (!policy.getIncludes().isEmpty()) {
          policyMap.put(ADDRESS_INCLUDES, new ArrayList<>(policy.getIncludes()));
@@ -8139,6 +8472,26 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
       if (!policy.getProperties().isEmpty()) {
          policyMap.put(POLICY_PROPERTIES_MAP, policy.getProperties());
       }
+
+      peer.remoteTransfer().withDeliveryId(0)
+                           .withMessageAnnotations().withAnnotation(OPERATION_TYPE.toString(), ADD_ADDRESS_POLICY)
+                           .also()
+                           .withBody().withValue(policyMap)
+                           .also()
+                           .now();
+   }
+
+   private static void sendNonStandardAddresPolicyToRemote(ProtonTestClient peer, String policyName, String included) {
+      final Map<String, Object> policyMap = new LinkedHashMap<>();
+
+      // These are required, everything else is optional as shown by using this policy
+      policyMap.put(POLICY_NAME, policyName);
+      policyMap.put(MAX_HOPS, 0);
+      policyMap.put(ADDRESS_INCLUDES, List.of(included));
+
+      // Some new unknown field which should be ignored.
+      policyMap.put("SOME_NEW_BOOLEAN", true);
+      policyMap.put("SOME_NEW_NUMBER", 1L);
 
       peer.remoteTransfer().withDeliveryId(0)
                            .withMessageAnnotations().withAnnotation(OPERATION_TYPE.toString(), ADD_ADDRESS_POLICY)
@@ -8172,6 +8525,10 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
 
    private static void scriptFederationConnectToRemote(ProtonTestClient peer, String user, String password, String federationName, boolean fqqnAddressSubs) {
       scriptFederationConnectToRemote(peer, user, password, federationName, AmqpSupport.AMQP_CREDITS_DEFAULT, AmqpSupport.AMQP_LOW_CREDITS_DEFAULT, false, false, fqqnAddressSubs);
+   }
+
+   private static void scriptFederationConnectToRemote(ProtonTestClient peer, String user, String password, String federationName, boolean eventsSender, boolean eventsReceiver, boolean fqqnAddressSubs) {
+      scriptFederationConnectToRemote(peer, user, password, federationName, AmqpSupport.AMQP_CREDITS_DEFAULT, AmqpSupport.AMQP_LOW_CREDITS_DEFAULT, eventsSender, eventsReceiver, fqqnAddressSubs);
    }
 
    private static void scriptFederationConnectToRemote(ProtonTestClient peer, String user, String password, String federationName, int amqpCredits, int amqpLowCredits, boolean eventsSender, boolean eventsReceiver, boolean fqqnAddressSubs) {
