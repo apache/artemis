@@ -34,6 +34,7 @@ public final class AMQPFederationAddressPolicyElement implements Serializable {
    private final Map<String, Object> properties = new HashMap<>();
 
    private String name;
+   private Boolean autoCreate;
    private Boolean autoDelete;
    private Long autoDeleteDelay;
    private Long autoDeleteMessageCount;
@@ -156,6 +157,15 @@ public final class AMQPFederationAddressPolicyElement implements Serializable {
       return this;
    }
 
+   public Boolean getAutoCreate() {
+      return autoCreate;
+   }
+
+   public AMQPFederationAddressPolicyElement setAutoCreate(Boolean autoCreate) {
+      this.autoCreate = autoCreate;
+      return this;
+   }
+
    public Boolean isEnableDivertBindings() {
       return enableDivertBindings;
    }
@@ -196,6 +206,7 @@ public final class AMQPFederationAddressPolicyElement implements Serializable {
              Objects.equals(includes, other.includes) &&
              Objects.equals(excludes, other.excludes) &&
              Objects.equals(properties, other.properties) &&
+             Objects.equals(autoCreate, other.autoCreate) &&
              Objects.equals(autoDelete, other.autoDelete) &&
              Objects.equals(autoDeleteDelay, other.autoDeleteDelay) &&
              Objects.equals(autoDeleteMessageCount, other.autoDeleteMessageCount) &&
@@ -207,7 +218,7 @@ public final class AMQPFederationAddressPolicyElement implements Serializable {
 
    @Override
    public int hashCode() {
-      return Objects.hash(name, includes, excludes, properties, autoDelete, autoDeleteDelay, autoDeleteMessageCount,
+      return Objects.hash(name, includes, excludes, properties, autoCreate, autoDelete, autoDeleteDelay, autoDeleteMessageCount,
                           maxHops, enableDivertBindings, allowWildcardGroupings, transformerConfig);
    }
 

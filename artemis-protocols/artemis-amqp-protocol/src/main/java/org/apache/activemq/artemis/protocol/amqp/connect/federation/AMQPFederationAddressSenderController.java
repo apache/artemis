@@ -17,14 +17,21 @@
 
 package org.apache.activemq.artemis.protocol.amqp.connect.federation;
 
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_AUTO_DELETE;
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_AUTO_DELETE_DELAY;
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_AUTO_DELETE_MSG_COUNT;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_CREATE;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_DELETE;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_DELETE_DELAY;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_DELETE_MSG_COUNT;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.FEDERATION_ADDRESS_RECEIVER;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.DEFAULT_ADDRESS_AUTO_CREATE;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.DEFAULT_AUTO_DELETE;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.DEFAULT_AUTO_DELETE_DELAY;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.DEFAULT_AUTO_DELETE_MSG_COUNT;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationPolicySupport.FEDERATED_ADDRESS_SOURCE_PROPERTIES;
+
 import java.lang.invoke.MethodHandles;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -99,15 +106,17 @@ public final class AMQPFederationAddressSenderController extends AMQPFederationS
 
       final Map<String, Object> addressSourceProperties;
 
-      if (sender.getRemoteProperties() == null || !sender.getRemoteProperties().containsKey(FEDERATED_ADDRESS_SOURCE_PROPERTIES)) {
+      if (sender.getRemoteProperties() == null) {
          addressSourceProperties = Collections.emptyMap();
       } else {
-         addressSourceProperties = (Map<String, Object>) sender.getRemoteProperties().get(FEDERATED_ADDRESS_SOURCE_PROPERTIES);
+         addressSourceProperties = (Map<String, Object>)
+            Objects.requireNonNullElse(sender.getRemoteProperties().get(FEDERATED_ADDRESS_SOURCE_PROPERTIES), Collections.emptyMap());
       }
 
-      final boolean autoDelete = (boolean) addressSourceProperties.getOrDefault(ADDRESS_AUTO_DELETE, false);
-      final long autoDeleteDelay = ((Number) addressSourceProperties.getOrDefault(ADDRESS_AUTO_DELETE_DELAY, 0)).longValue();
-      final long autoDeleteMsgCount = ((Number) addressSourceProperties.getOrDefault(ADDRESS_AUTO_DELETE_MSG_COUNT, 0)).longValue();
+      final boolean autoCreate = (boolean) addressSourceProperties.getOrDefault(AUTO_CREATE, DEFAULT_ADDRESS_AUTO_CREATE);
+      final boolean autoDelete = (boolean) addressSourceProperties.getOrDefault(AUTO_DELETE, DEFAULT_AUTO_DELETE);
+      final long autoDeleteDelay = ((Number) addressSourceProperties.getOrDefault(AUTO_DELETE_DELAY, DEFAULT_AUTO_DELETE_DELAY)).longValue();
+      final long autoDeleteMsgCount = ((Number) addressSourceProperties.getOrDefault(AUTO_DELETE_MSG_COUNT, DEFAULT_AUTO_DELETE_MSG_COUNT)).longValue();
 
       // An address receiver may opt to filter on things like max message hops or no local message
       // reflection so we must check for a filter here and apply it if it exists.
@@ -142,7 +151,7 @@ public final class AMQPFederationAddressSenderController extends AMQPFederationS
       final AddressQueryResult addressQueryResult;
 
       try {
-         addressQueryResult = sessionSPI.addressQuery(address, RoutingType.MULTICAST, true);
+         addressQueryResult = sessionSPI.addressQuery(address, RoutingType.MULTICAST, autoCreate);
       } catch (ActiveMQSecurityException e) {
          throw ActiveMQAMQPProtocolMessageBundle.BUNDLE.securityErrorCreatingConsumer(e.getMessage());
       } catch (ActiveMQAMQPException e) {

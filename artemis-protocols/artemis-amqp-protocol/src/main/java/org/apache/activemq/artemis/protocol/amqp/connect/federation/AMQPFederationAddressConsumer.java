@@ -17,9 +17,10 @@
 
 package org.apache.activemq.artemis.protocol.amqp.connect.federation;
 
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_AUTO_DELETE;
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_AUTO_DELETE_DELAY;
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_AUTO_DELETE_MSG_COUNT;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_CREATE;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_DELETE;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_DELETE_DELAY;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_DELETE_MSG_COUNT;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.FEDERATION_ADDRESS_RECEIVER;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.FEDERATION_POLICY_NAME;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationPolicySupport.FEDERATED_ADDRESS_SOURCE_PROPERTIES;
@@ -154,11 +155,10 @@ public abstract class AMQPFederationAddressConsumer extends AMQPFederationConsum
          target.setAddress(consumerInfo.getTargetAddress());
 
          final Map<String, Object> addressSourceProperties = new HashMap<>();
-         // If the remote needs to create the address then it should apply these
-         // settings during the create.
-         addressSourceProperties.put(ADDRESS_AUTO_DELETE, policy.isAutoDelete());
-         addressSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, policy.getAutoDeleteDelay());
-         addressSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, policy.getAutoDeleteMessageCount());
+         addressSourceProperties.put(AUTO_CREATE, policy.isAutoCreate());
+         addressSourceProperties.put(AUTO_DELETE, policy.isAutoDelete());
+         addressSourceProperties.put(AUTO_DELETE_DELAY, policy.getAutoDeleteDelay());
+         addressSourceProperties.put(AUTO_DELETE_MSG_COUNT, policy.getAutoDeleteMessageCount());
 
          final Map<Symbol, Object> receiverProperties = new HashMap<>();
          receiverProperties.put(FEDERATED_ADDRESS_SOURCE_PROPERTIES, addressSourceProperties);
