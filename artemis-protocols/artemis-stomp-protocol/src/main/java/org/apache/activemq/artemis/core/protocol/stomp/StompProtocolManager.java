@@ -245,7 +245,7 @@ public class StompProtocolManager extends AbstractProtocolManager<StompFrame, St
          stompSession = new StompSession(connection, this, server.getStorageManager().newContext(connection.getTransportConnection().getEventLoop()));
          String name = UUIDGenerator.getInstance().generateStringUUID();
          final String validatedUser = server.validateUser(connection.getLogin(), connection.getPasscode(), connection, getSecurityDomain());
-         ServerSession session = server.createSession(name, connection.getLogin(), connection.getPasscode(), ActiveMQClient.DEFAULT_MIN_LARGE_MESSAGE_SIZE, connection, !transacted, false, false, false, null, stompSession, true, server.newOperationContext(), getPrefixes(), getSecurityDomain(), validatedUser, false);
+         ServerSession session = server.createSession(name, connection.getLogin(), connection.getPasscode(), ActiveMQClient.DEFAULT_MIN_LARGE_MESSAGE_SIZE, connection, !transacted, false, false, false, null, stompSession, true, server.newOperationContext(), getPrefixes(), getTemporaryPrefixes(), getSecurityDomain(), validatedUser, false);
          stompSession.setServerSession(session);
          sessions.put(id, stompSession);
       }
