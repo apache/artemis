@@ -150,6 +150,8 @@ public class TransportConstants {
 
    public static final String TRUST_MANAGER_FACTORY_PLUGIN_PROP_NAME = "trustManagerFactoryPlugin";
 
+   public static final String CLIENT_FAILOVER_ADVERTISING_ENABLED_PROP_NAME = "clientFailoverAdvertisingEnabled";
+
    public static final String NETTY_VERSION;
 
    /**
@@ -569,6 +571,7 @@ public class TransportConstants {
       allowableConnectorKeys.add(TransportConstants.CRL_PATH_PROP_NAME);
       allowableConnectorKeys.add(TransportConstants.CRC_OPTIONS_PROP_NAME);
       allowableConnectorKeys.add(TransportConstants.OCSP_RESPONDER_URL_PROP_NAME);
+      allowableConnectorKeys.add(TransportConstants.CLIENT_FAILOVER_ADVERTISING_ENABLED_PROP_NAME);
 
       ALLOWABLE_CONNECTOR_KEYS = Collections.unmodifiableSet(allowableConnectorKeys);
 
