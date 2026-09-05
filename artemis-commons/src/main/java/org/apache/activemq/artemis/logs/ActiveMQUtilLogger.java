@@ -77,4 +77,22 @@ public interface ActiveMQUtilLogger {
 
    @LogMessage(id = 202017, value = "Algorithm two-way is deprecated and will be removed from the default codec in a future version. Use a custom codec instead. Consult the manual for details.", level = LogMessage.Level.WARN)
    void deprecatedDefaultCodecTwoWayAlgorithm();
+
+   @LogMessage(id = 202018, value = "Unable to check KQueue availability ", level = LogMessage.Level.WARN)
+   void unableToCheckKQueueAvailability(Throwable e);
+
+   @LogMessage(id = 202019, value = "KQueue is not available, please add to the classpath or configure useKQueue=false to remove this warning", level = LogMessage.Level.WARN)
+   void unableToCheckKQueueAvailabilityNoClass();
+
+   @LogMessage(id = 202020, value = "Unable to check Epoll availability ", level = LogMessage.Level.WARN)
+   void unableToCheckEpollAvailability(Throwable e);
+
+   @LogMessage(id = 202021, value = "Epoll is not available, please add to the classpath or configure useEpoll=false to remove this warning", level = LogMessage.Level.WARN)
+   void unableToCheckEpollAvailabilityNoClass();
+
+   @LogMessage(id = 202022, value = "Unable to check IoUring availability ", level = LogMessage.Level.WARN)
+   void unableToCheckIoUringAvailability(Throwable e);
+
+   @LogMessage(id = 202023, value = "IoUring is not available, please add to the classpath or configure useIoUring=false to remove this warning", level = LogMessage.Level.WARN)
+   void unableToCheckIoUringAvailabilityNoClass();
 }

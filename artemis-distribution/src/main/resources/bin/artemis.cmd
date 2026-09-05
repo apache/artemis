@@ -52,6 +52,7 @@ set JVM_ARGS=%JAVA_ARGS%
 if not "%ARTEMIS_CLUSTER_PROPS%"=="" set JVM_ARGS=%JVM_ARGS% %ARTEMIS_CLUSTER_PROPS%
 set JVM_ARGS=%JVM_ARGS% -classpath %ARTEMIS_HOME%\lib\artemis-boot.jar
 set JVM_ARGS=%JVM_ARGS% -Dartemis.home=%ARTEMIS_HOME%
+set JVM_ARGS=%JVM_ARGS% --enable-native-access=ALL-UNNAMED
 if not "%DEBUG_ARGS%"=="" set JVM_ARGS=%JVM_ARGS% %DEBUG_ARGS%
 if not "%JAVA_ARGS_APPEND%"=="" set JVM_ARGS=%JVM_ARGS% %JAVA_ARGS_APPEND%
 

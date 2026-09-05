@@ -460,6 +460,12 @@
          </dependency>
          <dependency>
             <groupId>io.netty</groupId>
+            <artifactId>netty-codec-base</artifactId>
+            <version>${netty.version}</version>
+            <!-- License: Apache 2.0 -->
+         </dependency>
+         <dependency>
+            <groupId>io.netty</groupId>
             <artifactId>netty-codec-http</artifactId>
             <version>${netty.version}</version>
             <!-- License: Apache 2.0 -->
@@ -524,6 +530,19 @@
             <artifactId>netty-transport-native-kqueue</artifactId>
             <version>${netty.version}</version>
             <classifier>${netty-transport-native-kqueue-classifier}</classifier>
+            <!-- License: Apache 2.0 -->
+         </dependency>
+         <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-transport-classes-io_uring</artifactId>
+            <version>${netty.version}</version>
+            <!-- License: Apache 2.0 -->
+         </dependency>
+         <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-transport-native-io_uring</artifactId>
+            <version>${netty.version}</version>
+            <classifier>${netty-transport-native-io_uring-classifier}</classifier>
             <!-- License: Apache 2.0 -->
          </dependency>
          <dependency>

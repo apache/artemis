@@ -84,6 +84,25 @@
          <artifactId>netty-transport</artifactId>
       </dependency>
       <dependency>
+         <groupId>io.netty</groupId>
+         <artifactId>netty-transport-classes-epoll</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.netty</groupId>
+         <artifactId>netty-transport-classes-kqueue</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.netty</groupId>
+         <artifactId>netty-transport-classes-io_uring</artifactId>
+         <optional>true</optional>
+      </dependency>
+      <dependency>
+         <groupId>io.netty</groupId>
+         <artifactId>netty-transport-native-io_uring</artifactId>
+         <classifier>${netty-transport-native-io_uring-classifier}</classifier>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
          <groupId>commons-beanutils</groupId>
          <artifactId>commons-beanutils</artifactId>
       </dependency>

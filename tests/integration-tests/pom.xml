@@ -256,6 +256,13 @@
          <artifactId>netty-common</artifactId>
          <scope>test</scope>
       </dependency>
+      <!-- The io_uring transport is optional, but we still want direct test coverage for it. -->
+      <dependency>
+         <groupId>io.netty</groupId>
+         <artifactId>netty-transport-native-io_uring</artifactId>
+         <classifier>${netty-transport-native-io_uring-classifier}</classifier>
+         <scope>test</scope>
+      </dependency>
       <dependency>
          <groupId>org.fusesource.hawtbuf</groupId>
          <artifactId>hawtbuf</artifactId>

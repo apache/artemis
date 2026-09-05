@@ -76,6 +76,14 @@
                <version>${project.version}</version>
                <scope>provided</scope>
             </dependency>
+            <!-- io_uring's Netty dependencies are optional in artemis-commons. However, the aggregate JavaDoc still
+                 unpacks its sources. Therefore, add the classes jar explicitly to ensure everything can be found during
+                 JavaDoc processing. -->
+            <dependency>
+               <groupId>io.netty</groupId>
+               <artifactId>netty-transport-classes-io_uring</artifactId>
+               <scope>provided</scope>
+            </dependency>
          </dependencies>
 
          <build>

@@ -74,6 +74,11 @@ move /Y %ARTEMIS_OOME_DUMP% %ARTEMIS_OOME_DUMP%.bkp
 rem "Create full JVM Args"
 set JVM_ARGS=%LOGGING_ARGS%
 set JVM_ARGS=%JVM_ARGS% %JAVA_ARGS%
+
+rem "Netty 4.2 only uses sun.misc.Unsafe on JDK 24+ when it's explicitly permitted; the NIO/MAPPED journals"
+rem "rely on it, so enable it there to avoid a broker startup failure. The option is unrecognized before JDK 23,"
+rem "so it's only added when recognized."
+"%_JAVACMD%" --sun-misc-unsafe-memory-access=allow --version >nul 2>&1 && set JVM_ARGS=%JVM_ARGS% --sun-misc-unsafe-memory-access=allow
 if not "%ARTEMIS_CLUSTER_PROPS%"=="" set JVM_ARGS=%JVM_ARGS% %ARTEMIS_CLUSTER_PROPS%
 set JVM_ARGS=%JVM_ARGS% -classpath %ARTEMIS_HOME%\lib\artemis-boot.jar
 set JVM_ARGS=%JVM_ARGS% -Dartemis.home=%ARTEMIS_HOME%

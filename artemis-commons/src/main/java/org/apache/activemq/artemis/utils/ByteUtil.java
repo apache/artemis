@@ -520,8 +520,11 @@ public class ByteUtil {
          Arrays.fill(buffer.array(), start, start + bytes, zero);
       } else {
          //slow path
+         // absolute put() checks index against limit, but we zero up to capacity
+         final ByteBuffer dup = buffer.duplicate();
+         dup.clear();
          for (int i = 0; i < bytes; i++) {
-            buffer.put(i + offset, zero);
+            dup.put(i + offset, zero);
          }
       }
    }

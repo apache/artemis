@@ -124,6 +124,11 @@ if [ -n "$ARTEMIS_SHELL_HISTORY" ]; then
   SHELL_HISTORY_ARG="-Dartemis.shell.history=${ARTEMIS_SHELL_HISTORY}"
 fi
 
+# Netty 4.2 only uses sun.misc.Unsafe on JDK 24+ when it's explicitly permitted; the NIO/MAPPED journals
+# rely on it, so enable it there to avoid a broker startup failure. The option is unrecognized before JDK 23,
+# so it's only added when recognized.
+$JAVACMD --sun-misc-unsafe-memory-access=allow --version > /dev/null 2>&1 && ALLOW_UNSAFE="--sun-misc-unsafe-memory-access=allow"
+
 exec "$JAVACMD" \
     $LOGGING_ARGS \
     $JAVA_ARGS \
@@ -138,6 +143,7 @@ exec "$JAVACMD" \
     -Ddata.dir="$ARTEMIS_DATA_DIR" \
     -Dartemis.instance.etc="$ARTEMIS_INSTANCE_ETC" \
     $SHELL_HISTORY_ARG \
+    $ALLOW_UNSAFE \
     $DEBUG_ARGS \
     $JAVA_ARGS_APPEND \
     org.apache.activemq.artemis.boot.Artemis "$@"

@@ -19,11 +19,11 @@ package org.apache.activemq.artemis.core.io.mapped;
 import java.io.File;
 import java.nio.ByteBuffer;
 
-import io.netty.util.internal.PlatformDependent;
 import org.apache.activemq.artemis.core.io.AbstractSequentialFileFactory;
 import org.apache.activemq.artemis.core.io.IOCriticalErrorListener;
 import org.apache.activemq.artemis.core.io.SequentialFile;
 import org.apache.activemq.artemis.core.io.util.ByteBufferPool;
+import org.apache.activemq.artemis.core.io.util.DirectByteBufferReleaser;
 import org.apache.activemq.artemis.utils.PowerOf2Util;
 import org.apache.activemq.artemis.utils.ByteUtil;
 import org.apache.activemq.artemis.utils.Env;
@@ -90,7 +90,7 @@ public final class MappedSequentialFileFactory extends AbstractSequentialFileFac
 
    @Override
    public void releaseDirectBuffer(ByteBuffer buffer) {
-      PlatformDependent.freeDirectBuffer(buffer);
+      DirectByteBufferReleaser.freeDirectBuffer(buffer);
    }
 
    public MappedSequentialFileFactory enableBufferReuse() {

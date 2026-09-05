@@ -89,6 +89,9 @@
          <groupId>io.netty</groupId>
          <artifactId>netty-transport-classes-kqueue</artifactId>
       </dependency>
+      <!-- io_uring is off by default and its Netty deps are intentionally omitted here so they aren't pulled in
+           transitively or bundled. Users who want io_uring add netty-transport-classes-io_uring and
+           netty-transport-native-io_uring themselves; see NettyIoUringSupport / CheckDependencies.isIoUringAvailable(). -->
       <dependency>
          <groupId>io.netty</groupId>
          <artifactId>netty-codec-http</artifactId>
@@ -108,10 +111,6 @@
       <dependency>
          <groupId>io.netty</groupId>
          <artifactId>netty-handler-proxy</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>io.netty</groupId>
-         <artifactId>netty-codec</artifactId>
       </dependency>
       <dependency>
          <groupId>io.netty</groupId>

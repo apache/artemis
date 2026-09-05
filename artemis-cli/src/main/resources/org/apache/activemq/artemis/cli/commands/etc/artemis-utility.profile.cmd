@@ -22,7 +22,7 @@ set ARTEMIS_DATA_DIR="${artemis.instance.data}"
 
 IF "%LOGGING_ARGS%"=="" (set LOGGING_ARGS=-Dlog4j2.configurationFile=log4j2-utility.properties)
 
-IF "%JAVA_ARGS%"=="" (set JAVA_ARGS=-Dlog4j2.disableJmx=true --add-opens java.base/jdk.internal.misc=ALL-UNNAMED ${java-utility-opts})
+IF "%JAVA_ARGS%"=="" (set JAVA_ARGS=-Dlog4j2.disableJmx=true --add-opens java.base/jdk.internal.misc=ALL-UNNAMED --enable-native-access=ALL-UNNAMED ${java-utility-opts})
 
 rem Uncomment to enable remote debugging
 rem set DEBUG_ARGS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005
