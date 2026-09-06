@@ -52,10 +52,13 @@ The timestamp of when the message was created.
 The value is a long integer.
 
 AMQSize::
-The size of a message in bytes.
+Broker calculated size of a message in bytes. For large messages, the body size may not be fully included.
 The value is an integer.
 
-Any other identifiers used in core filter expressions will be assumed to be properties of the message.
+AMQFullSize::
+Total size of the encoded message in bytes as it would be transmitted over the wire, including headers, properties, and the full body.
+Can be used in filters to select messages based on their size.
+The value is a long integer.
 
 == Property Identifier Constraints
 
