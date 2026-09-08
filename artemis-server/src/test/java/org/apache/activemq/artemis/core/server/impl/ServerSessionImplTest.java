@@ -50,7 +50,7 @@ public class ServerSessionImplTest {
 
       setupMocksForAddressStuff(server, addressInfo);
 
-      ServerSessionImpl session = new ServerSessionImpl(null, null, null, null, 0, false, false, false, false, true, mock(RemotingConnection.class), server, null, null, null, null, null, false);
+      ServerSessionImpl session = new ServerSessionImpl(null, null, null, null, 0, false, false, false, false, true, mock(RemotingConnection.class), server, null, null, null, null, null, null, false);
 
       QueueConfiguration queueConfiguration = QueueConfiguration.of(NAME).setRoutingType(RoutingType.MULTICAST);
 

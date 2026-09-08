@@ -552,9 +552,10 @@ public class HangConsumerTest extends ActiveMQTestBase {
                                                         OperationContext context,
                                                         boolean autoCreateQueue,
                                                         Map<SimpleString, RoutingType> prefixes,
+                                                        Map<SimpleString, RoutingType> temporaryPrefixes,
                                                         String securityDomain,
                                                         boolean isLegacyProducer) throws Exception {
-         return new ServerSessionImpl(name, username, password, validatedUser, minLargeMessageSize, autoCommitSends, autoCommitAcks, preAcknowledge, getConfiguration().isPersistDeliveryCountBeforeDelivery(), xa, connection, this, defaultAddress == null ? null : SimpleString.of(defaultAddress), new MyCallback(callback), context, prefixes, securityDomain, isLegacyProducer);
+         return new ServerSessionImpl(name, username, password, validatedUser, minLargeMessageSize, autoCommitSends, autoCommitAcks, preAcknowledge, getConfiguration().isPersistDeliveryCountBeforeDelivery(), xa, connection, this, defaultAddress == null ? null : SimpleString.of(defaultAddress), new MyCallback(callback), context, prefixes, temporaryPrefixes, securityDomain, isLegacyProducer);
       }
    }
 
