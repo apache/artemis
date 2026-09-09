@@ -48,6 +48,7 @@ import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
 import org.apache.activemq.artemis.jms.client.ActiveMQDestination;
 import org.apache.activemq.artemis.utils.CompositeAddress;
 import org.apache.activemq.artemis.utils.RandomUtil;
+import org.apache.activemq.artemis.utils.TableOut;
 import org.apache.activemq.artemis.utils.Wait;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -132,8 +133,9 @@ public class MessageSerializerTest extends CliTestBase {
          .execute(context);
       int currentMessageCount;
       try {
+         List<String> outLines = getOutputLines(context, false);
          // parse the value for MESSAGE_COUNT from the output
-         currentMessageCount = Integer.parseInt(getOutputLines(context, false).get(2).split("\\|")[4].trim());
+         currentMessageCount = Integer.parseInt(outLines.get(4).split(TableOut.BOX_VERTICAL)[4].trim());
       } catch (Exception e) {
          currentMessageCount = 0;
       }

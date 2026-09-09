@@ -88,7 +88,7 @@ public class PrintDataTest extends ParameterDBTestBase {
       }
       server.stop();
 
-      PrintData printData = new PrintData().setLegacyOutput(true);
+      PrintData printData = new PrintData().setAscii(true);
 
       ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
       PrintStream printStream = new PrintStream(byteArrayOutputStream, true, StandardCharsets.UTF_8.name());
