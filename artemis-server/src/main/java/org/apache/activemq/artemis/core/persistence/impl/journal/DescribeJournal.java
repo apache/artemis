@@ -246,7 +246,7 @@ public final class DescribeJournal {
       for (JournalFile file : files) {
          recordsPrintStream.println("#" + file + " (size=" + file.getFile().size() + ")");
          if (journalTable != null) {
-            journalTable.printSeparator(recordsPrintStream);
+            journalTable.printTopSeparator(recordsPrintStream);
             journalTable.print(recordsPrintStream, new String[]{"Operation", "ID", "Record Type", "TX", "Compact", "Decoded"});
             journalTable.printSeparator(recordsPrintStream);
          }
@@ -389,6 +389,9 @@ public final class DescribeJournal {
                }
             }
          }, null, reclaimed, null);
+         if (journalTable != null) {
+            journalTable.printBottomSeparator(out);
+         }
       }
 
       recordsPrintStream.println();
@@ -474,7 +477,7 @@ public final class DescribeJournal {
       final int[] survivingColumnSizes = {10, 8, 30, 7, 120};
       final TableOut survivingTable = legacyOutput ? null : new TableOut("|", 2, survivingColumnSizes);
       if (survivingTable != null) {
-         survivingTable.printSeparator(out);
+         survivingTable.printTopSeparator(out);
          survivingTable.print(out, new String[]{"Operation", "ID", "Record Type", "Compact", "Decoded"});
          survivingTable.printSeparator(out);
       }
@@ -542,6 +545,10 @@ public final class DescribeJournal {
          }
       }
 
+      if (survivingTable != null) {
+         survivingTable.printBottomSeparator(out);
+      }
+
       if (!counters.isEmpty()) {
          out.println("### Page Counters");
          printCounters(out, counters, legacyOutput);
@@ -556,7 +563,9 @@ public final class DescribeJournal {
          TableOut preparedTable = null;
          if (!legacyOutput) {
             preparedTable = new TableOut("|", 2, survivingColumnSizes);
+            preparedTable.printTopSeparator(out);
             preparedTable.print(out, new String[]{"Operation", "ID", "Record Type", "Compact", "Decoded"});
+            preparedTable.printSeparator(out);
          }
 
          for (RecordInfo info : tx.getRecords()) {
@@ -618,21 +627,27 @@ public final class DescribeJournal {
          out.println("### Message Counts ###");
          int[] countColumnSizes = {25, 12};
          TableOut countTable = new TableOut("|", 2, countColumnSizes);
+         countTable.printTopSeparator(out);
          countTable.print(out, new String[]{"Metric", "Count"});
+         countTable.printSeparator(out);
          countTable.print(out, new String[]{"Messages", String.valueOf(messageCount)});
          countTable.print(out, new String[]{"Large Messages", String.valueOf(largeMessageCount)});
          countTable.print(out, new String[]{"Prepared Messages", String.valueOf(preparedMessageCount)});
          countTable.print(out, new String[]{"Prepared Large Messages", String.valueOf(preparedLargeMessageCount)});
+         countTable.printBottomSeparator(out);
 
          if (!messageRefCounts.isEmpty()) {
             out.println();
             out.println("### Message References ###");
             int[] refColumnSizes = {12, 12};
             TableOut refTable = new TableOut("|", 2, refColumnSizes);
+            refTable.printTopSeparator(out);
             refTable.print(out, new String[]{"Queue", "Count"});
+            refTable.printSeparator(out);
             messageRefCounts.forEach((queueId, count) -> {
                refTable.print(out, new String[]{String.valueOf(queueId), String.valueOf(count)});
             });
+            refTable.printBottomSeparator(out);
          }
 
          if (!preparedMessageRefCount.isEmpty()) {
@@ -640,10 +655,13 @@ public final class DescribeJournal {
             out.println("### Prepared Message References ###");
             int[] prepRefColumnSizes = {12, 12};
             TableOut prepRefTable = new TableOut("|", 2, prepRefColumnSizes);
+            prepRefTable.printTopSeparator(out);
             prepRefTable.print(out, new String[]{"Queue", "Count"});
+            prepRefTable.printSeparator(out);
             preparedMessageRefCount.forEach((queueId, count) -> {
                prepRefTable.print(out, new String[]{String.valueOf(queueId), String.valueOf(count)});
             });
+            prepRefTable.printBottomSeparator(out);
          }
       }
 
@@ -664,10 +682,13 @@ public final class DescribeJournal {
       } else {
          int[] columnSizes = {12, 15};
          TableOut table = new TableOut("|", 2, columnSizes);
+         table.printTopSeparator(out);
          table.print(out, new String[]{"Queue", "Value"});
+         table.printSeparator(out);
          for (Map.Entry<Long, PageSubscriptionCounterImpl> entry : counters.entrySet()) {
             table.print(out, new String[]{String.valueOf(entry.getKey()), String.valueOf(entry.getValue().getValue())});
          }
+         table.printBottomSeparator(out);
       }
    }
 

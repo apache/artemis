@@ -15,6 +15,13 @@ NOTE: Follow the general upgrade procedure outlined in the xref:upgrading.adoc#u
 
 :sectnums!:
 
+== Version 2.58.0
+
+=== Highlights
+* https://issues.apache.org/jira/browse/ARTEMIS-6242[ARTEMIS-6242] / https://issues.apache.org/jira/browse/ARTEMIS-6216[ARTEMIS-6216] - CLI table output (`queue stat`, `lock list`, `print-data`) now uses Unicode box-drawing characters by default.
+  ** Use `--ascii` for plain ASCII output.
+
+=== Upgrading from 2.57.0
 == Version 2.57.0
 
 === Highlights
