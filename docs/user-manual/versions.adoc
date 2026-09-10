@@ -39,6 +39,7 @@ Upgrade every broker in the cluster, or temporarily disable `coreConnectionSecur
 * Selector filters now limit `%` wildcards to 5 by default.
 Configure via system property `org.apache.activemq.artemis.selector.maxWildcards` or environment variable `ARTEMIS_SELECTOR_MAX_WILDCARDS`.
 The broker will fail to start if existing durable subscriptions exceed this limit, so increase the value before upgrading if needed.
+
 == Version 2.56.0
 
 https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12357208[Full release notes]
