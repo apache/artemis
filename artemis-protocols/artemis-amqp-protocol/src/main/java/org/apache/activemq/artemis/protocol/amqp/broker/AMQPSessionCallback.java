@@ -210,14 +210,14 @@ public class AMQPSessionCallback implements SessionCallback {
                                                            false, // boolean autoCommitAcks,
                                                            false, // boolean preAcknowledge,
                                                            true, //boolean xa,
-                                                           null, this, true, operationContext, manager.getPrefixes(), manager.getSecurityDomain(), false);
+                                                           null, this, true, operationContext, manager.getPrefixes(), manager.getTemporaryPrefixes(), manager.getSecurityDomain(), false);
       } else {
          serverSession = manager.getServer().createSession(name, connection.getUser(), connection.getPassword(), ActiveMQClient.DEFAULT_MIN_LARGE_MESSAGE_SIZE, protonSPI.getProtonConnectionDelegate(), // RemotingConnection remotingConnection,
                                                            false, // boolean autoCommitSends
                                                            false, // boolean autoCommitAcks,
                                                            false, // boolean preAcknowledge,
                                                            true, //boolean xa,
-                                                           null, this, true, operationContext, manager.getPrefixes(), manager.getSecurityDomain(), connection.getValidatedUser(), false);
+                                                           null, this, true, operationContext, manager.getPrefixes(), manager.getTemporaryPrefixes(), manager.getSecurityDomain(), connection.getValidatedUser(), false);
       }
    }
 

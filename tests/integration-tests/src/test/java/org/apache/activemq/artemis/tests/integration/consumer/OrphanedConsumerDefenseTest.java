@@ -121,7 +121,7 @@ public class OrphanedConsumerDefenseTest extends ActiveMQTestBase {
       remotingConnection.destroy();
       ServerSessionImpl session = new ServerSessionImpl(RandomUtil.randomUUIDString(), RandomUtil.randomUUIDString(), RandomUtil.randomUUIDString(),
                                                         RandomUtil.randomUUIDString(), 1000, true, true, true, true, true,
-                                                        remotingConnection, mockServer, RandomUtil.randomUUIDSimpleString(), Mockito.mock(SessionCallback.class), Mockito.mock(OperationContext.class), new HashMap<>(), "securityDomain", false);
+                                                        remotingConnection, mockServer, RandomUtil.randomUUIDSimpleString(), Mockito.mock(SessionCallback.class), Mockito.mock(OperationContext.class), new HashMap<>(), new HashMap<>(), "securityDomain", false);
 
       try {
          new ServerConsumerImpl(1, session, null, null, 1, true, false, new NullStorageManager(), sessionCallback, true, true, managementService, false, 0, server);

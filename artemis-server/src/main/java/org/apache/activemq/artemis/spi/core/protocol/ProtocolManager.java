@@ -75,7 +75,13 @@ public interface ProtocolManager<P extends BaseInterceptor, R extends RoutingHan
 
    void setMulticastPrefix(String multicastPrefix);
 
+   void setTemporaryAnycastPrefix(String temporaryAnycastPrefix);
+
+   void setTemporaryMulticastPrefix(String temporaryMulticastPrefix);
+
    Map<SimpleString, RoutingType> getPrefixes();
+
+   Map<SimpleString, RoutingType> getTemporaryPrefixes();
 
    void setSecurityDomain(String securityDomain);
 
