@@ -35,7 +35,10 @@ An old broker connecting to a broker that has already been upgraded does not sen
 The upgraded broker therefore treats the connection as unauthenticated and responds with only the placeholder topology entry, not the real cluster view.
 Until that old broker is upgraded as well, it may be unable to discover or connect properly to the new brokers (cluster connections, bridges, replication, backup registration, and similar Core links can fail or stall).
 Upgrade every broker in the cluster, or temporarily disable `coreConnectionSecurityEnabled` on acceptors during a transitional window, before relying on cross-version cluster connectivity.
-
+* Server discovery is disabled by default, see the xref:clusters.adoc#server-discovery[Server Discovery] section in the user manual for security requirements and enablement.
+* Selector filters now limit `%` wildcards to 5 by default.
+Configure via system property `org.apache.activemq.artemis.selector.maxWildcards` or environment variable `ARTEMIS_SELECTOR_MAX_WILDCARDS`.
+The broker will fail to start if existing durable subscriptions exceed this limit, so increase the value before upgrading if needed.
 == Version 2.56.0
 
 https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12357208[Full release notes]
@@ -67,10 +70,6 @@ Due to the additional persistent state there will be a performance impact.
 Of course, this is a traditional trade-off for increased reliability.
 The exact impact will depend on your specific use-case.
 Generally speaking, the recommendation is to use the lowest QoS possible to avoid unnecessary overhead.
-* Server discovery is disabled by default, see the xref:clusters.adoc#server-discovery[Server Discovery] section in the user manual for security requirements and enablement.
-* Selector filters now limit `%` wildcards to 5 by default.
-Configure via system property `org.apache.activemq.artemis.selector.maxWildcards` or environment variable `ARTEMIS_SELECTOR_MAX_WILDCARDS`.
-The broker will fail to start if existing durable subscriptions exceed this limit, so increase the value before upgrading if needed.
 
 == Version 2.55.0
 
