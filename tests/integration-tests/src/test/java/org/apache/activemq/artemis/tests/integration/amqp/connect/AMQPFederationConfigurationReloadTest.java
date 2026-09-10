@@ -59,9 +59,10 @@ import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_AUTO_DELETE;
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_AUTO_DELETE_DELAY;
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_AUTO_DELETE_MSG_COUNT;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_CREATE;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_DELETE;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_DELETE_DELAY;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_DELETE_MSG_COUNT;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_RECEIVER_IDLE_TIMEOUT;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.FEDERATION_ADDRESS_RECEIVER;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.FEDERATION_CONTROL_LINK;
@@ -137,9 +138,10 @@ public class AMQPFederationConfigurationReloadTest extends AmqpClientTestSupport
          server.addAddressInfo(new AddressInfo(SimpleString.of("test"), RoutingType.MULTICAST));
 
          final Map<String, Object> expectedSourceProperties = new HashMap<>();
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE, true);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, 10_000L);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
+         expectedSourceProperties.put(AUTO_CREATE, true);
+         expectedSourceProperties.put(AUTO_DELETE, true);
+         expectedSourceProperties.put(AUTO_DELETE_DELAY, 10_000L);
+         expectedSourceProperties.put(AUTO_DELETE_MSG_COUNT, -1L);
 
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
          peer.expectAttach().ofReceiver()
@@ -253,9 +255,10 @@ public class AMQPFederationConfigurationReloadTest extends AmqpClientTestSupport
          server.addAddressInfo(new AddressInfo(SimpleString.of("test"), RoutingType.MULTICAST));
 
          final Map<String, Object> expectedSourceProperties = new HashMap<>();
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE, true);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, 10_000L);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
+         expectedSourceProperties.put(AUTO_CREATE, true);
+         expectedSourceProperties.put(AUTO_DELETE, true);
+         expectedSourceProperties.put(AUTO_DELETE_DELAY, 10_000L);
+         expectedSourceProperties.put(AUTO_DELETE_MSG_COUNT, -1L);
 
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
          peer.expectAttach().ofReceiver()
@@ -380,9 +383,10 @@ public class AMQPFederationConfigurationReloadTest extends AmqpClientTestSupport
          server.addAddressInfo(new AddressInfo(SimpleString.of("test"), RoutingType.MULTICAST));
 
          final Map<String, Object> expectedSourceProperties = new HashMap<>();
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE, true);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, 10_000L);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
+         expectedSourceProperties.put(AUTO_CREATE, true);
+         expectedSourceProperties.put(AUTO_DELETE, true);
+         expectedSourceProperties.put(AUTO_DELETE_DELAY, 10_000L);
+         expectedSourceProperties.put(AUTO_DELETE_MSG_COUNT, -1L);
 
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
          peer.expectAttach().ofReceiver()
@@ -486,9 +490,10 @@ public class AMQPFederationConfigurationReloadTest extends AmqpClientTestSupport
          server.addAddressInfo(new AddressInfo(SimpleString.of("test"), RoutingType.MULTICAST));
 
          final Map<String, Object> expectedSourceProperties = new HashMap<>();
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE, true);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_DELAY, 10_000L);
-         expectedSourceProperties.put(ADDRESS_AUTO_DELETE_MSG_COUNT, -1L);
+         expectedSourceProperties.put(AUTO_CREATE, true);
+         expectedSourceProperties.put(AUTO_DELETE, true);
+         expectedSourceProperties.put(AUTO_DELETE_DELAY, 10_000L);
+         expectedSourceProperties.put(AUTO_DELETE_MSG_COUNT, -1L);
 
          peer1.waitForScriptToComplete(5, TimeUnit.SECONDS);
          peer1.expectAttach().ofReceiver()
@@ -657,11 +662,11 @@ public class AMQPFederationConfigurationReloadTest extends AmqpClientTestSupport
    public void testReloadAmqpConnectionQueuePolicyMatches() throws Exception {
       server.start();
       server.createQueue(QueueConfiguration.of("queue1").setRoutingType(RoutingType.ANYCAST)
-                                                         .setAddress("queue1")
-                                                         .setAutoCreated(false));
+                                                        .setAddress("queue1")
+                                                        .setAutoCreated(false));
       server.createQueue(QueueConfiguration.of("queue2").setRoutingType(RoutingType.ANYCAST)
-                                                         .setAddress("queue2")
-                                                         .setAutoCreated(false));
+                                                        .setAddress("queue2")
+                                                        .setAutoCreated(false));
 
       final Path brokerXML = getTestDirfile().toPath().resolve("broker.xml");
       final URL url1 = RedeployTest.class.getClassLoader().getResource("reload-amqp-federated-queues.xml");
@@ -747,8 +752,8 @@ public class AMQPFederationConfigurationReloadTest extends AmqpClientTestSupport
    public void testReloadAmqpConnectionAddressPolicyReplacedWithQueuePolicy() throws Exception {
       server.start();
       server.createQueue(QueueConfiguration.of("queue1").setRoutingType(RoutingType.ANYCAST)
-                                                         .setAddress("queue1")
-                                                         .setAutoCreated(false));
+                                                        .setAddress("queue1")
+                                                        .setAutoCreated(false));
 
       final Path brokerXML = getTestDirfile().toPath().resolve("broker.xml");
       final URL url1 = RedeployTest.class.getClassLoader().getResource("reload-amqp-federated-addresses.xml");
@@ -821,11 +826,11 @@ public class AMQPFederationConfigurationReloadTest extends AmqpClientTestSupport
    public void testReloadAmqpConnectionQueuePolicyMatchesFromBrokerProperties() throws Exception {
       server.start();
       server.createQueue(QueueConfiguration.of("queue1").setRoutingType(RoutingType.ANYCAST)
-                                                         .setAddress("queue1")
-                                                         .setAutoCreated(false));
+                                                        .setAddress("queue1")
+                                                        .setAutoCreated(false));
       server.createQueue(QueueConfiguration.of("queue2").setRoutingType(RoutingType.ANYCAST)
-                                                         .setAddress("queue2")
-                                                         .setAutoCreated(false));
+                                                        .setAddress("queue2")
+                                                        .setAutoCreated(false));
 
       final Path brokerXML = getTestDirfile().toPath().resolve("broker.xml");
       final Path brokerProperties = getTestDirfile().toPath().resolve("broker.properties");

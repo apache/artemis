@@ -140,27 +140,35 @@ public class ConfigurationValidationTest extends ServerTestBase {
       amqpBrokerConnectConfiguration = fc.getAMQPConnection().get(3);
       assertFalse(amqpBrokerConnectConfiguration.isAutostart());
       AMQPFederatedBrokerConnectionElement federationElement = (AMQPFederatedBrokerConnectionElement) amqpBrokerConnectConfiguration.getConnectionElements().get(0);
-      assertEquals(1, federationElement.getLocalAddressPolicies().size());
-      assertEquals(2, federationElement.getLocalQueuePolicies().size());
-      assertEquals(1, federationElement.getRemoteAddressPolicies().size());
-      assertEquals(1, federationElement.getRemoteQueuePolicies().size());
+      assertEquals(2, federationElement.getLocalAddressPolicies().size());
+      assertEquals(3, federationElement.getLocalQueuePolicies().size());
+      assertEquals(2, federationElement.getRemoteAddressPolicies().size());
+      assertEquals(2, federationElement.getRemoteQueuePolicies().size());
       assertTrue(federationElement.getProperties().containsKey("amqpCredits"));
       assertEquals("7", federationElement.getProperties().get("amqpCredits"));
       assertTrue(federationElement.getProperties().containsKey("amqpLowCredits"));
       assertEquals("1", federationElement.getProperties().get("amqpLowCredits"));
 
       federationElement.getLocalAddressPolicies().forEach(p -> {
-         assertEquals("lap1", p.getName());
-         assertEquals(1, p.getIncludes().size());
-         p.getIncludes().forEach(match -> assertEquals("orders", match.getAddressMatch()));
-         assertEquals(1, p.getExcludes().size());
-         p.getExcludes().forEach(match -> assertEquals("all.#", match.getAddressMatch()));
-         assertFalse(p.getAutoDelete());
-         assertEquals(1L, (long) p.getAutoDeleteDelay());
-         assertEquals(12L, (long) p.getAutoDeleteMessageCount());
-         assertEquals(2, (int) p.getMaxHops());
-         assertNotNull(p.getTransformerConfiguration());
-         assertEquals("class-name", p.getTransformerConfiguration().getClassName());
+         if (p.getName().endsWith("lap1")) {
+            assertEquals("lap1", p.getName());
+            assertEquals(1, p.getIncludes().size());
+            p.getIncludes().forEach(match -> assertEquals("orders", match.getAddressMatch()));
+            assertEquals(1, p.getExcludes().size());
+            p.getExcludes().forEach(match -> assertEquals("all.#", match.getAddressMatch()));
+            assertNull(p.getAutoCreate());
+            assertFalse(p.getAutoDelete());
+            assertEquals(1L, (long) p.getAutoDeleteDelay());
+            assertEquals(12L, (long) p.getAutoDeleteMessageCount());
+            assertEquals(2, p.getMaxHops());
+            assertNotNull(p.getTransformerConfiguration());
+            assertEquals("class-name", p.getTransformerConfiguration().getClassName());
+         } else if (p.getName().endsWith("lap2")) {
+            assertEquals("lap2", p.getName());
+            assertFalse(p.getAutoCreate());
+         } else {
+            fail("Should only be two local address policies");
+         }
       });
       federationElement.getLocalQueuePolicies().forEach((p) -> {
          if (p.getName().endsWith("lqp1")) {
@@ -171,48 +179,72 @@ public class ConfigurationValidationTest extends ServerTestBase {
             assertFalse(p.getProperties().isEmpty());
             assertTrue(p.getProperties().containsKey("amqpCredits"));
             assertEquals("1", p.getProperties().get("amqpCredits"));
+            assertNull(p.getAutoCreate());
          } else if (p.getName().endsWith("lqp2")) {
             assertNull(p.getPriorityAdjustment());
             assertFalse(p.isIncludeFederated());
+            assertNull(p.getAutoCreate());
+         } else if (p.getName().endsWith("lqp3")) {
+            assertNull(p.getPriorityAdjustment());
+            assertFalse(p.isIncludeFederated());
+            assertTrue(p.getAutoCreate());
          } else {
-            fail("Should only be two local queue policies");
+            fail("Should only be three local queue policies");
          }
       });
       federationElement.getRemoteAddressPolicies().forEach((p) -> {
-         assertEquals("rap1", p.getName());
-         assertEquals(1, p.getIncludes().size());
-         p.getIncludes().forEach(match -> assertEquals("support", match.getAddressMatch()));
-         assertEquals(0, p.getExcludes().size());
-         assertTrue(p.getAutoDelete());
-         assertEquals(2L, (long) p.getAutoDeleteDelay());
-         assertEquals(42L, (long) p.getAutoDeleteMessageCount());
-         assertEquals(1, (int) p.getMaxHops());
-         assertNotNull(p.getTransformerConfiguration());
-         assertEquals("something", p.getTransformerConfiguration().getClassName());
-         assertEquals(2, p.getTransformerConfiguration().getProperties().size());
-         assertEquals("value1", p.getTransformerConfiguration().getProperties().get("key1"));
-         assertEquals("value2", p.getTransformerConfiguration().getProperties().get("key2"));
-         assertNotNull(p.getProperties());
-         assertFalse(p.getProperties().isEmpty());
-         assertTrue(p.getProperties().containsKey("amqpCredits"));
-         assertEquals("2", p.getProperties().get("amqpCredits"));
-         assertTrue(p.getProperties().containsKey("amqpLowCredits"));
-         assertEquals("1", p.getProperties().get("amqpLowCredits"));
+         if (p.getName().endsWith("rap1")) {
+            assertEquals("rap1", p.getName());
+            assertEquals(1, p.getIncludes().size());
+            p.getIncludes().forEach(match -> assertEquals("support", match.getAddressMatch()));
+            assertEquals(0, p.getExcludes().size());
+            assertTrue(p.getAutoDelete());
+            assertEquals(2L, (long) p.getAutoDeleteDelay());
+            assertEquals(42L, (long) p.getAutoDeleteMessageCount());
+            assertEquals(1, p.getMaxHops());
+            assertNotNull(p.getTransformerConfiguration());
+            assertEquals("something", p.getTransformerConfiguration().getClassName());
+            assertEquals(2, p.getTransformerConfiguration().getProperties().size());
+            assertEquals("value1", p.getTransformerConfiguration().getProperties().get("key1"));
+            assertEquals("value2", p.getTransformerConfiguration().getProperties().get("key2"));
+            assertNotNull(p.getProperties());
+            assertFalse(p.getProperties().isEmpty());
+            assertTrue(p.getProperties().containsKey("amqpCredits"));
+            assertEquals("2", p.getProperties().get("amqpCredits"));
+            assertTrue(p.getProperties().containsKey("amqpLowCredits"));
+            assertEquals("1", p.getProperties().get("amqpLowCredits"));
+         } else if (p.getName().endsWith("rap2")) {
+            assertEquals("rap2", p.getName());
+            assertFalse(p.getAutoCreate());
+         } else {
+            fail("Should only be two remote address policies");
+         }
       });
       federationElement.getRemoteQueuePolicies().forEach((p) -> {
-         assertEquals("rqp1", p.getName());
-         assertEquals(-1, (int) p.getPriorityAdjustment());
-         assertTrue(p.isIncludeFederated());
-         p.getIncludes().forEach(match -> {
-            assertEquals("#", match.getAddressMatch());
-            assertEquals("tracking", match.getQueueMatch());
-         });
-         assertNotNull(p.getProperties());
-         assertFalse(p.getProperties().isEmpty());
-         assertTrue(p.getProperties().containsKey("amqpCredits"));
-         assertEquals("2", p.getProperties().get("amqpCredits"));
-         assertTrue(p.getProperties().containsKey("amqpLowCredits"));
-         assertEquals("1", p.getProperties().get("amqpLowCredits"));
+         if (p.getName().endsWith("rqp1")) {
+            assertEquals("rqp1", p.getName());
+            assertEquals(-1, (int) p.getPriorityAdjustment());
+            assertTrue(p.isIncludeFederated());
+            p.getIncludes().forEach(match -> {
+               assertEquals("#", match.getAddressMatch());
+               assertEquals("tracking", match.getQueueMatch());
+            });
+            assertNotNull(p.getProperties());
+            assertFalse(p.getProperties().isEmpty());
+            assertTrue(p.getProperties().containsKey("amqpCredits"));
+            assertEquals("2", p.getProperties().get("amqpCredits"));
+            assertTrue(p.getProperties().containsKey("amqpLowCredits"));
+            assertEquals("1", p.getProperties().get("amqpLowCredits"));
+            assertNull(p.getAutoCreate());
+         } else if (p.getName().endsWith("rqp2")) {
+            assertEquals("rqp2", p.getName());
+            assertTrue(p.getAutoCreate());
+            assertTrue(p.getAutoDelete());
+            assertEquals(2L, (long) p.getAutoDeleteDelay());
+            assertEquals(42L, (long) p.getAutoDeleteMessageCount());
+         } else {
+            fail("Should only be two remote queue policies");
+         }
       });
 
       amqpBrokerConnectConfiguration = fc.getAMQPConnection().get(4);

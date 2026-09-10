@@ -2346,6 +2346,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
          Node item = attributes.item(i);
          if (item.getNodeName().equals("max-hops")) {
             config.setMaxHops(MINUS_ONE_OR_GE_ZERO.validate(item.getNodeName(), Integer.parseInt(item.getNodeValue())).intValue());
+         } else if (item.getNodeName().equals("auto-create")) {
+            config.setAutoCreate(Boolean.parseBoolean(item.getNodeValue()));
          } else if (item.getNodeName().equals("auto-delete")) {
             config.setAutoDelete(Boolean.parseBoolean(item.getNodeValue()));
          } else if (item.getNodeName().equals("auto-delete-delay")) {
@@ -2392,6 +2394,14 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
          Node item = attributes.item(i);
          if (item.getNodeName().equals("include-federated")) {
             config.setIncludeFederated(Boolean.parseBoolean(item.getNodeValue()));
+         } else if (item.getNodeName().equals("auto-create")) {
+            config.setAutoCreate(Boolean.parseBoolean(item.getNodeValue()));
+         } else if (item.getNodeName().equals("auto-delete")) {
+            config.setAutoDelete(Boolean.parseBoolean(item.getNodeValue()));
+         } else if (item.getNodeName().equals("auto-delete-delay")) {
+            config.setAutoDeleteDelay(GE_ZERO.validate("auto-delete-delay", Long.parseLong(item.getNodeValue())).longValue());
+         } else if (item.getNodeName().equals("auto-delete-message-count")) {
+            config.setAutoDeleteMessageCount(MINUS_ONE_OR_GE_ZERO.validate("auto-delete-message-count", Long.parseLong(item.getNodeValue())).longValue());
          } else if (item.getNodeName().equals("priority-adjustment")) {
             config.setPriorityAdjustment(Integer.parseInt(item.getNodeValue()));
          }

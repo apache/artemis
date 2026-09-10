@@ -80,7 +80,7 @@ In this case the policy is sent across the connection to the remote broker and f
 </broker-connections>
 ----
 
-=== Address federation configuration elements
+== Address federation configuration elements
 
 [,xml]
 ----
@@ -113,6 +113,10 @@ max-hops::
 The maximum number of hops that a message can perform to be federated.
 Default value is `0` and will work for most federation deployments.
 However, in certain topologies where a loop is configured a higher value may be required to prevent infinite looping of messages.
+auto-create::
+Controls if the federation receiver will attempt to create the target address if it does not exist on the remote when it attaches.
+By default federation receivers will attempt to auto create the target address when they attach so that they do not miss any messages later when a producer starts sending messages to that address.
+The configuration can be set to 'false' to indicate that if the remote address does not exist no address create attempt is made and the federation framework will send an event to the source when the address is created on the target.
 auto-delete::
 For address federation, a durable queue is created on the broker from which messages are being federated.
 Set this property to `true` to mark the queue for automatic deletion once the initiating broker disconnects and the delay and message count parameters are met.
@@ -144,7 +148,7 @@ The address-match pattern to use to match excluded addresses, multiple of these 
 property::
 A key / value property setting that allows for configuration options to be set either at the root federation level or within each federation policy that affects some defined behavior of the policy implementation.
 
-=== Queue federation configuration elements
+== Queue federation configuration elements
 
 [,xml]
 ----
@@ -172,6 +176,21 @@ When federation consumers are created this value can be used to ensure that thos
 The default is `-1`.
 include-federated::
 Controls if consumers on a queue which come from federation instances should be counted when observing a queue for demand, by default this value is `false` and federation consumers are not counted as local demand.
+auto-create::
+Controls if the federation receiver will attempt to create the target queue (and possibly its associated address) if it does not exist on the remote when it attaches.
+By default federation queue receivers will not attempt to auto create the target queue when they attach and the queue does not exist on the target and will simply listen for an event from the target indicating that the desired queue has now come into existence and to try again.
+The configuration can be set to 'true' to indicate that if the remote queue does not exist an attempt to create it should be made by the federation framework, this is useful for some configurations such as multi-hop queue federations where the intermediate peer does not define all the queues statically.
+auto-delete::
+For queue federation, if a durable queue is created on the broker by the federation framework that queue can be configured for auto deletion later.
+Set this property to `true` to mark the queue for automatic deletion once the initiating broker disconnects and the delay and message count parameters are met.
+This can is a useful option if you want to automate the cleanup of dynamically-created queues.
+The default value is `false`, which means that the queue is not automatically deleted.
+auto-delete-delay::
+The amount of time in milliseconds after the initiating broker has disconnected before the created queue can be eligible for `auto-delete`.
+The default value is `0` when option is omitted.
+auto-delete-message-count::
+After the initiating broker has disconnected, the maximum number of messages allowed in the remote queue for the queue to be eligible for automatic deletion.
+The default value is `0`.
 
 The following set of elements can be configured within the queue policy to control the behavior of the deployed policy.
 
@@ -184,7 +203,7 @@ Multiple of these can be set, or it can be omitted if no excludes are needed.
 property::
 A key / value property setting that allows for configuration options to be set either at the root federation level or within each federation policy that affects some defined behavior of the policy implementation.
 
-=== Federation policy property configuration index
+== Federation policy property configuration index
 
 The following properties can be set either at the federation element level or set per-policy in order to apply different behaviors to different policies within the same federation configuration.
 When remote address or queue policies are configured the value of these properties are sent to the remote along with the policies to ensure both sides are operating with the same configurations.

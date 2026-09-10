@@ -17,9 +17,14 @@
 
 package org.apache.activemq.artemis.protocol.amqp.connect.federation;
 
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_CREATE;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_DELETE;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_DELETE_DELAY;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_DELETE_MSG_COUNT;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.FEDERATION_POLICY_NAME;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.FEDERATION_QUEUE_RECEIVER;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.FEDERATION_RECEIVER_PRIORITY;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationPolicySupport.FEDERATED_QUEUE_SOURCE_PROPERTIES;
 import static org.apache.activemq.artemis.protocol.amqp.proton.AmqpSupport.AMQP_LINK_INITIALIZER_KEY;
 import static org.apache.activemq.artemis.protocol.amqp.proton.AmqpSupport.verifyDesiredCapability;
 
@@ -127,9 +132,16 @@ public final class AMQPFederationQueueConsumer extends AMQPFederationConsumer {
 
          target.setAddress(consumerInfo.getTargetFqqn());
 
+         final Map<String, Object> queueSourceProperties = new HashMap<>();
+         queueSourceProperties.put(AUTO_CREATE, policy.isAutoCreate());
+         queueSourceProperties.put(AUTO_DELETE, policy.isAutoDelete());
+         queueSourceProperties.put(AUTO_DELETE_DELAY, policy.getAutoDeleteDelay());
+         queueSourceProperties.put(AUTO_DELETE_MSG_COUNT, policy.getAutoDeleteMessageCount());
+
          final Map<Symbol, Object> receiverProperties = new HashMap<>();
          receiverProperties.put(FEDERATION_RECEIVER_PRIORITY, consumerInfo.getPriority());
          receiverProperties.put(FEDERATION_POLICY_NAME, policy.getPolicyName());
+         receiverProperties.put(FEDERATED_QUEUE_SOURCE_PROPERTIES, queueSourceProperties);
 
          protonReceiver.setSenderSettleMode(SenderSettleMode.UNSETTLED);
          protonReceiver.setReceiverSettleMode(ReceiverSettleMode.FIRST);

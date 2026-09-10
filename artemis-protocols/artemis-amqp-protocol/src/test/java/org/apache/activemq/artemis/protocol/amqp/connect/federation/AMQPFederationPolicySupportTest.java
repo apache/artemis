@@ -53,14 +53,15 @@ import org.jgroups.util.UUID;
 import org.junit.jupiter.api.Test;
 
 import static org.apache.activemq.artemis.core.config.WildcardConfiguration.DEFAULT_WILDCARD_CONFIGURATION;
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_AUTO_DELETE;
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_AUTO_DELETE_DELAY;
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_AUTO_DELETE_MSG_COUNT;
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_ENABLE_DIVERT_BINDINGS;
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_ALLOW_WILDCARD_GROUPINGS;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_CREATE;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_DELETE;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_DELETE_DELAY;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_DELETE_MSG_COUNT;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ENABLE_DIVERT_BINDINGS;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ALLOW_WILDCARD_GROUPINGS;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_EXCLUDES;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_INCLUDES;
-import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADDRESS_MAX_HOPS;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.MAX_HOPS;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADD_ADDRESS_POLICY;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.ADD_QUEUE_POLICY;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.OPERATION_TYPE;
@@ -97,12 +98,12 @@ public class AMQPFederationPolicySupportTest {
       properties2.put("amqpCredits", 10);
       properties2.put("amqpLowCredits", 3);
 
-      doTestEncodeReceiveFromQueuePolicy("test", false, 0, includes, excludes, properties1);
-      doTestEncodeReceiveFromQueuePolicy("test", true, 5, includes, excludes, properties2);
-      doTestEncodeReceiveFromQueuePolicy("test", false, -5, includes, excludes, null);
-      doTestEncodeReceiveFromQueuePolicy("test", true, 5, null, excludes, properties2);
-      doTestEncodeReceiveFromQueuePolicy("test", true, 5, includes, null, properties2);
-      doTestEncodeReceiveFromQueuePolicy("test", true, 5, Collections.emptySet(), Collections.emptySet(), Collections.emptyMap());
+      doTestEncodeReceiveFromQueuePolicy("test", false, false, 0, 1, false, 0, includes, excludes, properties1);
+      doTestEncodeReceiveFromQueuePolicy("test", false, true, 1, 1, true, 5, includes, excludes, properties2);
+      doTestEncodeReceiveFromQueuePolicy("test", true, false, 2, 1, false, -5, includes, excludes, null);
+      doTestEncodeReceiveFromQueuePolicy("test", true, true, 3, 2, true, 5, null, excludes, properties2);
+      doTestEncodeReceiveFromQueuePolicy("test", false, true, 10, 5, true, 5, includes, null, properties2);
+      doTestEncodeReceiveFromQueuePolicy("test", true, false, 0, 0, true, 5, Collections.emptySet(), Collections.emptySet(), Collections.emptyMap());
    }
 
    @Test
@@ -111,7 +112,7 @@ public class AMQPFederationPolicySupportTest {
       includes.add(new SimpleEntry<>("a", "b"));
       includes.add(new SimpleEntry<>("c", "d"));
 
-      doTestEncodeReceiveFromQueuePolicy("includes", false, 0, includes, null, null);
+      doTestEncodeReceiveFromQueuePolicy("includes", false, false, 0, 1, false, 0, includes, null, null);
    }
 
    @Test
@@ -120,7 +121,7 @@ public class AMQPFederationPolicySupportTest {
       excludes.add(new SimpleEntry<>("e", "f"));
       excludes.add(new SimpleEntry<>("g", "h"));
 
-      doTestEncodeReceiveFromQueuePolicy("excludes", false, 0, null, excludes, null);
+      doTestEncodeReceiveFromQueuePolicy("excludes", true, true, 1, 2, false, 0, null, excludes, null);
    }
 
    @Test
@@ -132,17 +133,20 @@ public class AMQPFederationPolicySupportTest {
       excludes.add(new SimpleEntry<>("e", ""));
       excludes.add(new SimpleEntry<>("g", null));
 
-      doTestEncodeReceiveFromQueuePolicy("excludes", false, 0, includes, excludes, null);
+      doTestEncodeReceiveFromQueuePolicy("excludes", true, false, 3, 4, false, 0, includes, excludes, null);
    }
 
    @SuppressWarnings("unchecked")
    private void doTestEncodeReceiveFromQueuePolicy(String name,
+                                                   boolean autoCreate, boolean autoDelete,
+                                                   long autoDeleteDelay, long autoDeleteMessageCount,
                                                    boolean includeFederated, int priorityAdjustment,
                                                    Collection<Map.Entry<String, String>> includes,
                                                    Collection<Map.Entry<String, String>> excludes,
                                                    Map<String, Object> policyProperties) {
       final FederationReceiveFromQueuePolicy policy = new FederationReceiveFromQueuePolicy(
-         name, includeFederated, priorityAdjustment, includes, excludes, policyProperties, null, DEFAULT_WILDCARD_CONFIGURATION);
+         name, autoCreate, autoDelete, autoDeleteDelay, autoDeleteMessageCount,
+         includeFederated, priorityAdjustment, includes, excludes, policyProperties, null, DEFAULT_WILDCARD_CONFIGURATION);
 
       final AMQPMessage message = AMQPFederationPolicySupport.encodeQueuePolicyControlMessage(policy);
 
@@ -157,6 +161,10 @@ public class AMQPFederationPolicySupportTest {
       assertEquals(name, policyMap.get(POLICY_NAME));
       assertEquals(includeFederated, policyMap.get(QUEUE_INCLUDE_FEDERATED));
       assertEquals(priorityAdjustment, policyMap.get(QUEUE_PRIORITY_ADJUSTMENT));
+      assertEquals(autoCreate, policyMap.get(AUTO_CREATE));
+      assertEquals(autoDelete, policyMap.get(AUTO_DELETE));
+      assertEquals(autoDeleteDelay, policyMap.get(AUTO_DELETE_DELAY));
+      assertEquals(autoDeleteMessageCount, policyMap.get(AUTO_DELETE_MSG_COUNT));
 
       if (includes == null || includes.isEmpty()) {
          assertFalse(policyMap.containsKey(QUEUE_INCLUDES));
@@ -225,17 +233,18 @@ public class AMQPFederationPolicySupportTest {
       properties2.put("amqpCredits", 10);
       properties2.put("amqpLowCredits", 3);
 
-      doTestEncodeReceiveFromAddressPolicy("test", false, 0, 1, 2, true, false, includes, excludes, properties1);
-      doTestEncodeReceiveFromAddressPolicy("test", true, 1, 3, 2, false, true, includes, excludes, null);
-      doTestEncodeReceiveFromAddressPolicy("test", false, 2, 4, -1, false, false, includes, excludes, properties2);
-      doTestEncodeReceiveFromAddressPolicy("test", true, 7, -1, 255, true, true, includes, excludes, null);
-      doTestEncodeReceiveFromAddressPolicy("test", false, 2, 4, -1, false, true, null, excludes, properties2);
-      doTestEncodeReceiveFromAddressPolicy("test", true, 7, -1, 255, true, false, includes, null, null);
-      doTestEncodeReceiveFromAddressPolicy("test", true, 7, -1, 255, true, true, Collections.emptyList(), Collections.emptyList(), Collections.emptyMap());
+      doTestEncodeReceiveFromAddressPolicy("test", true, false, 0, 1, 2, true, false, includes, excludes, properties1);
+      doTestEncodeReceiveFromAddressPolicy("test", true, true, 1, 3, 2, false, true, includes, excludes, null);
+      doTestEncodeReceiveFromAddressPolicy("test", false, false, 2, 4, -1, false, false, includes, excludes, properties2);
+      doTestEncodeReceiveFromAddressPolicy("test", false, true, 7, -1, 255, true, true, includes, excludes, null);
+      doTestEncodeReceiveFromAddressPolicy("test", false, false, 2, 4, -1, false, true, null, excludes, properties2);
+      doTestEncodeReceiveFromAddressPolicy("test", true, true, 7, -1, 255, true, false, includes, null, null);
+      doTestEncodeReceiveFromAddressPolicy("test", false, true, 7, -1, 255, true, true, Collections.emptyList(), Collections.emptyList(), Collections.emptyMap());
    }
 
    @SuppressWarnings("unchecked")
    private void doTestEncodeReceiveFromAddressPolicy(String name,
+                                                     boolean autoCreate,
                                                      boolean autoDelete,
                                                      long autoDeleteDelay,
                                                      long autoDeleteMessageCount,
@@ -246,7 +255,7 @@ public class AMQPFederationPolicySupportTest {
                                                      Collection<String> excludes,
                                                      Map<String, Object> policyProperties) {
       final FederationReceiveFromAddressPolicy policy = new FederationReceiveFromAddressPolicy(
-         name, autoDelete, autoDeleteDelay, autoDeleteMessageCount, maxHops, enableDivertBindings,
+         name, autoCreate, autoDelete, autoDeleteDelay, autoDeleteMessageCount, maxHops, enableDivertBindings,
          allowWildcardGroupings, includes, excludes, policyProperties, null, DEFAULT_WILDCARD_CONFIGURATION);
 
       final AMQPMessage message = AMQPFederationPolicySupport.encodeAddressPolicyControlMessage(policy);
@@ -260,12 +269,13 @@ public class AMQPFederationPolicySupportTest {
       final Map<String, Object> policyMap = (Map<String, Object>) ((AmqpValue) message.getBody()).getValue();
 
       assertEquals(name, policyMap.get(POLICY_NAME));
-      assertEquals(autoDelete, policyMap.get(ADDRESS_AUTO_DELETE));
-      assertEquals(autoDeleteDelay, policyMap.get(ADDRESS_AUTO_DELETE_DELAY));
-      assertEquals(autoDeleteMessageCount, policyMap.get(ADDRESS_AUTO_DELETE_MSG_COUNT));
-      assertEquals(maxHops, policyMap.get(ADDRESS_MAX_HOPS));
-      assertEquals(enableDivertBindings, policyMap.get(ADDRESS_ENABLE_DIVERT_BINDINGS));
-      assertEquals(allowWildcardGroupings, policyMap.get(ADDRESS_ALLOW_WILDCARD_GROUPINGS));
+      assertEquals(autoCreate, policyMap.get(AUTO_CREATE));
+      assertEquals(autoDelete, policyMap.get(AUTO_DELETE));
+      assertEquals(autoDeleteDelay, policyMap.get(AUTO_DELETE_DELAY));
+      assertEquals(autoDeleteMessageCount, policyMap.get(AUTO_DELETE_MSG_COUNT));
+      assertEquals(maxHops, policyMap.get(MAX_HOPS));
+      assertEquals(enableDivertBindings, policyMap.get(ENABLE_DIVERT_BINDINGS));
+      assertEquals(allowWildcardGroupings, policyMap.get(ALLOW_WILDCARD_GROUPINGS));
 
       if (includes == null || includes.isEmpty()) {
          assertFalse(policyMap.containsKey(ADDRESS_INCLUDES));
@@ -321,7 +331,7 @@ public class AMQPFederationPolicySupportTest {
       final Set<Map.Entry<String, String>> excludes = new LinkedHashSet<>();
       excludes.add(new SimpleEntry<>("c", "d"));
 
-      doTestDecodeReceiveFromQueuePolicy("address", "test", false, 0, includes, excludes, null);
+      doTestDecodeReceiveFromQueuePolicy("address", "test", true, false, 1, 6, false, 0, includes, excludes, null);
    }
 
    @Test
@@ -331,7 +341,7 @@ public class AMQPFederationPolicySupportTest {
       final Set<Map.Entry<String, String>> excludes = new LinkedHashSet<>();
       excludes.add(new SimpleEntry<>(null, "b"));
 
-      doTestDecodeReceiveFromQueuePolicy("address", "test", false, 0, includes, excludes, null);
+      doTestDecodeReceiveFromQueuePolicy("address", "test", true, false, 1, 6, false, 0, includes, excludes, null);
    }
 
    @Test
@@ -346,15 +356,19 @@ public class AMQPFederationPolicySupportTest {
       properties.put("amqpCredits", "10");
       properties.put("amqpLowCredits", "3");
 
-      doTestDecodeReceiveFromQueuePolicy("address", "test", false, 0, includes, excludes, null);
-      doTestDecodeReceiveFromQueuePolicy("address", "test", true, -5, includes, excludes, properties);
-      doTestDecodeReceiveFromQueuePolicy("address", "test", false, 5, includes, excludes, null);
-      doTestDecodeReceiveFromQueuePolicy("address", "test", true, -5, includes, null, properties);
-      doTestDecodeReceiveFromQueuePolicy("address", "test", true, -5, null, excludes, properties);
-      doTestDecodeReceiveFromQueuePolicy("address", "test", true, -5, Collections.emptyList(), Collections.emptyList(), Collections.emptyMap());
+      doTestDecodeReceiveFromQueuePolicy("address", "test", true, false, 1, 6, false, 0, includes, excludes, null);
+      doTestDecodeReceiveFromQueuePolicy("address", "test", true, true, 2, 5, true, -5, includes, excludes, properties);
+      doTestDecodeReceiveFromQueuePolicy("address", "test", false, false, 3, 4, false, 5, includes, excludes, null);
+      doTestDecodeReceiveFromQueuePolicy("address", "test", false, true, 4, 3, true, -5, includes, null, properties);
+      doTestDecodeReceiveFromQueuePolicy("address", "test", true, false, 5, 2, true, -5, null, excludes, properties);
+      doTestDecodeReceiveFromQueuePolicy("address", "test", true, false, 6, 1, true, -5, Collections.emptyList(), Collections.emptyList(), Collections.emptyMap());
    }
 
    private void doTestDecodeReceiveFromQueuePolicy(String address, String name,
+                                                   boolean autoCreate,
+                                                   boolean autoDelete,
+                                                   long autoDeleteDelay,
+                                                   long autoDeleteMessageCount,
                                                    boolean includeFederated,
                                                    int priorityAdjustment,
                                                    Collection<Map.Entry<String, String>> includes,
@@ -371,6 +385,10 @@ public class AMQPFederationPolicySupportTest {
       annotations.put(OPERATION_TYPE, ADD_QUEUE_POLICY);
 
       policyMap.put(POLICY_NAME, name);
+      policyMap.put(AUTO_CREATE, autoCreate);
+      policyMap.put(AUTO_DELETE, autoDelete);
+      policyMap.put(AUTO_DELETE_DELAY, autoDeleteDelay);
+      policyMap.put(AUTO_DELETE_MSG_COUNT, autoDeleteMessageCount);
       policyMap.put(QUEUE_INCLUDE_FEDERATED, includeFederated);
       policyMap.put(QUEUE_PRIORITY_ADJUSTMENT, priorityAdjustment);
 
@@ -403,7 +421,8 @@ public class AMQPFederationPolicySupportTest {
       final FederationReceiveFromQueuePolicy policy =
          AMQPFederationPolicySupport.decodeReceiveFromQueuePolicy(amqpMessage, DEFAULT_WILDCARD_CONFIGURATION);
 
-      checkPolicyMatchesExpectations(policy, name, includeFederated, priorityAdjustment, includes, excludes, policyProperties);
+      checkPolicyMatchesExpectations(policy, name, autoCreate, autoDelete, autoDeleteDelay, autoDeleteMessageCount,
+                                     includeFederated, priorityAdjustment, includes, excludes, policyProperties);
    }
 
    @Test
@@ -423,14 +442,15 @@ public class AMQPFederationPolicySupportTest {
       properties.put("amqpCredits", "10");
       properties.put("amqpLowCredits", "3");
 
-      doTestDecodeReceiveFromAddressPolicy("address", "test", false, 0, 1, 2, true, false, includes, excludes, null);
-      doTestDecodeReceiveFromAddressPolicy("address", "test", false, 0, 1, 2, true, true, includes, excludes, properties);
-      doTestDecodeReceiveFromAddressPolicy("address", "test", false, 0, 1, 2, true, true, null, excludes, null);
-      doTestDecodeReceiveFromAddressPolicy("address", "test", false, 0, 1, 2, true, false, includes, null, properties);
-      doTestDecodeReceiveFromAddressPolicy("address", "test", false, 0, 1, 2, true, true, Collections.emptyList(), Collections.emptyList(), Collections.emptyMap());
+      doTestDecodeReceiveFromAddressPolicy("address", "test", true, false, 1, 5, 2, true, false, includes, excludes, null);
+      doTestDecodeReceiveFromAddressPolicy("address", "test", false, false, 2, 4, 2, true, true, includes, excludes, properties);
+      doTestDecodeReceiveFromAddressPolicy("address", "test", true, false, 3, 3, 2, true, true, null, excludes, null);
+      doTestDecodeReceiveFromAddressPolicy("address", "test", true, true, 4, 2, 2, true, false, includes, null, properties);
+      doTestDecodeReceiveFromAddressPolicy("address", "test", false, false, 5, 1, 2, true, true, Collections.emptyList(), Collections.emptyList(), Collections.emptyMap());
    }
 
    private void doTestDecodeReceiveFromAddressPolicy(String address, String name,
+                                                     boolean autoCreate,
                                                      boolean autoDelete,
                                                      long autoDeleteDelay,
                                                      long autoDeleteMessageCount,
@@ -452,12 +472,13 @@ public class AMQPFederationPolicySupportTest {
       annotations.put(OPERATION_TYPE, ADD_ADDRESS_POLICY);
 
       policyMap.put(POLICY_NAME, name);
-      policyMap.put(ADDRESS_AUTO_DELETE, autoDelete);
-      policyMap.put(ADDRESS_AUTO_DELETE_DELAY, autoDeleteDelay);
-      policyMap.put(ADDRESS_AUTO_DELETE_MSG_COUNT, autoDeleteMessageCount);
-      policyMap.put(ADDRESS_MAX_HOPS, maxHops);
-      policyMap.put(ADDRESS_ENABLE_DIVERT_BINDINGS, enableDivertBindings);
-      policyMap.put(ADDRESS_ALLOW_WILDCARD_GROUPINGS, allowWildcardGroupings);
+      policyMap.put(AUTO_CREATE, autoCreate);
+      policyMap.put(AUTO_DELETE, autoDelete);
+      policyMap.put(AUTO_DELETE_DELAY, autoDeleteDelay);
+      policyMap.put(AUTO_DELETE_MSG_COUNT, autoDeleteMessageCount);
+      policyMap.put(MAX_HOPS, maxHops);
+      policyMap.put(ENABLE_DIVERT_BINDINGS, enableDivertBindings);
+      policyMap.put(ALLOW_WILDCARD_GROUPINGS, allowWildcardGroupings);
 
       if (includes != null && !includes.isEmpty()) {
          policyMap.put(ADDRESS_INCLUDES, new ArrayList<>(includes));
@@ -474,7 +495,7 @@ public class AMQPFederationPolicySupportTest {
       final FederationReceiveFromAddressPolicy policy =
          AMQPFederationPolicySupport.decodeReceiveFromAddressPolicy(amqpMessage, DEFAULT_WILDCARD_CONFIGURATION);
 
-      checkPolicyMatchesExpectations(policy, name, autoDelete, autoDeleteDelay, autoDeleteMessageCount, maxHops,
+      checkPolicyMatchesExpectations(policy, name, autoCreate, autoDelete, autoDeleteDelay, autoDeleteMessageCount, maxHops,
                                      enableDivertBindings, allowWildcardGroupings, includes, excludes, policyProperties);
    }
 
@@ -491,6 +512,10 @@ public class AMQPFederationPolicySupportTest {
       annotations.put(OPERATION_TYPE, ADD_ADDRESS_POLICY);
 
       policyMap.put(POLICY_NAME, "test");
+      policyMap.put(AUTO_CREATE, false);
+      policyMap.put(AUTO_DELETE, true);
+      policyMap.put(AUTO_DELETE_DELAY, 10);
+      policyMap.put(AUTO_DELETE_MSG_COUNT, 110);
       policyMap.put(QUEUE_INCLUDE_FEDERATED, false);
       policyMap.put(QUEUE_PRIORITY_ADJUSTMENT, 0);
 
@@ -499,7 +524,7 @@ public class AMQPFederationPolicySupportTest {
       includes.add("b");
       includes.add("c");
 
-      policyMap.put(QUEUE_INCLUDE_FEDERATED, includes);
+      policyMap.put(QUEUE_INCLUDES, includes);
 
       final AMQPMessage amqpMessage = encodeFromAMQPTypes(properties, messageAnnotations, sectionBody);
 
@@ -522,15 +547,19 @@ public class AMQPFederationPolicySupportTest {
       properties2.put("amqpCredits", 10);
       properties2.put("amqpLowCredits", 3);
 
-      doTestCreateQueuePolicyFromConfigurationElement("test", false, 0, includes, excludes, properties1);
-      doTestCreateQueuePolicyFromConfigurationElement("test", true, 5, includes, excludes, properties2);
-      doTestCreateQueuePolicyFromConfigurationElement("test", false, -5, includes, excludes, null);
-      doTestCreateQueuePolicyFromConfigurationElement("test", true, 5, null, excludes, properties1);
-      doTestCreateQueuePolicyFromConfigurationElement("test", true, 5, includes, null, properties2);
-      doTestCreateQueuePolicyFromConfigurationElement("test", false, 5, Collections.emptyList(), Collections.emptyList(), Collections.emptyMap());
+      doTestCreateQueuePolicyFromConfigurationElement("test", true, false, 0, 1, false, 0, includes, excludes, properties1);
+      doTestCreateQueuePolicyFromConfigurationElement("test", true, true, 1, 1, true, 5, includes, excludes, properties2);
+      doTestCreateQueuePolicyFromConfigurationElement("test", true, false, 3, 4, false, -5, includes, excludes, null);
+      doTestCreateQueuePolicyFromConfigurationElement("test", true, false, 0, 0, true, 5, null, excludes, properties1);
+      doTestCreateQueuePolicyFromConfigurationElement("test", false, true, 0, 1, true, 5, includes, null, properties2);
+      doTestCreateQueuePolicyFromConfigurationElement("test", false, false, 0, 1, false, 5, Collections.emptyList(), Collections.emptyList(), Collections.emptyMap());
    }
 
    private void doTestCreateQueuePolicyFromConfigurationElement(String name,
+                                                                boolean autoCreate,
+                                                                boolean autoDelete,
+                                                                long autoDeleteDelay,
+                                                                long autoDeleteMessageCount,
                                                                 boolean includeFederated,
                                                                 int priorityAdjustment,
                                                                 Collection<Map.Entry<String, String>> includes,
@@ -539,6 +568,10 @@ public class AMQPFederationPolicySupportTest {
       final AMQPFederationQueuePolicyElement element = new AMQPFederationQueuePolicyElement();
 
       element.setName(name);
+      element.setAutoCreate(autoCreate);
+      element.setAutoDelete(autoDelete);
+      element.setAutoDeleteDelay(autoDeleteDelay);
+      element.setAutoDeleteMessageCount(autoDeleteMessageCount);
       element.setPriorityAdjustment(priorityAdjustment);
       element.setIncludeFederated(includeFederated);
       element.setProperties(policyProperties);
@@ -557,7 +590,8 @@ public class AMQPFederationPolicySupportTest {
 
       final FederationReceiveFromQueuePolicy policy = AMQPFederationPolicySupport.create(element, DEFAULT_WILDCARD_CONFIGURATION);
 
-      checkPolicyMatchesExpectations(policy, name, includeFederated, priorityAdjustment, includes, excludes, policyProperties);
+      checkPolicyMatchesExpectations(policy, name, autoCreate, autoDelete, autoDeleteDelay, autoDeleteMessageCount,
+                                     includeFederated, priorityAdjustment, includes, excludes, policyProperties);
    }
 
    @Test
@@ -577,15 +611,16 @@ public class AMQPFederationPolicySupportTest {
       properties.put("amqpCredits", "10");
       properties.put("amqpLowCredits", "3");
 
-      doTestCreateAddressPolicyFromConfigurationElement("test", false, 0, 1, 2, true, false, includes, excludes, null);
-      doTestCreateAddressPolicyFromConfigurationElement("test", true, 1, 2, 3, true, true, includes, excludes, properties);
-      doTestCreateAddressPolicyFromConfigurationElement("test", false, 10, 9, 8, false, true, null, excludes, properties);
-      doTestCreateAddressPolicyFromConfigurationElement("test", true, 1, 1, 1, false, false, includes, null, null);
-      doTestCreateAddressPolicyFromConfigurationElement("test", false, 7, 1, 1, true, true, null, null, properties);
-      doTestCreateAddressPolicyFromConfigurationElement("test", false, 7, 1, 1, true, false, Collections.emptySet(), Collections.emptySet(), Collections.emptyMap());
+      doTestCreateAddressPolicyFromConfigurationElement("test", true, false, 0, 1, 2, true, false, includes, excludes, null);
+      doTestCreateAddressPolicyFromConfigurationElement("test", true, true, 1, 2, 3, true, true, includes, excludes, properties);
+      doTestCreateAddressPolicyFromConfigurationElement("test", false, false, 10, 9, 8, false, true, null, excludes, properties);
+      doTestCreateAddressPolicyFromConfigurationElement("test", false, true, 1, 1, 1, false, false, includes, null, null);
+      doTestCreateAddressPolicyFromConfigurationElement("test", false, false, 7, 1, 1, true, true, null, null, properties);
+      doTestCreateAddressPolicyFromConfigurationElement("test", true, false, 7, 1, 1, true, false, Collections.emptySet(), Collections.emptySet(), Collections.emptyMap());
    }
 
    private void doTestCreateAddressPolicyFromConfigurationElement(String name,
+                                                                  boolean autoCreate,
                                                                   boolean autoDelete,
                                                                   long autoDeleteDelay,
                                                                   long autoDeleteMessageCount,
@@ -599,6 +634,7 @@ public class AMQPFederationPolicySupportTest {
       final AMQPFederationAddressPolicyElement element = new AMQPFederationAddressPolicyElement();
 
       element.setName(name);
+      element.setAutoCreate(autoCreate);
       element.setAutoDelete(autoDelete);
       element.setAutoDeleteDelay(autoDeleteDelay);
       element.setAutoDeleteMessageCount(autoDeleteMessageCount);
@@ -617,17 +653,18 @@ public class AMQPFederationPolicySupportTest {
 
       final FederationReceiveFromAddressPolicy policy = AMQPFederationPolicySupport.create(element, DEFAULT_WILDCARD_CONFIGURATION);
 
-      checkPolicyMatchesExpectations(policy, name, autoDelete, autoDeleteDelay, autoDeleteMessageCount, maxHops,
+      checkPolicyMatchesExpectations(policy, name, autoCreate, autoDelete, autoDeleteDelay, autoDeleteMessageCount, maxHops,
                                      enableDivertBindings, allowWildcardGroupings, includes, excludes, policyProperties);
    }
 
    private void checkPolicyMatchesExpectations(FederationReceiveFromAddressPolicy policy,
-                                               String name, boolean autoDelete, long autoDeleteDelay,
+                                               String name, boolean autoCreate, boolean autoDelete, long autoDeleteDelay,
                                                long autoDeleteMessageCount, int maxHops,
                                                boolean enableDivertBindings, boolean enableWildcardSubscriptions,
                                                Collection<?> includes, Collection<?> excludes,
                                                Map<String, ?> policyProperties) {
       assertEquals(name, policy.getPolicyName());
+      assertEquals(autoCreate, policy.isAutoCreate());
       assertEquals(autoDelete, policy.isAutoDelete());
       assertEquals(autoDeleteDelay, policy.getAutoDeleteDelay());
       assertEquals(autoDeleteMessageCount, policy.getAutoDeleteMessageCount());
@@ -660,11 +697,17 @@ public class AMQPFederationPolicySupportTest {
    }
 
    private void checkPolicyMatchesExpectations(FederationReceiveFromQueuePolicy policy,
-                                               String name, boolean includeFederated, int priorityAdjustment,
+                                               String name, boolean autoCreate, boolean autoDelete,
+                                               long autoDeleteDelay, long autoDeleteMessageCount,
+                                               boolean includeFederated, int priorityAdjustment,
                                                Collection<?> includes, Collection<?> excludes,
                                                Map<String, ?> policyProperties) {
 
       assertEquals(name, policy.getPolicyName());
+      assertEquals(autoCreate, policy.isAutoCreate());
+      assertEquals(autoDelete, policy.isAutoDelete());
+      assertEquals(autoDeleteDelay, policy.getAutoDeleteDelay());
+      assertEquals(autoDeleteMessageCount, policy.getAutoDeleteMessageCount());
       assertEquals(includeFederated, policy.isIncludeFederated());
       assertEquals(priorityAdjustment, policy.getPriorityAjustment());
 

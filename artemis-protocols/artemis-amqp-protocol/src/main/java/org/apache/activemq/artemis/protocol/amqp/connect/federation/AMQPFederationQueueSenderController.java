@@ -17,12 +17,24 @@
 
 package org.apache.activemq.artemis.protocol.amqp.connect.federation;
 
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_CREATE;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_DELETE;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_DELETE_DELAY;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.AUTO_DELETE_MSG_COUNT;
 import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.FEDERATION_QUEUE_RECEIVER;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.DEFAULT_QUEUE_AUTO_CREATE;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.DEFAULT_AUTO_DELETE;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.DEFAULT_AUTO_DELETE_DELAY;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationConstants.DEFAULT_AUTO_DELETE_MSG_COUNT;
+import static org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationPolicySupport.FEDERATED_QUEUE_SOURCE_PROPERTIES;
 
+import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import org.apache.activemq.artemis.api.core.ActiveMQExceptionType;
+import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.server.QueueQueryResult;
@@ -76,6 +88,20 @@ public final class AMQPFederationQueueSenderController extends AMQPFederationSen
       // indicated it was desired, however unless offered by the remote we cannot use it.
       sender.setDesiredCapabilities(new Symbol[] {AmqpSupport.CORE_MESSAGE_TUNNELING_SUPPORT});
 
+      final Map<String, Object> queueSourceProperties;
+
+      if (sender.getRemoteProperties() == null) {
+         queueSourceProperties = Collections.emptyMap();
+      } else {
+         queueSourceProperties = (Map<String, Object>)
+            Objects.requireNonNullElse(sender.getRemoteProperties().get(FEDERATED_QUEUE_SOURCE_PROPERTIES), Collections.emptyMap());
+      }
+
+      final boolean autoCreate = (boolean) queueSourceProperties.getOrDefault(AUTO_CREATE, DEFAULT_QUEUE_AUTO_CREATE);
+      final boolean autoDelete = (boolean) queueSourceProperties.getOrDefault(AUTO_DELETE, DEFAULT_AUTO_DELETE);
+      final long autoDeleteDelay = ((Number) queueSourceProperties.getOrDefault(AUTO_DELETE_DELAY, DEFAULT_AUTO_DELETE_DELAY)).longValue();
+      final long autoDeleteMsgCount = ((Number) queueSourceProperties.getOrDefault(AUTO_DELETE_MSG_COUNT, DEFAULT_AUTO_DELETE_MSG_COUNT)).longValue();
+
       final RoutingType routingType = getRoutingType(source);
       final SimpleString targetAddress;
       final SimpleString targetQueue;
@@ -88,13 +114,39 @@ public final class AMQPFederationQueueSenderController extends AMQPFederationSen
          targetQueue = SimpleString.of(source.getAddress());
       }
 
-      final QueueQueryResult result = sessionSPI.queueQuery(targetQueue, routingType, false, null);
-      if (!result.isExists()) {
-         federation.registerMissingQueue(targetQueue.toString());
-         throw new ActiveMQAMQPNotFoundException("Queue: '" + targetQueue + "' does not exist");
+      QueueQueryResult queueQuery = sessionSPI.queueQuery(targetQueue, routingType, false, null);
+
+      if (!queueQuery.isExists()) {
+         if (autoCreate) {
+            final QueueConfiguration configuration = QueueConfiguration.of(targetQueue);
+
+            configuration.setAddress(targetAddress);
+            configuration.setRoutingType(routingType);
+            configuration.setAutoCreateAddress(true);
+            configuration.setMaxConsumers(-1);
+            configuration.setPurgeOnNoConsumers(false);
+            configuration.setDurable(true);
+            configuration.setAutoDelete(autoDelete);
+            configuration.setAutoDeleteDelay(autoDeleteDelay);
+            configuration.setAutoDeleteMessageCount(autoDeleteMsgCount);
+
+            // Try and create it and then later we will validate fully that it matches our expectations
+            // since we could lose a race with some other resource creating its own resources.
+            queueQuery = sessionSPI.queueQuery(configuration, true);
+
+            // It still might not create based on broker settings and user roles so in that case
+            // we setup a watcher to send an event if it ever does come into existence.
+            if (!queueQuery.isExists()) {
+               federation.registerMissingQueue(targetQueue.toString());
+               throw new ActiveMQAMQPNotFoundException("Queue: '" + targetQueue + "' does not exist");
+            }
+         } else {
+            federation.registerMissingQueue(targetQueue.toString());
+            throw new ActiveMQAMQPNotFoundException("Queue: '" + targetQueue + "' does not exist");
+         }
       }
 
-      if (targetAddress != null && !result.getAddress().equals(targetAddress)) {
+      if (targetAddress != null && !queueQuery.getAddress().equals(targetAddress)) {
          federation.registerMissingQueue(targetQueue.toString());
          throw new ActiveMQAMQPNotFoundException("Queue: '" + targetQueue + "' is not mapped to specified address: " + targetAddress);
       }
@@ -113,7 +165,7 @@ public final class AMQPFederationQueueSenderController extends AMQPFederationSen
          }
 
          // No need to apply another filter if the current one on the Queue already matches that.
-         if (result.getFilterString() == null || !filterString.equals(result.getFilterString().toString())) {
+         if (queueQuery.getFilterString() == null || !filterString.equals(queueQuery.getFilterString().toString())) {
             selector = filterString;
          } else {
             selector = null;
