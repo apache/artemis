@@ -204,6 +204,10 @@ public class SpawnedVMSupport {
          commandList.add(jacocoAgent);
       }
 
+      if (Runtime.version().feature() >= 24) {
+         commandList.add("--sun-misc-unsafe-memory-access=allow");
+      }
+
       commandList.add(className);
       for (String arg : args) {
          commandList.add(arg);

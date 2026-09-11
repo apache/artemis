@@ -15,6 +15,36 @@ NOTE: Follow the general upgrade procedure outlined in the xref:upgrading.adoc#u
 
 :sectnums!:
 
+== Version 2.58.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12357464[Full release notes]
+
+=== Highlights
+
+* Netty was upgraded to 4.2.
+This brings the new default "adaptive" buffer allocator which was originally introduced as experimental in Netty 4.1 and was promoted to the default after demonstrating efficiency gains.
+
+=== Upgrading from 2.57.0
+
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-5734[ARTEMIS-5734] Netty was upgraded to version 4.2. The most notable changes pertain to the default buffer allocator and usage of `sun.misc.Unsafe`.
++
+The adaptive buffer allocator replaced the pooled buffer allocator as the default.
+Performance in terms of both speed and efficiency is expected to improve.
+However, if you happen to observe a performance regression for your particular workload you can restore the previous allocator by passing `-Dio.netty.allocator.type=pooled` to the JVM on startup.
++
+From Netty's perspective usage of `sun.misc.Unsafe` is no longer technically necessary on JDK 24+ and is therefore disabled by default.
+However, the broker itself still relies on it for certain direct buffer operations.
+Therefore, the following must now be set on JDK 24+:
++
+[,text]
+----
+--sun-misc-unsafe-memory-access=allow
+----
+Freshly created brokers and brokers upgraded via xref:upgrading.adoc#upgrading-tool[`artemis upgrade`] get this setting automatically.
+If you xref:upgrading.adoc#general-upgrade-procedure[upgrade manually] instead then, when running on JDK 24+, you must add this setting to `JAVA_ARGS` in `etc/artemis.profile` (or `etc/artemis.profile.cmd` on Windows) yourself.
++
+To be clear, `sun.misc.Unsafe` (and the `--sun-misc-unsafe-memory-access` flag) is being removed from future JDKs, and a subsequent broker release will remove this dependency as well.
+
 == Version 2.57.0
 
 === Highlights

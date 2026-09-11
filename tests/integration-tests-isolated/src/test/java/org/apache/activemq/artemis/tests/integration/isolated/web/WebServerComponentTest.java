@@ -16,11 +16,6 @@
  */
 package org.apache.activemq.artemis.tests.integration.isolated.web;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -37,8 +32,9 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.HttpClientCodec;
@@ -61,6 +57,11 @@ import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * This test leaks a thread named org.eclipse.jetty.util.RolloverFileOutputStream which is why it is isolated now. In
@@ -211,7 +212,7 @@ public class WebServerComponentTest {
    }
 
    private Channel getChannel(int port, ClientHandler clientHandler) throws InterruptedException {
-      EventLoopGroup group = new NioEventLoopGroup();
+      EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
       Bootstrap bootstrap = new Bootstrap();
       bootstrap.group(group).channel(NioSocketChannel.class).handler(new ChannelInitializer() {
          @Override
