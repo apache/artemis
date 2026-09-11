@@ -129,7 +129,7 @@
       </dependency>
       <dependency>
          <groupId>org.jctools</groupId>
-         <artifactId>jctools-core</artifactId>
+         <artifactId>jctools-core-jdk11</artifactId>
          <scope>test</scope>
       </dependency>
       <dependency>
