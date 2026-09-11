@@ -95,7 +95,7 @@ public class DuplicateDetectionUnitTest extends ActiveMQTestBase {
          Map<SimpleString, List<Pair<byte[], Long>>> mapDups = new HashMap<>();
 
          FakePagingManager pagingManager = new FakePagingManager();
-         journal.loadMessageJournal(postOffice, pagingManager, new ResourceManagerImpl(null, 0, 0, scheduledThreadPool), null, mapDups, null, null, new PostOfficeJournalLoader(postOffice, pagingManager, null, null, null, null, null, null));
+         journal.loadMessageJournal(postOffice, pagingManager, new ResourceManagerImpl(null, 0, 0, scheduledThreadPool), null, mapDups, null, null, new PostOfficeJournalLoader(postOffice, pagingManager, null, null, null, null, null, null, null));
 
          assertEquals(0, mapDups.size());
 
@@ -111,7 +111,7 @@ public class DuplicateDetectionUnitTest extends ActiveMQTestBase {
          journal.start();
          journal.loadBindingJournal(new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
 
-         journal.loadMessageJournal(postOffice, pagingManager, new ResourceManagerImpl(null, 0, 0, scheduledThreadPool), null, mapDups, null, null, new PostOfficeJournalLoader(postOffice, pagingManager, null, null, null, null, null, null));
+         journal.loadMessageJournal(postOffice, pagingManager, new ResourceManagerImpl(null, 0, 0, scheduledThreadPool), null, mapDups, null, null, new PostOfficeJournalLoader(postOffice, pagingManager, null, null, null, null, null, null, null));
 
          assertEquals(1, mapDups.size());
 
@@ -134,7 +134,7 @@ public class DuplicateDetectionUnitTest extends ActiveMQTestBase {
          journal.start();
          journal.loadBindingJournal(new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
 
-         journal.loadMessageJournal(postOffice, pagingManager, new ResourceManagerImpl(null, 0, 0, scheduledThreadPool), null, mapDups, null, null, new PostOfficeJournalLoader(postOffice, pagingManager, null, null, null, null, null, null));
+         journal.loadMessageJournal(postOffice, pagingManager, new ResourceManagerImpl(null, 0, 0, scheduledThreadPool), null, mapDups, null, null, new PostOfficeJournalLoader(postOffice, pagingManager, null, null, null, null, null, null, null));
 
          assertEquals(1, mapDups.size());
 

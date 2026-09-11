@@ -100,6 +100,7 @@ import org.apache.activemq.artemis.core.settings.HierarchicalRepository;
 import org.apache.activemq.artemis.core.settings.HierarchicalRepositoryChangeListener;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.settings.impl.NamedHierarchicalRepositoryChangeListener;
+import org.apache.activemq.artemis.core.settings.impl.ResourceQuota;
 import org.apache.activemq.artemis.core.settings.impl.SlowConsumerPolicy;
 import org.apache.activemq.artemis.core.settings.impl.SlowConsumerThresholdMeasurementUnit;
 import org.apache.activemq.artemis.core.transaction.Transaction;
@@ -762,6 +763,18 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       return message.durableDown();
    }
 
+   private static long getMessageSizeForQuota(MessageReference messageReference) {
+      long size = messageReference.getMessageMemoryEstimate();
+      if (messageReference.getMessage().isLargeMessage()) {
+         try {
+            size += messageReference.getPersistentSize();
+         } catch (ActiveMQException ignore) {
+            // ignored
+         }
+      }
+      return size;
+   }
+
    @Override
    public void refUp(MessageReference messageReference) {
       int count = messageReference.getMessage().refUp();
@@ -770,6 +783,10 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
          if (owner != null) {
             owner.addSize(messageReference.getMessageMemoryEstimate(), false);
             messageReference.getMessage().routed();
+            final ResourceQuota quota = owner.getResourceQuota();
+            if (quota != null) {
+               quota.addSize(getMessageSizeForQuota(messageReference));
+            }
          }
       }
       if (pagingStore != null) {
@@ -780,6 +797,10 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
          }
 
          pagingStore.refUp(messageReference.getMessage(), count);
+         final ResourceQuota quota = pagingStore.getResourceQuota();
+         if (quota != null) {
+            quota.addSize(MessageReferenceImpl.getMemoryEstimate());
+         }
       }
    }
 
@@ -789,6 +810,10 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       PagingStore owner = (PagingStore) messageReference.getMessage().getOwner();
       if (count == 0 && owner != null) {
          owner.addSize(-messageReference.getMessageMemoryEstimate(), false);
+         final ResourceQuota quota = owner.getResourceQuota();
+         if (quota != null) {
+            quota.addSize(-getMessageSizeForQuota(messageReference));
+         }
       }
       if (pagingStore != null) {
          if (isMirrorController() && owner != null && pagingStore != owner) {
@@ -797,6 +822,10 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
             pagingStore.addSize(-messageReference.getMessage().getOriginalEstimate(), false, false);
          }
          pagingStore.refDown(messageReference.getMessage(), count);
+         final ResourceQuota quota = pagingStore.getResourceQuota();
+         if (quota != null) {
+            quota.addSize(-MessageReferenceImpl.getMemoryEstimate());
+         }
       }
    }
 

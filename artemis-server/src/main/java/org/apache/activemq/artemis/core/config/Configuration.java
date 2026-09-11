@@ -174,6 +174,26 @@ public interface Configuration {
    Configuration addResourceLimitSettings(ResourceLimitSettings resourceLimitSettings);
 
    /**
+    * {@return resource quota configurations (limits only, no runtime counters)}
+    */
+   Map<String, org.apache.activemq.artemis.core.settings.impl.ResourceQuotaConfig> getResourceQuotas();
+
+   /**
+    * Set the collection of resource quota configurations indexed by name.
+    *
+    * @param quotaConfigs quota names mapped to ResourceQuotaConfig
+    */
+   Configuration setResourceQuotas(Map<String, org.apache.activemq.artemis.core.settings.impl.ResourceQuotaConfig> quotaConfigs);
+
+   /**
+    * Add a resource quota configuration to the underlying collection.
+    *
+    * @param name   the unique name of the quota
+    * @param config the ResourceQuotaConfig defining limits
+    */
+   Configuration addResourceQuota(String name, org.apache.activemq.artemis.core.settings.impl.ResourceQuotaConfig config);
+
+   /**
     * {@return the period (in milliseconds) to scan configuration files used by deployment; default is {@link
     * ActiveMQDefaultConfiguration#DEFAULT_FILE_DEPLOYER_SCAN_PERIOD}}
     */

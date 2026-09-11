@@ -683,7 +683,9 @@ public abstract class ProtonAbstractReceiver extends ProtonInitializable impleme
    }
 
    protected static boolean isAddressFull(final Exception e) {
-      return e instanceof ActiveMQException amqe && ActiveMQExceptionType.ADDRESS_FULL.equals(amqe.getType());
+      return e instanceof ActiveMQException amqe &&
+         (ActiveMQExceptionType.ADDRESS_FULL.equals(amqe.getType()) ||
+          ActiveMQExceptionType.RESOURCE_QUOTA_EXCEEDED.equals(amqe.getType()));
    }
 
    protected static boolean outcomeSupported(final Source source, final Symbol outcome) {

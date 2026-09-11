@@ -91,6 +91,7 @@ import org.apache.activemq.artemis.core.server.files.FileStoreMonitor;
 import org.apache.activemq.artemis.core.server.management.ManagementService;
 import org.apache.activemq.artemis.core.server.management.Notification;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
+import org.apache.activemq.artemis.core.settings.impl.ResourceQuota;
 import org.apache.activemq.artemis.core.transaction.ResourceManager;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.core.transaction.Transaction.State;
@@ -2445,6 +2446,20 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
       // check the user has write access to this address (and potentially queue).
       try {
          securityCheck(CompositeAddress.extractAddressName(messageAddress), CompositeAddress.isFullyQualified(messageAddress) ? CompositeAddress.extractQueueName(messageAddress) : null, CheckType.SEND, this);
+
+         final org.apache.activemq.artemis.core.paging.PagingStore pagingStore =
+            server.getPagingManager() != null ? server.getPagingManager().getPageStore(messageAddress) : null;
+         final ResourceQuota quota = pagingStore != null ? pagingStore.getResourceQuota() : null;
+         if (quota != null) {
+            final long sizeForConsistency = MessageReferenceImpl.getMemoryEstimate() + message.getMemoryEstimate() + (message.isLargeMessage() ? message.getPersistentSize() : 0);
+            if (!quota.canAddBytes(sizeForConsistency)) {
+               throw ActiveMQMessageBundle.BUNDLE.resourceQuotaExceeded(
+                     "quota '" + quota.getName() +
+                           "' - cannot add message of " + sizeForConsistency +
+                           " bytes, current usage " + quota.getCurrentMessageBytes() +
+                           " bytes, max " + quota.getMaxMessageBytes() + " bytes");
+            }
+         }
       } catch (ActiveMQException e) {
          if (!autoCommitSends && tx != null) {
             tx.markAsRollbackOnly(e);

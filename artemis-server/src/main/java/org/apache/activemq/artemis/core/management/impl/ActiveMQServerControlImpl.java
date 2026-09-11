@@ -4672,7 +4672,9 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
       // managementLock will guarantee there's only one management operation being called
       try (AutoCloseable lock = server.managementLock()) {
          Future<Object> task = server.getPagingManager().rebuildCounters(null);
-         task.get();
+         if (task != null) {
+            task.get();
+         }
       }
    }
 

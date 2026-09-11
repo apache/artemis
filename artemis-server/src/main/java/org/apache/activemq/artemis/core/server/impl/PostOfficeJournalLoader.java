@@ -79,6 +79,7 @@ public class PostOfficeJournalLoader implements JournalLoader {
    protected final NodeManager nodeManager;
    private final ManagementService managementService;
    private final GroupingHandler groupingHandler;
+   private final org.apache.activemq.artemis.core.server.quota.ResourceQuotaService resourceQuotaService;
    private final Configuration configuration;
    private Map<Long, Queue> queues;
 
@@ -89,7 +90,8 @@ public class PostOfficeJournalLoader implements JournalLoader {
                                   NodeManager nodeManager,
                                   ManagementService managementService,
                                   GroupingHandler groupingHandler,
-                                  Configuration configuration) {
+                                  Configuration configuration,
+                                  org.apache.activemq.artemis.core.server.quota.ResourceQuotaService resourceQuotaService) {
 
       this.postOffice = postOffice;
       this.pagingManager = pagingManager;
@@ -98,6 +100,7 @@ public class PostOfficeJournalLoader implements JournalLoader {
       this.nodeManager = nodeManager;
       this.managementService = managementService;
       this.groupingHandler = groupingHandler;
+      this.resourceQuotaService = resourceQuotaService;
       this.configuration = configuration;
       queues = new HashMap<>();
    }
@@ -110,9 +113,10 @@ public class PostOfficeJournalLoader implements JournalLoader {
                                   ManagementService managementService,
                                   GroupingHandler groupingHandler,
                                   Configuration configuration,
+                                  org.apache.activemq.artemis.core.server.quota.ResourceQuotaService resourceQuotaService,
                                   Map<Long, Queue> queues) {
 
-      this(postOffice, pagingManager, storageManager, queueFactory, nodeManager, managementService, groupingHandler, configuration);
+      this(postOffice, pagingManager, storageManager, queueFactory, nodeManager, managementService, groupingHandler, configuration, resourceQuotaService);
       this.queues = queues;
    }
 
@@ -165,8 +169,14 @@ public class PostOfficeJournalLoader implements JournalLoader {
          final Binding binding = new LocalQueueBinding(queue.getAddress(), queue, nodeManager.getNodeId());
 
          queues.put(queue.getID(), queue);
+
          postOffice.addBinding(binding);
          managementService.registerQueue(queue, queue.getAddress(), storageManager);
+
+         // Rebuild quota counter during reload (no enforcement check needed)
+         if (resourceQuotaService != null) {
+            resourceQuotaService.incrementQueueCount(queue.getAddress());
+         }
 
       }
    }

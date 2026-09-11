@@ -148,6 +148,10 @@ public interface ManagementService extends NotificationService, ActiveMQComponen
 
    int getAddressControlCount();
 
+   void registerResourceQuota(org.apache.activemq.artemis.core.settings.impl.ResourceQuota resourceQuota) throws Exception;
+
+   void unregisterResourceQuota(String quotaName) throws Exception;
+
    List<AddressControl> getAddressControls();
 
    List<AddressControl> getAddressControls(Predicate<AddressControl> predicate);
