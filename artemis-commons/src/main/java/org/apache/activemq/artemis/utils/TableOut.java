@@ -23,10 +23,35 @@ import java.util.List;
 
 public class TableOut {
 
+   // Unicode box-drawing characters
+   public static final String BOX_HORIZONTAL = "─";
+   public static final String BOX_VERTICAL = "│";
+   public static final String BOX_TOP_LEFT = "┌";
+   public static final String BOX_TOP_RIGHT = "┐";
+   public static final String BOX_TOP_MID = "┬";
+   public static final String BOX_MID_LEFT = "├";
+   public static final String BOX_MID_RIGHT = "┤";
+   public static final String BOX_MID_MID = "┼";
+   public static final String BOX_BOTTOM_LEFT = "└";
+   public static final String BOX_BOTTOM_RIGHT = "┘";
+   public static final String BOX_BOTTOM_MID = "┴";
+
    final String separator;
    final int[] columnSizes;
    final int indentation;
    final String indentationString;
+
+
+   boolean ascii;
+
+   public boolean isAscii() {
+      return ascii;
+   }
+
+   public TableOut setAscii(boolean ascii) {
+      this.ascii = ascii;
+      return this;
+   }
 
    public TableOut(String separator, int indentation, int[] columnSizes) {
       this.separator = separator;
@@ -37,12 +62,41 @@ public class TableOut {
       indentationString = " ".repeat(indentation);
    }
 
-   public void printSeparator(PrintStream stream) {
-      int totalWidth = separator.length() * (columnSizes.length + 1);
-      for (int columnSize : columnSizes) {
-         totalWidth += columnSize;
+   /** Print the top border: ┌───┬───┐ (no-op in ascii style) */
+   public void printTopSeparator(PrintStream stream) {
+      if (!ascii) {
+         printBoxLine(stream, BOX_TOP_LEFT, BOX_TOP_MID, BOX_TOP_RIGHT);
       }
-      stream.println("-".repeat(totalWidth));
+   }
+
+   /** Print a middle separator: ├───┼───┤ (or plain dashes in ascii style) */
+   public void printSeparator(PrintStream stream) {
+      if (ascii) {
+         int totalWidth = separator.length() * (columnSizes.length + 1);
+         for (int columnSize : columnSizes) {
+            totalWidth += columnSize;
+         }
+         stream.println("-".repeat(totalWidth));
+      } else {
+         printBoxLine(stream, BOX_MID_LEFT, BOX_MID_MID, BOX_MID_RIGHT);
+      }
+   }
+
+   /** Print the bottom border: └───┴───┘ (no-op in ascii style) */
+   public void printBottomSeparator(PrintStream stream) {
+      if (!ascii) {
+         printBoxLine(stream, BOX_BOTTOM_LEFT, BOX_BOTTOM_MID, BOX_BOTTOM_RIGHT);
+      }
+   }
+
+   private void printBoxLine(PrintStream stream, String left, String mid, String right) {
+      StringBuilder line = new StringBuilder();
+      line.append(left);
+      for (int i = 0; i < columnSizes.length; i++) {
+         line.append(BOX_HORIZONTAL.repeat(columnSizes[i]));
+         line.append(i < columnSizes.length - 1 ? mid : right);
+      }
+      stream.println(line);
    }
 
    public void print(PrintStream stream, String[] columns) {
@@ -67,7 +121,7 @@ public class TableOut {
       int lineNumber = 0;
       do {
          hasMoreLines = false;
-         stream.print(separator);
+         stream.print(ascii ? separator : BOX_VERTICAL);
          for (int column = 0; column < splitColumns.length; column++) {
             StringBuilder cell = new StringBuilder();
 
@@ -92,7 +146,7 @@ public class TableOut {
                cell.append(" ");
             }
             stream.print(cell);
-            stream.print(separator);
+            stream.print(ascii ? separator : BOX_VERTICAL);
          }
          stream.println();
          lineNumber++;
@@ -104,18 +158,38 @@ public class TableOut {
       List<String> cells = new ArrayList<>();
 
       for (int position = 0; position < column.length();) {
-         int identationUsed;
-         String identationStringUsed;
+         int indentationUsed;
+         String indentationStringUsed;
          if (position == 0 || indentation == 0) {
-            identationUsed = 0;
-            identationStringUsed = "";
+            indentationUsed = 0;
+            indentationStringUsed = "";
          } else {
-            identationUsed = indentation;
-            identationStringUsed = this.indentationString;
+            indentationUsed = indentation;
+            indentationStringUsed = this.indentationString;
          }
-         int maxPosition = Math.min(size - identationUsed, column.length() - position);
-         cells.add(identationStringUsed + column.substring(position, position + maxPosition));
-         position += maxPosition;
+         int available = size - indentationUsed;
+         int remaining = column.length() - position;
+
+         if (remaining <= available) {
+            // everything fits — no split needed
+            cells.add(indentationStringUsed + column.substring(position));
+            break;
+         }
+
+         // look backwards from the hard-break position for the last non-alphanumeric character
+         // but only accept it if it falls at or beyond the halfway point of the available width
+         int hardBreak = available;
+         int naturalBreak = -1;
+         for (int i = hardBreak - 1; i >= available / 2; i--) {
+            if (!Character.isLetterOrDigit(column.charAt(position + i))) {
+               naturalBreak = i + 1; // split after the non-alphanumeric character
+               break;
+            }
+         }
+
+         int splitAt = naturalBreak > 0 ? naturalBreak : hardBreak;
+         cells.add(indentationStringUsed + column.substring(position, position + splitAt));
+         position += splitAt;
       }
 
       return cells;

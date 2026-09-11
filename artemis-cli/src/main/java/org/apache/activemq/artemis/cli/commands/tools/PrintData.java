@@ -84,8 +84,8 @@ public class PrintData extends DBOption {
    @Option(names = "--skip-journal", description = "Do not print data from the messages journal.")
    private boolean skipJournal = false;
 
-   @Option(names = "--legacy", description = "Use legacy semicolon-separated output format instead of table columns.")
-   private boolean legacyOutput = false;
+   @Option(names = "--ascii", description = "Use plain-text (ASCII) output format instead of Unicode box-drawing characters (useful if parsing output with scripts).")
+   private boolean ascii = false;
 
    private static final String BINDINGS_BANNER = "B I N D I N G S  J O U R N A L";
    private static final String MESSAGES_BANNER = "M E S S A G E S   J O U R N A L";
@@ -93,12 +93,12 @@ public class PrintData extends DBOption {
       MessagePersister.registerPersister(CoreMessagePersister.getInstance());
    }
 
-   public boolean isLegacyOutput() {
-      return legacyOutput;
+   public boolean isAscii() {
+      return ascii;
    }
 
-   public PrintData setLegacyOutput(boolean legacyOutput) {
-      this.legacyOutput = legacyOutput;
+   public PrintData setAscii(boolean ascii) {
+      this.ascii = ascii;
       return this;
    }
 
@@ -112,7 +112,7 @@ public class PrintData extends DBOption {
          if (configuration.isJDBC()) {
             printDataJDBC(configuration, context.out);
          } else {
-            printData(new File(getBinding()), new File(getJournal()), new File(getPaging()), context.out, safe, reclaimed, skipBindings, skipJournal, maxPages, legacyOutput);
+            printData(new File(getBinding()), new File(getJournal()), new File(getPaging()), context.out, safe, reclaimed, skipBindings, skipJournal, maxPages, ascii);
          }
       } catch (Exception e) {
          treatError(e, "data", "print");
@@ -130,13 +130,13 @@ public class PrintData extends DBOption {
 
       printBanner(out, BINDINGS_BANNER);
 
-      DescribeJournal bindings = DescribeJournal.printSurvivingRecords(storageManager.getBindingsJournal(), out, safe, legacyOutput);
+      DescribeJournal bindings = DescribeJournal.printSurvivingRecords(storageManager.getBindingsJournal(), out, safe, ascii);
 
       printBanner(out, MESSAGES_BANNER);
 
-      DescribeJournal describeJournal = DescribeJournal.printSurvivingRecords(storageManager.getMessageJournal(), out, safe, legacyOutput);
+      DescribeJournal describeJournal = DescribeJournal.printSurvivingRecords(storageManager.getMessageJournal(), out, safe, ascii);
 
-      printPages(describeJournal, storageManager, pagingmanager, out, safe, maxPages, bindings, legacyOutput);
+      printPages(describeJournal, storageManager, pagingmanager, out, safe, maxPages, bindings, ascii);
 
       cleanup();
 
@@ -162,7 +162,7 @@ public class PrintData extends DBOption {
       printData(bindingsDirectory, messagesDirectory, pagingDirectory, out, safe, reclaimed, skipBindings, skipJournal, maxPages, false);
    }
 
-   public static void printData(File bindingsDirectory, File messagesDirectory, File pagingDirectory, PrintStream out, boolean safe, boolean reclaimed, boolean skipBindings, boolean skipJournal, int maxPages, boolean legacyOutput) throws Exception {
+   public static void printData(File bindingsDirectory, File messagesDirectory, File pagingDirectory, PrintStream out, boolean safe, boolean reclaimed, boolean skipBindings, boolean skipJournal, int maxPages, boolean ascii) throws Exception {
       // printing the banner and version
       Artemis.printBanner(out);
 
@@ -186,7 +186,7 @@ public class PrintData extends DBOption {
          out.println();
          bindingsDescribe = null;
       } else {
-         bindingsDescribe = printBindings(bindingsDirectory, out, safe, true, true, reclaimed, legacyOutput);
+         bindingsDescribe = printBindings(bindingsDirectory, out, safe, true, true, reclaimed, ascii);
       }
 
       printBanner(out, MESSAGES_BANNER);
@@ -195,7 +195,7 @@ public class PrintData extends DBOption {
          out.println();
       }
       DescribeJournal describeJournal = null;
-      describeJournal = printMessages(messagesDirectory, out, safe, !skipJournal, !skipJournal, reclaimed, legacyOutput);
+      describeJournal = printMessages(messagesDirectory, out, safe, !skipJournal, !skipJournal, reclaimed, ascii);
 
       if (describeJournal == null) {
          return;
@@ -207,7 +207,7 @@ public class PrintData extends DBOption {
             out.println(".... skipping");
             out.println();
          } else {
-            printPages(pagingDirectory, describeJournal, out, safe, maxPages, bindingsDescribe, legacyOutput);
+            printPages(pagingDirectory, describeJournal, out, safe, maxPages, bindingsDescribe, ascii);
          }
       } catch (Exception e) {
          e.printStackTrace();
@@ -220,10 +220,10 @@ public class PrintData extends DBOption {
       return printMessages(messagesDirectory, out, safe, printRecords, printSurviving, reclaimed, false);
    }
 
-   public static DescribeJournal printMessages(File messagesDirectory, PrintStream out, boolean safe, boolean printRecords, boolean printSurviving, boolean reclaimed, boolean legacyOutput) {
+   public static DescribeJournal printMessages(File messagesDirectory, PrintStream out, boolean safe, boolean printRecords, boolean printSurviving, boolean reclaimed, boolean ascii) {
       DescribeJournal describeJournal;
       try {
-         describeJournal = DescribeJournal.describeMessagesJournal(messagesDirectory, out, safe, printRecords, printSurviving, reclaimed, legacyOutput);
+         describeJournal = DescribeJournal.describeMessagesJournal(messagesDirectory, out, safe, printRecords, printSurviving, reclaimed, ascii);
       } catch (Exception e) {
          e.printStackTrace();
          return null;
@@ -235,9 +235,9 @@ public class PrintData extends DBOption {
       return printBindings(bindingsDirectory, out, safe, printRecords, printSurviving, reclaimed, false);
    }
 
-   public static DescribeJournal printBindings(File bindingsDirectory, PrintStream out, boolean safe, boolean printRecords, boolean printSurviving, boolean reclaimed, boolean legacyOutput) {
+   public static DescribeJournal printBindings(File bindingsDirectory, PrintStream out, boolean safe, boolean printRecords, boolean printSurviving, boolean reclaimed, boolean ascii) {
       try {
-         return DescribeJournal.describeBindingsJournal(bindingsDirectory, out, safe, printRecords, printSurviving, reclaimed, legacyOutput);
+         return DescribeJournal.describeBindingsJournal(bindingsDirectory, out, safe, printRecords, printSurviving, reclaimed, ascii);
       } catch (Exception e) {
          e.printStackTrace();
          return null;
@@ -251,7 +251,7 @@ public class PrintData extends DBOption {
       out.println("********************************************");
    }
 
-   private static void printPages(File pageDirectory, DescribeJournal describeJournal, PrintStream out, boolean safe, int maxPages, DescribeJournal bindingsDescribe, boolean legacyOutput) {
+   private static void printPages(File pageDirectory, DescribeJournal describeJournal, PrintStream out, boolean safe, int maxPages, DescribeJournal bindingsDescribe, boolean ascii) {
       ActiveMQThreadFactory daemonFactory = new ActiveMQThreadFactory("cli", true, PrintData.class.getClassLoader());
       final ScheduledExecutorService scheduled = Executors.newScheduledThreadPool(1, daemonFactory);
       final ExecutorService executor = Executors.newFixedThreadPool(10, daemonFactory);
@@ -264,7 +264,7 @@ public class PrintData extends DBOption {
          addressSettingsRepository.setDefault(new AddressSettings());
          PagingManager manager = new PagingManagerImpl(pageStoreFactory, addressSettingsRepository);
 
-         printPages(describeJournal, sm, manager, out, safe, maxPages, bindingsDescribe, legacyOutput);
+         printPages(describeJournal, sm, manager, out, safe, maxPages, bindingsDescribe, ascii);
       } catch (Exception e) {
          e.printStackTrace();
       } finally {
@@ -279,7 +279,7 @@ public class PrintData extends DBOption {
                                   PrintStream out,
                                   boolean safe, int maxPages,
                                   DescribeJournal bindingsDescribe,
-                                  boolean legacyOutput) throws Exception {
+                                  boolean ascii) throws Exception {
       PageCursorsInfo cursorACKs = calculateCursorsInfo(describeJournal.getRecords());
 
       Set<Long> existingQueues = new HashSet<>();
@@ -294,7 +294,7 @@ public class PrintData extends DBOption {
       SimpleString[] stores = manager.getStoreNames();
 
       int[] pageColumnSizes = {10, 10, 12, safe ? 10 : 100, 10};
-      TableOut pageTable = legacyOutput ? null : new TableOut("|", 2, pageColumnSizes);
+      TableOut pageTable = ascii ? null : new TableOut("|", 2, pageColumnSizes);
 
       for (SimpleString store : stores) {
          PagingStore pgStore = manager.getPageStore(store);
@@ -318,7 +318,7 @@ public class PrintData extends DBOption {
                   pgid++;
                   page = pgStore.newPageObject(pgid);
                }
-               if (legacyOutput) {
+               if (ascii) {
                   out.println("*******   Page " + pgid);
                }
                page.open(false);
@@ -328,7 +328,7 @@ public class PrintData extends DBOption {
                int msgID = 0;
 
                if (pageTable != null) {
-                  pageTable.printSeparator(out);
+                  pageTable.printTopSeparator(out);
                   pageTable.print(out, new String[]{"Page", "Msg", "TX", safe ? "Size" : "Message", "Queues"});
                   pageTable.printSeparator(out);
                }
@@ -381,7 +381,7 @@ public class PrintData extends DBOption {
                         queuesStr.append(", **PG_TX_NOT_FOUND**");
                      }
 
-                     if (legacyOutput) {
+                     if (ascii) {
                         if (safe) {
                            try {
                               out.print("pg=" + pgid + ", msg=" + msgID + ",pgTX=" + msg.getTransactionID() + ", msg=" + msg.getMessage().getClass().getSimpleName() + "(safe data, size=" + msg.getMessage().getPersistentSize() + ")");
@@ -416,8 +416,14 @@ public class PrintData extends DBOption {
                      msgID++;
 
                   }
+
                   pgid++;
                }
+
+               if (pageTable != null) {
+                  pageTable.printBottomSeparator(out);
+               }
+
             }
          }
       }

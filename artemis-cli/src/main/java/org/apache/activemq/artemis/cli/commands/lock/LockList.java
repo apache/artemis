@@ -36,6 +36,9 @@ public class LockList extends ConnectionAbstract {
    @CommandLine.Option(names = "--sleep", description = "Monitor locks continuously by repeating the command at the specified interval in milliseconds. Use -1 to disable (default).", defaultValue = "-1")
    private long sleep = -1;
 
+   @CommandLine.Option(names = "--ascii", description = "Use ASCII table output style (plain text separators instead of Unicode box-drawing characters)")
+   private boolean ascii = false;
+
    @Override
    public Object execute(ActionContext context) throws Exception {
       super.execute(context);
@@ -93,10 +96,12 @@ public class LockList extends ConnectionAbstract {
          columnSizes[2] = Math.max(columnSizes[2], lock.getString("status", "").length());
       }
 
-      TableOut tableOut = new TableOut("|", 2, columnSizes);
+      TableOut tableOut = new TableOut("|", 2, columnSizes).setAscii(ascii);
 
       // Print header
+      tableOut.printTopSeparator(context.out);
       tableOut.print(context.out, fieldTitles, centralize);
+      tableOut.printSeparator(context.out);
 
       // Print data rows
       for (int i = 0; i < array.size(); i++) {
@@ -108,6 +113,7 @@ public class LockList extends ConnectionAbstract {
          };
          tableOut.print(context.out, columns, centralize);
       }
+      tableOut.printBottomSeparator(context.out);
       context.out.println();
    }
 

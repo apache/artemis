@@ -119,6 +119,18 @@ public class StatQueue extends ConnectionAbstract {
    @Option(names = "--json", description = "Prints the queue stat information in JSON format, useful for scripts")
    private boolean json;
 
+   @Option(names = "--ascii", description = "Use ASCII table output style (plain text separators instead of Unicode box-drawing characters)")
+   private boolean ascii = false;
+
+   public boolean isAscii() {
+      return ascii;
+   }
+
+   public StatQueue setAscii(boolean ascii) {
+      this.ascii = ascii;
+      return this;
+   }
+
    public boolean isSingleLineHeader() {
       return singleLineHeader;
    }
@@ -340,12 +352,16 @@ public class StatQueue extends ConnectionAbstract {
          getColumnSizes(array.getJsonObject(i), columnSizes);
       }
 
-      TableOut tableOut = new TableOut("|", 2, columnSizes);
+      TableOut tableOut = new TableOut("|", 2, columnSizes).setAscii(ascii);
 
       if (singleLineHeader) {
          printHeadings(columnSizes);
       } else {
+         tableOut.printTopSeparator(getActionContext().out);
          tableOut.print(getActionContext().out, fieldTitles, centralize);
+         if (!ascii) {
+            tableOut.printSeparator(getActionContext().out);
+         }
       }
 
       for (int i = 0; i < array.size(); i++) {
@@ -355,6 +371,7 @@ public class StatQueue extends ConnectionAbstract {
          printQueueStats(array.getJsonObject(i), columnSizes, centralize, tableOut);
          statCount++;
       }
+      tableOut.printBottomSeparator(getActionContext().out);
 
       if (count > maxRows) {
          getActionContext().out.println(String.format("WARNING: the displayed queues are %d/%d, set maxRows to display more queues.", maxRows, count));
