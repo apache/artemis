@@ -78,8 +78,6 @@ public class MQTTPublishManager {
 
    private final MQTTSession session;
 
-   private final Object lock = new Object();
-
    private boolean closeMqttConnectionOnPublishAuthorizationFailure;
 
    public MQTTPublishManager(MQTTSession session, boolean closeMqttConnectionOnPublishAuthorizationFailure) {
@@ -145,125 +143,101 @@ public class MQTTPublishManager {
     *
     * @param internal if true means on behalf of the broker (skips authorisation) and does not return ack.
     */
-   void sendToQueue(MqttPublishMessage message, boolean internal) throws Exception {
-      synchronized (lock) {
-         if (createProducer) {
-            session.getServerSession().addProducer(senderName, MQTTProtocolManagerFactory.MQTT_PROTOCOL_NAME, ServerProducer.ANONYMOUS);
-            createProducer = false;
-         }
-         String topic = message.variableHeader().topicName();
-         if (session.getVersion() == MQTTVersion.MQTT_5) {
-            Integer alias = MQTTUtil.getProperty(Integer.class, message.variableHeader().properties(), TOPIC_ALIAS);
-            if (alias != null) {
-               Integer topicAliasMax = session.getProtocolManager().getTopicAliasMaximum();
-               if (alias == 0) {
-                  // [MQTT-3.3.2-8]
-                  throw new DisconnectException(MQTTReasonCodes.TOPIC_ALIAS_INVALID);
-               } else if (topicAliasMax != null && alias > topicAliasMax) {
-                  // [MQTT-3.3.2-9]
-                  throw new DisconnectException(MQTTReasonCodes.TOPIC_ALIAS_INVALID);
-               }
+   synchronized void sendToQueue(MqttPublishMessage message, boolean internal) throws Exception {
+      int qos = message.fixedHeader().qosLevel().value();
+      boolean realQos2 = qos == 2 && !internal;
 
-               String existingTopicMapping = session.getState().getClientTopicAlias(alias);
-               if (existingTopicMapping == null) {
-                  if (topic == null || topic.isEmpty()) {
-                     // using a topic alias with no matching topic in the state; potentially [MQTT-3.3.2-7]
-                     throw new DisconnectException(MQTTReasonCodes.TOPIC_ALIAS_INVALID);
-                  }
-                  logger.debug("Adding new alias {} for topic {}", alias, topic);
-                  session.getState().putClientTopicAlias(alias, topic);
-               } else if (topic != null && !topic.isEmpty()) {
-                  logger.debug("Modifying existing alias {}. New value: {}; old value: {}", alias, topic, existingTopicMapping);
-                  session.getState().putClientTopicAlias(alias, topic);
-               } else {
-                  logger.debug("Applying topic {} for alias {}", existingTopicMapping, alias);
-                  topic = existingTopicMapping;
-               }
-            }
-         }
-         String coreAddress = MQTTUtil.getCoreAddressFromMqttTopic(topic, session.getWildcardConfiguration());
-         SimpleString address = SimpleString.of(coreAddress, session.getCoreMessageObjectPools().getAddressStringSimpleStringPool());
-         Message serverMessage = MQTTUtil.createServerMessageFromByteBuf(session, address, message);
-         int qos = message.fixedHeader().qosLevel().value();
-         if (qos > 0) {
-            serverMessage.setDurable(MQTTUtil.DURABLE_MESSAGES);
-         }
-
-         // only start a transction if really necessary
-         Transaction tx = (qos == 2 && !internal) || message.fixedHeader().isRetain() ? session.getServerSession().newTransaction() : null;
-
-         try {
-            AddressInfo addressInfo = session.getServer().getAddressInfo(address);
-            if (addressInfo == null && session.getServer().getAddressSettingsRepository().getMatch(coreAddress).isAutoCreateAddresses()) {
-               session.getServerSession().createAddress(address, RoutingType.MULTICAST, true);
-               serverMessage.setRoutingType(RoutingType.MULTICAST);
-            }
-            if (addressInfo != null) {
-               serverMessage.setRoutingType(addressInfo.getRoutingType());
-            }
-
-            session.getServerSession().send(tx, serverMessage, true, senderName, false);
-
-            if (qos == 2 && !internal) {
-               session.getState().getPublishCache().add(message.variableHeader().packetId(), tx);
-            }
-
-            if (message.fixedHeader().isRetain()) {
-               ByteBuf payload = message.payload();
-               boolean reset = payload instanceof EmptyByteBuf || payload.capacity() == 0;
-               session.getRetainMessageManager().handleRetainedMessage(serverMessage, topic, reset, tx);
-            }
-            if (tx != null) {
-               tx.commit();
-            }
-         } catch (ActiveMQSecurityException e) {
-            if (tx != null) {
-               tx.rollback();
-            }
-            if (internal) {
-               throw e;
-            }
-            if (session.getVersion() == MQTTVersion.MQTT_5) {
-               sendMessageAck(internal, qos, message.variableHeader().packetId(), MQTTReasonCodes.NOT_AUTHORIZED);
-               return;
-            } else if (session.getVersion() == MQTTVersion.MQTT_3_1_1) {
-               /*
-                * For MQTT 3.1.1 clients:
-                *
-                * [MQTT-3.3.5-2] If a Server implementation does not authorize a PUBLISH to be performed by a Client;
-                * it has no way of informing that Client. It MUST either make a positive acknowledgement, according
-                * to the normal QoS rules, or close the Network Connection
-                *
-                * Throwing an exception here will ultimately close the connection. This is the default behavior.
-                */
-               if (closeMqttConnectionOnPublishAuthorizationFailure) {
-                  throw new DisconnectException();
-               } else {
-                  logger.debug("MQTT 3.1.1 client not authorized to publish message.");
-               }
-            } else {
-               /*
-                * For MQTT 3.1 clients:
-                *
-                * Note that if a server implementation does not authorize a PUBLISH to be made by a client, it has no
-                * way of informing that client. It must therefore make a positive acknowledgement, according to the
-                * normal QoS rules, and the client will *not* be informed that it was not authorized to publish the
-                * message.
-                *
-                * Log the failure since we have to just swallow it.
-                */
-               logger.debug("MQTT 3.1 client not authorized to publish message.");
-            }
-         } catch (Throwable t) {
-            MQTTLogger.LOGGER.failedToPublishMqttMessage(session.getState().getClientId(), message.variableHeader().packetId(), t.getMessage(), t);
-            if (tx != null) {
-               tx.rollback();
-            }
-            throw t;
-         }
-
-         session.getProtocolHandler().runAfterStorageOperations(() -> sendMessageAck(internal, qos, message.variableHeader().packetId(), MQTTReasonCodes.SUCCESS));
+      if (realQos2 && checkDuplicate(message)) {
+         return;
       }
+
+      if (createProducer) {
+         session.getServerSession().addProducer(senderName, MQTTProtocolManagerFactory.MQTT_PROTOCOL_NAME, ServerProducer.ANONYMOUS);
+         createProducer = false;
+      }
+
+      String topic = handleTopic(message);
+      String coreAddress = MQTTUtil.getCoreAddressFromMqttTopic(topic, session.getWildcardConfiguration());
+      SimpleString address = SimpleString.of(coreAddress, session.getCoreMessageObjectPools().getAddressStringSimpleStringPool());
+      Message serverMessage = MQTTUtil.createServerMessageFromByteBuf(session, address, message);
+      if (qos > 0) {
+         serverMessage.setDurable(MQTTUtil.DURABLE_MESSAGES);
+      }
+
+      // only start a transction if really necessary
+      Transaction tx = realQos2 || message.fixedHeader().isRetain() ? session.getServerSession().newTransaction() : null;
+
+      try {
+         AddressInfo addressInfo = session.getServer().getAddressInfo(address);
+         if (addressInfo == null && session.getServer().getAddressSettingsRepository().getMatch(coreAddress).isAutoCreateAddresses()) {
+            session.getServerSession().createAddress(address, RoutingType.MULTICAST, true);
+            serverMessage.setRoutingType(RoutingType.MULTICAST);
+         }
+         if (addressInfo != null) {
+            serverMessage.setRoutingType(addressInfo.getRoutingType());
+         }
+
+         session.getServerSession().send(tx, serverMessage, true, senderName, false);
+
+         if (realQos2) {
+            session.getState().getPublishCache().add(message.variableHeader().packetId(), tx);
+         }
+
+         if (message.fixedHeader().isRetain()) {
+            ByteBuf payload = message.payload();
+            boolean reset = payload instanceof EmptyByteBuf || payload.capacity() == 0;
+            session.getRetainMessageManager().handleRetainedMessage(serverMessage, topic, reset, tx);
+         }
+         if (tx != null) {
+            tx.commit();
+         }
+      } catch (ActiveMQSecurityException e) {
+         if (tx != null) {
+            tx.rollback();
+         }
+         if (internal) {
+            throw e;
+         }
+         if (session.getVersion() == MQTTVersion.MQTT_5) {
+            sendMessageAck(internal, qos, message.variableHeader().packetId(), MQTTReasonCodes.NOT_AUTHORIZED);
+            return;
+         } else if (session.getVersion() == MQTTVersion.MQTT_3_1_1) {
+            /*
+             * For MQTT 3.1.1 clients:
+             *
+             * [MQTT-3.3.5-2] If a Server implementation does not authorize a PUBLISH to be performed by a Client;
+             * it has no way of informing that Client. It MUST either make a positive acknowledgement, according
+             * to the normal QoS rules, or close the Network Connection
+             *
+             * Throwing an exception here will ultimately close the connection. This is the default behavior.
+             */
+            if (closeMqttConnectionOnPublishAuthorizationFailure) {
+               throw new DisconnectException();
+            } else {
+               logger.debug("MQTT 3.1.1 client not authorized to publish message.");
+            }
+         } else {
+            /*
+             * For MQTT 3.1 clients:
+             *
+             * Note that if a server implementation does not authorize a PUBLISH to be made by a client, it has no
+             * way of informing that client. It must therefore make a positive acknowledgement, according to the
+             * normal QoS rules, and the client will *not* be informed that it was not authorized to publish the
+             * message.
+             *
+             * Log the failure since we have to just swallow it.
+             */
+            logger.debug("MQTT 3.1 client not authorized to publish message.");
+         }
+      } catch (Throwable t) {
+         MQTTLogger.LOGGER.failedToPublishMqttMessage(session.getState().getClientId(), message.variableHeader().packetId(), t.getMessage(), t);
+         if (tx != null) {
+            tx.rollback();
+         }
+         throw t;
+      }
+
+      session.getProtocolHandler().runAfterStorageOperations(() -> sendMessageAck(internal, qos, message.variableHeader().packetId(), MQTTReasonCodes.SUCCESS));
    }
 
    private void sendMessageAck(boolean internal, int qos, int messageId, byte reasonCode) {
@@ -274,6 +248,57 @@ public class MQTTPublishManager {
             session.getProtocolHandler().sendPubRec(messageId, reasonCode);
          }
       }
+   }
+
+   private boolean checkDuplicate(MqttPublishMessage message) {
+      if (session.getState().getPublishCache().contains(message.variableHeader().packetId())) {
+         byte reasonCode = MQTTReasonCodes.SUCCESS;
+         if (message.fixedHeader().isDup()) {
+            MQTTLogger.LOGGER.ignoringExpectedDuplicatePacketId(message.variableHeader().packetId(), session.getState().getClientId());
+         } else {
+            MQTTLogger.LOGGER.ignoringUnexpectedDuplicatePacketId(message.variableHeader().packetId(), session.getState().getClientId());
+            if (session.getVersion() == MQTTVersion.MQTT_5 && session.getProtocolManager().isRejectUnexpectedDuplicatePacketId()) {
+               reasonCode = MQTTReasonCodes.PACKET_IDENTIFIER_IN_USE;
+            }
+         }
+         session.getProtocolHandler().sendPubRec(message.variableHeader().packetId(), reasonCode);
+         return true;
+      }
+      return false;
+   }
+
+   private String handleTopic(MqttPublishMessage message) throws DisconnectException {
+      String topic = message.variableHeader().topicName();
+      if (session.getVersion() == MQTTVersion.MQTT_5) {
+         Integer alias = MQTTUtil.getProperty(Integer.class, message.variableHeader().properties(), TOPIC_ALIAS);
+         if (alias != null) {
+            Integer topicAliasMax = session.getProtocolManager().getTopicAliasMaximum();
+            if (alias == 0) {
+               // [MQTT-3.3.2-8]
+               throw new DisconnectException(MQTTReasonCodes.TOPIC_ALIAS_INVALID);
+            } else if (topicAliasMax != null && alias > topicAliasMax) {
+               // [MQTT-3.3.2-9]
+               throw new DisconnectException(MQTTReasonCodes.TOPIC_ALIAS_INVALID);
+            }
+
+            String existingTopicMapping = session.getState().getClientTopicAlias(alias);
+            if (existingTopicMapping == null) {
+               if (topic == null || topic.isEmpty()) {
+                  // using a topic alias with no matching topic in the state; potentially [MQTT-3.3.2-7]
+                  throw new DisconnectException(MQTTReasonCodes.TOPIC_ALIAS_INVALID);
+               }
+               logger.debug("Adding new alias {} for topic {}", alias, topic);
+               session.getState().putClientTopicAlias(alias, topic);
+            } else if (topic != null && !topic.isEmpty()) {
+               logger.debug("Modifying existing alias {}. New value: {}; old value: {}", alias, topic, existingTopicMapping);
+               session.getState().putClientTopicAlias(alias, topic);
+            } else {
+               logger.debug("Applying topic {} for alias {}", existingTopicMapping, alias);
+               topic = existingTopicMapping;
+            }
+         }
+      }
+      return topic;
    }
 
    synchronized void handlePubRecError(int packetId) throws Exception {

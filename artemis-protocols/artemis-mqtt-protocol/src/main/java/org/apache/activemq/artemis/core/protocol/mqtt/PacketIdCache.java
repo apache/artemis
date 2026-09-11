@@ -64,7 +64,7 @@ public class PacketIdCache {
       if (cache == null) {
          cache = postOffice.getDuplicateIDCache(cacheName, MQTTUtil.TWO_BYTE_INT_MAX);
       }
-      cache.addToCache(ByteUtil.intToBytes(packetId), tx);
+      cache.addToCache(ByteUtil.intToBytes(packetId), tx, true);
    }
 
    public boolean contains(int packetId) {

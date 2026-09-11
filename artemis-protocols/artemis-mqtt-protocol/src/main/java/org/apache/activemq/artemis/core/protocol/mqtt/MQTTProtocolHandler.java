@@ -346,20 +346,6 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
          return;
       }
 
-      if (message.fixedHeader().qosLevel().value() == 2 && session.getState().getPublishCache().contains(message.variableHeader().packetId())) {
-         byte reasonCode = MQTTReasonCodes.SUCCESS;
-         if (message.fixedHeader().isDup()) {
-            MQTTLogger.LOGGER.ignoringExpectedDuplicatePacketId(message.variableHeader().packetId(), session.getState().getClientId());
-         } else {
-            MQTTLogger.LOGGER.ignoringUnexpectedDuplicatePacketId(message.variableHeader().packetId(), session.getState().getClientId());
-            if (session.getVersion() == MQTTVersion.MQTT_5 && session.getProtocolManager().isRejectUnexpectedDuplicatePacketId()) {
-               reasonCode = MQTTReasonCodes.PACKET_IDENTIFIER_IN_USE;
-            }
-         }
-         sendPubRec(message.variableHeader().packetId(), reasonCode);
-         return;
-      }
-
       try {
          session.getMqttPublishManager().sendToQueue(message, false);
       } catch (DisconnectException e) {
@@ -455,8 +441,10 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
       if (this.protocolManager.invokeOutgoing(message, connection) != null) {
          return;
       }
-      MQTTUtil.logMessage(session.getState(), message, false, session.getVersion());
-      runAfterStorageOperations(() -> ctx.writeAndFlush(message, ctx.voidPromise()));
+      runAfterStorageOperations(() -> {
+         MQTTUtil.logMessage(session.getState(), message, false, session.getVersion());
+         ctx.writeAndFlush(message, ctx.voidPromise());
+      });
    }
 
    void runAfterStorageOperations(Runnable runnable) {
