@@ -1,0 +1,59 @@
+= Data Retention
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+If you enable `journal-retention-directory` in `broker.xml` a copy of every journal file used by the broker will be kept in this folder.
+
+[,xml]
+----
+<configuration...>
+   <core...>
+      ...
+      <journal-retention-directory unit="DAYS" period="365" storage-limit="10G">history</journal-retention-directory>
+      ...
+   </core>
+</configuration>
+----
+
+The broker will keep a copy of each generated journal file, up to the configured retention period at the unit chosen.
+In the example above, the system would keep all the journal files up to 365 days.
+
+It is also possible to limit the number of files kept in the retention directory.
+You can define `storage-limit` and older files will be removed when this limit is exceeded.
+
+Notice `storage-limit` is optional, but you need to be careful to not run out of disk space in the retention folder or the broker might be shutdown because of a critical IO failure.
+
+You can use the CLI tools to inspect and recover data from the history, by just passing the journal folder being the retention directory.
+
+Example:
+
+[,shell]
+----
+./artemis data print --journal ../data/history
+----
+
+== Paging and Large Messages
+When retention is enabled, paging and large messages are also stored on the retention folder for replaying, so replay will also work for both paged and large messages.
+
+== Non Persistent Messages
+Non persistent messages are never stored anywhere in the broker. If you intend to retain data your producers should be using Durable messages.
+
+== Recovering data from retention
+
+To recover data from the retention folder, you can use the method link:https://artemis.apache.org/components/artemis/documentation/javadocs/javadoc-latest/org/apache/activemq/artemis/api/core/management/ActiveMQServerControl.html#replay(java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String)[replay] on the management console:
+
+image::replay-method.png[align="center"]
+
+The broker will scan the set of files accordingly to the parameters you passed and it will send these methods to a target queue that you selected.
+
+=== CLI recover operation
+
+The CLI recover operation is intended as a low level operation, where data is read and recovered directly into a set of journal files.
+Notice uou should never manipulate journal files that are being used by an active broker as that could risk the integrity of your data files and running broker.
+
+[,shell]
+----
+./artemis data recovery --journal ../data/history --target ../data/recovered --large-messages ../data/large-messages
+----
+

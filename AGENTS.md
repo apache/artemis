@@ -109,7 +109,7 @@ Required steps:
 
 ## Security Model
 
-**Authoritative Reference**: See [docs/user-manual/threat-model.adoc](docs/user-manual/threat-model.adoc) for the complete threat model including trust boundaries, adversary model, security properties provided/not provided, and triage dispositions.
+**Authoritative Reference**: See [our threat model](docs/user-manual/modules/ROOT/pages/threat-model.adoc) for the complete threat model including trust boundaries, adversary model, security properties provided/not provided, and triage dispositions.
 
 ### Security Review Checklist
 When reviewing code changes:

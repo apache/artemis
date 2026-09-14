@@ -1,0 +1,1 @@
+This guide outlines how users can migrate an existing ActiveMQ broker installation to {project-name-short}.

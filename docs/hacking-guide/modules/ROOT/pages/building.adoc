@@ -1,0 +1,89 @@
+= Building
+
+We use Apache Maven to build the code, distribution, etc. and to manage dependencies.
+
+The minimum required Maven version is 3.0.0.
+
+Note that there are some https://cwiki.apache.org/confluence/display/MAVEN/Maven+3.x+Compatibility+Notes[compatibility issues with Maven 3.X] still unsolved.
+This is specially true for the https://maven.apache.org/plugins-archives/maven-site-plugin-3.3/maven-3.html['site' plugin].
+
+== Full Release
+
+To build the full release with the documentation & JavaDocs:
+[,console]
+----
+$ mvn -Prelease package
+----
+To install it to your local maven repo:
+[,console]
+----
+$ mvn -Prelease install
+----
+For any build you can skip the tests using `-DskipTests` which will make the build *much* faster, e.g.
+[,console]
+----
+$ mvn -Prelease package -DskipTests
+----
+
+== Full Release without docs
+
+It is possible to build a distribution without the manuals and Javadocs.
+simply run
+[,console]
+----
+$ mvn package
+----
+
+== Only docs
+
+From the `artemis-website` module run:
+[,console]
+----
+$ mvn -Prelease package
+----
+This will build the JavaDoc, user manual, migration guide, & hacking guide.
+JavaDoc output will be placed in the `target/apidocs` directory and the rest will be put into the `target/site` directory.
+
+== Offline
+
+Maven dependency:go-offline can be used to download various things the build needs. This necessitates some properties the build doesnt normally need set, so to make this work a helper profile called `go-offline` exists to have the os-maven-plugin set these properties based on the current environment. To run these together, do:
+[,console]
+----
+$ mvn dependency:go-offline -Pgo-offline
+$ mvn -o ...
+----
+
+Alternatively you can simply specify the needed properties directly, based on your environment preference. For example, on a Linux x86-64 environment you could run:
+[,console]
+----
+$ mvn dependency:go-offline -Dos.detected.name=linux -Dos.detected.arch=x86_64 -Dos.detected.classifier=linux-x86_64
+$ mvn -o ...
+----
+
+== Building the ASYNC IO library
+
+The `ASYNCIO` `journal-type` which interacts with the Linux kernel libaio library.
+The ASYNCIO journal type should be used where possible as it is far superior in terms of performance.
+
+The ASYNCIO native library is not included in the broker _source_ distribution.
+It needs to be built prior to running `mvn install` to ensure that the ASYNCIO journal type is available in the resulting build.
+Don't worry if you don't want to use ASYNCIO or your system does not support libaio.
+The broker will check at runtime to see if the required libraries and system dependencies are available and, if not, it will default to using NIO.
+
+To build the ASYNCIO native libraries, please follow link:https://github.com/apache/artemis-native[these instructions].
+
+== Open Web Application Security Project (OWASP) Report
+
+If you wish to generate a report for dependency CVEs you may build with the `-Powasp` profile, e.g.:
+
+[,console]
+----
+$ mvn -Powasp verify -DskipTests
+----
+The output for every module will be aggregated in `./target/dependency-check-report.html`.
+
+== Snapshot Builds
+
+Snapshot builds are available at https://repository.apache.org/content/repositories/snapshots/org/apache/artemis/apache-artemis/.
+
+These are built by https://ci-builds.apache.org/job/Artemis/job/Artemis-SNAPSHOT-Deploy/[this Apache CI job].
