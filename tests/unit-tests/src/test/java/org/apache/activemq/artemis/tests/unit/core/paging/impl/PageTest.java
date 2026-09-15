@@ -205,7 +205,7 @@ public class PageTest extends ActiveMQTestBase {
       // Add more 10 as they will need to be ignored
       addPageElements(simpleDestination, page, 10, numberOfElements + 2);
 
-      // Damage data... position the file on the middle between points A and B
+      // Damage data... position the file in the middle between points A and B
       file.position(positionA + (positionB - positionA) / 2);
 
       ByteBuffer buffer = ByteBuffer.allocate((int) (positionB - file.position()));

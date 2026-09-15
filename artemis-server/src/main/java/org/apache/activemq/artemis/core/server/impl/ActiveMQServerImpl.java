@@ -170,6 +170,8 @@ import org.apache.activemq.artemis.core.server.metrics.MetricsManager;
 import org.apache.activemq.artemis.core.server.mirror.MirrorController;
 import org.apache.activemq.artemis.core.server.mirror.MirrorRegistry;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQPluginRunnable;
+import org.apache.activemq.artemis.core.server.quota.ResourceQuotaService;
+import org.apache.activemq.artemis.core.server.quota.impl.ResourceQuotaServiceImpl;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerAddressPlugin;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerBasePlugin;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerBindingPlugin;
@@ -341,6 +343,8 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    private final List<ActiveMQComponent> protocolServices = new ArrayList<>();
 
    private volatile ManagementService managementService;
+
+   private volatile ResourceQuotaService resourceQuotaService;
 
    private volatile MirrorController mirrorControllerService;
 
@@ -1550,6 +1554,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       installMirrorController(null);
 
       pagingManager = null;
+      resourceQuotaService = null;
       securityStore = null;
       resourceManager = null;
       postOffice = null;
@@ -1820,6 +1825,11 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    @Override
    public ManagementService getManagementService() {
       return managementService;
+   }
+
+   @Override
+   public ResourceQuotaService getResourceQuotaService() {
+      return resourceQuotaService;
    }
 
    @Override
@@ -2654,6 +2664,11 @@ public class ActiveMQServerImpl implements ActiveMQServer {
             callBrokerQueuePlugins(plugin -> plugin.afterDestroyQueue(queue, address, session, checkConsumerCount, removeConsumers, forceAutoDeleteAddress));
          }
 
+         // Decrement quota after successful deletion
+         if (resourceQuotaService != null) {
+            resourceQuotaService.decrementQueueCount(address);
+         }
+
          if (forceAutoDeleteAddress) {
             AddressInfo addressInfo = getAddressInfo(address);
 
@@ -3434,6 +3449,8 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
       pagingManager = createPagingManager();
 
+      resourceQuotaService = new ResourceQuotaServiceImpl(addressSettingsRepository, configuration);
+
       resourceManager = new ResourceManagerImpl(this, (int) (configuration.getTransactionTimeout() / 1000), configuration.getTransactionTimeoutScanPeriod(), scheduledPool);
 
       /*
@@ -3449,7 +3466,11 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          metricsManager.registerExecutorService(BrokerMetricNames.SCHEDULED_EXECUTOR_SERVICE, scheduledPool);
       }
 
-      postOffice = new PostOfficeImpl(this, storageManager, pagingManager, queueFactory, managementService, configuration.getMessageExpiryScanPeriod(), configuration.getAddressQueueScanPeriod(), configuration.getWildcardConfiguration(), configuration.getIDCacheSize(), configuration.isPersistIDCache(), addressSettingsRepository);
+      postOffice = new PostOfficeImpl(this, storageManager, pagingManager, queueFactory, managementService, resourceQuotaService, configuration.getMessageExpiryScanPeriod(), configuration.getAddressQueueScanPeriod(), configuration.getWildcardConfiguration(), configuration.getIDCacheSize(), configuration.isPersistIDCache(), addressSettingsRepository);
+
+      resourceQuotaService.setPostOffice(postOffice);
+      resourceQuotaService.setPagingManager(pagingManager);
+      resourceQuotaService.setManagementService(managementService);
 
       // This can't be created until node id is set
       clusterManager = new ClusterManager(executorFactory, this, postOffice, scheduledPool, managementService, configuration, nodeManager, haPolicy.useQuorumManager());
@@ -3493,6 +3514,8 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       pagingManager.start();
 
       managementService.start();
+
+      pagingManager.setResourceQuotaManager(resourceQuotaService.getResourceQuotaManager());
 
       resourceManager.start();
 
@@ -3951,7 +3974,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
 
    private JournalLoadInformation[] loadJournals(Set<Long> storedLargeMessages) throws Exception {
-      JournalLoader journalLoader = activation.createJournalLoader(postOffice, pagingManager, storageManager, queueFactory, nodeManager, managementService, groupingHandler, configuration, parentServer);
+      JournalLoader journalLoader = activation.createJournalLoader(postOffice, pagingManager, storageManager, queueFactory, nodeManager, managementService, groupingHandler, configuration, this);
 
       JournalLoadInformation[] journalInfo = new JournalLoadInformation[2];
 
@@ -4238,9 +4261,11 @@ public class ActiveMQServerImpl implements ActiveMQServer {
             mirrorControllerService.createQueue(queueConfiguration);
          }
 
+         // Check quota early before creating queue
+         resourceQuotaService.checkQueueQuota(queueConfiguration.getAddress());
+
          queueConfiguration.setId(storageManager.generateID());
 
-         // preemptive check to ensure the filterString is good
          Filter filter = FilterImpl.createFilter(queueConfiguration.getFilterString());
 
          final Queue queue = queueFactory.createQueueWith(queueConfiguration, pagingManager, filter);
@@ -4285,6 +4310,8 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          }
 
          callPostQueueCreationCallbacks(queue.getName());
+
+         resourceQuotaService.incrementQueueCount(queueConfiguration.getAddress());
 
          return queue;
       }
@@ -4795,6 +4822,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       configuration.setPurgePageFolders(config.isPurgePageFolders());
       configuration.setConnectionRouters(config.getConnectionRouters());
       configuration.setJaasConfigs(config.getJaasConfigs());
+      configuration.setResourceQuotas(config.getResourceQuotas());
    }
 
    private static boolean hasReloadableConfig(Configuration configuration) {
@@ -4808,7 +4836,8 @@ public class ActiveMQServerImpl implements ActiveMQServer {
             !configuration.getAcceptorConfigurations().isEmpty() ||
             !configuration.getAMQPConnection().isEmpty() ||
             !configuration.getConnectionRouters().isEmpty() ||
-            !configuration.getJaasConfigs().isEmpty();
+            !configuration.getJaasConfigs().isEmpty() ||
+            !configuration.getResourceQuotas().isEmpty();
    }
 
    private void deployReloadableConfigFromConfiguration() throws Exception {
@@ -4917,6 +4946,10 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          ActiveMQServerLogger.LOGGER.reloadingConfiguration("protocol services");
          updateProtocolServices();
 
+         if (resourceQuotaService != null) {
+            ActiveMQServerLogger.LOGGER.reloadingConfiguration("resource quotas");
+            resourceQuotaService.reloadQuotas();
+         }
          ActiveMQServerLogger.LOGGER.configurationReloadCompleted();
       }
    }

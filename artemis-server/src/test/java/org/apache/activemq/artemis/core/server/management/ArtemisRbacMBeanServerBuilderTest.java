@@ -158,6 +158,17 @@ public class ArtemisRbacMBeanServerBuilderTest extends ServerTestBase {
       assertNotNull(rbacAddress);
       assertEquals(0, rbacAddress.compareTo(SimpleString.of("jmx.divert.d.opOnDivert")));
 
+      // resource quota
+      attrs.clear();
+
+      attrs.put("broker", "bb");
+      attrs.put("component", "quotas");
+      attrs.put("name", "myQuota");
+
+      rbacAddress = handler.addressFrom(new ObjectName("a.b", attrs), "getMaxAddresses");
+      assertNotNull(rbacAddress);
+      assertEquals(0, rbacAddress.compareTo(SimpleString.of("jmx.quotas.myQuota.getMaxAddresses")));
+
    }
 
    @Test
@@ -834,5 +845,66 @@ public class ArtemisRbacMBeanServerBuilderTest extends ServerTestBase {
       assertEquals(serverObjectName.toString(), cd.get("ObjectName"));
       assertEquals("deleteAddress()", cd.get("Method"));
       assertEquals(true, cd.get("CanInvoke"));
+   }
+
+   @Test
+   public void testPermissionResourceQuota() throws Exception {
+
+      MBeanServer proxy = underTest.newMBeanServer("d", mbeanServer, mBeanServerDelegate);
+
+      final ActiveMQServer server = createServer(false);
+      server.setMBeanServer(proxy);
+      server.getConfiguration().setJMXManagementEnabled(true).setSecurityEnabled(true);
+
+      // Configure a resource quota
+      org.apache.activemq.artemis.core.settings.impl.ResourceQuotaConfig globalQuota =
+         new org.apache.activemq.artemis.core.settings.impl.ResourceQuotaConfig("global");
+      globalQuota.setMaxAddresses(100);
+      globalQuota.setMaxQueues(200);
+      server.getConfiguration().addResourceQuota("global", globalQuota);
+
+      Set<Role> roles = new HashSet<>();
+      roles.add(new Role("viewers", false, false, false, false, false, false, false, false, false, false, true, false));
+      server.getConfiguration().putSecurityRoles("mops.quotas.global.getMaxAddresses", roles);
+
+      server.start();
+
+      try {
+         ObjectName quotaObjectName = ObjectNameBuilder.DEFAULT.getResourceQuotaObjectName("global");
+         final org.apache.activemq.artemis.api.core.management.ResourceQuotaControl quotaControl = JMX.newMBeanProxy(
+            proxy, quotaObjectName, org.apache.activemq.artemis.api.core.management.ResourceQuotaControl.class, false);
+
+         Subject viewSubject = new Subject();
+         viewSubject.getPrincipals().add(new UserPrincipal("v"));
+         viewSubject.getPrincipals().add(new RolePrincipal("viewers"));
+
+         Object ret = SecurityManagerShim.callAs(viewSubject, (Callable<Object>) () -> {
+            try {
+               return quotaControl.getMaxAddresses();
+            } catch (Exception e1) {
+               return e1;
+            }
+         });
+         assertNotNull(ret);
+         assertInstanceOf(Integer.class, ret);
+         assertEquals(100, (Integer) ret);
+
+         // verify failure case - no permission for getMaxQueues
+         Subject noPermSubject = new Subject();
+         noPermSubject.getPrincipals().add(new UserPrincipal("dud"));
+         noPermSubject.getPrincipals().add(new RolePrincipal("dud"));
+
+         ret = SecurityManagerShim.callAs(noPermSubject, (Callable<Object>) () -> {
+            try {
+               return quotaControl.getMaxAddresses();
+            } catch (Exception e1) {
+               return e1;
+            }
+         });
+         assertNotNull(ret);
+         assertInstanceOf(SecurityException.class, ret);
+      } finally {
+         server.stop();
+      }
    }
 }

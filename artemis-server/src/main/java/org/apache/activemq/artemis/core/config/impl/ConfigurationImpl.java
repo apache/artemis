@@ -372,6 +372,8 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
 
    private Map<String, ResourceLimitSettings> resourceLimitSettings = new HashMap<>();
 
+   private Map<String, org.apache.activemq.artemis.core.settings.impl.ResourceQuotaConfig> resourceQuotas = new HashMap<>();
+
    private Map<String, Set<Role>> securitySettings = new HashMap<>();
 
    private List<SecuritySettingPlugin> securitySettingPlugins = new ArrayList<>();
@@ -2537,6 +2539,23 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
 
    public ConfigurationImpl addResourceLimitSetting(ResourceLimitSettings resourceLimitSettings) {
       return this.addResourceLimitSettings(resourceLimitSettings);
+   }
+
+   @Override
+   public Map<String, org.apache.activemq.artemis.core.settings.impl.ResourceQuotaConfig> getResourceQuotas() {
+      return resourceQuotas;
+   }
+
+   @Override
+   public ConfigurationImpl setResourceQuotas(final Map<String, org.apache.activemq.artemis.core.settings.impl.ResourceQuotaConfig> quotaConfigs) {
+      this.resourceQuotas = quotaConfigs;
+      return this;
+   }
+
+   @Override
+   public ConfigurationImpl addResourceQuota(String name, org.apache.activemq.artemis.core.settings.impl.ResourceQuotaConfig config) {
+      this.resourceQuotas.put(name, config);
+      return this;
    }
 
    @Override

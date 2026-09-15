@@ -356,6 +356,16 @@ public class ClusteredResetMockTest extends ServerTestBase {
       }
 
       @Override
+      public void registerResourceQuota(org.apache.activemq.artemis.core.settings.impl.ResourceQuota resourceQuota) throws Exception {
+
+      }
+
+      @Override
+      public void unregisterResourceQuota(String quotaName) throws Exception {
+
+      }
+
+      @Override
       public void registerQueue(Queue queue, SimpleString address, StorageManager storageManager) throws Exception {
 
       }

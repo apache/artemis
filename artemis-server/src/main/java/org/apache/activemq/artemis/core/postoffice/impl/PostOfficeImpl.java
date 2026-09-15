@@ -93,6 +93,7 @@ import org.apache.activemq.artemis.core.server.management.ManagementService;
 import org.apache.activemq.artemis.core.server.management.Notification;
 import org.apache.activemq.artemis.core.server.management.NotificationListener;
 import org.apache.activemq.artemis.core.server.mirror.MirrorController;
+import org.apache.activemq.artemis.core.server.quota.ResourceQuotaService;
 import org.apache.activemq.artemis.core.settings.HierarchicalRepository;
 import org.apache.activemq.artemis.core.settings.HierarchicalRepositoryChangeListener;
 import org.apache.activemq.artemis.core.settings.impl.NamedHierarchicalRepositoryChangeListener;
@@ -137,6 +138,8 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
    private final ManagementService managementService;
 
+   private final ResourceQuotaService resourceQuotaService;
+
    private ExpiryReaper expiryReaperRunnable;
 
    private final long expiryReaperPeriod;
@@ -166,6 +169,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
                          final PagingManager pagingManager,
                          final QueueFactory bindableFactory,
                          final ManagementService managementService,
+                         final ResourceQuotaService resourceQuotaService,
                          final long expiryReaperPeriod,
                          final long addressQueueReaperPeriod,
                          final WildcardConfiguration wildcardConfiguration,
@@ -177,6 +181,8 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       queueFactory = bindableFactory;
 
       this.managementService = managementService;
+
+      this.resourceQuotaService = resourceQuotaService;
 
       this.pagingManager = pagingManager;
 
@@ -544,6 +550,11 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
             server.callBrokerAddressPlugins(plugin -> plugin.beforeAddAddress(addressInfo, reload));
          }
 
+         // Check quota early before creating address (skip check during reload)
+         if (!reload) {
+            resourceQuotaService.checkAddressQuota(addressInfo.getName());
+         }
+
          boolean result;
          if (reload) {
             result = addressManager.reloadAddressInfo(addressInfo);
@@ -555,10 +566,8 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
             if (!reload && mirrorControllerSource != null) {
                mirrorControllerSource.addAddress(addressInfo);
             }
-
             try {
                managementService.registerAddress(addressInfo);
-
                if (server.hasBrokerAddressPlugins()) {
                   server.callBrokerAddressPlugins(plugin -> plugin.afterAddAddress(addressInfo, reload));
                }
@@ -572,6 +581,10 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
             } catch (Exception e) {
                e.printStackTrace();
             }
+
+            // Increment quota only after all operations complete successfully
+            // This ensures quota is tracked even if operations above throw (but address was created)
+            resourceQuotaService.incrementAddressCount(addressInfo.getName());
          }
          return result;
       }
@@ -900,6 +913,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
          } else if (!bindingsForAddress.isEmpty()) {
             throw ActiveMQMessageBundle.BUNDLE.addressHasBindings(address);
          }
+
          managementService.unregisterAddress(address);
          final AddressInfo addressInfo = addressManager.removeAddressInfo(address);
 
@@ -915,6 +929,10 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
             server.callBrokerAddressPlugins(plugin -> plugin.afterRemoveAddress(address, addressInfo));
          }
 
+         // Decrement quota after successful removal
+         if (addressInfo != null) {
+            resourceQuotaService.decrementAddressCount(address);
+         }
          return addressInfo;
       }
    }

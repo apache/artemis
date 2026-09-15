@@ -25,7 +25,7 @@ import org.apache.activemq.artemis.core.server.impl.AddressInfo;
 public interface ActiveMQServerAddressPlugin extends ActiveMQServerBasePlugin {
 
    /**
-    * Before an address is added tot he broker
+    * Before an address is added to the broker
     *
     * @param addressInfo The addressInfo that will be added
     * @param reload If the address is being reloaded
@@ -35,7 +35,7 @@ public interface ActiveMQServerAddressPlugin extends ActiveMQServerBasePlugin {
    }
 
    /**
-    * After an address has been added tot he broker
+    * After an address has been added to the broker
     *
     * @param addressInfo The newly added address
     * @param reload If the address is being reloaded

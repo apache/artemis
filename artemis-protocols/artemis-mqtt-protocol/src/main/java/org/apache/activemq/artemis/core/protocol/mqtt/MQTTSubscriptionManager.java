@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentMap;
 import io.netty.handler.codec.mqtt.MqttSubscriptionOption;
 import io.netty.handler.codec.mqtt.MqttTopicSubscription;
 import org.apache.activemq.artemis.api.core.ActiveMQQueueExistsException;
+import org.apache.activemq.artemis.api.core.ActiveMQResourceQuotaExceededException;
 import org.apache.activemq.artemis.api.core.ActiveMQSecurityException;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
@@ -341,6 +342,14 @@ public class MQTTSubscriptionManager {
                    * [MQTT-3.8.4-1] When the Server receives a SUBSCRIBE Packet from a Client, the Server MUST respond
                    *  with a SUBACK Packet.
                    */
+                  qos[i] = subscriptions.get(i).qualityOfService().value();
+               }
+            } catch (ActiveMQResourceQuotaExceededException e) {
+               if (session.getVersion() == MQTTVersion.MQTT_5) {
+                  qos[i] = MQTTReasonCodes.QUOTA_EXCEEDED;
+               } else if (session.getVersion() == MQTTVersion.MQTT_3_1_1) {
+                  qos[i] = MQTTReasonCodes.UNSPECIFIED_ERROR;
+               } else {
                   qos[i] = subscriptions.get(i).qualityOfService().value();
                }
             }
