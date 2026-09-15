@@ -94,30 +94,35 @@ public class AMQPBrokerConnectConfiguration extends BrokerConnectConfiguration {
       return connectionElements;
    }
 
+   @Deprecated(forRemoval = true)
    public AMQPBrokerConnectConfiguration addPeer(AMQPPeerBrokerConnectionElement element) {
       return addElement(element);
    }
 
+   @Deprecated(forRemoval = true)
    public List<AMQPBrokerConnectionElement> getPeers() {
       return connectionElements;
    }
 
+   @Deprecated(forRemoval = true)
    public AMQPBrokerConnectConfiguration addSender(AMQPSenderBrokerConnectionElement element) {
       return addElement(element);
    }
 
+   @Deprecated(forRemoval = true)
    public List<AMQPBrokerConnectionElement> getSenders() {
       return connectionElements;
    }
 
+   @Deprecated(forRemoval = true)
    public AMQPBrokerConnectConfiguration addReceiver(AMQPReceiverBrokerConnectionElement element) {
       return addElement(element);
    }
 
+   @Deprecated(forRemoval = true)
    public List<AMQPBrokerConnectionElement> getReceivers() {
       return connectionElements;
    }
-
 
    @Override
    public void parseURI() throws Exception {

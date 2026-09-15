@@ -2236,9 +2236,27 @@
    <xsd:complexType name="amqp-connectionUriType">
       <xsd:sequence>
          <xsd:choice maxOccurs="unbounded">
-            <xsd:element name="sender" type="amqp-address-match-type"/>
-            <xsd:element name="receiver" type="amqp-address-match-type"/>
-            <xsd:element name="peer" type="amqp-address-match-type"/>
+            <xsd:element name="sender" type="amqp-address-match-type">
+               <xsd:annotation>
+                 <xsd:documentation xml:lang="en">
+                   DEPRECATED: Defines an AMQP sender broker connection type, will be removed in a future release
+                 </xsd:documentation>
+               </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="receiver" type="amqp-address-match-type">
+               <xsd:annotation>
+                 <xsd:documentation xml:lang="en">
+                   DEPRECATED: Defines an AMQP receiver broker connection type, will be removed in a future release
+                 </xsd:documentation>
+               </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="peer" type="amqp-address-match-type">
+               <xsd:annotation>
+                 <xsd:documentation xml:lang="en">
+                   DEPRECATED: Defines an AMQP peer broker connection type, will be removed in a future release
+                 </xsd:documentation>
+               </xsd:annotation>
+            </xsd:element>
             <xsd:element name="mirror" type="amqp-mirror-type"/>
             <xsd:element name="federation" type="amqp-federation-type"/>
             <xsd:element name="bridge" type="amqp-bridge-type"/>

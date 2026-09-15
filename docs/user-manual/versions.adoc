@@ -22,6 +22,8 @@ NOTE: Follow the general upgrade procedure outlined in the xref:upgrading.adoc#u
 * https://issues.apache.org/jira/browse/ARTEMIS-6242[ARTEMIS-6242] / https://issues.apache.org/jira/browse/ARTEMIS-6216[ARTEMIS-6216] - CLI table output (`queue stat`, `lock list`, `print-data`) now uses Unicode box-drawing characters by default.
   ** Use `--ascii` for plain ASCII output.
 * AMQP message size estimation has been improved to account for the full message metadata, fixing underestimates that occurred when messages carried large application properties.
+* AMQP broker connection Senders, Receivers and Peer configurations have been deprecated and will be removed in a future release.
+Users of the AMQP broker connection Senders and Receivers are encouraged to migrate to the newer AMQP Bridge configurations that provide more robust and configurable send to and receive from topologies.
 
 === Upgrading from 2.57.0
 

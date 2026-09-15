@@ -273,6 +273,8 @@ On the provided example above, two brokers are configured to mirror each other a
 
 == Senders and Receivers
 
+WARNING: AMQP Senders and Receivers are deprecated and this configuration will be removed in a future release, users are advised to migrate to the newer AMQP bridging configuration described later in this document.
+
 It is possible to connect a broker to another AMQP endpoint simply by creating a `sender` or `receiver` element.
 
 For a `sender`, the broker creates a message consumer on a queue that sends messages to another AMQP endpoint.
@@ -353,6 +355,8 @@ IMPORTANT: Do not create a sender and a receiver to the same destination.
 This creates an infinite loop of sends and receives.
 
 == Peers
+
+WARNING: AMQP Peer functionality is deprecated and will be removed in a future broker release.
 
 The broker can be configured as a peer which connects to the https://qpid.apache.org/components/dispatch-router/[Apache Qpid Dispatch Router] and instructs it that the broker will act as a store-and-forward queue for a given AMQP waypoint address configured on the router.
 In this scenario, clients connect to a router to send and receive messages using a waypointed address, and the router routes these messages to or from the queue on the broker.

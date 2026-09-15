@@ -16,10 +16,12 @@
  */
 package org.apache.activemq.artemis.core.config.amqpBrokerConnectivity;
 
+@Deprecated(forRemoval = true)
 public class AMQPReceiverBrokerConnectionElement extends AMQPBrokerConnectionElement {
 
    private static final long serialVersionUID = 5257427388207911228L;
 
+   @Deprecated(forRemoval = true)
    public AMQPReceiverBrokerConnectionElement() {
       this.setType(AMQPBrokerConnectionAddressType.RECEIVER);
    }

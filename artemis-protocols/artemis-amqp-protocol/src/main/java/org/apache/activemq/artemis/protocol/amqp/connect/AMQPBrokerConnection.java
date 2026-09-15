@@ -452,6 +452,7 @@ public class AMQPBrokerConnection implements ClientConnectionLifeCycleListener, 
       });
    }
 
+   @Deprecated
    public void validateMatching(Queue queue, AMQPBrokerConnectionElement connectionElement) {
       if (connectionElement.getType() == AMQPBrokerConnectionAddressType.SENDER ||
           connectionElement.getType() == AMQPBrokerConnectionAddressType.RECEIVER ||
@@ -466,6 +467,7 @@ public class AMQPBrokerConnection implements ClientConnectionLifeCycleListener, 
       }
    }
 
+   @Deprecated
    public void createLink(Queue queue, AMQPBrokerConnectionElement connectionElement) {
       if (connectionElement.getType() == AMQPBrokerConnectionAddressType.PEER) {
          Symbol[] dispatchCapability = new Symbol[]{AMQPMirrorControllerSource.QPID_DISPATCH_WAYPOINT_CAPABILITY};
@@ -845,6 +847,10 @@ public class AMQPBrokerConnection implements ClientConnectionLifeCycleListener, 
       this.brokerFederation = federation;
    }
 
+   /*
+    * Only used for the deprecated AMQP Receiver functionality that will be removed in a future release.
+    */
+   @Deprecated
    private void connectReceiver(ActiveMQProtonRemotingConnection protonRemotingConnection,
                                 Session session,
                                 AMQPSessionContext sessionContext,
