@@ -50,6 +50,16 @@ public final class XmlDataConstants {
    static final String ADDRESS_BINDING_ID = "id";
    static final String ADDRESS_BINDING_ROUTING_TYPE = "routing-types";
 
+   public static final String DIVERT_BINDINGS_CHILD = "divert-binding";
+   static final String DIVERT_BINDING_NAME = "name";
+   static final String DIVERT_BINDING_ROUTING_NAME = "routing-name";
+   static final String DIVERT_BINDING_ADDRESS = "address";
+   static final String DIVERT_BINDING_FORWARDING_ADDRESS = "forwarding-address";
+   static final String DIVERT_BINDING_EXCLUSIVE = "exclusive";
+   static final String DIVERT_BINDING_FILTER_STRING = "filter-string";
+   static final String DIVERT_BINDING_ROUTING_TYPE = "routing-type";
+   static final String DIVERT_BINDING_TRANSFORMER_CLASS_NAME = "transformer-class-name";
+
    public static final String MESSAGES_PARENT = "messages";
    public static final String MESSAGES_CHILD = "message";
    static final String MESSAGE_ID = "id";

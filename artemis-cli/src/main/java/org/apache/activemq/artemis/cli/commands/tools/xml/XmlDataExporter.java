@@ -61,6 +61,8 @@ import org.apache.activemq.artemis.core.persistence.impl.journal.DescribeJournal
 import org.apache.activemq.artemis.core.persistence.impl.journal.JournalRecordIds;
 import org.apache.activemq.artemis.core.persistence.impl.journal.codec.CursorAckRecordEncoding;
 import org.apache.activemq.artemis.core.persistence.impl.journal.codec.PageUpdateTXEncoding;
+import org.apache.activemq.artemis.core.config.DivertConfiguration;
+import org.apache.activemq.artemis.core.persistence.config.PersistedDivertConfiguration;
 import org.apache.activemq.artemis.core.persistence.impl.journal.codec.PersistentAddressBindingEncoding;
 import org.apache.activemq.artemis.core.persistence.impl.journal.codec.PersistentQueueBindingEncoding;
 import org.apache.activemq.artemis.core.server.JournalType;
@@ -101,6 +103,8 @@ public final class XmlDataExporter extends DBOption {
    private final Map<Long, PersistentQueueBindingEncoding> queueBindings = new HashMap<>();
 
    private final Map<Long, PersistentAddressBindingEncoding> addressBindings = new HashMap<>();
+
+   private final Map<String, PersistedDivertConfiguration> divertConfigurations = new HashMap<>();
 
    long messagesPrinted = 0L;
 
@@ -340,6 +344,9 @@ public final class XmlDataExporter extends DBOption {
          } else if (info.getUserRecordType() == JournalRecordIds.ADDRESS_BINDING_RECORD) {
             PersistentAddressBindingEncoding bindingEncoding = (PersistentAddressBindingEncoding) DescribeJournal.newObjectEncoding(info, null);
             addressBindings.put(bindingEncoding.getId(), bindingEncoding);
+         } else if (info.getUserRecordType() == JournalRecordIds.DIVERT_RECORD) {
+            PersistedDivertConfiguration divertConfiguration = (PersistedDivertConfiguration) DescribeJournal.newObjectEncoding(info, null);
+            divertConfigurations.put(divertConfiguration.getName(), divertConfiguration);
          }
       }
 
@@ -419,6 +426,23 @@ public final class XmlDataExporter extends DBOption {
          xmlWriter.writeAttribute(XmlDataConstants.QUEUE_BINDING_NAME, queueConfig.getName().toString());
          xmlWriter.writeAttribute(XmlDataConstants.QUEUE_BINDING_ID, Long.toString(queueConfig.getId()));
          xmlWriter.writeAttribute(XmlDataConstants.QUEUE_BINDING_ROUTING_TYPE, queueConfig.getRoutingType().toString());
+         bindingsPrinted++;
+      }
+      for (PersistedDivertConfiguration persistedDivert : divertConfigurations.values()) {
+         DivertConfiguration dc = persistedDivert.getDivertConfiguration();
+         xmlWriter.writeEmptyElement(XmlDataConstants.DIVERT_BINDINGS_CHILD);
+         xmlWriter.writeAttribute(XmlDataConstants.DIVERT_BINDING_NAME, dc.getName());
+         xmlWriter.writeAttribute(XmlDataConstants.DIVERT_BINDING_ROUTING_NAME, dc.getRoutingName() != null ? dc.getRoutingName() : "");
+         xmlWriter.writeAttribute(XmlDataConstants.DIVERT_BINDING_ADDRESS, dc.getAddress() != null ? dc.getAddress() : "");
+         xmlWriter.writeAttribute(XmlDataConstants.DIVERT_BINDING_FORWARDING_ADDRESS, dc.getForwardingAddress() != null ? dc.getForwardingAddress() : "");
+         xmlWriter.writeAttribute(XmlDataConstants.DIVERT_BINDING_EXCLUSIVE, Boolean.toString(dc.isExclusive()));
+         xmlWriter.writeAttribute(XmlDataConstants.DIVERT_BINDING_FILTER_STRING, dc.getFilterString() != null ? dc.getFilterString() : "");
+         if (dc.getRoutingType() != null) {
+            xmlWriter.writeAttribute(XmlDataConstants.DIVERT_BINDING_ROUTING_TYPE, dc.getRoutingType().toString());
+         }
+         if (dc.getTransformerConfiguration() != null && dc.getTransformerConfiguration().getClassName() != null) {
+            xmlWriter.writeAttribute(XmlDataConstants.DIVERT_BINDING_TRANSFORMER_CLASS_NAME, dc.getTransformerConfiguration().getClassName());
+         }
          bindingsPrinted++;
       }
       xmlWriter.writeEndElement(); // end BINDINGS_PARENT

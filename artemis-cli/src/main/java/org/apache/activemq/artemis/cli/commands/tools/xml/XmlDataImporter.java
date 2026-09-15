@@ -48,6 +48,7 @@ import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
 import org.apache.activemq.artemis.api.core.client.ServerLocator;
 import org.apache.activemq.artemis.api.core.management.ManagementHelper;
 import org.apache.activemq.artemis.api.core.management.ResourceNames;
+import org.apache.activemq.artemis.core.config.DivertConfiguration;
 import org.apache.activemq.artemis.cli.commands.ActionContext;
 import org.apache.activemq.artemis.cli.commands.messages.ConnectionConfigurationAbtract;
 import org.apache.activemq.artemis.core.filter.impl.FilterImpl;
@@ -250,6 +251,8 @@ public final class XmlDataImporter extends ConnectionConfigurationAbtract {
                bindQueue();
             } else if (XmlDataConstants.ADDRESS_BINDINGS_CHILD.equals(reader.getLocalName())) {
                bindAddress();
+            } else if (XmlDataConstants.DIVERT_BINDINGS_CHILD.equals(reader.getLocalName())) {
+               bindDivert();
             } else if (XmlDataConstants.MESSAGES_CHILD.equals(reader.getLocalName())) {
                processMessage();
             }
@@ -480,6 +483,74 @@ public final class XmlDataImporter extends ConnectionConfigurationAbtract {
       }
 
       addressMap.put(queueName, address);
+   }
+
+   private void bindDivert() throws Exception {
+      String name = "";
+      String routingName = "";
+      String address = "";
+      String forwardingAddress = "";
+      boolean exclusive = false;
+      String filterString = "";
+      String routingType = null;
+      String transformerClassName = null;
+
+      for (int i = 0; i < reader.getAttributeCount(); i++) {
+         String attributeName = reader.getAttributeLocalName(i);
+         switch (attributeName) {
+            case XmlDataConstants.DIVERT_BINDING_NAME:
+               name = reader.getAttributeValue(i);
+               break;
+            case XmlDataConstants.DIVERT_BINDING_ROUTING_NAME:
+               routingName = reader.getAttributeValue(i);
+               break;
+            case XmlDataConstants.DIVERT_BINDING_ADDRESS:
+               address = reader.getAttributeValue(i);
+               break;
+            case XmlDataConstants.DIVERT_BINDING_FORWARDING_ADDRESS:
+               forwardingAddress = reader.getAttributeValue(i);
+               break;
+            case XmlDataConstants.DIVERT_BINDING_EXCLUSIVE:
+               exclusive = Boolean.parseBoolean(reader.getAttributeValue(i));
+               break;
+            case XmlDataConstants.DIVERT_BINDING_FILTER_STRING:
+               filterString = reader.getAttributeValue(i);
+               break;
+            case XmlDataConstants.DIVERT_BINDING_ROUTING_TYPE:
+               routingType = reader.getAttributeValue(i);
+               break;
+            case XmlDataConstants.DIVERT_BINDING_TRANSFORMER_CLASS_NAME:
+               transformerClassName = reader.getAttributeValue(i);
+               break;
+         }
+      }
+
+      DivertConfiguration divertConfig = new DivertConfiguration()
+         .setName(name)
+         .setRoutingName(routingName.isEmpty() ? null : routingName)
+         .setAddress(address)
+         .setForwardingAddress(forwardingAddress)
+         .setExclusive(exclusive)
+         .setFilterString(filterString.isEmpty() ? null : filterString);
+
+      if (routingType != null) {
+         divertConfig.setRoutingType(org.apache.activemq.artemis.core.server.ComponentConfigurationRoutingType.valueOf(routingType));
+      }
+      if (transformerClassName != null) {
+         divertConfig.setTransformerConfiguration(new org.apache.activemq.artemis.core.config.TransformerConfiguration(transformerClassName));
+      }
+
+      try (ClientRequestor requestor = new ClientRequestor(managementSession, "activemq.management")) {
+         ClientMessage managementMessage = managementSession.createMessage(false);
+         ManagementHelper.putOperationInvocation(managementMessage, ResourceNames.BROKER, "createDivert", divertConfig.toJSON());
+         managementSession.start();
+         ClientMessage reply = requestor.request(managementMessage);
+         if (!ManagementHelper.hasOperationSucceeded(reply)) {
+            logger.debug("Failed to create divert {}: {}", name, ManagementHelper.getResult(reply, String.class));
+         } else {
+            logger.debug("Created divert(name={}, address={}, forwardingAddress={})", name, address, forwardingAddress);
+         }
+      }
    }
 
    private void bindAddress() throws Exception {

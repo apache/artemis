@@ -18,6 +18,7 @@ package org.apache.activemq.artemis.tests.integration.persistence;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -37,6 +38,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -57,10 +59,15 @@ import org.apache.activemq.artemis.cli.commands.ActionContext;
 import org.apache.activemq.artemis.cli.commands.tools.xml.XmlDataExporter;
 import org.apache.activemq.artemis.cli.commands.tools.xml.XmlDataImporter;
 import org.apache.activemq.artemis.core.persistence.impl.journal.BatchingIDGenerator;
+import org.apache.activemq.artemis.core.persistence.impl.journal.JournalRecordIds;
 import org.apache.activemq.artemis.core.persistence.impl.journal.JournalStorageManager;
 import org.apache.activemq.artemis.core.persistence.impl.journal.LargeServerMessageImpl;
 import org.apache.activemq.artemis.core.registry.JndiBindingRegistry;
+import org.apache.activemq.artemis.core.config.DivertConfiguration;
+import org.apache.activemq.artemis.core.postoffice.Binding;
+import org.apache.activemq.artemis.core.postoffice.impl.DivertBinding;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
+import org.apache.activemq.artemis.core.server.Divert;
 import org.apache.activemq.artemis.core.server.impl.AddressInfo;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.jms.server.JMSServerManager;
@@ -76,6 +83,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A test of the XML export/import functionality
@@ -1484,6 +1492,90 @@ public class XmlImportExportTest extends ActiveMQTestBase {
       server.getStorageManager().deleteAddressBinding(tx, addressInfo.getId());
       server.getStorageManager().deleteQueueBinding(tx, serverQueue.getID());
       server.getStorageManager().commitBindings(tx);
+   }
+
+   /**
+    * Creates a divert via management, exports the journal, wipes all data, imports the journal
+    * and verifies that the divert is re-created on the broker.
+    */
+   @Test
+   public void testDivertExportImport() throws Exception {
+      basicSetUp();
+
+      final String divertName = "myDivert";
+      final String routingName = "myRoutingName";
+      final String address = "mySourceAddress";
+      final String forwardingAddress = "myForwardAddress";
+      final boolean exclusive = true;
+      final String filterString = "myProp = 'hello'";
+
+      // Create the divert via the server control (persists a DIVERT_RECORD in the bindings journal)
+      server.getActiveMQServerControl().createDivert(
+         new DivertConfiguration()
+            .setName(divertName)
+            .setRoutingName(routingName)
+            .setAddress(address)
+            .setForwardingAddress(forwardingAddress)
+            .setExclusive(exclusive)
+            .setFilterString(filterString)
+            .toJSON());
+
+      // Verify the divert exists before export
+      Binding bindingBefore = server.getPostOffice().getBinding(SimpleString.of(divertName));
+      assertInstanceOf(DivertBinding.class, bindingBefore, "Divert binding should exist before export");
+
+      locator.close();
+      server.stop();
+
+      // Export
+      ByteArrayOutputStream xmlOutputStream = new ByteArrayOutputStream();
+      XmlDataExporter xmlDataExporter = new XmlDataExporter();
+      xmlDataExporter.process(xmlOutputStream,
+                              server.getConfiguration().getBindingsDirectory(),
+                              server.getConfiguration().getJournalDirectory(),
+                              server.getConfiguration().getPagingDirectory(),
+                              server.getConfiguration().getLargeMessagesDirectory());
+
+      logger.debug("XML export output:\n{}", xmlOutputStream);
+
+      // Wipe all data
+      clearDataRecreateServerDirs();
+      server.start();
+      locator = createInVMNonHALocator();
+      factory = createSessionFactory(locator);
+      ClientSession session = factory.createSession(false, true, true);
+      ClientSession managementSession = factory.createSession(false, true, true);
+
+      // Import
+      ByteArrayInputStream xmlInputStream = new ByteArrayInputStream(xmlOutputStream.toByteArray());
+      XmlDataImporter xmlDataImporter = new XmlDataImporter();
+      xmlDataImporter.validate(xmlInputStream);
+      xmlInputStream.reset();
+      xmlDataImporter.process(xmlInputStream, session, managementSession);
+
+      session.close();
+      managementSession.close();
+
+      // Verify divert was re-created after import
+      Binding bindingAfter = server.getPostOffice().getBinding(SimpleString.of(divertName));
+      assertInstanceOf(DivertBinding.class, bindingAfter, "Divert binding should be restored after import");
+
+      Divert divert = ((DivertBinding) bindingAfter).getDivert();
+      assertEquals(divertName, divert.getUniqueName().toString());
+      assertEquals(address, divert.getAddress().toString());
+      assertEquals(forwardingAddress, divert.getForwardAddress().toString());
+      assertEquals(routingName, divert.getRoutingName().toString());
+      assertTrue(divert.isExclusive());
+
+      for (int i = 0; i < 2; i++) {
+         // stop and start the server a couple of times. Divert is redeployed on the journal every time, so we need to make sure there are no duplicates after a full cycle
+         server.stop();
+         server.start();
+      }
+
+      HashMap<Integer, AtomicInteger> records = internalCountJournalLivingRecords(server.getConfiguration(), false);
+      AtomicInteger recordsBindging = records.get((int)JournalRecordIds.DIVERT_RECORD);
+      assertEquals(1, recordsBindging.get());
    }
 
 }

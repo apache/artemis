@@ -90,10 +90,25 @@
          </xsd:extension>
       </xsd:simpleContent>
    </xsd:complexType>
+   <xsd:complexType name="divert-bindingType">
+      <xsd:simpleContent>
+         <xsd:extension base="xsd:string">
+            <xsd:attribute type="xsd:string" name="name" use="required"/>
+            <xsd:attribute type="xsd:string" name="routing-name" use="optional"/>
+            <xsd:attribute type="xsd:string" name="address" use="required"/>
+            <xsd:attribute type="xsd:string" name="forwarding-address" use="required"/>
+            <xsd:attribute type="xsd:boolean" name="exclusive" use="optional"/>
+            <xsd:attribute type="xsd:string" name="filter-string" use="optional"/>
+            <xsd:attribute type="xsd:string" name="routing-type" use="optional"/>
+            <xsd:attribute type="xsd:string" name="transformer-class-name" use="optional"/>
+         </xsd:extension>
+      </xsd:simpleContent>
+   </xsd:complexType>
    <xsd:complexType name="bindingsType">
       <xsd:sequence>
          <xsd:element type="address-bindingType" name="address-binding" maxOccurs="unbounded" minOccurs="0"/>
          <xsd:element type="queue-bindingType" name="queue-binding" maxOccurs="unbounded" minOccurs="0"/>
+         <xsd:element type="divert-bindingType" name="divert-binding" maxOccurs="unbounded" minOccurs="0"/>
       </xsd:sequence>
    </xsd:complexType>
    <xsd:complexType name="propertyType">
