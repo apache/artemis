@@ -120,8 +120,6 @@ public class OpenWireProtocolManager extends AbstractProtocolManager<Command, Op
 
    private final ScheduledExecutorService scheduledPool;
 
-   private String securityDomain;
-
    //bean properties
    //http://activemq.apache.org/failover-transport-reference.html
    private boolean rebalanceClusterClients = false;
@@ -160,8 +158,6 @@ public class OpenWireProtocolManager extends AbstractProtocolManager<Command, Op
    }
 
    private final OpenWireFormat wireFormat;
-
-   private final Map<SimpleString, RoutingType> prefixes = new HashMap<>();
 
    private final List<OpenWireInterceptor> incomingInterceptors = new ArrayList<>();
    private final List<OpenWireInterceptor> outgoingInterceptors = new ArrayList<>();
@@ -673,37 +669,8 @@ public class OpenWireProtocolManager extends AbstractProtocolManager<Command, Op
    }
 
    @Override
-   public void setAnycastPrefix(String anycastPrefix) {
-      for (String prefix : anycastPrefix.split(",")) {
-         prefixes.put(SimpleString.of(prefix), RoutingType.ANYCAST);
-      }
-   }
-
-   @Override
-   public void setMulticastPrefix(String multicastPrefix) {
-      for (String prefix : multicastPrefix.split(",")) {
-         prefixes.put(SimpleString.of(prefix), RoutingType.MULTICAST);
-      }
-   }
-
-   @Override
-   public Map<SimpleString, RoutingType> getPrefixes() {
-      return prefixes;
-   }
-
-   @Override
-   public void setSecurityDomain(String securityDomain) {
-      this.securityDomain = securityDomain;
-   }
-
-   @Override
    public OpenWireRoutingHandler getRoutingHandler() {
       return routingHandler;
-   }
-
-   @Override
-   public String getSecurityDomain() {
-      return securityDomain;
    }
 
    public List<DestinationInfo> getTemporaryDestinations() {

@@ -18,7 +18,6 @@ package org.apache.activemq.artemis.protocol.amqp.broker;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
@@ -27,8 +26,6 @@ import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.BaseInterceptor;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
-import org.apache.activemq.artemis.api.core.RoutingType;
-import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.client.ActiveMQClient;
 import org.apache.activemq.artemis.core.remoting.impl.netty.NettyServerConnection;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
@@ -79,8 +76,6 @@ public class ProtonProtocolManager extends AbstractProtocolManager<AMQPMessage, 
    private ReferenceIDSupplier referenceIDSupplier;
 
    private final ProtonProtocolManagerFactory factory;
-
-   private final Map<SimpleString, RoutingType> prefixes = new HashMap<>();
 
    /**
     * minLargeMessageSize determines when a message should be considered as large. minLargeMessageSize = -1 basically
@@ -385,25 +380,6 @@ public class ProtonProtocolManager extends AbstractProtocolManager<AMQPMessage, 
 
    public void setSaslLoginConfigScope(String saslLoginConfigScope) {
       this.saslLoginConfigScope = saslLoginConfigScope;
-   }
-
-   @Override
-   public void setAnycastPrefix(String anycastPrefix) {
-      for (String prefix : anycastPrefix.split(",")) {
-         prefixes.put(SimpleString.of(prefix), RoutingType.ANYCAST);
-      }
-   }
-
-   @Override
-   public void setMulticastPrefix(String multicastPrefix) {
-      for (String prefix : multicastPrefix.split(",")) {
-         prefixes.put(SimpleString.of(prefix), RoutingType.MULTICAST);
-      }
-   }
-
-   @Override
-   public Map<SimpleString, RoutingType> getPrefixes() {
-      return prefixes;
    }
 
    @Override

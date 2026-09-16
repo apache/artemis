@@ -16,6 +16,7 @@
  */
 package org.apache.activemq.artemis.core.protocol.core.impl;
 
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,8 +33,6 @@ import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.BaseInterceptor;
 import org.apache.activemq.artemis.api.core.Interceptor;
 import org.apache.activemq.artemis.api.core.Pair;
-import org.apache.activemq.artemis.api.core.RoutingType;
-import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.api.core.client.ActiveMQClient;
 import org.apache.activemq.artemis.api.core.client.ClusterTopologyListener;
@@ -70,8 +69,8 @@ import org.apache.activemq.artemis.core.remoting.impl.netty.NettyConnection;
 import org.apache.activemq.artemis.core.remoting.impl.netty.NettyServerConnection;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
+import org.apache.activemq.artemis.spi.core.protocol.AbstractProtocolManager;
 import org.apache.activemq.artemis.spi.core.protocol.ConnectionEntry;
-import org.apache.activemq.artemis.spi.core.protocol.ProtocolManager;
 import org.apache.activemq.artemis.spi.core.protocol.ProtocolManagerFactory;
 import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
 import org.apache.activemq.artemis.spi.core.remoting.Acceptor;
@@ -81,9 +80,7 @@ import org.apache.activemq.artemis.utils.SecurityManagerUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.invoke.MethodHandles;
-
-public class CoreProtocolManager implements ProtocolManager<Interceptor, ActiveMQRoutingHandler> {
+public class CoreProtocolManager extends AbstractProtocolManager<Packet, Interceptor, CoreRemotingConnection, ActiveMQRoutingHandler> {
 
    public static final int CORE_INITIAL_MAX_FRAME_SIZE = 4 * 1024;
 
@@ -100,10 +97,6 @@ public class CoreProtocolManager implements ProtocolManager<Interceptor, ActiveM
    private final List<Interceptor> outgoingInterceptors;
 
    private final CoreProtocolManagerFactory protocolManagerFactory;
-
-   private final Map<SimpleString, RoutingType> prefixes = new HashMap<>();
-
-   private String securityDomain;
 
    private final ActiveMQRoutingHandler routingHandler;
 
@@ -264,35 +257,6 @@ public class CoreProtocolManager implements ProtocolManager<Interceptor, ActiveM
    @Override
    public List<String> websocketSubprotocolIdentifiers() {
       return websocketRegistryNames;
-   }
-
-   @Override
-   public void setAnycastPrefix(String anycastPrefix) {
-      for (String prefix : anycastPrefix.split(",")) {
-         prefixes.put(SimpleString.of(prefix), RoutingType.ANYCAST);
-      }
-   }
-
-   @Override
-   public void setMulticastPrefix(String multicastPrefix) {
-      for (String prefix : multicastPrefix.split(",")) {
-         prefixes.put(SimpleString.of(prefix), RoutingType.MULTICAST);
-      }
-   }
-
-   @Override
-   public Map<SimpleString, RoutingType> getPrefixes() {
-      return prefixes;
-   }
-
-   @Override
-   public void setSecurityDomain(String securityDomain) {
-      this.securityDomain = securityDomain;
-   }
-
-   @Override
-   public String getSecurityDomain() {
-      return securityDomain;
    }
 
    @Override
