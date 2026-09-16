@@ -423,6 +423,12 @@
             <!-- License: Apache 2.0 -->
          </dependency>
          <dependency>
+            <groupId>org.jctools</groupId>
+            <artifactId>jctools-core-jdk11</artifactId>
+            <version>${jctools.version}</version>
+            <!-- License: Apache 2.0 -->
+         </dependency>
+         <dependency>
             <groupId>org.hdrhistogram</groupId>
             <artifactId>HdrHistogram</artifactId>
             <version>${hdrhistogram.version}</version>
