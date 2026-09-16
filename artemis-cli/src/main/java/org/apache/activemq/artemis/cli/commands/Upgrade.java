@@ -246,7 +246,16 @@ public class Upgrade extends InstallAbstract {
       //we remove the unwanted wars after updating them above just in case we are upgrading from an older version where the format was different
       removeWars(context, bootstrapXml);
 
+      // copy the systemd service file if it doesn't exist yet
+      final File systemdService = new File(etcFolder, Create.ARTEMIS_SERVICE_SYSTEMD);
+      if (!systemdService.exists()) {
+         context.out.println("Creating " + systemdService);
+         writeSystemdService(systemdService, false);
+         printSystemdServiceInstructions(context, systemdService);
+      }
+
       upgradeLogging(context, etcFolder, etcBkp);
+      upgradeLog4j2(context, etcFolder, etcBkp);
 
       context.out.println();
       context.out.println("*******************************************************************************************************************************");
@@ -440,6 +449,31 @@ public class Upgrade extends InstallAbstract {
               OutputStream outputStream = new FileOutputStream(newUtilityLogging)) {
             copy(inputStream, outputStream);
          }
+      }
+   }
+
+   // replace a log4j2.properties that does not support the settings used by the systemd service, backing up the original
+   private void upgradeLog4j2(ActionContext context, File etcFolder, File etcBkp) throws Exception {
+      final File log4j2 = new File(etcFolder, Create.ETC_LOG4J2_PROPERTIES);
+      if (!log4j2.exists()) {
+         return;
+      }
+
+      try (Stream<String> lines = Files.lines(log4j2.toPath())) {
+         if (lines.anyMatch(line -> line.contains("ARTEMIS_CONSOLE_PATTERN") || line.contains("ARTEMIS_FILE_LEVEL"))) {
+            return; // already upgraded
+         }
+      }
+
+      final File log4j2Bkp = new File(etcBkp, Create.ETC_LOG4J2_PROPERTIES);
+      context.out.println("Copying " + log4j2 + " to " + log4j2Bkp);
+      Files.copy(log4j2.toPath(), log4j2Bkp.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+      context.out.println("Overwriting " + log4j2 + " with the default configuration, as it does not support ARTEMIS_CONSOLE_PATTERN and ARTEMIS_FILE_LEVEL used by the systemd service.");
+      context.out.println("Any customizations must be reapplied manually from " + log4j2Bkp);
+      try (InputStream inputStream = openStream("etc/" + Create.ETC_LOG4J2_PROPERTIES);
+           OutputStream outputStream = new FileOutputStream(log4j2)) {
+         copy(inputStream, outputStream);
       }
    }
 

@@ -1,0 +1,96 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+[Unit]
+Description=Apache Artemis Service
+#Start the broker only after the network is up, so acceptors can bind to their addresses
+After=network-online.target
+Wants=network-online.target
+#Mark the service as failed if the broker exits 5 times within 5 minutes, instead of restarting it forever
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+#The service is considered started as soon as the broker executable has been run
+Type=exec
+
+#Path of the broker instance
+Environment=${environment}
+
+#Console log pattern. Each message is prefixed with its syslog priority, so journald records its level
+#Note that % must be escaped as %% in systemd unit files
+Environment="ARTEMIS_CONSOLE_PATTERN=<%%level{FATAL=2, ERROR=3, WARN=4, INFO=6, DEBUG=7, TRACE=7}>%%-5level [%%logger] %%msg%%n"
+
+#Disable logging to log/artemis.log, the broker logs to journald only
+Environment="ARTEMIS_FILE_LEVEL=OFF"
+
+#Command that starts the broker
+ExecStart=${exec-start}
+
+#How long to wait for the broker to shut down before it is killed with SIGKILL
+TimeoutStopSec=120s
+
+#Exit code 143 (128 + SIGTERM) is returned by the JVM when stopped with systemctl stop, treat it as a clean shutdown
+SuccessExitStatus=143
+
+#Send SIGTERM only to the main broker process, so it can shut down cleanly.
+#Processes still running after TimeoutStopSec are killed with SIGKILL.
+KillMode=mixed
+
+#Maximum amount of memory the broker may lock in RAM (ulimit -l)
+LimitMEMLOCK=infinity
+
+#Maximum number of open file descriptors (ulimit -n), each client connection and journal file uses one
+LimitNOFILE=524288
+
+#Maximum number of processes for the service user (ulimit -u), threads count towards this limit
+LimitNPROC=infinity
+
+#No limit on the number of tasks (processes and threads) of the service.
+#The systemd default is 15% of the system limit, which a busy broker may exceed on some systems
+TasksMax=infinity
+
+#No limit on the size of the virtual address space (ulimit -v)
+LimitAS=infinity
+
+#No limit on the size of files the broker writes (ulimit -f), such as journal and paging files
+LimitFSIZE=infinity
+
+#Restart the broker whenever it exits, unless it was stopped with systemctl stop
+Restart=always
+
+#Seconds to wait before restarting the broker
+RestartSec=10
+
+#User and group with which to run the service, to avoid running as root.
+#The user needs read and write access to the broker instance directory.
+#User=artemis
+#Group=artemis
+
+#CPU Niceness parameter. Lower values mean higher CPU priority.
+#Acceptable range is from +19 to -20. Default is 0.
+#Nice=-10
+
+#IO niceness parameters. Lower priority values mean higher IO priority.
+#IOSchedulingClass is one of realtime, best-effort or idle. Default is best-effort.
+#IOSchedulingPriority acceptable range is from 0 to 7. Default is 4.
+#IOSchedulingClass=best-effort
+#IOSchedulingPriority=2
+
+[Install]
+#Start the broker at boot once the service is enabled with systemctl enable
+WantedBy=multi-user.target
