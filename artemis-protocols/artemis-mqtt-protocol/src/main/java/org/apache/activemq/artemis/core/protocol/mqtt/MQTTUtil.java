@@ -157,11 +157,15 @@ public class MQTTUtil {
 
       if (isSharedSubscription(topicFilter)) {
          Pair<String, String> decomposed = decomposeSharedSubscriptionTopicFilter(topicFilter);
-         return new StringBuilder().append(decomposed.getA()).append(".").append(getCoreAddressFromMqttTopic(decomposed.getB(), wildcardConfiguration)).toString();
+         return new StringBuilder().append(escapeDots(decomposed.getA())).append(".").append(getCoreAddressFromMqttTopic(decomposed.getB(), wildcardConfiguration)).toString();
       } else {
          Objects.requireNonNull(clientId, "MQTT client ID must not be null");
-         return new StringBuilder().append(clientId).append(".").append(getCoreAddressFromMqttTopic(topicFilter, wildcardConfiguration)).toString();
+         return new StringBuilder().append(escapeDots(clientId)).append(".").append(getCoreAddressFromMqttTopic(topicFilter, wildcardConfiguration)).toString();
       }
+   }
+
+   private static String escapeDots(String input) {
+      return input.replace("\\", "\\\\").replace(".", "\\.");
    }
 
    /**

@@ -69,6 +69,16 @@ public class MQTTUtilTest {
       assertEquals(clientId + ".$", MQTTUtil.getCoreQueueFromMqttTopic("+", clientId, customWildCardConfig));
       assertEquals(clientId + ".|", MQTTUtil.getCoreQueueFromMqttTopic("/", clientId, customWildCardConfig));
       assertEquals(clientId + ".!", MQTTUtil.getCoreQueueFromMqttTopic("#", clientId, customWildCardConfig));
+
+      // ensure dots in the client ID are escaped
+      assertEquals("x\\.y.a.b.c", MQTTUtil.getCoreQueueFromMqttTopic("a/b/c", "x.y", defaultWildCardConfig));
+      assertEquals("x\\.y\\.z.a.b.c", MQTTUtil.getCoreQueueFromMqttTopic("a/b/c", "x.y.z", defaultWildCardConfig));
+      assertEquals("x\\.y.a|b|c", MQTTUtil.getCoreQueueFromMqttTopic("a/b/c", "x.y", customWildCardConfig));
+      assertEquals("x\\.y\\.z.a|b|c", MQTTUtil.getCoreQueueFromMqttTopic("a/b/c", "x.y.z", customWildCardConfig));
+
+      // ensure wildcard characters in the topic are escaped
+      assertEquals(clientId + ".\\.\\*", MQTTUtil.getCoreQueueFromMqttTopic(".*", clientId, defaultWildCardConfig));
+      assertEquals(clientId + ".\\|\\$\\!", MQTTUtil.getCoreQueueFromMqttTopic("|$!", clientId, customWildCardConfig));
    }
 
    @Test
@@ -81,6 +91,15 @@ public class MQTTUtilTest {
       WildcardConfiguration customWildCardConfig = new WildcardConfiguration().setDelimiter('|').setSingleWord('$').setAnyWords('!');
       assertEquals("shareName.a|b|c", MQTTUtil.getCoreQueueFromMqttTopic("$share/shareName/a/b/c", clientId, customWildCardConfig));
 
+      // ensure dots in the share name are escaped
+      assertEquals("x\\.y.a.b.c", MQTTUtil.getCoreQueueFromMqttTopic("$share/x.y/a/b/c", clientId, defaultWildCardConfig));
+      assertEquals("x\\.y\\.z.a.b.c", MQTTUtil.getCoreQueueFromMqttTopic("$share/x.y.z/a/b/c", clientId, defaultWildCardConfig));
+      assertEquals("x\\.y.a|b|c", MQTTUtil.getCoreQueueFromMqttTopic("$share/x.y/a/b/c", clientId, customWildCardConfig));
+      assertEquals("x\\.y\\.z.a|b|c", MQTTUtil.getCoreQueueFromMqttTopic("$share/x.y.z/a/b/c", clientId, customWildCardConfig));
+
+      // ensure wildcard characters in the topic are escaped
+      assertEquals("shareName.\\.\\*", MQTTUtil.getCoreQueueFromMqttTopic("$share/shareName/.*", clientId, defaultWildCardConfig));
+      assertEquals("shareName.\\|\\$\\!", MQTTUtil.getCoreQueueFromMqttTopic("$share/shareName/|$!", clientId, customWildCardConfig));
    }
 
    @Test
