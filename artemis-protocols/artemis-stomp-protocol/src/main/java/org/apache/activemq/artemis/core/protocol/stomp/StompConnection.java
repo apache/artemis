@@ -486,9 +486,10 @@ public final class StompConnection extends AbstractRemotingConnection {
                                       String durableSubscriptionName,
                                       boolean noLocal,
                                       RoutingType subscriptionType,
-                                      Integer consumerWindowSize) throws ActiveMQStompException {
+                                      Integer consumerWindowSize,
+                                      boolean temporary) throws ActiveMQStompException {
       validateSelector(selector);
-      checkAutoCreate(destination, subscriptionType);
+      checkAutoCreate(destination, subscriptionType, temporary);
       String subscriptionID = getSubscriptionID(destination, id);
 
       try {
@@ -507,11 +508,15 @@ public final class StompConnection extends AbstractRemotingConnection {
       }
    }
 
-   protected void checkAutoCreate(String destination, RoutingType subscriptionType) throws ActiveMQStompException {
+   protected void checkAutoCreate(String destination, RoutingType subscriptionType, boolean temporary) throws ActiveMQStompException {
       AutoCreateResult autoCreateResult;
       try {
          RoutingType routingType = getSubscriptionRoutingType(destination, subscriptionType);
-         autoCreateResult = getSession().getCoreSession().checkAutoCreate(QueueConfiguration.of(destination).setRoutingType(routingType));
+         QueueConfiguration queueConfiguration = QueueConfiguration.of(destination).setRoutingType(routingType);
+         if (temporary) {
+            queueConfiguration.setTemporary(true).setDurable(false);
+         }
+         autoCreateResult = getSession().getCoreSession().checkAutoCreate(queueConfiguration);
       } catch (Exception e) {
          logger.debug("Exception while auto-creating destination", e);
          throw new ActiveMQStompException(e.getMessage(), e).setHandler(frameHandler);
