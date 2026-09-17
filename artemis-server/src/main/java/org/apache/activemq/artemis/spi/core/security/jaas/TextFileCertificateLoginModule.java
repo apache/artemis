@@ -42,7 +42,6 @@ public class TextFileCertificateLoginModule extends CertificateLoginModule {
    private Map<String, Set<String>> rolesByUser;
    private Map<String, Pattern> regexpByUser;
    private Map<String, String> usersByDn;
-   boolean normalise = false; // leaving this off by default as it validates the input, which may blow up with preexisting config
 
    /**
     * Performs initialization of file paths. A standard JAAS override.
@@ -53,7 +52,6 @@ public class TextFileCertificateLoginModule extends CertificateLoginModule {
                           Map<String, ?> sharedState,
                           Map<String, ?> options) {
       super.initialize(subject, callbackHandler, sharedState, options);
-      normalise = booleanOption("normalise", options);
       if (normalise) {
          usersByDn = load(USER_FILE_PROP_NAME, "", options, (String v) -> new X500Principal(v).getName()).invertedPropertiesMap();
       } else {

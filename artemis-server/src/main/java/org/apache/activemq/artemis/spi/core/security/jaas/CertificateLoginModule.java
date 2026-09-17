@@ -40,6 +40,7 @@ import java.lang.invoke.MethodHandles;
 public abstract class CertificateLoginModule extends PropertiesLoader implements AuditLoginModule {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+   boolean normalise = false; // leaving this off by default as it validates the input, which may blow up with preexisting config
 
    private CallbackHandler callbackHandler;
    private Subject subject;
@@ -58,6 +59,7 @@ public abstract class CertificateLoginModule extends PropertiesLoader implements
                           Map<String, ?> options) {
       this.subject = subject;
       this.callbackHandler = callbackHandler;
+      normalise = booleanOption("normalise", options);
 
       init(options);
    }
@@ -168,7 +170,11 @@ public abstract class CertificateLoginModule extends PropertiesLoader implements
 
    protected String getDistinguishedName(final X509Certificate[] certs) {
       if (certs != null && certs.length > 0 && certs[0] != null) {
-         return certs[0].getSubjectDN().getName();
+         if (normalise) {
+            return certs[0].getSubjectX500Principal().getName();
+         } else {
+            return certs[0].getSubjectDN().getName();
+         }
       } else {
          return null;
       }
