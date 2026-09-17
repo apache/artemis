@@ -1,0 +1,17 @@
+[Unit]
+Description=Apache Artemis Service
+After=network.target
+
+[Service]
+Type=exec
+Environment=${environment}
+ExecStart=${exec-start}
+ExecStop=/bin/kill $MAINPID
+TimeoutStopSec=30s
+SuccessExitStatus=143
+Restart=always
+RestartSec=10
+
+[Install]
+Alias=artemis.service
+WantedBy=multi-user.target
