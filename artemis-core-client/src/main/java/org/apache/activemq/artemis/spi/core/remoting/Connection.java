@@ -134,6 +134,14 @@ public interface Connection {
       close();
    }
 
+   // Marks this connection as being used for clustering or topology discovery
+   default void setConnected() {
+   }
+
+   default boolean isConnected() {
+      return false;
+   }
+
    /**
     * {@return the string representation of the remote address this connection is connected to}
     */

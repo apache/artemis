@@ -53,7 +53,7 @@ public class InVMConnection implements Connection {
 
    private final String id;
 
-   private boolean closed;
+   private volatile boolean closed;
 
    // Used on tests
    private static boolean flushEnabled = true;
@@ -62,11 +62,12 @@ public class InVMConnection implements Connection {
 
    private final ArtemisExecutor executor;
 
-   private volatile boolean closing;
-
    private final ActiveMQPrincipal defaultActiveMQPrincipal;
 
    private RemotingConnection protocolConnection;
+
+   // set when this connection is used for clustering or topology discovery
+   private volatile boolean connected;
 
    private boolean bufferPoolingEnabled = TransportConstants.DEFAULT_BUFFER_POOLING;
 
@@ -141,23 +142,30 @@ public class InVMConnection implements Connection {
    }
 
    @Override
+   public void setConnected() {
+      this.connected = true;
+   }
+
+   @Override
+   public boolean isConnected() {
+      return connected;
+   }
+
+   @Override
    public void close() {
       internalClose(false);
    }
 
    private void internalClose(boolean failed) {
-      if (closing) {
-         return;
-      }
-
-      closing = true;
-
+      // guarantee connectionDestroyed  is fired exactly once
       synchronized (this) {
-         if (!closed) {
-            listener.connectionDestroyed(id, failed);
-
-            closed = true;
+         if (closed) {
+            return;
          }
+
+         listener.connectionDestroyed(id, failed);
+
+         closed = true;
       }
    }
 
