@@ -29,6 +29,7 @@ import java.util.List;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerBuilder;
 import javax.management.MBeanServerDelegate;
+import javax.management.ObjectName;
 
 public class ArtemisMBeanServerBuilder extends MBeanServerBuilder {
 
@@ -69,25 +70,31 @@ public class ArtemisMBeanServerBuilder extends MBeanServerBuilder {
             }
             AuditLogger.setRemoteAddress(url);
          }
-         if (guarded.contains(method.getName())) {
+         String methodName = method.getName();
+         Class<?>[] paramTypes = method.getParameterTypes();
+         if (guarded.contains(methodName)) {
             if (ArtemisMBeanServerBuilder.guard == null) {
                throw new IllegalStateException("ArtemisMBeanServerBuilder not initialized");
             }
-            guard.invoke(proxy, method, args);
-         }
-         if (method.getName().equals("equals")
-               && method.getParameterTypes().length == 1
-               && method.getParameterTypes()[0] == Object.class) {
-            Object target = args[0];
-            if (target != null && Proxy.isProxyClass(target.getClass())) {
-               InvocationHandler handler = Proxy.getInvocationHandler(target);
-               if (handler instanceof MBeanInvocationHandler invocationHandler) {
-                  args[0] = invocationHandler.wrapped;
-               }
+            if (paramTypes.length != 0 && ObjectName.class.isAssignableFrom(paramTypes[0])) {
+               guard.invoke(proxy, method, args);
             }
-         } else if (method.getName().equals("finalize") && method.getParameterTypes().length == 0) {
-            // special case finalize, don't route through to delegate because that will get its own call
-            return null;
+         } else { //equals and finalize cases which are not in guarded list
+            int parameterCount = paramTypes.length;
+            if (parameterCount == 1
+                  && methodName.equals("equals")
+                  && paramTypes[0] == Object.class) {
+               Object target = args[0];
+               if (target != null && Proxy.isProxyClass(target.getClass())) {
+                  InvocationHandler handler = Proxy.getInvocationHandler(target);
+                  if (handler instanceof MBeanInvocationHandler invocationHandler) {
+                     args[0] = invocationHandler.wrapped;
+                  }
+               }
+            } else if (parameterCount == 0 && methodName.equals("finalize")) {
+               // special case finalize, don't route through to delegate because that will get its own call
+               return null;
+            }
          }
          try {
             return method.invoke(wrapped, args);
