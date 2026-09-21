@@ -144,7 +144,7 @@ public class PageTimedWriter extends ActiveMQScheduledComponent {
 
          final boolean replicated = storageManager.isReplicated();
          PageEvent event = new PageEvent(context, message, tx, listCtx, credits, replicated, useFlowControl);
-         context.storeLineUp();
+         context.pageSyncLineUp();
          if (replicated) {
             context.replicationLineUp();
          }
@@ -230,7 +230,7 @@ public class PageTimedWriter extends ActiveMQScheduledComponent {
             }
             logger.trace("Completing events");
             for (PageEvent event : pendingEvents) {
-               event.context.done();
+               event.context.pageSyncDone();
             }
          }
       } catch (Throwable e) {
