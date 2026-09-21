@@ -128,7 +128,7 @@
       <zookeeper.version>3.9.6</zookeeper.version>
       <woodstox.version>4.4.1</woodstox.version>
       <pem-keystore.version>3.0.0</pem-keystore.version>
-      <nimbus.jwt.version>10.9.1</nimbus.jwt.version>
+      <nimbus.jwt.version>10.10</nimbus.jwt.version>
 
       <!-- docs -->
       <asciidoctor.maven.plugin.version>3.2.0</asciidoctor.maven.plugin.version>
