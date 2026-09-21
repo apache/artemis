@@ -248,9 +248,10 @@ public final class QuorumManager implements ClusterTopologyListener, ActiveMQCom
          }
          //send a vote to each node
          ActiveMQServerLogger.LOGGER.initiatingQuorumVote(quorumVote.getName());
+         final SimpleString ourNodeID = clusterController.getNodeID();
          for (TopologyMemberImpl tm : clusterController.getDefaultClusterTopology().getMembers()) {
             //but not ourselves
-            if (!tm.getNodeId().equals(clusterController.getNodeID().toString())) {
+            if (ourNodeID == null || !tm.getNodeId().equals(ourNodeID.toString())) {
                Pair<TransportConfiguration, TransportConfiguration> pair = tm.getConnector();
 
                final TransportConfiguration serverTC = pair.getA();
