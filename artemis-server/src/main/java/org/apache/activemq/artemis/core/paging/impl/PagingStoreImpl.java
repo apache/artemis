@@ -1673,23 +1673,20 @@ public class PagingStoreImpl implements PagingStore {
       this.addSize(-MessageReferenceImpl.getMemoryEstimate(), true);
    }
 
+   private FinishPageMessageOperation createFinishPageOperation(Transaction tx) {
+      PageTransactionInfo pgTX = new PageTransactionInfoImpl(tx.getID());
+      pagingManager.addTransaction(pgTX);
+      return new FinishPageMessageOperation(pgTX, storageManager, pagingManager);
+   }
+
    private void installPageTransaction(final Transaction tx, final RouteContextList listCtx) throws Exception {
-      FinishPageMessageOperation pgOper = (FinishPageMessageOperation) tx.getProperty(TransactionPropertyIndexes.PAGE_TRANSACTION);
-      if (pgOper == null) {
-         PageTransactionInfo pgTX = new PageTransactionInfoImpl(tx.getID());
-         pagingManager.addTransaction(pgTX);
-         pgOper = new FinishPageMessageOperation(pgTX, storageManager, pagingManager);
-         tx.putProperty(TransactionPropertyIndexes.PAGE_TRANSACTION, pgOper);
-         tx.addOperation(pgOper);
-      }
+      FinishPageMessageOperation pgOper = tx.getOrCreateOperation(TransactionPropertyIndexes.PAGE_TRANSACTION, () -> createFinishPageOperation(tx));
 
       if (!tx.isAsync()) {
          pgOper.addStore(this);
       }
 
       pgOper.pageTransaction.increment(listCtx.getNumberOfDurableQueues(), listCtx.getNumberOfNonDurableQueues());
-
-      return;
    }
 
    @Override

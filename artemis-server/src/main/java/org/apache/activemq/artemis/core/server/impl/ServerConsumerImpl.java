@@ -1748,11 +1748,7 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
       }
 
       public void addOperation(Transaction tx) {
-         Object property = tx.getProperty(TransactionPropertyIndexes.CONSUMER_METRICS_OPERATION);
-         if (property == null) {
-            tx.putProperty(TransactionPropertyIndexes.CONSUMER_METRICS_OPERATION, this);
-            tx.addOperation(this);
-         }
+         tx.getOrCreateOperation(TransactionPropertyIndexes.CONSUMER_METRICS_OPERATION, () -> this);
       }
    }
 }

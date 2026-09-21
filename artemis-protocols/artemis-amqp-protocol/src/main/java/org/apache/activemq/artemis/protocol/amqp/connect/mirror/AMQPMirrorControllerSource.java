@@ -410,10 +410,7 @@ public class AMQPMirrorControllerSource extends BasicMirrorController<Sender> im
             if (tx == null) {
                snfQueue.deliverAsync();
             } else {
-               if (tx.getProperty(TransactionPropertyIndexes.MIRROR_DELIVERY_ASYNC) == null) {
-                  tx.putProperty(TransactionPropertyIndexes.MIRROR_DELIVERY_ASYNC, deliveryAsyncTX);
-                  tx.addOperation(deliveryAsyncTX);
-               }
+               tx.getOrCreateOperation(TransactionPropertyIndexes.MIRROR_DELIVERY_ASYNC, () -> deliveryAsyncTX);
             }
             return;
          }
@@ -654,30 +651,15 @@ public class AMQPMirrorControllerSource extends BasicMirrorController<Sender> im
    }
 
    private MirrorACKOperation getAckOperation(Transaction tx) {
-      MirrorACKOperation ackOperation = (MirrorACKOperation) tx.getProperty(TransactionPropertyIndexes.MIRROR_ACK_OPERATION);
-      if (ackOperation == null) {
-         logger.trace("getAckOperation::setting operation on transaction {}", tx);
-         ackOperation = new MirrorACKOperation(server);
-         tx.putProperty(TransactionPropertyIndexes.MIRROR_ACK_OPERATION, ackOperation);
-         tx.afterWired(ackOperation);
-      }
-
-      return ackOperation;
+      return tx.getOrCreateAfterWireRunnable(TransactionPropertyIndexes.MIRROR_ACK_OPERATION, () -> new MirrorACKOperation(server));
    }
 
    private MirrorSendOperation getSendOperation(Transaction tx) {
       if (tx == null) {
          return null;
       }
-      MirrorSendOperation sendOperation = (MirrorSendOperation) tx.getProperty(TransactionPropertyIndexes.MIRROR_SEND_OPERATION);
-      if (sendOperation == null) {
-         logger.trace("getSendOperation::setting operation on transaction {}", tx);
-         sendOperation = new MirrorSendOperation();
-         tx.putProperty(TransactionPropertyIndexes.MIRROR_SEND_OPERATION, sendOperation);
-         tx.afterStore(sendOperation);
-      }
 
-      return sendOperation;
+      return tx.getOrCreateAfterStore(TransactionPropertyIndexes.MIRROR_SEND_OPERATION, MirrorSendOperation::new);
    }
 
    private static class MirrorACKOperation implements Runnable {

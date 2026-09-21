@@ -858,14 +858,7 @@ public final class PageSubscriptionImpl implements PageSubscription {
 
          info.remove(position.getMessageNr());
 
-         PageCursorTX cursorTX = (PageCursorTX) tx.getProperty(TransactionPropertyIndexes.PAGE_CURSOR_POSITIONS);
-
-         if (cursorTX == null) {
-            cursorTX = new PageCursorTX(fromDelivery);
-            tx.putProperty(TransactionPropertyIndexes.PAGE_CURSOR_POSITIONS, cursorTX);
-            tx.addOperation(cursorTX);
-         }
-
+         PageCursorTX cursorTX = tx.getOrCreateOperation(TransactionPropertyIndexes.PAGE_CURSOR_POSITIONS, () -> new PageCursorTX(fromDelivery));
          cursorTX.addPositionConfirmation(this, position);
       }
 

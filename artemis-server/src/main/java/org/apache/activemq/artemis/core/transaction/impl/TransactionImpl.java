@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import io.netty.util.collection.IntObjectHashMap;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
@@ -734,6 +736,44 @@ public class TransactionImpl implements Transaction {
    @Override
    public Object getProperty(final int index) {
       return properties == null ? null : properties.get(index);
+   }
+
+   /**
+    * Implements the pattern of looking up an existing property and, if not found, creating it via the supplier,
+    * storing it in the transaction properties, and passing it to the given operation consumer.
+    *
+    * @param propertyIndex the index of the property
+    * @param supplier the supplier to create the property value if not present
+    * @param choiceOfOperation the action to perform on the newly created value (e.g. {@link #addOperation(TransactionOperation)} or {@link #afterWired(Runnable)})
+    * @param <T> the type of the property value
+    * @return the existing or newly created property value
+    */
+   @SuppressWarnings("unchecked")
+   private <T> T internalGet(int propertyIndex, Supplier<T> supplier, Consumer<T> choiceOfOperation) {
+      assert choiceOfOperation != null;
+      T value = (T) getProperty(propertyIndex);
+      if (value == null) {
+         value = supplier.get();
+         putProperty(propertyIndex, value);
+         choiceOfOperation.accept(value);
+      }
+      return value;
+   }
+
+   @Override
+   public <T extends TransactionOperation> T getOrCreateAfterStore(int propertyIndex, Supplier<T> supplier) {
+      return internalGet(propertyIndex, supplier, this::afterStore);
+   }
+
+
+   @Override
+   public <T extends TransactionOperation> T getOrCreateOperation(int propertyIndex, Supplier<T> supplier) {
+      return internalGet(propertyIndex, supplier, this::addOperation);
+   }
+
+   @Override
+   public <T extends Runnable> T getOrCreateAfterWireRunnable(int propertyIndex, Supplier<T> supplier) {
+      return internalGet(propertyIndex, supplier, this::afterWired);
    }
 
    // Private

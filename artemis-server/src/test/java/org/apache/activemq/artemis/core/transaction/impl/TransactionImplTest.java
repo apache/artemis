@@ -17,11 +17,13 @@
 package org.apache.activemq.artemis.core.transaction.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import javax.transaction.xa.Xid;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -76,6 +78,7 @@ import org.apache.activemq.artemis.core.server.impl.JournalLoader;
 import org.apache.activemq.artemis.core.transaction.ResourceManager;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.core.transaction.TransactionOperation;
+import org.apache.activemq.artemis.core.transaction.TransactionOperationAbstract;
 import org.apache.activemq.artemis.tests.util.ServerTestBase;
 import org.apache.activemq.artemis.utils.ArtemisCloseable;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
@@ -84,6 +87,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class TransactionImplTest extends ServerTestBase {
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
@@ -968,6 +972,67 @@ public class TransactionImplTest extends ServerTestBase {
       @Override
       public void deleteMapRecordTx(long txid, long id) throws Exception {
       }
+   }
+
+   @Test
+   public void testGetOrCreateOperation() throws Exception {
+      TransactionImpl tx = new TransactionImpl(newXID(), new FakeSM(), 10);
+      AtomicInteger supplierCalls = new AtomicInteger(0);
+
+      AtomicInteger result = new AtomicInteger(0);
+
+
+      class MyOperation extends TransactionOperationAbstract {
+         ArrayList<Integer> adds = new ArrayList<>();
+         @Override
+         public void afterCommit(Transaction tx) {
+            for (Integer i : adds) {
+               result.addAndGet(i);
+            }
+         }
+      }
+
+      Supplier<MyOperation> operSupplier = () -> {
+         supplierCalls.incrementAndGet();
+         return new MyOperation();
+      };
+
+      for (int i = 0; i < 10; i++) {
+         MyOperation op1 = tx.getOrCreateOperation(1, operSupplier);
+         op1.adds.add(1);
+      }
+
+      assertEquals(1, supplierCalls.get());
+      assertEquals(1, tx.getAllOperations().size());
+
+      assertEquals(1, supplierCalls.get());
+      assertEquals(1, tx.getAllOperations().size());
+
+      tx.commit();
+
+      assertEquals(10, result.get());
+   }
+
+   @Test
+   public void testGetOrCreateAfterWireRunnable() {
+      TransactionImpl tx = new TransactionImpl(newXID(), new FakeSM(), 10);
+      AtomicInteger supplierCalls = new AtomicInteger(0);
+      AtomicInteger runCount = new AtomicInteger(0);
+
+      Runnable r1 = tx.getOrCreateAfterWireRunnable(2, () -> {
+         supplierCalls.incrementAndGet();
+         return runCount::incrementAndGet;
+      });
+
+      assertEquals(1, supplierCalls.get());
+
+      Runnable r2 = tx.getOrCreateAfterWireRunnable(2, () -> {
+         supplierCalls.incrementAndGet();
+         return runCount::incrementAndGet;
+      });
+
+      assertEquals(1, supplierCalls.get());
+      assertSame(r1, r2);
    }
 
    protected XidImpl newXID() {

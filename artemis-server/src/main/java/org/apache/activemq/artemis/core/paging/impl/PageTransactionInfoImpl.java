@@ -217,13 +217,8 @@ public final class PageTransactionInfoImpl implements PageTransactionInfo {
                                                              final PagingManager pagingManager,
                                                              final Transaction tx,
                                                              final int increment) {
-      UpdatePageTXOperation pgtxUpdate = (UpdatePageTXOperation) tx.getProperty(TransactionPropertyIndexes.PAGE_TRANSACTION_UPDATE);
 
-      if (pgtxUpdate == null) {
-         pgtxUpdate = new UpdatePageTXOperation(storageManager, pagingManager);
-         tx.putProperty(TransactionPropertyIndexes.PAGE_TRANSACTION_UPDATE, pgtxUpdate);
-         tx.addOperation(pgtxUpdate);
-      }
+      UpdatePageTXOperation pgtxUpdate = tx.getOrCreateOperation(TransactionPropertyIndexes.PAGE_TRANSACTION_UPDATE, () -> new UpdatePageTXOperation(storageManager, pagingManager));
 
       tx.setContainsPersistent();
 

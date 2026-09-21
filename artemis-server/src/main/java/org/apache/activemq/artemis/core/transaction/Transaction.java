@@ -18,6 +18,7 @@ package org.apache.activemq.artemis.core.transaction;
 
 import javax.transaction.xa.Xid;
 import java.util.List;
+import java.util.function.Supplier;
 
 import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.core.server.Queue;
@@ -96,6 +97,18 @@ public interface Transaction {
    void putProperty(int index, Object property);
 
    Object getProperty(int index);
+
+   default <T extends TransactionOperation> T getOrCreateOperation(int propertyIndex, Supplier<T> supplier) {
+      return null;
+   }
+
+   default <T extends Runnable> T getOrCreateAfterWireRunnable(int propertyIndex, Supplier<T> supplier) {
+      return null;
+   }
+
+   default <T extends TransactionOperation> T getOrCreateAfterStore(int propertyIndex, Supplier<T> supplier) {
+      return null;
+   }
 
    boolean isContainsPersistent();
 

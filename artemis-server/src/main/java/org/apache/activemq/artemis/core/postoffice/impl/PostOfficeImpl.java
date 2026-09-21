@@ -1645,7 +1645,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       }
    }
 
-   private static class PageDelivery extends TransactionOperationAbstract {
+   private static class PageDeliveryOperation extends TransactionOperationAbstract {
 
       private final Set<Queue> queues = new HashSet<>();
 
@@ -1849,15 +1849,9 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
     */
    private void schedulePageDelivery(Transaction tx, Map.Entry<SimpleString, RouteContextList> entry) {
       if (tx != null) {
-         PageDelivery delivery = (PageDelivery) tx.getProperty(TransactionPropertyIndexes.PAGE_DELIVERY);
-         if (delivery == null) {
-            delivery = new PageDelivery();
-            tx.putProperty(TransactionPropertyIndexes.PAGE_DELIVERY, delivery);
-            tx.addOperation(delivery);
-         }
-
-         delivery.addQueues(entry.getValue().getDurableQueues());
-         delivery.addQueues(entry.getValue().getNonDurableQueues());
+         PageDeliveryOperation pageDeliveryOperation = tx.getOrCreateOperation(TransactionPropertyIndexes.PAGE_DELIVERY, PageDeliveryOperation::new);
+         pageDeliveryOperation.addQueues(entry.getValue().getDurableQueues());
+         pageDeliveryOperation.addQueues(entry.getValue().getNonDurableQueues());
       } else {
 
          List<Queue> durableQueues = entry.getValue().getDurableQueues();
