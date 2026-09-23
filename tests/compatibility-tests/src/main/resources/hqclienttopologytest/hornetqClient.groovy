@@ -40,12 +40,15 @@ def tc = new TransportConfiguration(NettyConnectorFactory.class.getName(), param
 latch = new CountDownLatch(1);
 transportParams = new HashMap<String, Object>();
 
+final def latchLocal = latch;
+final def transportParamsLocal = transportParams;
+
 ServerLocator locator = HornetQClient.createServerLocatorWithHA(tc);
 locator.addClusterTopologyListener(new ClusterTopologyListener() {
     public void nodeUP(TopologyMember topologyMember, boolean b) {
         println("Node up: " + topologyMember.getNodeId() + " " + topologyMember.getLive().getParams().toString());
-        transportParams.putAll(topologyMember.getLive().getParams());
-        latch.countDown();
+        transportParamsLocal.putAll(topologyMember.getLive().getParams());
+        latchLocal.countDown();
     }
 
     public void nodeDown(long l, String s) {

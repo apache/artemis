@@ -61,38 +61,46 @@ for (int i = 0; i < 200 * 1024; i++) {
 
 largeMessageBody = bufferStr.toString();
 
+final def cfLocal = cf;
+final def topicNameLocal = topicName;
+final def numberOfMessagesLocal = numberOfMessages;
+final def multiplyFactorLocal = multiplyFactor;
+final def reusableLatchLocal = reusableLatch;
+final def largeMessageBodyLocal = largeMessageBody;
+final def errorsProducerLocal = errorsProducer;
+
 for (int i = 0; i < producers; i++) {
     Runnable r = new Runnable() {
         @Override
         void run() {
             try {
-                Connection connection = cf.createConnection();
+                Connection connection = cfLocal.createConnection();
                 Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-                Topic topic = session.createTopic(topicName);
+                Topic topic = session.createTopic(topicNameLocal);
                 MessageProducer producer = session.createProducer(topic);
 
-                for (int m = 0; m < numberOfMessages; m++) {
+                for (int m = 0; m < numberOfMessagesLocal; m++) {
 
-                    for (int j = 0; j < multiplyFactor; j++) {
-                        reusableLatch.countUp()
+                    for (int j = 0; j < multiplyFactorLocal; j++) {
+                        reusableLatchLocal.countUp()
                     }
 
                     if (m % 10 == 0) {
-                        producer.send(session.createTextMessage(largeMessageBody));
+                        producer.send(session.createTextMessage(largeMessageBodyLocal));
                         //System.out.println("Sending regular ")
                     } else {
                         producer.send(session.createTextMessage("This is a regular message"));
                         //System.out.println("Sending large ")
                     }
 
-                    reusableLatch.await(10, TimeUnit.SECONDS)
+                    reusableLatchLocal.await(10, TimeUnit.SECONDS)
                 }
 
                 connection.close();
             }
             catch (Exception e) {
                 e.printStackTrace()
-                errorsProducer.incrementAndGet();
+                errorsProducerLocal.incrementAndGet();
             } finally {
                 ran.incrementAndGet();
             }

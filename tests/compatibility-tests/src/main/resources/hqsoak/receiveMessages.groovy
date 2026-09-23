@@ -59,34 +59,39 @@ errorsConsumer = new AtomicInteger(0);
 final AtomicInteger running = new AtomicInteger(0);
 CountDownLatch latchStarted = new CountDownLatch(consumers);
 
+final def cfLocal = cf;
+final def topicNameLocal = topicName;
+final def errorsConsumerLocal = errorsConsumer;
+final def reusableLatchLocal = reusableLatch;
+
 for (int i = 0; i < consumers; i++) {
     Runnable r = new Runnable() {
         @Override
         void run() {
             try {
                 int threadid = running.incrementAndGet();
-                Connection connection = cf.createConnection();
+                Connection connection = cfLocal.createConnection();
                 connection.setClientID(clientType + threadid)
                 Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-                Topic topic = session.createTopic(topicName);
+                Topic topic = session.createTopic(topicNameLocal);
                 connection.start();
-                latchStarted.countDown();
                 MessageConsumer consumer = session.createDurableSubscriber(topic, "test")
+                latchStarted.countDown();
 
                 for (int m = 0; m < messagesPerConsumer; m++) {
                     TextMessage msg = consumer.receive(5000);
                     if (msg == null) {
-                        errorsConsumer.incrementAndGet();
+                        errorsConsumerLocal.incrementAndGet();
                         System.err.println("Could not receive message")
                         break;
                     }
-                    reusableLatch.countDown();
+                    reusableLatchLocal.countDown();
                 }
                 connection.close();
             }
             catch (Exception e) {
                 e.printStackTrace()
-                errorsConsumer.incrementAndGet();
+                errorsConsumerLocal.incrementAndGet();
             } finally {
                 running.decrementAndGet();
             }
@@ -96,7 +101,7 @@ for (int i = 0; i < consumers; i++) {
     t.start();
 }
 if (!latchStarted.await(10, TimeUnit.SECONDS)) {
-    System.err.prntln("Could not start consumers")
+    System.err.println("Could not start consumers")
     errorsConsumer.incrementAndGet()
 }
 return running;

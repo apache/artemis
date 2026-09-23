@@ -38,12 +38,15 @@ cf = new ActiveMQConnectionFactory(true, tc);
 latch = new CountDownLatch(1);
 transportParams = new HashMap<String, Object>();
 
+final def latchLocal = latch;
+final def transportParamsLocal = transportParams;
+
 cf.getServerLocator().addClusterTopologyListener(new ClusterTopologyListener() {
     @Override
     void nodeUP(TopologyMember topologyMember, boolean last) {
         println("Node up: " + topologyMember.getNodeId() + " " + topologyMember.getLive().getParams().toString());
-        transportParams.putAll(topologyMember.getLive().getParams());
-        latch.countDown();
+        transportParamsLocal.putAll(topologyMember.getLive().getParams());
+        latchLocal.countDown();
     }
 
     @Override
