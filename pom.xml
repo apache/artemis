@@ -25,7 +25,7 @@
    <parent>
       <groupId>org.apache</groupId>
       <artifactId>apache</artifactId>
-      <version>39</version>
+      <version>40</version>
    </parent>
 
    <modules>
@@ -922,6 +922,7 @@
                      <exclude>**/*.jceks</exclude>
                      <exclude>**/*.jks</exclude>
                      <exclude>**/*.p12</exclude>
+                     <exclude>**/*.pem</exclude>
                      <exclude>**/xml.xsd</exclude>
                      <exclude>**/*.pemcfg</exclude>
                      <exclude>**/org/apache/activemq/artemis/utils/json/**</exclude>
