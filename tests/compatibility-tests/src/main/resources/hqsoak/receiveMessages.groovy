@@ -96,7 +96,7 @@ for (int i = 0; i < consumers; i++) {
     t.start();
 }
 if (!latchStarted.await(10, TimeUnit.SECONDS)) {
-    System.err.prntln("Could not start consumers")
+    System.err.println("Could not start consumers")
     errorsConsumer.incrementAndGet()
 }
 return running;
