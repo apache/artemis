@@ -241,6 +241,9 @@
       <maven.test.failure.ignore>false</maven.test.failure.ignore>
       <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
 
+      <!-- overrides version from org.apache:apache parent -->
+      <version.apache-rat-plugin>0.16.1</version.apache-rat-plugin>
+
       <!--
 
        note for idea users:
