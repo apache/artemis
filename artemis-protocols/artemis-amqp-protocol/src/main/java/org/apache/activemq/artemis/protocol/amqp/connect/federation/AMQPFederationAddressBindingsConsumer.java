@@ -21,6 +21,7 @@ import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.core.io.IOCallback;
@@ -34,7 +35,6 @@ import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.protocol.amqp.connect.federation.AMQPFederationMetrics.ConsumerMetrics;
 import org.apache.activemq.artemis.protocol.amqp.federation.FederationConsumerInfo;
 import org.apache.activemq.artemis.protocol.amqp.proton.AMQPSessionContext;
-import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.Receiver;
@@ -59,7 +59,7 @@ public final class AMQPFederationAddressBindingsConsumer extends AMQPFederationA
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-   private final Set<Binding> bindings = new ConcurrentHashSet<>();
+   private final Set<Binding> bindings = ConcurrentHashMap.newKeySet();
    private final PostOffice postOffice;
    private final StorageManager storageManager;
 

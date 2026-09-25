@@ -38,7 +38,6 @@ import org.apache.activemq.artemis.core.settings.HierarchicalRepository;
 import org.apache.activemq.artemis.core.settings.HierarchicalRepositoryChangeListener;
 import org.apache.activemq.artemis.core.settings.Mergeable;
 import org.apache.activemq.artemis.utils.CompositeAddress;
-import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -106,7 +105,7 @@ public class HierarchicalObjectRepository<T> implements HierarchicalRepository<T
    /**
     * any registered listeners, these get fired on changes to the repository
     */
-   private final ConcurrentHashSet<HierarchicalRepositoryChangeListener> listeners = new ConcurrentHashSet<>();
+   private final Set<HierarchicalRepositoryChangeListener> listeners = ConcurrentHashMap.newKeySet();
 
    public HierarchicalObjectRepository() {
       this(null);

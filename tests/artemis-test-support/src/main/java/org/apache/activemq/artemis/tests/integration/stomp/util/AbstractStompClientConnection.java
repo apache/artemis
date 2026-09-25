@@ -23,7 +23,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -31,7 +33,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import org.apache.activemq.artemis.core.protocol.stomp.Stomp;
-import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.apache.activemq.transport.netty.NettyTransport;
 import org.apache.activemq.transport.netty.NettyTransportFactory;
 import org.apache.activemq.transport.netty.NettyTransportListener;
@@ -54,7 +55,7 @@ public abstract class AbstractStompClientConnection implements StompClientConnec
    //protected ReaderThread readerThread;
    protected String scheme;
 
-   private static final ConcurrentHashSet<StompClientConnection> connections = new ConcurrentHashSet<>();
+   private static final Set<StompClientConnection> connections = ConcurrentHashMap.newKeySet();
 
 
    public static final void tearDownConnections() {

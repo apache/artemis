@@ -18,8 +18,7 @@ package org.apache.activemq.artemis.jms.client;
 
 import javax.jms.IllegalStateException;
 import java.util.Set;
-
-import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Restricts what can be called on context passed in wrapped CompletionListener.
@@ -39,7 +38,7 @@ public class ThreadAwareContext {
     * Use a set because JMSContext can create more than one JMSConsumer to receive asynchronously from different
     * destinations.
     */
-   private final Set<Long> messageListenerThreads = new ConcurrentHashSet<>();
+   private final Set<Long> messageListenerThreads = ConcurrentHashMap.newKeySet();
 
    /**
     * Sets current thread to the context

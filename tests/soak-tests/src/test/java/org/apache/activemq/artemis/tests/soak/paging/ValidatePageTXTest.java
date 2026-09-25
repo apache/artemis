@@ -29,6 +29,8 @@ import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 import java.io.File;
 import java.lang.invoke.MethodHandles;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
@@ -41,7 +43,6 @@ import org.apache.activemq.artemis.api.core.ActiveMQDuplicateIdException;
 import org.apache.activemq.artemis.cli.commands.helper.HelperCreate;
 import org.apache.activemq.artemis.tests.soak.SoakTestBase;
 import org.apache.activemq.artemis.tests.util.CFUtil;
-import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -119,7 +120,7 @@ public class ValidatePageTXTest extends SoakTestBase {
 
       AtomicInteger sequenceGenerator = new AtomicInteger(1);
 
-      ConcurrentHashSet<String> dupList = new ConcurrentHashSet<>();
+      Set<String> dupList = ConcurrentHashMap.newKeySet();
 
       CountDownLatch enoughSent = new CountDownLatch(SEND_GROUPS * GROUP_SIZE * 2);
       CountDownLatch latchDone = new CountDownLatch(SEND_GROUPS * GROUP_SIZE);
@@ -258,7 +259,7 @@ public class ValidatePageTXTest extends SoakTestBase {
                        AtomicInteger sequenceGenerator,
                        AtomicBoolean running,
                        String messageBody,
-                       ConcurrentHashSet<String> dupList,
+                       Set<String> dupList,
                        CountDownLatch enoughSent,
                        CountDownLatch latchDone) {
       try {

@@ -27,12 +27,12 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.security.PrivilegedAction;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.activemq.artemis.logs.ActiveMQUtilLogger;
 import org.apache.activemq.artemis.utils.ActiveMQThreadFactory;
 import org.apache.activemq.artemis.utils.Env;
-import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.apache.activemq.artemis.utils.sm.SecurityManagerShim;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,9 +46,9 @@ public class NetworkHealthCheck extends ActiveMQScheduledComponent {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-   private final Set<ActiveMQComponent> componentList = new ConcurrentHashSet<>();
-   private final Set<String> addresses = new ConcurrentHashSet<>();
-   private final Set<URL> urls = new ConcurrentHashSet<>();
+   private final Set<ActiveMQComponent> componentList = ConcurrentHashMap.newKeySet();
+   private final Set<String> addresses = ConcurrentHashMap.newKeySet();
+   private final Set<URL> urls = ConcurrentHashMap.newKeySet();
    private NetworkInterface networkInterface;
 
    public static final String IPV6_DEFAULT_COMMAND = Env.isWindowsOs() ? "ping -n 1 -w %d000 %s" : "ping6 -c 1 %2$s";

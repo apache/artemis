@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -79,7 +80,6 @@ import org.apache.activemq.artemis.core.transaction.ResourceManager;
 import org.apache.activemq.artemis.spi.core.remoting.Acceptor;
 import org.apache.activemq.artemis.tests.util.ServerTestBase;
 import org.apache.activemq.artemis.utils.ReusableLatch;
-import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -190,7 +190,7 @@ public class ClusteredResetMockTest extends ServerTestBase {
 
    class FakeManagement implements ManagementService {
 
-      public ConcurrentHashSet<Notification> pendingNotifications = new ConcurrentHashSet<>();
+      public Set<Notification> pendingNotifications = ConcurrentHashMap.newKeySet();
 
       final ReusableLatch latch;
 

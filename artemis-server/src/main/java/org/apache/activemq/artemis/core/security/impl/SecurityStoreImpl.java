@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.stream.Collectors;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -58,7 +59,6 @@ import org.apache.activemq.artemis.spi.core.security.jaas.UserPrincipal;
 import org.apache.activemq.artemis.utils.ByteUtil;
 import org.apache.activemq.artemis.utils.CertificateUtil;
 import org.apache.activemq.artemis.utils.CompositeAddress;
-import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.apache.activemq.artemis.utils.collections.TypedProperties;
 import org.apache.activemq.artemis.utils.sm.SecurityManagerShim;
 import org.slf4j.Logger;
@@ -81,7 +81,7 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
 
    private final ActiveMQSecurityManager securityManager;
 
-   private final Cache<String, ConcurrentHashSet<SimpleString>> authorizationCache;
+   private final Cache<String, Set<SimpleString>> authorizationCache;
 
    private final Cache<String, Pair<Boolean, Subject>> authenticationCache;
 
@@ -357,13 +357,13 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
 
          if (validated && user != null) {
             // if we get here we're granted, add to the cache
-            ConcurrentHashSet<SimpleString> set;
+            final Set<SimpleString> set;
             String key = createAuthorizationCacheKey(user, checkType);
-            ConcurrentHashSet<SimpleString> act = getAuthorizationCacheEntry(key);
+            Set<SimpleString> act = getAuthorizationCacheEntry(key);
             if (act != null) {
                set = act;
             } else {
-               set = new ConcurrentHashSet<>();
+               set = ConcurrentHashMap.newKeySet();
                putAuthorizationCacheEntry(set, key);
             }
             set.add(Objects.requireNonNullElse(fqqn, bareAddress));
@@ -566,18 +566,18 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
       }
    }
 
-   private void putAuthorizationCacheEntry(ConcurrentHashSet<SimpleString> value, String key) {
+   private void putAuthorizationCacheEntry(Set<SimpleString> value, String key) {
       if (authorizationCache != null) {
          authorizationCache.put(key, value);
          logger.trace("Put into authz cache; key: {}; value: {}", key, value);
       }
    }
 
-   private ConcurrentHashSet<SimpleString> getAuthorizationCacheEntry(String key) {
+   private Set<SimpleString> getAuthorizationCacheEntry(String key) {
       if (authorizationCache == null) {
          return null;
       } else {
-         ConcurrentHashSet<SimpleString> value = authorizationCache.getIfPresent(key);
+         Set<SimpleString> value = authorizationCache.getIfPresent(key);
          logger.trace("Get from authz cache; key: {}; value: {}", key, value);
          return value;
       }
@@ -616,7 +616,7 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
    private boolean checkAuthorizationCache(final SimpleString dest, final String user, final CheckType checkType) {
       boolean granted = false;
 
-      ConcurrentHashSet<SimpleString> act = getAuthorizationCacheEntry(createAuthorizationCacheKey(user, checkType));
+      Set<SimpleString> act = getAuthorizationCacheEntry(createAuthorizationCacheKey(user, checkType));
       if (act != null) {
          granted = act.contains(dest);
       }
@@ -671,7 +671,7 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
       return authenticationCache;
    }
 
-   public Cache<String, ConcurrentHashSet<SimpleString>> getAuthorizationCache() {
+   public Cache<String, Set<SimpleString>> getAuthorizationCache() {
       return authorizationCache;
    }
 

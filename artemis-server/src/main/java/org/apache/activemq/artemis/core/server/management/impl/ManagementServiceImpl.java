@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -115,7 +116,6 @@ import org.apache.activemq.artemis.core.settings.HierarchicalRepository;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.transaction.ResourceManager;
 import org.apache.activemq.artemis.spi.core.remoting.Acceptor;
-import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.apache.activemq.artemis.utils.collections.TypedProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -162,7 +162,7 @@ public class ManagementServiceImpl implements ManagementService {
 
    private boolean notificationsEnabled;
 
-   private final Set<NotificationListener> listeners = new ConcurrentHashSet<>();
+   private final Set<NotificationListener> listeners = ConcurrentHashMap.newKeySet();
 
    private final ObjectNameBuilder objectNameBuilder;
 
@@ -170,7 +170,7 @@ public class ManagementServiceImpl implements ManagementService {
 
    private final Pattern viewPermissionMatcher;
 
-   private final Set<ObjectName> registeredNames = new ConcurrentHashSet<>();
+   private final Set<ObjectName> registeredNames = ConcurrentHashMap.newKeySet();
 
    public ManagementServiceImpl(final MBeanServer mbeanServer, final Configuration configuration) {
       this.mbeanServer = mbeanServer;

@@ -39,10 +39,10 @@ import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
@@ -73,9 +73,9 @@ public final class ActiveMQRAManagedConnection implements ManagedConnection, Exc
 
    private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
 
-   private final List<ConnectionEventListener> eventListeners;
+   private final List<ConnectionEventListener> eventListeners = Collections.synchronizedList(new ArrayList<>());
 
-   private final Set<ActiveMQRASession> handles;
+   private final Set<ActiveMQRASession> handles = ConcurrentHashMap.newKeySet();
 
    private ReentrantLock lock = new ReentrantLock();
 
@@ -111,8 +111,6 @@ public final class ActiveMQRAManagedConnection implements ManagedConnection, Exc
       this.ra = ra;
       this.userName = userName;
       this.password = password;
-      eventListeners = Collections.synchronizedList(new ArrayList<>());
-      handles = Collections.synchronizedSet(new HashSet<>());
 
       connection = null;
       nonXAsession = null;

@@ -23,12 +23,12 @@ import java.lang.invoke.MethodHandles;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
 import org.apache.activemq.artemis.service.extensions.xa.recovery.ActiveMQRegistry;
 import org.apache.activemq.artemis.service.extensions.xa.recovery.ActiveMQRegistryImpl;
 import org.apache.activemq.artemis.service.extensions.xa.recovery.XARecoveryConfig;
-import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +42,7 @@ public final class RecoveryManager implements Serializable {
 
    private static final String RESOURCE_RECOVERY_CLASS_NAMES = "org.jboss.as.messaging.jms.AS7RecoveryRegistry;" + "org.jboss.as.integration.activemq.recovery.AS5RecoveryRegistry";
 
-   private transient Set<XARecoveryConfig> resources = new ConcurrentHashSet<>();
+   private transient Set<XARecoveryConfig> resources = ConcurrentHashMap.newKeySet();
 
    public void start(final boolean useAutoRecovery) {
       if (useAutoRecovery) {
@@ -116,6 +116,6 @@ public final class RecoveryManager implements Serializable {
     */
    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
       in.defaultReadObject();
-      resources = new ConcurrentHashSet<>();
+      resources = ConcurrentHashMap.newKeySet();
    }
 }

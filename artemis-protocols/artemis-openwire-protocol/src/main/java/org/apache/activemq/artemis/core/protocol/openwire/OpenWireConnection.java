@@ -83,7 +83,6 @@ import org.apache.activemq.artemis.spi.core.protocol.ConnectionEntry;
 import org.apache.activemq.artemis.spi.core.remoting.Connection;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
 import org.apache.activemq.artemis.utils.actors.ThresholdActor;
-import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.apache.activemq.command.ActiveMQDestination;
 import org.apache.activemq.command.ActiveMQMessage;
 import org.apache.activemq.command.ActiveMQTempQueue;
@@ -208,7 +207,7 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
    private long maxInactivityDuration;
    private volatile ThresholdActor<Command> openWireActor;
 
-   private final Set<SimpleString> knownDestinations = new ConcurrentHashSet<>();
+   private final Set<SimpleString> knownDestinations = ConcurrentHashMap.newKeySet();
 
    private final AtomicBoolean disableTtl = new AtomicBoolean(false);
 

@@ -21,9 +21,10 @@ import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
 import java.util.Locale;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.activemq.artemis.api.core.Pair;
-import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.apache.commons.beanutils.FluentPropertyBeanIntrospector;
 import org.apache.commons.beanutils.IntrospectionContext;
 import org.slf4j.Logger;
@@ -34,7 +35,7 @@ public class FluentPropertyBeanIntrospectorWithIgnores extends FluentPropertyBea
 
    static Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-   private static ConcurrentHashSet<Pair<String, String>> ignores = new ConcurrentHashSet<>();
+   private static Set<Pair<String, String>> ignores = ConcurrentHashMap.newKeySet();
 
    public static void addIgnore(String className, String methodName) {
       logger.trace("Adding ignore on {}/{}", className, methodName);

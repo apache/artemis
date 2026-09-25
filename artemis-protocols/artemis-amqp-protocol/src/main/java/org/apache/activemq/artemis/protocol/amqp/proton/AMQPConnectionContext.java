@@ -64,7 +64,6 @@ import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
 import org.apache.activemq.artemis.spi.core.remoting.ReadyListener;
 import org.apache.activemq.artemis.utils.ByteUtil;
 import org.apache.activemq.artemis.utils.VersionLoader;
-import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.TerminusExpiryPolicy;
@@ -127,7 +126,7 @@ public class AMQPConnectionContext extends ProtonInitializable implements EventH
    private final Symbol[] desiredCapabilities;
    private final ScheduledExecutorService scheduledPool;
    private final Map<String, LinkCloseListener> linkCloseListeners = new ConcurrentHashMap<>();
-   private final Set<Consumer<AMQPConnectionContext>> remoteOpenedListeners = new ConcurrentHashSet<>();
+   private final Set<Consumer<AMQPConnectionContext>> remoteOpenedListeners = ConcurrentHashMap.newKeySet();
 
    private final Map<Session, AMQPSessionContext> sessions = new ConcurrentHashMap<>();
 

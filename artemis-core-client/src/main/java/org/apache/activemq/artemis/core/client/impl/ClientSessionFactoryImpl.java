@@ -20,10 +20,10 @@ import java.lang.invoke.MethodHandles;
 import java.lang.ref.WeakReference;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
@@ -73,7 +73,6 @@ import org.apache.activemq.artemis.utils.PasswordMaskingUtil;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
 import org.apache.activemq.artemis.utils.actors.ArtemisExecutor;
 import org.apache.activemq.artemis.utils.actors.OrderedExecutorFactory;
-import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.apache.activemq.artemis.utils.sm.SecurityManagerShim;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -104,7 +103,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
    private final long connectionTTL;
 
-   private final Set<ClientSessionInternal> sessions = new ConcurrentHashSet<>();
+   private final Set<ClientSessionInternal> sessions = ConcurrentHashMap.newKeySet();
 
    private final Object createSessionLock = new Object();
 
@@ -138,9 +137,9 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
    private int failoverAttempts;
 
-   private final Set<SessionFailureListener> listeners = new ConcurrentHashSet<>();
+   private final Set<SessionFailureListener> listeners = ConcurrentHashMap.newKeySet();
 
-   private final Set<FailoverEventListener> failoverListeners = new ConcurrentHashSet<>();
+   private final Set<FailoverEventListener> failoverListeners = ConcurrentHashMap.newKeySet();
 
    private Connector connector;
 
@@ -155,7 +154,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
    private volatile boolean closed;
 
-   public static final Set<CloseRunnable> CLOSE_RUNNABLES = Collections.synchronizedSet(new HashSet<>());
+   public static final Set<CloseRunnable> CLOSE_RUNNABLES = ConcurrentHashMap.newKeySet();
 
    private final ConfirmationWindowWarning confirmationWindowWarning;
 
