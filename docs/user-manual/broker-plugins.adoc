@@ -206,3 +206,15 @@ The plugin can be configured via xml in the normal broker-plugin way:
    </broker-plugin>
 </broker-plugins>
 ----
+
+== Reloaded Plugin Properties
+
+Broker plugins receive their initial configured properties through `init(Map<String, String>)` when the plugin is created.
+
+When `broker.xml` is reloaded, already registered broker plugin instances are not replaced.
+Instead, plugins may implement `propertiesReloaded(Map<String, String>)` to receive the properties parsed from the reloaded configuration.
+
+The callback is invoked on each reload for matching plugin configuration entries, regardless of whether the property values changed.
+Plugins that need change detection should compare against their current state.
+
+Broker plugin entries do not have a stable name/id attribute, so reload matching is performed by plugin class name.
