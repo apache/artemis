@@ -22,6 +22,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
+import org.apache.activemq.artemis.api.core.ActiveMQSecurityException;
 import org.apache.activemq.artemis.api.core.ICoreMessage;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.RoutingType;
@@ -190,7 +191,8 @@ public abstract class VersionedStompFrameHandler {
          connection.validate();
          String destination = getDestination(frame);
          RoutingType routingType = getRoutingType(frame.getHeader(Headers.Send.DESTINATION_TYPE), frame.getHeader(Headers.Send.DESTINATION));
-         connection.checkAutoCreate(destination, routingType);
+         boolean temporary = isTemporaryDestination(frame.getHeader(Headers.Send.DESTINATION));
+         connection.checkAutoCreate(destination, routingType, temporary);
          String txID = frame.getHeader(Stomp.Headers.TRANSACTION);
 
          long timestamp = System.currentTimeMillis();
@@ -271,6 +273,7 @@ public abstract class VersionedStompFrameHandler {
          }
       }
       RoutingType routingType = getRoutingType(frame.getHeader(Headers.Subscribe.SUBSCRIPTION_TYPE), frame.getHeader(Headers.Subscribe.DESTINATION));
+      boolean temporary = isTemporaryDestination(frame.getHeader(Headers.Subscribe.DESTINATION));
       boolean noLocal = false;
       if (frame.hasHeader(Stomp.Headers.Subscribe.NO_LOCAL)) {
          noLocal = Boolean.parseBoolean(frame.getHeader(Stomp.Headers.Subscribe.NO_LOCAL));
@@ -283,7 +286,19 @@ public abstract class VersionedStompFrameHandler {
       } else if (frame.hasHeader(Headers.Subscribe.ACTIVEMQ_PREFETCH_SIZE)) {
          consumerWindowSize = Integer.parseInt(frame.getHeader(Stomp.Headers.Subscribe.ACTIVEMQ_PREFETCH_SIZE));
       }
-      return connection.subscribe(destination, selector, ack, id, durableSubscriptionName, noLocal, routingType, consumerWindowSize);
+      return connection.subscribe(destination, selector, ack, id, durableSubscriptionName, noLocal, routingType, consumerWindowSize, temporary);
+   }
+
+   /**
+    * The address on a SEND/SUBSCRIBE frame may already have had a temporary prefix stripped from it by
+    * {@link #getDestination(StompFrame)} by the time it reaches most of this class, so this must be checked against
+    * the raw (un-stripped) destination header, the same way {@link #getRoutingType} is resolved from the raw header.
+    */
+   private boolean isTemporaryDestination(String rawDestination) throws ActiveMQStompException, ActiveMQSecurityException {
+      if (rawDestination == null) {
+         return false;
+      }
+      return connection.getSession().getCoreSession().getRoutingTypeFromTemporaryPrefix(SimpleString.of(rawDestination)) != null;
    }
 
    public String getDestination(StompFrame request) throws Exception {
