@@ -20,7 +20,7 @@ package org.apache.activemq.artemis.core.protocol.mqtt;
 
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -50,7 +50,7 @@ import org.slf4j.LoggerFactory;
 public class MQTTStateManager {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-   private static final Map<Integer, MQTTStateManager> INSTANCES = new HashMap<>();
+   private static final Map<Integer, MQTTStateManager> INSTANCES = new ConcurrentHashMap<>();
    private final ActiveMQServer server;
    private final Map<String, MQTTSessionState> sessionStates = new ConcurrentHashMap<>();
    private Queue sessionStore;
@@ -112,21 +112,15 @@ public class MQTTStateManager {
     * one instance of MQTTSessionStateManager per-broker with the understanding that there can be multiple brokers in
     * the same JVM.
     */
-   public static synchronized MQTTStateManager getInstance(ActiveMQServer server) throws Exception {
-      MQTTStateManager instance = INSTANCES.get(System.identityHashCode(server));
-      if (instance == null) {
-         instance = new MQTTStateManager(server);
-         INSTANCES.put(System.identityHashCode(server), instance);
-      }
-
-      return instance;
+   public static MQTTStateManager getInstance(ActiveMQServer server) {
+      return INSTANCES.computeIfAbsent(System.identityHashCode(server), id -> new MQTTStateManager(server));
    }
 
-   public static synchronized void removeInstance(ActiveMQServer server) {
+   public static void removeInstance(ActiveMQServer server) {
       INSTANCES.remove(System.identityHashCode(server));
    }
 
-   private MQTTStateManager(ActiveMQServer server) throws Exception {
+   private MQTTStateManager(ActiveMQServer server) {
       this.server = server;
       this.subscriptionPersistenceEnabled = server.getConfiguration().isMqttSubscriptionPersistenceEnabled();
       this.journalHashMapProvider = new JournalHashMapProvider<>(server.getStorageManager()::generateID, server.getStorageManager(), PacketIdCorrelationKey.getPersister(), JournalRecordIds.MQTT_PACKET_ID_CORRELATION, OperationContextImpl::getContext, null, server.getIoCriticalErrorListener());
@@ -172,11 +166,7 @@ public class MQTTStateManager {
 
    public MQTTSessionState removeSessionState(String clientId) throws Exception {
       logger.debug("Removing MQTT session state for: {}", clientId);
-      if (clientId == null) {
-         return null;
-      }
-      MQTTSessionState removed = sessionStates.remove(clientId);
-      return removed;
+      return clientId != null ? sessionStates.remove(clientId) : null;
    }
 
    public void removeDurableSubscriptionState(String clientId) throws Exception {
@@ -187,7 +177,7 @@ public class MQTTStateManager {
    }
 
    public Map<String, MQTTSessionState> getSessionStates() {
-      return new HashMap<>(sessionStates);
+      return Collections.unmodifiableMap(sessionStates);
    }
 
    @Override
