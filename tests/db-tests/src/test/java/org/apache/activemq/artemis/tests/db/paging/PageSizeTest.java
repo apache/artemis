@@ -117,7 +117,8 @@ public class PageSizeTest extends ParameterDBTestBase {
       try (java.sql.Connection sqlConn = database.getConnection()) {
          String sql = switch (database) {
             case MSSQL -> "SELECT MAX(LEN(DATA)) FROM " + tableName;
-            case ORACLE, DB2, DERBY, MYSQL -> "SELECT MAX(LENGTH(DATA)) FROM " + tableName;
+            case HSQL -> "SELECT MAX(OCTET_LENGTH(DATA)) FROM " + tableName;
+            case ORACLE, DB2, MYSQL -> "SELECT MAX(LENGTH(DATA)) FROM " + tableName;
             case POSTGRES -> "SELECT MAX(OCTET_LENGTH(lo_get(DATA))) FROM  " + tableName;
             default -> null;
          };

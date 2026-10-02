@@ -23,8 +23,8 @@
          <database-store>
             <data-source-properties>
                <!-- All configuration options: https://commons.apache.org/proper/commons-dbcp/configuration.html -->
-               <data-source-property key="driverClassName" value="org.apache.derby.jdbc.EmbeddedDriver" />
-               <data-source-property key="url" value="jdbc:derby:target/derby/database-store;create=true" />
+               <data-source-property key="driverClassName" value="org.hsqldb.jdbc.JDBCDriver" />
+               <data-source-property key="url" value="jdbc:hsqldb:mem:database-store" />
                <data-source-property key="username" value="ENC(5493dd76567ee5ec269d11823973462f)" />
                <data-source-property key="password" value="ENC(56a0db3b71043054269d11823973462f)" />
                <data-source-property key="poolPreparedStatements" value="true" />

@@ -101,7 +101,7 @@ public class BasicXaRecoveryTest extends ActiveMQTestBase {
       super.setUp();
 
       if (storeType == StoreConfiguration.StoreType.DATABASE) {
-         Object unused = Class.forName("org.apache.derby.jdbc.EmbeddedDriver").getDeclaredConstructor().newInstance();
+         Object unused = Class.forName("org.hsqldb.jdbc.JDBCDriver").getDeclaredConstructor().newInstance();
       }
 
       addressSettings.clear();

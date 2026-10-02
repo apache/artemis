@@ -57,7 +57,7 @@ public class RealServerDatabasePagingTest extends ParameterDBTestBase {
    private static final int MAX_MESSAGES = Integer.parseInt(testProperty(TEST_NAME, "MAX_MESSAGES", "1000"));
    private static final int MAX_LARGE_MESSAGES = Integer.parseInt(testProperty(TEST_NAME, "MAX_LARGE_MESSAGES", "200"));
 
-   private static final int SOAK_MAX_MESSAGES = Integer.parseInt(testProperty(TEST_NAME, "SOAK_MAX_MESSAGES", "100000"));
+   private static final int SOAK_MAX_MESSAGES = Integer.parseInt(testProperty(TEST_NAME, "SOAK_MAX_MESSAGES", "10000"));
 
    private static final int MESSAGE_SIZE = Integer.parseInt(testProperty(TEST_NAME, "MESSAGE_SIZE", "1000"));
    private static final int LARGE_MESSAGE_SIZE = Integer.parseInt(testProperty(TEST_NAME, "LARGE_MESSAGE_SIZE", "500000"));

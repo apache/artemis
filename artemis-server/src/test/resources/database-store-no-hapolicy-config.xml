@@ -21,12 +21,12 @@
    <core xmlns="urn:activemq:core">
       <store>
          <database-store>
-            <jdbc-connection-url>jdbc:derby:target/derby/database-store;create=true</jdbc-connection-url>
+            <jdbc-connection-url>jdbc:hsqldb:mem:database-store</jdbc-connection-url>
             <bindings-table-name>BINDINGS</bindings-table-name>
             <message-table-name>MESSAGE</message-table-name>
             <large-message-table-name>LARGE_MESSAGE</large-message-table-name>
             <page-store-table-name>PAGE_STORE</page-store-table-name>
-            <jdbc-driver-class-name>org.apache.derby.jdbc.EmbeddedDriver</jdbc-driver-class-name>
+            <jdbc-driver-class-name>org.hsqldb.jdbc.JDBCDriver</jdbc-driver-class-name>
          </database-store>
       </store>
    </core>

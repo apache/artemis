@@ -517,8 +517,8 @@ public abstract class AbstractConfigurationFullTest {
       assertEquals("FULL_LARGE_MESSAGES", dbStore.getLargeMessageTableName());
       assertEquals("FULL_PAGE_STORE", dbStore.getPageStoreTableName());
       assertEquals("FULL_NODE_MANAGER", dbStore.getNodeManagerStoreTableName());
-      assertEquals("jdbc:derby:target/full-test-store;create=true", dbStore.getJdbcConnectionUrl());
-      assertEquals("org.apache.derby.jdbc.EmbeddedDriver", dbStore.getJdbcDriverClassName());
+      assertEquals("jdbc:hsqldb:mem:full-test-store", dbStore.getJdbcConnectionUrl());
+      assertEquals("org.hsqldb.jdbc.JDBCDriver", dbStore.getJdbcDriverClassName());
       assertEquals(30000, dbStore.getJdbcNetworkTimeout());
       assertEquals(3000, dbStore.getJdbcLockRenewPeriodMillis());
       assertEquals(20000, dbStore.getJdbcLockExpirationMillis());

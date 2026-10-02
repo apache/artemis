@@ -307,7 +307,7 @@ These databases are supported:
 . Microsoft SQL Server
 . Oracle
 . DB2
-. Apache Derby
+. HSQLDB
 
 The JDBC store uses a JDBC connection to store messages and bindings data in records in database tables.
 The data stored in the database tables uses internal encodings.
@@ -324,8 +324,8 @@ For example:
 ----
 <store>
    <database-store>
-      <jdbc-driver-class-name>org.apache.derby.jdbc.EmbeddedDriver</jdbc-driver-class-name>
-      <jdbc-connection-url>jdbc:derby:data/derby/database-store;create=true</jdbc-connection-url>
+      <jdbc-driver-class-name>org.hsqldb.jdbc.JDBCDriver</jdbc-driver-class-name>
+      <jdbc-connection-url>jdbc:hsqldb:file:data/hsqldb/database-store</jdbc-connection-url>
       <bindings-table-name>BINDINGS_TABLE</bindings-table-name>
       <message-table-name>MESSAGE_TABLE</message-table-name>
       <page-store-table-name>PAGE_TABLE</page-store-table-name>
@@ -403,8 +403,8 @@ It is also possible to explicitly add the user and password rather than in the J
 ----
 <store>
    <database-store>
-      <jdbc-driver-class-name>org.apache.derby.jdbc.EmbeddedDriver</jdbc-driver-class-name>
-      <jdbc-connection-url>jdbc:derby:data/derby/database-store;create=true</jdbc-connection-url>
+      <jdbc-driver-class-name>org.hsqldb.jdbc.JDBCDriver</jdbc-driver-class-name>
+      <jdbc-connection-url>jdbc:hsqldb:file:data/hsqldb/database-store</jdbc-connection-url>
       <jdbc-user>ENC(dasfn353cewc)</jdbc-user>
       <jdbc-password>ENC(ucwiurfjtew345)</jdbc-password>
       <bindings-table-name>BINDINGS_TABLE</bindings-table-name>

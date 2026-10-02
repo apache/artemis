@@ -4,7 +4,7 @@ This module runs tests against selected Databases.
 
 There is one profile for each supported Database:
 
-- DB-derby-tests
+- DB-hsql-tests
 - DB-postgres-tests
 - DB-mysql-tests
 - DB-mssql-tests
@@ -23,7 +23,7 @@ You can refer to the examples provided under `./scripts`. Please note that you a
 
 You can pass the JDBC URI as a parameter using the following supported parameters:
 
-- `derby.uri`
+- `hsql.uri`
 - `postgres.uri`
 - `mysql.uri`
 - `mssql.uri`
@@ -44,7 +44,7 @@ Also It is recommended to the database schema allocated exclusively to this test
 
 One Artemis server is created for each supported database. After building, they will be available under ./target/${DATABASE}:
 
-- `./target/derby`
+- `./target/hsql`
 - `./target/postgres`
 - `./target/mysql`
 - `./target/mssql`

@@ -45,10 +45,6 @@ public class JdbcNodeManagerTest extends ServerTestBase {
 
    @BeforeEach
    public void configure() {
-      if (useAuthentication) {
-         System.setProperty("derby.connection.requireAuthentication", "true");
-         System.setProperty("derby.user." + getJDBCUser(), getJDBCPassword());
-      }
       dbConf = createDefaultDatabaseStorageConfiguration();
       dbConf.setJdbcUser(getJDBCUser());
       dbConf.setJdbcPassword(getJDBCPassword());

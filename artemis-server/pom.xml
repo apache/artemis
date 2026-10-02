@@ -245,13 +245,8 @@
       </dependency>
       <!-- db test -->
       <dependency>
-         <groupId>org.apache.derby</groupId>
-         <artifactId>derby</artifactId>
-         <scope>test</scope>
-      </dependency>
-      <dependency>
-         <groupId>org.apache.derby</groupId>
-         <artifactId>derbytools</artifactId>
+         <groupId>org.hsqldb</groupId>
+         <artifactId>hsqldb</artifactId>
          <scope>test</scope>
       </dependency>
       <dependency>

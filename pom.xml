@@ -96,7 +96,7 @@
       <commons.config.version>2.15.1</commons.config.version>
       <commons.lang.version>3.21.0</commons.lang.version>
       <activemq5-version>5.19.11</activemq5-version>
-      <apache.derby.version>10.15.2.0</apache.derby.version>
+      <hsqldb.version>2.7.4</hsqldb.version>
       <commons.beanutils.version>1.11.0</commons.beanutils.version>
       <commons.logging.version>1.4.0</commons.logging.version>
       <commons.dbcp2.version>2.14.0</commons.dbcp2.version>

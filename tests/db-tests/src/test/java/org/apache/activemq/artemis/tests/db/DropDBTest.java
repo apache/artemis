@@ -44,12 +44,12 @@ public class DropDBTest extends ParameterDBTestBase {
    @Parameters(name = "db={0}")
    public static Collection<Object[]> parameters() {
       List<Database> dbList = Database.selectedList();
-      dbList.remove(Database.DERBY); // no derby on this test
+      dbList.remove(Database.HSQL); // no HSQL on this test
 
       return convertParameters(dbList);
    }
 
-   // Used in @DisabledIf on class, avoids no-params failure with only -PDB-derby-tests
+   // Used in @DisabledIf on class, avoids no-params failure with only -PDB-hsql-tests
    public static boolean isNoDatabaseSelected() {
       return parameters().isEmpty();
    }
@@ -58,7 +58,7 @@ public class DropDBTest extends ParameterDBTestBase {
    @Override
    public void setUp() throws Exception {
       super.setUp();
-      assumeTrue(database != Database.DERBY);
+      assumeTrue(database != Database.HSQL);
       dropDatabase();
    }
 

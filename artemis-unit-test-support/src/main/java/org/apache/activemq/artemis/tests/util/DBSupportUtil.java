@@ -17,8 +17,10 @@
 package org.apache.activemq.artemis.tests.util;
 
 import java.lang.invoke.MethodHandles;
+import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,38 +28,30 @@ import org.slf4j.LoggerFactory;
 public class DBSupportUtil {
    private static Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-   public static final String EXPECTED_DERBY_DROP_STATE = "08006";
-   public static final String EXPECTED_DERBY_SHUTDOWN_STATE = "XJ015";
-
-   public static void dropDerbyDatabase(String user, String password, String databaseName) throws SQLException {
-      try {
-         if (user == null) {
-            DriverManager.getConnection("jdbc:derby:" + databaseName + ";drop=true");
-         } else {
-            DriverManager.getConnection("jdbc:derby:" + databaseName + ";drop=true", user, password);
-         }
+   public static void dropHSQLDatabase(String connectionUrl, String user, String password) throws SQLException {
+      logger.debug("dropHSQLDatabase on {}", connectionUrl);
+      try (Connection connection = getConnection(connectionUrl, user, password);
+           Statement statement = connection.createStatement()) {
+         statement.execute("DROP SCHEMA PUBLIC CASCADE");
       } catch (SQLException sqlE) {
-         if (!sqlE.getSQLState().equals(EXPECTED_DERBY_DROP_STATE)) {
-            logger.warn("{} / {}", sqlE.getMessage(), sqlE.getSQLState());
-            throw sqlE;
-         } else {
-            logger.info("{} / {}", sqlE.getMessage(), sqlE.getSQLState());
-         }
+         logger.debug("{} / {}", sqlE.getMessage(), sqlE.getSQLState(), sqlE);
       }
    }
 
-   public static void shutdownDerby(String user, String password) throws SQLException {
-      try {
-         if (user == null) {
-            DriverManager.getConnection("jdbc:derby:;shutdown=true;deregister=false");
-         } else {
-            DriverManager.getConnection("jdbc:derby:;shutdown=true;deregister=false", user, password);
-         }
+   public static void shutdownHSQL(String connectionUrl, String user, String password) throws SQLException {
+      try (Connection connection = getConnection(connectionUrl, user, password);
+           Statement statement = connection.createStatement()) {
+         statement.execute("SHUTDOWN");
       } catch (SQLException sqlE) {
-         logger.debug("{} / {}", sqlE.getMessage(), sqlE.getSQLState());
-         if (!sqlE.getSQLState().equals(EXPECTED_DERBY_SHUTDOWN_STATE)) {
-            throw sqlE;
-         }
+         logger.debug("{} / {}", sqlE.getMessage(), sqlE.getSQLState(), sqlE);
+      }
+   }
+
+   private static Connection getConnection(String connectionUrl, String user, String password) throws SQLException {
+      if (user == null) {
+         return DriverManager.getConnection(connectionUrl);
+      } else {
+         return DriverManager.getConnection(connectionUrl, user, password);
       }
    }
 

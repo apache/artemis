@@ -123,16 +123,11 @@
             <!-- Apache v2.0 License -->
          </dependency>
          <dependency>
-            <groupId>org.apache.derby</groupId>
-            <artifactId>derby</artifactId>
-            <version>${apache.derby.version}</version>
+            <groupId>org.hsqldb</groupId>
+            <artifactId>hsqldb</artifactId>
+            <version>${hsqldb.version}</version>
             <scope>test</scope>
-         </dependency>
-         <dependency>
-            <groupId>org.apache.derby</groupId>
-            <artifactId>derbytools</artifactId>
-            <version>${apache.derby.version}</version>
-            <scope>test</scope>
+            <!-- BSD License -->
          </dependency>
          <dependency>
             <groupId>org.eclipse.paho</groupId>

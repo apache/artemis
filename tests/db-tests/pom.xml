@@ -29,7 +29,7 @@
    <properties>
       <activemq.basedir>${project.basedir}/../../</activemq.basedir>
       <!-- note: I am passing these properties through command line as opposed to syste-properties on surefire as IntelijIDEA wouldn't pick up these properties automatically. It was the simplest way to make it work -->
-      <db-extra-args>-Dderby.load=${derby.load} -Dpostgres.load=${postgres.load} -Dpostgres.uri=${postgres.uri}
+      <db-extra-args>-Dhsql.load=${hsql.load} -Dpostgres.load=${postgres.load} -Dpostgres.uri=${postgres.uri}
          -Dpostgres.class=${postgres.class} -Dmssql.load=${mssql.load} -Dmssql.uri=${mssql.uri}
          -Dmssql.class=${mssql.class} -Dmysql.load=${mysql.load} -Dmysql.uri=${mysql.uri} -Dmysql.class=${mysql.class}
          -Ddb2.load=${db2.load} -Ddb2.class=${db2.class} -Ddb2.uri=${db2.uri} -Doracle.load=${oracle.load}
@@ -39,7 +39,7 @@
          -Ddistribution.lib="${activemq.basedir}/artemis-distribution/target/apache-artemis-${project.version}-bin/apache-artemis-${project.version}/lib"
       </artemis-distribution-lib-dir>
 
-      <derby.load>false</derby.load>
+      <hsql.load>false</hsql.load>
 
       <db2.load>false</db2.load>
       <db2.uri>jdbc:db2://localhost:50000/artemis:user=db2inst1;password=artemis;</db2.uri>
@@ -183,13 +183,8 @@
 
       <!-- DB Test Deps -->
       <dependency>
-         <groupId>org.apache.derby</groupId>
-         <artifactId>derby</artifactId>
-         <scope>test</scope>
-      </dependency>
-      <dependency>
-         <groupId>org.apache.derby</groupId>
-         <artifactId>derbytools</artifactId>
+         <groupId>org.hsqldb</groupId>
+         <artifactId>hsqldb</artifactId>
          <scope>test</scope>
       </dependency>
 
@@ -230,22 +225,22 @@
                </execution>
                <execution>
                   <phase>test-compile</phase>
-                  <id>create-derby</id>
+                  <id>create-hsql</id>
                   <goals>
                      <goal>create</goal>
                   </goals>
                   <configuration>
                      <!-- this makes it easier in certain envs -->
                      <javaOptions>-Djava.net.preferIPv4Stack=true</javaOptions>
-                     <instance>${basedir}/target/derby</instance>
-                     <configuration>${basedir}/target/classes/servers/derby</configuration>
+                     <instance>${basedir}/target/hsql</instance>
+                     <configuration>${basedir}/target/classes/servers/hsql</configuration>
                      <noWeb>true</noWeb>
                      <args>
                         <arg>--jdbc</arg>
                         <arg>--global-max-messages</arg>
                         <arg>100</arg>
                         <arg>--java-options</arg>
-                        <arg>-Dartemis.extra.libs=${basedir}/target/derby/jdbc-jars</arg>
+                        <arg>-Dartemis.extra.libs=${basedir}/target/hsql/jdbc-jars</arg>
                         <arg>--java-options</arg>
                         <arg>-ea</arg>
                      </args>
@@ -253,17 +248,15 @@
                </execution>
                <execution>
                   <phase>test-compile</phase>
-                  <id>create-derby-jdbc</id>
+                  <id>create-hsql-jdbc</id>
                   <goals>
                      <goal>dependency-scan</goal>
                   </goals>
                   <configuration>
                      <libList>
-                        <arg>org.apache.derby:derby:${apache.derby.version}</arg>
-                        <arg>org.apache.derby:derbytools:${apache.derby.version}</arg>
-                        <arg>org.apache.derby:derbyshared:${apache.derby.version}</arg>
+                        <arg>org.hsqldb:hsqldb:${hsqldb.version}</arg>
                      </libList>
-                     <targetFolder>${basedir}/target/derby/jdbc-jars</targetFolder>
+                     <targetFolder>${basedir}/target/hsql/jdbc-jars</targetFolder>
                   </configuration>
                </execution>
 
@@ -441,7 +434,7 @@
             <mysql.load>true</mysql.load>
             <mssql.load>true</mssql.load>
             <db2.load>true</db2.load>
-            <derby.load>true</derby.load>
+            <hsql.load>true</hsql.load>
             <postgres.load>true</postgres.load>
          </properties>
       </profile>
@@ -487,9 +480,9 @@
       </profile>
 
       <profile>
-         <id>DB-derby-tests</id>
+         <id>DB-hsql-tests</id>
          <properties>
-            <derby.load>true</derby.load>
+            <hsql.load>true</hsql.load>
             <skipDBTests>false</skipDBTests>
          </properties>
       </profile>

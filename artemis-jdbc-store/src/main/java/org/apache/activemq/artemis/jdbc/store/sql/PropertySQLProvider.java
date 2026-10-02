@@ -328,10 +328,9 @@ public class PropertySQLProvider implements SQLProvider {
       public enum SQLDialect {
          ORACLE("oracle", "oracle"),
          POSTGRESQL("postgresql", "postgres"),
-         DERBY("derby", "derby"),
+         HSQL("hsql", "hsql", "hypersonic"),
          MYSQL("mysql", "mysql", "mariadb"),
          DB2("db2", "db2"),
-         HSQL("hsql", "hsql", "hypersonic"),
          H2("h2", "h2"),
          MSSQL("mssql", "microsoft"),
          SYBASE("jconnect", "jconnect");

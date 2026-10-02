@@ -19,7 +19,6 @@ package org.apache.activemq.artemis.jdbc.store.journal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.sql.DriverManager;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,7 +26,6 @@ import org.apache.activemq.artemis.core.journal.PreparedTransactionInfo;
 import org.apache.activemq.artemis.core.journal.RecordInfo;
 import org.apache.activemq.artemis.core.journal.TransactionFailureCallback;
 import org.apache.activemq.artemis.tests.util.ArtemisTestCase;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 public class JDBCJournalLoaderCallbackTest extends ArtemisTestCase {
@@ -49,14 +47,6 @@ public class JDBCJournalLoaderCallbackTest extends ArtemisTestCase {
 
       cb.deleteRecord(record.id);
       assertTrue(committedRecords.isEmpty());
-   }
-
-   @AfterEach
-   public void shutdownDerby() {
-      try {
-         DriverManager.getConnection("jdbc:derby:;shutdown=true");
-      } catch (Exception ignored) {
-      }
    }
 
 }

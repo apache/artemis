@@ -18,13 +18,10 @@ package org.apache.activemq.artemis.jdbc.store.drivers;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.activemq.artemis.jdbc.store.logging.LoggingConnection;
-import org.apache.activemq.artemis.jdbc.store.sql.PropertySQLProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
@@ -50,7 +47,6 @@ public class JDBCConnectionProvider {
       this.supportNetworkTimeout = true;
       this.user = user;
       this.password = password;
-      addDerbyShutdownHook();
    }
 
    public synchronized Connection getConnection() throws SQLException {
@@ -89,32 +85,6 @@ public class JDBCConnectionProvider {
          }
       }
       return connection;
-   }
-
-   private static AtomicBoolean shutAdded = new AtomicBoolean(false);
-
-   private static class ShutdownDerby extends Thread {
-      @Override
-      public void run() {
-         try {
-            DriverManager.getConnection("jdbc:derby:;shutdown=true");
-         } catch (Exception e) { }
-      }
-
-   }
-
-   public void addDerbyShutdownHook() {
-      // Shutdown the derby if using the derby embedded driver.
-      try (Connection connection = getConnection()) {
-         PropertySQLProvider.Factory.SQLDialect sqlDialect = PropertySQLProvider.Factory.investigateDialect(connection);
-         if (sqlDialect == PropertySQLProvider.Factory.SQLDialect.DERBY) {
-            if (shutAdded.compareAndSet(false, true)) {
-               Runtime.getRuntime().addShutdownHook(new ShutdownDerby());
-            }
-         }
-      } catch (SQLException e) {
-         logger.error(JDBCUtils.appendSQLExceptionDetails(new StringBuilder(), e).toString());
-      }
    }
 
    public int getNetworkTimeoutMillis() {

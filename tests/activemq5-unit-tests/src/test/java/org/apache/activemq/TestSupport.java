@@ -126,8 +126,8 @@ public abstract class TestSupport extends CombinationTestSupport {
       if (System.getProperty("activemq.store.dir") != null) {
          recursiveDelete(new File(System.getProperty("activemq.store.dir")));
       }
-      if (System.getProperty("derby.system.home") != null) {
-         recursiveDelete(new File(System.getProperty("derby.system.home")));
+      if (System.getProperty("hsqldb.system.home") != null) {
+         recursiveDelete(new File(System.getProperty("hsqldb.system.home")));
       }
    }
 
@@ -174,7 +174,7 @@ public abstract class TestSupport extends CombinationTestSupport {
       switch (choice) {
          case JDBC:
             JDBCPersistenceAdapter jdbcPersistenceAdapter = new JDBCPersistenceAdapter();
-            jdbcPersistenceAdapter.setUseLock(false); // rollback (at shutdown) on derby can take a long time with file io etc
+            jdbcPersistenceAdapter.setUseLock(false);
             adapter = jdbcPersistenceAdapter;
             break;
          case KahaDB:

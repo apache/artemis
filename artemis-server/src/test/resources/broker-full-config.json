@@ -376,8 +376,8 @@
     "largeMessageTableName": "FULL_LARGE_MESSAGES",
     "pageStoreTableName": "FULL_PAGE_STORE",
     "nodeManagerStoreTableName": "FULL_NODE_MANAGER",
-    "jdbcConnectionUrl": "jdbc:derby:target/full-test-store;create=true",
-    "jdbcDriverClassName": "org.apache.derby.jdbc.EmbeddedDriver",
+    "jdbcConnectionUrl": "jdbc:hsqldb:mem:full-test-store",
+    "jdbcDriverClassName": "org.hsqldb.jdbc.JDBCDriver",
     "jdbcNetworkTimeout": 30000,
     "jdbcLockRenewPeriodMillis": 3000,
     "jdbcLockExpirationMillis": 20000

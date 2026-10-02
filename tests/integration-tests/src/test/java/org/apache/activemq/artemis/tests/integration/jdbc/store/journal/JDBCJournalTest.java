@@ -102,8 +102,6 @@ public class JDBCJournalTest extends ActiveMQTestBase {
    public void setup() throws Exception {
       dbConf = createDefaultDatabaseStorageConfiguration();
       if (useAuthentication) {
-         System.setProperty("derby.connection.requireAuthentication", "true");
-         System.setProperty("derby.user." + getJDBCUser(), getJDBCPassword());
          dbConf.setJdbcUser(getJDBCUser());
          dbConf.setJdbcPassword(getJDBCPassword());
       }

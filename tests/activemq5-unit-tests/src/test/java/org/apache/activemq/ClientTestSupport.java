@@ -159,8 +159,8 @@ public class ClientTestSupport extends TestCase {
       if (System.getProperty("activemq.store.dir") != null) {
          recursiveDelete(new File(System.getProperty("activemq.store.dir")));
       }
-      if (System.getProperty("derby.system.home") != null) {
-         recursiveDelete(new File(System.getProperty("derby.system.home")));
+      if (System.getProperty("hsqldb.system.home") != null) {
+         recursiveDelete(new File(System.getProperty("hsqldb.system.home")));
       }
    }
 

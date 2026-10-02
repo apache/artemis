@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.nio.ByteBuffer;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -52,8 +51,9 @@ import org.apache.activemq.artemis.tests.extensions.parameterized.ParameterizedT
 import org.apache.activemq.artemis.tests.extensions.parameterized.Parameter;
 import org.apache.activemq.artemis.tests.extensions.parameterized.Parameters;
 import org.apache.activemq.artemis.tests.util.ArtemisTestCase;
+import org.apache.activemq.artemis.tests.util.DBSupportUtil;
 import org.apache.activemq.artemis.utils.ActiveMQThreadFactory;
-import org.apache.derby.jdbc.EmbeddedDriver;
+import org.hsqldb.jdbc.JDBCDriver;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
@@ -62,7 +62,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @ExtendWith(ParameterizedTestExtension.class)
 public class JDBCSequentialFileFactoryTest extends ArtemisTestCase {
 
-   private static String className = EmbeddedDriver.class.getCanonicalName();
+   private static String className = JDBCDriver.class.getCanonicalName();
 
    private JDBCSequentialFileFactory factory;
 
@@ -89,12 +89,13 @@ public class JDBCSequentialFileFactoryTest extends ArtemisTestCase {
       if (useAuthentication) {
          user = "testuser";
          password = "testpassword";
-         System.setProperty("derby.connection.requireAuthentication", "true");
-         System.setProperty("derby.user." + user, password);
          dataSourceProperties.put("username", user);
          dataSourceProperties.put("password", password);
+      } else {
+         dataSourceProperties.put("username", "SA");
+         dataSourceProperties.put("password", "");
       }
-      dataSourceProperties.put("url", "jdbc:derby:target/data;create=true");
+      dataSourceProperties.put("url", "jdbc:hsqldb:mem:filetest");
       dataSourceProperties.put("driverClassName", className);
       String tableName = "FILES";
       String jdbcDatasourceClass = ActiveMQDefaultConfiguration.getDefaultDataSourceClassName();
@@ -110,22 +111,16 @@ public class JDBCSequentialFileFactoryTest extends ArtemisTestCase {
          scheduledExecutorService.shutdown();
          factory.destroy();
       } finally {
-         shutdownDerby();
+         shutdownHSQL();
       }
    }
 
-   private void shutdownDerby() {
+   private void shutdownHSQL() {
       try {
-         if (useAuthentication) {
-            DriverManager.getConnection("jdbc:derby:;shutdown=true", user, password);
-         } else {
-            DriverManager.getConnection("jdbc:derby:;shutdown=true");
-         }
+         String hsqlUser = useAuthentication ? user : "SA";
+         String hsqlPassword = useAuthentication ? password : "";
+         DBSupportUtil.shutdownHSQL("jdbc:hsqldb:mem:filetest", hsqlUser, hsqlPassword);
       } catch (Exception ignored) {
-      }
-      if (useAuthentication) {
-         System.clearProperty("derby.connection.requireAuthentication");
-         System.clearProperty("derby.user." + user);
       }
    }
 

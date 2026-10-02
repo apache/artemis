@@ -29,7 +29,7 @@ import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
 import org.apache.activemq.artemis.utils.RandomUtil;
 
 public enum Database {
-   MYSQL("mysql"), POSTGRES("postgres"), ORACLE("oracle"), MSSQL("mssql"), DB2("db2"), JOURNAL("journal"), DERBY("derby");
+   MYSQL("mysql"), POSTGRES("postgres"), ORACLE("oracle"), MSSQL("mssql"), DB2("db2"), JOURNAL("journal"), HSQL("hsql");
 
    private String dbname;
    private boolean load;
@@ -57,7 +57,7 @@ public enum Database {
 
    public Connection getConnection() throws Exception {
       return switch (this) {
-         case DERBY -> DriverManager.getConnection(getJdbcURI());
+         case HSQL -> DriverManager.getConnection(getJdbcURI(), "SA", "");
          case JOURNAL -> null;
          default -> getDriver().connect(getJdbcURI(), null);
       };
@@ -65,7 +65,7 @@ public enum Database {
 
    // There is one artemis server for each database we provide on the tests
    public ClassLoader getDBClassLoader() throws Exception {
-      if (this != JOURNAL && this != DERBY && dbClassLoader == null) {
+      if (this != JOURNAL && this != HSQL && dbClassLoader == null) {
          String serverLocation = ParameterDBTestBase.getServerLocation(getName());
          File lib = new File(serverLocation + "/lib");
          dbClassLoader = defineClassLoader(lib, getClass().getClassLoader());
@@ -80,9 +80,8 @@ public enum Database {
    public String getJdbcURI() {
       if (jdbcURI == null) {
          switch (this) {
-            case DERBY:
-               String derbyData = ParameterDBTestBase.getServerLocation("derby") + "/data/derby/db";
-               jdbcURI = "jdbc:derby:" + derbyData + ";create=true";
+            case HSQL:
+               jdbcURI = "jdbc:hsqldb:mem:dbtest";
                break;
             case JOURNAL:
                jdbcURI = null;
@@ -103,7 +102,7 @@ public enum Database {
       }
 
       switch (this) {
-         case DERBY:
+         case HSQL:
             this.driverClass = ActiveMQDefaultConfiguration.getDefaultDriverClassName();
             break;
          case JOURNAL:

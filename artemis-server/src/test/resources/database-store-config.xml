@@ -21,14 +21,14 @@
    <core xmlns="urn:activemq:core">
       <store>
          <database-store>
-            <jdbc-connection-url>jdbc:derby:target/derby/database-store;create=true</jdbc-connection-url>
+            <jdbc-connection-url>jdbc:hsqldb:mem:database-store</jdbc-connection-url>
             <jdbc-user>ENC(5493dd76567ee5ec269d11823973462f)</jdbc-user>
             <jdbc-password>ENC(56a0db3b71043054269d11823973462f)</jdbc-password>
             <bindings-table-name>BINDINGS_TABLE</bindings-table-name>
             <message-table-name>MESSAGE_TABLE</message-table-name>
             <large-message-table-name>LARGE_MESSAGE_TABLE</large-message-table-name>
             <page-store-table-name>PAGE_STORE_TABLE</page-store-table-name>
-            <jdbc-driver-class-name>org.apache.derby.jdbc.EmbeddedDriver</jdbc-driver-class-name>
+            <jdbc-driver-class-name>org.hsqldb.jdbc.JDBCDriver</jdbc-driver-class-name>
          </database-store>
       </store>
    </core>

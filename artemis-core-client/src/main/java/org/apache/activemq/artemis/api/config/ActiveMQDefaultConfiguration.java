@@ -464,11 +464,11 @@ public final class ActiveMQDefaultConfiguration {
    // Which store type to use, options are FILE or DATABASE, FILE is default.
    private static String DEFAULT_STORE_TYPE = "FILE";
 
-   // Default database url.  Derby database is used by default.
+   // Default database url.  HSQLDB is used by default.
    private static String DEFAULT_DATABASE_URL = null;
 
-   // Default JDBC Driver class name, derby by default just for demo purposes
-   private static String DEFAULT_JDBC_DRIVER_CLASS_NAME = "org.apache.derby.jdbc.EmbeddedDriver";
+   // Default JDBC Driver class name, HSQLDB by default just for demo purposes
+   private static String DEFAULT_JDBC_DRIVER_CLASS_NAME = "org.hsqldb.jdbc.JDBCDriver";
 
    // Default JDBC Driver class name. DBCP2 BasicDataSource is used by default.
    private static String DEFAULT_JDBC_DATA_SOURCE_CLASS_NAME = "org.apache.commons.dbcp2.BasicDataSource";

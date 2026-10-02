@@ -70,7 +70,7 @@ public class HAPolicyConfigurationTest extends ServerTestBase {
    public void tearDown() throws Exception {
       super.tearDown();
 
-      shutdownDerby();
+      shutdownEmbeddedDatabases();
    }
 
    @Test

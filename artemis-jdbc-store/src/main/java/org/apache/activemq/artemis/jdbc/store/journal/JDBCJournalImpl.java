@@ -223,6 +223,9 @@ public class JDBCJournalImpl extends AbstractJDBCDriver implements Journal {
 
          connection.setAutoCommit(false);
 
+         boolean batchInsertRecord = false;
+         boolean batchDeleteRecord = false;
+         boolean batchRollbackRecord = false;
          for (JDBCJournalRecord record : recordRef) {
 
             logger.trace("sync::preparing JDBC statement for {}", record);
@@ -232,11 +235,13 @@ public class JDBCJournalImpl extends AbstractJDBCDriver implements Journal {
                   // Standard SQL Delete Record, Non transactional delete
                   deletedRecords.add(record.getId());
                   record.writeDeleteRecord(deleteJournalRecords);
+                  batchDeleteRecord = true;
                   break;
                case JDBCJournalRecord.ROLLBACK_RECORD:
                   // Roll back we remove all records associated with this TX ID.  This query is always performed last.
                   deleteJournalTxRecords.setLong(1, record.getTxId());
                   deleteJournalTxRecords.addBatch();
+                  batchRollbackRecord = true;
                   break;
                case JDBCJournalRecord.COMMIT_RECORD:
                   // We perform all the deletes and add the commit record in the same Database TX
@@ -246,20 +251,29 @@ public class JDBCJournalImpl extends AbstractJDBCDriver implements Journal {
                      deletedRecords.add(info.id);
                      deleteJournalRecords.setLong(1, info.id);
                      deleteJournalRecords.addBatch();
+                     batchDeleteRecord = true;
                   }
                   record.writeRecord(insertJournalRecords);
+                  batchInsertRecord = true;
                   committedTransactions.add(record.getTxId());
                   break;
                default:
                   // Default we add a new record to the DB
                   record.writeRecord(insertJournalRecords);
+                  batchInsertRecord = true;
                   break;
             }
          }
 
-         insertJournalRecords.executeBatch();
-         deleteJournalRecords.executeBatch();
-         deleteJournalTxRecords.executeBatch();
+         if (batchInsertRecord) {
+            insertJournalRecords.executeBatch();
+         }
+         if (batchDeleteRecord) {
+            deleteJournalRecords.executeBatch();
+         }
+         if (batchRollbackRecord) {
+            deleteJournalTxRecords.executeBatch();
+         }
 
          connection.commit();
          logger.trace("JDBC commit worked");
