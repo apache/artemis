@@ -1100,6 +1100,40 @@ public class MessageRedistributionTest extends ClusterTestBase {
    }
 
    @Test
+   public void testEvenRedistributionLbOffWithRedistribution() throws Exception {
+      final int messageCount = 1000;
+      final String queue = "queues.test";
+
+      setupCluster(MessageLoadBalancingType.OFF_WITH_REDISTRIBUTION);
+      startServers(0, 1, 2);
+
+      setupSessionFactory(0, isNetty());
+      setupSessionFactory(1, isNetty());
+      setupSessionFactory(2, isNetty());
+
+      createQueue(0, queue, queue, null, false, RoutingType.ANYCAST);
+      createQueue(1, queue, queue, null, false, RoutingType.ANYCAST);
+      createQueue(2, queue, queue, null, false, RoutingType.ANYCAST);
+
+      addConsumer(0, 1, queue, null);
+      addConsumer(1, 2, queue, null);
+
+      waitForBindings(0, queue, 1, 0, true);
+      waitForBindings(1, queue, 1, 1, true);
+      waitForBindings(2, queue, 1, 1, true);
+
+      waitForBindings(0, queue, 2, 2, false);
+      waitForBindings(1, queue, 2, 1, false);
+      waitForBindings(2, queue, 2, 1, false);
+
+      send(0, queue, messageCount * 2, false, null);
+
+      Wait.assertEquals(0L, () -> servers[0].getTotalMessageCount(), 5000, 100);
+      Assert.assertEquals(messageCount, servers[1].getTotalMessageCount());
+      Assert.assertEquals(messageCount, servers[2].getTotalMessageCount());
+   }
+
+   @Test
    public void testRedistributionToRemoteMulticastConsumerLbOffWithRedistribution() throws Exception {
 
       String address = "test.address";
