@@ -176,19 +176,21 @@ public class Producer extends DestAbstract {
                   return null;
                }
 
-               serializer.setInput(in, session);
-               serializer.start();
+               try (in) {
+                  serializer.setInput(in, session);
+                  serializer.start();
 
-               Message message = serializer.read();
+                  Message message = serializer.read();
 
-               while (message != null) {
-                  producer.send(message);
-                  message = serializer.read();
-                  messageCount++;
+                  while (message != null) {
+                     producer.send(message);
+                     message = serializer.read();
+                     messageCount++;
+                  }
+
+                  session.commit();
+                  serializer.stop();
                }
-
-               session.commit();
-               serializer.stop();
             } catch (Exception e) {
                context.err.println("Error occurred during import.  Rolling back.");
                session.rollback();
