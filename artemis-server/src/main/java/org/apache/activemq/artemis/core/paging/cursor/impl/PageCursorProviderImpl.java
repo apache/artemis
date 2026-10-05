@@ -66,7 +66,7 @@ public class PageCursorProviderImpl implements PageCursorProvider {
 
    protected final StorageManager storageManager;
 
-   private final ConcurrentLongHashMap<PageSubscription> activeCursors = new ConcurrentLongHashMap<>();
+   private final ConcurrentLongHashMap<PageSubscription> activeCursors = new ConcurrentLongHashMap<>(4, 1);
 
    public PageCursorProviderImpl(final PagingStore pagingStore,
                                  final StorageManager storageManager) {
