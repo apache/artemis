@@ -16,4 +16,4 @@
 # specific language governing permissions and limitations
 # under the License.
 
-mvn -Ptests -Pactivemq5-unit-tests -DfailIfNoTests=false -DskipStyleCheck=true -Dmaven.test.redirectTestOutputToFile=false -DskipPerformanceTests=false -DskipSoakTests=false -Dtest=$1 test
+mvn -Ptests -Pactivemq5-unit-tests -DfailIfNoTests=false -DskipStyleCheck=true -Dmaven.test.redirectTestOutputToFile=false -DskipPerformanceTests=false -DskipSoakTests=false -Dtest=$1 test "${@:2}"
