@@ -72,7 +72,7 @@ public class MQTTConnectionManager {
       boolean cleanStart = connect.variableHeader().isCleanSession();
 
       String clientId = session.getConnection().getClientID();
-      boolean sessionPresent = session.getStateManager().getSessionStates().containsKey(clientId);
+      boolean sessionPresent = session.getStateManager().sessionPresent(clientId);
       MQTTSessionState sessionState = session.getStateManager().getSessionState(clientId);
       session.setSessionState(sessionState);
       sessionState.setFailed(false);

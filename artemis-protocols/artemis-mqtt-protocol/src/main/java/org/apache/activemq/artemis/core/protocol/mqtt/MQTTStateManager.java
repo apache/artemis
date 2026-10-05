@@ -190,6 +190,10 @@ public class MQTTStateManager {
       return new HashMap<>(sessionStates);
    }
 
+   public boolean sessionPresent(String clientId) {
+      return sessionStates.containsKey(clientId);
+   }
+
    @Override
    public String toString() {
       return "MQTTSessionStateManager@" + Integer.toHexString(System.identityHashCode(this));
