@@ -706,7 +706,7 @@ public class Create extends InstallAbstract {
 
       if (jdbc) {
          if (jdbcURL == null) {
-            jdbcURL = "jdbc:hsqldb:file:" + getInstance().getAbsolutePath() + "/data/hsqldb/db";
+            jdbcURL = "jdbc:hsqldb:file:" + getInstance().getAbsolutePath() + "/data/hsqldb/db;hsqldb.write_delay=false";
          }
          filters.put("${jdbcBindings}", jdbcBindings);
          filters.put("${jdbcMessages}", jdbcMessages);

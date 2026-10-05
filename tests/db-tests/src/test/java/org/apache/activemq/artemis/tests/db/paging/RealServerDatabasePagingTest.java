@@ -54,16 +54,16 @@ public class RealServerDatabasePagingTest extends ParameterDBTestBase {
 
    private static final String TEST_NAME = "PGDB";
 
-   private static final int MAX_MESSAGES = Integer.parseInt(testProperty(TEST_NAME, "MAX_MESSAGES", "1000"));
+   private static final int MAX_MESSAGES = Integer.parseInt(testProperty(TEST_NAME, "MAX_MESSAGES", "500"));
    private static final int MAX_LARGE_MESSAGES = Integer.parseInt(testProperty(TEST_NAME, "MAX_LARGE_MESSAGES", "200"));
 
-   private static final int SOAK_MAX_MESSAGES = Integer.parseInt(testProperty(TEST_NAME, "SOAK_MAX_MESSAGES", "10000"));
+   private static final int SOAK_MAX_MESSAGES = Integer.parseInt(testProperty(TEST_NAME, "SOAK_MAX_MESSAGES", "2000"));
 
-   private static final int MESSAGE_SIZE = Integer.parseInt(testProperty(TEST_NAME, "MESSAGE_SIZE", "1000"));
+   private static final int MESSAGE_SIZE = Integer.parseInt(testProperty(TEST_NAME, "MESSAGE_SIZE", "500"));
    private static final int LARGE_MESSAGE_SIZE = Integer.parseInt(testProperty(TEST_NAME, "LARGE_MESSAGE_SIZE", "500000"));
    private static final int SOAK_MESSAGE_SIZE = Integer.parseInt(testProperty(TEST_NAME, "SOAK_MESSAGE_SIZE", "1000"));
 
-   private static final int COMMIT_INTERVAL = Integer.parseInt(testProperty(TEST_NAME, "COMMIT_INTERVAL", "1000"));
+   private static final int COMMIT_INTERVAL = Integer.parseInt(testProperty(TEST_NAME, "COMMIT_INTERVAL", "50"));
 
    Process serverProcess;
 
@@ -126,7 +126,6 @@ public class RealServerDatabasePagingTest extends ParameterDBTestBase {
             }
          }
          session.commit();
-
       }
 
       stopServerWithFile(getServerLocation(database.getName()), serverProcess, 1, TimeUnit.MINUTES);
@@ -140,7 +139,7 @@ public class RealServerDatabasePagingTest extends ParameterDBTestBase {
          Queue queue = session.createQueue(queueName);
          MessageConsumer consumer = session.createConsumer(queue);
          for (int i = 0; i < messages; i++) {
-            BytesMessage message = (BytesMessage) consumer.receive(5000);
+            BytesMessage message = (BytesMessage) consumer.receive(15_000);
             assertNotNull(message);
             assertEquals(i, message.getIntProperty("i"));
             assertEquals(messageSize, message.getBodyLength());

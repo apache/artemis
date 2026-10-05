@@ -74,9 +74,7 @@ export TEST_OW_LEAK_OPENWIRE_MESSAGE_SIZE=2000000
 export TEST_OW_LEAK_PRINT_INTERVAL=1
 
 #DatabasePagingTest
-export TEST_PGDB_DB_LIST=derby
-# use this to allow all the databases
-#export TEST_PGDB_DB_LIST=derby,postgres,mysql
+export TEST_PGDB_DB_LIST=hsql
 export TEST_PGDB_MAX_MESSAGES=500
 export TEST_PGDB_MESSAGE_SIZE=100
 export TEST_PGDB_COMMIT_INTERVAL=50
