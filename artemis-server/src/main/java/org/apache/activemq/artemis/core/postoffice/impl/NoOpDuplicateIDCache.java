@@ -56,6 +56,11 @@ public final class NoOpDuplicateIDCache implements DuplicateIDCache {
    }
 
    @Override
+   public boolean deleteFromCache(byte[] duplicateID, Transaction tx) throws Exception {
+      return true;
+   }
+
+   @Override
    public void load(List<Pair<byte[], Long>> ids) throws Exception {
 
    }

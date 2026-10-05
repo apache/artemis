@@ -72,9 +72,9 @@ public class PacketIdCache {
       return cache != null && cache.contains(ByteUtil.intToBytes(packetId));
    }
 
-   public boolean remove(int packetId) throws Exception {
+   public boolean remove(int packetId, Transaction tx) throws Exception {
       check();
-      return cache != null && cache.deleteFromCache(ByteUtil.intToBytes(packetId));
+      return cache != null && cache.deleteFromCache(ByteUtil.intToBytes(packetId), tx);
    }
 
    public int size() {

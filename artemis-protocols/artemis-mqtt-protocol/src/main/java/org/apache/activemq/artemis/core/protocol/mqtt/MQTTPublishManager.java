@@ -325,15 +325,26 @@ public class MQTTPublishManager {
    }
 
    synchronized void handlePubComp(int packetId) throws Exception {
-      session.getState().getPubRecCache().remove(packetId);
+      removePacketIdFromCache(session.getState().getPubRecCache(), packetId, MqttMessageType.PUBCOMP, MqttMessageType.PUBREC);
    }
 
    synchronized void handlePubRel(int packetId) throws Exception {
-      boolean deleted = session.getState().getPublishCache().remove(packetId);
-      if (!deleted) {
-         logger.debug("MQTT client {} sent PUBREL for packet {} but no corresponding PUBLISH was found in the cache", session.getState().getClientId(), packetId);
-      }
+      removePacketIdFromCache(session.getState().getPublishCache(), packetId, MqttMessageType.PUBREL, MqttMessageType.PUBLISH);
       session.getProtocolHandler().sendPubComp(packetId);
+   }
+
+   private void removePacketIdFromCache(PacketIdCache cache, int packetId, MqttMessageType receivedType, MqttMessageType cachedType) throws Exception {
+      Transaction tx = session.getServerSession().newTransaction();
+      try {
+         boolean deleted = cache.remove(packetId, tx);
+         if (!deleted) {
+            logger.debug("MQTT client {} sent {} for packet {} but no corresponding {} was found in the cache", session.getState().getClientId(), receivedType, packetId, cachedType);
+         }
+         tx.commit();
+      } catch (Throwable t) {
+         tx.rollback();
+         throw t;
+      }
    }
 
    synchronized void handlePubAck(int packetId) throws Exception {
@@ -377,6 +388,7 @@ public class MQTTPublishManager {
                state.getPubRecCache().add(packetId, tx);
             }
             session.getStateManager().removePacketIdCorrelation(state.getClientId(), delivery.getPacketIdCorrelationKey(), tx.getID());
+            tx.setContainsPersistent();
             consumer.individualAcknowledge(tx, delivery.getCoreMessageId());
             tx.commit();
             state.removeCoreDeliveryInfo(packetId);

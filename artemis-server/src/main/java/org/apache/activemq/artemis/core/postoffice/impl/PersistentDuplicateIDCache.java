@@ -146,10 +146,16 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
 
    @Override
    public boolean deleteFromCache(byte[] duplicateID) throws Exception {
-      return deleteFromCache(new ByteArray(duplicateID));
+      return deleteFromCache(new ByteArray(duplicateID), null);
    }
 
-   private boolean deleteFromCache(final ByteArray duplicateID) throws Exception {
+   @Override
+   public boolean deleteFromCache(byte[] duplicateID, Transaction tx) throws Exception {
+      Objects.requireNonNull(tx, "tx must be not null");
+      return deleteFromCache(new ByteArray(duplicateID), tx);
+   }
+
+   private boolean deleteFromCache(final ByteArray duplicateID, final Transaction tx) throws Exception {
       if (logger.isTraceEnabled()) {
          logger.trace("deleting id = {}", describeID(duplicateID.bytes));
       }
@@ -167,7 +173,12 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
                if (logger.isTraceEnabled()) {
                   logger.trace("address = {} deleting id = {}", address, describeID(duplicateID.bytes, id.getB()));
                }
-               storageManager.deleteDuplicateID(recordID);
+               if (tx == null) {
+                  storageManager.deleteDuplicateID(recordID);
+               } else {
+                  storageManager.deleteDuplicateIDTransactional(tx.getID(), recordID);
+                  tx.setContainsPersistent();
+               }
             }
          }
          return true;
@@ -393,7 +404,7 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
       @Override
       public void beforeRollback(Transaction tx) throws Exception {
          if (!afterCommit) {
-            deleteFromCache(holder);
+            deleteFromCache(holder, null);
          }
       }
 

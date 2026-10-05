@@ -81,6 +81,11 @@ final class InMemoryDuplicateIDCache implements DuplicateIDCache {
       return deleteFromCache(new ByteArray(duplicateID));
    }
 
+   @Override
+   public boolean deleteFromCache(byte[] duplicateID, Transaction tx) {
+      return deleteFromCache(new ByteArray(duplicateID));
+   }
+
    private boolean deleteFromCache(final ByteArray duplicateID) {
       if (logger.isTraceEnabled()) {
          logger.trace("deleting id = {}", describeID(duplicateID.bytes));
