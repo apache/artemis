@@ -19,12 +19,13 @@ package org.apache.activemq.artemis.utils.critical;
 import java.security.PrivilegedAction;
 import java.util.ConcurrentModificationException;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.activemq.artemis.core.server.ActiveMQScheduledComponent;
 import org.apache.activemq.artemis.utils.ActiveMQThreadFactory;
-import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.apache.activemq.artemis.utils.sm.SecurityManagerShim;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,7 +80,7 @@ public class CriticalAnalyzerImpl implements CriticalAnalyzer {
 
    private List<CriticalAction> actions = new CopyOnWriteArrayList<>();
 
-   private final ConcurrentHashSet<CriticalComponent> components = new ConcurrentHashSet<>();
+   private final Set<CriticalComponent> components = ConcurrentHashMap.newKeySet();
 
    @Override
    public int getNumberOfComponents() {

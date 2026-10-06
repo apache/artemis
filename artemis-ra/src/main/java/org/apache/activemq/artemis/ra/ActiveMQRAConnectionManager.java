@@ -22,13 +22,14 @@ import javax.resource.spi.ConnectionRequestInfo;
 import javax.resource.spi.ManagedConnection;
 import javax.resource.spi.ManagedConnectionFactory;
 
-import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.lang.invoke.MethodHandles;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The connection manager used in non-managed environments.
@@ -42,7 +43,7 @@ public class ActiveMQRAConnectionManager implements ConnectionManager {
       logger.trace("constructor()");
    }
 
-   transient ConcurrentHashSet<ManagedConnection> connections = new ConcurrentHashSet<>();
+   transient Set<ManagedConnection> connections = ConcurrentHashMap.newKeySet();
 
    /**
     * Allocates a connection
@@ -81,6 +82,6 @@ public class ActiveMQRAConnectionManager implements ConnectionManager {
     */
    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
       in.defaultReadObject();
-      connections = new ConcurrentHashSet<>();
+      connections = ConcurrentHashMap.newKeySet();
    }
 }

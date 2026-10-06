@@ -32,6 +32,7 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -117,7 +118,6 @@ import org.apache.activemq.artemis.utils.ReferenceCounter;
 import org.apache.activemq.artemis.utils.ReusableLatch;
 import org.apache.activemq.artemis.utils.SizeAwareMetric;
 import org.apache.activemq.artemis.utils.actors.ArtemisExecutor;
-import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.apache.activemq.artemis.utils.collections.LinkedListIterator;
 import org.apache.activemq.artemis.utils.collections.NodeStoreFactory;
 import org.apache.activemq.artemis.utils.collections.PriorityLinkedList;
@@ -342,7 +342,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
     */
    private final Object directDeliveryGuard = new Object();
 
-   private final ConcurrentHashSet<String> lingerSessionIds = new ConcurrentHashSet<>();
+   private final Set<String> lingerSessionIds = ConcurrentHashMap.newKeySet();
 
    public String debug() {
       StringWriter str = new StringWriter();

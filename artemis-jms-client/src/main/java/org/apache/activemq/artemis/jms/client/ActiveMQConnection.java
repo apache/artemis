@@ -20,6 +20,7 @@ import java.lang.ref.WeakReference;
 import java.security.PrivilegedAction;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -55,7 +56,6 @@ import org.apache.activemq.artemis.reader.MessageUtil;
 import org.apache.activemq.artemis.utils.ActiveMQThreadFactory;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
 import org.apache.activemq.artemis.utils.VersionLoader;
-import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.apache.activemq.artemis.utils.sm.SecurityManagerShim;
 
 /**
@@ -82,9 +82,9 @@ public class ActiveMQConnection extends ActiveMQConnectionForContextImpl impleme
 
    private final int connectionType;
 
-   private final Set<ActiveMQSession> sessions = new ConcurrentHashSet<>();
+   private final Set<ActiveMQSession> sessions = ConcurrentHashMap.newKeySet();
 
-   private final Set<SimpleString> tempQueues = new ConcurrentHashSet<>();
+   private final Set<SimpleString> tempQueues = ConcurrentHashMap.newKeySet();
 
    private volatile boolean hasNoLocal;
 

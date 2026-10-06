@@ -23,6 +23,7 @@ import java.util.Set;
  *
  * @param <E> The generic class
  */
+@Deprecated(forRemoval = true)
 public interface ConcurrentSet<E> extends Set<E> {
 
    boolean addIfAbsent(E o);

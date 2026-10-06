@@ -18,6 +18,7 @@ package org.apache.activemq.artemis.tests.integration.client;
 
 import java.lang.invoke.MethodHandles;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -46,7 +47,6 @@ import org.apache.activemq.artemis.core.settings.impl.SlowConsumerThresholdMeasu
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.tests.util.Wait;
 import org.apache.activemq.artemis.utils.RandomUtil;
-import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -454,7 +454,7 @@ public class SlowConsumerTest extends ActiveMQTestBase {
       session.commit();
 
 
-      ConcurrentHashSet<ClientMessage> receivedMessages = new ConcurrentHashSet<>();
+      Set<ClientMessage> receivedMessages = ConcurrentHashMap.newKeySet();
       FixedRateConsumer consumer = new FixedRateConsumer(40, MESSAGES_PER_MINUTE, receivedMessages, sf, QUEUE, 0);
       consumer.start();
 
@@ -496,7 +496,7 @@ public class SlowConsumerTest extends ActiveMQTestBase {
       session.commit();
 
 
-      ConcurrentHashSet<ClientMessage> receivedMessages = new ConcurrentHashSet<>();
+      Set<ClientMessage> receivedMessages = ConcurrentHashMap.newKeySet();
       FixedRateConsumer consumer = new FixedRateConsumer(30, MESSAGES_PER_MINUTE, receivedMessages, sf, QUEUE, 0);
       consumer.start();
 
@@ -548,7 +548,7 @@ public class SlowConsumerTest extends ActiveMQTestBase {
       session.commit();
 
 
-      ConcurrentHashSet<ClientMessage> receivedMessages = new ConcurrentHashSet<>();
+      Set<ClientMessage> receivedMessages = ConcurrentHashMap.newKeySet();
       FixedRateConsumer consumer = new FixedRateConsumer(30, MESSAGES_PER_MINUTE, receivedMessages, sf, QUEUE, 0);
       consumer.start();
 
@@ -589,7 +589,7 @@ public class SlowConsumerTest extends ActiveMQTestBase {
       session.commit();
 
 
-      ConcurrentHashSet<ClientMessage> receivedMessages = new ConcurrentHashSet<>();
+      Set<ClientMessage> receivedMessages = ConcurrentHashMap.newKeySet();
       FixedRateConsumer consumer = new FixedRateConsumer(70, MESSAGES_PER_MINUTE, receivedMessages, sf, QUEUE, 0);
       consumer.start();
 
@@ -634,7 +634,7 @@ public class SlowConsumerTest extends ActiveMQTestBase {
       session.commit();
 
 
-      ConcurrentHashSet<ClientMessage> receivedMessages = new ConcurrentHashSet<>();
+      Set<ClientMessage> receivedMessages = ConcurrentHashMap.newKeySet();
       FixedRateConsumer consumer = new FixedRateConsumer(80, MESSAGES_PER_MINUTE, receivedMessages, sf, QUEUE, 0);
       consumer.start();
 
@@ -707,8 +707,8 @@ public class SlowConsumerTest extends ActiveMQTestBase {
 
       FixedRateProducer producer = new FixedRateProducer(threshold * 2, MESSAGES_PER_SECOND, sf1, QUEUE, messages);
 
-      final Set<FixedRateConsumer> consumers = new ConcurrentHashSet<>();
-      final Set<ClientMessage> receivedMessages = new ConcurrentHashSet<>();
+      final Set<FixedRateConsumer> consumers = ConcurrentHashMap.newKeySet();
+      final Set<ClientMessage> receivedMessages = ConcurrentHashMap.newKeySet();
 
       consumers.add(new FixedRateConsumer(threshold, MESSAGES_PER_SECOND, receivedMessages, sf2, QUEUE, 1));
       consumers.add(new FixedRateConsumer(threshold, MESSAGES_PER_SECOND, receivedMessages, sf3, QUEUE, 2));

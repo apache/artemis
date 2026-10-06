@@ -34,6 +34,8 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
@@ -87,7 +89,6 @@ import org.apache.activemq.artemis.utils.ExecutorFactory;
 import org.apache.activemq.artemis.utils.SimpleFuture;
 import org.apache.activemq.artemis.utils.SimpleFutureImpl;
 import org.apache.activemq.artemis.utils.actors.OrderedExecutorFactory;
-import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.apache.activemq.artemis.utils.collections.ConcurrentLongHashMap;
 import org.apache.activemq.artemis.utils.collections.LongHashSet;
 import org.apache.activemq.artemis.utils.collections.SparseArrayLinkedList;
@@ -313,7 +314,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
 
    private Executor appendExecutor = null;
 
-   private final ConcurrentHashSet<CountDownLatch> latches = new ConcurrentHashSet<>();
+   private final Set<CountDownLatch> latches = ConcurrentHashMap.newKeySet();
 
    private final ExecutorFactory providedIOThreadPool;
    protected ExecutorFactory ioExecutorFactory;

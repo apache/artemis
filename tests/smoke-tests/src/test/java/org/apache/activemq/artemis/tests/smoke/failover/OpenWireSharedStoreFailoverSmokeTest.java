@@ -24,6 +24,8 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 import java.io.File;
 import java.lang.invoke.MethodHandles;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
@@ -37,7 +39,6 @@ import org.apache.activemq.artemis.tests.smoke.common.SmokeTestBase;
 import org.apache.activemq.artemis.tests.util.CFUtil;
 import org.apache.activemq.artemis.util.ServerUtil;
 import org.apache.activemq.artemis.utils.Wait;
-import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -127,7 +128,7 @@ public class OpenWireSharedStoreFailoverSmokeTest extends SmokeTestBase {
 
       CyclicBarrier startFlag = new CyclicBarrier(PRODUCERS);
 
-      ConcurrentHashSet<String> duplicateIDs = new ConcurrentHashSet<>();
+      Set<String> duplicateIDs = ConcurrentHashMap.newKeySet();
 
       for (int producerID = 0; producerID < PRODUCERS; producerID++) {
          final int theProducerID = producerID;

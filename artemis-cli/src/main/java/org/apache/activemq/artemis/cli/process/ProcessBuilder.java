@@ -21,12 +21,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-
-import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ProcessBuilder {
 
-   static ConcurrentHashSet<Process> processes = new ConcurrentHashSet<>();
+   static Set<Process> processes = ConcurrentHashMap.newKeySet();
 
    static {
       Runtime.getRuntime().addShutdownHook(new Thread(() -> {

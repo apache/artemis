@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentMap;
  * <p>
  * Offers same concurrency as ConcurrentHashMap but for a Set
  */
+@Deprecated(forRemoval = true)
 public class ConcurrentHashSet<E> extends AbstractSet<E> implements ConcurrentSet<E> {
 
    private final ConcurrentMap<E, Object> theMap;

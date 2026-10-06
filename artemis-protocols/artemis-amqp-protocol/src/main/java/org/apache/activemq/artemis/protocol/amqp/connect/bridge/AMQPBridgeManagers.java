@@ -18,11 +18,11 @@ package org.apache.activemq.artemis.protocol.amqp.connect.bridge;
 
 import java.lang.invoke.MethodHandles;
 import java.util.Collection;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPBridgeBrokerConnectionElement;
 import org.apache.activemq.artemis.protocol.amqp.connect.AMQPBrokerConnection;
 import org.apache.activemq.artemis.protocol.amqp.proton.AMQPSessionContext;
-import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +33,7 @@ public class AMQPBridgeManagers {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-   private final Collection<AMQPBridgeManager> bridgeManagers = new ConcurrentHashSet<>();
+   private final Collection<AMQPBridgeManager> bridgeManagers = ConcurrentHashMap.newKeySet();
    private final AMQPBrokerConnection brokerConnection;
 
    public AMQPBridgeManagers(AMQPBrokerConnection brokerConnection) {

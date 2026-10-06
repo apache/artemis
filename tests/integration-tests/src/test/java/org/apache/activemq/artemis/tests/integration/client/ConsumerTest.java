@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
@@ -71,7 +72,6 @@ import org.apache.activemq.artemis.tests.extensions.parameterized.Parameters;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.tests.util.Wait;
 import org.apache.activemq.artemis.utils.ByteUtil;
-import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
@@ -913,7 +913,7 @@ public class ConsumerTest extends ActiveMQTestBase {
    @TestTemplate
    public void testReceiveAndResend() throws Exception {
 
-      final Set<Object> sessions = new ConcurrentHashSet<>();
+      final Set<Object> sessions = ConcurrentHashMap.newKeySet();
       final AtomicInteger errors = new AtomicInteger(0);
 
       final SimpleString QUEUE_RESPONSE = SimpleString.of("QUEUE_RESPONSE");

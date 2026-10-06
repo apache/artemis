@@ -20,11 +20,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.activemq.artemis.utils.TimeAndCounterIDGenerator;
-import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.junit.jupiter.api.Test;
 
 public class TimeAndCounterIDGeneratorTest {
@@ -66,7 +67,7 @@ public class TimeAndCounterIDGeneratorTest {
 
    @Test
    public void testCalculationOnMultiThread() throws Throwable {
-      final ConcurrentHashSet<Long> hashSet = new ConcurrentHashSet<>();
+      final Set<Long> hashSet = ConcurrentHashMap.newKeySet();
 
       final TimeAndCounterIDGenerator seq = new TimeAndCounterIDGenerator();
 

@@ -217,7 +217,6 @@ import org.apache.activemq.artemis.utils.TimeUtils;
 import org.apache.activemq.artemis.utils.UUID;
 import org.apache.activemq.artemis.utils.VersionLoader;
 import org.apache.activemq.artemis.utils.actors.OrderedExecutorFactory;
-import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.apache.activemq.artemis.utils.critical.CriticalAction;
 import org.apache.activemq.artemis.utils.critical.CriticalAnalyzer;
 import org.apache.activemq.artemis.utils.critical.CriticalAnalyzerImpl;
@@ -365,15 +364,15 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
    private final Map<String, BrokerConnection> brokerConnectionMap = new ConcurrentHashMap<>();
 
-   private final Set<ActivateCallback> activateCallbacks = new ConcurrentHashSet<>();
+   private final Set<ActivateCallback> activateCallbacks = ConcurrentHashMap.newKeySet();
 
-   private final Set<ActivationFailureListener> activationFailureListeners = new ConcurrentHashSet<>();
+   private final Set<ActivationFailureListener> activationFailureListeners = ConcurrentHashMap.newKeySet();
 
-   private final Set<IOCriticalErrorListener> ioCriticalErrorListeners = new ConcurrentHashSet<>();
+   private final Set<IOCriticalErrorListener> ioCriticalErrorListeners = ConcurrentHashMap.newKeySet();
 
-   private final Set<PostQueueCreationCallback> postQueueCreationCallbacks = new ConcurrentHashSet<>();
+   private final Set<PostQueueCreationCallback> postQueueCreationCallbacks = ConcurrentHashMap.newKeySet();
 
-   private final Set<PostQueueDeletionCallback> postQueueDeletionCallbacks = new ConcurrentHashSet<>();
+   private final Set<PostQueueDeletionCallback> postQueueDeletionCallbacks = ConcurrentHashMap.newKeySet();
 
    private volatile GroupingHandler groupingHandler;
 

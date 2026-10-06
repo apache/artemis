@@ -25,6 +25,8 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -47,7 +49,6 @@ import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.utils.ExecutorFactory;
 import org.apache.activemq.artemis.utils.SimpleIDGenerator;
 import org.apache.activemq.artemis.utils.actors.OrderedExecutorFactory;
-import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -99,7 +100,7 @@ public class BatchCommitTest extends ActiveMQTestBase {
 
       CountDownLatch latch = new CountDownLatch(RECORDS);
 
-      ConcurrentHashSet<Long> existingRecords = new ConcurrentHashSet<>();
+      Set<Long> existingRecords = ConcurrentHashMap.newKeySet();
 
       AtomicInteger errors = new AtomicInteger(0);
 
