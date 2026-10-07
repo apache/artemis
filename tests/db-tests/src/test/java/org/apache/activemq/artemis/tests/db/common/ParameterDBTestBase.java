@@ -102,6 +102,15 @@ public abstract class ParameterDBTestBase extends DBTestBase {
       }
    }
 
+   @Override
+   protected String getJDBCUser() {
+      return database == Database.HSQL ? super.getJDBCUser() : null;
+   }
+
+   @Override
+   protected String getJDBCPassword() {
+      return database == Database.HSQL ? super.getJDBCPassword() : null;
+   }
 
    protected static List<Object[]> convertParameters(List<Database> dbList) {
       List<Object[]> parameters = new ArrayList<>();
