@@ -22,6 +22,7 @@ import java.util.Set;
  * A ConcurrentSet
  *
  * @param <E> The generic class
+ * @deprecated Use {@link java.util.Set} with {@link java.util.concurrent.ConcurrentHashMap#newKeySet()} instead.
  */
 @Deprecated(forRemoval = true)
 public interface ConcurrentSet<E> extends Set<E> {

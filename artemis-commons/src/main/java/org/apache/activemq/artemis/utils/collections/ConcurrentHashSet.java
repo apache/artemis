@@ -25,6 +25,12 @@ import java.util.concurrent.ConcurrentMap;
  * A ConcurrentHashSet.
  * <p>
  * Offers same concurrency as ConcurrentHashMap but for a Set
+ *
+ * @deprecated Use {@link java.util.concurrent.ConcurrentHashMap#newKeySet()} instead.
+ * For example, replace:
+ * <pre>{@code Set<String> set = new ConcurrentHashSet<>();}</pre>
+ * with:
+ * <pre>{@code Set<String> set = ConcurrentHashMap.newKeySet();}</pre>
  */
 @Deprecated(forRemoval = true)
 public class ConcurrentHashSet<E> extends AbstractSet<E> implements ConcurrentSet<E> {
