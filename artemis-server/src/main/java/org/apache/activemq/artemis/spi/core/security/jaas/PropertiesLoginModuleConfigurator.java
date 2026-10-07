@@ -19,6 +19,7 @@ package org.apache.activemq.artemis.spi.core.security.jaas;
 import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.Configuration;
 import java.io.File;
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,11 +35,15 @@ import org.apache.activemq.artemis.utils.StringUtil;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
 import org.apache.commons.configuration2.builder.fluent.Configurations;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.apache.activemq.artemis.spi.core.security.jaas.PropertiesLoginModule.ROLE_FILE_PROP_NAME;
 import static org.apache.activemq.artemis.spi.core.security.jaas.PropertiesLoginModule.USER_FILE_PROP_NAME;
 
 public class PropertiesLoginModuleConfigurator implements UserManagement {
+
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private static final String LICENSE_HEADER = """
       ## ---------------------------------------------------------------------------
@@ -82,9 +87,9 @@ public class PropertiesLoginModuleConfigurator implements UserManagement {
             String userFileName = (String) entry.getOptions().get(USER_FILE_PROP_NAME);
             String roleFileName = (String) entry.getOptions().get(ROLE_FILE_PROP_NAME);
 
-            File etcDir = new File(brokerEtc);
-            File userFile = new File(etcDir, userFileName);
-            File roleFile = new File(etcDir, roleFileName);
+            File baseDir = resolveBaseDir(entry.getOptions(), brokerEtc);
+            File userFile = new File(baseDir, userFileName);
+            File roleFile = new File(baseDir, roleFileName);
 
             if (!userFile.exists()) {
                throw ActiveMQMessageBundle.BUNDLE.failedToLoadUserFile(brokerEtc + userFileName);
@@ -125,6 +130,34 @@ public class PropertiesLoginModuleConfigurator implements UserManagement {
       if (entriesInspected == entries.length) {
          throw ActiveMQMessageBundle.BUNDLE.failedToFindLoginModuleEntry(entryName);
       }
+   }
+
+   /**
+    * Resolve the base directory for property files using the same priority order as
+    * {@link PropertiesLoader.FileNameKey}:
+    * <ol>
+    *   <li>The {@code baseDir} option from the JAAS login-module options</li>
+    *   <li>The parent directory of the {@code java.security.auth.login.config} system property</li>
+    *   <li>The broker {@code etc} directory as a last resort</li>
+    * </ol>
+    */
+   private File resolveBaseDir(Map<String, ?> options, String brokerEtc) {
+      Object baseDirOption = options.get("baseDir");
+      if (baseDirOption != null) {
+         File dir = new File((String) baseDirOption);
+         logger.debug("Using baseDir from JAAS options: {}", dir.getAbsolutePath());
+         return dir;
+      }
+
+      File loginConfigParent = PropertiesLoader.FileNameKey.parentDirOfLoginConfigSystemProperty();
+      if (loginConfigParent != null) {
+         logger.debug("Using baseDir from login.config location: {}", loginConfigParent.getAbsolutePath());
+         return loginConfigParent;
+      }
+
+      File etcDir = new File(brokerEtc);
+      logger.debug("Using broker etc dir as baseDir: {}", etcDir.getAbsolutePath());
+      return etcDir;
    }
 
    @Override
