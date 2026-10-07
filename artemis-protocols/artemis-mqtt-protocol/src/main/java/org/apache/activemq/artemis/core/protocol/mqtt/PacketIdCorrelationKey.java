@@ -29,7 +29,7 @@ import org.apache.activemq.artemis.utils.DataConstants;
  * IDs for in-flight QoS 1 and QoS 2 messages are unique per client session, and that the same packet ID is reused if
  * the message is redelivered (e.g. after a reconnect). This mapping is persisted in the journal so that a reconnecting
  * client receives the same packet ID it was originally assigned. The key includes both the core message ID and the
- * subscription address because overlapping subscriptions (e.g. {@code foo/bar} and {@code foo/#}) can cause the same
+ * subscription queue because overlapping subscriptions (e.g. {@code foo/bar} and {@code foo/#}) can cause the same
  * core message to be delivered to the same client more than once, each through a different subscription address and
  * with its own packet ID.
  */
@@ -42,23 +42,23 @@ public class PacketIdCorrelationKey {
    }
 
    private long coreMessageId;
-   private SimpleString address;
+   private SimpleString queueName;
 
-   public static PacketIdCorrelationKey of(long coreMessageId, SimpleString address) {
-      return new PacketIdCorrelationKey(coreMessageId, address);
+   public static PacketIdCorrelationKey of(long coreMessageId, SimpleString queueName) {
+      return new PacketIdCorrelationKey(coreMessageId, queueName);
    }
 
-   private PacketIdCorrelationKey(long coreMessageId, SimpleString address) {
+   private PacketIdCorrelationKey(long coreMessageId, SimpleString queueName) {
       this.coreMessageId = coreMessageId;
-      this.address = address;
+      this.queueName = queueName;
    }
 
    public long getCoreMessageId() {
       return coreMessageId;
    }
 
-   public SimpleString getAddress() {
-      return address;
+   public SimpleString getQueueName() {
+      return queueName;
    }
 
    @Override
@@ -70,17 +70,17 @@ public class PacketIdCorrelationKey {
          return false;
       }
       return coreMessageId == other.coreMessageId &&
-         Objects.equals(address, other.address);
+         Objects.equals(queueName, other.queueName);
    }
 
    @Override
    public int hashCode() {
-      return Objects.hash(coreMessageId, address);
+      return Objects.hash(coreMessageId, queueName);
    }
 
    @Override
    public String toString() {
-      return "PacketIdCorrelation[" + "coreMessageId=" + coreMessageId + ", address=" + address + "]";
+      return "PacketIdCorrelation[" + "coreMessageId=" + coreMessageId + ", queueName=" + queueName + "]";
    }
 
    public static class Persister extends AbstractHashMapPersister<String, PacketIdCorrelationKey, Integer> {
@@ -101,13 +101,13 @@ public class PacketIdCorrelationKey {
 
       @Override
       protected int getKeySize(PacketIdCorrelationKey packetIdCorrelationKey) {
-         return DataConstants.SIZE_LONG + packetIdCorrelationKey.getAddress().sizeof();
+         return DataConstants.SIZE_LONG + packetIdCorrelationKey.getQueueName().sizeof();
       }
 
       @Override
       protected void encodeKey(ActiveMQBuffer buffer, PacketIdCorrelationKey packetIdCorrelationKey) {
          buffer.writeLong(packetIdCorrelationKey.getCoreMessageId());
-         buffer.writeSimpleString(packetIdCorrelationKey.getAddress());
+         buffer.writeSimpleString(packetIdCorrelationKey.getQueueName());
       }
 
       @Override

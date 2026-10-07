@@ -49,9 +49,9 @@ public class MQTTPrintDataTest extends ActiveMQTestBase {
          server.getConfiguration().setPersistenceEnabled(true);
          server.start();
          String clientID = RandomUtil.randomUUIDString();
-         SimpleString addressID = RandomUtil.randomUUIDSimpleString();
+         SimpleString queueName = RandomUtil.randomUUIDSimpleString();
          long messageID = 3000L;
-         MQTTStateManager.getInstance(server).putPacketIdCorrelation(clientID, PacketIdCorrelationKey.of(messageID, addressID), 1);
+         MQTTStateManager.getInstance(server).putPacketIdCorrelation(clientID, PacketIdCorrelationKey.of(messageID, queueName), 1);
          server.stop();
 
          String previousInstance = System.getProperty("artemis.instance");
@@ -68,7 +68,7 @@ public class MQTTPrintDataTest extends ActiveMQTestBase {
             String output = byteArrayOutputStream.toString();
             System.out.println(output);
             assertTrue(output.contains("PacketIdCorrelation"), "Print data output should contain the MQTT PacketIdCorrelation record.\nOutput:\n" + output);
-            assertTrue(output.contains(addressID.toString()), "Print data output should contain the MQTT PacketIdCorrelation record.\nOutput:\n" + output);
+            assertTrue(output.contains(queueName.toString()), "Print data output should contain the MQTT PacketIdCorrelation record.\nOutput:\n" + output);
             assertTrue(output.contains(clientID), "Print data output should contain the MQTT PacketIdCorrelation record.\nOutput:\n" + output);
          } finally {
             if (previousInstance != null) {

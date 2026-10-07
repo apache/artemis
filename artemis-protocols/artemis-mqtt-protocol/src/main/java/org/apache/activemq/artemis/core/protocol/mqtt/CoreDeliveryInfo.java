@@ -22,7 +22,7 @@ import org.apache.activemq.artemis.api.core.SimpleString;
 
 /**
  * Tracks volatile, in-memory state for an in-flight MQTT delivery: the consumer that originated it and the
- * {@link PacketIdCorrelationKey} that identifies the underlying core message and address. This information is held only
+ * {@link PacketIdCorrelationKey} that identifies the underlying core message and queue. This information is held only
  * for the lifetime of the connection and is discarded on disconnect, whereas the {@link PacketIdCorrelationKey} mapping
  * is persisted in the journal so that packet IDs can be correlated across reconnects.
  */
@@ -51,8 +51,8 @@ public class CoreDeliveryInfo {
       return packetIdCorrelationKey.getCoreMessageId();
    }
 
-   public SimpleString getAddress() {
-      return packetIdCorrelationKey.getAddress();
+   public SimpleString getQueueName() {
+      return packetIdCorrelationKey.getQueueName();
    }
 
    @Override

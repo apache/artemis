@@ -94,9 +94,9 @@ public class MQTTPublishManager {
 
    /**
     * Delivers a message to the MQTT client at the appropriate QoS level. For QoS 1 and 2, each delivery is tracked by a
-    * journal-persisted {@link PacketIdCorrelationKey} that pairs the core message ID and subscription address to an
+    * journal-persisted {@link PacketIdCorrelationKey} that pairs the core message ID and subscription queue to an
     * MQTT packet ID. This ensures the same packet ID is reused when a message is redelivered after a broker restart, as
-    * required by the MQTT specification. The address component of the key allows overlapping subscriptions to receive
+    * required by the MQTT specification. The queue name of the key allows overlapping subscriptions to receive
     * the same message with distinct packet IDs.
     * <p>
     * A {@link CoreDeliveryInfo} is also stored in-memory for each in-flight packet ID, mapping it back to the consumer
@@ -117,14 +117,14 @@ public class MQTTPublishManager {
          final int packetIdToUse;
          boolean redelivery = false;
          synchronized (this) {
-            PacketIdCorrelationKey correlationKey = PacketIdCorrelationKey.of(message.getMessageID(), message.getAddressSimpleString());
+            PacketIdCorrelationKey correlationKey = PacketIdCorrelationKey.of(message.getMessageID(), consumer.getQueue().getName());
             existingPacketId = session.getStateManager().getPacketIdCorrelation(state.getClientId(), correlationKey);
             if (existingPacketId != null && !state.coreDeliveryInfoExists(existingPacketId)) {
                // re-delivery after reconnect or restart; reuse persisted packet ID
                packetIdToUse = existingPacketId;
                redelivery = true;
             } else {
-               // first delivery, or same message via a different subscription
+               // first delivery of this core message on this subscription queue
                packetIdToUse = state.generatePacketId();
                session.getStateManager().putPacketIdCorrelation(state.getClientId(), correlationKey, packetIdToUse);
             }
