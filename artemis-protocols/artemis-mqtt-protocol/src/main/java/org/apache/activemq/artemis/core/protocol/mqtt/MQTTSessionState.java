@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -415,6 +416,24 @@ public class MQTTSessionState {
 
    public boolean coreDeliveryInfoExists(Integer packetId) {
       return coreDeliveryInfos == null ? false : coreDeliveryInfos.containsKey(packetId);
+   }
+
+   public void removeCoreDeliveryInfos(SimpleString queueName) {
+      if (coreDeliveryInfos == null) {
+         return;
+      }
+      int removed = 0;
+      Iterator<CoreDeliveryInfo> iterator = coreDeliveryInfos.values().iterator();
+      while (iterator.hasNext()) {
+         if (queueName.equals(iterator.next().getQueueName())) {
+            iterator.remove();
+            decrementSendQuota();
+            removed++;
+         }
+      }
+      if (removed > 0) {
+         logger.debug("Discarded {} in-delivery info(s) for client {} on queue {}", removed, clientId, queueName);
+      }
    }
 
    public void clearCoreDeliveryInfo() {

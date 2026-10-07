@@ -32,6 +32,7 @@ import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
+import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.filter.impl.FilterImpl;
 import org.apache.activemq.artemis.core.journal.RecordInfo;
 import org.apache.activemq.artemis.core.journal.collections.JournalHashMap;
@@ -284,6 +285,26 @@ public class MQTTStateManager {
       Integer removed = journalHashMapProvider.getMap(clientId).remove(key, transactionId);
       packetIdCorrelationIndex.remove(clientId, removed);
       return removed;
+   }
+
+   public void removePacketIdCorrelations(String clientId, SimpleString queueName) {
+      if (clientId == null || queueName == null || !journalHashMapProvider.containsMap(clientId)) {
+         return;
+      }
+      JournalHashMap<String, PacketIdCorrelationKey, Integer, Object> map = journalHashMapProvider.getMap(clientId);
+      int released = 0;
+      for (Map.Entry<PacketIdCorrelationKey, Integer> entry : map.entrySetCopy()) {
+         if (queueName.equals(entry.getKey().getQueueName())) {
+            Integer packetId = map.remove(entry.getKey());
+            if (packetId != null) {
+               packetIdCorrelationIndex.remove(clientId, packetId);
+               released++;
+            }
+         }
+      }
+      if (released > 0) {
+         logger.debug("Released {} packet ID correlation(s) for client {} on queue {}", released, clientId, queueName);
+      }
    }
 
    public void clearPacketIdCorrelation(String clientId) {
