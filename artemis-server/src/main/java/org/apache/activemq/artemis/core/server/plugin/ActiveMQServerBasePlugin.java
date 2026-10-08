@@ -46,4 +46,14 @@ public interface ActiveMQServerBasePlugin {
     */
    default void unregistered(ActiveMQServer server) {
    }
+
+   /**
+    * The broker configuration has been reloaded. Unlike {@link #init(Map)}, this is
+    * called only on an already registered and active plugin. Called on every reload
+    * regardless of whether properties actually changed.
+    *
+    * @param properties The new set of properties from the reloaded configuration
+    */
+   default void propertiesReloaded(Map<String, String> properties) {
+   }
 }
