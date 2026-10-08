@@ -139,7 +139,7 @@ public class QoS1SubscriberResiliencyTest extends MQTT5TestSupport {
          waitForServerToStart(server);
       } else {
          server.getRemotingService().clearInterceptors();
-         server.getActiveMQServerControl().closeConnectionWithID(server.getActiveMQServerControl().listConnectionIDs()[0]);
+         closeConnectionByManagement(SUBSCRIBER_CLIENT_ID);
       }
 
       assertTrue(getProtocolManager().getStateManager().packetIdCorrelationExists(SUBSCRIBER_CLIENT_ID, 2));
@@ -227,7 +227,7 @@ public class QoS1SubscriberResiliencyTest extends MQTT5TestSupport {
          waitForServerToStart(server);
       } else {
          server.getRemotingService().clearInterceptors();
-         server.getActiveMQServerControl().closeConnectionWithID(server.getActiveMQServerControl().listConnectionIDs()[0]);
+         closeConnectionByManagement(SUBSCRIBER_CLIENT_ID);
       }
 
       reconnectSafely(subscriber);

@@ -38,6 +38,7 @@ import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.postoffice.DuplicateIDCache;
+import org.apache.activemq.artemis.core.protocol.mqtt.MQTTConnection;
 import org.apache.activemq.artemis.core.protocol.mqtt.MQTTInterceptor;
 import org.apache.activemq.artemis.core.protocol.mqtt.PacketIdCache;
 import org.apache.activemq.artemis.core.protocol.mqtt.MQTTProtocolManager;
@@ -451,6 +452,14 @@ public class MQTT5TestSupport extends ActiveMQTestBase {
             return false;
          }
       }, 2000, 10);
+   }
+
+   protected void closeConnectionByManagement(String clientId) throws Exception {
+      MQTTConnection connection = getProtocolManager().getStateManager().getConnectedClient(clientId);
+      if (connection != null) {
+         server.getActiveMQServerControl().closeConnectionWithID(connection.getID().toString());
+      }
+      Wait.assertTrue(() -> !getProtocolManager().getStateManager().isClientConnected(clientId), 2000, 25);
    }
 
    /*

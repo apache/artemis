@@ -269,7 +269,7 @@ public class QoS2SubscriberResiliencyTest extends MQTT5TestSupport {
          waitForServerToStart(server);
       } else {
          server.getRemotingService().clearInterceptors();
-         server.getActiveMQServerControl().closeConnectionWithID(server.getActiveMQServerControl().listConnectionIDs()[0]);
+         closeConnectionByManagement(SUBSCRIBER_CLIENT_ID);
       }
 
       assertEquals(0, getProtocolManager().getStateManager().getPacketIdCorrelationSize(SUBSCRIBER_CLIENT_ID));
@@ -489,8 +489,7 @@ public class QoS2SubscriberResiliencyTest extends MQTT5TestSupport {
          waitForServerToStart(server);
       } else {
          server.getRemotingService().clearInterceptors();
-         server.getActiveMQServerControl().closeConnectionWithID(
-            server.getActiveMQServerControl().listConnectionIDs()[0]);
+         closeConnectionByManagement(SUBSCRIBER_CLIENT_ID);
       }
 
       int countBeforeReconnect = messageCount.get();

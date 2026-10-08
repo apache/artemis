@@ -148,7 +148,7 @@ public class QoS2PublisherResiliencyTest extends MQTT5TestSupport {
          waitForServerToStart(server);
       } else {
          server.getRemotingService().clearInterceptors();
-         server.getActiveMQServerControl().closeConnectionWithID(server.getActiveMQServerControl().listConnectionIDs()[0]);
+         closeConnectionByManagement(CLIENTID);
       }
 
       MQTTInterceptor pubCompInterceptor = (packet, connection) -> {
@@ -262,7 +262,7 @@ public class QoS2PublisherResiliencyTest extends MQTT5TestSupport {
          waitForServerToStart(server);
       } else {
          server.getRemotingService().clearInterceptors();
-         server.getActiveMQServerControl().closeConnectionWithID(server.getActiveMQServerControl().listConnectionIDs()[0]);
+         closeConnectionByManagement(CLIENTID);
       }
 
       MQTTInterceptor pubCompInterceptor = (packet, connection) -> {
@@ -390,7 +390,7 @@ public class QoS2PublisherResiliencyTest extends MQTT5TestSupport {
          waitForServerToStart(server);
       } else {
          server.getRemotingService().clearInterceptors();
-         server.getActiveMQServerControl().closeConnectionWithID(server.getActiveMQServerControl().listConnectionIDs()[0]);
+         closeConnectionByManagement(CLIENTID);
       }
 
       MQTTInterceptor pubCompInterceptor = (packet, connection) -> {
@@ -502,7 +502,7 @@ public class QoS2PublisherResiliencyTest extends MQTT5TestSupport {
          waitForServerToStart(server);
       } else {
          server.getRemotingService().clearInterceptors();
-         server.getActiveMQServerControl().closeConnectionWithID(server.getActiveMQServerControl().listConnectionIDs()[0]);
+         closeConnectionByManagement(CLIENTID);
       }
 
       pubCompLatch.countUp();
