@@ -82,7 +82,7 @@ public final class MappedSequentialFileFactory extends AbstractSequentialFileFac
 
    @Override
    public ByteBuffer allocateDirectBuffer(final int size) {
-      final int requiredCapacity = PowerOf2Util.align(size, Env.osPageSize());
+      final int requiredCapacity = PowerOf2Util.align(size, Env.memPageSize());
       final ByteBuffer byteBuffer = ByteBuffer.allocateDirect(requiredCapacity);
       byteBuffer.limit(size);
       return byteBuffer;
