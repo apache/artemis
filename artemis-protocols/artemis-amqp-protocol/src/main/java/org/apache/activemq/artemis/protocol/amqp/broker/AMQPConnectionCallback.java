@@ -27,10 +27,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffers;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.Message;
+import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.core.buffers.impl.ChannelBufferWrapper;
 import org.apache.activemq.artemis.core.client.impl.TopologyMemberImpl;
 import org.apache.activemq.artemis.core.remoting.CloseListener;
 import org.apache.activemq.artemis.core.remoting.FailureListener;
+import org.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.cluster.ClusterConnection;
 import org.apache.activemq.artemis.core.server.cluster.ClusterManager;
@@ -49,12 +51,14 @@ import org.apache.activemq.artemis.protocol.amqp.sasl.ServerSASL;
 import org.apache.activemq.artemis.protocol.amqp.sasl.ServerSASLFactory;
 import org.apache.activemq.artemis.spi.core.remoting.Connection;
 import org.apache.activemq.artemis.spi.core.remoting.ReadyListener;
+import org.apache.activemq.artemis.utils.ConfigurationHelper;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.transport.AmqpError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.lang.invoke.MethodHandles;
 
 import io.netty.buffer.ByteBuf;
@@ -191,7 +195,7 @@ public class AMQPConnectionCallback implements FailureListener, CloseListener {
    }
 
    public void sendSASLSupported() {
-      connection.write(ActiveMQBuffers.wrappedBuffer(new byte[]{'A', 'M', 'Q', 'P', 3, 1, 0, 0}));
+      connection.write(ActiveMQBuffers.wrappedBuffer(new byte[] {'A', 'M', 'Q', 'P', 3, 1, 0, 0}));
    }
 
    public boolean validateConnection(org.apache.qpid.proton.engine.Connection connection, SASLResult saslResult) {
@@ -266,7 +270,14 @@ public class AMQPConnectionCallback implements FailureListener, CloseListener {
       if (clusterConnection != null) {
          TopologyMemberImpl member = clusterConnection.getTopology().getMember(server.getNodeID().toString());
          if (member != null) {
-            return member.toBackupURI();
+            TransportConfiguration backupConnector = member.getBackup();
+            if (backupConnector == null) {
+               return null;
+            }
+            boolean clientFailoverAdvertisingEnabled = ConfigurationHelper.getBooleanProperty(TransportConstants.CLIENT_FAILOVER_ADVERTISING_ENABLED_PROP_NAME, true, backupConnector.getCombinedParams());
+            if (clientFailoverAdvertisingEnabled) {
+               return member.toBackupURI();
+            }
          }
       }
       return null;
