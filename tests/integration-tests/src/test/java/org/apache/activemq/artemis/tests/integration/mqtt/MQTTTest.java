@@ -64,6 +64,7 @@ import org.apache.activemq.artemis.core.postoffice.QueueBinding;
 import org.apache.activemq.artemis.core.protocol.mqtt.MQTTUtil;
 import org.apache.activemq.artemis.core.protocol.mqtt.PacketIdCache;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
+import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.impl.AddressInfo;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.json.JsonArray;
@@ -554,6 +555,64 @@ public class MQTTTest extends MQTTTestSupport {
          assertEquals(messages.get(i), new String(msg));
       }
       subscriber.disconnect();
+      publisher.disconnect();
+   }
+
+   @Test
+   @Timeout(60)
+   public void testSendAndReceiveRetainedMessageWhileDeliveryIsPending() throws Exception {
+      final String topic = getTopicName();
+      final String retainTopic = MQTTUtil.getCoreRetainAddressFromMqttTopic(topic, server.getConfiguration().getWildcardConfiguration());
+
+      final MQTTClientProvider publisher = getMQTTClientProvider();
+      initializeConnection(publisher);
+
+      // publish a first retained message so the retain queue exists and its executor can be grabbed
+      publisher.publish(topic, "primer".getBytes(), AT_LEAST_ONCE, true);
+      Wait.assertTrue(() -> server.locateQueue(retainTopic) != null, 5000);
+      final Queue retainedQueue = server.locateQueue(retainTopic);
+      Wait.assertEquals(1L, () -> retainedQueue.getMessageCount(), 5000);
+
+      // block the retain queue's executor so it can't move anything into the main list of references
+      final CountDownLatch unblock = new CountDownLatch(1);
+      final CountDownLatch blocked = new CountDownLatch(1);
+      retainedQueue.getExecutor().execute(() -> {
+         blocked.countDown();
+         try {
+            unblock.await(30, TimeUnit.SECONDS);
+         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+         }
+      });
+      assertTrue(blocked.await(5, TimeUnit.SECONDS));
+
+      try {
+         String RETAINED = "retained";
+         publisher.publish(topic, RETAINED.getBytes(), AT_LEAST_ONCE, true);
+
+         final MQTTClientProvider subscriber = getMQTTClientProvider();
+         initializeConnection(subscriber);
+         subscriber.subscribe(topic, AT_LEAST_ONCE);
+
+         List<String> messages = new ArrayList<>();
+         for (int i = 0; i < 10; i++) {
+            messages.add("TEST MESSAGE:" + i);
+            publisher.publish(topic, messages.get(i).getBytes(), AT_LEAST_ONCE);
+         }
+
+         byte[] msg = subscriber.receive(5000);
+         assertNotNull(msg);
+         assertEquals(RETAINED, new String(msg));
+
+         for (int i = 0; i < 10; i++) {
+            msg = subscriber.receive(5000);
+            assertNotNull(msg);
+            assertEquals(messages.get(i), new String(msg));
+         }
+         subscriber.disconnect();
+      } finally {
+         unblock.countDown();
+      }
       publisher.disconnect();
    }
 
