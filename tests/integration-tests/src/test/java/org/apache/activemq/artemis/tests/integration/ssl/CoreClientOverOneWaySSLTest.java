@@ -21,9 +21,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+
+import io.netty.handler.ssl.OpenSsl;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -498,6 +501,44 @@ public class CoreClientOverOneWaySSLTest extends ActiveMQTestBase {
       } catch (Exception e) {
          // ignore
       }
+   }
+
+   @TestTemplate
+   public void testOneWaySSLVerifyHostDisabledOpenSSL() throws Exception {
+      // Netty 4.2 enables endpoint identification (host verification) by default for client SslContexts, including the
+      // OpenSSL provider. This verifies that verifyHost=false actually disables it: connecting to a server whose
+      // certificate CN does not match the host must succeed.
+      assumeTrue(OpenSsl.isAvailable());
+      // the "unknown" server keystore stores its key under the "unknown-server" alias, not "server", so the
+      // useKeystoreAlias variant can't set up a working server here (unrelated to host verification)
+      assumeTrue(!useKeystoreAlias);
+
+      createCustomSslServer(true);
+      String text = RandomUtil.randomUUIDString();
+
+      tc.getParams().put(TransportConstants.SSL_ENABLED_PROP_NAME, true);
+      tc.getParams().put(TransportConstants.SSL_PROVIDER, TransportConstants.OPENSSL_PROVIDER);
+      tc.getParams().put(TransportConstants.TRUSTSTORE_PROVIDER_PROP_NAME, storeProvider);
+      tc.getParams().put(TransportConstants.TRUSTSTORE_TYPE_PROP_NAME, storeType);
+      tc.getParams().put(TransportConstants.TRUSTSTORE_PATH_PROP_NAME, CLIENT_SIDE_TRUSTSTORE);
+      tc.getParams().put(TransportConstants.TRUSTSTORE_PASSWORD_PROP_NAME, PASSWORD);
+      tc.getParams().put(TransportConstants.VERIFY_HOST_PROP_NAME, false);
+
+      ServerLocator locator = addServerLocator(ActiveMQClient.createServerLocatorWithoutHA(tc));
+      ClientSessionFactory sf = addSessionFactory(createSessionFactory(locator));
+      ClientSession session = addClientSession(sf.createSession(false, true, true));
+      session.createQueue(QueueConfiguration.of(CoreClientOverOneWaySSLTest.QUEUE).setDurable(false));
+      ClientProducer producer = addClientProducer(session.createProducer(CoreClientOverOneWaySSLTest.QUEUE));
+
+      ClientMessage message = createTextMessage(session, text);
+      producer.send(message);
+
+      ClientConsumer consumer = addClientConsumer(session.createConsumer(CoreClientOverOneWaySSLTest.QUEUE));
+      session.start();
+
+      Message m = consumer.receive(1000);
+      assertNotNull(m);
+      assertEquals(text, m.getBodyBuffer().readString());
    }
 
    @TestTemplate
