@@ -13,11 +13,81 @@ For this reason MQTT is ideally suited to constrained devices such as sensors an
 * https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html[3.1.1]
 * https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html[5.0]
 
-By default there are `acceptor` elements configured to accept MQTT connections  on ports `61616` and `1883`.
+By default there are `acceptor` elements configured to accept MQTT connections on ports `61616` and `1883`.
 
 See the general xref:protocols-interoperability.adoc#protocols-and-interoperability[Protocols and Interoperability] chapter for details on configuring an `acceptor` for MQTT.
 
 Refer to the MQTT xref:examples.adoc[examples] for a look at some of this functionality in action.
+
+== MQTT 5 Optional Features
+
+Aside from the mandatory features, the MQTT 5 specification defines a number of features which are *optional* for a server to implement.
+{project-name-full} implements all of the mandatory features as well as all the optional features, i.e.:
+
+* <<mqtt-quality-of-service,QoS 1 & 2>>
+* <<mqtt-retain-messages,Retained Messages>>
+* <<wildcard-subscriptions,Wildcard Subscriptions>>
+* <<subscription-identifiers,Subscription Identifiers>>
+* <<shared-subscriptions,Shared Subscriptions>>
+
+Since each of these features is fully supported the broker never needs to advertise a restriction on any of them (e.g. via the `Maximum QoS`, `Retain Available`, `Wildcard Subscription Available`, `Subscription Identifiers Available`, or `Shared Subscription Available` properties on the `CONNACK` packet).
+Per the MQTT 5 specification, the absence of these properties indicates that the corresponding feature is fully supported by the server.
+
+== Mapping MQTT Concepts to the Core API
+
+This section describes how MQTT topics and subscriptions are mapped onto the address model.
+If you haven't already done so, please read about the xref:address-model.adoc[address model] as it introduces concepts which are referenced here.
+
+=== MQTT Topics
+
+An MQTT topic is implemented as a xref:address-model.adoc#address[address] using the xref:address-model.adoc#multicast[multicast] routing type.
+The name of the address is derived from the name of the MQTT topic, converting any wildcard characters used by the <<wildcard-subscriptions,MQTT wildcard syntax>> into the equivalent characters used by the xref:wildcard-syntax.adoc[broker's configured wildcard syntax].
+If the broker is configured to use the same wildcard syntax as MQTT (as described in <<wildcard-subscriptions,Wildcard Subscriptions>>) then the address name is identical to the topic name.
+
+If the address for a given MQTT topic doesn't already exist when a client subscribes or publishes to it then the broker can xref:address-model.adoc#automatic-configuration[create it automatically].
+
+=== MQTT Subscriptions
+
+An MQTT subscription is implemented as a multicast xref:address-model.adoc#queue[queue] bound to the address corresponding to the subscription's topic filter.
+
+* For a normal (i.e. non-shared) subscription the queue is named using the MQTT client ID combined with the address name (e.g. `<clientId>.<address>`) so that every client gets its own queue and therefore its own copy of every message, consistent with normal MQTT publish/subscribe semantics.
+* For a <<shared-subscriptions,shared subscription>> the queue is instead named using the share name passed by the MQTT subscriber combined with the address name (e.g. `<shareName>.<address>`) so that every client using the same share name consumes from the same queue as competing consumers.
+
+The queue is durable if the client is using MQTT 5 or if it's using MQTT 3.x with a non-clean session.
+Otherwise the queue is non-durable and will be removed if the broker restarts (see <<persistent-subscriptions,Persistent Subscriptions>> for more details).
+
+Retained messages use a similar mapping, but onto addresses and queues with a special `$sys.mqtt.retain` prefix as described in <<mqtt-retain-messages,MQTT Retain Messages>>.
+
+=== Security
+
+Because MQTT topics and subscriptions are implemented using the Core address model, MQTT clients are subject to the same xref:security.adoc#role-based-security-for-addresses[role-based security] as clients using any other protocol.
+The specific permissions involved depend on what the client is doing:
+
+`createAddress`::
+Needed the first time a client publishes or subscribes to a given MQTT topic, since that's typically when the corresponding address is auto-created (assuming xref:address-model.adoc#automatic-configuration[`auto-create-addresses`] is enabled).
+`send`::
+Needed by a client to publish a message to an MQTT topic.
+`createDurableQueue`::
+Needed by a client to create the queue backing a subscription when that queue is *durable* (i.e. for an MQTT 5 subscription, or an MQTT 3.x subscription with a non-clean session).
+`createNonDurableQueue`::
+Needed by a client to create the queue backing a subscription when that queue is *non-durable* (i.e. an MQTT 3.x subscription with a clean session).
+`consume`::
+Needed by a client to receive messages from the queue backing its subscription.
+`deleteDurableQueue` / `deleteNonDurableQueue`::
+Needed by a client to remove the queue backing a subscription when it unsubscribes.
+The durable or non-durable permission applies according to the durability of the underlying queue, just like the corresponding `create*` permission above.
++
+These only apply to an explicit `UNSUBSCRIBE`.
+They don't apply to the automatic clean-up the broker performs to protect itself against unbounded resource growth, e.g. when a subscription's queue would otherwise be orphaned because the owning session is ending for good -- either because a client with a clean session disconnects or because an abandoned session's <<automatic-subscription-clean-up,session expiry interval>> elapses.
+In both of these cases the broker removes the queue itself without enforcing `deleteDurableQueue`/`deleteNonDurableQueue` so that a client (or role) which was never granted delete permissions can't leave behind subscription queues that nothing would ever be able to remove.
+
+Putting this together, the first time a client subscribes to a topic it will need `createAddress` (if the address doesn't already exist), either `createDurableQueue` or `createNonDurableQueue` (depending on the subscription's durability), and `consume`.
+Simply publishing to a topic only requires `send` (plus `createAddress` if the address doesn't already exist).
+
+<<shared-subscriptions,Shared subscriptions>> don't require any additional permissions, but keep in mind that the underlying queue is named using the share name rather than the client ID, so every client using the same share name must be granted `createDurableQueue`/`createNonDurableQueue` and `consume` on that address, typically via a role they all share.
+
+The `deleteAddress` permission isn't relevant to normal MQTT client operations since address removal (e.g. via `auto-delete-addresses`) happens as a consequence of queue removal rather than as a direct client action.
+Likewise, `browse`, `manage`, `view`, and `edit` aren't relevant since MQTT doesn't have an equivalent to browsing a queue or invoking broker management operations.
 
 == MQTT Quality of Service
 
@@ -30,23 +100,23 @@ The broker will attempt to deliver messages to subscribers at the highest qualit
 
 Each quality of service level offers a level of guarantee by which a message is sent or received:
 
-* QoS 0: `AT MOST ONCE`
+* QoS 0 (`AT MOST ONCE`)
 +
 Guarantees that a particular message is only ever received by the subscriber a maximum of one time.
 This does mean that the message may never arrive.
 The sender and the receiver will attempt to deliver the message, but if something fails and the message does not reach its destination (say due to a network connection) the message may be lost.
 This QoS has the least network traffic overhead and the least burden on the client and the broker and is often useful for telemetry data where it doesn't matter if some of the data is lost.
 
-* QoS 1: `AT LEAST ONCE`
+* QoS 1 (`AT LEAST ONCE`)
 +
 Guarantees that a message will reach its intended recipient one or more times.
 The sender will continue to send the message until it receives an acknowledgment from the recipient, confirming it has received the message.
 The result of this QoS is that the recipient may receive the message multiple times, and also increases the network overhead than QoS 0, (due to acks).
 In addition more burden is placed on the sender as it needs to store the message and retry should it fail to receive an ack in a reasonable time.
 
-* QoS 2: `EXACTLY ONCE`
+* QoS 2 (`EXACTLY ONCE`)
 +
-The most costly of the QoS (in terms of network traffic and burden on sender and receiver) this QoS will ensure that the message is received by a recipient exactly one time.
+The most costly of the QoS (in terms of network traffic and burden on sender and receiver), this QoS will ensure that the message is received by a recipient exactly one time.
 This ensures that the receiver never gets any duplicate copies of the message and will eventually get it, but at the extra cost of network overhead and complexity required on the sender and receiver.
 
 == MQTT Retain Messages
@@ -126,9 +196,10 @@ The simplest implementation is a "wrapper" just like the `security-manager` exam
 In the `authenticate` method you can modify the client ID using `setClientId()` on the `org.apache.activemq.artemis.spi.core.protocol.RemotingConnection` that is passed in.
 If you perform some custom validation of the client ID you can reject the client ID by throwing a `org.apache.activemq.artemis.core.protocol.mqtt.exceptions.InvalidClientIdException`.
 
-== Wildcard subscriptions
+== Wildcard Subscriptions
 
-MQTT defines a special wildcard syntax for topic filters. This definition is found in section 4.7.1 of both the http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718107[3.1.1] and https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901242[5] specs.
+MQTT defines a special wildcard syntax for topic filters.
+This definition is found in section 4.7.1 of both the http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718107[3.1.1] and https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901242[5] specs.
 MQTT topics are hierarchical much like a file system, and they use a special character (i.e. `/` by default) to separate hierarchical levels.
 Subscribers are able to subscribe to specific topics or to whole branches of a hierarchy.
 
@@ -138,7 +209,7 @@ There are 2 types of wildcards in MQTT:
 * *Multi level* (`#`)
 +
 Adding this wildcard to an address would match all branches of the address hierarchy under a specified node.
-For example: `/uk/#`  Would match `/uk/cities`, `/uk/cities/newcastle` and also `/uk/rivers/tyne`.
+For example: `/uk/\#`  Would match `/uk/cities`, `/uk/cities/newcastle` and also `/uk/rivers/tyne`.
 Subscribing to an address `#` would result in subscribing to all topics in the broker.
 This can be useful, but should be done so with care since it has significant performance implications.
 
@@ -165,6 +236,26 @@ This conversion isn't free so *if you want the best MQTT performance* use `broke
 ----
 
 Of course, changing the default syntax also means other clients on other protocols will need to follow this same syntax as well as the `match` values of your `address-setting` configuration elements.
+
+== Shared Subscriptions
+
+MQTT 5 introduced https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901250[shared subscriptions] which allow multiple clients to share the workload of consuming messages published to the same topic.
+Ordinarily, if more than one client subscribes to the same topic then every client receives its own copy of each message.
+With a shared subscription messages are instead distributed amongst the clients in the share so that each message is only processed once overall rather than once per client.
+
+To create a shared subscription a client subscribes using a topic filter of the form `$share/<shareName>/<topicFilter>` where `<shareName>` identifies the group of clients sharing the subscription and `<topicFilter>` is a normal MQTT topic filter (which may include wildcards).
+For example, subscribing to `$share/myConsumerGroup/sensors/\+/temperature` shares messages published to topics matching `sensors/+/temperature` amongst all the clients that subscribed using the `myConsumerGroup` share name.
+
+Internally the broker implements each share name as a single underlying multicast queue so that all the clients in the same share consume from it as competing consumers.
+Different share names (or non-shared subscriptions) on the same topic filter each get their own queue and therefore their own copy of every message, consistent with normal MQTT publish/subscribe semantics.
+
+== Subscription Identifiers
+
+MQTT 5 introduced https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901166[subscription identifiers] which allow a client to associate an integer identifier with a subscription when it sends a `SUBSCRIBE` packet.
+Whenever the broker subsequently routes a message to a matching subscription it includes the corresponding https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901117[Subscription Identifier] property on the resulting `PUBLISH` packet so the client can determine which subscription(s) triggered delivery of that message.
+If a message matches more than one of the client's subscriptions and those subscriptions have different subscription identifiers then the `PUBLISH` packet will include multiple Subscription Identifier properties, one for each matching subscription.
+
+This allows a client to multiplex application logic for multiple subscriptions over a single MQTT session without having to perform its own topic matching to figure out which subscription(s) a given message satisfies.
 
 == WebSockets
 
@@ -204,7 +295,8 @@ In the case of MQTT 5 clients they will receive a disconnect reason code of http
 
 == Automatic Subscription Clean-up
 
-Sometimes MQTT 3.x clients using `CleanSession=false` don't properly unsubscribe. The URL parameter `defaultMqttSessionExpiryInterval` can be configured on the MQTT `acceptor` so that abandoned sessions and subscription queues will be cleaned up automatically after the expiry interval elapses.
+Sometimes MQTT 3.x clients using `CleanSession=false` don't properly unsubscribe.
+The URL parameter `defaultMqttSessionExpiryInterval` can be configured on the MQTT `acceptor` so that abandoned sessions and subscription queues will be cleaned up automatically after the expiry interval elapses.
 
 The default `defaultMqttSessionExpiryInterval` is `-1` which means no clean up will happen for MQTT 3.x clients.
 Otherwise it represents the number of *seconds* which must elapse after the client has disconnected before the broker will remove the session state and subscription queues.
@@ -214,20 +306,21 @@ The `CleanSession` flag was replaced with `CleanStart` and a https://docs.oasis-
 The broker will use the client's session expiry interval if it is set.
 If it is not set or set to `0`, the session ends when the Network Connection is closed.
 
-
 MQTT session state is scanned every 5,000 milliseconds by default.
 This can be changed using the `mqtt-session-scan-interval` element set in the `core` section of `broker.xml`.
 
 == Flow Control
 
-MQTT 3.x lacks a flow control mechanism. The sending party determines how many QoS 1 & 2 messages can be published without acknowledgment. On the broker side, this is controlled by the `defaultMaximumInFlightPublishMessages` URL parameter on the MQTT `acceptor` in `broker.xml`, which defaults to `65535`.
+MQTT 3.x lacks a flow control mechanism.
+The sending party determines how many QoS 1 & 2 messages can be published without acknowledgment.
+On the broker side, this is controlled by the `defaultMaximumInFlightPublishMessages` URL parameter on the MQTT `acceptor` in `broker.xml`, which defaults to `65535`.
 
 MQTT 5 introduced a simple form of https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Flow_Control[flow control].
 In short, a broker can tell a client how many QoS 1 & 2 messages it can receive before being acknowledged and vice versa.
 
 This is controlled on the broker by setting the `receiveMaximum` URL parameter on the MQTT `acceptor`.
 
-The default value is `65535` (the maximum value of the 2-byte integer used by  MQTT).
+The default value is `65535` (the maximum value of the 2-byte integer used by MQTT).
 
 A value of `0` is prohibited by the MQTT 5 specification.
 
@@ -269,7 +362,7 @@ This also reduces the size of the `CONNACK` packet by a few bytes.
 
 All MQTT versions support a connection keep alive value defined by the _client_.
 MQTT 5 introduced a https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901094[server keep alive] value so that a broker can define the value that the client should use.
-The  primary use of the server keep alive is for the server to inform the client that it will disconnect the client for inactivity sooner than the keep alive specified by the client.
+The primary use of the server keep alive is for the server to inform the client that it will disconnect the client for inactivity sooner than the keep alive specified by the client.
 
 This is controlled on the broker by setting the `serverKeepAlive` URL parameter on the MQTT `acceptor` in `broker.xml`.
 
@@ -295,8 +388,7 @@ The MQTT 3.1.1 specification is ambiguous regarding the broker's behavior when a
 In http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718042[section 3.3.5] it says:
 
 ____
-If a Server implementation does not authorize a PUBLISH to be performed by a Client;
-it has no way of informing that Client.
+If a Server implementation does not authorize a PUBLISH to be performed by a Client; it has no way of informing that Client.
 It MUST either make a positive acknowledgement, according to the normal QoS rules, or close the Network Connection
 ____
 
@@ -316,8 +408,10 @@ If a client loses its outgoing session state but resumes an existing session it 
 
 When the broker receives a QoS 2 `PUBLISH` whose packet identifier is already in use it inspects the `DUP` flag to distinguish two cases:
 
-* `DUP=1`: an expected retransmission of the original in-flight message. The broker does not deliver the message to subscribers and logs `AMQ834017` at `INFO`.
-* `DUP=0`: an unexpected reuse of an in-flight packet identifier. The broker does not deliver the message to subscribers and logs `AMQ834009` at `WARN`.
+* `DUP=1`: an expected retransmission of the original in-flight message.
+The broker does not deliver the message to subscribers and logs `AMQ834017` at `INFO`.
+* `DUP=0`: an unexpected reuse of an in-flight packet identifier.
+The broker does not deliver the message to subscribers and logs `AMQ834009` at `WARN`.
 
 By default the broker responds to the client in both cases with a `PUBREC` reason code of `0x00` (i.e. "Success") in order to allow the QoS 2 flow to complete.
 For MQTT 5 clients you can instead have the broker reject the `DUP=0` case with a `PUBREC` reason code of https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901147[`0x91` (i.e. "Packet Identifier in use")] by setting the URL parameter `rejectUnexpectedDuplicatePacketId` to `true` on the relevant MQTT `acceptor` in `broker.xml`, e.g.:

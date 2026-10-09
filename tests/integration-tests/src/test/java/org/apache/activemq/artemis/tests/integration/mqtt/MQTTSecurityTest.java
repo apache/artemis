@@ -21,7 +21,12 @@ import javax.jms.Session;
 import java.io.EOFException;
 import java.util.Arrays;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
+import org.apache.activemq.artemis.api.core.management.CoreNotificationType;
+import org.apache.activemq.artemis.api.core.management.ManagementHelper;
+import org.apache.activemq.artemis.core.security.CheckType;
 import org.apache.activemq.artemis.core.security.Role;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
@@ -41,6 +46,8 @@ import org.junit.jupiter.api.Timeout;
 import static org.apache.activemq.artemis.core.protocol.mqtt.MQTTProtocolManagerFactory.MQTT_PROTOCOL_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -247,6 +254,80 @@ public class MQTTSecurityTest extends MQTTTestSupport {
             if (connection != null && connection.isConnected()) {
                connection.disconnect();
             }
+         }
+      }
+   }
+
+   /**
+    * MQTT 3.x uses a durable queue only when the session is *not* clean, so these 4 tests exercise both the
+    * createDurableQueue/deleteDurableQueue and the createNonDurableQueue/deleteNonDurableQueue permissions, which the
+    * MQTT 5 security tests cannot do since they only ever exercise the durable permissions.
+    */
+   @Test
+   @Timeout(30)
+   public void testUnsubscribeAuthorizationFailureDurable() throws Exception {
+      internalTestUnsubscribeAuthorization(false, noDeleteUser, noDeletePass, CheckType.DELETE_DURABLE_QUEUE, false);
+   }
+
+   @Test
+   @Timeout(30)
+   public void testUnsubscribeAuthorizationSuccessDurable() throws Exception {
+      internalTestUnsubscribeAuthorization(false, fullUser, fullPass, null, true);
+   }
+
+   @Test
+   @Timeout(30)
+   public void testUnsubscribeAuthorizationFailureNonDurable() throws Exception {
+      internalTestUnsubscribeAuthorization(true, noDeleteUser, noDeletePass, CheckType.DELETE_NON_DURABLE_QUEUE, false);
+   }
+
+   @Test
+   @Timeout(30)
+   public void testUnsubscribeAuthorizationSuccessNonDurable() throws Exception {
+      internalTestUnsubscribeAuthorization(true, fullUser, fullPass, null, true);
+   }
+
+   private void internalTestUnsubscribeAuthorization(boolean cleanSession,
+                                                       String username,
+                                                       String password,
+                                                       CheckType expectedViolation,
+                                                       boolean expectQueueRemoved) throws Exception {
+      final String TOPIC = getTopicName();
+      final String CLIENT_ID = "consumer";
+      final CountDownLatch latch = new CountDownLatch(1);
+
+      if (expectedViolation != null) {
+         server.getManagementService().addNotificationListener(notification -> {
+            if (notification.getType() == CoreNotificationType.SECURITY_PERMISSION_VIOLATION && CheckType.valueOf(notification.getProperties().getSimpleStringProperty(ManagementHelper.HDR_CHECK_TYPE).toString()) == expectedViolation) {
+               latch.countDown();
+            }
+         });
+      }
+
+      MQTT mqtt = createMQTTConnection(CLIENT_ID, cleanSession);
+      mqtt.setUserName(username);
+      mqtt.setPassword(password);
+      BlockingConnection connection = mqtt.blockingConnection();
+      try {
+         connection.connect();
+         connection.subscribe(new Topic[]{new Topic(TOPIC, QoS.AT_MOST_ONCE)});
+
+         assertNotNull(getSubscriptionQueue(TOPIC, CLIENT_ID));
+
+         connection.unsubscribe(new String[]{TOPIC});
+
+         if (expectedViolation != null) {
+            assertTrue(latch.await(2, TimeUnit.SECONDS));
+         }
+
+         if (expectQueueRemoved) {
+            assertNull(getSubscriptionQueue(TOPIC, CLIENT_ID));
+         } else {
+            assertNotNull(getSubscriptionQueue(TOPIC, CLIENT_ID));
+         }
+      } finally {
+         if (connection.isConnected()) {
+            connection.disconnect();
          }
       }
    }
