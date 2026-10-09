@@ -316,4 +316,17 @@ public class JMXAccessControlListTest {
       assertFalse(controlList.authorizeUserForMethod(new ObjectName("org.myDomain:type=verylongvalue"), "listSomething", Set.of("roleA")));
    }
 
+   @Test
+   public void testAuthorize_KeyAddedAfterLookup() throws MalformedObjectNameException {
+      JMXAccessControlList controlList = new JMXAccessControlList();
+      controlList.addToRoleAccess("org.myDomain", null, "listSomething", "view");
+
+      assertTrue(controlList.authorizeUserForMethod(new ObjectName("org.myDomain:type=foo"), "listSomething", Set.of("view")));
+
+      controlList.addToRoleAccess("org.myDomain", "type=foo", "listSomething", "admin");
+
+      assertTrue(controlList.authorizeUserForMethod(new ObjectName("org.myDomain:type=foo"), "listSomething", Set.of("admin")));
+      assertFalse(controlList.authorizeUserForMethod(new ObjectName("org.myDomain:type=foo"), "listSomething", Set.of("view")));
+   }
+
 }

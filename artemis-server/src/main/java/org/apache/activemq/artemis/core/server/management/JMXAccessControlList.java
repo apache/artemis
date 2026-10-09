@@ -242,6 +242,8 @@ public class JMXAccessControlList {
       if (access == null) {
          access = new Access(domain, accessKey);
          domainMap.put(accessKey, access);
+         // a new key changes the buckets, existing keys are updated in place
+         bucketedDomainCache.invalidate(domain);
       }
 
       if (method.equals(WILDCARD)) {
