@@ -120,7 +120,7 @@ public abstract class AbstractControl extends StandardMBean {
                                                          Integer.MAX_VALUE, fakeConnection,
                                                          true, true, false,
                                                          false, address.toString(), fakeConnection.callback,
-                                                         false, new DummyOperationContext(), Collections.emptyMap(), null, validatedUser, false);
+                                                         false, new DummyOperationContext(), Collections.emptyMap(), Collections.emptyMap(), null, validatedUser, false);
       try {
          CoreMessage message = new CoreMessage(storageManager.generateID(), 50);
          if (headers != null) {

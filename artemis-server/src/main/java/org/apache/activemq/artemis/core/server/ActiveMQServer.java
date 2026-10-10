@@ -383,6 +383,7 @@ public interface ActiveMQServer extends ServiceComponent {
                                boolean autoCreateQueues,
                                OperationContext context,
                                Map<SimpleString, RoutingType> prefixes,
+                               Map<SimpleString, RoutingType> temporaryPrefixes,
                                String securityDomain,
                                String validatedUser,
                                boolean isLegacyProducer) throws Exception;
@@ -402,6 +403,7 @@ public interface ActiveMQServer extends ServiceComponent {
                                boolean autoCreateQueues,
                                OperationContext context,
                                Map<SimpleString, RoutingType> prefixes,
+                               Map<SimpleString, RoutingType> temporaryPrefixes,
                                String securityDomain,
                                boolean isLegacyProducer) throws Exception;
 
