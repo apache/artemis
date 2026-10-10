@@ -1477,6 +1477,11 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    }
 
    @Override
+   public void flushIntermediateReferences() {
+      doInternalPoll();
+   }
+
+   @Override
    public QueueBrowserIterator browserIterator() {
       return new QueueBrowserIterator();
    }

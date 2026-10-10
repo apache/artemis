@@ -415,6 +415,13 @@ public interface Queue extends Bindable, CriticalComponent {
    Pair<Boolean, Boolean> checkRedelivery(MessageReference ref, long timeBase, boolean ignoreRedeliveryDelay) throws Exception;
 
    /**
+    * Move any references which are still pending delivery into the main list of references so that they are visible to
+    * {@link #iterator()}.
+    */
+   default void flushIntermediateReferences() {
+   }
+
+   /**
     * It will iterate through memory only (not paging)
     */
    LinkedListIterator<MessageReference> iterator();
