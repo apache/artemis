@@ -442,15 +442,15 @@ By default, remote JMX access to Artemis is disabled for security reasons.
 
 Artemis has a JMX agent which allows access to JMX MBeans remotely.
 This is configured via the `connector` element in the `management.xml` configuration file.
-To enable this, you add the following XML:
+To enable this, uncomment the following line:
 
 [,xml]
 ----
-<connector connector-port="1099"/>
+<connector connector-port="1099" rmi-registry-port="1098" connector-host="0.0.0.0" />
 ----
 
 This exposes the agent remotely on the port `1099`.
-If you were connecting via JConsole you would connect as a remote process using the service url:
+If you were connecting via JConsole locally, you would connect as a remote process using the service url:
 
 ----
 service:jmx:rmi:///jndi/rmi://localhost:1099/jmxrmi
@@ -458,10 +458,10 @@ service:jmx:rmi:///jndi/rmi://localhost:1099/jmxrmi
 
 You'd be able to supply an appropriate user name and password in this case as well.
 
-You can also configure the connector using the following:
+You can configure the connector using the following:
 
 connector-host::
-The host to expose the agent on.
+The host to expose the agent on. Setting this to 0.0.0.0 will bind the ports on all available interfaces and IP addresses.
 
 connector-port::
 The port to expose the agent on.
@@ -509,7 +509,8 @@ See the xref:masking-passwords.adoc#masking-passwords[password masking] document
 
 [NOTE]
 ====
-It is important to note that the rmi registry will pick an ip address to bind to, If you have a multi IP addresses/NICs  present on the system then you can choose the ip address to use by adding the following to artemis.profile `-Djava.rmi.server.hostname=localhost`
+It is important to note that the rmi registry will pick an ip address to bind to.
+If you have a multi IP addresses/NICs present on the system then you can choose the ip address to use by uncommenting and changing the IP address in the following line in artemis.profile: `-Djava.rmi.server.hostname=localhost`
 ====
 
 [NOTE]
