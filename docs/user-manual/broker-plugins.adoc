@@ -206,3 +206,15 @@ The plugin can be configured via xml in the normal broker-plugin way:
    </broker-plugin>
 </broker-plugins>
 ----
+
+== Using the MQTTRetainMessagePlugin
+
+The `MQTTRetainMessagePlugin` will move xref:mqtt.adoc#mqtt-retain-messages[MQTT retain message processing] from the MQTT publish manager on the MQTT protocol head to the broker routing layer. Every message will be checked for the MQTT specific retain header such that MQTT messages that orginate on the broker over other protocols (via an AMQPBrokerConnection for example) will have their retain header respected. The plugin checks the properties of every message, so this plugin should only be used when the MQTT retain state needs to span more than one broker.
+
+The plugin can be configured via xml in the normal broker-plugin way:
+[,xml]
+----
+<broker-plugins>
+   <broker-plugin class-name="org.apache.activemq.artemis.core.protocol.mqtt.MQTTRetainMessagePlugin" />
+</broker-plugins>
+----
