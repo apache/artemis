@@ -49,6 +49,7 @@ import org.apache.activemq.artemis.core.remoting.impl.AbstractAcceptor;
 import org.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants;
 import org.apache.activemq.artemis.core.security.Role;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
+import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.settings.HierarchicalRepository;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
@@ -108,6 +109,9 @@ public class MQTTTestSupport extends ActiveMQTestBase {
 
    protected String fullUser = "user";
    protected String fullPass = "pass";
+
+   protected String noDeleteUser = "noDelete";
+   protected String noDeletePass = "noDelete";
 
    public MQTTTestSupport() {
       this.protocolScheme = "mqtt";
@@ -184,6 +188,8 @@ public class MQTTTestSupport extends ActiveMQTestBase {
          securityManager.getConfiguration().addRole(guestUser, "guest");
          securityManager.getConfiguration().addUser(fullUser, fullPass);
          securityManager.getConfiguration().addRole(fullUser, "full");
+         securityManager.getConfiguration().addUser(noDeleteUser, noDeletePass);
+         securityManager.getConfiguration().addRole(noDeleteUser, "noDelete");
 
          // Configure roles
          HierarchicalRepository<Set<Role>> securityRepository = server.getSecurityRepository();
@@ -192,6 +198,7 @@ public class MQTTTestSupport extends ActiveMQTestBase {
          value.add(new Role("browser", false, false, false, false, false, false, false, true, false, false, false, false));
          value.add(new Role("guest", false, true, false, false, false, false, false, true, false, false, false, false));
          value.add(new Role("full", true, true, true, true, true, true, true, true, true, true, false, false));
+         value.add(new Role("noDelete", true, true, true, false, true, false, true, true, true, true, false, false));
          securityRepository.addMatch(MQTTUtil.getCoreAddressFromMqttTopic(getQueueName(), server.getConfiguration().getWildcardConfiguration()), value);
 
          server.getConfiguration().setSecurityEnabled(true);
@@ -256,6 +263,10 @@ public class MQTTTestSupport extends ActiveMQTestBase {
 
    protected String getTopicName() {
       return getClass().getName() + "." + name;
+   }
+
+   protected Queue getSubscriptionQueue(String mqttTopicFilter, String clientId) {
+      return server.locateQueue(MQTTUtil.getCoreQueueFromMqttTopic(mqttTopicFilter, clientId, server.getConfiguration().getWildcardConfiguration()));
    }
 
    /**
