@@ -38,7 +38,10 @@ public class Main {
 
    public static void main(String[] args) throws Exception {
 
-      if (args.length == 1) {
+      if (args.length >= 1) {
+         if (args[0] == null || args[0].trim().isEmpty()) {
+            throw new IllegalArgumentException("Work directory cannot be empty");
+         }
          workDir = args[0];
          logger.debug("User supplied work dir {}", workDir);
       }
