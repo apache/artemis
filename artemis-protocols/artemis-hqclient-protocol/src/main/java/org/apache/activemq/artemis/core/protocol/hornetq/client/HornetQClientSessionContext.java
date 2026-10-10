@@ -85,7 +85,7 @@ public class HornetQClientSessionContext extends ActiveMQSessionContext {
                                                 Executor executor,
                                                 Executor flowControlExecutor,
                                                 int onMessageCloseTimeout) throws ActiveMQException {
-      long consumerID = idGenerator.generateID();
+      long consumerID = generateID();
 
       ActiveMQConsumerContext consumerContext = new ActiveMQConsumerContext(consumerID);
 

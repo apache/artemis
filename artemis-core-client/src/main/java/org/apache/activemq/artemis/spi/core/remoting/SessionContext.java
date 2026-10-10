@@ -41,8 +41,6 @@ import org.apache.activemq.artemis.core.client.impl.ClientProducerInternal;
 import org.apache.activemq.artemis.core.client.impl.ClientSessionInternal;
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.SessionQueueQueryResponseMessage;
 import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
-import org.apache.activemq.artemis.utils.IDGenerator;
-import org.apache.activemq.artemis.utils.SimpleIDGenerator;
 
 public abstract class SessionContext {
 
@@ -51,8 +49,6 @@ public abstract class SessionContext {
    protected SendAcknowledgementHandler sendAckHandler;
 
    protected volatile RemotingConnection remotingConnection;
-
-   protected final IDGenerator idGenerator = new SimpleIDGenerator(0);
 
    public SessionContext(RemotingConnection remotingConnection) {
       this.remotingConnection = remotingConnection;

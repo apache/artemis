@@ -28,6 +28,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
@@ -140,11 +141,22 @@ public class ActiveMQSessionContext extends SessionContext {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
+   static final class IdHolder {
+      volatile long id;
+   }
+   private static final AtomicLongFieldUpdater<IdHolder> ID_UPDATER =
+      AtomicLongFieldUpdater.newUpdater(IdHolder.class, "id");
+   static final IdHolder ID_HOLDER = new IdHolder();
+
    private final Channel sessionChannel;
    private final int serverVersion;
    private int confirmationWindow;
    private String name;
    private boolean killed;
+
+   protected static long generateID() {
+      return ID_UPDATER.getAndIncrement(ID_HOLDER);
+   }
 
    public Channel getSessionChannel() {
       return sessionChannel;
@@ -399,7 +411,7 @@ public class ActiveMQSessionContext extends SessionContext {
                                                 Executor executor,
                                                 Executor flowControlExecutor,
                                                 int onMessageCloseTimeout) throws ActiveMQException {
-      long consumerID = idGenerator.generateID();
+      long consumerID = generateID();
 
       ActiveMQConsumerContext consumerContext = new ActiveMQConsumerContext(consumerID);
 

@@ -16,23 +16,18 @@
  */
 package org.apache.activemq.artemis.utils;
 
-import java.util.concurrent.atomic.AtomicLong;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class SimpleIDGenerator implements IDGenerator {
+import org.junit.jupiter.api.Test;
 
-   private final AtomicLong idSequence;
-
-   public SimpleIDGenerator(final long startID) {
-      idSequence = new AtomicLong(startID);
-   }
-
-   @Override
-   public long generateID() {
-      return idSequence.getAndIncrement();
-   }
-
-   @Override
-   public long getCurrentID() {
-      return idSequence.get();
+public class SimpleIDGeneratorTest {
+   @Test
+   public void test() {
+      SimpleIDGenerator idGenerator = new SimpleIDGenerator(0L);
+      long[] expectedSequence = new long[] {0L, 1L, 2L};
+      for (long expected : expectedSequence) {
+         assertEquals(expected, idGenerator.getCurrentID());
+         assertEquals(expected, idGenerator.generateID());
+      }
    }
 }
