@@ -877,7 +877,9 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
                   // and we should ignore UDP restarts here.
                   if (!disableDiscoveryRetries) {
                      if (discoveryGroup != null) {
-                        discoveryGroup.stop();
+                        // stop(0L) — skip thread join on reconnect retry to avoid blocking
+                        // for stoppingTimeout on every failed attempt.
+                        discoveryGroup.stop(0L);
                      }
 
                      logger.debug("Restarting discovery");
