@@ -125,6 +125,10 @@ appender.log_file.policies.cron.schedule = 0 0 0 * * ?
 appender.log_file.policies.cron.evaluateOnStartup = true
 ----
 
+While the default console log level is set to `INFO`, the console log level is set to `OFF` via additional java flags in the case of running Apache Artemis as a systemd service.
+This is configured in the artemis.service systemd file: `JAVA_ARGS_APPEND=-Dartemis.console.level=OFF`.
+This is to avoid the overhead of logging to both the console and the file. Any potential errors at startup will still be visible when checking the systemd service logs, by running `journalctl -u artemis` or similar commands.
+
 == Configuring Broker Audit Logging
 
 There are 3 audit loggers that can be enabled separately and audit  different types of broker events, these are:
