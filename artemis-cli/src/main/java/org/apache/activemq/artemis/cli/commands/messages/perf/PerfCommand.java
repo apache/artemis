@@ -81,9 +81,12 @@ public abstract class PerfCommand extends ConnectionAbstract {
          Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             onInterruptBenchmark();
             try {
-               completed.await();
-            } catch (InterruptedException ignored) {
-
+               // Use a timed await to prevent permanent shutdown hangs if thread/driver is deadlocked
+               if (!completed.await(5, TimeUnit.SECONDS)) {
+                  System.err.println("Benchmark shutdown timed out waiting for completion latch.");
+               }
+            } catch (InterruptedException e) {
+               Thread.currentThread().interrupt();
             }
          }));
          try {
@@ -107,7 +110,7 @@ public abstract class PerfCommand extends ConnectionAbstract {
                                                             final long endWarmup,
                                                             final long end,
                                                             final BenchmarkService benchmark) throws IOException {
-      while (benchmark.isRunning()) {
+      while (benchmark.isRunning() && !Thread.currentThread().isInterrupted()) {
          if (end != 0) {
             final long tick = System.currentTimeMillis();
             if (tick - end >= 0) {
