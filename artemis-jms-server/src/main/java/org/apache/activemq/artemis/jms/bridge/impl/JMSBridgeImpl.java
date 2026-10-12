@@ -1617,9 +1617,19 @@ public final class JMSBridgeImpl implements JMSBridge {
 
             if (val instanceof byte[] == false) {
                //Can't set byte[] array props through the JMS API - if we're bridging an Apache Artemis message it might have such props
-               msg.setObjectProperty(propName, entry.getValue());
+               try {
+                  msg.setObjectProperty(propName, entry.getValue());
+               } catch (Exception exception) {
+                  var skipMessage = "Skipping property " + propName;
+                  logger.trace(skipMessage, exception);
+               }
             } else if (msg instanceof ActiveMQMessage activeMQMessage) {
-               activeMQMessage.getCoreMessage().putBytesProperty(propName, (byte[]) val);
+               try {
+                  activeMQMessage.getCoreMessage().putBytesProperty(propName, (byte[]) val);
+               } catch (Exception exception) {
+                  var skipMessage = "Skipping property " + propName;
+                  logger.trace(skipMessage, exception);
+               }
             }
          }
       }
