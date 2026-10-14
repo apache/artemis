@@ -1028,10 +1028,13 @@ public class QueueImplTest extends ActiveMQTestBase {
       assertEquals(0, consumer2.getReferences().size());
       assertEquals(0, consumer3.getReferences().size());
 
-      // verify redistributor not yet needed, only consumer3 gets to
-      // peek at pending
-      // should not attempt to add (and throw) due to unmatched not being set
-      queue.addRedistributor(0);
+      // verify redistributor is doing some work....
+      try {
+         // adding a consumer gives every existing consumer a fresh look at pending messages, so this should attempt to add due to unmatched
+         queue.addRedistributor(0);
+         fail("expect error on attempt to add addRedistributor - npe b/c no storage etc");
+      } catch (NullPointerException expected) {
+      }
 
       // on new message dispatch, need for redistributor will kick in
       MessageReference ref = generateReference(queue, numMessages);

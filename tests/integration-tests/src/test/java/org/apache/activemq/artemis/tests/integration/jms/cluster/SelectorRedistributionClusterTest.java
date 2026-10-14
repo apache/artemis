@@ -28,6 +28,7 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 
 import org.apache.activemq.artemis.tests.util.JMSClusteredTestBase;
+import org.apache.activemq.artemis.tests.util.Wait;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -46,6 +47,51 @@ public class SelectorRedistributionClusterTest extends JMSClusteredTestBase {
    @Override
    protected boolean enablePersistence() {
       return true;
+   }
+
+   @Test
+   public void testSelectorRoutingReDistributionManyInitialLocalConsumers() throws Exception {
+      server1.getAddressSettingsRepository().getMatch("#").setRedistributionDelay(0);
+      server2.getAddressSettingsRepository().getMatch("#").setRedistributionDelay(0);
+
+      Connection conn1 = cf1.createConnection();
+      Connection conn2 = cf2.createConnection();
+      conn1.start();
+      conn2.start();
+
+      try {
+         Session session1 = conn1.createSession(Session.SESSION_TRANSACTED);
+         Session session2 = conn2.createSession(Session.SESSION_TRANSACTED);
+
+         javax.jms.Queue jmsQueue = session1.createQueue(myQueue);
+         MessageProducer prod1 = session1.createProducer(jmsQueue);
+         prod1.setDeliveryMode(DeliveryMode.PERSISTENT);
+         TextMessage textMessage = session1.createTextMessage("m1");
+         textMessage.setIntProperty("N", 10);
+         prod1.send(textMessage);
+         session1.commit();
+
+         MessageConsumer cons1_1 = session1.createConsumer(jmsQueue, "N = 0");
+         waitForBindings(server1, jmsQueue.getQueueName(), true, 1, 1, 4000);
+
+         MessageConsumer cons1_2 = session1.createConsumer(jmsQueue, "N = 0");
+         waitForBindings(server1, jmsQueue.getQueueName(), true, 1, 2, 4000);
+
+         MessageConsumer cons2 = session2.createConsumer(jmsQueue, "N = 10");
+         waitForBindings(server1, jmsQueue.getQueueName(), false, 1, 1, 4000);
+
+         // message should be redistributed to server2
+         TextMessage received = (TextMessage) cons2.receive(5000);
+         assertNotNull(received);
+         assertEquals("m1", received.getText());
+         session2.commit();
+
+         Wait.assertEquals(0, () -> server1.locateQueue(jmsQueue.getQueueName()).getMessageCount(), 5000);
+         Wait.assertEquals(0, () -> server2.locateQueue(jmsQueue.getQueueName()).getMessageCount(), 5000);
+      } finally {
+         conn1.close();
+         conn2.close();
+      }
    }
 
    @Test

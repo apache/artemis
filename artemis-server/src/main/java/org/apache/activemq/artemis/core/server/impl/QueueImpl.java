@@ -1229,6 +1229,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
                   dispatchStartTimeUpdater.compareAndSet(this, -1, queueConfiguration.getDelayBeforeDispatch() + System.currentTimeMillis());
                }
                refCountForConsumers.increment();
+               resetCompletedIterators();
             }
          }
       }
@@ -2706,6 +2707,25 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       }
    }
 
+   /**
+    * Resets only consumer iterators:
+    * <ul>
+    * <li>that are completed (i.e., no more elements to look at)</li>
+    * <li>whose consumer has never actually handled a reference</li>
+    * </ul>
+    * Unlike {@link #resetAllIterators()}, this leaves untouched consumers that still have references left to look at or
+    * that have already handled at least one reference. Otherwise already-delivered-but-not-removed (non-destructive)
+    * references could be redelivered to a consumer that already has them.
+    */
+   private synchronized void resetCompletedIterators() {
+      for (ConsumerHolder<? extends Consumer> holder : this.consumers) {
+         LinkedListIterator<MessageReference> consumerIterator = holder.iter;
+         if (consumerIterator != null && !consumerIterator.hasNext() && !holder.handled) {
+            holder.resetIterator();
+         }
+      }
+   }
+
    @Override
    public synchronized void pause() {
       pause(false);
@@ -3044,6 +3064,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
                   noDelivery = 0;
                   numNoMatch = 0;
                   numAttempts = 0;
+                  holder.handled = true;
 
                   ref = handleMessageGroup(ref, consumer, groupConsumer, groupID);
 
@@ -4143,6 +4164,8 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       final QueueImpl queue;
 
       LinkedListIterator<MessageReference> iter;
+
+      boolean handled;
 
       private void resetIterator() {
          if (iter != null) {
