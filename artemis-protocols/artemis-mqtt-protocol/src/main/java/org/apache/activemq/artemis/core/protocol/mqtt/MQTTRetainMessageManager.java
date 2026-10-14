@@ -75,6 +75,7 @@ public class MQTTRetainMessageManager {
       try {
          for (SimpleString retainedQueueName : bindingQueryResult.getQueueNames()) {
             Queue retainedQueue = session.getServer().locateQueue(retainedQueueName);
+            retainedQueue.flushIntermediateReferences();
             try (LinkedListIterator<MessageReference> i = retainedQueue.iterator()) {
                if (i.hasNext()) {
                   MessageReference ref = i.next();
