@@ -108,6 +108,12 @@ public class MQTTSubscriptionManager {
                ServerConsumer existingConsumer = existingSub.getConsumer();
                consumerQoSLevels.put(existingConsumer.getID(), qos);
                if (existingSub.getSubscription().option().isNoLocal() != isNoLocal) {
+                  /*
+                   * Closing the existing consumer cancels its in-flight refs back to the queue so they are redelivered
+                   * through the new consumer. Dropping the delivery state here ensures redelivery reuses the persisted
+                   * packet ID correlations instead of creating new ones and leaking the old ones.
+                   */
+                  state.removeCoreDeliveryInfos(q.getName());
                   existingSub.setConsumer(createConsumer(q, qos, isNoLocal, existingConsumer.getID()));
                   closeConsumer(existingConsumer);
                }
@@ -269,8 +275,12 @@ public class MQTTSubscriptionManager {
                ServerConsumer removed = item != null ? item.getConsumer() : null;
                state.removeSubscription(topics.get(i));
                if (removed != null) {
+                  SimpleString subscriptionQueue = removed.getQueue().getName();
                   removed.close(false);
                   consumerQoSLevels.remove(removed.getID());
+                  // any message still in delivery can never be acknowledged so release the packet IDs, etc.
+                  state.removeCoreDeliveryInfos(subscriptionQueue);
+                  stateManager.removePacketIdCorrelations(state.getClientId(), subscriptionQueue);
                }
 
                SimpleString internalQueueName = SimpleString.of(MQTTUtil.getCoreQueueFromMqttTopic(topics.get(i), state.getClientId(), session.getServer().getConfiguration().getWildcardConfiguration()));
