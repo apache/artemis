@@ -24,8 +24,6 @@ import org.apache.activemq.artemis.core.persistence.impl.journal.LargeServerMess
 import org.apache.activemq.artemis.core.server.BindingQueryResult;
 import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.server.Queue;
-import org.apache.activemq.artemis.core.server.RoutingContext;
-import org.apache.activemq.artemis.core.server.impl.RoutingContextImpl;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.utils.collections.LinkedListIterator;
 
@@ -34,27 +32,35 @@ import static org.apache.activemq.artemis.core.protocol.mqtt.MQTTUtil.MQTT_MESSA
 public class MQTTRetainMessageManager {
 
    private MQTTSession session;
+   private final boolean retainMessagePluginRegistered;
 
    public MQTTRetainMessageManager(MQTTSession session) {
       this.session = session;
+      this.retainMessagePluginRegistered = session.getServer().getBrokerPlugins().stream().anyMatch(activeMQServerBasePlugin -> activeMQServerBasePlugin instanceof MQTTRetainMessagePlugin);
    }
 
    /**
-    * FIXME
-    * Retained messages should be handled in the core API.  There is currently no support for retained messages
-    * at the time of writing.  Instead we handle retained messages here.  This method will create a new queue for
-    * every address that is used to store retained messages.  THere should only ever be one message in the retained
-    * message queue.  When a new subscription is created the queue should be browsed and the message copied onto
+    * Retained messages have two implementations, one that works on the mqtt protocol and is limited to a single broker
+    * and a second implemented as a broker plugin that intercepts all messages and can be used with broker connections.
+    * The tradeoff is that the plugin intercepts every message looking for the retain header, the plugin should only be
+    * configured when mqtt retained state needs to propagate between brokers.
+    *
+    * The implementation will create a new queue for every address that is used to store retained messages.
+    * There should only ever be one message in the retained message queue.
+    * When a new subscription is created the queue should be browsed and the message copied onto
     * the subscription queue for the consumer.  When a new retained message is received the message will be sent to
     * the retained queue and the previous retain message consumed to remove it from the queue.
     */
    void handleRetainedMessage(Message messageParameter, String address, boolean reset, Transaction tx) throws Exception {
-      String retainAddress = MQTTUtil.getCoreRetainAddressFromMqttTopic(address, session.getWildcardConfiguration());
 
-      Queue queue = session.getServer().locateQueue(retainAddress);
-      if (queue == null) {
-         queue = session.getServer().createQueue(QueueConfiguration.of(retainAddress).setAutoCreated(true));
+      if (retainMessagePluginRegistered) {
+         // see: org.apache.activemq.artemis.core.protocol.mqtt.MQTTRetainMessagePlugin.beforeMessageRoute
+         return;
       }
+
+      final String retainAddress = MQTTUtil.getCoreRetainAddressFromMqttTopic(address, session.getWildcardConfiguration());
+
+      Queue queue = session.getServer().createQueue(QueueConfiguration.of(retainAddress).setAutoCreated(true), true);
 
       queue.deleteAllReferences();
 
@@ -95,11 +101,5 @@ public class MQTTRetainMessageManager {
          throw t;
       }
       tx.commit();
-   }
-
-   private void sendToQueue(Message message, Queue queue, Transaction tx) throws Exception {
-      RoutingContext context = new RoutingContextImpl(tx);
-      queue.route(message, context);
-      session.getServer().getPostOffice().processRoute(message, context, false);
    }
 }

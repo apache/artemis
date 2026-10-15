@@ -78,7 +78,7 @@ public class MQTTPublishManager {
 
    private final MQTTSession session;
 
-   private boolean closeMqttConnectionOnPublishAuthorizationFailure;
+   private final boolean closeMqttConnectionOnPublishAuthorizationFailure;
 
    public MQTTPublishManager(MQTTSession session, boolean closeMqttConnectionOnPublishAuthorizationFailure) {
       this.session = session;
@@ -164,7 +164,7 @@ public class MQTTPublishManager {
          serverMessage.setDurable(MQTTUtil.DURABLE_MESSAGES);
       }
 
-      // only start a transction if really necessary
+      // only start a transaction if really necessary
       Transaction tx = realQos2 || message.fixedHeader().isRetain() ? session.getServerSession().newTransaction() : null;
 
       try {
@@ -188,6 +188,7 @@ public class MQTTPublishManager {
             boolean reset = payload instanceof EmptyByteBuf || payload.capacity() == 0;
             session.getRetainMessageManager().handleRetainedMessage(serverMessage, topic, reset, tx);
          }
+
          if (tx != null) {
             tx.commit();
          }
