@@ -48,6 +48,7 @@ import org.apache.activemq.artemis.core.config.HAPolicyConfiguration;
 import org.apache.activemq.artemis.core.config.LockCoordinatorConfiguration;
 import org.apache.activemq.artemis.core.config.ScaleDownConfiguration;
 import org.apache.activemq.artemis.core.config.WildcardConfiguration;
+import org.apache.activemq.artemis.core.config.federation.FederationAddressPolicyConfiguration;
 import org.apache.activemq.artemis.core.config.federation.FederationQueuePolicyConfiguration;
 import org.apache.activemq.artemis.core.config.ha.PrimaryOnlyPolicyConfiguration;
 import org.apache.activemq.artemis.core.config.ha.SharedStorePrimaryPolicyConfiguration;
@@ -713,6 +714,62 @@ public class FileConfigurationParserTest extends ServerTestBase {
       assertEquals(1, configuration4.getUpstreamConfigurations().size());
       assertEquals(1, configuration4.getDownstreamConfigurations().size());
       assertEquals(1, configuration4.getTransformerConfigurations().size());
+   }
+
+   @Test
+   public void testCoreFederationMaxHopsAndShareConnection() throws Exception {
+      FileConfigurationParser parser = new FileConfigurationParser();
+      String middlePart = """
+      <federations>
+         <federation name="federation1">
+            <upstream name="upstream1">
+               <share-connection>true</share-connection>
+               <static-connectors>
+                  <connector-ref>connector1</connector-ref>
+               </static-connectors>
+               <policy ref="address-federation"/>
+            </upstream>
+            <upstream name="upstream2">
+               <static-connectors>
+                  <connector-ref>connector1</connector-ref>
+               </static-connectors>
+               <policy ref="address-federation-default"/>
+            </upstream>
+            <downstream name="downstream1">
+               <share-connection>true</share-connection>
+               <static-connectors>
+                  <connector-ref>connector1</connector-ref>
+               </static-connectors>
+               <policy ref="address-federation"/>
+               <upstream-connector-ref>connector1</upstream-connector-ref>
+            </downstream>
+            <address-policy name="address-federation" max-hops="2">
+               <include address-match="the_address" />
+            </address-policy>
+            <address-policy name="address-federation-default">
+               <include address-match="the_address" />
+            </address-policy>
+         </federation>
+      </federations>""";
+
+      String configStr = FIRST_PART + middlePart + LAST_PART;
+      ByteArrayInputStream input = new ByteArrayInputStream(configStr.getBytes(StandardCharsets.UTF_8));
+
+      Configuration config = parser.parseMainConfig(input);
+
+      assertEquals(1, config.getFederationConfigurations().size());
+      FederationConfiguration federation = config.getFederationConfigurations().get(0);
+
+      FederationAddressPolicyConfiguration policy = assertInstanceOf(FederationAddressPolicyConfiguration.class, federation.getFederationPolicyMap().get("address-federation"));
+      assertEquals(2, policy.getMaxHops());
+      FederationAddressPolicyConfiguration defaultPolicy = assertInstanceOf(FederationAddressPolicyConfiguration.class, federation.getFederationPolicyMap().get("address-federation-default"));
+      assertEquals(0, defaultPolicy.getMaxHops());
+
+      assertEquals(2, federation.getUpstreamConfigurations().size());
+      assertTrue(federation.getUpstreamConfigurations().get(0).getConnectionConfiguration().isShareConnection());
+      assertFalse(federation.getUpstreamConfigurations().get(1).getConnectionConfiguration().isShareConnection());
+      assertEquals(1, federation.getDownstreamConfigurations().size());
+      assertTrue(federation.getDownstreamConfigurations().get(0).getConnectionConfiguration().isShareConnection());
    }
 
    @Test

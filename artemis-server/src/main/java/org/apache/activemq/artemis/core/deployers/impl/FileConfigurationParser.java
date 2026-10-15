@@ -2897,7 +2897,7 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
       NamedNodeMap attributes = policyNod.getAttributes();
       for (int i = 0; i < attributes.getLength(); i++) {
          Node item = attributes.item(i);
-         if (item.getNodeName().equals("max-consumers")) {
+         if (item.getNodeName().equals("max-hops")) {
             config.setMaxHops(MINUS_ONE_OR_GE_ZERO.validate(item.getNodeName(), Integer.parseInt(item.getNodeValue())).intValue());
          } else if (item.getNodeName().equals("auto-delete")) {
             config.setAutoDelete(Boolean.parseBoolean(item.getNodeValue()));
@@ -2981,6 +2981,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
       boolean ha = getBoolean(upstreamNode, "ha", false);
 
+      boolean shareConnection = getBoolean(upstreamNode, "share-connection", false);
+
       long circuitBreakerTimeout = getLong(upstreamNode, "circuit-breaker-timeout", config.getConnectionConfiguration().getCircuitBreakerTimeout(), MINUS_ONE_OR_GE_ZERO);
 
       long clientFailureCheckPeriod = getLong(upstreamNode, "check-period", ActiveMQDefaultConfiguration.getDefaultFederationFailureCheckPeriod(), GT_ZERO);
@@ -3018,6 +3020,7 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
       config.getConnectionConfiguration()
           .setCircuitBreakerTimeout(circuitBreakerTimeout)
           .setHA(ha)
+          .setShareConnection(shareConnection)
           .setClientFailureCheckPeriod(clientFailureCheckPeriod)
           .setConnectionTTL(connectionTTL)
           .setRetryInterval(retryInterval)
