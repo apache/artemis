@@ -29,6 +29,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -245,6 +246,19 @@ public class Upgrade extends InstallAbstract {
 
       //we remove the unwanted wars after updating them above just in case we are upgrading from an older version where the format was different
       removeWars(context, bootstrapXml);
+
+      // copy the systemd service file if it doesn't exist yet
+      final File systemdService = new File(etcFolder, Create.ARTEMIS_SERVICE_SYSTEMD);
+      if (!systemdService.exists()) {
+         final String instancePath = directory.getCanonicalPath();
+         final Map<String, String> serviceFilters = new LinkedHashMap<>();
+         serviceFilters.put("${java-args-append}", "JAVA_ARGS_APPEND=-Dartemis.console.level=OFF");
+         serviceFilters.put("${environment}", "ARTEMIS_INSTANCE=" + instancePath);
+         serviceFilters.put("${exec-start}", instancePath + "/bin/artemis run");
+
+         context.out.println("Creating " + systemdService);
+         write(Create.ETC_ARTEMIS_SERVICE_SYSTEMD, systemdService, serviceFilters, true, false);
+      }
 
       upgradeLogging(context, etcFolder, etcBkp);
 

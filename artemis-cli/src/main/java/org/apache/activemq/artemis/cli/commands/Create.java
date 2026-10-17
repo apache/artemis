@@ -21,6 +21,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
 import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -81,6 +83,8 @@ public class Create extends InstallAbstract {
    public static final String BIN_ARTEMIS = "bin/" + ARTEMIS;
    public static final String ARTEMIS_SERVICE = "artemis-service";
    public static final String BIN_ARTEMIS_SERVICE = "bin/" + ARTEMIS_SERVICE;
+   public static final String ARTEMIS_SERVICE_SYSTEMD = "artemis.service";
+   public static final String ETC_ARTEMIS_SERVICE_SYSTEMD = "etc/" + ARTEMIS_SERVICE_SYSTEMD;
    public static final String ETC_ARTEMIS_PROFILE = "artemis.profile";
    public static final String ETC_ARTEMIS_UTILITY_PROFILE = "artemis-utility.profile";
    public static final String ETC_LOG4J2_PROPERTIES = "log4j2.properties";
@@ -340,6 +344,12 @@ public class Create extends InstallAbstract {
    @Option(names = "--jdbc-lock-expiration", description = "Lock expiration (in milliseconds).")
    long jdbcLockExpiration = ActiveMQDefaultConfiguration.getDefaultJdbcLockExpirationMillis();
 
+   @Option(names = "--enable-systemd-service", description = "Enable systemd service. Default is false.")
+   boolean enableSystemdService = false;
+
+   @Option(names = "--systemd-service-name", description = "Name of the artemis systemd service. Default is 'artemis'.")
+   String systemdServiceName = "artemis";
+
    private boolean isAutoCreate() {
       if (autoCreate == null) {
          if (noAutoCreate != null) {
@@ -573,6 +583,68 @@ public class Create extends InstallAbstract {
       return disablePersistence;
    }
 
+   public void setSystemdServiceInstall(boolean enableSystemdService) {
+      this.enableSystemdService = enableSystemdService;
+   }
+
+   public void generateSystemdService(File etcFolder) throws Exception {
+      Map<String, String> serviceFilters = new LinkedHashMap<>();
+
+      // set JAVA_ARGS_APPEND: Set console output level to OFF when runing as a service. Output to logs only.
+      serviceFilters.put("${java-args-append}", "JAVA_ARGS_APPEND=-Dartemis.console.level=OFF");
+      // set the ARTEMIS_INSTANCE environment variable and the exec-start command to run the broker
+      serviceFilters.put("${environment}", "ARTEMIS_INSTANCE=" + path(directory));
+      serviceFilters.put("${exec-start}", path(directory) + "/bin/artemis run");
+
+      write(ETC_ARTEMIS_SERVICE_SYSTEMD, new File(etcFolder, systemdServiceName + ".service"), serviceFilters, true, false);
+   }
+
+   public void enableSystemdService() throws Exception {
+
+      if (enableSystemdService) {
+         File systemdServiceFile = new File(directory, "etc/" + systemdServiceName + ".service");
+         File targetServiceFile = new File("/etc/systemd/system/" + systemdServiceName + ".service");
+
+         try { // try enabling the service automatically
+            Files.copy(systemdServiceFile.toPath(), targetServiceFile.toPath());
+            getActionContext().out.println("Executing systemctl daemon-reload && systemctl enable " + systemdServiceName + ".service ...");
+            executeCommand("systemctl", "daemon-reload");
+            executeCommand("systemctl", "enable", systemdServiceName + ".service");
+
+            getActionContext().out.println("Systemd unit file was generated and enabled at:");
+            getActionContext().out.println(String.format("   /etc/systemd/system/%s.service", systemdServiceName));
+            getActionContext().out.println();
+            getActionContext().out.println("To start it, execute:");
+            getActionContext().out.println(String.format("   systemctl start %s.service", systemdServiceName));
+         } catch (FileAlreadyExistsException e) {
+            getActionContext().out.println("Service file already exists at " + targetServiceFile.getAbsolutePath() + ".");
+         } catch (Exception e) {
+            getActionContext().out.println("Unable to install service: " + e.getMessage());
+         }
+      } else { // print out instructions to enable the service
+         getActionContext().out.println("Systemd unit file was generated at:");
+         getActionContext().out.println(String.format("   \"%s\"", path(new File(directory, "etc/" + systemdServiceName + ".service"))));
+         getActionContext().out.println();
+         getActionContext().out.println("To enable it, run this as root or with sudo privileges:");
+         getActionContext().out.println(String.format("   cp \"%s\" /etc/systemd/system/%s.service", path(new File(directory, "etc/" + systemdServiceName + ".service")), systemdServiceName));
+         getActionContext().out.println(String.format("   systemctl daemon-reload && systemctl enable %s.service", systemdServiceName));
+      }
+   }
+
+   private void executeCommand(String... command) throws Exception {
+      ProcessBuilder pb = new ProcessBuilder(command);
+      pb.redirectErrorStream(true);
+      Process process = pb.start();
+
+      String output = new String(process.getInputStream().readAllBytes()).trim();
+      int exitCode = process.waitFor();
+
+      if (exitCode != 0) {
+         throw new RuntimeException(String.format("Command '%s' failed with exit code %d: %s",
+            String.join(" ", command), exitCode, output));
+      }
+   }
+
    @Override
    public Object execute(ActionContext context) throws Exception {
       this.checkDirectory();
@@ -796,7 +868,6 @@ public class Create extends InstallAbstract {
 
       boolean allowAnonymous = isAllowAnonymous();
 
-
       String retentionTag;
       if (retentionDays > 0) {
          if (retentionMaxBytes != null) {
@@ -926,6 +997,11 @@ public class Create extends InstallAbstract {
             "        <strict-checking/>");
       }
       writeEtc(ETC_JOLOKIA_ACCESS_XML, etcFolder, filters, false);
+
+      generateSystemdService(etcFolder);
+      if (IS_NIX) {
+         enableSystemdService();
+      }
 
       context.out.println("");
       context.out.println("You can now start the broker by executing:  ");

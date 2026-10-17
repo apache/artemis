@@ -26,6 +26,14 @@ Use `--ascii` for plain ASCII output.
 * AMQP message size estimation has been improved to account for the full message metadata, fixing underestimates that occurred when messages carried large application properties.
 * AMQP broker connection Senders, Receivers and Peer configurations have been deprecated and will be removed in a future release.
 Users of the AMQP broker connection Senders and Receivers are encouraged to migrate to the newer AMQP Bridge configurations that provide more robust and configurable send to and receive from topologies.
+* https://issues.apache.org/jira/browse/ARTEMIS-6261[ARTEMIS-6261] - Run artemis as a systemd service
+Automated systemd unit file generation has been added to the broker instance creation tool.
+The service is not enabled by default.
+If running the creation script with `sudo` or `root` privileges, you can pass `--enable-systemd-service` to automatically enable the service at system startup.
+The service file will then be placed in `/etc/systemd/system` and the commands `systemctl daemon-reload` and `systemctl enable artemis.service` will be executed automatically.
+To customize the unit name use the `--systemd-service-name` flag (e.g., `--systemd-service-name=artemis-broker`).
+The service can then be started/stopped by using commands like `systemctl start/stop artemis`.
+This native systemd integration is preferred over the legacy `artemis-service` script.
 
 === Upgrading from 2.57.0
 

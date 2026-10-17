@@ -1,0 +1,72 @@
+= Systemd
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+== Automatic systemd service generation
+
+A systemd service file is generated automatically when you create the broker via cli. The file is available at `pathToBrokerInstance/etc/artemis.service`.
+
+The contents of the automatically generated file look like this:
+
+[,console]
+
+----
+[Unit]
+Description=Apache Artemis Service
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+Environment=ARTEMIS_INSTANCE=/pathToBrokerInstance
+Environment=JAVA_ARGS_APPEND=-Dartemis.console.level=OFF
+ExecStart=/pathToBrokerInstance/bin/artemis run
+TimeoutStopSec=60s
+SuccessExitStatus=143
+KillMode=mixed
+LimitMEMLOCK=infinity
+LimitNOFILE=524288
+LimitNPROC=31438
+LimitAS=infinity
+LimitFSIZE=infinity
+SendSIGKILL=no
+NotifyAccess=all
+Restart=always
+RestartSec=10
+#User=artemis
+#Group=artemis
+
+[Install]
+WantedBy=multi-user.target
+----
+
+You might want to tweak or add additional configuration inside the service file, for example:
+
+* uncomment and/or change `User` with which to run the service, to avoid running as root
+* add `Nice` to tweak niceness of the java process
+* add `Alias`
+* increase or decrease `TimeoutStopSec` and `RestartSec`
+* tweak the console log level, which is set to `OFF` to avoid the overhead of logging to both file and console
+
+You can read more about systemd https://systemd.io/[here].
+
+== Enable systemd service via flags
+
+It is also possible to automate the service installation via `--enable-systemd-service` and `--systemd-service-name` flags.
+In order to do this, the broker creation script usually needs to be run with `sudo` or `root` privileges.
+
+To enable the service automatically, and to change its name (from the default `artemis`), run:
+
+`./artemis create brokername --enable-systemd-service --systemd-service-name=artemisTest`
+
+You can now use `systemctl` commands to start/stop/restart the service, named `artemisTest`:
+
+[,console]
+----
+systemctl start   artemisTest
+systemctl stop    artemisTest
+systemctl restart artemisTest
+----
+
+You can read the systemctl man page https://man7.org/linux/man-pages/man1/systemctl.1.html[here].
