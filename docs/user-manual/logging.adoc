@@ -109,6 +109,7 @@ logger.activemq.level=INFO
 # Console appender
 appender.console.type=Console
 appender.console.name=console
+appender.console.direct=${env:ARTEMIS_CONSOLE_DIRECT:-false}
 appender.console.layout.type=PatternLayout
 appender.console.layout.pattern=${env:ARTEMIS_CONSOLE_PATTERN:-%d %-5level [%logger] %msg%n}
 
@@ -129,17 +130,20 @@ appender.log_file.policies.cron.schedule = 0 0 0 * * ?
 appender.log_file.policies.cron.evaluateOnStartup = true
 ----
 
-The default `log4j2.properties` reads two optional environment variables:
+The default `log4j2.properties` reads three optional environment variables:
 
 `ARTEMIS_CONSOLE_PATTERN`:: overrides the console layout pattern (default `%d %-5level [%logger] %msg%n`).
 `ARTEMIS_FILE_LEVEL`:: sets the threshold of the `log/artemis.log` file appender (default `INFO`); `OFF` disables it.
+`ARTEMIS_CONSOLE_DIRECT`:: when `true`, the console appender writes straight to the process standard output instead of going through `System.out` (default `false`).
+This is faster when the output is piped, for example to journald.
 
-The systemd service file generated for the broker sets both, so the broker logs to journald only, without its own date and time since journald timestamps every line:
+The systemd service file generated for the broker sets all three, so the broker logs to journald only, without its own date and time since journald timestamps every line:
 
 [,ini]
 ----
 Environment="ARTEMIS_CONSOLE_PATTERN=<%%level{FATAL=2, ERROR=3, WARN=4, INFO=6, DEBUG=7, TRACE=7}>%%-5level [%%logger] %%msg%%n"
 Environment="ARTEMIS_FILE_LEVEL=OFF"
+Environment="ARTEMIS_CONSOLE_DIRECT=true"
 ----
 
 Note that `%` must be escaped as `%%` in systemd unit files.

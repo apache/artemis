@@ -38,6 +38,9 @@ Environment="ARTEMIS_CONSOLE_PATTERN=<%%level{FATAL=2, ERROR=3, WARN=4, INFO=6, 
 #Disable logging to log/artemis.log, the broker logs to journald only
 Environment="ARTEMIS_FILE_LEVEL=OFF"
 
+#Write console logs straight to the standard output piped to journald, bypassing System.out, which is faster
+Environment="ARTEMIS_CONSOLE_DIRECT=true"
+
 #Command that starts the broker
 ExecStart=${exec-start}
 
