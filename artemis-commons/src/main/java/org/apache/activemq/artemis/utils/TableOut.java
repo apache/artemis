@@ -23,6 +23,10 @@ import java.util.List;
 
 public class TableOut {
 
+
+   public static final char LINE_BREAK_CHAR = '\n';
+   public static final String LINE_BREAK = "\n";
+
    // Unicode box-drawing characters
    public static final String BOX_HORIZONTAL = "─";
    public static final String BOX_VERTICAL = "│";
@@ -156,11 +160,26 @@ public class TableOut {
 
    public List<String> splitLine(final String column, int size) {
       List<String> cells = new ArrayList<>();
+      boolean firstSegment = true;
 
-      for (int position = 0; position < column.length();) {
+      for (String segment : column.split(LINE_BREAK, -1)) {
+         splitSegment(segment, size, cells, firstSegment);
+         firstSegment = false;
+      }
+
+      return cells;
+   }
+
+   private void splitSegment(final String segment, int size, List<String> cells, boolean firstSegment) {
+      if (segment.isEmpty()) {
+         cells.add("");
+         return;
+      }
+
+      for (int position = 0; position < segment.length();) {
          int indentationUsed;
          String indentationStringUsed;
-         if (position == 0 || indentation == 0) {
+         if ((position == 0 && firstSegment) || indentation == 0) {
             indentationUsed = 0;
             indentationStringUsed = "";
          } else {
@@ -168,31 +187,26 @@ public class TableOut {
             indentationStringUsed = this.indentationString;
          }
          int available = size - indentationUsed;
-         int remaining = column.length() - position;
+         int remaining = segment.length() - position;
 
          if (remaining <= available) {
-            // everything fits — no split needed
-            cells.add(indentationStringUsed + column.substring(position));
+            cells.add(indentationStringUsed + segment.substring(position));
             break;
          }
 
-         // look backwards from the hard-break position for the last non-alphanumeric character
-         // but only accept it if it falls at or beyond the halfway point of the available width
          int hardBreak = available;
          int naturalBreak = -1;
          for (int i = hardBreak - 1; i >= available / 2; i--) {
-            if (!Character.isLetterOrDigit(column.charAt(position + i))) {
-               naturalBreak = i + 1; // split after the non-alphanumeric character
+            if (!Character.isLetterOrDigit(segment.charAt(position + i))) {
+               naturalBreak = i + 1;
                break;
             }
          }
 
          int splitAt = naturalBreak > 0 ? naturalBreak : hardBreak;
-         cells.add(indentationStringUsed + column.substring(position, position + splitAt));
+         cells.add(indentationStringUsed + segment.substring(position, position + splitAt));
          position += splitAt;
       }
-
-      return cells;
    }
 
 }

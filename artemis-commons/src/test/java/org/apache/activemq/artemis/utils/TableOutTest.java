@@ -111,6 +111,71 @@ public class TableOutTest {
    }
 
    @Test
+   public void testSplitLineWithExplicitLineBreak() {
+      TableOut tableOut = new TableOut("|", 0, new int[]{20});
+      List<String> lines = tableOut.splitLine("hello\nworld", 20);
+      assertEquals(2, lines.size());
+      assertEquals("hello", lines.get(0));
+      assertEquals("world", lines.get(1));
+   }
+
+   @Test
+   public void testSplitLineBreakAtStart() {
+      TableOut tableOut = new TableOut("|", 0, new int[]{20});
+      List<String> lines = tableOut.splitLine("\nhello", 20);
+      assertEquals(2, lines.size());
+      assertEquals("", lines.get(0));
+      assertEquals("hello", lines.get(1));
+   }
+
+   @Test
+   public void testSplitLineBreakAtEnd() {
+      TableOut tableOut = new TableOut("|", 0, new int[]{20});
+      List<String> lines = tableOut.splitLine("hello\n", 20);
+      assertEquals(2, lines.size());
+      assertEquals("hello", lines.get(0));
+      assertEquals("", lines.get(1));
+   }
+
+   @Test
+   public void testSplitLineBreakWithWidthSplit() {
+      TableOut tableOut = new TableOut("|", 0, new int[]{5});
+      List<String> lines = tableOut.splitLine("1234567890\nabcde", 5);
+      assertEquals(3, lines.size());
+      assertEquals("12345", lines.get(0));
+      assertEquals("67890", lines.get(1));
+      assertEquals("abcde", lines.get(2));
+   }
+
+   @Test
+   public void testSplitLineMultipleBreaks() {
+      TableOut tableOut = new TableOut("|", 0, new int[]{20});
+      List<String> lines = tableOut.splitLine("a\nb\nc", 20);
+      assertEquals(3, lines.size());
+      assertEquals("a", lines.get(0));
+      assertEquals("b", lines.get(1));
+      assertEquals("c", lines.get(2));
+   }
+
+   @Test
+   public void testSplitLineBreakBeforeWidthWouldSplit() {
+      TableOut tableOut = new TableOut("|", 0, new int[]{10});
+      List<String> lines = tableOut.splitLine("abc\ndefgh", 10);
+      assertEquals(2, lines.size());
+      assertEquals("abc", lines.get(0));
+      assertEquals("defgh", lines.get(1));
+   }
+
+   @Test
+   public void testSplitLineBreakWithIndentation() {
+      TableOut tableOut = new TableOut("|", 2, new int[]{10});
+      List<String> lines = tableOut.splitLine("hello\nworld", 10);
+      assertEquals(2, lines.size());
+      assertEquals("hello", lines.get(0));
+      assertEquals("  world", lines.get(1));
+   }
+
+   @Test
    public void testAscii() {
       java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
       java.io.PrintStream ps = new java.io.PrintStream(baos);

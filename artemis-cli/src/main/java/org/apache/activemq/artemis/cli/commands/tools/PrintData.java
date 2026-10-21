@@ -18,6 +18,7 @@ package org.apache.activemq.artemis.cli.commands.tools;
 
 import java.io.File;
 import java.io.PrintStream;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -131,13 +132,13 @@ public class PrintData extends DBOption {
 
       printBanner(out, BINDINGS_BANNER);
 
-      DescribeJournal bindings = DescribeJournal.printSurvivingRecords(storageManager.getBindingsJournal(), out, safe, ascii, Long.MAX_VALUE);
+      DescribeJournal bindings = DescribeJournal.printSurvivingRecords(storageManager.getBindingsJournal(), out, safe, ascii, null);
 
       printBanner(out, MESSAGES_BANNER);
 
-      DescribeJournal describeJournal = DescribeJournal.printSurvivingRecords(storageManager.getMessageJournal(), out, safe, ascii, Long.MAX_VALUE);
+      DescribeJournal describeJournal = DescribeJournal.printSurvivingRecords(storageManager.getMessageJournal(), out, safe, ascii, null);
 
-      printPages(describeJournal, storageManager, pagingmanager, out, safe, maxPages, bindings, ascii, Long.MAX_VALUE);
+      printPages(describeJournal, storageManager, pagingmanager, out, safe, maxPages, bindings, ascii, null);
 
       cleanup();
 
@@ -180,7 +181,7 @@ public class PrintData extends DBOption {
          }
       }
 
-      long maxID = DescribeJournal.loadMaxID(bindingsDirectory);
+      DescribeJournal.BrokerInfo info = DescribeJournal.loadBrokerInfo(bindingsDirectory);
 
       printBanner(out, BINDINGS_BANNER);
       DescribeJournal bindingsDescribe;
@@ -189,7 +190,7 @@ public class PrintData extends DBOption {
          out.println();
          bindingsDescribe = null;
       } else {
-         bindingsDescribe = printBindings(bindingsDirectory, out, safe, true, true, reclaimed, ascii, maxID);
+         bindingsDescribe = printBindings(bindingsDirectory, out, safe, true, true, reclaimed, ascii, info);
       }
 
       printBanner(out, MESSAGES_BANNER);
@@ -198,7 +199,7 @@ public class PrintData extends DBOption {
          out.println();
       }
       DescribeJournal describeJournal = null;
-      describeJournal = printMessages(messagesDirectory, out, safe, !skipJournal, !skipJournal, reclaimed, ascii, maxID);
+      describeJournal = printMessages(messagesDirectory, out, safe, !skipJournal, !skipJournal, reclaimed, ascii, info);
 
       if (describeJournal == null) {
          return;
@@ -210,7 +211,7 @@ public class PrintData extends DBOption {
             out.println(".... skipping");
             out.println();
          } else {
-            printPages(pagingDirectory, describeJournal, out, safe, maxPages, bindingsDescribe, ascii, maxID);
+            printPages(pagingDirectory, describeJournal, out, safe, maxPages, bindingsDescribe, ascii, info);
          }
       } catch (Exception e) {
          e.printStackTrace();
@@ -224,13 +225,13 @@ public class PrintData extends DBOption {
    }
 
    public static DescribeJournal printMessages(File messagesDirectory, PrintStream out, boolean safe, boolean printRecords, boolean printSurviving, boolean reclaimed, boolean ascii) {
-      return printMessages(messagesDirectory, out, safe, printRecords, printSurviving, reclaimed, ascii, 0);
+      return printMessages(messagesDirectory, out, safe, printRecords, printSurviving, reclaimed, ascii, null);
    }
 
-   public static DescribeJournal printMessages(File messagesDirectory, PrintStream out, boolean safe, boolean printRecords, boolean printSurviving, boolean reclaimed, boolean ascii, long maxID) {
+   public static DescribeJournal printMessages(File messagesDirectory, PrintStream out, boolean safe, boolean printRecords, boolean printSurviving, boolean reclaimed, boolean ascii, DescribeJournal.BrokerInfo brokerInfo) {
       DescribeJournal describeJournal;
       try {
-         describeJournal = DescribeJournal.describeMessagesJournal(messagesDirectory, out, safe, printRecords, printSurviving, reclaimed, ascii, maxID);
+         describeJournal = DescribeJournal.describeMessagesJournal(messagesDirectory, out, safe, printRecords, printSurviving, reclaimed, ascii, brokerInfo);
       } catch (Exception e) {
          e.printStackTrace();
          return null;
@@ -243,12 +244,12 @@ public class PrintData extends DBOption {
    }
 
    public static DescribeJournal printBindings(File bindingsDirectory, PrintStream out, boolean safe, boolean printRecords, boolean printSurviving, boolean reclaimed, boolean ascii) {
-      return printBindings(bindingsDirectory, out, safe, printRecords, printSurviving, reclaimed, ascii, 0);
+      return printBindings(bindingsDirectory, out, safe, printRecords, printSurviving, reclaimed, ascii, null);
    }
 
-   public static DescribeJournal printBindings(File bindingsDirectory, PrintStream out, boolean safe, boolean printRecords, boolean printSurviving, boolean reclaimed, boolean ascii, long maxID) {
+   public static DescribeJournal printBindings(File bindingsDirectory, PrintStream out, boolean safe, boolean printRecords, boolean printSurviving, boolean reclaimed, boolean ascii, DescribeJournal.BrokerInfo brokerInfo) {
       try {
-         return DescribeJournal.describeBindingsJournal(bindingsDirectory, out, safe, printRecords, printSurviving, reclaimed, ascii, maxID);
+         return DescribeJournal.describeBindingsJournal(bindingsDirectory, out, safe, printRecords, printSurviving, reclaimed, ascii, brokerInfo);
       } catch (Exception e) {
          e.printStackTrace();
          return null;
@@ -262,7 +263,7 @@ public class PrintData extends DBOption {
       out.println("********************************************");
    }
 
-   private static void printPages(File pageDirectory, DescribeJournal describeJournal, PrintStream out, boolean safe, int maxPages, DescribeJournal bindingsDescribe, boolean ascii, long maxID) {
+   private static void printPages(File pageDirectory, DescribeJournal describeJournal, PrintStream out, boolean safe, int maxPages, DescribeJournal bindingsDescribe, boolean ascii, DescribeJournal.BrokerInfo brokerInfo) {
       ActiveMQThreadFactory daemonFactory = new ActiveMQThreadFactory("cli", true, PrintData.class.getClassLoader());
       final ScheduledExecutorService scheduled = Executors.newScheduledThreadPool(1, daemonFactory);
       final ExecutorService executor = Executors.newFixedThreadPool(10, daemonFactory);
@@ -275,7 +276,7 @@ public class PrintData extends DBOption {
          addressSettingsRepository.setDefault(new AddressSettings());
          PagingManager manager = new PagingManagerImpl(pageStoreFactory, addressSettingsRepository);
 
-         printPages(describeJournal, sm, manager, out, safe, maxPages, bindingsDescribe, ascii, maxID);
+         printPages(describeJournal, sm, manager, out, safe, maxPages, bindingsDescribe, ascii, brokerInfo);
       } catch (Exception e) {
          e.printStackTrace();
       } finally {
@@ -291,7 +292,11 @@ public class PrintData extends DBOption {
                                   boolean safe, int maxPages,
                                   DescribeJournal bindingsDescribe,
                                   boolean ascii,
-                                  long maxID) throws Exception {
+                                  DescribeJournal.BrokerInfo brokerInfo) throws Exception {
+      if (brokerInfo == null) {
+         brokerInfo = new DescribeJournal.BrokerInfo(Long.MAX_VALUE, Collections.emptyMap(), Collections.emptyMap());
+      }
+
       PageCursorsInfo cursorACKs = calculateCursorsInfo(describeJournal.getRecords());
 
       Set<Long> existingQueues = new HashSet<>();
@@ -305,8 +310,8 @@ public class PrintData extends DBOption {
 
       SimpleString[] stores = manager.getStoreNames();
 
-      int idColumnSize = maxID > 0 ? Math.max(4, String.valueOf(maxID).length()) : 8;
-      int[] pageColumnSizes = {10, idColumnSize, idColumnSize, safe ? 10 : 100, 10};
+      int idColumnSize = brokerInfo.maxID() > 0 ? Math.max(4, String.valueOf(brokerInfo.maxID()).length()) : 8;
+      int[] pageColumnSizes = {10, idColumnSize, idColumnSize, safe ? 10 : 100, 30};
       TableOut pageTable = ascii ? null : new TableOut("|", 2, pageColumnSizes);
 
       for (SimpleString store : stores) {
@@ -355,7 +360,17 @@ public class PrintData extends DBOption {
 
                      StringBuilder queuesStr = new StringBuilder();
                      for (int i = 0; i < q.length; i++) {
-                        queuesStr.append(q[i]);
+
+                        if (safe) {
+                           queuesStr.append(q[i]);
+                        } else {
+                           String name = brokerInfo.queues().get(q[i]);
+                           if (name != null) {
+                              queuesStr.append(name).append("[").append(q[i]).append("]");
+                           } else {
+                              queuesStr.append(q[i]);
+                           }
+                        }
 
                         PagePosition posCheck = new PagePositionImpl(pgid, msgID);
                         boolean acked = false;

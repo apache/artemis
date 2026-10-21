@@ -234,5 +234,9 @@ public final class BatchingIDGenerator implements IDGenerator {
       public int getEncodeSize() {
          return DataConstants.SIZE_LONG;
       }
+
+      public long getId() {
+         return id;
+      }
    }
 }
