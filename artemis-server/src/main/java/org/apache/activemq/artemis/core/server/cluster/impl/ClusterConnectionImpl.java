@@ -1435,6 +1435,14 @@ public final class ClusterConnectionImpl implements ClusterConnection, AfterConn
       }
 
       @Override
+      public synchronized void disableBindings() {
+         logger.debug("{} disable bindings", ClusterConnectionImpl.this);
+         for (RemoteQueueBinding binding : new HashSet<>(bindings.values())) {
+            binding.setEnabled(false);
+         }
+      }
+
+      @Override
       public synchronized void disconnectBindings() throws Exception {
          logger.debug("{} disconnect bindings", ClusterConnectionImpl.this);
          reset = false;
@@ -1497,6 +1505,10 @@ public final class ClusterConnectionImpl implements ClusterConnection, AfterConn
 
          if (existingBinding != null) {
             if (queueID.equals(existingBinding.getRemoteQueueID())) {
+               // A binding can be disabled while its node is drained during scale-down (see disableBindings). Re-enable
+               // a reused binding here, above the isConnected() check, so both the reconnecting case and the still
+               // connected "already bound" case below recover; otherwise the binding would stay stuck disabled.
+               existingBinding.setEnabled(true);
                if (!existingBinding.isConnected()) {
                   existingBinding.connect();
                   return;
@@ -1813,6 +1825,17 @@ public final class ClusterConnectionImpl implements ClusterConnection, AfterConn
             } catch (Exception e) {
                ActiveMQServerLogger.LOGGER.errorUpdatingTopology(e);
             }
+         }
+      }
+   }
+
+   @Override
+   public void disableRecord(String targetNodeID) {
+      synchronized (recordsGuard) {
+         logger.debug("Disabling record for: {}", targetNodeID);
+         MessageFlowRecord record = records.get(targetNodeID);
+         if (record != null) {
+            record.disableBindings();
          }
       }
    }

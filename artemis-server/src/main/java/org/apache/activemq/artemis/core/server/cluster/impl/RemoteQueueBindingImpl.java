@@ -68,6 +68,8 @@ public class RemoteQueueBindingImpl implements RemoteQueueBinding {
 
    private boolean connected = true;
 
+   private volatile boolean enabled = true;
+
    public RemoteQueueBindingImpl(final long id,
                                  final SimpleString address,
                                  final SimpleString uniqueName,
@@ -253,6 +255,7 @@ public class RemoteQueueBindingImpl implements RemoteQueueBinding {
       consumerCount = 0;
       filterCounts.clear();
       filters.clear();
+      enabled = true;
    }
 
    @Override
@@ -298,6 +301,16 @@ public class RemoteQueueBindingImpl implements RemoteQueueBinding {
    @Override
    public void disconnect() {
       connected = false;
+   }
+
+   @Override
+   public boolean isEnabled() {
+      return enabled;
+   }
+
+   @Override
+   public void setEnabled(boolean enabled) {
+      this.enabled = enabled;
    }
 
    @Override

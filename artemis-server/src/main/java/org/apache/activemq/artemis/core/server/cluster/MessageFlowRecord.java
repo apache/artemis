@@ -34,5 +34,7 @@ public interface MessageFlowRecord extends MessageHandler {
 
    void reset() throws Exception;
 
+   void disableBindings();
+
    void disconnectBindings() throws Exception;
 }
