@@ -67,4 +67,16 @@ public interface Binding extends UnproposalListener {
    String toManagementString();
 
    boolean isConnected();
+
+   /**
+    * Whether this binding is eligible for routing. {@link org.apache.activemq.artemis.core.postoffice.impl.BindingsImpl}
+    * skips disabled bindings both when routing and when redistributing.
+    * <p>
+    * The default <b>must</b> remain {@code true}: bindings that do not override it (such as local queue bindings and
+    * diverts) have to keep receiving messages. Only remote queue bindings are temporarily disabled, while a node is
+    * being drained during scale-down, to stop store-and-forward ingress/egress toward the departing node.
+    */
+   default boolean isEnabled() {
+      return true;
+   }
 }

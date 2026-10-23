@@ -38,4 +38,6 @@ public interface RemoteQueueBinding extends QueueBinding {
    void setFilter(Filter filter);
 
    MessageLoadBalancingType getMessageLoadBalancingType();
+
+   void setEnabled(boolean enabled);
 }

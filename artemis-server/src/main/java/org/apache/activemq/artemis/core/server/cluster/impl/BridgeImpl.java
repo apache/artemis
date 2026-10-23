@@ -743,16 +743,9 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
       } catch (Throwable ignored) {
       }
 
-      if (scaleDownTargetNodeID != null && !scaleDownTargetNodeID.equals(nodeUUID.toString())) {
-         scaleDown(scaleDownTargetNodeID);
-      } else if (scaleDownTargetNodeID != null) {
-         // the disconnected node is scaling down to me, no need to reconnect to it
-         logger.debug("Received scaleDownTargetNodeID: {}; cancelling reconnect.", scaleDownTargetNodeID);
-         fail(true, true);
-      } else {
-         logger.debug("Received null scaleDownTargetNodeID");
-         fail(me.getType() == ActiveMQExceptionType.DISCONNECTED, false);
-      }
+      logger.debug("Connection failed with exception={} and scaleDownTargetNodeID={}", me.getType(), scaleDownTargetNodeID);
+
+      fail(me.getType() == ActiveMQExceptionType.DISCONNECTED || scaleDownTargetNodeID != null, scaleDownTargetNodeID);
 
       tryScheduleRetryReconnect(me.getType());
    }
@@ -764,10 +757,6 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
             logger.debug("Moving {} messages from {} to {}", queue.getMessageCount(), queue.getName(), scaleDownTargetNodeID);
          }
          ((QueueImpl) queue).moveReferencesBetweenSnFQueues(SimpleString.of(scaleDownTargetNodeID));
-
-         // stop the bridge from trying to reconnect and clean up all the bindings
-         fail(true, true);
-
       } catch (Exception e) {
          logger.warn(e.getMessage(), e);
       } finally {
@@ -888,8 +877,8 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
       return state;
    }
 
-   protected void fail(final boolean permanently, boolean scaleDown) {
-      logger.debug("{}\n\t::fail being called, permanently={}", this, permanently);
+   protected void fail(final boolean permanently, final String scaleDownTargetNodeID) {
+      logger.debug("{}\n\t::fail being called, permanently={}, scaleDownTargetNodeID={}", this, permanently, scaleDownTargetNodeID);
       //we need to make sure we remove the node from the topology so any incoming quorum requests are voted correctly
       if (targetNodeID != null) {
          this.disconnectedAndDown = true;
@@ -908,6 +897,10 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
       cancelRefs();
       if (queue != null) {
          queue.deliverAsync();
+      }
+
+      if (scaleDownTargetNodeID != null && !scaleDownTargetNodeID.equals(nodeUUID.toString())) {
+         scaleDown(scaleDownTargetNodeID);
       }
    }
 
@@ -989,7 +982,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
       if (reconnectAttemptsInUse >= 0 && retryCount > reconnectAttemptsInUse) {
          ActiveMQServerLogger.LOGGER.bridgeAbortStart(configuration.getName(), retryCount, configuration.getReconnectAttempts());
-         fail(true, false);
+         fail(true, null);
          return;
       }
 
@@ -1193,7 +1186,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
                   } catch (Throwable ignored) {
                   }
                }
-               fail(false, false);
+               fail(false, null);
                scheduleRetryConnect();
             }
          }

@@ -17,6 +17,9 @@
 package org.apache.activemq.artemis.tests.unit.core.postoffice.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import javax.transaction.xa.Xid;
 import java.util.Collections;
@@ -41,6 +44,12 @@ import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.RoutingContext;
 import org.apache.activemq.artemis.core.server.cluster.RemoteQueueBinding;
 import org.apache.activemq.artemis.core.server.cluster.impl.MessageLoadBalancingType;
+import org.apache.activemq.artemis.core.server.group.GroupingHandler;
+import org.apache.activemq.artemis.core.server.group.UnproposalListener;
+import org.apache.activemq.artemis.core.server.group.impl.GroupBinding;
+import org.apache.activemq.artemis.core.server.group.impl.Proposal;
+import org.apache.activemq.artemis.core.server.group.impl.Response;
+import org.apache.activemq.artemis.core.server.management.Notification;
 import org.apache.activemq.artemis.core.server.impl.AckReason;
 import org.apache.activemq.artemis.core.server.impl.RefsOperation;
 import org.apache.activemq.artemis.core.server.impl.RoutingContextImpl;
@@ -84,6 +93,121 @@ public class BindingsImplTest extends ActiveMQTestBase {
       bind.addBinding(fake);
       bind.route(new CoreMessage(0, 100), new RoutingContextImpl(new FakeTransaction()));
       assertEquals(0, fake.routedCount.get());
+   }
+
+   /**
+    * Pins the critical invariant that {@link Binding#isEnabled()} defaults to {@code true}: a binding that does not
+    * override it (like a local queue binding or a divert) must still be routed to. If the default ever regresses to
+    * {@code false}, ordinary local delivery breaks and this test fails immediately.
+    */
+   @Test
+   public void testDefaultBindingIsEnabledAndRoutes() throws Exception {
+      final FakeBinding fake = new FakeBinding(SimpleString.of("a"));
+      fake.filter = null;  // such that it will match all messages
+      final Bindings bind = new BindingsImpl(null, null, new NullStorageManager(1000));
+      bind.addBinding(fake);
+      bind.route(new CoreMessage(0, 100), new RoutingContextImpl(new FakeTransaction()));
+      assertEquals(1, fake.routedCount.get());
+   }
+
+   @Test
+   public void testDisabledRemoteBindingIsNotRouted() throws Exception {
+      final FakeRemoteBinding fake = new FakeRemoteBinding(SimpleString.of("a"));
+      fake.filter = null;  // such that it will match all messages
+      fake.messageLoadBalancingType = MessageLoadBalancingType.ON_DEMAND;
+      fake.setEnabled(false);
+      final Bindings bind = new BindingsImpl(null, null, new NullStorageManager(1000));
+      bind.addBinding(fake);
+      bind.route(new CoreMessage(0, 100), new RoutingContextImpl(new FakeTransaction()));
+      assertEquals(0, fake.routedCount.get());
+   }
+
+   @Test
+   public void testDisabledRemoteBindingIsNotRoutedWithStrictOrdering() throws Exception {
+      final FakeRemoteBinding fake = new FakeRemoteBinding(SimpleString.of("a"));
+      fake.filter = null;  // such that it will match all messages
+      fake.messageLoadBalancingType = MessageLoadBalancingType.STRICT;
+      fake.setEnabled(false);
+      final Bindings bind = new BindingsImpl(null, null, new NullStorageManager(1000));
+      bind.addBinding(fake);
+      bind.route(new CoreMessage(0, 100), new RoutingContextImpl(new FakeTransaction()));
+      assertEquals(0, fake.routedCount.get());
+   }
+
+   @Test
+   public void testReEnabledRemoteBindingIsRouted() throws Exception {
+      final FakeRemoteBinding fake = new FakeRemoteBinding(SimpleString.of("a"));
+      fake.filter = null;  // such that it will match all messages
+      fake.messageLoadBalancingType = MessageLoadBalancingType.ON_DEMAND;
+      fake.setEnabled(false);
+      final Bindings bind = new BindingsImpl(null, null, new NullStorageManager(1000));
+      bind.addBinding(fake);
+      bind.route(new CoreMessage(0, 100), new RoutingContextImpl(new FakeTransaction()));
+      assertEquals(0, fake.routedCount.get());
+
+      fake.setEnabled(true);
+      bind.route(new CoreMessage(1, 100), new RoutingContextImpl(new FakeTransaction()));
+      assertEquals(1, fake.routedCount.get());
+   }
+
+   @Test
+   public void testDisabledBindingIsSkippedDuringRedistribution() throws Exception {
+      final FakeRemoteBinding fake = new FakeRemoteBinding(SimpleString.of("a"));
+      fake.filter = null;  // such that it will match all messages
+      fake.highAcceptPriority = true;
+      fake.messageLoadBalancingType = MessageLoadBalancingType.ON_DEMAND;
+      fake.setEnabled(false);
+      final Bindings bind = new BindingsImpl(null, null, new NullStorageManager(1000));
+      bind.addBinding(fake);
+
+      final Queue originatingQueue = new FakeQueue(SimpleString.of("a"));
+
+      assertNull(bind.redistribute(new CoreMessage(0, 100), originatingQueue, new RoutingContextImpl(new FakeTransaction())));
+      assertEquals(0, fake.routedCount.get());
+
+      fake.setEnabled(true);
+      assertNotNull(bind.redistribute(new CoreMessage(1, 100), originatingQueue, new RoutingContextImpl(new FakeTransaction())));
+      assertEquals(1, fake.routedCount.get());
+   }
+
+   /**
+    * Covers the strict-ordering (message grouping) route path. When a group is already pinned to a binding that has
+    * since been disabled (e.g. a remote queue binding whose node is being drained during scale-down), the message must
+    * not be routed to that disabled binding. Instead the stale group proposal is force-removed and the group is
+    * re-proposed to an enabled binding.
+    */
+   @Test
+   public void testDisabledPinnedBindingIsReRoutedToEnabledBindingDuringStrictOrdering() throws Exception {
+      final SimpleString routingName = SimpleString.of("a");
+
+      final FakeRemoteBinding disabled = new FakeRemoteBinding(routingName);
+      disabled.filter = null;  // such that it will match all messages
+      disabled.highAcceptPriority = true;
+      disabled.messageLoadBalancingType = MessageLoadBalancingType.ON_DEMAND;
+      disabled.clusterName = SimpleString.of("a_disabled");
+      disabled.setEnabled(false);
+
+      final FakeRemoteBinding enabled = new FakeRemoteBinding(routingName);
+      enabled.filter = null;  // such that it will match all messages
+      enabled.highAcceptPriority = true;
+      enabled.messageLoadBalancingType = MessageLoadBalancingType.ON_DEMAND;
+      enabled.clusterName = SimpleString.of("a_enabled");
+
+      // the grouping handler starts with the group pinned to the now-disabled binding's cluster name
+      final FakeGroupingHandler groupingHandler = new FakeGroupingHandler(disabled.clusterName);
+
+      final Bindings bind = new BindingsImpl(null, groupingHandler, new NullStorageManager(1000));
+      bind.addBinding(disabled);
+      bind.addBinding(enabled);
+
+      final CoreMessage message = new CoreMessage(0, 100);
+      message.setGroupID(SimpleString.of("group0"));
+
+      bind.route(message, new RoutingContextImpl(new FakeTransaction()));
+
+      assertEquals(0, disabled.routedCount.get(), "disabled binding must not receive the grouped message");
+      assertEquals(1, enabled.routedCount.get(), "group must be re-routed to the enabled binding");
+      assertTrue(groupingHandler.forceRemoveCalled, "the stale proposal pinned to the disabled binding must be removed");
    }
 
    @Test
@@ -336,6 +460,8 @@ public class BindingsImplTest extends ActiveMQTestBase {
 
       Filter filter = new FakeFilter();
       AtomicInteger routedCount = new AtomicInteger();
+      boolean highAcceptPriority = false;
+      SimpleString clusterName;
       @Override
       public void close() throws Exception {
 
@@ -367,7 +493,7 @@ public class BindingsImplTest extends ActiveMQTestBase {
       @Override
       public SimpleString getClusterName() {
 
-         return null;
+         return clusterName;
       }
 
       @Override
@@ -407,7 +533,7 @@ public class BindingsImplTest extends ActiveMQTestBase {
 
       @Override
       public boolean isHighAcceptPriority(final Message message) {
-         return false;
+         return highAcceptPriority;
       }
 
       @Override
@@ -432,8 +558,19 @@ public class BindingsImplTest extends ActiveMQTestBase {
 
    private final class FakeRemoteBinding extends FakeBinding implements RemoteQueueBinding {
       MessageLoadBalancingType messageLoadBalancingType;
+      boolean enabled = true;
       FakeRemoteBinding(SimpleString name) {
          super(name);
+      }
+
+      @Override
+      public boolean isEnabled() {
+         return enabled;
+      }
+
+      @Override
+      public void setEnabled(boolean enabled) {
+         this.enabled = enabled;
       }
 
       @Override
@@ -484,6 +621,95 @@ public class BindingsImplTest extends ActiveMQTestBase {
       @Override
       public MessageLoadBalancingType getMessageLoadBalancingType() {
          return messageLoadBalancingType;
+      }
+   }
+
+   /**
+    * Minimal grouping handler for the strict-ordering route path: a group is pinned to {@code pinnedClusterName} until
+    * {@link #forceRemove} evicts it, after which {@link #propose} accepts whatever binding is proposed next.
+    */
+   private final class FakeGroupingHandler implements GroupingHandler {
+
+      private SimpleString pinnedClusterName;
+      private boolean forceRemoveCalled = false;
+
+      private FakeGroupingHandler(SimpleString pinnedClusterName) {
+         this.pinnedClusterName = pinnedClusterName;
+      }
+
+      @Override
+      public Response getProposal(SimpleString fullID, boolean touchTime) {
+         return pinnedClusterName == null ? null : new Response(fullID, pinnedClusterName);
+      }
+
+      @Override
+      public Response propose(Proposal proposal) {
+         return new Response(proposal.getGroupId(), proposal.getClusterName());
+      }
+
+      @Override
+      public void forceRemove(SimpleString groupid, SimpleString clusterName) {
+         forceRemoveCalled = true;
+         pinnedClusterName = null;
+      }
+
+      @Override
+      public void addListener(UnproposalListener listener) {
+      }
+
+      @Override
+      public SimpleString getName() {
+         return null;
+      }
+
+      @Override
+      public void resendPending() {
+      }
+
+      @Override
+      public void proposed(Response response) {
+      }
+
+      @Override
+      public void sendProposalResponse(Response response, int distance) {
+      }
+
+      @Override
+      public Response receive(Proposal proposal, int distance) {
+         return null;
+      }
+
+      @Override
+      public void addGroupBinding(GroupBinding groupBinding) {
+      }
+
+      @Override
+      public void awaitBindings() {
+      }
+
+      @Override
+      public void remove(SimpleString groupid, SimpleString clusterName) {
+      }
+
+      @Override
+      public void remove(SimpleString groupid, SimpleString clusterName, int distance) {
+      }
+
+      @Override
+      public void onNotification(Notification notification) {
+      }
+
+      @Override
+      public void start() {
+      }
+
+      @Override
+      public void stop() {
+      }
+
+      @Override
+      public boolean isStarted() {
+         return true;
       }
    }
 }

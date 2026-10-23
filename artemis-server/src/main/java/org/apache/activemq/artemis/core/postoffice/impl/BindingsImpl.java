@@ -270,7 +270,7 @@ public final class BindingsImpl implements Bindings {
          nextPosition = moveNextPosition(nextPosition, bindingsCount);
          final Filter filter = binding.getFilter();
          final boolean highPrior = binding.isHighAcceptPriority(message);
-         if (highPrior && binding.getBindable() != originatingQueue && (filter == null || filter.match(message))) {
+         if (binding.isEnabled() && highPrior && binding.getBindable() != originatingQueue && (filter == null || filter.match(message))) {
             nextBinding = binding;
             break;
          }
@@ -448,7 +448,7 @@ public final class BindingsImpl implements Bindings {
 
       for (int i = 0; i < bindingsCount; i++) {
          final Binding binding = bindings[nextPosition];
-         if (matchBinding(message, binding, loadBalancingType)) {
+         if (binding.isEnabled() && matchBinding(message, binding, loadBalancingType)) {
             // bindings.length == 1 ==> only a local queue so we don't check for matching consumers (it's an
             // unnecessary overhead)
             if (bindingsCount == 1 || (binding.isConnected() && (loadBalancingType.equals(MessageLoadBalancingType.STRICT) || binding.isHighAcceptPriority(message)))) {
@@ -548,7 +548,9 @@ public final class BindingsImpl implements Bindings {
 
    private static Binding locateBinding(SimpleString clusterName, Binding[] bindings) {
       for (Binding binding : bindings) {
-         if (binding.getClusterName().equals(clusterName)) {
+         // a disabled binding (e.g. a remote queue binding whose node is being drained during scale-down) is treated
+         // as not located, so routeAndCheckNull evicts the stale group proposal and re-proposes to an enabled binding
+         if (binding.getClusterName().equals(clusterName) && binding.isEnabled()) {
             return binding;
          }
       }
