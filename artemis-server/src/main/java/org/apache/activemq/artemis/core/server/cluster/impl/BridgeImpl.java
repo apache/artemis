@@ -756,7 +756,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
          if (logger.isDebugEnabled()) {
             logger.debug("Moving {} messages from {} to {}", queue.getMessageCount(), queue.getName(), scaleDownTargetNodeID);
          }
-         ((QueueImpl) queue).moveReferencesBetweenSnFQueues(SimpleString.of(scaleDownTargetNodeID));
+         ((QueueImpl) queue).moveReferencesBetweenSnFQueues(scaleDownTargetNodeID);
       } catch (Exception e) {
          logger.warn(e.getMessage(), e);
       } finally {
