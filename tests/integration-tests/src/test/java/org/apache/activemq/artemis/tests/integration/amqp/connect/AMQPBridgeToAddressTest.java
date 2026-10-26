@@ -1003,6 +1003,66 @@ public class AMQPBridgeToAddressTest extends AmqpClientTestSupport {
 
    @Test
    @Timeout(20)
+   public void testBridgeRecoveryAttemptsResetAfterEachSuccessfulAttach() throws Exception {
+      try (ProtonTestServer peer = new ProtonTestServer()) {
+         peer.expectSASLAnonymousConnect();
+         peer.expectOpen().respond();
+         peer.expectBegin().respond();
+         peer.start();
+
+         final URI remoteURI = peer.getServerURI();
+         logger.info("Test started, peer listening on: {}", remoteURI);
+
+         final AMQPBridgeAddressPolicyElement sendToAddress = new AMQPBridgeAddressPolicyElement();
+         sendToAddress.setName("address-policy");
+         sendToAddress.addToIncludes(getTestName());
+         sendToAddress.addProperty(LINK_RECOVERY_INITIAL_DELAY, 1);  // 1 millisecond initial recovery delay
+         sendToAddress.addProperty(LINK_RECOVERY_DELAY, 1);          // 1 millisecond continued recovery delay
+         sendToAddress.addProperty(MAX_LINK_RECOVERY_ATTEMPTS, 1);   // 1 attempt for each failure of an attached link
+
+         final AMQPBridgeBrokerConnectionElement element = new AMQPBridgeBrokerConnectionElement();
+         element.setName(getTestName());
+         element.addBridgeToAddressPolicy(sendToAddress);
+
+         final AMQPBrokerConnectConfiguration amqpConnection =
+            new AMQPBrokerConnectConfiguration(getTestName(), "tcp://" + remoteURI.getHost() + ":" + remoteURI.getPort());
+         amqpConnection.setReconnectAttempts(0);// No reconnects
+         amqpConnection.addElement(element);
+
+         server.getConfiguration().addAMQPConnection(amqpConnection);
+         server.start();
+
+         peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+         peer.expectAttach().ofSender()
+                            .withTarget().withAddress(getTestName()).also()
+                            .withSource().withAddress(getTestName()).also()
+                            .respond();
+
+         server.addAddressInfo(new AddressInfo(SimpleString.of(getTestName()), RoutingType.MULTICAST));
+
+         Wait.assertTrue(() -> server.addressQuery(SimpleString.of(getTestName())).isExists());
+
+         // Each successful attach ends the recovery that led to it, so every later
+         // failure of the attached link gets its own recovery attempt.
+         for (int i = 0; i < 3; ++i) {
+            peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+            peer.expectDetach();
+            peer.expectAttach().ofSender()
+                               .withTarget().withAddress(getTestName()).also()
+                               .withSource().withAddress(getTestName()).also()
+                               .respond();
+
+            peer.remoteDetach().withErrorCondition(DETACH_FORCED.toString(), "forced detach")
+                               .withClosed(true).now();
+         }
+
+         peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
+         peer.close();
+      }
+   }
+
+   @Test
+   @Timeout(20)
    public void testBridgeSendCoreMessageTunneleInAMQPMessageWhenSupported() throws Exception {
       doTestBridgeSendMessagesAccordingToTunnelingState(true, true);
    }

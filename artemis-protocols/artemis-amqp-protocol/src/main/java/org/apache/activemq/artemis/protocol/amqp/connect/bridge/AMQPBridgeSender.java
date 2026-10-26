@@ -186,7 +186,7 @@ public abstract class AMQPBridgeSender implements Closeable {
          throw new IllegalStateException("Cannot set a remote open handler after the senderContext is initialized");
       }
 
-      this.remoteCloseHandler = handler;
+      this.remoteOpenHandler = handler;
       return this;
    }
 
