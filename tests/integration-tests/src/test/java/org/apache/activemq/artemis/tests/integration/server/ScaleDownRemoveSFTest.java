@@ -17,7 +17,6 @@
 package org.apache.activemq.artemis.tests.integration.server;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -33,6 +32,7 @@ import org.apache.activemq.artemis.core.server.cluster.impl.ClusterConnectionImp
 import org.apache.activemq.artemis.core.server.cluster.impl.MessageLoadBalancingType;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.tests.integration.cluster.distribution.ClusterTestBase;
+import org.apache.activemq.artemis.tests.util.Wait;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -64,7 +64,11 @@ public class ScaleDownRemoveSFTest extends ClusterTestBase {
       haPolicyConfiguration0.getScaleDownConfiguration().getConnectors().addAll(servers[0].getConfiguration().getClusterConfigurations().iterator().next().getStaticConnectors());
       haPolicyConfiguration1.getScaleDownConfiguration().getConnectors().addAll(servers[1].getConfiguration().getClusterConfigurations().iterator().next().getStaticConnectors());
       servers[0].getConfiguration().getAddressSettings().put("#", new AddressSettings().setRedistributionDelay(0));
+      servers[0].getConfiguration().getClusterConfigurations().get(0).setScaleDownReaperPeriod(100);
+      servers[0].getConfiguration().getClusterConfigurations().get(0).setScaleDownReaperGraceTicks(1);
       servers[1].getConfiguration().getAddressSettings().put("#", new AddressSettings().setRedistributionDelay(0));
+      servers[1].getConfiguration().getClusterConfigurations().get(0).setScaleDownReaperPeriod(100);
+      servers[1].getConfiguration().getClusterConfigurations().get(0).setScaleDownReaperGraceTicks(1);
       startServers(0, 1);
       setupSessionFactory(0, isNetty());
       setupSessionFactory(1, isNetty());
@@ -125,8 +129,8 @@ public class ScaleDownRemoveSFTest extends ClusterTestBase {
       removeConsumer(0);
 
       //check
-      assertFalse(servers[1].queueQuery(sfQueueName).isExists());
-      assertFalse(servers[1].addressQuery(sfQueueName).isExists());
+      Wait.assertFalse(() -> servers[1].queueQuery(sfQueueName).isExists());
+      Wait.assertFalse(() -> servers[1].addressQuery(sfQueueName).isExists());
 
    }
 

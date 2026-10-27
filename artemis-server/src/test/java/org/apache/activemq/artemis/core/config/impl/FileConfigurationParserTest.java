@@ -41,6 +41,7 @@ import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.core.config.BridgeConfiguration;
+import org.apache.activemq.artemis.core.config.ClusterConnectionConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.config.FederationConfiguration;
 import org.apache.activemq.artemis.core.config.FileDeploymentManager;
@@ -872,6 +873,57 @@ public class FileConfigurationParserTest extends ServerTestBase {
       String connector = connectors.get(0);
       assertEquals("server0-connector", connector);
       assertEquals(33, scaledownCfg.getCommitInterval());
+   }
+
+   @Test
+   public void testClusterConnectionScaleDownReaperConfig() throws Exception {
+      FileConfigurationParser parser = new FileConfigurationParser();
+      String middlePart = """
+         <cluster-connections>
+            <cluster-connection name="reaper-cluster">
+               <connector-ref>netty</connector-ref>
+               <scale-down-reaper-period>3000</scale-down-reaper-period>
+               <scale-down-reaper-grace-ticks>5</scale-down-reaper-grace-ticks>
+               <scale-down-reaper-max-attempts>15</scale-down-reaper-max-attempts>
+               <static-connectors>
+                  <connector-ref>netty</connector-ref>
+               </static-connectors>
+            </cluster-connection>
+         </cluster-connections>""";
+      String configStr = FIRST_PART + middlePart + LAST_PART;
+      ByteArrayInputStream input = new ByteArrayInputStream(configStr.getBytes(StandardCharsets.UTF_8));
+
+      Configuration config = parser.parseMainConfig(input);
+      assertEquals(1, config.getClusterConfigurations().size());
+      ClusterConnectionConfiguration ccc = config.getClusterConfigurations().get(0);
+      assertEquals("reaper-cluster", ccc.getName());
+      assertEquals(3000L, ccc.getScaleDownReaperPeriod());
+      assertEquals(5, ccc.getScaleDownReaperGraceTicks());
+      assertEquals(15, ccc.getScaleDownReaperMaxAttempts());
+   }
+
+   @Test
+   public void testClusterConnectionScaleDownReaperDefaults() throws Exception {
+      FileConfigurationParser parser = new FileConfigurationParser();
+      String middlePart = """
+         <cluster-connections>
+            <cluster-connection name="default-reaper-cluster">
+               <connector-ref>netty</connector-ref>
+               <static-connectors>
+                  <connector-ref>netty</connector-ref>
+               </static-connectors>
+            </cluster-connection>
+         </cluster-connections>""";
+      String configStr = FIRST_PART + middlePart + LAST_PART;
+      ByteArrayInputStream input = new ByteArrayInputStream(configStr.getBytes(StandardCharsets.UTF_8));
+
+      Configuration config = parser.parseMainConfig(input);
+      assertEquals(1, config.getClusterConfigurations().size());
+      ClusterConnectionConfiguration ccc = config.getClusterConfigurations().get(0);
+      assertEquals("default-reaper-cluster", ccc.getName());
+      assertEquals(ActiveMQDefaultConfiguration.getDefaultClusterScaleDownReaperPeriod(), ccc.getScaleDownReaperPeriod());
+      assertEquals(ActiveMQDefaultConfiguration.getDefaultClusterScaleDownReaperGraceTicks(), ccc.getScaleDownReaperGraceTicks());
+      assertEquals(ActiveMQDefaultConfiguration.getDefaultClusterScaleDownReaperMaxAttempts(), ccc.getScaleDownReaperMaxAttempts());
    }
 
 

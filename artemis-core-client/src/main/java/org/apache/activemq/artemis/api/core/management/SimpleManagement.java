@@ -157,6 +157,15 @@ public class SimpleManagement implements AutoCloseable {
    }
 
    /**
+    * Simple helper for management returning a map.
+    */
+   public Map<String, String> simpleManagementMap(String resource, String method, Object... parameters) throws Exception {
+      AtomicReference<Map<String, String>> responseMap = new AtomicReference<>();
+      doManagement((m) -> setupCall(m, resource, method, parameters), m -> setMapResult(m, responseMap), SimpleManagement::failed);
+      return responseMap.get();
+   }
+
+   /**
     * Simple helper for management void calls.
     */
    public void simpleManagementVoid(String resource, String method, Object... parameters) throws Exception {
@@ -259,6 +268,12 @@ public class SimpleManagement implements AutoCloseable {
       int resultInt = (int)ManagementHelper.getResult(m, Integer.class);
       logger.debug("management result:: {}", resultInt);
       result.set(resultInt);
+   }
+
+   protected static void setMapResult(ClientMessage m, AtomicReference<Map<String, String>> result) throws Exception {
+      Map<String, String> resultMap = (Map<String, String>)ManagementHelper.getResult(m, Map.class);
+      logger.debug("management result:: {}", resultMap);
+      result.set(resultMap);
    }
 
    protected void doManagement(ManagementHelper.MessageAcceptor setup, ManagementHelper.MessageAcceptor ok, ManagementHelper.MessageAcceptor failed) throws Exception {

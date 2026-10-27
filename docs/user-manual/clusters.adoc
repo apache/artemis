@@ -618,6 +618,24 @@ A value of `0` means the system doesn't scan the cluster connection topology for
 A value of `-1` means the system scans the cluster connection topology until there are no more missing cluster nodes.
 Default is 30.
 
+scale-down-reaper-period::
+How often (in milliseconds) the broker runs the store-and-forward reaper.
+When a node scales down or otherwise departs, its store-and-forward queue on the remaining nodes is now *retained* rather than deleted immediately.
+Deleting it eagerly raced the asynchronous completion of an in-flight produce route and could lose messages.
+The reaper reclaims such an orphaned store-and-forward queue only once it is provably idle: owner-less and empty (or with any residual relocated to the scale-down target), and stable across `scale-down-reaper-grace-ticks` consecutive runs.
+A value `<= 0` disables the reaper, in which case orphaned store-and-forward queues are retained but never reclaimed.
+Default is 1000.
+
+scale-down-reaper-grace-ticks::
+The number of consecutive reaper runs an orphaned store-and-forward queue must stay idle before it is reclaimed.
+A larger value increases the safety margin against a slow asynchronous route completion at the cost of a longer delay before the queue is reclaimed.
+Default is 10.
+
+scale-down-reaper-max-attempts::
+The maximum number of reaping attempts for an orphaned store-and-forward queue before abandoning.
+A value `<= 0` means unlimited attempts.
+Default is 30.
+
 === Cluster User Credentials
 
 When creating connections between nodes of a cluster to form a cluster connection, the broker uses a cluster user and cluster password which is defined in `broker.xml` (shown with the default values):
