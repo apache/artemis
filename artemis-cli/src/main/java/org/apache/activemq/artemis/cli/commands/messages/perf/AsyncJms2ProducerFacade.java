@@ -171,8 +171,7 @@ public final class AsyncJms2ProducerFacade {
          return;
       }
       availableObservers.clear();
-      closedObservers.forEach(Runnable::run);
-      closedObservers.clear();
+      runObservers(closedObservers);
       closed = true;
    }
 
@@ -203,25 +202,34 @@ public final class AsyncJms2ProducerFacade {
             if (closing) {
                closing = false;
                closed = true;
-               closedObservers.forEach(Runnable::run);
-               closedObservers.clear();
+               runObservers(closedObservers);
             } else if (isAvailable()) {
-               availableObservers.forEach(Runnable::run);
-               availableObservers.clear();
+               runObservers(availableObservers);
             }
          }
       } else {
          if (closing && pending == 0) {
             closing = false;
             closed = true;
-            closedObservers.forEach(Runnable::run);
-            closedObservers.clear();
+            runObservers(closedObservers);
          } else if (isAvailable()) {
-            availableObservers.forEach(Runnable::run);
-            availableObservers.clear();
+            runObservers(availableObservers);
          }
       }
       return completionError;
+   }
+
+   /**
+    * Runs and removes the given observers. They are taken off the list first, so an observer that registers again while
+    * running (e.g. a send attempt that finds the producer not available) is kept for the next round.
+    */
+   private static void runObservers(final List<Runnable> observers) {
+      if (observers.isEmpty()) {
+         return;
+      }
+      final List<Runnable> toRun = new ArrayList<>(observers);
+      observers.clear();
+      toRun.forEach(Runnable::run);
    }
 
    public long getMessageSent() {
