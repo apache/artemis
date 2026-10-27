@@ -1176,6 +1176,18 @@ Default=2000.
 | xref:clusters.adoc#clusters[notification-attempts]
 | how many times this cluster connection will notify the cluster of its existence right after joining the cluster
 | 2
+
+| xref:clusters.adoc#clusters[scale-down-reaper-period]
+| how often (in milliseconds) the store-and-forward reaper reclaims orphaned store-and-forward queues left by a scaled-down or departed node; `<= 0` disables it
+| 1000
+
+| xref:clusters.adoc#clusters[scale-down-reaper-grace-ticks]
+| the number of consecutive reaper runs an orphaned store-and-forward queue must stay idle before it is reclaimed
+| 10
+
+| xref:clusters.adoc#clusters[scale-down-reaper-max-attempts]
+| maximum number of reaping attempts for an orphaned store-and-forward queue before abandoning; `<= 0` means unlimited
+| 30
 |===
 
 == discovery-group type

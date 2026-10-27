@@ -739,6 +739,15 @@ public final class ActiveMQDefaultConfiguration {
 
    private static final int DEFAULT_CLUSTER_TOPOLOGY_SCANNER_ATTEMPTS = 30;
 
+   // Period (in milliseconds) between runs of the store-and-forward reaper. A value <= 0 disables the reaper.
+   private static final long DEFAULT_CLUSTER_SCALE_DOWN_REAPER_PERIOD = 1000;
+
+   // Number of consecutive reaper ticks an orphaned store-and-forward queue must stay idle before it is reclaimed.
+   private static final int DEFAULT_CLUSTER_SCALE_DOWN_REAPER_GRACE_TICKS = 10;
+
+   // Maximum number of reaping attempts for a candidate store-and-forward queue before abandoning.
+   private static final int DEFAULT_CLUSTER_SCALE_DOWN_REAPER_MAX_ATTEMPTS = 30;
+
    /**
     * If {@code true} then the Apache Artemis Server will make use of any Protocol Managers that are in available on
     * the classpath. If false then only the core protocol will be available, unless in Embedded mode where users can
@@ -2081,5 +2090,17 @@ public final class ActiveMQDefaultConfiguration {
 
    public static int getClusterTopologyScannerAttempts() {
       return DEFAULT_CLUSTER_TOPOLOGY_SCANNER_ATTEMPTS;
+   }
+
+   public static long getDefaultClusterScaleDownReaperPeriod() {
+      return DEFAULT_CLUSTER_SCALE_DOWN_REAPER_PERIOD;
+   }
+
+   public static int getDefaultClusterScaleDownReaperGraceTicks() {
+      return DEFAULT_CLUSTER_SCALE_DOWN_REAPER_GRACE_TICKS;
+   }
+
+   public static int getDefaultClusterScaleDownReaperMaxAttempts() {
+      return DEFAULT_CLUSTER_SCALE_DOWN_REAPER_MAX_ATTEMPTS;
    }
 }

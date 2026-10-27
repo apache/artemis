@@ -25,7 +25,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
-import org.apache.activemq.artemis.api.core.ActiveMQAddressDoesNotExistException;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.ActiveMQExceptionType;
 import org.apache.activemq.artemis.api.core.Message;
@@ -441,17 +440,10 @@ public class ClusterConnectionBridge extends BridgeImpl {
          clusterConnection.removeRecord(targetNodeID);
 
          if (scaleDownTargetNodeID != null) {
-            executor.execute(() -> {
-               logger.debug("Scaling down queue {}", queue);
-               try {
-                  queue.deleteQueue(true);
-                  queue.removeAddress();
-               } catch (ActiveMQAddressDoesNotExistException e) {
-                  logger.debug("ActiveMQAddressDoesNotExistException during scale down for queue {}", queue);
-               } catch (Exception e) {
-                  logger.warn(e.getMessage(), e);
-               }
-            });
+            // Retain the SnF queue rather than deleting it here: an eager delete races the deferred addTail of an
+            // in-flight produce route across the journal-IO boundary and loses messages. Record the scale-down target
+            // (if any) so the lazy reaper can relocate any residual before reclaiming the now owner-less queue.
+            clusterConnection.scaleDownRecord(targetNodeID, scaleDownTargetNodeID);
          }
       } else {
          clusterConnection.disconnectRecord(targetNodeID);

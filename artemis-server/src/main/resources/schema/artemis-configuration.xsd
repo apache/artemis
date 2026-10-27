@@ -2925,6 +2925,34 @@
             </xsd:annotation>
          </xsd:element>
 
+         <xsd:element name="scale-down-reaper-period" type="xsd:long" default="1000" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  period (in milliseconds) between runs of the store-and-forward reaper that reclaims
+                  orphaned store-and-forward queues left behind by a scaled-down node. A
+                  value &lt;= 0 disables the reaper (queues are retained rather than reclaimed).
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+
+         <xsd:element name="scale-down-reaper-grace-ticks" type="xsd:int" default="10" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  number of consecutive reaper ticks an orphaned store-and-forward queue must stay idle
+                  before it is reclaimed
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+
+         <xsd:element name="scale-down-reaper-max-attempts" type="xsd:int" default="30" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  maximum number of reaping attempts for an orphaned store-and-forward queue before abandoning.
+                  A value &lt;= 0 means unlimited attempts.
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+
          <xsd:element ref="discovery-type" maxOccurs="1" minOccurs="0"/>
 
       </xsd:all>

@@ -2613,6 +2613,12 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
       int topologyScannerAttempts = getInteger(e, "topology-scanner-attempts", ActiveMQDefaultConfiguration.getClusterTopologyScannerAttempts(), MINUS_ONE_OR_GE_ZERO);
 
+      long scaleDownReaperPeriod = getLong(e, "scale-down-reaper-period", ActiveMQDefaultConfiguration.getDefaultClusterScaleDownReaperPeriod(), MINUS_ONE_OR_GE_ZERO);
+
+      int scaleDownReaperGraceTicks = getInteger(e, "scale-down-reaper-grace-ticks", ActiveMQDefaultConfiguration.getDefaultClusterScaleDownReaperGraceTicks(), GT_ZERO);
+
+      int scaleDownReaperMaxAttempts = getInteger(e, "scale-down-reaper-max-attempts", ActiveMQDefaultConfiguration.getDefaultClusterScaleDownReaperMaxAttempts(), MINUS_ONE_OR_GE_ZERO);
+
       String discoveryGroupName = null;
 
       List<String> staticConnectorNames = new ArrayList<>();
@@ -2637,7 +2643,7 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
       String clientId = getString(e, "client-id", null, NO_CHECK);
 
-      ClusterConnectionConfiguration config = new ClusterConnectionConfiguration().setName(name).setAddress(address).setConnectorName(connectorName).setMinLargeMessageSize(minLargeMessageSize).setClientFailureCheckPeriod(clientFailureCheckPeriod).setConnectionTTL(connectionTTL).setRetryInterval(retryInterval).setRetryIntervalMultiplier(retryIntervalMultiplier).setMaxRetryInterval(maxRetryInterval).setInitialConnectAttempts(initialConnectAttempts).setReconnectAttempts(reconnectAttempts).setCallTimeout(callTimeout).setCallFailoverTimeout(callFailoverTimeout).setDuplicateDetection(duplicateDetection).setMessageLoadBalancingType(messageLoadBalancingType).setMaxHops(maxHops).setConfirmationWindowSize(confirmationWindowSize).setProducerWindowSize(producerWindowSize).setAllowDirectConnectionsOnly(allowDirectConnectionsOnly).setClusterNotificationInterval(clusterNotificationInterval).setClusterNotificationAttempts(clusterNotificationAttempts).setClientId(clientId).setTopologyScannerAttempts(topologyScannerAttempts);
+      ClusterConnectionConfiguration config = new ClusterConnectionConfiguration().setName(name).setAddress(address).setConnectorName(connectorName).setMinLargeMessageSize(minLargeMessageSize).setClientFailureCheckPeriod(clientFailureCheckPeriod).setConnectionTTL(connectionTTL).setRetryInterval(retryInterval).setRetryIntervalMultiplier(retryIntervalMultiplier).setMaxRetryInterval(maxRetryInterval).setInitialConnectAttempts(initialConnectAttempts).setReconnectAttempts(reconnectAttempts).setCallTimeout(callTimeout).setCallFailoverTimeout(callFailoverTimeout).setDuplicateDetection(duplicateDetection).setMessageLoadBalancingType(messageLoadBalancingType).setMaxHops(maxHops).setConfirmationWindowSize(confirmationWindowSize).setProducerWindowSize(producerWindowSize).setAllowDirectConnectionsOnly(allowDirectConnectionsOnly).setClusterNotificationInterval(clusterNotificationInterval).setClusterNotificationAttempts(clusterNotificationAttempts).setClientId(clientId).setTopologyScannerAttempts(topologyScannerAttempts).setScaleDownReaperPeriod(scaleDownReaperPeriod).setScaleDownReaperGraceTicks(scaleDownReaperGraceTicks).setScaleDownReaperMaxAttempts(scaleDownReaperMaxAttempts);
 
       if (discoveryGroupName == null) {
          config.setStaticConnectors(staticConnectorNames);

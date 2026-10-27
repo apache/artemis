@@ -76,6 +76,16 @@ public interface ClusterConnection extends ActiveMQComponent, ClusterTopologyLis
 
    void disableRecord(String targetNodeID);
 
+   /**
+    * Record that {@code targetNodeID} departed as part of a scale-down toward {@code scaleDownTargetNodeID}.
+    * The scale-down reaper uses this to relocate any residual messages left in the departed node's
+    * store-and-forward queue before reclaiming the queue once idle.
+    *
+    * @param targetNodeID the ID of the departed node
+    * @param scaleDownTargetNodeID the ID of the node designated to receive scaled-down messages
+    */
+   void scaleDownRecord(String targetNodeID, String scaleDownTargetNodeID);
+
    void removeRecord(String targetNodeID);
 
    void disconnectRecord(String targetNodeID);
