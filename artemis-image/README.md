@@ -14,6 +14,23 @@ An _empty_, _open_, _default_ broker with an acceptor on port 61616
 
  3) the image will use `/app/etc/broker.xml` if present, to bootstrap configuration, the 'bring your own config' use case
 
+###Arguments
+
+The embedded broker main class accepts up to two optional arguments:
+
+ `<workDir> [<propertiesPaths>]`
+
+ - `workDir`: the work directory, replacing `/app` above. Data is kept in `<workDir>/data` and `<workDir>/etc/broker.xml` is used if present. Default: `/app`
+ - `propertiesPaths`: a comma separated list of [broker properties](https://activemq.apache.org/components/artemis/documentation/latest/configuration-index.html#broker_properties) files or directories (ending with `/`) used to augment the configuration, replacing the default `/config/,<workDir>/etc/`
+
+When both arguments are given, both are applied: data is still kept under `<workDir>`.
+
+An empty or blank argument, or more than two arguments, is rejected with an `IllegalArgumentException` and the broker does not start.
+
+Arguments are appended to the container run command, e.g.:
+
+ `$> podman run --name=artemis -dp 61616:61616 localhost/target/activemq-artemis-image:<version> /app /config/,/app/etc/,/app/extra/`
+
 ###Build and Use
 
 First build an OCI image tar file from this artemis project using mvn. 
