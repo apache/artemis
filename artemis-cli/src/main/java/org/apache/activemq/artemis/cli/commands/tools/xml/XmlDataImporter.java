@@ -20,6 +20,7 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.stax.StAXSource;
 import javax.xml.validation.Validator;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.lang.invoke.MethodHandles;
@@ -107,7 +108,7 @@ public final class XmlDataImporter extends ConnectionConfigurationAbtract {
    public int commitInterval = 1000;
 
    @Option(names = "--input", description = "The input file name. Default: exp.dmp.", required = true)
-   public String input = "exp.dmp";
+   public File input = new File("exp.dmp");
 
    @Option(names = "--sort", description = "Sort the messages from the input (used for older versions that won't sort messages).")
    public boolean sort = false;
@@ -123,7 +124,7 @@ public final class XmlDataImporter extends ConnectionConfigurationAbtract {
       return null;
    }
 
-   public void process(String inputFileName, String host, int port) throws Exception {
+   public void process(File inputFileName, String host, int port) throws Exception {
       try (FileInputStream inputFile = new FileInputStream(inputFileName)) {
          this.process(inputFile, host, port);
       }
