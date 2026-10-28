@@ -21,12 +21,16 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+import javax.jms.TextMessage;
 
 import org.apache.activemq.artemis.jms.client.ActiveMQDestination;
 import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.cli.test.TestActionContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 public class ProducerThreadTest {
@@ -230,5 +234,41 @@ public class ProducerThreadTest {
 
    private static String createJsonProperty(String type, String key, String value) {
       return ("[{'type':'" + type + "','key':'" + key + "','value':'" + value + "'}]").replaceAll("'", "\"");
+   }
+
+   @Test
+   public void testTransactionCommitInterval() throws Exception {
+      Session mockSession = Mockito.mock(Session.class);
+      MessageProducer mockProducer = Mockito.mock(MessageProducer.class);
+      TextMessage mockTextMessage = Mockito.mock(TextMessage.class);
+
+      Mockito.when(mockSession.createProducer(Mockito.any())).thenReturn(mockProducer);
+      Mockito.when(mockSession.createTextMessage(Mockito.anyString())).thenReturn(mockTextMessage);
+
+      TestActionContext context = new TestActionContext();
+
+      ProducerThread producerThread = new ProducerThread(mockSession, ActiveMQDestination.createQueue("test"), 0, context);
+      producerThread.setTransactionBatchSize(5);
+      producerThread.setMessageCount(14);
+
+      // Using start()+join() instead of run() to avoid an error-prone warning.
+      producerThread.start();
+      producerThread.join();
+
+      InOrder inOrder = Mockito.inOrder(mockSession, mockProducer);
+
+      // should send 2 groups of 5s and commit
+      for (int repeat = 0; repeat < 2; repeat++) {
+         for (int i = 0; i < 5; i++) {
+            inOrder.verify(mockProducer).send(mockTextMessage);
+         }
+         inOrder.verify(mockSession).commit();
+      }
+
+      // should send 1 group of 4 and commit
+      for (int i = 0; i < 4; i++) {
+         inOrder.verify(mockProducer).send(mockTextMessage);
+      }
+      inOrder.verify(mockSession).commit();
    }
 }

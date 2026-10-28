@@ -135,7 +135,7 @@ public class ProducerThread extends Thread {
          context.out.println(threadName + " Sent: " + (message instanceof TextMessage tm ? tm.getText() : message.getJMSMessageID()));
       }
 
-      if (transactionBatchSize > 0 && sentCount.get() > 0 && sentCount.get() % transactionBatchSize == 0) {
+      if (transactionBatchSize > 0 && (sentCount.get() + 1) % transactionBatchSize == 0) {
          context.out.println(threadName + " Committing transaction: " + transactions++);
          session.commit();
       }
