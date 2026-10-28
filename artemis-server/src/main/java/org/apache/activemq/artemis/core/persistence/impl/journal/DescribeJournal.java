@@ -839,7 +839,7 @@ public final class DescribeJournal {
                      if (!first) {
                         sb.append(", ");
                      }
-                     sb.append(id);
+                     sb.append(id).append(decorateQueueName(id, brokerInfo));
                      first = false;
                   }
                } catch (Exception e) {
