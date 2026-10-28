@@ -818,13 +818,13 @@ public final class DescribeJournal {
          } else if (encoding instanceof AckDescribe ackDescribe) {
             decoratedString += decorateQueueName(ackDescribe.refEncoding.queueID, brokerInfo);
          } else if (encoding instanceof MessageDescribe messageDescribe) {
-            decoratedString += decorateRouteToProperties(messageDescribe.getMsg(), brokerInfo);
+            decoratedString += decorateRouteToProperties(messageDescribe.getMsg());
          }
       }
       return decoratedString;
    }
 
-   static String decorateRouteToProperties(Message message, BrokerInfo brokerInfo) {
+   static String decorateRouteToProperties(Message message) {
       StringBuilder sb = new StringBuilder();
       for (SimpleString propertyName : message.getPropertyNames()) {
          if (propertyName.startsWith(Message.HDR_ROUTE_TO_IDS)) {
