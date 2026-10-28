@@ -1192,6 +1192,7 @@ public class AMQPBridgeToAddressTest extends AmqpClientTestSupport {
    @Timeout(20)
    public void testBridgeCreatesDurableBindingWhenSenderConfiguredToUseDurableSubscriptions() throws Exception {
       try (ProtonTestServer peer = new ProtonTestServer()) {
+         server.getConfiguration().setAddressQueueScanPeriod(100);
          server.start();
 
          peer.expectSASLAnonymousConnect();
@@ -1251,6 +1252,7 @@ public class AMQPBridgeToAddressTest extends AmqpClientTestSupport {
 
          assertFalse(bridgeQueueBinding.isTemporary());
          assertTrue(bridgeQueueBinding.isDurable());
+         assertFalse(bridgeQueueBinding.isAutoDelete());
          assertEquals(RoutingType.MULTICAST, bridgeQueueBinding.getRoutingType());
 
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
@@ -1259,7 +1261,7 @@ public class AMQPBridgeToAddressTest extends AmqpClientTestSupport {
 
       // Once remote peer is offline the address binding should not be cleaned up.
       Wait.assertTrue(() -> server.addressQuery(SimpleString.of(getTestName())).isExists(), 5_000, 25);
-      Wait.assertTrue(() -> server.bindingQuery(SimpleString.of(getTestName())).getQueueNames().size() == 1, 5_000, 25);
+      assertFalse(Wait.waitFor(() -> server.bindingQuery(SimpleString.of(getTestName())).getQueueNames().isEmpty(), 1_000, 25));
    }
 
    @Test
@@ -1319,6 +1321,9 @@ public class AMQPBridgeToAddressTest extends AmqpClientTestSupport {
 
          assertFalse(bridgeQueueBinding.isTemporary());
          assertTrue(bridgeQueueBinding.isDurable());
+         assertTrue(bridgeQueueBinding.isAutoDelete());
+         assertEquals(100L, server.locateQueue(binding).getAutoDeleteDelay());
+         assertEquals(0L, server.locateQueue(binding).getAutoDeleteMessageCount());
 
          peer.waitForScriptToComplete(5, TimeUnit.SECONDS);
          peer.close();

@@ -278,9 +278,9 @@ public class AMQPBridgeToAddressSender extends AMQPBridgeSender {
                configuration.setFilterString(policy.getFilter());
                configuration.setDurable(true);
                configuration.setAutoCreated(false);
-               configuration.setAutoDelete(configuration.isAutoDelete());
-               configuration.setAutoDeleteMessageCount(configuration.getAutoDeleteMessageCount());
-               configuration.setAutoDeleteDelay(configuration.getAutoDeleteDelay());
+               configuration.setAutoDelete(this.configuration.isAutoDeleteDurableSubscriptions());
+               configuration.setAutoDeleteMessageCount(this.configuration.getAutoDeleteDurableSubscriptionMsgCount());
+               configuration.setAutoDeleteDelay(this.configuration.getAutoDeleteDurableSubscriptionDelay());
 
                // Try and create it and then later we will validate fully that it matches our expectations
                // since we could lose a race with some other resource creating its own resources, although
