@@ -31,7 +31,7 @@ import org.apache.activemq.artemis.api.core.client.ClientSession;
 import org.apache.activemq.artemis.cli.commands.tools.xml.XMLMessageExporter;
 import org.apache.activemq.artemis.cli.commands.tools.xml.XMLMessageImporter;
 import org.apache.activemq.artemis.cli.commands.tools.xml.XmlDataConstants;
-import org.apache.activemq.artemis.cli.commands.tools.xml.XmlDataExporter;
+import org.apache.activemq.artemis.cli.commands.tools.xml.PrettyPrintHandler;
 import org.apache.activemq.artemis.jms.client.ActiveMQMessage;
 import org.apache.activemq.artemis.jms.client.ActiveMQSession;
 import org.apache.activemq.artemis.utils.XmlProvider;
@@ -80,7 +80,7 @@ public class XMLMessageSerializer implements MessageSerializer {
       this.out = outputStream;
       XMLOutputFactory factory = XMLOutputFactory.newInstance();
       XMLStreamWriter rawXmlWriter = factory.createXMLStreamWriter(outputStream, "UTF-8");
-      XmlDataExporter.PrettyPrintHandler handler = new XmlDataExporter.PrettyPrintHandler(rawXmlWriter);
+      PrettyPrintHandler handler = new PrettyPrintHandler(rawXmlWriter);
       XMLStreamWriter xmlWriter = (XMLStreamWriter) Proxy.newProxyInstance(XMLStreamWriter.class.getClassLoader(), new Class[]{XMLStreamWriter.class}, handler);
       this.writer = new XMLMessageExporter(xmlWriter);
    }

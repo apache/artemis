@@ -25,5 +25,5 @@ XmlDataImporter importer = new XmlDataImporter();
 importer.legacyPrefixes = legacy
 importer.sort = sort;
 
-importer.input = arg[0] + "/journal.export"
+importer.input = new File(arg[0] + "/journal.export")
 importer.execute(new ActionContext(System.in, System.out, System.err))
