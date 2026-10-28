@@ -1454,7 +1454,7 @@ public class XmlImportExportTest extends ActiveMQTestBase {
       server.start();
 
       XmlDataImporter importer = new XmlDataImporter();
-      importer.input = new File(getTestDir(), fileName).getAbsolutePath();
+      importer.input = new File(getTestDir(), fileName);
       importer.execute(new ActionContext());
 
       {

@@ -251,10 +251,6 @@
                         <arg>--jdbc</arg>
                         <arg>--global-max-messages</arg>
                         <arg>100</arg>
-                        <arg>--java-options</arg>
-                        <arg>-Dartemis.extra.libs=${basedir}/target/hsql/jdbc-jars</arg>
-                        <arg>--java-options</arg>
-                        <arg>-ea</arg>
                      </args>
                   </configuration>
                </execution>
@@ -268,7 +264,7 @@
                      <libList>
                         <arg>org.hsqldb:hsqldb:${hsqldb.version}</arg>
                      </libList>
-                     <targetFolder>${basedir}/target/hsql/jdbc-jars</targetFolder>
+                     <targetFolder>${basedir}/target/hsql/lib</targetFolder>
                   </configuration>
                </execution>
 
@@ -288,10 +284,6 @@
                         <arg>--jdbc</arg>
                         <arg>--global-max-messages</arg>
                         <arg>100</arg>
-                        <arg>--java-options</arg>
-                        <arg>-Dartemis.extra.libs=${basedir}/target/new-hsql/jdbc-jars</arg>
-                        <arg>--java-options</arg>
-                        <arg>-ea</arg>
                         <arg>--database-storage</arg>
                      </args>
                   </configuration>
@@ -306,7 +298,7 @@
                      <libList>
                         <arg>org.hsqldb:hsqldb:${hsqldb.version}</arg>
                      </libList>
-                     <targetFolder>${basedir}/target/new-hsql/jdbc-jars</targetFolder>
+                     <targetFolder>${basedir}/target/new-hsql/lib</targetFolder>
                   </configuration>
                </execution>
 
