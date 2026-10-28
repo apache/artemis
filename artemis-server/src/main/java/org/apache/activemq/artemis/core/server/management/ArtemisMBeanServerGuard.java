@@ -130,41 +130,12 @@ public class ArtemisMBeanServerGuard extends AbstractGuardInvocationHandler {
       throw new SecurityException("User not authorized to access operation: " + operationName);
    }
 
-   Set<String> getRequiredRoles(ObjectName objectName, String methodName) {
-      return jmxAccessControlList.getRolesForObject(objectName, methodName);
-   }
-
    boolean authorizeUserForMethod(ObjectName objectName, String operationName, Set<String> currentUserRoles) {
       return jmxAccessControlList.authorizeUserForMethod(objectName, operationName, currentUserRoles);
    }
 
    public void setJMXAccessControlList(JMXAccessControlList JMXAccessControlList) {
       this.jmxAccessControlList = JMXAccessControlList;
-   }
-
-   public static boolean currentUserHasRole(String requestedRole) {
-
-      String clazz;
-      String role;
-      int index = requestedRole.indexOf(':');
-      if (index > 0) {
-         clazz = requestedRole.substring(0, index);
-         role = requestedRole.substring(index + 1);
-      } else {
-         clazz = "org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal";
-         role = requestedRole;
-      }
-
-      Subject subject = SecurityManagerShim.currentSubject();
-      if (subject == null) {
-         return false;
-      }
-      for (Principal p : subject.getPrincipals()) {
-         if (clazz.equals(p.getClass().getName()) && role.equals(p.getName())) {
-            return true;
-         }
-      }
-      return false;
    }
 
    public static Set<String> getCurrentUserRoles() {

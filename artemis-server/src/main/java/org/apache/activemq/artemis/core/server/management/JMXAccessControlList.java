@@ -83,28 +83,6 @@ public class JMXAccessControlList {
       }
    }
 
-   public Set<String> getRolesForObject(ObjectName objectName, String methodName) {
-      TreeMap<String, Access> domainMap = domainAccess.get(objectName.getDomain());
-      if (domainMap != null) {
-         Map<String, String> keyPropertyList = objectName.getKeyPropertyList();
-         for (Map.Entry<String, String> keyEntry : keyPropertyList.entrySet()) {
-            String key = normalizeKey(keyEntry.getKey() + "=" + keyEntry.getValue());
-            for (Access accessEntry : domainMap.values()) {
-               if (accessEntry.getKeyPattern().matcher(key).matches()) {
-                  return accessEntry.getMatchingRolesForMethod(methodName);
-               }
-            }
-         }
-
-         Access access = domainMap.get("");
-         if (access != null) {
-            return access.getMatchingRolesForMethod(methodName);
-         }
-      }
-
-      return defaultAccess.getMatchingRolesForMethod(methodName);
-   }
-
    public boolean authorizeUserForMethod(ObjectName objectName, String methodName, Set<String> userRoles) {
       String domainKey = objectName.getDomain();
 
@@ -350,19 +328,6 @@ public class JMXAccessControlList {
 
       public Pattern getKeyPattern() {
          return keyPattern;
-      }
-
-      public Set<String> getMatchingRolesForMethod(String methodName) {
-         Set<String> roles = methodRoles.get(methodName);
-         if (roles != null) {
-            return roles;
-         }
-         for (Map.Entry<String, Set<String>> entry : methodPrefixRoles.entrySet()) {
-            if (methodName.startsWith(entry.getKey())) {
-               return entry.getValue();
-            }
-         }
-         return catchAllRoles;
       }
 
       public boolean authorizeUserForMethod(String methodName, Set<String> userRoles) {

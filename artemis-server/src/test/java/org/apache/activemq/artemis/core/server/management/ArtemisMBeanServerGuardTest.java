@@ -37,7 +37,6 @@ import javax.management.ObjectName;
 import javax.management.QueryExp;
 import javax.security.auth.Subject;
 import java.lang.reflect.Method;
-import java.security.Principal;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -380,40 +379,6 @@ public class ArtemisMBeanServerGuardTest extends ServerTestBase {
       ArtemisMBeanServerGuard guard = new ArtemisMBeanServerGuard();
       ObjectName hawtioName = new ObjectName("hawtio:type=Something");
       assertTrue(guard.canInvoke(hawtioName.getCanonicalName(), "anyMethod"));
-   }
-
-   @Test
-   public void testCurrentUserHasRoleMatchesClassQualifiedPrincipal() throws Exception {
-      Subject subject = new Subject();
-      subject.getPrincipals().add(new CustomPrincipal("myrole"));
-      assertTrue(SecurityManagerShim.callAs(subject, (Callable<Boolean>) () ->
-         ArtemisMBeanServerGuard.currentUserHasRole(CustomPrincipal.class.getName() + ":myrole")));
-   }
-
-   @Test
-   public void testCurrentUserHasRoleRejectsWrongPrincipalClass() throws Exception {
-      Subject subject = new Subject();
-      subject.getPrincipals().add(new RolePrincipal("myrole"));
-      assertFalse(SecurityManagerShim.callAs(subject, (Callable<Boolean>) () ->
-         ArtemisMBeanServerGuard.currentUserHasRole(CustomPrincipal.class.getName() + ":myrole")));
-   }
-
-   @Test
-   public void testCurrentUserHasRoleFalseWhenNoSubject() {
-      assertFalse(ArtemisMBeanServerGuard.currentUserHasRole("admin"));
-   }
-
-   private static final class CustomPrincipal implements Principal {
-      private final String name;
-
-      CustomPrincipal(String name) {
-         this.name = name;
-      }
-
-      @Override
-      public String getName() {
-         return name;
-      }
    }
 
    private boolean canInvokeAs(Subject subject, JMXAccessControlList controlList, String operation) throws Throwable {
