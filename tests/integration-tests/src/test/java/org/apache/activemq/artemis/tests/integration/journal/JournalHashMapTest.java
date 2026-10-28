@@ -98,6 +98,51 @@ public class JournalHashMapTest extends ActiveMQTestBase {
       doTestHashMap(new StringPersister(), "collection-1", i -> "key-" + i, () -> RandomUtil.randomAlphaNumericString(10));
    }
 
+   @Test
+   public void testClearRemovesRecords() throws Exception {
+      ExecutorService service = Executors.newFixedThreadPool(10);
+      runAfter(service::shutdownNow);
+      OrderedExecutorFactory executorFactory = new OrderedExecutorFactory(service);
+
+      NIOSequentialFileFactory factory = new NIOSequentialFileFactory(getTestDirfile(), 1);
+
+      JournalImpl journal = new JournalImpl(executorFactory, 10 * 1024, 10, 10, 3, 0, 50_000, factory, "coll", "data", 1, 0);
+
+      journal.start();
+      runAfter(journal::stop);
+
+      journal.loadInternalOnly();
+
+      AtomicLong sequence = new AtomicLong(1);
+
+      JournalHashMapProvider<Long, Long, Long, Object> journalHashMapProvider = new JournalHashMapProvider<>(sequence::incrementAndGet, new JournalManager(journal), new LongPersister(), (byte)3, OperationContextImpl::getContext, l -> null, (e, m, f) -> {
+         e.printStackTrace();
+      });
+
+      JournalHashMap<Long, Long, Long, Object> journalHashMap = journalHashMapProvider.getMap(1L);
+
+      for (long i = 0; i < 100; i++) {
+         journalHashMap.put(i, RandomUtil.randomLong());
+      }
+
+      journalHashMap.clear();
+      assertEquals(0, journalHashMap.size());
+
+      journal.flush();
+
+      journal.stop();
+
+      journalHashMapProvider.clear();
+
+      journal.start();
+
+      List<RecordInfo> recordInfos = new ArrayList<>();
+      List<PreparedTransactionInfo> preparedTransactions = new ArrayList<>();
+      journal.load(recordInfos, preparedTransactions, (a, b, c) -> { }, true);
+
+      assertEquals(0, recordInfos.size());
+   }
+
    private <I, K, V> void doTestHashMap(AbstractHashMapPersister<I, K, V> persister,
                                          I collectionId,
                                          IntFunction<K> keyProducer,

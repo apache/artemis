@@ -279,7 +279,7 @@ public class JournalHashMap<I, K, V, C> implements Map<K, V> {
 
    @Override
    public synchronized void clear() {
-      map.values().forEach(this::remove);
+      map.values().forEach(this::removed);
       map.clear();
    }
 

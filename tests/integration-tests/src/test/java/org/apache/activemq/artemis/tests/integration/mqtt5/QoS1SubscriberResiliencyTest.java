@@ -167,6 +167,58 @@ public class QoS1SubscriberResiliencyTest extends MQTT5TestSupport {
    }
 
    /**
+    * Verifies that a clean start removes the packet ID correlations of an unacknowledged PUBLISH from the journal so
+    * they are not reloaded when the broker restarts.
+    */
+   @Test
+   @Timeout(DEFAULT_TIMEOUT_SEC)
+   public void testQoS1CleanStartBeforePubAckSentThenBrokerRestart() throws Exception {
+      final String TOPIC = "test/resiliency";
+      final String SUBSCRIBER_CLIENT_ID = "subscriber";
+      final String PUBLISHER_CLIENT_ID = "publisher";
+
+      // Block every incoming PUBACK so the packet ID correlation is kept.
+      MQTTInterceptor pubAckInterceptor = (packet, connection) -> packet.fixedHeader().messageType() != MqttMessageType.PUBACK;
+      server.getRemotingService().addIncomingInterceptor(pubAckInterceptor);
+
+      // Consumer with persistent session
+      MqttClient subscriber = createPahoClient(SUBSCRIBER_CLIENT_ID);
+      MqttConnectionOptions subscriberOptions = new MqttConnectionOptionsBuilder()
+         .cleanStart(false)
+         .sessionExpiryInterval(300L)
+         .build();
+      subscriber.connect(subscriberOptions);
+      subscriber.subscribe(TOPIC, 1);
+
+      // Producer
+      MqttClient producer = createPahoClient(PUBLISHER_CLIENT_ID);
+      producer.connect();
+      producer.publish(TOPIC, RandomUtil.randomBytes(), 1, false);
+      producer.disconnect();
+      producer.close();
+
+      Wait.assertEquals(1, () -> getProtocolManager().getStateManager().getPacketIdCorrelationSize(SUBSCRIBER_CLIENT_ID), 2000, 25);
+
+      server.getRemotingService().clearInterceptors();
+      closeConnectionByManagement(SUBSCRIBER_CLIENT_ID);
+      subscriber.close();
+
+      // Reconnect with a clean start, which clears the packet ID correlations
+      subscriber = createPahoClient(SUBSCRIBER_CLIENT_ID);
+      subscriber.connect(new MqttConnectionOptionsBuilder().cleanStart(true).sessionExpiryInterval(0L).build());
+      assertEquals(0, getProtocolManager().getStateManager().getPacketIdCorrelationSize(SUBSCRIBER_CLIENT_ID));
+      subscriber.disconnect();
+      subscriber.close();
+
+      server.stop();
+      waitForServerToStop(server);
+      server.start();
+      waitForServerToStart(server);
+
+      assertFalse(getProtocolManager().getStateManager().packetIdCorrelationExistsForClient(SUBSCRIBER_CLIENT_ID));
+   }
+
+   /**
     * Verifies that after a complete QoS 1 protocol exchange (PUBLISH, PUBACK), a broker restart does
     * not cause re-delivery.
     */
