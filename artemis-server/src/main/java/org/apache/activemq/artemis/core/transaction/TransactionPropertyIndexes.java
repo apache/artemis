@@ -43,4 +43,6 @@ public class TransactionPropertyIndexes {
    public static final int MIRROR_SEND_OPERATION = 12;
 
    public static final int MIRROR_DELIVERY_ASYNC = 13;
+
+   public static final int ADD_MESSAGE = 14;
 }

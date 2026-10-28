@@ -1754,24 +1754,29 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
          mirrorControllerSource.sendMessage(tx, message, context);
       }
 
-      if (tx != null) {
-         tx.addOperation(new AddOperation(refs));
-      } else if (!containsDurables) {
-         processReferences(refs, direct);
-      } else {
-         // This will use the same thread if there are no pending operations
-         // avoiding a context switch on this case
-         storageManager.afterCompleteOperations(new IOCallback() {
-            @Override
-            public void onError(final int errorCode, final String errorMessage) {
-               ActiveMQServerLogger.LOGGER.ioErrorAddingReferences(errorCode, errorMessage);
-            }
+      // there is a possibility of no refs (e.g Paging case).
+      // so we check if these are empty before wasting an addOperation
+      if (refs != null && !refs.isEmpty()) {
+         if (tx != null) {
+            AddOperation operation = tx.getOrCreateOperation(TransactionPropertyIndexes.ADD_MESSAGE, AddOperation::new);
+            operation.adoptOrAppendReferences(refs);
+         } else if (!containsDurables) {
+            processReferences(refs, direct);
+         } else {
+            // This will use the same thread if there are no pending operations
+            // avoiding a context switch on this case
+            storageManager.afterCompleteOperations(new IOCallback() {
+               @Override
+               public void onError(final int errorCode, final String errorMessage) {
+                  ActiveMQServerLogger.LOGGER.ioErrorAddingReferences(errorCode, errorMessage);
+               }
 
-            @Override
-            public void done() {
-               processReferences(refs, direct);
-            }
-         });
+               @Override
+               public void done() {
+                  processReferences(refs, direct);
+               }
+            });
+         }
       }
 
       if (startedTX) {
@@ -2139,10 +2144,25 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
    public static final class AddOperation implements TransactionOperation {
 
-      private final List<MessageReference> refs;
+      private List<MessageReference> refs;
+
+      AddOperation() {
+      }
 
       AddOperation(final List<MessageReference> refs) {
          this.refs = refs;
+      }
+
+      /**
+       * Adopts the list directly on first call (zero-copy); appends elements on subsequent calls.
+       */
+      public void adoptOrAppendReferences(List<MessageReference> refs) {
+         if (this.refs == null) {
+            // if it's first time, we will just use the one prepared by the PostOffice
+            this.refs = refs;
+         } else {
+            this.refs.addAll(refs);
+         }
       }
 
       @Override
