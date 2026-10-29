@@ -48,6 +48,10 @@ public interface Queue extends Bindable, CriticalComponent {
 
    Long getID();
 
+   default StorageMessageReader getStorageMessageReader() {
+      return null;
+   }
+
    Filter getFilter();
 
    void setFilter(Filter filter);
@@ -98,6 +102,8 @@ public interface Queue extends Bindable, CriticalComponent {
 
    default void setSwept(boolean sweep) {
    }
+
+   void destroy() throws Exception;
 
    long getAutoDeleteDelay();
 

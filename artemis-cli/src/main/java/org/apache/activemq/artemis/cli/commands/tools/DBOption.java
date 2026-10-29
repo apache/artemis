@@ -273,6 +273,8 @@ public class DBOption extends OptionalLocking {
          storageConfiguration.setJdbcUser(getJdbcUser());
          storageConfiguration.setJdbcPassword(getJdbcPassword());
          configuration.setStoreConfiguration(storageConfiguration);
+      } else if (configuration.isUsingDatabaseStorage()) {
+         // new database storage - store config is already set from the parsed configuration
       } else {
          configuration.setBindingsDirectory(getBinding());
          configuration.setJournalDirectory(getJournal());
@@ -297,13 +299,15 @@ public class DBOption extends OptionalLocking {
       addressSettingsRepository.setDefault(new AddressSettings());
 
       if (configuration.isJDBC()) {
-         storageManager = new JDBCJournalStorageManager(config, null, scheduledExecutorService, executorFactory, executorFactory, null);
+         if (configuration.isUsingDatabaseStorage()) {
+            throw new UnsupportedOperationException("Journal initialization is not supported for the relational database storage. " +
+               "Use the database-aware export path instead.");
+         } else {
+            storageManager = new JDBCJournalStorageManager(config, null, scheduledExecutorService, executorFactory, executorFactory, null);
 
-         PagingStoreFactory pageStoreFactory = new PagingStoreFactoryDatabase((DatabaseStorageConfiguration) configuration.getStoreConfiguration(),
-                                                                              storageManager, 1000L,
-                                                                              scheduledExecutorService, executorFactory,
-                                                                             false, null);
-         pagingmanager = new PagingManagerImpl(pageStoreFactory, addressSettingsRepository, configuration.getManagementAddress());
+            PagingStoreFactory pageStoreFactory = new PagingStoreFactoryDatabase((DatabaseStorageConfiguration) configuration.getStoreConfiguration(), storageManager, 1000L, scheduledExecutorService, executorFactory, false, null);
+            pagingmanager = new PagingManagerImpl(pageStoreFactory, addressSettingsRepository, configuration.getManagementAddress());
+         }
       } else {
          storageManager = new JournalStorageManager(config, EmptyCriticalAnalyzer.getInstance(), executorFactory, executorFactory);
          PagingStoreFactory pageStoreFactory = new PagingStoreFactoryNIO(storageManager, config.getPagingLocation(), 1000L, scheduledExecutorService, executorFactory, true, null);

@@ -60,6 +60,8 @@ import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.impl.AddressInfo;
 import org.apache.activemq.artemis.core.server.impl.QueueImpl;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
+import org.apache.activemq.artemis.core.transaction.Transaction;
+import org.apache.activemq.artemis.core.transaction.impl.TransactionImpl;
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
 import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
@@ -391,11 +393,11 @@ public class JournalPagingTest extends ActiveMQTestBase {
       StorageManager sm = server.getStorageManager();
 
       for (int i = 0; i < 1000; i++) {
-         long tx = sm.generateID();
-         PageTransactionInfoImpl txinfo = new PageTransactionInfoImpl(tx);
+         Transaction tx = new TransactionImpl(sm);
+         PageTransactionInfoImpl txinfo = new PageTransactionInfoImpl(tx.getID());
          sm.storePageTransaction(tx, txinfo);
          sm.commit(tx);
-         tx = sm.generateID();
+         tx = new TransactionImpl(sm);
          sm.updatePageTransaction(tx, txinfo, 1);
          sm.commit(tx);
       }

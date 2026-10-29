@@ -1374,6 +1374,8 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
          ackedRefs = consumer.acknowledge(autoCommitAcks ? null : tx, messageID);
       }
 
+      storageFlowControl();
+
       return ackedRefs;
    }
 
@@ -2072,6 +2074,8 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
             }
          }
 
+         storageFlowControl(theMessage.getAddressSimpleString());
+
          if (AuditLogger.isMessageLoggingEnabled()) {
             if (tx != null && !autoCommitSends) {
                AuditLogger.addSendToTransaction(remotingConnection.getSubject(), remotingConnection.getRemoteAddress(), theMessage.toString(), tx.toString());
@@ -2101,6 +2105,53 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
          server.callBrokerMessagePlugins(plugin -> plugin.afterSend(this, autoCommitSends ? null : tx, theMessage, direct, noAutoCreateQueue, result));
       }
       return result;
+   }
+
+   private void storageFlowControl() {
+      storageFlowControl(null);
+   }
+
+   private volatile boolean blocked = false;
+   private void storageFlowControl(SimpleString address) {
+      if (blocked) {
+         return;
+      }
+
+      PagingStore pagingStore = null;
+      if (address != null) {
+         try {
+            pagingStore = server.getPagingManager().getPageStore(address);
+         } catch (Exception e) {
+            logger.warn(e.getMessage(), e);
+         }
+      }
+      storageManager.flowControl(pagingStore, blockRunnable, unblockRunnable);
+   }
+
+   // I'm declaring the runnable ahead to avoid creating a new instance on every call
+   private final Runnable unblockRunnable = this::unblock;
+   private void unblock() {
+      try {
+         remotingConnection.unblock();
+      } catch (Throwable e) {
+         logger.warn(e.getMessage(), e);
+      } finally {
+         if (logger.isDebugEnabled()) {
+            logger.debug("Resuming reading on session {} connection {}", name, remotingConnection.getRemoteAddress());
+         }
+         blocked = false;
+      }
+   }
+
+   // I'm declaring the runnable ahead to avoid creating a new instance on every call
+   private final Runnable blockRunnable = this::block;
+   private void block() {
+      try {
+         remotingConnection.block();
+         blocked = true;
+      } catch (Throwable e) {
+         logger.warn(e.getMessage(), e);
+      }
    }
 
    private void auditLogSend(Message message, Transaction tx) {

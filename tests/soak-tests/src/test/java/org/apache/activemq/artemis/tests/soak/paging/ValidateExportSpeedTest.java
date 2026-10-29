@@ -254,7 +254,7 @@ public class ValidateExportSpeedTest extends SoakTestBase {
          XmlDataImporter dataImporter = new XmlDataImporter();
          dataImporter.setHomeValues(null, new File(getServerLocation(SERVER_NAME_0)), null);
 
-         dataImporter.input = xmlDataExporter.getOutput().getAbsolutePath();
+         dataImporter.input = xmlDataExporter.getOutput();
          dataImporter.execute(new ActionContext());
       }
 

@@ -58,7 +58,7 @@ public class SizeAwareMetricTest {
       SizeAwareMetric child = new SizeAwareMetric(5, 5, 2, 2);
       SizeAwareMetric parent = new SizeAwareMetric(10, 10, 15, 15);
 
-      child.setOnSizeCallback(parent::addSize);
+      child.setOnSizeCallback(parent);
       child.setOverCallback(() -> childBoolean.set(true));
       child.setUnderCallback(() -> childBoolean.set(false));
 
@@ -138,7 +138,7 @@ public class SizeAwareMetricTest {
       SizeAwareMetric metric = new SizeAwareMetric(1000, 500, -1, -1);
       SizeAwareMetric globalMetric = new SizeAwareMetric(10000, 500, -1, -1);
 
-      metric.setOnSizeCallback(globalMetric::addSize);
+      metric.setOnSizeCallback(globalMetric);
       metric.setOverCallback(() -> {
          metricOver.set(true);
          metricOverCalls.incrementAndGet();
@@ -258,7 +258,7 @@ public class SizeAwareMetricTest {
       SizeAwareMetric metricMain = new SizeAwareMetric(10000, 500, 10, 10);
       SizeAwareMetric metric = new SizeAwareMetric(10000, 500, 1000, 1000);
 
-      metric.setOnSizeCallback(metricMain::addSize);
+      metric.setOnSizeCallback(metricMain);
 
       AtomicBoolean over = new AtomicBoolean(false);
       metricMain.setOverCallback(() -> over.set(true));
@@ -373,7 +373,7 @@ public class SizeAwareMetricTest {
       for (int istart = 0; istart < THREADS; istart++) {
          final AtomicBoolean metricOver = new AtomicBoolean(false);
          final SizeAwareMetric theMetric = new SizeAwareMetric(1000, 500, 1000, 500);
-         theMetric.setOnSizeCallback(globalMetric::addSize);
+         theMetric.setOnSizeCallback(globalMetric);
          theMetric.setOverCallback(() -> {
             metricOver.set(true);
             metricOverCalls.incrementAndGet();
@@ -501,7 +501,7 @@ public class SizeAwareMetricTest {
       SizeAwareMetric metric = new SizeAwareMetric(-1, -1, -1, -1);
 
       metric.setOverCallback(() -> over.set(true));
-      metric.setOnSizeCallback(metricMain::addSize);
+      metric.setOnSizeCallback(metricMain);
       for (int i = 0; i < 10; i++) {
          metric.addSize(10, true);
       }
@@ -648,5 +648,54 @@ public class SizeAwareMetricTest {
       metric.setMax(1, 1, 1, 1);
       assertTrue(metric.isSizeEnabled());
       assertTrue(metric.isElementsEnabled());
+   }
+
+   @Test
+   public void testSimpleAdd() {
+      AtomicBoolean childOver = new AtomicBoolean(false);
+
+      SizeAwareMetric parent = new SizeAwareMetric(1000, 500, 10, 5);
+      SizeAwareMetric child = new SizeAwareMetric(500, 200, 5, 2);
+
+      child.setOnSizeCallback(parent);
+
+      child.setOverCallback(() -> childOver.set(true));
+      child.setUnderCallback(() -> childOver.set(false));
+
+      // add 3 elements with size 30 each — parent mirrors child via simpleAdd callback
+      child.simpleAdd(3, 90, true);
+
+      assertEquals(3, child.getElements());
+      assertEquals(90, child.getSize());
+      assertEquals(3, parent.getElements());
+      assertEquals(90, parent.getSize());
+      assertFalse(childOver.get());
+
+      // push child over the elements limit (maxElements=5)
+      child.simpleAdd(3, 30, true);
+
+      assertEquals(6, child.getElements());
+      assertEquals(120, child.getSize());
+      assertEquals(6, parent.getElements());
+      assertEquals(120, parent.getSize());
+      assertTrue(childOver.get());
+      assertTrue(child.isOverElements());
+
+      // remove enough to go under lowerMarkElements (lowerMarkElements=2)
+      child.simpleAdd(-6, -120, true);
+
+      assertEquals(0, child.getElements());
+      assertEquals(0, child.getSize());
+      assertEquals(0, parent.getElements());
+      assertEquals(0, parent.getSize());
+      assertFalse(childOver.get());
+      assertFalse(child.isOver());
+
+      // verify affectCallbacks=false does not propagate to parent
+      child.simpleAdd(1, 10, false);
+      assertEquals(1, child.getElements());
+      assertEquals(10, child.getSize());
+      assertEquals(0, parent.getElements());
+      assertEquals(0, parent.getSize());
    }
 }

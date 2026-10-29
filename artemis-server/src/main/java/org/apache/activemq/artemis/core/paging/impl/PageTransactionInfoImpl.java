@@ -190,7 +190,7 @@ public final class PageTransactionInfoImpl implements PageTransactionInfo {
    public void store(final StorageManager storageManager,
                      PagingManager pagingManager,
                      final Transaction tx) throws Exception {
-      storageManager.storePageTransaction(tx.getID(), this);
+      storageManager.storePageTransaction(tx, this);
    }
 
    /*
@@ -389,7 +389,7 @@ public final class PageTransactionInfoImpl implements PageTransactionInfo {
          if (!stored) {
             stored = true;
             for (Map.Entry<PageTransactionInfo, AtomicInteger> entry : countsToUpdate.entrySet()) {
-               storageManager.updatePageTransaction(tx.getID(), entry.getKey(), entry.getValue().get());
+               storageManager.updatePageTransaction(tx, entry.getKey(), entry.getValue().get());
             }
          }
       }

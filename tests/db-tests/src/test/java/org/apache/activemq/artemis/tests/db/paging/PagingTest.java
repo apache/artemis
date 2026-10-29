@@ -81,6 +81,7 @@ import org.apache.activemq.artemis.core.journal.RecordInfo;
 import org.apache.activemq.artemis.core.paging.PageTransactionInfo;
 import org.apache.activemq.artemis.core.paging.PagedMessage;
 import org.apache.activemq.artemis.core.paging.PagingManager;
+import org.apache.activemq.artemis.core.paging.impl.PagingManagerImpl;
 import org.apache.activemq.artemis.core.paging.PagingStore;
 import org.apache.activemq.artemis.core.paging.PagingStoreFactory;
 import org.apache.activemq.artemis.core.paging.cursor.PageCursorProvider;
@@ -109,6 +110,7 @@ import org.apache.activemq.artemis.core.server.impl.QueueAccessor;
 import org.apache.activemq.artemis.core.server.impl.QueueImpl;
 import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
+import org.apache.activemq.artemis.core.transaction.impl.TransactionImpl;
 import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
 import org.apache.activemq.artemis.spi.core.security.ActiveMQSecurityManagerImpl;
 import org.apache.activemq.artemis.tests.db.common.Database;
@@ -710,7 +712,7 @@ public class PagingTest extends ParameterDBTestBase {
       }
 
       // Forcing a situation in the data that would cause an issue while reloading the data
-      long tx = server.getStorageManager().generateID();
+      TransactionImpl tx = new TransactionImpl(server.getStorageManager());
       server.getStorageManager().storePageCompleteTransactional(tx, serverQueue.getID(), new PagePositionImpl(1, 10));
       server.getStorageManager().commit(tx);
       server.getStorageManager().storeCursorAcknowledge(serverQueue.getID(), new PagePositionImpl(1, 0));
@@ -3788,21 +3790,41 @@ public class PagingTest extends ParameterDBTestBase {
          }
       }
 
-      server = new ActiveMQServerImpl(config, ManagementFactory.getPlatformMBeanServer(), new ActiveMQSecurityManagerImpl()) {
-         @Override
-         protected PagingStoreFactoryNIO getPagingStoreFactory() {
-            return new PagingStoreFactoryNIO(this.getStorageManager(), this.getConfiguration().getPagingLocation(), this.getConfiguration().getJournalBufferTimeout_NIO(), this.getScheduledPool(), this.getExecutorFactory(), this.getConfiguration().isJournalSyncNonTransactional(), null, () -> purgeFolders) {
-               @Override
-               public PageCursorProvider newCursorProvider(PagingStore store,
-                                                           StorageManager storageManager,
-                                                           AddressSettings addressSettings,
-                                                           ArtemisExecutor executor) {
-                  return new InterruptedCursorProvider(store, storageManager);
-               }
-            };
-         }
-
-      };
+      if (database != Database.JOURNAL) {
+         server = new ActiveMQServerImpl(config, ManagementFactory.getPlatformMBeanServer(), new ActiveMQSecurityManagerImpl()) {
+            @Override
+            public PagingManager createPagingManager() throws Exception {
+               PagingStoreFactoryDatabase factory = new PagingStoreFactoryDatabase((DatabaseStorageConfiguration) this.getConfiguration().getStoreConfiguration(), this.getStorageManager(), this.getConfiguration().getJournalBufferTimeout_NIO(), this.getScheduledPool(), this.getExecutorFactory(), this.getConfiguration().isJournalSyncNonTransactional(), null) {
+                  @Override
+                  public PageCursorProvider newCursorProvider(PagingStore store,
+                                                              StorageManager storageManager,
+                                                              AddressSettings addressSettings,
+                                                              ArtemisExecutor executor) {
+                     return new InterruptedCursorProvider(store, storageManager);
+                  }
+               };
+               return new PagingManagerImpl(factory, getAddressSettingsRepository(), getConfiguration().getGlobalMaxSize(), getConfiguration().getGlobalMaxMessages(), getConfiguration().getManagementAddress(), this);
+            }
+         };
+      } else {
+         server = new ActiveMQServerImpl(config, ManagementFactory.getPlatformMBeanServer(), new ActiveMQSecurityManagerImpl()) {
+            @Override
+            public PagingManager createPagingManager() throws Exception {
+               PagingManagerImpl manager = (PagingManagerImpl) super.createPagingManager();
+               PagingStoreFactoryNIO originalFactory = (PagingStoreFactoryNIO) manager.getPagingStoreFactory();
+               manager.replacePageStoreFactory(new PagingStoreFactoryNIO(originalFactory.getStorageManager(), originalFactory.getDirectory(), originalFactory.getSyncTimeout(), originalFactory.getScheduledExecutor(), originalFactory.getExecutorFactory(), originalFactory.isSyncNonTransactional(), originalFactory.getCritialErrorListener(), () -> purgeFolders) {
+                  @Override
+                  public PageCursorProvider newCursorProvider(PagingStore store,
+                                                              StorageManager storageManager,
+                                                              AddressSettings addressSettings,
+                                                              ArtemisExecutor executor) {
+                     return new InterruptedCursorProvider(store, storageManager);
+                  }
+               });
+               return manager;
+            }
+         };
+      }
 
       addServer(server);
 
@@ -3848,7 +3870,7 @@ public class PagingTest extends ParameterDBTestBase {
       // This will force a scenario where the pages are cleaned up. When restarting we need to check if the current page is complete
       // if it is complete we must move to another page avoiding races on cleanup
       // which could happen during a crash / restart
-      long tx = server.getStorageManager().generateID();
+      TransactionImpl tx = new TransactionImpl(server.getStorageManager());
       for (int i = 1; i <= 20; i++) {
          server.getStorageManager().storePageCompleteTransactional(tx, queue1.getID(), new PagePositionImpl(i, 1));
       }
@@ -3940,21 +3962,41 @@ public class PagingTest extends ParameterDBTestBase {
          }
       }
 
-      server = new ActiveMQServerImpl(config, ManagementFactory.getPlatformMBeanServer(), new ActiveMQSecurityManagerImpl()) {
-         @Override
-         protected PagingStoreFactoryNIO getPagingStoreFactory() {
-            return new PagingStoreFactoryNIO(this.getStorageManager(), this.getConfiguration().getPagingLocation(), this.getConfiguration().getJournalBufferTimeout_NIO(), this.getScheduledPool(), this.getExecutorFactory(), this.getConfiguration().isJournalSyncNonTransactional(), null, () -> purgeFolders) {
-               @Override
-               public PageCursorProvider newCursorProvider(PagingStore store,
-                                                           StorageManager storageManager,
-                                                           AddressSettings addressSettings,
-                                                           ArtemisExecutor executor) {
-                  return new InterruptedCursorProvider(store, storageManager);
-               }
-            };
-         }
-
-      };
+      if (database != Database.JOURNAL) {
+         server = new ActiveMQServerImpl(config, ManagementFactory.getPlatformMBeanServer(), new ActiveMQSecurityManagerImpl()) {
+            @Override
+            public PagingManager createPagingManager() throws Exception {
+               PagingStoreFactoryDatabase factory = new PagingStoreFactoryDatabase((DatabaseStorageConfiguration) this.getConfiguration().getStoreConfiguration(), this.getStorageManager(), this.getConfiguration().getJournalBufferTimeout_NIO(), this.getScheduledPool(), this.getExecutorFactory(), this.getConfiguration().isJournalSyncNonTransactional(), null) {
+                  @Override
+                  public PageCursorProvider newCursorProvider(PagingStore store,
+                                                              StorageManager storageManager,
+                                                              AddressSettings addressSettings,
+                                                              ArtemisExecutor executor) {
+                     return new InterruptedCursorProvider(store, storageManager);
+                  }
+               };
+               return new PagingManagerImpl(factory, getAddressSettingsRepository(), getConfiguration().getGlobalMaxSize(), getConfiguration().getGlobalMaxMessages(), getConfiguration().getManagementAddress(), this);
+            }
+         };
+      } else {
+         server = new ActiveMQServerImpl(config, ManagementFactory.getPlatformMBeanServer(), new ActiveMQSecurityManagerImpl()) {
+            @Override
+            public PagingManager createPagingManager() throws Exception {
+               PagingManagerImpl manager = (PagingManagerImpl) super.createPagingManager();
+               PagingStoreFactoryNIO originalFactory = (PagingStoreFactoryNIO) manager.getPagingStoreFactory();
+               manager.replacePageStoreFactory(new PagingStoreFactoryNIO(originalFactory.getStorageManager(), originalFactory.getDirectory(), originalFactory.getSyncTimeout(), originalFactory.getScheduledExecutor(), originalFactory.getExecutorFactory(), originalFactory.isSyncNonTransactional(), originalFactory.getCritialErrorListener(), () -> purgeFolders) {
+                  @Override
+                  public PageCursorProvider newCursorProvider(PagingStore store,
+                                                              StorageManager storageManager,
+                                                              AddressSettings addressSettings,
+                                                              ArtemisExecutor executor) {
+                     return new InterruptedCursorProvider(store, storageManager);
+                  }
+               });
+               return manager;
+            }
+         };
+      }
 
       addServer(server);
 
@@ -4399,6 +4441,7 @@ public class PagingTest extends ParameterDBTestBase {
          assertEquals(0, getMessageCount(queue), "Queue someQueue" + i + " was supposed to be empty");
          assertEquals(0, queue.getDeliveringCount(), "Queue someQueue" + i + " was supposed to be empty");
       }
+
    }
 
    @TestTemplate
@@ -4524,6 +4567,11 @@ public class PagingTest extends ParameterDBTestBase {
          producerPaged.send(msg);
       }
       session.commit();
+
+      if (database != Database.JOURNAL) {
+         File pagingFolder = server.getConfiguration().getPagingLocation();
+         assertFalse(pagingFolder.exists() && pagingFolder.list().length > 0, "Paging folder should not exist or be empty when using database storage. check on " + pagingFolder);
+      }
 
       session.close();
 
@@ -6181,25 +6229,29 @@ public class PagingTest extends ParameterDBTestBase {
       if (database != Database.JOURNAL) {
          server = new ActiveMQServerImpl(config, ManagementFactory.getPlatformMBeanServer(), new ActiveMQSecurityManagerImpl()) {
             @Override
-            protected PagingStoreFactoryDatabase getPagingStoreFactory() throws Exception {
-               return new PagingStoreFactoryDatabase((DatabaseStorageConfiguration) this.getConfiguration().getStoreConfiguration(), this.getStorageManager(), this.getConfiguration().getJournalBufferTimeout_NIO(), this.getScheduledPool(), this.getExecutorFactory(), this.getConfiguration().isJournalSyncNonTransactional(), null) {
+            public PagingManager createPagingManager() throws Exception {
+               PagingStoreFactoryDatabase factory = new PagingStoreFactoryDatabase((DatabaseStorageConfiguration) this.getConfiguration().getStoreConfiguration(), this.getStorageManager(), this.getConfiguration().getJournalBufferTimeout_NIO(), this.getScheduledPool(), this.getExecutorFactory(), this.getConfiguration().isJournalSyncNonTransactional(), null) {
                   @Override
                   public synchronized PagingStore newStore(SimpleString address, AddressSettings settings) {
                      return new NonStoppablePagingStoreImpl(address, this.getScheduledExecutor(), config.getJournalBufferTimeout_NIO(), getPagingManager(), getStorageManager(), null, this, address, settings, getExecutorFactory().getExecutor(), this.syncNonTransactional);
                   }
                };
+               return new PagingManagerImpl(factory, getAddressSettingsRepository(), getConfiguration().getGlobalMaxSize(), getConfiguration().getGlobalMaxMessages(), getConfiguration().getManagementAddress(), this);
             }
          };
       } else {
          server = new ActiveMQServerImpl(config, ManagementFactory.getPlatformMBeanServer(), new ActiveMQSecurityManagerImpl()) {
             @Override
-            protected PagingStoreFactoryNIO getPagingStoreFactory() {
-               return new PagingStoreFactoryNIO(this.getStorageManager(), this.getConfiguration().getPagingLocation(), this.getConfiguration().getJournalBufferTimeout_NIO(), this.getScheduledPool(), this.getExecutorFactory(), this.getConfiguration().isJournalSyncNonTransactional(), null, () -> purgeFolders) {
+            public PagingManager createPagingManager() throws Exception {
+               PagingManagerImpl manager = (PagingManagerImpl) super.createPagingManager();
+               PagingStoreFactoryNIO originalFactory = (PagingStoreFactoryNIO) manager.getPagingStoreFactory();
+               manager.replacePageStoreFactory(new PagingStoreFactoryNIO(originalFactory.getStorageManager(), originalFactory.getDirectory(), originalFactory.getSyncTimeout(), originalFactory.getScheduledExecutor(), originalFactory.getExecutorFactory(), originalFactory.isSyncNonTransactional(), originalFactory.getCritialErrorListener(), () -> purgeFolders) {
                   @Override
                   public synchronized PagingStore newStore(SimpleString address, AddressSettings settings) {
                      return new NonStoppablePagingStoreImpl(address, this.getScheduledExecutor(), config.getJournalBufferTimeout_NIO(), getPagingManager(), getStorageManager(), null, this, address, settings, getExecutorFactory().getExecutor(), this.isSyncNonTransactional());
                   }
-               };
+               });
+               return manager;
             }
          };
       }
@@ -6682,7 +6734,7 @@ public class PagingTest extends ParameterDBTestBase {
          if (repeat == 0) {
             PageSubscriptionImpl subscription = QueueAccessor.getSubscription(testQueue);
             try (PageIterator iterator = subscription.iterator(true)) {
-               long txID = server.getStorageManager().generateID();
+               TransactionImpl txID = new TransactionImpl(server.getStorageManager());
                int i = 0;
                while (iterator.hasNext()) {
                   PagedReference reference = iterator.next();

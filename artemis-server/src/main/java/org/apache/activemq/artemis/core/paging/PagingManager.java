@@ -22,6 +22,7 @@ import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
 
 import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.core.paging.impl.AddressSizeLimiter;
 import org.apache.activemq.artemis.core.server.ActiveMQComponent;
 import org.apache.activemq.artemis.core.server.files.FileStoreMonitor;
 import org.apache.activemq.artemis.core.settings.HierarchicalRepositoryChangeListener;
@@ -43,43 +44,80 @@ import org.apache.activemq.artemis.core.settings.HierarchicalRepositoryChangeLis
  */
 public interface PagingManager extends ActiveMQComponent, HierarchicalRepositoryChangeListener {
 
+
+   default boolean requireRebuildCounters() {
+      return true;
+   }
+
    /**
     * {@return the PageStore associated with the address; a new page store is created if necessary}
     */
    PagingStore getPageStore(SimpleString address) throws Exception;
 
    /**
-    * Point to inform/restoring Transactions used when the messages were added into paging
+    * Point to inform/restoring Transactions used when the messages were added into paging.
+    * No-op by default for implementations that do not use journal-based page transactions (e.g. database).
     */
-   void addTransaction(PageTransactionInfo pageTransaction);
+   default void addTransaction(PageTransactionInfo pageTransaction) {
+   }
 
    /**
-    * Point to inform/restoring Transactions used when the messages were added into paging
+    * Point to inform/restoring Transactions used when the messages were added into paging.
+    * Returns {@code null} by default for implementations that do not use journal-based page transactions.
     */
-   PageTransactionInfo getTransaction(long transactionID);
+   default PageTransactionInfo getTransaction(long transactionID) {
+      return null;
+   }
 
-   void removeTransaction(long transactionID);
+   default void removeTransaction(long transactionID) {
+   }
 
-   Map<Long, PageTransactionInfo> getTransactions();
+   default Map<Long, PageTransactionInfo> getTransactions() {
+      return Map.of();
+   }
 
    /**
-    * Reload previously created PagingStores into memory
+    * Reload previously created PagingStores into memory.
+    * No-op by default for implementations that do not use file-based stores.
     */
-   void reloadStores() throws Exception;
+   default void reloadStores() throws Exception {
+   }
 
-   SimpleString[] getStoreNames();
+   default SimpleString[] getStoreNames() {
+      return new SimpleString[0];
+   }
 
-   void deletePageStore(SimpleString storeName) throws Exception;
+   /**
+    * No-op by default for implementations that do not use file-based stores.
+    */
+   default void deletePageStore(SimpleString storeName) throws Exception {
+   }
 
-   void processReload() throws Exception;
+   /**
+    * No-op by default for implementations that do not use file-based stores.
+    */
+   default void processReload() throws Exception {
+   }
 
-   void disableCleanup();
+   /**
+    * No-op by default for implementations that do not use file-based stores.
+    */
+   default void disableCleanup() {
+   }
 
-   void resumeCleanup();
+   /**
+    * No-op by default for implementations that do not use file-based stores.
+    */
+   default void resumeCleanup() {
+   }
 
-   void addBlockedStore(PagingStore store);
+   void addBlockedStore(AddressSizeLimiter store);
 
-   void injectMonitor(FileStoreMonitor monitor) throws Exception;
+   /**
+    * No-op by default for implementations that do not use disk-based storage (e.g. database).
+    */
+   default void injectMonitor(FileStoreMonitor monitor) throws Exception {
+   }
 
    /**
     * Execute a runnable inside the PagingManager's executor
@@ -113,6 +151,8 @@ public interface PagingManager extends ActiveMQComponent, HierarchicalRepository
       return addSize(size, false);
    }
 
+   PagingManager simpleAdd(long elements, long size);
+
    /**
     * An utility method to call addSize(size, true); this is a good fit for an IntConsumer.
     */
@@ -124,11 +164,26 @@ public interface PagingManager extends ActiveMQComponent, HierarchicalRepository
 
    boolean isGlobalFull();
 
-   boolean isDiskFull();
+   /**
+    * Returns {@code false} by default for implementations that do not use disk-based storage (e.g. database).
+    */
+   default boolean isDiskFull() {
+      return false;
+   }
 
-   long getDiskUsableSpace();
+   /**
+    * Returns {@code 0} by default for implementations that do not use disk-based storage (e.g. database).
+    */
+   default long getDiskUsableSpace() {
+      return 0;
+   }
 
-   long getDiskTotalSpace();
+   /**
+    * Returns {@code 0} by default for implementations that do not use disk-based storage (e.g. database).
+    */
+   default long getDiskTotalSpace() {
+      return 0;
+   }
 
    default long getGlobalSize() {
       return 0;
@@ -143,7 +198,11 @@ public interface PagingManager extends ActiveMQComponent, HierarchicalRepository
     */
    void checkMemory(Runnable runWhenAvailable);
 
-   void counterSnapshot();
+   /**
+    * No-op by default for implementations that do not use file-based cursor snapshots.
+    */
+   default void counterSnapshot() {
+   }
 
    /**
     * Use this when you have no refernce of an address. (anonymous AMQP Producers for example)

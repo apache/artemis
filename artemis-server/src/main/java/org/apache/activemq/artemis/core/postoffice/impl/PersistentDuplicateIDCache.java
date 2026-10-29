@@ -33,6 +33,7 @@ import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.core.transaction.TransactionOperationAbstract;
+import org.apache.activemq.artemis.core.transaction.impl.TransactionImpl;
 import org.apache.activemq.artemis.utils.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,7 +90,7 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
       // - ignoring (and reporting) ids unpaired with record ID
       // Then, delete the exceeding ones.
 
-      long txID = -1;
+      Transaction tx = null;
 
       int toNotBeAdded = ids.size() - cacheSize;
       if (toNotBeAdded < 0) {
@@ -108,14 +109,14 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
          }
          assert id.getB() != null && id.getB().longValue() != NIL;
          if (toNotBeAdded > 0) {
-            if (txID == -1) {
-               txID = storageManager.generateID();
+            if (tx == null) {
+               tx = new TransactionImpl(storageManager);
             }
             if (logger.isTraceEnabled()) {
                logger.trace("deleting id = {}", describeID(id.getA(), id.getB()));
             }
 
-            storageManager.deleteDuplicateIDTransactional(txID, id.getB());
+            storageManager.deleteDuplicateIDTransactional(tx, id.getB());
             toNotBeAdded--;
          } else {
             ByteArray bah = new ByteArray(id.getA());
@@ -132,8 +133,8 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
 
       }
 
-      if (txID != -1) {
-         storageManager.commit(txID);
+      if (tx != null) {
+         storageManager.commit(tx);
       }
 
       pos = this.ids.size();
@@ -176,7 +177,7 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
                if (tx == null) {
                   storageManager.deleteDuplicateID(recordID);
                } else {
-                  storageManager.deleteDuplicateIDTransactional(tx.getID(), recordID);
+                  storageManager.deleteDuplicateIDTransactional(tx, recordID);
                   tx.setContainsPersistent();
                }
             }
@@ -248,7 +249,7 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
 
          addToCacheInMemory(holder, recordID);
       } else {
-         storageManager.storeDuplicateIDTransactional(tx.getID(), address, holder.bytes, recordID);
+         storageManager.storeDuplicateIDTransactional(tx, address, holder.bytes, recordID);
 
          tx.setContainsPersistent();
 
@@ -335,8 +336,8 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
       logger.debug("address = {} removing duplicate ID data", address);
       final int idsSize = ids.size();
       if (idsSize > 0) {
+         Transaction tx = new TransactionImpl(storageManager);
          boolean deleted = false;
-         long tx = storageManager.generateID();
          for (int i = 0; i < idsSize; i++) {
             final ObjLongPair<ByteArray> id = ids.get(i);
             if (id.getA() != null) {

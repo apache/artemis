@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.core.persistence.impl.nullpm.NullStorageManager;
+import org.apache.activemq.artemis.core.transaction.Transaction;
 
 public class FakeStorageManager extends NullStorageManager {
 
@@ -34,7 +35,7 @@ public class FakeStorageManager extends NullStorageManager {
    }
 
    @Override
-   public void storeMessageTransactional(final long txID, final Message message) throws Exception {
+   public void storeMessageTransactional(final Transaction tx, final Message message) throws Exception {
       messageIds.add(message.getMessageID());
    }
 
@@ -49,7 +50,7 @@ public class FakeStorageManager extends NullStorageManager {
    }
 
    @Override
-   public void storeAcknowledgeTransactional(final long txID,
+   public void storeAcknowledgeTransactional(final Transaction tx,
                                              final long queueID,
                                              final long messageiD) throws Exception {
       ackIds.add(messageiD);

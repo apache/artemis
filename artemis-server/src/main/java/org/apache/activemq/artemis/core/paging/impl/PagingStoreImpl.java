@@ -17,6 +17,7 @@
 package org.apache.activemq.artemis.core.paging.impl;
 
 import java.io.File;
+import java.lang.invoke.MethodHandles;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -24,14 +25,11 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.SimpleString;
@@ -53,8 +51,10 @@ import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.LargeServerMessage;
 import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.server.RouteContextList;
+import org.apache.activemq.artemis.core.server.StorageMessageReader;
 import org.apache.activemq.artemis.core.server.impl.MessageReferenceImpl;
-import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
+import org.apache.activemq.artemis.core.server.impl.PageStorageMessageReader;
+import org.apache.activemq.artemis.core.server.impl.QueueImpl;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.settings.impl.DiskFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.PageFullMessagePolicy;
@@ -62,27 +62,22 @@ import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.core.transaction.TransactionOperation;
 import org.apache.activemq.artemis.core.transaction.TransactionPropertyIndexes;
 import org.apache.activemq.artemis.utils.ArtemisCloseable;
-import org.apache.activemq.artemis.utils.FutureLatch;
 import org.apache.activemq.artemis.utils.SimpleFutureImpl;
-import org.apache.activemq.artemis.utils.SizeAwareMetric;
 import org.apache.activemq.artemis.utils.actors.ArtemisExecutor;
-import org.apache.activemq.artemis.utils.runnables.AtomicRunnable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.lang.invoke.MethodHandles;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
+ * File-based {@link org.apache.activemq.artemis.core.paging.PagingStore} implementation.
+ * Creates {@link FilePage} instances for page storage.
+ *
  * @see PagingStore
  */
-public class PagingStoreImpl implements PagingStore {
+public class PagingStoreImpl extends AddressSizeLimiter implements PagingStore {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private final SimpleString address;
-
-   private final StorageManager storageManager;
 
    private final DecimalFormat format = new DecimalFormat("000000000");
 
@@ -101,18 +96,6 @@ public class PagingStoreImpl implements PagingStore {
    // this is used to batch and sync into paging asynchronously
    private PageTimedWriter timedWriter;
 
-   private long maxSize;
-
-   private int maxPageReadBytes = -1;
-
-   private int maxPageReadMessages = -1;
-
-   private int prefetchPageBytes = -1;
-
-   private int prefetchPageMessages = -1;
-
-   private long maxMessages;
-
    private volatile boolean pageFull;
 
    private Long pageLimitBytes;
@@ -123,30 +106,7 @@ public class PagingStoreImpl implements PagingStore {
 
    private PageFullMessagePolicy pageFullMessagePolicy;
 
-   private DiskFullMessagePolicy diskFullMessagePolicy;
-
    private int pageSize;
-
-   private volatile AddressFullMessagePolicy addressFullMessagePolicy;
-
-   // Internal components such as mirroring could enforce a different page full message policy
-   // differing from the AddressSettings
-   // Example: User configured sync mirroring while default address-settings is PAGE. We must use Block on that case
-   //          User configured non sync mirroring while configured drop. We must use page. (always paged)
-   private volatile AddressFullMessagePolicy enforcedAddressFullMessagePolicy;
-
-   private boolean printedDropMessagesWarning;
-
-   private final PagingManager pagingManager;
-
-   private final boolean usingGlobalMaxSize;
-
-   private final ArtemisExecutor executor;
-
-   // Bytes consumed by the queue on the memory
-   private final SizeAwareMetric size;
-
-   private volatile boolean full;
 
    private long numberOfPages;
 
@@ -156,27 +116,11 @@ public class PagingStoreImpl implements PagingStore {
 
    private volatile Page currentPage;
 
-   private volatile boolean paging = false;
-
    private final PageCursorProvider cursorProvider;
-
-   // This lock mostly protects the paging field. It is also used to block producers in eventual cases such as dropping
-   // a queue, but mostly to protect if the storage is in paging mode.
-   private final ReadWriteLock lock = new ReentrantReadWriteLock();
-
-   private volatile boolean running = false;
 
    private final boolean syncNonTransactional;
 
-   private volatile boolean blocking = false;
-
-   private volatile boolean blockedViaManagement = false;
-
-   private long rejectThreshold;
-
    private final Supplier<Boolean> purgePageFolder;
-
-   private final ScheduledExecutorService scheduledExecutorService;
 
    public PagingStoreImpl(final SimpleString address,
                           final ScheduledExecutorService scheduledExecutor,
@@ -189,10 +133,7 @@ public class PagingStoreImpl implements PagingStore {
                           final AddressSettings addressSettings,
                           final ArtemisExecutor executor,
                           final boolean syncNonTransactional) {
-      this(address, scheduledExecutor, syncTimeout, pagingManager,
-           storageManager, fileFactory, storeFactory,
-           storeName, addressSettings, executor, syncNonTransactional,
-           () -> false);
+      this(address, scheduledExecutor, syncTimeout, pagingManager, storageManager, fileFactory, storeFactory, storeName, addressSettings, executor, syncNonTransactional, () -> false);
    }
 
    public PagingStoreImpl(final SimpleString address,
@@ -207,25 +148,15 @@ public class PagingStoreImpl implements PagingStore {
                           final ArtemisExecutor executor,
                           final boolean syncNonTransactional,
                           final Supplier<Boolean> purgePageFolder) {
+      super(storageManager, pagingManager, address, addressSettings, executor);
+
       Objects.requireNonNull(scheduledExecutor, "scheduledExecutor = null");
 
       Objects.requireNonNull(pagingManager, "Paging Manager can't be null");
 
       this.address = address;
 
-      this.storageManager = storageManager;
-
       this.storeName = storeName;
-
-      this.size = new SizeAwareMetric(maxSize, maxSize, maxMessages, maxMessages).
-         setUnderCallback(this::underSized).setOverCallback(this::overSized).
-         setOnSizeCallback(pagingManager::addSize);
-
-      applySetting(addressSettings, true);
-
-      this.executor = executor;
-
-      this.pagingManager = pagingManager;
 
       this.fileFactory = fileFactory;
 
@@ -238,19 +169,13 @@ public class PagingStoreImpl implements PagingStore {
       this.timedWriter = createPageTimedWriter(scheduledExecutor, syncTimeout);
 
       this.cursorProvider = storeFactory.newCursorProvider(this, this.storageManager, addressSettings, executor);
-
-      this.usingGlobalMaxSize = pagingManager.isUsingGlobalSize();
-
-      this.scheduledExecutorService = scheduledExecutor;
    }
 
-   // This is an extension point for unit tests to replace the creation of the PagedTimeWriter
+   // Extension point for unit tests to replace the creation of the PageTimedWriter
    protected PageTimedWriter createPageTimedWriter(ScheduledExecutorService scheduledExecutor, long syncTimeout) {
       Objects.requireNonNull(scheduledExecutor, "scheduledExecutor");
-      Objects.requireNonNull(executor, "executor");
-      // Notice that any calls on the PageTimedWriter are going to use the paging store's executor.
-      // The scheduledExecutor will transfer the call to the paging store executor.
-      PageTimedWriter localWriter = new PageTimedWriter(pageSize, storageManager, this, scheduledExecutor, executor, syncNonTransactional, syncTimeout);
+      Objects.requireNonNull(getExecutor(), "executor");
+      PageTimedWriter localWriter = new PageTimedWriter(getPageSizeBytes(), getStorageManager(), this, scheduledExecutor, getExecutor(), syncNonTransactional, syncTimeout);
       localWriter.start();
       return localWriter;
    }
@@ -260,55 +185,19 @@ public class PagingStoreImpl implements PagingStore {
       this.timedWriter = writer;
    }
 
-   private void overSized() {
-      full = true;
-   }
-
-   private void underSized() {
-      full = false;
-      checkReleasedMemory();
-   }
-
-   private void configureSizeMetric() {
-      size.setMax(maxSize, maxSize, maxMessages, maxMessages);
+   public PageTimedWriter getPageTimedWriter() {
+      return timedWriter;
    }
 
    @Override
-   public void applySetting(final AddressSettings addressSettings) {
-      applySetting(addressSettings, false);
-   }
-
-   private void applySetting(final AddressSettings addressSettings, final boolean firstTime) {
-      maxSize = addressSettings.getMaxSizeBytes();
-
-      maxPageReadMessages = addressSettings.getMaxReadPageMessages();
-
-      prefetchPageMessages = addressSettings.getPrefetchPageMessages();
-
-      maxPageReadBytes = addressSettings.getMaxReadPageBytes();
-
-      prefetchPageBytes = addressSettings.getPrefetchPageBytes();
-
-      maxMessages = addressSettings.getMaxSizeMessages();
-
-      configureSizeMetric();
+   protected void applySetting(final AddressSettings addressSettings, final boolean firstTime) {
+      super.applySetting(addressSettings, firstTime);
 
       // JDBC has a maximum page size of 100K by default.
       // it can be reconfigured through jdbc-max-page-size-bytes in the JDBC configuration section
       pageSize = storageManager.getAllowedPageSize(addressSettings.getPageSizeBytes());
 
-      if (enforcedAddressFullMessagePolicy != null) {
-         this.addressFullMessagePolicy = enforcedAddressFullMessagePolicy;
-      } else {
-         addressFullMessagePolicy = addressSettings.getAddressFullMessagePolicy();
-      }
-
-      rejectThreshold = addressSettings.getMaxSizeBytesRejectThreshold();
-
       pageFullMessagePolicy = addressSettings.getPageFullMessagePolicy();
-
-      diskFullMessagePolicy = addressSettings.getDiskFullMessagePolicy();
-
       pageLimitBytes = addressSettings.getPageLimitBytes();
 
       if (pageLimitBytes != null && pageLimitBytes < 0) {
@@ -352,13 +241,16 @@ public class PagingStoreImpl implements PagingStore {
          if (estimatedMaxPagesChanged) {
             checkNumberOfPages();
          }
-         cursorProvider.checkClearPageLimit();
+         final PageCursorProvider provider = getCursorProvider();
+         if (provider != null) {
+            provider.checkClearPageLimit();
+         }
       }
    }
 
    @Override
    public String toString() {
-      return "PagingStoreImpl(" + this.address + ")";
+      return getClass().getSimpleName() + "(" + this.address + ")";
    }
 
    @Override
@@ -435,89 +327,13 @@ public class PagingStoreImpl implements PagingStore {
    }
 
    @Override
-   public void readLock() {
-      readLock(-1L);
-   }
-
-   @Override
-   public boolean readLock(long timeout) {
-      try {
-         if (timeout == -1) {
-            while (true) {
-               if (tryReadLock(1, TimeUnit.SECONDS)) {
-                  return true;
-               }
-            }
-         } else {
-            return tryReadLock(timeout, TimeUnit.MILLISECONDS);
-         }
-      } catch (InterruptedException e) {
-         logger.warn(e.getMessage(), e);
-         Thread.currentThread().interrupt();
-         return false;
-      }
-   }
-
-   private boolean tryReadLock(long timeout, TimeUnit unit) throws InterruptedException {
-      if (lock.readLock().tryLock(timeout, unit)) {
-         return true;
-      } else {
-         if (logger.isTraceEnabled()) {
-            logger.trace("Not able to read lock");
-         }
-         return false;
-      }
-   }
-
-   @Override
-   public void readUnlock() {
-      lock.readLock().unlock();
-   }
-
-   @Override
-   public void writeLock() {
-      writeLock(-1L);
-   }
-
-   @Override
-   public boolean writeLock(long timeout) {
-      try {
-         if (timeout == -1) {
-            while (true) {
-               if (tryWriteLock(1, TimeUnit.SECONDS)) {
-                  return true;
-               }
-            }
-         } else {
-            return tryWriteLock(timeout, TimeUnit.MILLISECONDS);
-         }
-      } catch (InterruptedException e) {
-         logger.warn(e.getMessage(), e);
-         Thread.currentThread().interrupt();
-         return false;
-      }
-   }
-
-   private boolean tryWriteLock(long timeout, TimeUnit unit) throws InterruptedException {
-      if (lock.writeLock().tryLock(timeout, unit)) {
-         return true;
-      } else {
-         if (logger.isTraceEnabled()) {
-            logger.trace("Not able to write lock");
-         }
-         return false;
-      }
-
-   }
-
-   @Override
-   public void writeUnlock() {
-      lock.writeLock().unlock();
-   }
-
-   @Override
    public PageCursorProvider getCursorProvider() {
       return cursorProvider;
+   }
+
+   @Override
+   public StorageMessageReader createStorageMessageReader(QueueImpl queue) {
+      return new PageStorageMessageReader(queue);
    }
 
    @Override
@@ -531,55 +347,14 @@ public class PagingStoreImpl implements PagingStore {
    }
 
    @Override
-   public long getAddressSize() {
-      return size.getSize();
-   }
-
-   @Override
-   public long getAddressElements() {
-      return size.getElements();
-   }
-
-   @Override
    public long getMaxSize() {
+      long maxSize = super.getMaxSize();
       if (maxSize <= 0) {
          // if maxSize <= 0, we will return 2 pages for de-page purposes
          return pageSize * 2L;
       } else {
          return maxSize;
       }
-   }
-
-   @Override
-   public int getMaxPageReadBytes() {
-      return maxPageReadBytes;
-   }
-
-   @Override
-   public int getPrefetchPageBytes() {
-      return prefetchPageBytes;
-   }
-
-   @Override
-   public int getMaxPageReadMessages() {
-      return maxPageReadMessages;
-   }
-
-   @Override
-   public int getPrefetchPageMessages() {
-      return prefetchPageMessages;
-   }
-
-   @Override
-   public AddressFullMessagePolicy getAddressFullMessagePolicy() {
-      return addressFullMessagePolicy;
-   }
-
-   @Override
-   public PagingStoreImpl enforceAddressFullMessagePolicy(AddressFullMessagePolicy enforcedAddressFullMessagePolicy) {
-      this.addressFullMessagePolicy = enforcedAddressFullMessagePolicy;
-      this.enforcedAddressFullMessagePolicy = enforcedAddressFullMessagePolicy;
-      return this;
    }
 
    @Override
@@ -603,26 +378,6 @@ public class PagingStoreImpl implements PagingStore {
    }
 
    @Override
-   public boolean isStorePaging() {
-      return paging;
-   }
-
-   @Override
-   public boolean isPaging() {
-      AddressFullMessagePolicy policy = this.addressFullMessagePolicy;
-      if (policy == AddressFullMessagePolicy.BLOCK) {
-         return false;
-      }
-      if (policy == AddressFullMessagePolicy.FAIL) {
-         return isFull();
-      }
-      if (policy == AddressFullMessagePolicy.DROP) {
-         return isFull();
-      }
-      return paging;
-   }
-
-   @Override
    public long getNumberOfPages() {
       return numberOfPages;
    }
@@ -640,7 +395,7 @@ public class PagingStoreImpl implements PagingStore {
    @Override
    public void ioSync() throws Exception {
       if (!fileFactory.supportsIndividualContext()) {
-         Page page = currentPage;
+         Page page = getCurrentPage();
          if (page != null) {
             page.trySync();
          }
@@ -649,22 +404,18 @@ public class PagingStoreImpl implements PagingStore {
 
    @Override
    public void processReload() throws Exception {
-      cursorProvider.processReload();
-   }
-
-   @Override
-   public PagingManager getPagingManager() {
-      return pagingManager;
-   }
-
-   @Override
-   public boolean isStarted() {
-      return running;
+      final PageCursorProvider provider = getCursorProvider();
+      if (provider != null) {
+         provider.processReload();
+      }
    }
 
    @Override
    public void counterSnapshot() {
-      cursorProvider.counterSnapshot();
+      final PageCursorProvider provider = getCursorProvider();
+      if (provider != null) {
+         provider.counterSnapshot();
+      }
    }
 
    @Override
@@ -674,8 +425,9 @@ public class PagingStoreImpl implements PagingStore {
             if (timedWriter != null) {
                timedWriter.stop();
             }
-            if (cursorProvider != null) {
-               cursorProvider.stop();
+            final PageCursorProvider provider = getCursorProvider();
+            if (provider != null) {
+               provider.stop();
             }
             running = false;
          } else {
@@ -689,30 +441,6 @@ public class PagingStoreImpl implements PagingStore {
       if (page != null) {
          page.close(true);
          currentPage = null;
-      }
-   }
-
-   @Override
-   public ArtemisExecutor getExecutor() {
-      return executor;
-   }
-
-   @Override
-   public void execute(Runnable run) {
-      executor.execute(run);
-   }
-
-   @Override
-   public void flushExecutors() {
-      FutureLatch future = new FutureLatch();
-
-      try {
-         executor.execute(future);
-
-         if (!future.await(60000)) {
-            ActiveMQServerLogger.LOGGER.pageStoreTimeout(address);
-         }
-      } catch (Exception ignored) {
       }
    }
 
@@ -759,7 +487,7 @@ public class PagingStoreImpl implements PagingStore {
                checkNumberOfPages();
 
                for (String fileName : files) {
-                  final int fileId = PagingStoreImpl.getPageIdFromFileName(fileName);
+                  final int fileId = getPageIdFromFileName(fileName);
 
                   if (fileId > pageId) {
                      pageId = fileId;
@@ -808,7 +536,7 @@ public class PagingStoreImpl implements PagingStore {
        * keep writing the file. But in case 2 we'd better not bcs old data might be overwritten. Here we open a new page
        * so the incomplete page would be reserved for recovery if needed.
        */
-      if (page.getSize() != page.getFile().size()) {
+      if (page.getSize() != page.storageSize()) {
          openNewPage();
       }
    }
@@ -836,17 +564,20 @@ public class PagingStoreImpl implements PagingStore {
       try {
          final boolean isPaging = this.paging;
          if (isPaging) {
-            assert !timedWriter.hasPendingIO() : "There is pending IO on PagingStoreImpl while calling stopPaging";
-            if (timedWriter.hasPendingIO()) {
+            assert !(timedWriter != null && timedWriter.hasPendingIO()) : "There is pending IO on PagingStoreImpl while calling stopPaging";
+            if (timedWriter != null && timedWriter.hasPendingIO()) {
                // it should not happen, however if it happened we will just ignore the call for stopPaging
                logger.debug("There are pending timed writes. Cannot clear paging now.");
                return;
             }
             paging = false;
-            ActiveMQServerLogger.LOGGER.pageStoreStop(storeName, getPageInfo());
+            ActiveMQServerLogger.LOGGER.pageStoreStop(storeName, getInfo());
             pageLimitReleased();
          }
-         this.cursorProvider.onPageModeCleared();
+         final PageCursorProvider provider = getCursorProvider();
+         if (provider != null) {
+            provider.onPageModeCleared();
+         }
          if (purgePageFolder.get()) {
             execute(this::purgeFolder);
          }
@@ -860,8 +591,8 @@ public class PagingStoreImpl implements PagingStore {
       try (ArtemisCloseable readLock = storageManager.closeableReadLock()) {
          writeLock();
          try {
-            if (!isStorePaging() && !hasPendingIO() && fileFactory != null) {
-               ActiveMQServerLogger.LOGGER.purgingPageFolder(fileFactory.getDirectoryName(), storeName);
+            if (!isStorePaging() && !hasPendingIO() && hasStorage()) {
+               ActiveMQServerLogger.LOGGER.purgingPageFolder(getFolderName(), storeName);
                // closing used pages...
                // all files need to be closed before we can remove a folder
                usedPages.forEachUsedPage(this::closePage);
@@ -870,8 +601,10 @@ public class PagingStoreImpl implements PagingStore {
                currentPage = null;
                numberOfPages = 0;
                if (deleteFolder()) {
-                  // we delete the subscription's journal information after the folder is removed
-                  cursorProvider.forEachSubscription(PageSubscription::deleteCursorInfo);
+                  final PageCursorProvider provider = getCursorProvider();
+                  if (provider != null) {
+                     provider.forEachSubscription(PageSubscription::deleteCursorInfo);
+                  }
                }
             }
          } finally {
@@ -890,62 +623,24 @@ public class PagingStoreImpl implements PagingStore {
       }
    }
 
-   private String getPageInfo() {
-      return String.format("size=%d bytes (%d messages); maxSize=%d bytes (%d messages); globalSize=%d bytes (%d messages); globalMaxSize=%d bytes (%d messages);", size.getSize(), size.getElements(), maxSize, maxMessages, pagingManager.getGlobalSize(), pagingManager.getGlobalMessages(), pagingManager.getMaxSize(), pagingManager.getMaxMessages());
-   }
-
    @Override
-   public boolean startPaging() {
-      if (!running) {
+   protected boolean beginPage() {
+      try {
+         if (currentPage == null) {
+            openNewPage();
+         } else {
+            if (!currentPage.storageExists() || !currentPage.isOpen()) {
+               currentPage.open(false);
+            }
+         }
+      } catch (Exception e) {
+         // If not possible to starting page due to an IO error, we will just consider it non paging.
+         // This shouldn't happen anyway
+         ActiveMQServerLogger.LOGGER.pageStoreStartIOError(e);
+         storageManager.criticalError(e);
          return false;
       }
-
-      readLock();
-      try {
-         // I'm not calling isPaging() here because i need to be atomic and hold a lock.
-         if (paging) {
-            return false;
-         }
-      } finally {
-         readUnlock();
-      }
-
-      // We need to guarantee a readLock on the storageManager before starting paging. This is because the replication
-      // manager will get a list of files to synchronize while holding a writeLock on the storageManager. So we must
-      // guarantee a readLock here otherwise the list might be wrong.
-      try (ArtemisCloseable readLock = storageManager.closeableReadLock()) {
-         // if the first check failed, we do it again under a global currentPageLock
-         // (writeLock) this time
-         writeLock();
-         try {
-            // Same notes from previous if (paging) on this method will apply here
-            if (paging) {
-               return false;
-            }
-
-            try {
-               if (currentPage == null) {
-                  openNewPage();
-               } else {
-                  if (!currentPage.getFile().exists() || !currentPage.getFile().isOpen()) {
-                     currentPage.getFile().open();
-                  }
-               }
-            } catch (Exception e) {
-               // If not possible to starting page due to an IO error, we will just consider it non paging.
-               // This shouldn't happen anyway
-               ActiveMQServerLogger.LOGGER.pageStoreStartIOError(e);
-               storageManager.criticalError(e);
-               return false;
-            }
-            paging = true;
-            ActiveMQServerLogger.LOGGER.pageStoreStart(storeName, getPageInfo());
-
-            return true;
-         } finally {
-            writeUnlock();
-         }
-      }
+      return true;
    }
 
    @Override
@@ -960,16 +655,13 @@ public class PagingStoreImpl implements PagingStore {
       }
       String fileName = createFileName(pageNumber);
 
-      SequentialFileFactory factory = null;
       try {
-         factory = checkFileFactory();
+         SequentialFileFactory factory = checkFileFactory();
          SequentialFile file = factory.createSequentialFile(fileName);
          return file.exists() && file.size() > 0;
       } catch (Exception ignored) {
-         // never supposed to happen, but just in case
          logger.warn("PagingStoreFactory::checkPageFileExists never-throws assumption failed.", ignored);
-         return true; // returning false would make the acks to the page to go missing.
-                      // since we are not sure on the result for this case, we just return true
+         return true;
       }
    }
 
@@ -981,9 +673,7 @@ public class PagingStoreImpl implements PagingStore {
 
       SequentialFile file = factory.createSequentialFile(fileName);
 
-      Page page = new Page(storeName, storageManager, factory, file, pageNumber);
-
-      return page;
+      return new FilePage(getStoreName(), getStorageManager(), factory, file, pageNumber);
    }
 
    @Override
@@ -998,7 +688,7 @@ public class PagingStoreImpl implements PagingStore {
 
    @Override
    public Page usePage(final long pageId, final boolean createEntry, final boolean createFile) {
-      if (fileFactory == null) {
+      if (!hasStorage()) {
          return null;
       }
       synchronized (usedPages) {
@@ -1006,7 +696,7 @@ public class PagingStoreImpl implements PagingStore {
             Page page = usedPages.get(pageId);
             if (createEntry && page == null) {
                page = newPageObject(pageId);
-               if (page.getFile().exists()) {
+               if (page.storageExists()) {
                   page.getMessages();
                   injectPage(page);
                } else {
@@ -1085,7 +775,7 @@ public class PagingStoreImpl implements PagingStore {
    private SequentialFileFactory checkFileFactory() throws Exception {
       SequentialFileFactory factory = fileFactory;
       if (factory == null) {
-         factory = storeFactory.newFileFactory(getStoreName());
+         factory = getStoreFactory().newFileFactory(getStoreName());
          fileFactory = factory;
       }
       return factory;
@@ -1148,7 +838,7 @@ public class PagingStoreImpl implements PagingStore {
             page = newPageObject(pageId);
          }
 
-         if (page != null && page.getFile().exists()) {
+         if (page != null && page.storageExists()) {
             page.usageDown();
             // we only decrement numberOfPages if the file existed
             // it could have been removed by a previous delete
@@ -1249,7 +939,7 @@ public class PagingStoreImpl implements PagingStore {
             }
          }
 
-         if (!returnPage.getFile().exists()) {
+         if (!returnPage.storageExists()) {
             // if the file does not exist, we will just increment back to where it was before
             numberOfPages++;
          }
@@ -1263,181 +953,91 @@ public class PagingStoreImpl implements PagingStore {
       }
    }
 
-   private final Queue<Runnable> onMemoryFreedRunnables = new ConcurrentLinkedQueue<>();
-
-   private void memoryReleased() {
-      Runnable runnable;
-
-      while ((runnable = onMemoryFreedRunnables.poll()) != null) {
-         runnable.run();
-      }
-   }
-
    @Override
-   public boolean checkMemory(final Runnable runWhenAvailable, Consumer<AtomicRunnable> blockedCallback) {
-      return checkMemory(true, runWhenAvailable, null, blockedCallback);
-   }
-
-   private void addToBlockList(AtomicRunnable atomicRunnable, Consumer<AtomicRunnable> accepted) {
-      atomicRunnable.setCancel(onMemoryFreedRunnables::remove);
-      onMemoryFreedRunnables.add(atomicRunnable);
-      if (accepted != null) {
-         accepted.accept(atomicRunnable);
-      }
-   }
-
-   @Override
-   public boolean checkMemory(boolean runOnFailure, Runnable runWhenAvailableParameter, Runnable runWhenBlocking, Consumer<AtomicRunnable> blockedCallback) {
-      AtomicRunnable runWhenAvailable = AtomicRunnable.checkAtomic(runWhenAvailableParameter);
-
-      if (blockedViaManagement) {
-         if (runWhenAvailable != null) {
-            addToBlockList(runWhenAvailable, blockedCallback);
-         }
-         return false;
-      }
-
-      if (pagingManager.isDiskFull()) {
-         if (diskFullMessagePolicy == DiskFullMessagePolicy.FAIL) {
-            if (runOnFailure) {
-               addToBlockList(runWhenAvailable, blockedCallback);
-               pagingManager.addBlockedStore(this);
-            }
-            return false;
-         }
-
-         if (diskFullMessagePolicy == null || diskFullMessagePolicy == DiskFullMessagePolicy.BLOCK) {
-            if (runWhenBlocking != null) {
-               runWhenBlocking.run();
-            }
-
-            addToBlockList(runWhenAvailable, blockedCallback);
-
-            // Avoid a race condition see description below
-            if (!pagingManager.isDiskFull()) {
-               runWhenAvailable.run();
-               onMemoryFreedRunnables.remove(runWhenAvailable);
-            } else {
-               pagingManager.addBlockedStore(this);
-
-               if (!blocking) {
-                  ActiveMQServerLogger.LOGGER.blockingDiskFull(address);
-                  blocking = true;
-               }
-            }
-
-            return true;
-         }
-      } else {
-         if (addressFullMessagePolicy == AddressFullMessagePolicy.FAIL && (maxSize != -1 || maxMessages != -1 || usingGlobalMaxSize)) {
-            if (isFull()) {
-               if (runOnFailure && runWhenAvailable != null) {
-                  addToBlockList(runWhenAvailable, blockedCallback);
-                  pagingManager.addBlockedStore(this);
-               }
-               return false;
-            }
-         } else if (addressFullMessagePolicy == AddressFullMessagePolicy.BLOCK && (maxMessages != -1 || maxSize != -1 || usingGlobalMaxSize)) {
-            if (this.full || pagingManager.isGlobalFull()) {
-               if (runWhenBlocking != null) {
-                  runWhenBlocking.run();
-               }
-
-               addToBlockList(runWhenAvailable, blockedCallback);
-
-               // We check again to avoid a race condition where the size can come down just after the element
-               // has been added, but the check to execute was done before the element was added
-               // NOTE! We do not fix this race by locking the whole thing, doing this check provides
-               // MUCH better performance in a highly concurrent environment
-               if (!pagingManager.isGlobalFull() && !full) {
-                  // run it now
-                  runWhenAvailable.run();
-                  onMemoryFreedRunnables.remove(runWhenAvailable);
-               } else {
-                  if (usingGlobalMaxSize) {
-                     pagingManager.addBlockedStore(this);
-                  }
-
-                  if (!blocking) {
-                     ActiveMQServerLogger.LOGGER.blockingMessageProduction(address, getPageInfo());
-                     blocking = true;
-                  }
-               }
-
-               return true;
-            }
-         }
-      }
-
-      if (runWhenAvailable != null) {
-         runWhenAvailable.run();
-      }
-
-      return true;
-   }
-
-   @Override
-   public void addSize(final int size, boolean sizeOnly, boolean affectGlobal) {
-      long newSize = this.size.addSize(size, sizeOnly, affectGlobal);
-      boolean globalFull = pagingManager.isGlobalFull();
-
-      if (newSize < 0) {
-         ActiveMQServerLogger.LOGGER.negativeAddressSize(address.toString(), newSize);
-      }
-
-      if (addressFullMessagePolicy == AddressFullMessagePolicy.BLOCK || addressFullMessagePolicy == AddressFullMessagePolicy.FAIL) {
-         if (usingGlobalMaxSize && !globalFull || maxSize != -1) {
-            checkReleasedMemory();
-         }
-
-         return;
-      } else if (addressFullMessagePolicy == AddressFullMessagePolicy.PAGE) {
-         if (size > 0) {
-            if (globalFull || full) {
-               startPaging();
-            }
-         }
-
-         return;
-      }
-   }
-
-   @Override
-   public boolean checkReleasedMemory() {
-      if (!blockedViaManagement && !pagingManager.isGlobalFull() && !full) {
-         executor.execute(this::memoryReleased);
-         if (blocking) {
-            ActiveMQServerLogger.LOGGER.unblockingMessageProduction(address, getPageInfo());
-            blocking = false;
-            return true;
-         }
-      }
-
-      return !blocking;
-   }
-
-   @Override
-   public boolean page(Message message,
-                       final Transaction tx,
-                       RouteContextList listCtx) throws Exception {
-      return page(message, tx, listCtx, null, false) >= 0;
+   public boolean page(Message message, final Transaction tx, RouteContextList listCtx) throws Exception {
+      return page(message, tx, listCtx, null) >= 0;
    }
 
    @Override
    public int page(Message message,
-                       final Transaction tx,
-                       RouteContextList listCtx,
-                       Function<Message, Message> pageDecorator,
-                       boolean useFlowControl) throws Exception {
+                   final Transaction tx,
+                   RouteContextList listCtx,
+                   Function<Message, Message> pageDecorator) throws Exception {
 
       if (!running) {
          return -1;
       }
 
-      boolean diskFull = pagingManager.isDiskFull();
+      Integer policiesResult = checkFullPolicies(message);
+      if (policiesResult != null) {
+         return policiesResult;
+      }
 
+      return writePage(message, tx, listCtx, pageDecorator);
+   }
+
+   /**
+    * Extends the base address-full check with disk-full and page-full checks.
+    * {@inheritDoc}
+    */
+   @Override
+   protected Integer checkFullPolicies(Message message) throws Exception {
+      Integer result = super.checkFullPolicies(message);
+      if (result != null) {
+         return result;
+      }
+      if ((result = validateDiskFull(message)) != null) {
+         return result;
+      }
+      if ((result = validatePageFull(message)) != null) {
+         return result;
+      }
+      return null;
+   }
+
+
+   /**
+    * Checks whether the page is full and applies the configured {@link PageFullMessagePolicy}.
+    *
+    * @return {@code null} if the page is not full and processing should continue;
+    *         {@code 0} if the message was dropped (caller must return this value);
+    *         throws {@link org.apache.activemq.artemis.api.core.ActiveMQAddressFullException}
+    *         if the policy is {@link PageFullMessagePolicy#FAIL}.
+    */
+   protected Integer validatePageFull(Message message) throws Exception {
+      if (pageFull) {
+         if (message.isLargeMessage()) {
+            ((LargeServerMessage) message).deleteFile();
+         }
+
+         if (pageFullMessagePolicy == PageFullMessagePolicy.FAIL) {
+            throw ActiveMQMessageBundle.BUNDLE.addressIsFull(address);
+         }
+
+         if (!printedDropMessagesWarning) {
+            printedDropMessagesWarning = true;
+            ActiveMQServerLogger.LOGGER.pageStoreDropMessages(storeName, getInfo());
+         }
+
+         // we are in page mode, if we got to this point, we are dropping the message while still paging
+         // we return 0 as in the storage is in "page mode" however no credits are being taken.
+         return 0;
+      }
+      return null;
+   }
+
+
+   /**
+    * Checks whether the disk is full and applies the configured {@link DiskFullMessagePolicy}.
+    *
+    * @return {@code null} if the disk is not full and processing should continue;
+    *         {@code 0} if the message was dropped (caller must return this value);
+    *         throws {@link org.apache.activemq.artemis.api.core.ActiveMQAddressFullException}
+    *         if the policy is {@link DiskFullMessagePolicy#FAIL}.
+    */
+   protected Integer validateDiskFull(Message message) throws Exception {
       if (diskFullMessagePolicy == DiskFullMessagePolicy.DROP || diskFullMessagePolicy == DiskFullMessagePolicy.FAIL) {
-         if (diskFull) {
+         if (pagingManager.isDiskFull()) {
             message.setDropped(true);
 
             if (message.isLargeMessage()) {
@@ -1445,80 +1045,30 @@ public class PagingStoreImpl implements PagingStore {
             }
 
             if (diskFullMessagePolicy == DiskFullMessagePolicy.FAIL) {
-               throw ActiveMQMessageBundle.BUNDLE.addressIsFull(address.toString());
+               throw ActiveMQMessageBundle.BUNDLE.addressIsFull(address);
             }
 
-            // Dist is full, just drop the data
+            // Disk is full, just drop the data
             if (!printedDropMessagesWarning) {
                printedDropMessagesWarning = true;
-               ActiveMQServerLogger.LOGGER.pageStoreDropMessages(storeName, getPageInfo());
+               ActiveMQServerLogger.LOGGER.pageStoreDropMessages(storeName, getInfo());
             }
 
             return 0;
          }
       }
-
-      boolean full = isFull();
-
-      if (addressFullMessagePolicy == AddressFullMessagePolicy.DROP || addressFullMessagePolicy == AddressFullMessagePolicy.FAIL) {
-         if (full) {
-            message.setDropped(true);
-
-            if (message.isLargeMessage()) {
-               ((LargeServerMessage) message).deleteFile();
-            }
-
-            if (addressFullMessagePolicy == AddressFullMessagePolicy.FAIL) {
-               throw ActiveMQMessageBundle.BUNDLE.addressIsFull(address.toString());
-            }
-
-            // Address is full, we just pretend we are paging, and drop the data
-            if (!printedDropMessagesWarning) {
-               printedDropMessagesWarning = true;
-               ActiveMQServerLogger.LOGGER.pageStoreDropMessages(storeName, getPageInfo());
-            }
-            return 0;
-         } else {
-            return -1;
-         }
-      } else if (addressFullMessagePolicy == AddressFullMessagePolicy.BLOCK) {
-         return -1;
-      }
-
-      if (pageFull) {
-         if (message.isLargeMessage()) {
-            ((LargeServerMessage) message).deleteFile();
-         }
-
-         if (pageFullMessagePolicy == PageFullMessagePolicy.FAIL) {
-            throw ActiveMQMessageBundle.BUNDLE.addressIsFull(address.toString());
-         }
-
-         if (!printedDropMessagesWarning) {
-            printedDropMessagesWarning = true;
-            ActiveMQServerLogger.LOGGER.pageStoreDropMessages(storeName, getPageInfo());
-         }
-
-         // we are in page mode, if we got to this point, we are dropping the message while still paging
-         // we return 0 as in the storage is in "page mode" however no credits are being taken.
-         return 0;
-      }
-
-      return writePage(message, tx, listCtx, pageDecorator, useFlowControl);
+      return null;
    }
 
-   private int writePage(Message message,
-                             Transaction tx,
-                             RouteContextList listCtx,
-                             Function<Message, Message> pageDecorator,
-                             boolean useFlowControl) throws Exception {
-      // We need to use a readLock as we need to keep paging until we scheduled a task
-      // notice that to leave paging you need pending tasks done
+
+   protected int writePage(Message message,
+                           Transaction tx,
+                           RouteContextList listCtx,
+                           Function<Message, Message> pageDecorator) throws Exception {
       readLock();
       PagedMessage pagedMessage;
       try {
-         if (!paging) {
-            // no paging was used
+         if (!isStorePaging()) {
             return -1;
          }
 
@@ -1531,13 +1081,15 @@ public class PagingStoreImpl implements PagingStore {
          message.setPaged();
 
          pagedMessage = new PagedMessageImpl(message, routeQueues(tx, listCtx), transactionID);
+         if (tx != null) {
+            pagedMessage.setStorageTX(tx.getStorageTx());
+         }
          long persistentSize = pagedMessage.getPersistentSize() > 0 ? pagedMessage.getPersistentSize() : 0;
 
          if (tx != null && tx.isAllowPageTransaction()) {
             installPageTransaction(tx, listCtx);
          }
 
-         // Read the comment bellow on timedWriter.addTask call
          timedWriter.incrementTask();
 
          applyPageCounters(tx, listCtx, persistentSize);
@@ -1546,20 +1098,7 @@ public class PagingStoreImpl implements PagingStore {
          readUnlock();
       }
 
-
-      // timedWriter.addTask will use a semaphore for flow control, it can hold up to a page file pending.
-      // each write will take its number of bytes away from the semaphore.
-      //
-      // However, when page cleanup is called, it will be using the page executor, and it will require a writeLock
-      // to validate if it can leave page mode.
-      //
-      // If cleanup happens while blocking for credits inside the writeLock the system would deadLock (or starve)
-      // for that reason we increment the task within the readLock (timedWriter.incrementTask()), and call this addTask away from locks
-      //
-      // timedWriter.hasPendingIO would return pending based on incrementTask, and for that reason we can still call the addTask away from the readLock.
-      //
-      // This scenario was found when running FloodServerWithAsyncSendTest smoke test.
-      int credits = timedWriter.addTask(storageManager.getContext(), pagedMessage, tx, listCtx, useFlowControl);
+      int credits = timedWriter.addTask(getStorageManager().getContext(), pagedMessage, tx, listCtx);
 
       assert credits >= 0;
 
@@ -1567,13 +1106,17 @@ public class PagingStoreImpl implements PagingStore {
    }
 
    @Override
-   public void writeFlowControl(int credits) {
+   public boolean flowControl(Runnable block, Runnable release) {
       if (timedWriter != null) {
-         timedWriter.flowControl(credits);
+         return timedWriter.flowControl(block, release);
+      } else {
+         return false;
       }
    }
 
-   protected void directWritePage(PagedMessage pagedMessage, boolean lineUp, boolean originalReplicated) throws Exception {
+   protected void directWritePage(PagedMessage pagedMessage,
+                                  boolean lineUp,
+                                  boolean originalReplicated) throws Exception {
       int bytesToWrite = pagedMessage.getEncodeSize() + PageReadWriter.SIZE_RECORD;
 
       currentPageSize += bytesToWrite;
@@ -1604,7 +1147,10 @@ public class PagingStoreImpl implements PagingStore {
     */
    @Override
    public void disableCleanup() {
-      getCursorProvider().disableCleanup();
+      final PageCursorProvider provider = getCursorProvider();
+      if (provider != null) {
+         provider.disableCleanup();
+      }
    }
 
    /**
@@ -1612,7 +1158,10 @@ public class PagingStoreImpl implements PagingStore {
     */
    @Override
    public void enableCleanup() {
-      getCursorProvider().resumeCleanup();
+      final PageCursorProvider provider = getCursorProvider();
+      if (provider != null) {
+         provider.resumeCleanup();
+      }
    }
 
    private long[] routeQueues(Transaction tx, RouteContextList ctx) throws Exception {
@@ -1673,14 +1222,15 @@ public class PagingStoreImpl implements PagingStore {
       this.addSize(-MessageReferenceImpl.getMemoryEstimate(), true);
    }
 
-   private FinishPageMessageOperation createFinishPageOperation(Transaction tx) {
-      PageTransactionInfo pgTX = new PageTransactionInfoImpl(tx.getID());
-      pagingManager.addTransaction(pgTX);
-      return new FinishPageMessageOperation(pgTX, storageManager, pagingManager);
-   }
-
    private void installPageTransaction(final Transaction tx, final RouteContextList listCtx) throws Exception {
-      FinishPageMessageOperation pgOper = tx.getOrCreateOperation(TransactionPropertyIndexes.PAGE_TRANSACTION, () -> createFinishPageOperation(tx));
+      FinishPageMessageOperation pgOper = (FinishPageMessageOperation) tx.getProperty(TransactionPropertyIndexes.PAGE_TRANSACTION);
+      if (pgOper == null) {
+         PageTransactionInfo pgTX = new PageTransactionInfoImpl(tx.getID());
+         getPagingManager().addTransaction(pgTX);
+         pgOper = new FinishPageMessageOperation(pgTX, storageManager, pagingManager);
+         tx.putProperty(TransactionPropertyIndexes.PAGE_TRANSACTION, pgOper);
+         tx.addOperation(pgOper);
+      }
 
       if (!tx.isAsync()) {
          pgOper.addStore(this);
@@ -1691,16 +1241,14 @@ public class PagingStoreImpl implements PagingStore {
 
    @Override
    public boolean hasPendingIO() {
-      return timedWriter.hasPendingIO();
-   }
-
-   public PageTimedWriter getPageTimedWriter() {
-      return timedWriter;
+      return timedWriter != null && timedWriter.hasPendingIO();
    }
 
    @Override
    public void destroy() throws Exception {
-      timedWriter.stop();
+      if (timedWriter != null) {
+         timedWriter.stop();
+      }
       // destroy has to be executed in the same executor as the cleanup
       execute(this::internalDestroy);
       OperationContext context = OperationContextImpl.getContext();
@@ -1716,13 +1264,10 @@ public class PagingStoreImpl implements PagingStore {
          writeLock();
 
          try {
-            SequentialFileFactory factory = fileFactory;
-            if (factory != null) {
-               try {
-                  storeFactory.removeFileFactory(factory);
-               } catch (Exception e) {
-                  logger.warn(e.getMessage(), e);
-               }
+            try {
+               removeFromStoreFactory();
+            } catch (Exception e) {
+               logger.warn(e.getMessage(), e);
             }
          } finally {
             writeUnlock();
@@ -1758,10 +1303,6 @@ public class PagingStoreImpl implements PagingStore {
 
       @Override
       public void afterCommit(final Transaction tx) {
-         // If part of the transaction goes to the queue, and part goes to paging, we can't let depage start for the
-         // transaction until all the messages were added to the queue
-         // or else we could deliver the messages out of order
-
          if (pageTransaction != null) {
             pageTransaction.commit();
          }
@@ -1846,8 +1387,25 @@ public class PagingStoreImpl implements PagingStore {
       }
    }
 
+   protected PagingStoreFactory getStoreFactory() {
+      return storeFactory;
+   }
+
+   private void removeFromStoreFactory() {
+      if (fileFactory != null) {
+         try {
+            getStoreFactory().removeFileFactory(fileFactory);
+         } catch (Exception e) {
+            logger.warn(e.getMessage(), e);
+         }
+      }
+   }
+
+   private boolean hasStorage() {
+      return fileFactory != null;
+   }
+
    public String createFileName(final long pageID) {
-      // DecimalFormat is not thread safe.
       synchronized (format) {
          return format.format(pageID) + ".page";
       }
@@ -1857,53 +1415,7 @@ public class PagingStoreImpl implements PagingStore {
       return Integer.parseInt(fileName.substring(0, fileName.indexOf('.')));
    }
 
-   // To be used on isDropMessagesWhenFull
-   @Override
-   public boolean isFull() {
-      return full || pagingManager.isGlobalFull();
-   }
 
-
-   @Override
-   public int getAddressLimitPercent() {
-      final long currentUsage = getAddressSize();
-      if (maxSize > 0) {
-         return (int) (currentUsage * 100 / maxSize);
-      } else if (pagingManager.isUsingGlobalSize()) {
-         return (int) (currentUsage * 100 / pagingManager.getMaxSize());
-      }
-      return 0;
-   }
-
-   @Override
-   public void block() {
-      if (!blockedViaManagement) {
-         ActiveMQServerLogger.LOGGER.blockingViaControl(address);
-      }
-      blockedViaManagement = true;
-   }
-
-   @Override
-   public void unblock() {
-      if (blockedViaManagement) {
-         ActiveMQServerLogger.LOGGER.unblockingViaControl(address);
-      }
-      blockedViaManagement = false;
-      checkReleasedMemory();
-   }
-
-   @Override
-   public boolean isBlockedViaManagement() {
-      return blockedViaManagement;
-   }
-
-   @Override
-   public boolean isRejectingMessages() {
-      if (addressFullMessagePolicy != AddressFullMessagePolicy.BLOCK) {
-         return false;
-      }
-      return rejectThreshold != AddressSettings.DEFAULT_ADDRESS_REJECT_THRESHOLD && getAddressSize() > rejectThreshold;
-   }
 
    @Override
    public Collection<Integer> getCurrentIds() throws Exception {
@@ -1930,11 +1442,10 @@ public class PagingStoreImpl implements PagingStore {
          if (!sFile.exists()) {
             continue;
          }
-         ActiveMQServerLogger.LOGGER.replicaSyncFile(sFile, sFile.size(), storeName);
+         ActiveMQServerLogger.LOGGER.replicaSyncFile(sFile, sFile.size(), getStoreName());
          replicator.syncPages(sFile, id, getAddress());
       }
    }
-
    private void injectPage(Page page) {
       usedPages.injectPage(page);
    }

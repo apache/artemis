@@ -347,7 +347,7 @@ public class AckManager implements ActiveMQComponent {
 
    private Page openPage(PagingStore store, long pageID) throws Throwable {
       Page page = store.newPageObject(pageID);
-      if (page.getFile().exists()) {
+      if (page.storageExists()) {
          page.getMessages();
          return page;
       } else {
