@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.function.Consumer;
 
 import org.apache.artemis.database.DatabaseProvider;
 import org.apache.artemis.database.data.QueueData;
@@ -36,8 +37,9 @@ public class InsertQueueStatement extends BatchableStatement<QueueData> {
 
    public InsertQueueStatement(DatabaseProvider databaseProvider,
                                Connection connection,
-                               int expectedSize) throws SQLException {
-      super(databaseProvider, connection, getSQL(databaseProvider), expectedSize);
+                               int expectedSize,
+                               Consumer<QueueData> duplicateReaper) throws SQLException {
+      super(databaseProvider, connection, getSQL(databaseProvider), expectedSize, duplicateReaper);
    }
 
    private static String getSQL(DatabaseProvider databaseProvider) {

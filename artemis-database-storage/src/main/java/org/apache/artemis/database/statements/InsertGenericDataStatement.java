@@ -20,6 +20,7 @@ package org.apache.artemis.database.statements;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.function.Consumer;
 
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.artemis.database.DatabaseProvider;
@@ -30,15 +31,17 @@ public class InsertGenericDataStatement extends BatchableStatement<GenericData> 
 
    public InsertGenericDataStatement(DatabaseProvider databaseProvider,
                                      Connection connection,
-                                     int expectedSize) throws SQLException {
-      super(databaseProvider, connection, getSQL(databaseProvider, databaseProvider.getSqlProvider().getBrokerData()), expectedSize);
+                                     int expectedSize,
+                                     Consumer<GenericData> duplicateReaper) throws SQLException {
+      super(databaseProvider, connection, getSQL(databaseProvider, databaseProvider.getSqlProvider().getBrokerData()), expectedSize, duplicateReaper);
    }
 
    public InsertGenericDataStatement(DatabaseProvider databaseProvider,
                                      Connection connection,
                                      int expectedSize,
-                                     String tableName) throws SQLException {
-      super(databaseProvider, connection, getSQL(databaseProvider, tableName), expectedSize);
+                                     String tableName,
+                                     Consumer<GenericData> duplicateReaper) throws SQLException {
+      super(databaseProvider, connection, getSQL(databaseProvider, tableName), expectedSize, duplicateReaper);
    }
 
    private static String getSQL(DatabaseProvider databaseProvider, String tableName) {
