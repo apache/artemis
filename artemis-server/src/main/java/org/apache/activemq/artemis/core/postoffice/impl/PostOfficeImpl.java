@@ -1649,7 +1649,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
       private final Set<Queue> queues = new HashSet<>();
 
-      public void addQueues(List<Queue> queueList) {
+      public synchronized void addQueues(List<Queue> queueList) {
          queues.addAll(queueList);
       }
 
@@ -1759,7 +1759,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       if (refs != null && !refs.isEmpty()) {
          if (tx != null) {
             AddOperation operation = tx.getOrCreateOperation(TransactionPropertyIndexes.ADD_MESSAGE, AddOperation::new);
-            operation.adoptOrAppendReferences(refs);
+            operation.addReferences(refs);
          } else if (!containsDurables) {
             processReferences(refs, direct);
          } else {
@@ -1852,7 +1852,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
    /**
     * This will kick a delivery async on the queue, so the queue may have a chance to depage messages
     */
-   private void schedulePageDelivery(Transaction tx, Map.Entry<SimpleString, RouteContextList> entry) {
+   private void schedulePageDelivery(final Transaction tx, Map.Entry<SimpleString, RouteContextList> entry) {
       if (tx != null) {
          PageDeliveryOperation pageDeliveryOperation = tx.getOrCreateOperation(TransactionPropertyIndexes.PAGE_DELIVERY, PageDeliveryOperation::new);
          pageDeliveryOperation.addQueues(entry.getValue().getDurableQueues());
@@ -2153,13 +2153,9 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
          this.refs = refs;
       }
 
-      /**
-       * Adopts the list directly on first call (zero-copy); appends elements on subsequent calls.
-       */
-      public void adoptOrAppendReferences(List<MessageReference> refs) {
+      public synchronized void addReferences(List<MessageReference> refs) {
          if (this.refs == null) {
-            // if it's first time, we will just use the one prepared by the PostOffice
-            this.refs = refs;
+            this.refs = new ArrayList<>(refs);
          } else {
             this.refs.addAll(refs);
          }

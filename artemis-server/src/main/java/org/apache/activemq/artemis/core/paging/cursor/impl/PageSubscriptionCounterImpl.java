@@ -164,7 +164,7 @@ public class PageSubscriptionCounterImpl extends BasePagingCounter {
    @Override
    public void applyIncrementOnTX(Transaction tx, int add, long size) {
       CounterOperations oper = tx.getOrCreateOperation(TransactionPropertyIndexes.PAGE_COUNT_INC, CounterOperations::new);
-      oper.operations.add(new ItemOper(this, add, size));
+      oper.addOperation(new ItemOper(this, add, size));
    }
 
    @Override
@@ -382,6 +382,10 @@ public class PageSubscriptionCounterImpl extends BasePagingCounter {
          for (ItemOper oper : operations) {
             oper.counter.process(oper.amount, oper.persistentSize);
          }
+      }
+
+      public synchronized void addOperation(ItemOper oper) {
+         this.operations.add(oper);
       }
    }
 

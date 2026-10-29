@@ -3695,7 +3695,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
       List<Pair<SimpleString, MessageReference>> expiries = new LinkedList<>();
 
-      public void addExpiry(SimpleString address, MessageReference ref) {
+      public synchronized void addExpiry(SimpleString address, MessageReference ref) {
          expiries.add(new Pair<>(address, ref));
       }
 

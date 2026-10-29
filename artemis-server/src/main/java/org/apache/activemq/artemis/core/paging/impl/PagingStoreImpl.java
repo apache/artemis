@@ -1744,7 +1744,7 @@ public class PagingStoreImpl implements PagingStore {
 
       private boolean stored = false;
 
-      public void addStore(PagingStore store) {
+      public synchronized void addStore(PagingStore store) {
          this.usedStores.add(store);
       }
 

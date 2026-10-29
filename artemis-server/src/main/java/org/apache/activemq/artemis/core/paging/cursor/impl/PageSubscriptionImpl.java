@@ -1144,7 +1144,7 @@ public final class PageSubscriptionImpl implements PageSubscription {
 
       private final Map<PageSubscriptionImpl, List<PagePosition>> pendingPositions = new HashMap<>();
 
-      private void addPositionConfirmation(final PageSubscriptionImpl cursor, final PagePosition position) {
+      private synchronized void addPositionConfirmation(final PageSubscriptionImpl cursor, final PagePosition position) {
          List<PagePosition> list = pendingPositions.get(cursor);
 
          if (list == null) {

@@ -750,14 +750,16 @@ public class TransactionImpl implements Transaction {
     */
    @SuppressWarnings("unchecked")
    private <T> T internalGet(int propertyIndex, Supplier<T> supplier, Consumer<T> choiceOfOperation) {
-      assert choiceOfOperation != null;
-      T value = (T) getProperty(propertyIndex);
-      if (value == null) {
-         value = supplier.get();
-         putProperty(propertyIndex, value);
-         choiceOfOperation.accept(value);
+      synchronized (this) {
+         assert choiceOfOperation != null;
+         T value = (T) getProperty(propertyIndex);
+         if (value == null) {
+            value = supplier.get();
+            putProperty(propertyIndex, value);
+            choiceOfOperation.accept(value);
+         }
+         return value;
       }
-      return value;
    }
 
    @Override

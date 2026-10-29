@@ -357,7 +357,7 @@ public final class PageTransactionInfoImpl implements PageTransactionInfo {
          stored = true;
       }
 
-      public void addUpdate(final PageTransactionInfo info, final int increment) {
+      public synchronized void addUpdate(final PageTransactionInfo info, final int increment) {
          AtomicInteger counter = countsToUpdate.get(info);
 
          if (counter == null) {
