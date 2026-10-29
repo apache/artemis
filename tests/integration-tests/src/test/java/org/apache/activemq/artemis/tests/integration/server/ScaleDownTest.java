@@ -28,7 +28,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
@@ -39,6 +41,7 @@ import org.apache.activemq.artemis.api.core.client.ClientMessage;
 import org.apache.activemq.artemis.api.core.client.ClientProducer;
 import org.apache.activemq.artemis.api.core.client.ClientSession;
 import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
+import org.apache.activemq.artemis.api.core.client.SessionFailureListener;
 import org.apache.activemq.artemis.api.core.management.QueueControl;
 import org.apache.activemq.artemis.core.client.impl.ClientSessionFactoryImpl;
 import org.apache.activemq.artemis.core.client.impl.ServerLocatorImpl;
@@ -213,6 +216,38 @@ public class ScaleDownTest extends ClusterTestBase {
       clientMessage = consumers[0].getConsumer().receiveImmediate();
       assertNull(clientMessage);
       removeConsumer(0);
+   }
+
+
+   @TestTemplate
+   public void testScaleDownRedirectsClientsToTargetNode() throws Exception {
+      final AtomicReference<String> scaleDownTargetNodeID = new AtomicReference<>();
+      final CountDownLatch connectionFailed = new CountDownLatch(1);
+
+      // a client connected to the node being scaled down must be told which node is taking over its messages
+      ClientSession session = addClientSession(sfs[0].createSession());
+      session.addFailureListener(new SessionFailureListener() {
+         @Override
+         public void beforeReconnect(ActiveMQException exception) {
+         }
+
+         @Override
+         public void connectionFailed(ActiveMQException exception, boolean failedOver) {
+            connectionFailed(exception, failedOver, null);
+         }
+
+         @Override
+         public void connectionFailed(ActiveMQException exception, boolean failedOver, String targetNodeID) {
+            scaleDownTargetNodeID.set(targetNodeID);
+            connectionFailed.countDown();
+         }
+      });
+
+      ActiveMQServerControlImpl serverControl = (ActiveMQServerControlImpl) servers[0].getManagementService().getServerControl();
+      serverControl.scaleDown(null);
+
+      assertTrue(connectionFailed.await(10, TimeUnit.SECONDS), "the client should be disconnected by the scale-down");
+      assertEquals(servers[1].getNodeID().toString(), scaleDownTargetNodeID.get());
    }
 
 

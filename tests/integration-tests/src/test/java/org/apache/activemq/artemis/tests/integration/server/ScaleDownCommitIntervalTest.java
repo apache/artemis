@@ -98,6 +98,6 @@ public class ScaleDownCommitIntervalTest extends ClusterTestBase {
    private long performScaledown(int commitInterval) throws Exception {
       ScaleDownHandler handler = new ScaleDownHandler(servers[0].getPagingManager(), servers[0].getPostOffice(), servers[0].getNodeManager(), servers[0].getClusterManager().getClusterController(), servers[0].getStorageManager(), commitInterval);
 
-      return handler.scaleDownMessages(sfs[1], servers[1].getNodeID(), servers[0].getConfiguration().getClusterUser(), servers[0].getConfiguration().getClusterPassword());
+      return handler.scaleDownMessages(sfs[1], servers[1].getNodeID().toString(), servers[0].getConfiguration().getClusterUser(), servers[0].getConfiguration().getClusterPassword());
    }
 }
