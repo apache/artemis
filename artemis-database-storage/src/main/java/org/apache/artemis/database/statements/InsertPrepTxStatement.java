@@ -20,6 +20,7 @@ package org.apache.artemis.database.statements;
 import java.lang.invoke.MethodHandles;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.function.Consumer;
 
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.artemis.database.DatabaseProvider;
@@ -33,8 +34,9 @@ public class InsertPrepTxStatement extends BatchableStatement<PrepareTXData> {
 
    public InsertPrepTxStatement(DatabaseProvider databaseProvider,
                                 Connection connection,
-                                int expectedSize) throws SQLException {
-      super(databaseProvider, connection, getSQL(databaseProvider), expectedSize);
+                                int expectedSize,
+                                Consumer<PrepareTXData> duplicateReaper) throws SQLException {
+      super(databaseProvider, connection, getSQL(databaseProvider), expectedSize, duplicateReaper);
    }
 
    private static String getSQL(DatabaseProvider databaseProvider) {

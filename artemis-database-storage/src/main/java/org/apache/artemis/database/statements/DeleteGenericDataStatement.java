@@ -28,14 +28,14 @@ public class DeleteGenericDataStatement extends BatchableStatement<DeleteGeneric
    public DeleteGenericDataStatement(DatabaseProvider databaseProvider,
                                      Connection connection,
                                      int expectedSize) throws SQLException {
-      super(databaseProvider, connection, getSQL(databaseProvider, databaseProvider.getSqlProvider().getBrokerData()), expectedSize);
+      super(databaseProvider, connection, getSQL(databaseProvider, databaseProvider.getSqlProvider().getBrokerData()), expectedSize, null);
    }
 
    public DeleteGenericDataStatement(DatabaseProvider databaseProvider,
                                      Connection connection,
                                      int expectedSize,
                                      String tableName) throws SQLException {
-      super(databaseProvider, connection, getSQL(databaseProvider, tableName), expectedSize);
+      super(databaseProvider, connection, getSQL(databaseProvider, tableName), expectedSize, null);
    }
 
    private static String getSQL(DatabaseProvider databaseProvider, String tableName) {
