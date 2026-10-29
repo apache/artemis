@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -77,7 +78,6 @@ public class ScaleDownHandler {
    private final ClusterController clusterController;
    private final StorageManager storageManager;
    private final int commitInterval;
-   private String targetNodeId;
 
    public ScaleDownHandler(PagingManager pagingManager,
                            PostOffice postOffice,
@@ -98,22 +98,22 @@ public class ScaleDownHandler {
                          Map<SimpleString, List<Pair<byte[], Long>>> duplicateIDMap,
                          SimpleString managementAddress,
                          SimpleString targetNodeId) throws Exception {
+      String resolvedTargetNodeId = targetNodeId != null ? targetNodeId.toString() : getTargetNodeId(sessionFactory);
       ClusterControl clusterControl = clusterController.connectToNodeInCluster((ClientSessionFactoryInternal) sessionFactory);
       clusterControl.authorize();
-      long num = scaleDownMessages(sessionFactory, targetNodeId, clusterControl.getClusterUser(), clusterControl.getClusterPassword());
+      long num = scaleDownMessages(sessionFactory, resolvedTargetNodeId, clusterControl.getClusterUser(), clusterControl.getClusterPassword());
       ActiveMQServerLogger.LOGGER.infoScaledDownMessages(num);
       scaleDownTransactions(sessionFactory, resourceManager, clusterControl.getClusterUser(), clusterControl.getClusterPassword());
       scaleDownDuplicateIDs(duplicateIDMap, sessionFactory, managementAddress, clusterControl.getClusterUser(), clusterControl.getClusterPassword());
-      clusterControl.announceScaleDown(SimpleString.of(this.targetNodeId), nodeManager.getNodeId());
+      clusterControl.announceScaleDown(SimpleString.of(resolvedTargetNodeId), nodeManager.getNodeId());
       return num;
    }
 
    public long scaleDownMessages(ClientSessionFactory sessionFactory,
-                                 SimpleString nodeId,
+                                 String targetNodeId,
                                  String user,
                                  String password) throws Exception {
       long messageCount = 0;
-      targetNodeId = nodeId != null ? nodeId.toString() : getTargetNodeId(sessionFactory);
 
       try (ClientSession session = sessionFactory.createSession(user, password, false, true, true, false, 0)) {
          ClientProducer producer = session.createProducer();
@@ -141,7 +141,7 @@ public class ScaleDownHandler {
             String sfPrefix = ((PostOfficeImpl) postOffice).getServer().getInternalNamingPrefix() + "sf.";
             long messageCountItem = 0;
             if (address.toString().startsWith(sfPrefix)) {
-               messageCountItem += scaleDownSNF(address, queues, producer);
+               messageCountItem += scaleDownSNF(address, queues, producer, targetNodeId);
             } else {
                messageCountItem += scaleDownRegularMessages(address, queues, session, producer);
             }
@@ -254,7 +254,8 @@ public class ScaleDownHandler {
 
    private long scaleDownSNF(final SimpleString address,
                              final Set<Queue> queues,
-                             final ClientProducer producer) throws Exception {
+                             final ClientProducer producer,
+                             final String targetNodeId) throws Exception {
       long messageCount = 0;
 
       final String propertyEnd;
@@ -336,7 +337,9 @@ public class ScaleDownHandler {
    }
 
    private String getTargetNodeId(ClientSessionFactory sessionFactory) {
-      return sessionFactory.getServerLocator().getTopology().getMember(sessionFactory.getConnection()).getNodeId();
+      return Objects.requireNonNull(sessionFactory.getServerLocator().
+            getTopology().getMember(sessionFactory.getConnection()),
+         "Target topology member not found for scale-down").getNodeId();
    }
 
    public void scaleDownTransactions(ClientSessionFactory sessionFactory,

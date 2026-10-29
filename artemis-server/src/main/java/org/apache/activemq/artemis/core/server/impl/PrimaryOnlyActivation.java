@@ -19,6 +19,7 @@ package org.apache.activemq.artemis.core.server.impl;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentMap;
 
 import org.apache.activemq.artemis.api.core.ActiveMQException;
@@ -37,10 +38,10 @@ import org.apache.activemq.artemis.core.server.NodeManager;
 import org.apache.activemq.artemis.core.server.cluster.ActiveMQServerSideProtocolManagerFactory;
 import org.apache.activemq.artemis.core.server.cluster.ha.PrimaryOnlyPolicy;
 import org.apache.activemq.artemis.core.server.cluster.ha.ScaleDownPolicy;
-import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
+import java.util.concurrent.TimeUnit;
 
 public class PrimaryOnlyActivation extends Activation {
 
@@ -54,6 +55,8 @@ public class PrimaryOnlyActivation extends Activation {
    private ServerLocatorInternal scaleDownServerLocator;
 
    private ClientSessionFactoryInternal scaleDownClientSessionFactory;
+
+   private String scaleDownNodeID;
 
    public PrimaryOnlyActivation(ActiveMQServerImpl server, PrimaryOnlyPolicy primaryOnlyPolicy) {
       this.activeMQServer = server;
@@ -122,10 +125,8 @@ public class PrimaryOnlyActivation extends Activation {
          connectToScaleDownTarget(primaryOnlyPolicy.getScaleDownPolicy());
       }
 
-      RemotingConnection rc = scaleDownClientSessionFactory == null ? null : scaleDownClientSessionFactory.getConnection();
-      String nodeID = rc == null ? null : scaleDownClientSessionFactory.getServerLocator().getTopology().getMember(rc).getNodeId();
       if (remotingService != null) {
-         remotingService.freeze(nodeID, null);
+         remotingService.freeze(scaleDownNodeID, null);
       }
    }
 
@@ -137,6 +138,7 @@ public class PrimaryOnlyActivation extends Activation {
          } catch (Exception e) {
             ActiveMQServerLogger.LOGGER.failedToScaleDown(e);
          } finally {
+            scaleDownNodeID = null;
             scaleDownClientSessionFactory.close();
             scaleDownServerLocator.close();
          }
@@ -190,6 +192,17 @@ public class PrimaryOnlyActivation extends Activation {
          }
          if (clientSessionFactory != null) {
             scaleDownClientSessionFactory = clientSessionFactory;
+
+            boolean topologyReady = scaleDownClientSessionFactory.waitForTopology(
+               scaleDownServerLocator.getCallTimeout(), TimeUnit.MILLISECONDS);
+
+            if (!topologyReady) {
+               throw new ActiveMQException("Topology not ready for scale-down");
+            }
+
+            scaleDownNodeID = Objects.requireNonNull(scaleDownClientSessionFactory.getServerLocator().
+               getTopology().getMember(scaleDownClientSessionFactory.getConnection()),
+               "Target topology member not found for scale-down").getNodeId();
          } else {
             throw new ActiveMQException("Unable to connect to server for scale-down");
          }
@@ -206,6 +219,6 @@ public class PrimaryOnlyActivation extends Activation {
          DuplicateIDCache duplicateIDCache = activeMQServer.getPostOffice().getDuplicateIDCache(address);
          duplicateIDMap.put(address, duplicateIDCache.getMap());
       }
-      return scaleDownHandler.scaleDown(scaleDownClientSessionFactory, activeMQServer.getResourceManager(), duplicateIDMap, activeMQServer.getManagementService().getManagementAddress(), null);
+      return scaleDownHandler.scaleDown(scaleDownClientSessionFactory, activeMQServer.getResourceManager(), duplicateIDMap, activeMQServer.getManagementService().getManagementAddress(), SimpleString.of(scaleDownNodeID));
    }
 }
