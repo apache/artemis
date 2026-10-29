@@ -36,4 +36,8 @@ public interface ActiveMQDatabaseLogger {
 
    @LogMessage(id = 232002, value = "Borrowed read connections ({}) exceeded database-max-read-connections ({}). Demanding return. Consider increasing database-max-read-connections or database-connections if this happens frequently:\n{}", level = LogMessage.Level.INFO)
    void demandingBorrowedConnectionsBack(int borrowedCount, int maxReadConnections, String tableOutput);
+
+   @LogMessage(id = 232003, value = "Constraint violation while executing batch for {}", level = LogMessage.Level.WARN)
+   void constraintViolation(Object element, Throwable e);
+
 }

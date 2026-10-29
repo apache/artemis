@@ -32,7 +32,7 @@ public class UpdateQueueStatement extends BatchableStatement<UpdateQueueData> {
    public UpdateQueueStatement(DatabaseProvider databaseProvider,
                                Connection connection,
                                int expectedSize) throws SQLException {
-      super(databaseProvider, connection, getSQL(databaseProvider), expectedSize);
+      super(databaseProvider, connection, getSQL(databaseProvider), expectedSize, null);
    }
 
    private static String getSQL(DatabaseProvider databaseProvider) {

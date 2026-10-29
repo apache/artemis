@@ -19,10 +19,10 @@ package org.apache.activemq.artemis.tests.db.dbstorage.statements;
 import java.lang.invoke.MethodHandles;
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
-
+import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
 import org.apache.activemq.artemis.core.message.impl.CoreMessage;
 import org.apache.activemq.artemis.core.persistence.OperationContext;
 import org.apache.activemq.artemis.core.persistence.impl.database.DatabaseStorageManager;
@@ -33,6 +33,7 @@ import org.apache.activemq.artemis.tests.db.dbstorage.VariableCountCompletion;
 import org.apache.activemq.artemis.tests.extensions.parameterized.ParameterizedTestExtension;
 import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.artemis.database.DatabaseProvider;
+import org.apache.artemis.database.data.DBData;
 import org.apache.artemis.database.data.MessageData;
 import org.apache.artemis.database.data.MessageReferenceData;
 import org.apache.artemis.database.queries.MessageDeliveryUpdater;
@@ -41,7 +42,10 @@ import org.apache.artemis.database.queries.MessagesPendingDeliverQueryForUpdate;
 import org.apache.artemis.database.queries.QueryUtil;
 import org.apache.artemis.database.statements.InsertMessageStatement;
 import org.apache.artemis.database.statements.InsertReferencesStatement;
+import org.apache.artemis.database.worker.DataManager;
+import org.apache.artemis.database.worker.DataWorker;
 import org.junit.jupiter.api.TestTemplate;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
@@ -49,7 +53,7 @@ import org.slf4j.LoggerFactory;
 
 import static org.apache.activemq.artemis.core.persistence.impl.database.DatabaseStorageManager.encodeMessage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisabledIf("isNoDatabaseSelected")
@@ -71,7 +75,7 @@ public class MessagesStatementTest extends AbstractStatementTest {
 
          try (Connection connection = databaseProvider.getConnection()) {
             connection.setAutoCommit(false);
-            InsertReferencesStatement insertReferencesStatement = new InsertReferencesStatement(databaseProvider, connection, 100);
+            InsertReferencesStatement insertReferencesStatement = new InsertReferencesStatement(databaseProvider, connection, 100, null);
             for (int i = 1; i <= nrecords; i++) {
                MessageReferenceData task = databaseStorageManager.getDataManager().newReferenceTask(i, 1, false, i % 2 == 0 ? (long) i : null, latch);
                insertReferencesStatement.addElement(task, latch);
@@ -100,7 +104,7 @@ public class MessagesStatementTest extends AbstractStatementTest {
 
          try (Connection connection = databaseProvider.getConnection()) {
             connection.setAutoCommit(false);
-            InsertMessageStatement insertMessageStatement = new InsertMessageStatement(databaseProvider, connection, 100);
+            InsertMessageStatement insertMessageStatement = new InsertMessageStatement(databaseProvider, connection, 100, null);
             for (int i = 1; i <= nrecords; i++) {
                CoreMessage message = new CoreMessage().initBuffer(1024).setDurable(true);
                message.setMessageID(i);
@@ -377,33 +381,114 @@ public class MessagesStatementTest extends AbstractStatementTest {
    }
 
    @TestTemplate
-   public void testTreatExceptionOnError() throws Exception {
+   public void testRetryDuplicates() throws Exception {
       DatabaseStorageManager databaseStorageManager = new DatabaseStorageManager(configuration, criticalAnalyzer, executorFactory, executorFactory, scheduledExecutorService, executorService, null);
       databaseStorageManager.start();
       try {
          DatabaseProvider databaseProvider = storageConfiguration.getDatabaseProvider();
 
-         int nrecords = 100;
+         int nrecords = 10;
 
          VariableCountCompletion ioCallback = new VariableCountCompletion();
 
-         try (Connection connection = databaseProvider.getConnection()) {
+         try (Connection connection = databaseProvider.getConnection();
+              AssertionLoggerHandler loggerHandler = new AssertionLoggerHandler(true)) {
             connection.setAutoCommit(false);
-            InsertMessageStatement insertMessageStatement = new InsertMessageStatement(databaseProvider, connection, 100);
-            for (int i = 1; i <= nrecords; i++) {
-               CoreMessage message = new CoreMessage().initBuffer(1024).setDurable(true);
-               message.setMessageID(1); // everything should fail with a DuplicateException
-               message.getBodyBuffer().writeByte((byte) 'Z');
+            InsertMessageStatement insertMessageStatement = new InsertMessageStatement(databaseProvider, connection, 100, null);
 
-               insertMessageStatement.addElement(databaseStorageManager.getDataManager().newMessageTask(message.getMessageID(), () -> encodeMessage(message), message.getMemoryEstimate(), false, false, null, ioCallback), ioCallback);
+            addMessageOnBatch(1, insertMessageStatement, databaseStorageManager, ioCallback);
+            insertMessageStatement.flushPending(true);
+
+            assertFalse(loggerHandler.findText("AMQ232003"), "Expected constraint violation warning AMQ232003 in log");
+
+            for (int i = 2; i <= nrecords; i++) {
+               addMessageOnBatch(i, insertMessageStatement, databaseStorageManager, ioCallback);
             }
-            assertThrows(SQLException.class, () -> insertMessageStatement.flushPending(true));
-
-            // forcing a commit, even though it failed... it should not commit any success
+            addMessageOnBatch(1, insertMessageStatement, databaseStorageManager, ioCallback);
+            // constraint violations are logged as warnings but do not throw
+            try {
+               insertMessageStatement.flushPending(true);
+            } catch (Exception e) {
+               logger.info("Expected");
+            }
+            connection.rollback();
+            insertMessageStatement.flushPending(true);
             connection.commit();
 
-            assertEquals(0, selectCount(connection, "DB_MESSAGES"));
+            assertTrue(loggerHandler.findText("AMQ232003"), "Expected constraint violation warning AMQ232003 in log");
+            assertEquals(nrecords, selectCount(connection, "DB_MESSAGES"));
             assertEquals(0, ioCallback.errors.get());
+         }
+      } finally {
+         databaseStorageManager.stop();
+      }
+   }
+
+   private static void addMessageOnBatch(int messageID,
+                                         InsertMessageStatement insertMessageStatement,
+                                         DatabaseStorageManager databaseStorageManager,
+                                         VariableCountCompletion ioCallback) {
+      CoreMessage message = new CoreMessage().initBuffer(1024).setDurable(true);
+      message.setMessageID(messageID); // everything should fail with a DuplicateException
+      message.getBodyBuffer().writeByte((byte) 'Z');
+
+      insertMessageStatement.addElement(databaseStorageManager.getDataManager().newMessageTask(message.getMessageID(), () -> encodeMessage(message), message.getMemoryEstimate(), false, false, null, ioCallback), ioCallback);
+   }
+
+   @Timeout(600)
+   @TestTemplate
+   public void testRetryDuplicatesFromWorker() throws Exception {
+      // retry after duplicate-key is immediate. This will make sure we would catch an eventual timeout
+      storageConfiguration.setDatabaseRetryIntervalMillis(TimeUnit.HOURS.toMillis(1));
+      DatabaseStorageManager databaseStorageManager = new DatabaseStorageManager(configuration, criticalAnalyzer, executorFactory, executorFactory, scheduledExecutorService, executorService, null);
+      databaseStorageManager.start();
+      try {
+         DatabaseProvider databaseProvider = storageConfiguration.getDatabaseProvider();
+         DataManager dataManager = databaseStorageManager.getDataManager();
+
+         int nrecords = 100;
+         int duplicateId = 50;
+
+         OperationContext context = databaseStorageManager.getContext();
+         runAfter(OperationContextImpl::clearContext);
+
+         // Insert one message that will later collide
+         CoreMessage seedMessage = new CoreMessage().initBuffer(1024).setDurable(true);
+         seedMessage.setMessageID(duplicateId);
+         seedMessage.getBodyBuffer().writeByte((byte) 'Z');
+         databaseStorageManager.storeMessage(seedMessage);
+         assertTrue(context.waitCompletion(5000));
+
+         try (Connection verifyConn = databaseProvider.getConnection()) {
+            assertEquals(1, selectCount(verifyConn, "DB_MESSAGES"));
+         }
+
+         // Build a task list with nrecords messages — one (duplicateId) is a duplicate
+         try (AssertionLoggerHandler loggerHandler = new AssertionLoggerHandler(true)) {
+            List<DBData> taskList = new ArrayList<>();
+            CountDownCompletion latch = new CountDownCompletion(nrecords);
+            for (int i = 1; i <= nrecords; i++) {
+               CoreMessage message = new CoreMessage().initBuffer(1024).setDurable(true);
+               message.setMessageID(i);
+               message.getBodyBuffer().writeByte((byte) 'Z');
+               MessageData task = dataManager.newMessageTask(message.getMessageID(), () -> encodeMessage(message), message.getMemoryEstimate(), false, false, null, latch);
+               taskList.add(task);
+            }
+
+            // Take a worker from the pool, set task list, and run directly
+            // run() returns the worker to the pool via doCleanup → workerDone
+            DataWorker worker = dataManager.pollWorker(5, TimeUnit.SECONDS);
+            worker.setTaskList(taskList);
+            worker.run();
+
+            // The constraint violation should have been logged as a warning, not a critical error
+            assertTrue(loggerHandler.findText("AMQ232003"), "Expected constraint violation warning AMQ232003 in log");
+            assertTrue(loggerHandler.findText("messageID=" + duplicateId), "Expected the duplicate messageID in the log");
+
+            // The batch should complete — the duplicate was already in the DB, so all data is persisted
+            try (Connection connection = databaseProvider.getConnection()) {
+               assertEquals(nrecords, selectCount(connection, "DB_MESSAGES"));
+            }
          }
       } finally {
          databaseStorageManager.stop();

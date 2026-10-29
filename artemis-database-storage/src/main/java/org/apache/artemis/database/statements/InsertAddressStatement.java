@@ -20,6 +20,7 @@ package org.apache.artemis.database.statements;
 import java.lang.invoke.MethodHandles;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.function.Consumer;
 
 import org.apache.artemis.database.DatabaseProvider;
 import org.apache.artemis.database.data.AddressData;
@@ -32,8 +33,9 @@ public class InsertAddressStatement extends BatchableStatement<AddressData> {
 
    public InsertAddressStatement(DatabaseProvider databaseProvider,
                                  Connection connection,
-                                 int expectedSize) throws SQLException {
-      super(databaseProvider, connection, getSQL(databaseProvider), expectedSize);
+                                 int expectedSize,
+                                 Consumer<AddressData> duplicateReaper) throws SQLException {
+      super(databaseProvider, connection, getSQL(databaseProvider), expectedSize, duplicateReaper);
    }
 
    private static String getSQL(DatabaseProvider connectionProvider) {

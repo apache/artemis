@@ -27,6 +27,7 @@ import org.apache.activemq.artemis.core.journal.IOCompletion;
 import org.apache.artemis.database.ActiveMQDatabaseLogger;
 import org.apache.artemis.database.DatabaseProvider;
 import org.apache.artemis.database.DatabaseTX;
+import org.apache.artemis.database.JDBCUtils;
 import org.apache.artemis.database.data.DBData;
 import org.apache.artemis.database.queries.MessagesPendingDeliverQueryForUpdate;
 import org.apache.artemis.database.statements.DeleteAddressStatement;
@@ -105,31 +106,36 @@ public class DataWorker implements Runnable {
    protected void connect() throws SQLException {
       connection = databaseProvider.getConnection();
       connection.setAutoCommit(false);
-      insertMessageStatement = new InsertMessageStatement(databaseProvider, connection, batchSize);
-      insertReferencesStatement = new InsertReferencesStatement(databaseProvider, connection, batchSize);
+      insertMessageStatement = new InsertMessageStatement(databaseProvider, connection, batchSize, this::removeDuplicate);
+      insertReferencesStatement = new InsertReferencesStatement(databaseProvider, connection, batchSize, this::removeDuplicate);
       deleteReferenceStatement = new DeleteReferenceStatement(databaseProvider, connection, batchSize);
       deleteMessageStatement = new DeleteMessageStatement(databaseProvider, connection, batchSize);
       deleteAddressStatement = new DeleteAddressStatement(databaseProvider, connection, batchSize);
-      insertAddressStatement = new InsertAddressStatement(databaseProvider, connection, batchSize);
-      insertQueueStatement = new InsertQueueStatement(databaseProvider, connection, batchSize);
+      insertAddressStatement = new InsertAddressStatement(databaseProvider, connection, batchSize, this::removeDuplicate);
+      insertQueueStatement = new InsertQueueStatement(databaseProvider, connection, batchSize, this::removeDuplicate);
       updateQueueStatement = new UpdateQueueStatement(databaseProvider, connection, batchSize);
       deleteQueueStatement = new DeleteQueueStatement(databaseProvider, connection, batchSize);
-      insertGenericDataStatement = new InsertGenericDataStatement(databaseProvider, connection, batchSize);
+      insertGenericDataStatement = new InsertGenericDataStatement(databaseProvider, connection, batchSize, this::removeDuplicate);
       updateGenericDataStatement = new UpdateGenericDataStatement(databaseProvider, connection, batchSize);
       updateTXGenericDataStatement = new UpdateTXGenericDataStatement(databaseProvider, connection, batchSize);
       deleteGenericDataStatement = new DeleteGenericDataStatement(databaseProvider, connection, batchSize);
       updateTXMessageStatement = new UpdateTXMessageStatement(databaseProvider, connection, batchSize);
       updateTXReferenceStatement = new UpdateTXReferenceStatement(databaseProvider, connection, batchSize);
       updateAckTXReferenceStatement = new UpdateAckTXReferenceStatement(databaseProvider, connection, batchSize);
-      insertPrepTxStatement = new InsertPrepTxStatement(databaseProvider, connection, batchSize);
+      insertPrepTxStatement = new InsertPrepTxStatement(databaseProvider, connection, batchSize, this::removeDuplicate);
       deletePrepTxStatement = new DeletePrepTxStatement(databaseProvider, connection, batchSize);
       String bindingsTable = databaseProvider.getSqlProvider().getConfigData();
-      insertBindingsGenericDataStatement = new InsertGenericDataStatement(databaseProvider, connection, batchSize, bindingsTable);
+      insertBindingsGenericDataStatement = new InsertGenericDataStatement(databaseProvider, connection, batchSize, bindingsTable, this::removeDuplicate);
       updateBindingsGenericDataStatement = new UpdateGenericDataStatement(databaseProvider, connection, batchSize, bindingsTable);
       deleteBindingsGenericDataStatement = new DeleteGenericDataStatement(databaseProvider, connection, batchSize, bindingsTable);
       pendingDeliveryQueryForUpdate = new MessagesPendingDeliverQueryForUpdate(databaseProvider, connection, dataManager.isPageJoinFetch());
       pendingDeliveryQueryForUpdate.prepare();
       pendingTX = new ArrayList<>();
+   }
+
+   private void removeDuplicate(DBData element) {
+      dataList.remove(element);
+      element.getContext().done();
    }
 
    public void setTaskList(List<DBData> dataList) {
@@ -169,14 +175,16 @@ public class DataWorker implements Runnable {
                long interval = dataManager.getRetryIntervalMillis();
                ActiveMQDatabaseLogger.LOGGER.retrySQLAction(retryI + 1, dataManager.getMaxRetries(), interval, lastException.getMessage(), lastException);
                if (interval > 0) {
-                  Thread.sleep(interval);
+                  if (!JDBCUtils.isConstraintViolation(lastException)) {
+                     // no need to wait if the retry is because of a primary key
+                     Thread.sleep(interval);
+                  }
                }
                connect();
             }
             action.accept(this);
             return null;
-         } catch (
-            Throwable e) { // Some JDBC drivers throw non-SQLException (e.g. NPE) when the connection drops mid-operation
+         } catch (Throwable e) { // Some JDBC drivers throw non-SQLException (e.g. NPE) when the connection drops mid-operation
             if (e instanceof InterruptedException) {
                return new SQLException(e.getMessage(), e);
             }
