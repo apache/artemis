@@ -193,4 +193,26 @@ public class JDBCUtils {
       }
    }
 
+   public static boolean isConstraintViolation(Throwable e) {
+      if (e instanceof SQLException sqlException) {
+         String sqlState = sqlException.getSQLState();
+         if (sqlState != null && sqlState.startsWith("23")) {
+            return true;
+         }
+         Throwable cause = sqlException.getCause();
+         if (cause instanceof SQLException && cause != sqlException) {
+            if (isConstraintViolation(cause)) {
+               return true;
+            }
+         }
+         // DB2 puts SQLSTATE=null on the BatchUpdateException and chains per-element exceptions via getNextException()
+         for (SQLException next = sqlException.getNextException(); next != null; next = next.getNextException()) {
+            if (isConstraintViolation(next)) {
+               return true;
+            }
+         }
+      }
+      return false;
+   }
+
 }

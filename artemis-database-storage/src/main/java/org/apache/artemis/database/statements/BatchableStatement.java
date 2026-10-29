@@ -23,13 +23,16 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffers;
 import org.apache.activemq.artemis.core.io.IOCallback;
 import org.apache.activemq.artemis.core.persistence.Persister;
 import org.apache.activemq.artemis.utils.ActiveMQBufferInputStream;
+import org.apache.artemis.database.ActiveMQDatabaseLogger;
 import org.apache.artemis.database.DatabaseProvider;
+import org.apache.artemis.database.JDBCUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,6 +44,7 @@ public abstract class BatchableStatement<E> {
    final Connection connection;
    final String statement;
    protected PreparedStatement preparedStatement;
+   protected Consumer<E> duplicateReaper;
 
    List<E> pendingList;
    List<IOCallback> callbacks;
@@ -48,12 +52,14 @@ public abstract class BatchableStatement<E> {
    public BatchableStatement(DatabaseProvider connectionProvider,
                              Connection connection,
                              String statement,
-                             int expectedSize) throws SQLException {
+                             int expectedSize,
+                             Consumer<E> duplicateReaper) throws SQLException {
       this.connectionProvider = connectionProvider;
       this.connection = connection;
       this.pendingList = new ArrayList<>(expectedSize);
       this.callbacks = new ArrayList<>(expectedSize);
       this.statement = statement;
+      this.duplicateReaper = duplicateReaper;
       init();
    }
 
@@ -87,18 +93,52 @@ public abstract class BatchableStatement<E> {
       try {
          preparedStatement.executeBatch();
       } catch (SQLException e) {
+         logger.warn(e.getMessage(), e);
          if (commit) {
             try {
                connection.rollback();
             } catch (Throwable ignored) {
             }
          }
-         clear();
+         if (JDBCUtils.isConstraintViolation(e)) {
+            connection.rollback();
+            cleanupDuplicates();
+         }
          throw e;
       }
       if (commit) {
          connection.commit();
          confirmData();
+      }
+   }
+
+   // It will try element by element, however always committing
+   // any duplicates will be removed from the list
+   private void cleanupDuplicates() throws SQLException {
+      preparedStatement.clearParameters();
+      preparedStatement.clearBatch();
+      ArrayList<E> duplicates = new ArrayList<>();
+      for (E element : pendingList) {
+         try {
+            doOne(element);
+            preparedStatement.executeUpdate();
+         } catch (Exception inner) {
+            if (JDBCUtils.isConstraintViolation(inner)) {
+               logger.debug("Removing {} from the list", element);
+               ActiveMQDatabaseLogger.LOGGER.constraintViolation(element, inner);
+               duplicates.add(element);
+            }
+            connection.rollback();
+         }
+      }
+
+      connection.rollback();
+
+      for (E duplicate : duplicates) {
+         if (duplicateReaper != null) {
+            duplicateReaper.accept(duplicate);
+         }
+         pendingList.remove(duplicate);
       }
    }
 

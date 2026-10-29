@@ -21,6 +21,7 @@ import java.lang.invoke.MethodHandles;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.function.Consumer;
 
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.artemis.database.DatabaseProvider;
@@ -34,8 +35,9 @@ public class InsertMessageStatement extends BatchableStatement<MessageData> {
 
    public InsertMessageStatement(DatabaseProvider databaseProvider,
                                  Connection connection,
-                                 int expectedSize) throws SQLException {
-      super(databaseProvider, connection, getSQL(databaseProvider), expectedSize);
+                                 int expectedSize,
+                                 Consumer<MessageData> messageDataConsumer) throws SQLException {
+      super(databaseProvider, connection, getSQL(databaseProvider), expectedSize, messageDataConsumer);
    }
 
    private static String getSQL(DatabaseProvider databaseProvider) {

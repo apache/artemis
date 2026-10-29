@@ -28,7 +28,7 @@ public class UpdateTXReferenceStatement extends BatchableStatement<MessageRefere
    public UpdateTXReferenceStatement(DatabaseProvider databaseProvider,
                                      Connection connection,
                                      int expectedSize) throws SQLException {
-      super(databaseProvider, connection, getSQL(databaseProvider), expectedSize);
+      super(databaseProvider, connection, getSQL(databaseProvider), expectedSize, null);
    }
 
    private static String getSQL(DatabaseProvider databaseProvider) {

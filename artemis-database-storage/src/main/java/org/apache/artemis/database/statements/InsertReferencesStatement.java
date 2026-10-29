@@ -21,6 +21,7 @@ import java.lang.invoke.MethodHandles;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.function.Consumer;
 
 import org.apache.artemis.database.DatabaseProvider;
 import org.apache.artemis.database.data.MessageReferenceData;
@@ -33,8 +34,9 @@ public class InsertReferencesStatement extends BatchableStatement<MessageReferen
 
    public InsertReferencesStatement(DatabaseProvider databaseProvider,
                                     Connection connection,
-                                    int expectedSize) throws SQLException {
-      super(databaseProvider, connection, getSQL(databaseProvider), expectedSize);
+                                    int expectedSize,
+                                    Consumer<MessageReferenceData> duplicateReaper) throws SQLException {
+      super(databaseProvider, connection, getSQL(databaseProvider), expectedSize, duplicateReaper);
    }
 
    private static String getSQL(DatabaseProvider databaseProvider) {

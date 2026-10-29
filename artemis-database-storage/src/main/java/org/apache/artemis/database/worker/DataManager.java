@@ -225,6 +225,10 @@ public class DataManager extends ActiveMQScheduledComponent {
       workers.clear();
    }
 
+   public DataWorker pollWorker(long timeout, java.util.concurrent.TimeUnit unit) throws InterruptedException {
+      return workers.poll(timeout, unit);
+   }
+
    public int getMaxRetries() {
       return maxRetriesSupplier.getAsInt();
    }
