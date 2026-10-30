@@ -2947,8 +2947,8 @@
          <xsd:element name="scale-down-reaper-max-attempts" type="xsd:int" default="30" maxOccurs="1" minOccurs="0">
             <xsd:annotation>
                <xsd:documentation>
-                  maximum number of reaping attempts for an orphaned store-and-forward queue before abandoning.
-                  A value &lt;= 0 means unlimited attempts.
+                  maximum number of reaping attempts for an orphaned store-and-forward queue before the
+                  reaper gives up and retains the queue (it is not deleted). A value &lt;= 0 means unlimited attempts.
                </xsd:documentation>
             </xsd:annotation>
          </xsd:element>
