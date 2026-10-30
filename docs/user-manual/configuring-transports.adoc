@@ -491,6 +491,11 @@ This value takes precedence of all other SSL parameters which apply to the trust
 +
 Any plugin specified will need to be placed on the xref:using-server.adoc#adding-runtime-dependencies[broker's classpath].
 
+clientFailoverAdvertisingEnabled::
+When used on a `connector` determines whether the connector is advertised to clients as a failover connector.
+Valid values are `true` or `false`.
+Default is `true`.
+
 ==== Configuring an SSLContextFactory
 
 If you use `JDK` as SSL provider (the default), you can configure which SSLContextFactory to use.
