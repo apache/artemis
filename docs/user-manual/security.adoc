@@ -1441,6 +1441,7 @@ Therefore you will _still need_ to configure a `login.config` if you plan on usi
 However, this security manager _may_ still may have a couple of advantages depending on your use-case.
 
 All user & role data is stored in the bindings journal (or bindings table if using JDBC).
+Therefore, the broker must have xref:persistence.adoc#persistence[persistence] enabled; it will refuse to start with the basic security manager when `persistence-enabled` is `false`.
 The advantage here is that in a primary/backup use-case any user management performed on the primary broker will be reflected on the backup upon failover.
 
 Typically LDAP would be employed for this kind of use-case, but not everyone wants or is able to administer an independent LDAP server.

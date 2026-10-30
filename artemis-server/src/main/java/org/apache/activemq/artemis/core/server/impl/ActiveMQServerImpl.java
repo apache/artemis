@@ -720,6 +720,10 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
       ConfigurationUtils.validateStartupConfiguration(configuration);
 
+      if (securityManager instanceof ActiveMQBasicSecurityManager && !configuration.isPersistenceEnabled()) {
+         throw ActiveMQMessageBundle.BUNDLE.basicSecurityManagerRequiresPersistence();
+      }
+
       initializeExecutorServices();
 
       initializeCriticalAnalyzer();
