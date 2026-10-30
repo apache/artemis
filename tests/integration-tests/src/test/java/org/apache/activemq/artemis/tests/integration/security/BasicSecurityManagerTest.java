@@ -17,7 +17,9 @@
 package org.apache.activemq.artemis.tests.integration.security;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -30,6 +32,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.activemq.artemis.api.core.ActiveMQException;
+import org.apache.activemq.artemis.api.core.ActiveMQIllegalStateException;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
@@ -76,6 +79,10 @@ public class BasicSecurityManagerTest extends ActiveMQTestBase {
    }
 
    public ActiveMQServer initializeServer() throws Exception {
+      return initializeServer(true);
+   }
+
+   public ActiveMQServer initializeServer(boolean persistenceEnabled) throws Exception {
       Map<String, String> initProperties = new HashMap<>();
       if (bootstrapProperties) {
          initProperties.put(ActiveMQBasicSecurityManager.BOOTSTRAP_USER_FILE, "users.properties");
@@ -86,8 +93,16 @@ public class BasicSecurityManagerTest extends ActiveMQTestBase {
          initProperties.put(ActiveMQBasicSecurityManager.BOOTSTRAP_ROLE, "programmers");
       }
       ActiveMQBasicSecurityManager securityManager = new ActiveMQBasicSecurityManager().init(initProperties);
-      ActiveMQServer server = addServer(ActiveMQServers.newActiveMQServer(createDefaultInVMConfig().setSecurityEnabled(true), ManagementFactory.getPlatformMBeanServer(), securityManager, true));
+      ActiveMQServer server = addServer(ActiveMQServers.newActiveMQServer(createDefaultInVMConfig().setSecurityEnabled(true), ManagementFactory.getPlatformMBeanServer(), securityManager, persistenceEnabled));
       return server;
+   }
+
+   @TestTemplate
+   public void testPersistenceDisabled() throws Exception {
+      ActiveMQServer server = initializeServer(false);
+      ActiveMQIllegalStateException e = assertThrows(ActiveMQIllegalStateException.class, server::start);
+      assertTrue(e.getMessage().startsWith("AMQ229264"), e.getMessage());
+      assertFalse(server.isStarted());
    }
 
    @TestTemplate
