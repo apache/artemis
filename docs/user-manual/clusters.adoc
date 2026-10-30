@@ -632,7 +632,9 @@ A larger value increases the safety margin against a slow asynchronous route com
 Default is 10.
 
 scale-down-reaper-max-attempts::
-The maximum number of reaping attempts for an orphaned store-and-forward queue before abandoning.
+The maximum number of reaping attempts for an orphaned store-and-forward queue before the reaper gives up.
+Giving up does not delete the queue: it is retained, together with any messages it still holds,
+and the reaper stops checking it, which limits the effort wasted on a queue that is stuck for some reason.
 A value `<= 0` means unlimited attempts.
 Default is 30.
 

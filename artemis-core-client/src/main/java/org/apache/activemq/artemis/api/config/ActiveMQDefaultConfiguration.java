@@ -745,7 +745,7 @@ public final class ActiveMQDefaultConfiguration {
    // Number of consecutive reaper ticks an orphaned store-and-forward queue must stay idle before it is reclaimed.
    private static final int DEFAULT_CLUSTER_SCALE_DOWN_REAPER_GRACE_TICKS = 10;
 
-   // Maximum number of reaping attempts for a candidate store-and-forward queue before abandoning.
+   // Maximum number of reaping attempts for a candidate store-and-forward queue before the reaper gives up and retains the queue.
    private static final int DEFAULT_CLUSTER_SCALE_DOWN_REAPER_MAX_ATTEMPTS = 30;
 
    /**

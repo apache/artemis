@@ -1186,7 +1186,7 @@ Default=2000.
 | 10
 
 | xref:clusters.adoc#clusters[scale-down-reaper-max-attempts]
-| maximum number of reaping attempts for an orphaned store-and-forward queue before abandoning; `<= 0` means unlimited
+| maximum number of reaping attempts for an orphaned store-and-forward queue before the reaper gives up and retains the queue (it is not deleted); `<= 0` means unlimited
 | 30
 |===
 

@@ -1977,9 +1977,10 @@ public final class ClusterConnectionImpl implements ClusterConnection, AfterConn
 
             snfReapState.attempts++;
 
-            // Abandon and retain queue if max attempts exceeded
+            // Give up reaping if max attempts exceeded: the queue is retained (not deleted) and no longer
+            // checked, so a stuck queue doesn't waste cycles
             if (maxAttempts > 0 && snfReapState.attempts > maxAttempts) {
-               logger.warn("Exceeded max scale-down reaper attempts ({}) for SnF queue toward departed node {}. The queue will be retained.", maxAttempts, candidateNodeId);
+               logger.warn("Giving up reaping SnF queue toward departed node {} after {} attempts. The queue is retained, not deleted, and will not be checked again until the broker restarts.", candidateNodeId, maxAttempts);
                reapStates.remove(candidateNodeId);
                return;
             }
