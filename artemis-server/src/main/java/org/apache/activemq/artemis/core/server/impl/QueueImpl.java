@@ -3463,7 +3463,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
          final byte[] encodedBuffer = new byte[Long.BYTES];
          ByteBuffer buffer = ByteBuffer.wrap(encodedBuffer);
          buffer.putLong(0, queueID);
-         copyMessage.putBytesProperty(Message.HDR_ROUTE_TO_IDS.toString(), encodedBuffer);
+         copyMessage.putExtraBytesProperty(Message.HDR_ROUTE_TO_IDS, encodedBuffer);
       }
 
       RoutingStatus routingStatus;
