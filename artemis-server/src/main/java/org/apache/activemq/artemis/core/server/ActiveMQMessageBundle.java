@@ -553,4 +553,7 @@ public interface ActiveMQMessageBundle {
 
    @Message(id = 229263, value = "Discovery groups are disabled by default. See the Server Discovery section in the user manual for security requirements and enablement.")
    ActiveMQIllegalStateException discoveryGroupsConfiguredButDisabled();
+
+   @Message(id = 229264, value = "The ActiveMQBasicSecurityManager stores users and roles in the bindings journal, so it requires persistence-enabled to be true.")
+   ActiveMQIllegalStateException basicSecurityManagerRequiresPersistence();
 }
