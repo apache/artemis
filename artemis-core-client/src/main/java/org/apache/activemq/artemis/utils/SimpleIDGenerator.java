@@ -16,34 +16,23 @@
  */
 package org.apache.activemq.artemis.utils;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 public class SimpleIDGenerator implements IDGenerator {
 
-   private long idSequence;
-
-   private boolean wrapped;
+   private final AtomicLong idSequence;
 
    public SimpleIDGenerator(final long startID) {
-      idSequence = startID;
+      idSequence = new AtomicLong(startID);
    }
 
    @Override
-   public synchronized long generateID() {
-      long id = idSequence++;
-
-      if (idSequence == Long.MIN_VALUE) {
-         wrapped = true;
-      }
-
-      if (wrapped) {
-         // Wrap - Very unlikely to happen
-         throw new IllegalStateException("Exhausted ids to use!");
-      }
-
-      return id;
+   public long generateID() {
+      return idSequence.getAndIncrement();
    }
 
    @Override
-   public synchronized long getCurrentID() {
-      return idSequence;
+   public long getCurrentID() {
+      return idSequence.get();
    }
 }
