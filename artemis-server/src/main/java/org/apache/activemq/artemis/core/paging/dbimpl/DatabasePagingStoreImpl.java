@@ -42,8 +42,7 @@ import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.utils.actors.ArtemisExecutor;
 
 /**
- * Database-backed {@link org.apache.activemq.artemis.core.paging.PagingStore} implementation.
- * Creates {@link DatabasePage} instances for page storage.
+ * Database-backed PagingStore implementation.
  */
 public class DatabasePagingStoreImpl extends AddressSizeLimiter implements PagingStore {
 

@@ -197,12 +197,6 @@ public class DatabaseStorageManager extends AbstractStorageManager {
       return databaseConfiguration.getDatabaseReadIdleTimeout();
    }
 
-   @Override
-   public void stop() throws Exception {
-      super.stop();
-      stop(false, true);
-   }
-
    public DatabaseProvider getDatabaseProvider() {
       return databaseProvider;
    }
