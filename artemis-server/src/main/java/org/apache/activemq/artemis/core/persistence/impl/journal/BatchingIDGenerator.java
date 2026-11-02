@@ -165,9 +165,8 @@ public final class BatchingIDGenerator implements IDGenerator {
 
    private synchronized void saveCheckPoint(final long id) {
       if (id >= nextID) {
-         long journalID = counter.incrementAndGet();
          nextID += checkpointSize;
-         logger.debug("Saving checkpoint nextID={} with journalID={}", nextID, journalID);
+
          if (!storageManager.isStarted()) {
             // This could happen after the server is stopped
             // while notifications are being sent and ID generated.
@@ -175,7 +174,7 @@ public final class BatchingIDGenerator implements IDGenerator {
             // so we just ignore this for now
             logger.debug("The journalStorageManager is not loaded. This is probably ok as long as it's a notification being sent after shutdown");
          } else {
-            storeID(journalID, nextID);
+            storeID(counter.getAndIncrement(), nextID);
          }
       }
    }
