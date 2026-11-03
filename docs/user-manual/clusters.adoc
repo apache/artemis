@@ -662,7 +662,7 @@ With client-side load balancing, subsequent sessions created using a single sess
 This allows sessions to spread smoothly across the nodes of a cluster and not be "clumped" on any particular node.
 
 The load balancing policy to be used by the client factory is configurable.
-Four out-of-the-box load balancing policies are available, and you can also implement your own.
+Five out-of-the-box load balancing policies are available, and you can also implement your own.
 
 The out-of-the-box policies are
 
@@ -672,6 +672,13 @@ With this policy the first node is chosen randomly then each subsequent node is 
 For example nodes might be chosen in the order B, C, D, A, B, C, D, A, B or D, A, B, C, D, A, B, C, D or C, D, A, B, C, D, A, B, C.
 +
 Use `org.apache.activemq.artemis.api.core.client.loadbalance.RoundRobinConnectionLoadBalancingPolicy` as the `<connection-load-balancing-policy-class-name>`.
+
+* Sequential.
+With this policy the first node (i.e. 0th element) is always chosen first, and each subsequent node is chosen sequentially in the configured order.
++
+For example nodes will always be chosen in the order A, B, C, D, A, B, C, D.
++
+Use `org.apache.activemq.artemis.api.core.client.loadbalance.SequentialConnectionLoadBalancingPolicy` as the `<connection-load-balancing-policy-class-name>`.
 
 * Random.
 With this policy each node is chosen randomly.
