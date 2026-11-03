@@ -61,6 +61,7 @@ public class MQTTSessionCallback implements SessionCallback {
          logger.debug("Unable to send message to MQTT client because the storage manager is stopping; consumer: {}; message: {}", consumer, ref, ignored);
       } catch (Exception e) {
          MQTTLogger.LOGGER.unableToSendMessage(session.getState().getClientId(), ref, e);
+         rollbackCredits(consumer, ref);
       }
       return 1;
    }
@@ -118,11 +119,38 @@ public class MQTTSessionCallback implements SessionCallback {
        *
        * Therefore, enforce flow-control based on the number of pending QoS 1 & 2 messages
        */
-      int maxInFlightPublishMessages = connection.getReceiveMaximum() > 0 ? connection.getReceiveMaximum() : defaultMaximumInFlightPublishMessages;
-      if (ref != null && ref.isDurable() == true && maxInFlightPublishMessages > 0 && session.getState().getSendQuota() >= maxInFlightPublishMessages) {
-         return false;
+      if (isSubjectToFlowControl(ref)) {
+         return session.getState().tryReserveSendQuota(getMaxInFlightPublishMessages());
       } else {
          return true;
+      }
+   }
+
+   @Override
+   public void rollbackCredits(ServerConsumer consumerID, MessageReference ref) {
+      if (isSubjectToFlowControl(ref)) {
+         session.getState().decrementSendQuota();
+      }
+   }
+
+   /**
+    * {@return {@code true} if {@code ref} is not {@code null}, is durable, and flow control is actually enabled}
+    */
+   private boolean isSubjectToFlowControl(MessageReference ref) {
+      if (ref == null || !ref.isDurable()) {
+         return false;
+      }
+      return getMaxInFlightPublishMessages() > 0;
+   }
+
+   /**
+    * {@return the effective receive maximum. A value of {@code 0} or less means flow control is disabled}
+    */
+   private int getMaxInFlightPublishMessages() {
+      if (connection.getReceiveMaximum() > 0) {
+         return connection.getReceiveMaximum();
+      } else {
+         return defaultMaximumInFlightPublishMessages;
       }
    }
 

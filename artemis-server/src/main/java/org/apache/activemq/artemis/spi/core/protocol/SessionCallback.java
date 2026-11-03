@@ -47,6 +47,15 @@ public interface SessionCallback {
    }
 
    /**
+    * Invoked when {@link #hasCredits(ServerConsumer, MessageReference)} granted credit for {@code ref} but the
+    * reference was ultimately not delivered to {@code consumerID} for an unrelated reason (e.g. the consumer became
+    * busy or the reference didn't match). This gives protocols that reserve credit eagerly within {@code hasCredits()}
+    * a chance to release that reservation so it isn't leaked.
+    */
+   default void rollbackCredits(ServerConsumer consumerID, MessageReference ref) {
+   }
+
+   /**
     * This can be used to complete certain operations outside of the lock, like acks or other operations.
     */
    void afterDelivery() throws Exception;

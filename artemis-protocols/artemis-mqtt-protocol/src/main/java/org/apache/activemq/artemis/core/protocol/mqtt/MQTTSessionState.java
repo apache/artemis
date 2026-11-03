@@ -498,8 +498,22 @@ public class MQTTSessionState {
       return sendQuota;
    }
 
-   public void incrementSendQuota() {
-      SEND_QUOTA_UPDATER.incrementAndGet(this);
+   /**
+    * Reserves one unit of send quota if, and only if, doing so would not exceed {@code max}. Done atomically so that
+    * concurrent deliveries across different subscriptions on this session can't race past the limit.
+    *
+    * @return {@code true} if a unit of quota was reserved, {@code false} if {@code max} would have been exceeded
+    */
+   public boolean tryReserveSendQuota(int max) {
+      while (true) {
+         int current = sendQuota;
+         if (current >= max) {
+            return false;
+         }
+         if (SEND_QUOTA_UPDATER.compareAndSet(this, current, current + 1)) {
+            return true;
+         }
+      }
    }
 
    public void decrementSendQuota() {
