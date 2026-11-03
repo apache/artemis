@@ -437,16 +437,23 @@ public class MQTTSessionState {
          return;
       }
       int removed = 0;
+      int originalSendQuota = -1;
       Iterator<CoreDeliveryInfo> iterator = coreDeliveryInfos.values().iterator();
       while (iterator.hasNext()) {
          if (queueName.equals(iterator.next().getQueueName())) {
             iterator.remove();
-            decrementSendQuota();
+            int currentSendQuota = getAndDecrementSendQuota();
+            if (removed == 0) {
+               originalSendQuota = currentSendQuota;
+            }
             removed++;
          }
       }
       if (removed > 0) {
          logger.debug("Discarded {} in-delivery info(s) for client {} on queue {}", removed, clientId, queueName);
+         if (session != null) {
+            session.promptDelivery(originalSendQuota);
+         }
       }
    }
 
@@ -516,8 +523,8 @@ public class MQTTSessionState {
       }
    }
 
-   public void decrementSendQuota() {
-      SEND_QUOTA_UPDATER.decrementAndGet(this);
+   public int getAndDecrementSendQuota() {
+      return SEND_QUOTA_UPDATER.getAndDecrement(this);
    }
 
    public void resetSendQuota() {
