@@ -225,7 +225,7 @@ public class BorrowedWorker extends ActiveMQScheduledComponent {
 
    private void doReturn() {
       try {
-         logger.info("Returning worker {}", description);
+         logger.debug("Returning worker {}", description);
          if (cleanupAction != null) {
             cleanupAction.run();
          }

@@ -452,7 +452,7 @@
                      <!-- this makes it easier in certain envs -->
                      <javaOptions>-Djava.net.preferIPv4Stack=true</javaOptions>
                      <instance>${basedir}/target/new-mysql</instance>
-                     <configuration>${basedir}/target/classes/servers/mysql</configuration>
+                     <configuration>${basedir}/target/classes/servers/database</configuration>
                      <noWeb>true</noWeb>
                      <libListWithDeps>
                         <arg>com.mysql:mysql-connector-j:8.0.33</arg>
@@ -481,7 +481,7 @@
                      <!-- this makes it easier in certain envs -->
                      <javaOptions>-Djava.net.preferIPv4Stack=true</javaOptions>
                      <instance>${basedir}/target/new-postgres</instance>
-                     <configuration>${basedir}/target/classes/servers/postgres</configuration>
+                     <configuration>${basedir}/target/classes/servers/database</configuration>
                      <noWeb>false</noWeb>
                      <libListWithDeps>
                         <arg>org.postgresql:postgresql:42.6.0</arg>
@@ -493,7 +493,7 @@
                         <arg>--jdbc-driver-class-name</arg>
                         <arg>${postgres.class}</arg>
                         <arg>--global-max-messages</arg>
-                        <arg>100</arg>
+                        <arg>500000</arg>
                         <arg>--java-options</arg>
                         <arg>-ea</arg>
                         <arg>--database-storage</arg>
@@ -510,6 +510,7 @@
                      <!-- this makes it easier in certain envs -->
                      <javaOptions>-Djava.net.preferIPv4Stack=true</javaOptions>
                      <instance>${basedir}/target/new-oracle</instance>
+                     <configuration>${basedir}/target/classes/servers/database</configuration>
                      <noWeb>true</noWeb>
                      <libListWithDeps>
                         <arg>com.oracle.database.jdbc:ojdbc10:19.21.0.0</arg>
@@ -541,6 +542,7 @@
                      <!-- this makes it easier in certain envs -->
                      <javaOptions>-Djava.net.preferIPv4Stack=true</javaOptions>
                      <instance>${basedir}/target/new-mssql</instance>
+                     <configuration>${basedir}/target/classes/servers/database</configuration>
                      <noWeb>true</noWeb>
                      <args>
                         <arg>--jdbc</arg>
@@ -572,6 +574,7 @@
                      <!-- this makes it easier in certain envs -->
                      <javaOptions>-Djava.net.preferIPv4Stack=true</javaOptions>
                      <instance>${basedir}/target/new-db2</instance>
+                     <configuration>${basedir}/target/classes/servers/database</configuration>
                      <noWeb>true</noWeb>
                      <args>
                         <arg>--jdbc</arg>
