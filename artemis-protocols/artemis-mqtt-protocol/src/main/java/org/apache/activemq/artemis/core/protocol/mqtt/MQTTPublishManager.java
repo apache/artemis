@@ -312,16 +312,6 @@ public class MQTTPublishManager {
       }
    }
 
-   /**
-    * Once we get an acknowledgement for a QoS 1 or 2 message we allow messages to flow
-    */
-   private void releaseFlowControl(Long consumerId) {
-      ServerConsumer consumer = session.getServerSession().locateConsumer(consumerId);
-      if (consumer != null) {
-         consumer.promptDelivery();
-      }
-   }
-
    synchronized void handlePubComp(int packetId) throws Exception {
       removePacketIdFromCache(session.getState().getPubRecCache(), packetId, MqttMessageType.PUBCOMP, MqttMessageType.PUBREC);
    }
@@ -390,8 +380,7 @@ public class MQTTPublishManager {
             consumer.individualAcknowledge(tx, delivery.getCoreMessageId());
             tx.commit();
             state.removeCoreDeliveryInfo(packetId);
-            state.decrementSendQuota();
-            releaseFlowControl(delivery.getConsumerId());
+            session.promptDelivery(state.getAndDecrementSendQuota());
             sendAcknowledgementReply(packetId, MQTTReasonCodes.SUCCESS, needsPubRel);
          } else {
             sendAcknowledgementReply(packetId, MQTTReasonCodes.PACKET_IDENTIFIER_NOT_FOUND, needsPubRel);

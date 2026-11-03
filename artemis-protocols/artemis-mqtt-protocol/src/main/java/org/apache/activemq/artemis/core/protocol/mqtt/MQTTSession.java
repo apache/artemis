@@ -29,8 +29,8 @@ import org.apache.activemq.artemis.core.config.WildcardConfiguration;
 import org.apache.activemq.artemis.core.persistence.CoreMessageObjectPools;
 import org.apache.activemq.artemis.core.persistence.OperationContext;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
+import org.apache.activemq.artemis.core.server.ServerConsumer;
 import org.apache.activemq.artemis.core.server.impl.ServerSessionImpl;
-import org.apache.activemq.artemis.spi.core.protocol.SessionCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -198,8 +198,23 @@ public class MQTTSession {
       return protocolHandler;
    }
 
-   SessionCallback getSessionCallback() {
+   MQTTSessionCallback getSessionCallback() {
       return sessionCallback;
+   }
+
+   /**
+    * Prompt all consumers for delivery if we were at or near the in-flight limit. Call this after freeing quota to wake
+    * waiting subscriptions.
+    *
+    * @param quota the relevant in-flight quota value
+    */
+   void promptDelivery(int quota) {
+      int max = sessionCallback.getMaxInFlightPublishMessages();
+      if (quota >= max) {
+         for (ServerConsumer consumer : serverSession.getServerConsumers()) {
+            consumer.promptDelivery();
+         }
+      }
    }
 
    void setServerSession(ServerSessionImpl serverSession) {

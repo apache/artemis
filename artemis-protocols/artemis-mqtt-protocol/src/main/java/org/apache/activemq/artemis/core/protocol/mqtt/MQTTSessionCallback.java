@@ -129,7 +129,7 @@ public class MQTTSessionCallback implements SessionCallback {
    @Override
    public void rollbackCredits(ServerConsumer consumerID, MessageReference ref) {
       if (isSubjectToFlowControl(ref)) {
-         session.getState().decrementSendQuota();
+         session.promptDelivery(session.getState().getAndDecrementSendQuota());
       }
    }
 
@@ -146,7 +146,7 @@ public class MQTTSessionCallback implements SessionCallback {
    /**
     * {@return the effective receive maximum. A value of {@code 0} or less means flow control is disabled}
     */
-   private int getMaxInFlightPublishMessages() {
+   protected int getMaxInFlightPublishMessages() {
       if (connection.getReceiveMaximum() > 0) {
          return connection.getReceiveMaximum();
       } else {
