@@ -88,7 +88,7 @@ public class ParameterizedTestExtension implements TestTemplateInvocationContext
          throw new IllegalStateException("Failed to invoke parameter provider", e);
       }
 
-      Objects.requireNonNull(parameterValues, "No paramaters returned by @Parameters annotated method: " + parameterProvider.getName());
+      Objects.requireNonNull(parameterValues, "No parameters returned by @Parameters annotated method: " + parameterProvider.getName());
 
       // Parameter values could be Object[][]
       if (parameterValues instanceof Object[][] typedParameterValues) {

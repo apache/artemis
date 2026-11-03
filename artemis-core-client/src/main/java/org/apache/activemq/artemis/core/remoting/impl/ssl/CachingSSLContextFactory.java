@@ -49,7 +49,7 @@ public class CachingSSLContextFactory extends DefaultSSLContextFactory {
          try {
             return CachingSSLContextFactory.super.getSSLContext(config, additionalOpts);
          } catch (final Exception ex) {
-            throw new RuntimeException("An unexpected exception occured while creating JDK SSLContext with " + config, ex);
+            throw new RuntimeException("An unexpected exception occurred while creating JDK SSLContext with " + config, ex);
          }
       });
    }
