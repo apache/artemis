@@ -181,11 +181,12 @@ public class DatabaseStorageMessageReader implements StorageMessageReader {
    private boolean openCursor() {
       try {
          long start = System.currentTimeMillis();
-         logger.info("Executing query....");
+         logger.debug("Executing query on {}....", queue.getName());
          resultSet = borrowedWorker.getWorker().pendingDeliveryQueryForUpdate.execute(queue.getID());
 
-         long end = System.currentTimeMillis();
-         logger.info("took {} milliseconds to start returning results", (end - start));
+         if (logger.isDebugEnabled()) {
+            logger.debug("took {} milliseconds to start returning results", (System.currentTimeMillis() - start));
+         }
          resultSetExhausted = false;
          return true;
       } catch (Throwable e) {
@@ -250,7 +251,7 @@ public class DatabaseStorageMessageReader implements StorageMessageReader {
             }
 
             if (resultSet.isClosed()) {
-               logger.info("Cursor had to be closed....");
+               logger.debug("Cursor {} had to be closed....", queue.getName());
                // DB2 may close the cursor when another statement executes on the same connection.
                // Deliver what we have, return the worker, and force a reschedule.
                cursorHasMore = false;
@@ -444,7 +445,7 @@ public class DatabaseStorageMessageReader implements StorageMessageReader {
          ActiveMQServerLogger.LOGGER.storageReaderNegativePagedCount(queue.getName().toString(), pagedSize.getElements());
       }
       if (pagedSize.getElements() <= 0) {
-         logger.info("nothing to read.. give up on queue {}", queue.getName());
+         logger.debug("nothing to read.. give up on queue {}", queue.getName());
          return;
       }
       boolean needsDepage = pagedSize.getElements() > 0 && queue.needsDepage();

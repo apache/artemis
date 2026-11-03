@@ -231,7 +231,9 @@ public class DataWorker implements Runnable {
    }
 
    private void doBeforeCommit() throws SQLException {
-      logger.info("Worker {} running with {} tasks", name, dataList.size());
+      if (logger.isDebugEnabled()) {
+         logger.debug("Worker {} running with {} tasks", name, dataList.size());
+      }
       dataList.forEach(this::doStore);
       insertMessageStatement.flushPending(false);
       updateTXMessageStatement.flushPending(false);

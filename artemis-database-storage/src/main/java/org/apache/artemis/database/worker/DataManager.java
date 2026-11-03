@@ -128,7 +128,7 @@ public class DataManager extends ActiveMQScheduledComponent {
 
       this.executorService = executorService;
 
-      logger.info("FlushTime {}", flushTimeNanos);
+      logger.debug("FlushTime {}", flushTimeNanos);
       this.databaseProvider = databaseProvider;
       this.batchSize = batchSize;
       init();
@@ -591,7 +591,7 @@ public class DataManager extends ActiveMQScheduledComponent {
 
       List<DBData> dataList = extractTaskList();
       if (dataList != null && !dataList.isEmpty()) {
-         logger.info("Extracted dataList with {} elements", dataList.size());
+         logger.debug("Extracted dataList with {} elements", dataList.size());
          // Mark each IOCompletion as busy so no other worker will use them while this batch is being persisted.
          // No lock needed here: the task list is already drained, and flush() is single-threaded.
          ioCompletions(dataList).forEach(IOCompletion::workUp);
