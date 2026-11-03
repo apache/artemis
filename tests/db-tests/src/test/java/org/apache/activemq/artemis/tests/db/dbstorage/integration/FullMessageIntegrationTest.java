@@ -27,6 +27,7 @@ import java.lang.invoke.MethodHandles;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.core.config.CoreAddressConfiguration;
+import org.apache.activemq.artemis.core.paging.PagingStore;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.impl.DatabaseStorageMessageReader;
@@ -45,7 +46,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisabledIf("isNoDatabaseSelected")
 @ExtendWith(ParameterizedTestExtension.class)
@@ -253,6 +256,68 @@ public class FullMessageIntegrationTest extends AbstractStatementTest {
             assertEquals(LARGE_MESSAGE_SIZE, received.getText().length());
          }
       }
+
+      checkMessageCounts(0, true);
+      server.stop();
+   }
+
+   @TestTemplate
+   public void testPagingStopsAfterDrain() throws Exception {
+      String queueName = "pageDrain" + RandomUtil.randomUUIDString();
+      int totalMessages = 200;
+      String body = "a".repeat(MESSAGE_SIZE);
+
+      configuration.getAddressSettings().clear();
+      configuration.addAddressSetting("#", new AddressSettings()
+         .setAddressFullMessagePolicy(AddressFullMessagePolicy.PAGE)
+         .setMaxSizeMessages(50));
+
+      configuration.addAddressConfiguration(new CoreAddressConfiguration()
+         .setName(queueName)
+         .addRoutingType(RoutingType.ANYCAST)
+         .addQueueConfiguration(QueueConfiguration.of(queueName).setRoutingType(RoutingType.ANYCAST)));
+
+      ActiveMQServer server = createServer(true, configuration);
+      server.start();
+
+      ConnectionFactory factory = CFUtil.createConnectionFactory("CORE", "tcp://localhost:61616");
+
+      try (javax.jms.Connection connection = factory.createConnection()) {
+         try (Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE)) {
+            MessageProducer producer = session.createProducer(session.createQueue(queueName));
+            for (int i = 0; i < totalMessages; i++) {
+               producer.send(session.createTextMessage(body));
+            }
+         }
+      }
+
+      Queue queue = server.locateQueue(queueName);
+      assertNotNull(queue);
+
+      PagingStore pagingStore = server.getPagingManager().getPageStore(queue.getAddress());
+      assertTrue(pagingStore.isStorePaging(), "should be in paging mode after sending " + totalMessages + " messages");
+
+      DatabaseStorageMessageReader reader = (DatabaseStorageMessageReader) queue.getStorageMessageReader();
+      assertTrue(reader.getPagedMessages() > 0, "should have paged messages");
+
+      try (javax.jms.Connection connection = factory.createConnection()) {
+         connection.start();
+         try (Session session = connection.createSession(true, Session.SESSION_TRANSACTED)) {
+            MessageConsumer consumer = session.createConsumer(session.createQueue(queueName));
+            for (int i = 0; i < totalMessages; i++) {
+               TextMessage received = (TextMessage) consumer.receive(10_000);
+               assertNotNull(received, "Missing message at index " + i);
+               if ((i + 1) % 10 == 0) {
+                  session.commit();
+               }
+            }
+            session.commit();
+         }
+      }
+
+      Wait.assertFalse(pagingStore::isStorePaging, 5000, 100);
+      assertFalse(pagingStore.isStorePaging(), "paging should have stopped after consuming all messages");
+      assertEquals(0, reader.getPagedMessages());
 
       checkMessageCounts(0, true);
       server.stop();
