@@ -50,7 +50,7 @@ public class CachingOpenSSLContextFactory extends DefaultOpenSSLContextFactory {
       try {
          return super.getClientSslContext(config, null);
       } catch (final Exception ex) {
-         throw new RuntimeException("An unexpected exception occured while creating Client OpenSSL Context with " + config, ex);
+         throw new RuntimeException("An unexpected exception occurred while creating Client OpenSSL Context with " + config, ex);
       }
    }
 
@@ -63,7 +63,7 @@ public class CachingOpenSSLContextFactory extends DefaultOpenSSLContextFactory {
       try {
          return super.getServerSslContext(config, null);
       } catch (final Exception ex) {
-         throw new RuntimeException("An unexpected exception occured while creating Server OpenSSL Context " + config, ex);
+         throw new RuntimeException("An unexpected exception occurred while creating Server OpenSSL Context " + config, ex);
       }
    }
 
