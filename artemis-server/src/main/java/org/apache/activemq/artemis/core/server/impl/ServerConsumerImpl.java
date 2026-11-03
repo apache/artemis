@@ -423,6 +423,7 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
       if (server.hasBrokerMessagePlugins() && !server.callBrokerMessagePluginsCanAccept(this, ref)) {
          logger.trace("Reference {} is not allowed to be consumed by {} due to message plugin filter.", ref, this);
 
+         rollbackCredits(ref);
          return HandleStatus.NO_MATCH;
       }
 
@@ -432,6 +433,7 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
          // queue for delivery later.
          // TCP-flow control has to be done first than everything else otherwise we may lose notifications
          if ((callback != null && !callback.isWritable(this, protocolContext)) || !started || transferring) {
+            rollbackCredits(ref);
             return HandleStatus.BUSY;
          }
 
@@ -442,17 +444,20 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
                logger.debug("{} is busy delivering large message {}, can't deliver reference {}", this, largeMessageDeliverer, ref);
             }
 
+            rollbackCredits(ref);
             return HandleStatus.BUSY;
          }
          final Message message = ref.getMessage();
 
          if (!message.acceptsConsumer(sequentialID())) {
+            rollbackCredits(ref);
             return HandleStatus.NO_MATCH;
          }
 
          if (filter != null && !filter.match(message)) {
             logger.trace("Reference {} is a noMatch on consumer {}", ref, this);
 
+            rollbackCredits(ref);
             return HandleStatus.NO_MATCH;
          }
 
@@ -498,6 +503,12 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
          pendingDelivery.countUp();
 
          return HandleStatus.HANDLED;
+      }
+   }
+
+   private void rollbackCredits(MessageReference ref) {
+      if (callback != null) {
+         callback.rollbackCredits(this, ref);
       }
    }
 

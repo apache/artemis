@@ -128,7 +128,6 @@ public class MQTTPublishManager {
                session.getStateManager().putPacketIdCorrelation(state.getClientId(), correlationKey, packetIdToUse);
             }
             state.putCoreDeliveryInfo(packetIdToUse, CoreDeliveryInfo.of(consumer.getID(), correlationKey));
-            state.incrementSendQuota();
          }
          publishToClient(packetIdToUse, message, consumer.getID(), redelivery, qos);
       } else {
