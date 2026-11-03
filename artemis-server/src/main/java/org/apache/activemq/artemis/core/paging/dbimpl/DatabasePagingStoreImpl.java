@@ -17,8 +17,11 @@
 package org.apache.activemq.artemis.core.paging.dbimpl;
 
 import java.io.File;
+import java.lang.invoke.MethodHandles;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 import org.apache.activemq.artemis.api.core.Message;
@@ -32,6 +35,7 @@ import org.apache.activemq.artemis.core.paging.impl.Page;
 import org.apache.activemq.artemis.core.persistence.StorageManager;
 import org.apache.activemq.artemis.core.persistence.impl.database.DatabaseStorageManager;
 import org.apache.activemq.artemis.core.replication.ReplicationManager;
+import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.RouteContextList;
 import org.apache.activemq.artemis.core.server.StorageMessageReader;
 import org.apache.activemq.artemis.core.server.impl.DatabaseStorageMessageReader;
@@ -40,11 +44,18 @@ import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.settings.impl.PageFullMessagePolicy;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.utils.actors.ArtemisExecutor;
+import org.apache.artemis.database.worker.DataManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Database-backed PagingStore implementation.
  */
 public class DatabasePagingStoreImpl extends AddressSizeLimiter implements PagingStore {
+
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+   private final Set<DatabaseStorageMessageReader> readers = ConcurrentHashMap.newKeySet();
 
    public DatabasePagingStoreImpl(StorageManager storageManager,
                                   PagingManager pagingManager,
@@ -210,8 +221,12 @@ public class DatabasePagingStoreImpl extends AddressSizeLimiter implements Pagin
 
    @Override
    public void stopPaging() throws Exception {
-      paging = false;
-
+      writeLock();
+      try {
+         paging = false;
+      } finally {
+         writeUnlock();
+      }
    }
 
    @Override
@@ -241,7 +256,52 @@ public class DatabasePagingStoreImpl extends AddressSizeLimiter implements Pagin
 
    @Override
    public StorageMessageReader createStorageMessageReader(QueueImpl queue) {
-      return new DatabaseStorageMessageReader(queue, (DatabaseStorageManager) storageManager, this);
+      DatabaseStorageMessageReader reader = new DatabaseStorageMessageReader(queue, (DatabaseStorageManager) storageManager, this);
+      readers.add(reader);
+      return reader;
+   }
+
+   public void removeReader(DatabaseStorageMessageReader reader) {
+      readers.remove(reader);
+   }
+
+   public void checkStopPaging() {
+      if (!paging) {
+         return;
+      }
+
+      for (DatabaseStorageMessageReader reader : readers) {
+         if (reader.getPagedMessages() > 0) {
+            return;
+         }
+      }
+
+      DataManager dataManager = ((DatabaseStorageManager) storageManager).getDataManager();
+      if (dataManager.hasPendingData()) {
+         return;
+      }
+
+      writeLock();
+      try {
+         if (!paging) {
+            return;
+         }
+
+         for (DatabaseStorageMessageReader reader : readers) {
+            if (reader.getPagedMessages() > 0) {
+               return;
+            }
+         }
+
+         if (dataManager.hasPendingData()) {
+            return;
+         }
+
+         paging = false;
+         ActiveMQServerLogger.LOGGER.pageStoreStop(getAddress(), getInfo());
+      } finally {
+         writeUnlock();
+      }
    }
 
    @Override

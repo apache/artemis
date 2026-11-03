@@ -27,7 +27,7 @@ import java.util.function.Supplier;
 
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.core.io.IOCallback;
-import org.apache.activemq.artemis.core.paging.PagingStore;
+import org.apache.activemq.artemis.core.paging.dbimpl.DatabasePagingStoreImpl;
 import org.apache.activemq.artemis.core.persistence.impl.database.DatabaseStorageManager;
 import org.apache.activemq.artemis.core.persistence.impl.database.browserIterator.DatabasePendingMessagesIterator;
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
@@ -68,6 +68,8 @@ public class DatabaseStorageMessageReader implements StorageMessageReader {
 
    final DatabaseStorageManager databaseStorageManager;
 
+   final DatabasePagingStoreImpl pagingStore;
+
    final SizeAwareMetric pagedSize = new SizeAwareMetric();
 
    @Override
@@ -101,16 +103,18 @@ public class DatabaseStorageMessageReader implements StorageMessageReader {
 
    public DatabaseStorageMessageReader(QueueImpl queue,
                                        DatabaseStorageManager databaseStorageManager,
-                                       PagingStore pagingStore) {
-      this(queue, databaseStorageManager, pagingStore::getPrefetchPageMessages, pagingStore::getPrefetchPageBytes);
+                                       DatabasePagingStoreImpl pagingStore) {
+      this(queue, databaseStorageManager, pagingStore, pagingStore::getPrefetchPageMessages, pagingStore::getPrefetchPageBytes);
    }
 
    public DatabaseStorageMessageReader(QueueImpl queue,
                                        DatabaseStorageManager databaseStorageManager,
+                                       DatabasePagingStoreImpl pagingStore,
                                        Supplier<Integer> prefetchMessages,
                                        Supplier<Integer> prefetchBytes) {
       this.queue = queue;
       this.databaseStorageManager = databaseStorageManager;
+      this.pagingStore = pagingStore;
       this.dataManager = databaseStorageManager.getDataManager();
       this.readIdleTimeoutMillis = databaseStorageManager.getDatabaseReadIdleTimeout();
       this.prefetchMessages = prefetchMessages;
@@ -425,6 +429,10 @@ public class DatabaseStorageMessageReader implements StorageMessageReader {
       queue.deliverAsync();
       // this call is always performed from a single thread call. no need to synchronized here
       scheduled = false;
+
+      if (pagedSize.getElements() <= 0 && pagingStore != null) {
+         pagingStore.checkStopPaging();
+      }
    }
 
    @Override

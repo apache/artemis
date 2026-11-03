@@ -138,6 +138,20 @@ public class DataManager extends ActiveMQScheduledComponent {
       return pageJoinFetch;
    }
 
+   public boolean hasPendingData() {
+      if (getCredits() > 0) {
+         return true;
+      }
+      if (dataLock.tryAcquire()) {
+         try {
+            return !pendingData.isEmpty();
+         } finally {
+            dataLock.release();
+         }
+      }
+      return true;
+   }
+
    public void setMaxCredits(int maxCredits) {
       this.maxCredits = maxCredits;
    }

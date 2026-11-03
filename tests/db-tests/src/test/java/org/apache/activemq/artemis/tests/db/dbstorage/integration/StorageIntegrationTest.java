@@ -603,7 +603,7 @@ public class StorageIntegrationTest extends AbstractStatementTest {
 
       AtomicInteger prefetch = new AtomicInteger(10);
 
-      DatabaseStorageMessageReader storageMessageReader = new DatabaseStorageMessageReader(mockQueue, databaseStorageManager, prefetch::get, () -> 1024 * 1024);
+      DatabaseStorageMessageReader storageMessageReader = new DatabaseStorageMessageReader(mockQueue, databaseStorageManager, null, prefetch::get, () -> 1024 * 1024);
       storageMessageReader.addPending(100, 1024 * 1024);
       storageMessageReader.scheduleRead(false);
 
