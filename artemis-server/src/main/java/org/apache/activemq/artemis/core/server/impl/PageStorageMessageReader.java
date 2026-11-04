@@ -17,11 +17,13 @@
 package org.apache.activemq.artemis.core.server.impl;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.activemq.artemis.core.paging.cursor.PageIterator;
 import org.apache.activemq.artemis.core.paging.cursor.PagedReference;
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
+import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.server.StorageMessageReader;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.core.transaction.impl.TransactionImpl;
@@ -31,6 +33,8 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 
 public class PageStorageMessageReader implements StorageMessageReader {
+
+   private final AtomicLong queueSequence = new AtomicLong(0);
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -87,6 +91,11 @@ public class PageStorageMessageReader implements StorageMessageReader {
       } else {
          pageDelivered = false;
       }
+   }
+
+   @Override
+   public void setSequence(MessageReference reference) {
+      reference.setSequence(queueSequence.incrementAndGet());
    }
 
    @Override

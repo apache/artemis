@@ -43,4 +43,6 @@ public interface StorageMessageReader {
    default long getReaderPaged() {
       return 0;
    }
+
+   void setSequence(MessageReference reference);
 }
