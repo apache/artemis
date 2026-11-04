@@ -338,8 +338,7 @@ The whole `perf client` all-out throughput command would be:
 [,bash]
 ----
 # same as in the previous cases
-./artemis perf client --warmup 20 --max-pending 100 --s
-how-latency --url tcp://localhost:61616?confirmationWindowSize=20000 --consumer-url tcp://localhost:61616 \
+./artemis perf client --warmup 20 --max-pending 100 --show-latency --url tcp://localhost:61616?confirmationWindowSize=20000 --consumer-url tcp://localhost:61616 \
 --producers 3 --consumers 2 --num-destinations 10 --durable --persistent topic://DURABLE_TOPIC
 # this last part above is new
 ----
@@ -348,7 +347,7 @@ and it would print...
 
 [,bash]
 ----
-javax.jms.IllegalStateException: Cannot create durable subscription - client ID has not been set
+The clientID must be set on durable subscriptions
 ----
 
 Given that the generator is creating https://jakarta.ee/specifications/messaging/2.0/apidocs/javax/jms/session#createDurableConsumer-javax.jms.Topic-java.lang.String-[unshared durable Topic subscriptions], is it mandatory to set a ClientID for each connection used.
