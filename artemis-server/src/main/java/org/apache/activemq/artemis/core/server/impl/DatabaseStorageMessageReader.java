@@ -77,6 +77,11 @@ public class DatabaseStorageMessageReader implements StorageMessageReader {
       return pagedSize.getElements();
    }
 
+   @Override
+   public void setSequence(MessageReference reference) {
+      reference.setSequence(reference.getMessageID());
+   }
+
    // -- Borrowed worker state (accessed only from the queue's executor thread) --
 
    /**
@@ -425,7 +430,7 @@ public class DatabaseStorageMessageReader implements StorageMessageReader {
          }
          queue.refUp(reference);
          queue.durableUp(m);
-         queue.addTail(reference, false);
+         queue.addSorted(reference, false);
       }
       queue.deliverAsync();
       // this call is always performed from a single thread call. no need to synchronized here

@@ -1046,7 +1046,7 @@ public class DatabaseStorageManager extends AbstractStorageManager {
             });
          }
 
-         logger.info("Querying references");
+         logger.debug("Querying references");
          ReferencesJDBCQuery referencesQuery = new ReferencesJDBCQuery(databaseProvider, connection);
          referencesQuery.query(d -> {
             Message message = loadedMessages.get(d.messageID);
