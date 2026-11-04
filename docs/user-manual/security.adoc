@@ -25,6 +25,8 @@ Security is enabled by default. To disable security completely set the `security
 Security configuration can be provided at boot time via system properties, which will override any security settings defined in `bootstrap.xml`.
 This is useful for containerized deployments or scenarios where configuration needs to be injected without modifying configuration files.
 
+These are Java system properties, not options of the `run` command, so they must be passed to Java, for example with the `JAVA_ARGS_APPEND` environment variable or in `JAVA_ARGS` in `artemis.profile`.
+
 === JAAS Security via System Properties
 
 To configure JAAS security at boot time, use the following system properties:
@@ -41,7 +43,7 @@ For example, to start the broker with JAAS security configured via system proper
 
 [,sh]
 ----
-./artemis run -Dsecurityconfig.jaas.domain=MyDomain -Dsecurityconfig.jaas.certificateDomain=MyCertDomain
+JAVA_ARGS_APPEND="-Dsecurityconfig.jaas.domain=MyDomain -Dsecurityconfig.jaas.certificateDomain=MyCertDomain" ./artemis run
 ----
 
 === Custom Security Manager via System Properties
@@ -60,11 +62,10 @@ For example, to start the broker with the basic security manager configured via 
 
 [,sh]
 ----
-./artemis run \
-  -Dsecurityconfig.manager.className=org.apache.activemq.artemis.spi.core.security.ActiveMQBasicSecurityManager \
+JAVA_ARGS_APPEND="-Dsecurityconfig.manager.className=org.apache.activemq.artemis.spi.core.security.ActiveMQBasicSecurityManager \
   -Dsecurityconfig.manager.properties.bootstrapUser=admin \
   -Dsecurityconfig.manager.properties.bootstrapPassword=admin \
-  -Dsecurityconfig.manager.properties.bootstrapRole=amq
+  -Dsecurityconfig.manager.properties.bootstrapRole=amq" ./artemis run
 ----
 
 NOTE: When security configuration is provided via system properties, it takes precedence over any security configuration in `bootstrap.xml`.
