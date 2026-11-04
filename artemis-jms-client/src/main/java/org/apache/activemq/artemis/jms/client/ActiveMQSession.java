@@ -590,31 +590,24 @@ public class ActiveMQSession implements QueueSession, TopicSession {
          throw JMSExceptionHelper.convertFromActiveMQException(e);
       }
    }
+
    protected Queue internalCreateQueue(String queueName) throws ActiveMQException, JMSException {
-      ActiveMQQueue queue = lookupQueue(queueName, false);
-
-      if (queue == null) {
-         queue = lookupQueue(queueName, true);
+      String queueNameToUse = enable1xPrefixes ? PacketImpl.OLD_QUEUE_PREFIX + queueName : queueName;
+      ActiveMQQueue queue = ActiveMQDestination.createQueue(queueNameToUse);
+      if (queueName != queueNameToUse) {
+         queue.setName(queueName);
       }
-
-      if (queue == null) {
-         queue = internalCreateQueueCompatibility("jms.queue." + queueName);
-      }
-      if (queue == null) {
-         throw new JMSException("There is no queue with name " + queueName);
-      } else {
+      QueueQuery response = session.queueQuery(queue.getSimpleAddress());
+      if (response.isExists() || response.isAutoCreateQueues()) {
          return queue;
       }
-   }
 
-   protected ActiveMQQueue internalCreateQueueCompatibility(String queueName) throws ActiveMQException, JMSException {
-      ActiveMQQueue queue = lookupQueue(queueName, false);
-
-      if (queue == null) {
-         queue = lookupQueue(queueName, true);
+      // if nothing else worked, try finding an *existing* queue with the legacy prefix
+      if (session.queueQuery(SimpleString.of(PacketImpl.OLD_QUEUE_PREFIX + queueName)).isExists()) {
+         return ActiveMQDestination.createQueue(PacketImpl.OLD_QUEUE_PREFIX + queueName, queueName);
       }
 
-      return queue;
+      throw new JMSException("There is no queue with name " + queueName);
    }
 
 
@@ -633,7 +626,7 @@ public class ActiveMQSession implements QueueSession, TopicSession {
             topic = topicCache.get(topicName);
          }
          if (topic == null) {
-            topic = internalCreateTopic(topicName, false);
+            topic = internalCreateTopic(topicName);
          }
          if (cacheDestination) {
             topicCache.put(topicName, topic);
@@ -644,21 +637,23 @@ public class ActiveMQSession implements QueueSession, TopicSession {
       }
    }
 
-   protected Topic internalCreateTopic(String topicName, boolean retry) throws ActiveMQException, JMSException {
-      ActiveMQTopic topic = lookupTopic(topicName, false);
-
-      if (topic == null) {
-         topic = lookupTopic(topicName, true);
+   protected Topic internalCreateTopic(String topicName) throws ActiveMQException, JMSException {
+      String topicNameToUse = enable1xPrefixes ? PacketImpl.OLD_TOPIC_PREFIX + topicName : topicName;
+      ActiveMQTopic topic = ActiveMQDestination.createTopic(topicNameToUse);
+      if (topicName != topicNameToUse) {
+         topic.setName(topicName);
       }
-
-      if (topic == null) {
-         if (!retry) {
-            return internalCreateTopic("jms.topic." + topicName, true);
-         }
-         throw new JMSException("There is no topic with name " + topicName);
-      } else {
+      AddressQuery query = session.addressQuery(topic.getSimpleAddress());
+      if (query.isExists() || query.isAutoCreateAddresses()) {
          return topic;
       }
+
+      // if nothing else worked, try finding an *existing* topic with the legacy prefix
+      if (session.addressQuery(SimpleString.of(PacketImpl.OLD_TOPIC_PREFIX + topicName)).isExists()) {
+         return ActiveMQDestination.createTopic(PacketImpl.OLD_TOPIC_PREFIX + topicName, topicName);
+      }
+
+      throw new JMSException("There is no topic with name " + topicName);
    }
 
    /**
@@ -1438,61 +1433,5 @@ public class ActiveMQSession implements QueueSession, TopicSession {
       session.createQueue(queueConfiguration.setName(queueName).setAddress(destination.getAddress()).setAutoCreated(autoCreated).setDurable(durable));
    }
 
-
-
-   private ActiveMQQueue lookupQueue(final String queueName, boolean isTemporary) throws ActiveMQException {
-      String queueNameToUse = queueName;
-      if (enable1xPrefixes) {
-         queueNameToUse = (isTemporary ? PacketImpl.OLD_TEMP_QUEUE_PREFIX.toString() : PacketImpl.OLD_QUEUE_PREFIX.toString()) + queueName;
-      }
-
-      ActiveMQQueue queue;
-
-      if (isTemporary) {
-         queue = ActiveMQDestination.createTemporaryQueue(queueNameToUse);
-      } else {
-         queue = ActiveMQDestination.createQueue(queueNameToUse);
-      }
-
-      if (queueName != queueNameToUse) {
-         queue.setName(queueName);
-      }
-
-      QueueQuery response = session.queueQuery(queue.getSimpleAddress());
-
-      if (!response.isExists() && !response.isAutoCreateQueues()) {
-         return null;
-      } else {
-         return queue;
-      }
-   }
-
-   private ActiveMQTopic lookupTopic(final String topicName, final boolean isTemporary) throws ActiveMQException {
-      String topicNameToUse = topicName;
-      if (enable1xPrefixes) {
-         topicNameToUse = (isTemporary ? PacketImpl.OLD_TEMP_TOPIC_PREFIX.toString() : PacketImpl.OLD_TOPIC_PREFIX.toString()) + topicName;
-      }
-
-      ActiveMQTopic topic;
-
-      if (isTemporary) {
-         topic = ActiveMQDestination.createTemporaryTopic(topicNameToUse);
-      } else {
-         topic = ActiveMQDestination.createTopic(topicNameToUse);
-      }
-
-      if (topicNameToUse != topicName) {
-         topic.setName(topicName);
-      }
-
-
-      AddressQuery query = session.addressQuery(topic.getSimpleAddress());
-
-      if (!query.isExists() && !query.isAutoCreateAddresses()) {
-         return null;
-      } else {
-         return topic;
-      }
-   }
 
 }
