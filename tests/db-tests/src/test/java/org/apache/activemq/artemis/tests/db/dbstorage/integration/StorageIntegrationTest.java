@@ -599,7 +599,7 @@ public class StorageIntegrationTest extends AbstractStatementTest {
       Mockito.doAnswer(invocation -> {
          references.add(invocation.getArgument(0));
          return null;
-      }).when(mockQueue).addTail(Mockito.any(MessageReference.class), Mockito.anyBoolean());
+      }).when(mockQueue).addSorted(Mockito.any(MessageReference.class), Mockito.anyBoolean());
 
       AtomicInteger prefetch = new AtomicInteger(10);
 

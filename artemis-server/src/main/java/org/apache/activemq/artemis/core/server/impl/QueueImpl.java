@@ -294,8 +294,6 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
    private final AtomicLong messagesAddedSnapshot = new AtomicLong(0);
 
-   private final AtomicLong queueSequence = new AtomicLong(0);
-
    private ScheduledFuture slowConsumerReaperFuture;
 
    private SlowConsumerReaperRunnable slowConsumerReaperRunnable;
@@ -986,7 +984,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
    @Override
    public void reloadSequence(final MessageReference ref) {
-      ref.setSequence(queueSequence.incrementAndGet());
+      setSequence(ref);
    }
 
    @Override
@@ -2782,10 +2780,19 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
    private synchronized void internalAddTail(final MessageReference ref) {
       refAdded(ref);
-      ref.setSequence(queueSequence.incrementAndGet());
+      setSequence(ref);
       messageReferences.addTail(ref, getPriority(ref));
       pendingMetrics.incrementMetrics(ref);
       enforceRing(false);
+   }
+
+   private void setSequence(MessageReference ref) {
+      if (storageMessageReader != null) {
+         storageMessageReader.setSequence(ref);
+      } else {
+         // management and and perhaps internal queues won't have a pageManager
+         ref.setSequence(ref.getMessageID());
+      }
    }
 
    /**
@@ -2822,7 +2829,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       int priority = getPriority(ref);
 
       if (ref.getSequence() <= 0) {
-         ref.setSequence(queueSequence.incrementAndGet());
+         setSequence(ref);
       }
       messageReferences.addSorted(ref, priority);
 
@@ -3718,7 +3725,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
                reference.setInDelivery(true);
                proceedDeliver(consumer, reference);
                consumers.reset();
-               reference.setSequence(queueSequence.incrementAndGet());
+               setSequence(ref);
                return true;
             }
 
