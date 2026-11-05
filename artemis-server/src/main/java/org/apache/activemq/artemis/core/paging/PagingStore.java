@@ -108,6 +108,17 @@ public interface PagingStore extends ActiveMQComponent, RefCountMessageListener 
 
    void applySetting(AddressSettings addressSettings);
 
+   default void incrementPending() {
+   }
+
+   default void decrementPending() {
+   }
+
+   /** returns a callback for decrementPending */
+   default Runnable getDecrementPendingCallback() {
+      return null;
+   }
+
    /**
     * This method will look if the current state of paging is not paging, without using a lock. For cases where you need
     * absolutely atomic results, check it directly on the internal variables while requiring a readLock.

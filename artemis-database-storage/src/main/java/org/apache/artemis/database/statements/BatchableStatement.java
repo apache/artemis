@@ -33,10 +33,11 @@ import org.apache.activemq.artemis.utils.ActiveMQBufferInputStream;
 import org.apache.artemis.database.ActiveMQDatabaseLogger;
 import org.apache.artemis.database.DatabaseProvider;
 import org.apache.artemis.database.JDBCUtils;
+import org.apache.artemis.database.data.DBData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class BatchableStatement<E> {
+public abstract class BatchableStatement<E extends DBData> {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -47,7 +48,6 @@ public abstract class BatchableStatement<E> {
    protected Consumer<E> duplicateReaper;
 
    List<E> pendingList;
-   List<IOCallback> callbacks;
 
    public BatchableStatement(DatabaseProvider connectionProvider,
                              Connection connection,
@@ -57,7 +57,6 @@ public abstract class BatchableStatement<E> {
       this.connectionProvider = connectionProvider;
       this.connection = connection;
       this.pendingList = new ArrayList<>(expectedSize);
-      this.callbacks = new ArrayList<>(expectedSize);
       this.statement = statement;
       this.duplicateReaper = duplicateReaper;
       init();
@@ -73,7 +72,6 @@ public abstract class BatchableStatement<E> {
 
    public void addElement(E element, IOCallback callback) {
       pendingList.add(element);
-      callbacks.add(callback);
    }
 
    public void flushPendingNoCommit() {
@@ -143,7 +141,7 @@ public abstract class BatchableStatement<E> {
    }
 
    public void onError(Exception e) {
-      callbacks.forEach(c -> {
+      pendingList.forEach(c -> {
          if (c != null) {
             c.onError(-1, e.getMessage());
          }
@@ -151,16 +149,15 @@ public abstract class BatchableStatement<E> {
    }
 
    public void confirmData() {
-      callbacks.forEach(this::okCallback);
+      pendingList.forEach(this::okCallback);
       clear();
    }
 
    public void clear() {
       pendingList.clear();
-      callbacks.clear();
    }
 
-   private void okCallback(IOCallback callback) {
+   private void okCallback(DBData callback) {
       if (callback != null) {
          callback.done();
       }

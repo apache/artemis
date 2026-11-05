@@ -104,7 +104,7 @@ public class PreparedTXLoader {
             if (txImpl != null) {
                DatabaseTX databaseTX = (DatabaseTX) txImpl.getStorageTx();
 
-               MessageData messageData = new MessageData(d.messageID(), d.messageBufferSupplier(), d.memoryEstimate(), d.isLarge(), d.isCore(), d.largeBodySupplier(), null);
+               MessageData messageData = new MessageData(d.messageID(), d.messageBufferSupplier(), d.memoryEstimate(), d.isLarge(), d.isCore(), d.largeBodySupplier(), null, null);
                databaseTX.addData(messageData);
                Message message = DatabaseStorageManager.decodeMessage(d.messageID(), d.isLarge(), d.isCore(), d.messageBufferSupplier(), d.largeBodySupplier(), storageManager);
 

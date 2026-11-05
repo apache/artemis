@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.function.Function;
 
 import org.apache.activemq.artemis.api.core.Message;
@@ -44,7 +45,6 @@ import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.settings.impl.PageFullMessagePolicy;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.utils.actors.ArtemisExecutor;
-import org.apache.artemis.database.worker.DataManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,6 +56,26 @@ public class DatabasePagingStoreImpl extends AddressSizeLimiter implements Pagin
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private final Set<DatabaseStorageMessageReader> readers = ConcurrentHashMap.newKeySet();
+
+
+   private volatile int pendingWrite;
+   private static AtomicIntegerFieldUpdater<DatabasePagingStoreImpl> pendingWriteUpdater = AtomicIntegerFieldUpdater.newUpdater(DatabasePagingStoreImpl.class, "pendingWrite");
+
+   @Override
+   public void incrementPending() {
+      pendingWriteUpdater.incrementAndGet(this);
+   }
+
+   Runnable decrementCallback = this::decrementPending;
+   @Override
+   public void decrementPending() {
+      pendingWriteUpdater.decrementAndGet(this);
+   }
+
+   @Override
+   public Runnable getDecrementPendingCallback() {
+      return decrementCallback;
+   }
 
    public DatabasePagingStoreImpl(StorageManager storageManager,
                                   PagingManager pagingManager,
@@ -276,11 +296,10 @@ public class DatabasePagingStoreImpl extends AddressSizeLimiter implements Pagin
          }
       }
 
-      DataManager dataManager = ((DatabaseStorageManager) storageManager).getDataManager();
-      if (dataManager.hasPendingData()) {
-         return;
-      }
+      execute(this::internalCheckStopPaging);
+   }
 
+   private void internalCheckStopPaging() {
       writeLock();
       try {
          if (!paging) {
@@ -293,7 +312,8 @@ public class DatabasePagingStoreImpl extends AddressSizeLimiter implements Pagin
             }
          }
 
-         if (dataManager.hasPendingData()) {
+         if (pendingWriteUpdater.get(this) > 0) {
+            logger.debug("Page manager {} has pending data. System will remain paging for this address.", getStoreName());
             return;
          }
 

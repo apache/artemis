@@ -478,7 +478,7 @@ public class TransactionImplTest extends ServerTestBase {
       }
 
       @Override
-      public void storeMessage(Message message) throws Exception {
+      public void storeMessage(PagingStore store, Message message) throws Exception {
 
       }
 
@@ -520,7 +520,7 @@ public class TransactionImplTest extends ServerTestBase {
       }
 
       @Override
-      public void storeMessageTransactional(Transaction tx, Message message) throws Exception {
+      public void storeMessageTransactional(Transaction tx, PagingStore pagingStore, Message message) throws Exception {
 
       }
 

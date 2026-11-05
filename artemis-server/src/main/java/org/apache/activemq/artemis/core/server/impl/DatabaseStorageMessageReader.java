@@ -127,6 +127,11 @@ public class DatabaseStorageMessageReader implements StorageMessageReader {
    }
 
    @Override
+   public Queue getQueue() {
+      return queue;
+   }
+
+   @Override
    public void scheduleRead(boolean scheduleExpiry) {
       if (borrowedWorker != null && !borrowedWorker.isReturned()) {
          // We already have a borrowed worker with an open cursor — resume on the queue executor

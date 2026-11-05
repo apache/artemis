@@ -48,7 +48,7 @@ public class LargeMessageJournalTest extends StorageManagerTestBase {
       byte[] bodyBytes = RandomUtil.randomBytes(100 * 1024);
       largeMessage.addBytes(bodyBytes);
 
-      journal.storeMessage(largeMessage.getMessage());
+      journal.storeMessage(null, largeMessage.getMessage());
 
       assertTrue(journal.getContext().waitCompletion(5000));
 

@@ -45,4 +45,6 @@ public interface StorageMessageReader {
    }
 
    void setSequence(MessageReference reference);
+
+   Queue getQueue();
 }

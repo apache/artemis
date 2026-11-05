@@ -24,6 +24,7 @@ import org.apache.activemq.artemis.core.paging.cursor.PageIterator;
 import org.apache.activemq.artemis.core.paging.cursor.PagedReference;
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.MessageReference;
+import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.StorageMessageReader;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.core.transaction.impl.TransactionImpl;
@@ -55,6 +56,11 @@ public class PageStorageMessageReader implements StorageMessageReader {
       } else {
          pageIterator = null;
       }
+   }
+
+   @Override
+   public Queue getQueue() {
+      return queue;
    }
 
    @Override

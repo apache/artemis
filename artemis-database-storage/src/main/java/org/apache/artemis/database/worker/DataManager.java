@@ -221,8 +221,9 @@ public class DataManager extends ActiveMQScheduledComponent {
                                      boolean isLarge,
                                      boolean isCore,
                                      Supplier<ActiveMQBuffer> largeBodySupplier,
-                                     IOCompletion context) {
-      return new MessageData(messageID, messageBufferSupplier, memoryEstimate, isLarge, isCore, largeBodySupplier, context);
+                                     IOCompletion context,
+                                     Runnable completion) {
+      return new MessageData(messageID, messageBufferSupplier, memoryEstimate, isLarge, isCore, largeBodySupplier, context, completion);
    }
 
    public void init() throws SQLException {
@@ -340,8 +341,9 @@ public class DataManager extends ActiveMQScheduledComponent {
                             boolean isLarge,
                             boolean isCore,
                             Supplier<ActiveMQBuffer> largeBodySupplier,
-                            IOCompletion callback) {
-      castTX(storageTX).addData(new MessageData(messageID, messageBufferSupplier, memoryEstimate, isLarge, isCore, largeBodySupplier, callback));
+                            IOCompletion callback,
+                            Runnable ioDone) {
+      castTX(storageTX).addData(new MessageData(messageID, messageBufferSupplier, memoryEstimate, isLarge, isCore, largeBodySupplier, callback, ioDone));
    }
 
    public void storeMessage(long messageID,
@@ -350,8 +352,9 @@ public class DataManager extends ActiveMQScheduledComponent {
                             boolean isLarge,
                             boolean isCore,
                             Supplier<ActiveMQBuffer> largeBodySupplier,
-                            IOCompletion callback) {
-      flushData(new MessageData(messageID, messageBufferSupplier, memoryEstimate, isLarge, isCore, largeBodySupplier, callback));
+                            IOCompletion callback,
+                            Runnable ioDone) {
+      flushData(new MessageData(messageID, messageBufferSupplier, memoryEstimate, isLarge, isCore, largeBodySupplier, callback, ioDone));
    }
 
    public void deleteMessage(long messageID, IOCompletion callback) {

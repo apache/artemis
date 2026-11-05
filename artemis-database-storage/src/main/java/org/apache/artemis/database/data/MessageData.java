@@ -36,6 +36,7 @@ public class MessageData extends DBData {
    public final boolean isLarge;
    public final boolean isCore;
    public final Supplier<ActiveMQBuffer> largeBodySupplier;
+   public final Runnable onCompletion;
 
    public MessageData(long messageID,
                       Supplier<ActiveMQBuffer> messageBufferSupplier,
@@ -43,7 +44,8 @@ public class MessageData extends DBData {
                       boolean isLarge,
                       boolean isCore,
                       Supplier<ActiveMQBuffer> largeBodySupplier,
-                      IOCompletion context) {
+                      IOCompletion context,
+                      Runnable onCompletion) {
       super(context);
       this.messageID = messageID;
       this.messageBufferSupplier = messageBufferSupplier;
@@ -51,6 +53,7 @@ public class MessageData extends DBData {
       this.isLarge = isLarge;
       this.isCore = isCore;
       this.largeBodySupplier = largeBodySupplier;
+      this.onCompletion = onCompletion;
    }
 
    @Override
@@ -59,6 +62,15 @@ public class MessageData extends DBData {
          worker.updateTXMessageStatement.addElement(this, context);
       } else {
          worker.insertMessageStatement.addElement(this, context);
+      }
+   }
+
+   @Override
+   public void done() {
+      super.done();
+
+      if (onCompletion != null) {
+         onCompletion.run();
       }
    }
 
