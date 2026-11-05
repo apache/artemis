@@ -286,7 +286,7 @@ public abstract class AbstractJournalStorageManager extends AbstractStorageManag
    }
 
    @Override
-   public void storeMessage(final Message message) throws Exception {
+   public void storeMessage(final PagingStore pagingStore, final Message message) throws Exception {
       if (message.getMessageID() <= 0) {
          // Sanity check only... this shouldn't happen unless there is a bug
          throw ActiveMQMessageBundle.BUNDLE.messageIdNotAssigned();
@@ -394,7 +394,7 @@ public abstract class AbstractJournalStorageManager extends AbstractStorageManag
    // Transactional operations
 
    @Override
-   public void storeMessageTransactional(final Transaction tx, final Message message) throws Exception {
+   public void storeMessageTransactional(final Transaction tx, final PagingStore pagingStore, final Message message) throws Exception {
       if (message.getMessageID() <= 0) {
          throw ActiveMQMessageBundle.BUNDLE.messageIdNotAssigned();
       }

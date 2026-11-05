@@ -49,7 +49,7 @@ public class DatabaseStorageManagerTest extends AbstractStatementTest {
          message.setMessageID(333);
          message.getBodyBuffer().writeByte((byte) 'Z');
 
-         databaseStorageManager.storeMessage(message);
+         databaseStorageManager.storeMessage(null, message);
          databaseStorageManager.storeReference(1, 333, false, true);
 
          CountDownLatch done = new CountDownLatch(1);
@@ -86,7 +86,7 @@ public class DatabaseStorageManagerTest extends AbstractStatementTest {
                CoreMessage message = new CoreMessage().initBuffer(1024).setDurable(true);
                message.setMessageID(i);
                message.getBodyBuffer().writeByte((byte) 'Z');
-               databaseStorageManager.storeMessage(message);
+               databaseStorageManager.storeMessage(null, message);
             }
             OperationContextImpl.getContext().waitCompletion();
             assertEquals(nrecords, selectCount(connection, databaseStorageProvider.getSqlProvider().getMessages()));
@@ -112,7 +112,7 @@ public class DatabaseStorageManagerTest extends AbstractStatementTest {
                CoreMessage message = new CoreMessage().initBuffer(1024).setDurable(true);
                message.setMessageID(i);
                message.getBodyBuffer().writeByte((byte) 'Z');
-               databaseStorageManager.storeMessageTransactional(tx, message);
+               databaseStorageManager.storeMessageTransactional(tx, null, message);
                databaseStorageManager.storeReferenceTransactional(tx, 3, message.getMessageID(), false);
                databaseStorageManager.commit(tx);
                assertTrue(OperationContextImpl.getContext().waitCompletion(5000));

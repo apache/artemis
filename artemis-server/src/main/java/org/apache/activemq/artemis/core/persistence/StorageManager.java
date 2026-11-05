@@ -217,7 +217,7 @@ public interface StorageManager extends MapStorageManager, IDGenerator, ActiveMQ
 
    void deletePendingLargeMessage(long recordID) throws Exception;
 
-   void storeMessage(Message message) throws Exception;
+   void storeMessage(PagingStore pagingStore, Message message) throws Exception;
 
    void storeReference(long queueID, long messageID, boolean pendingDelivery, boolean last) throws Exception;
 
@@ -235,7 +235,7 @@ public interface StorageManager extends MapStorageManager, IDGenerator, ActiveMQ
 
    void deleteDuplicateID(long recordID) throws Exception;
 
-   void storeMessageTransactional(Transaction tx, Message message) throws Exception;
+   void storeMessageTransactional(Transaction tx, PagingStore pagingStore, Message message) throws Exception;
 
    void storeReferenceTransactional(Transaction tx, long queueID, long messageID, boolean pendingDelivery) throws Exception;
 

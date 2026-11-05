@@ -338,9 +338,10 @@ public class DatabaseStorageManager extends AbstractStorageManager {
    }
 
    @Override
-   public void storeMessage(Message message) throws Exception {
+   public void storeMessage(PagingStore pagingStore, Message message) throws Exception {
       boolean isCore = message instanceof CoreMessage;
-      dataManager.storeMessage(message.getMessageID(), () -> encodeMessage(message), message.getMemoryEstimate(), message.isLargeMessage(), isCore, () -> getLargeBody(message), getContext());
+      Runnable doneCompletion = incrementPendingOnPageStore(pagingStore);
+      dataManager.storeMessage(message.getMessageID(), () -> encodeMessage(message), message.getMemoryEstimate(), message.isLargeMessage(), isCore, () -> getLargeBody(message), getContext(), doneCompletion);
    }
 
    public static ActiveMQBuffer getLargeBody(Message message) {
@@ -432,9 +433,20 @@ public class DatabaseStorageManager extends AbstractStorageManager {
    }
 
    @Override
-   public void storeMessageTransactional(Transaction tx, Message message) throws Exception {
+   public void storeMessageTransactional(Transaction tx, PagingStore pagingStore, Message message) throws Exception {
       boolean isCore = message instanceof CoreMessage;
-      dataManager.storeMessage(tx.getStorageTx(), message.getMessageID(), () -> encodeMessage(message), message.getMemoryEstimate(), message.isLargeMessage(), isCore, () -> getLargeBody(message), getContext());
+      Runnable doneCompletion = incrementPendingOnPageStore(pagingStore);
+      dataManager.storeMessage(tx.getStorageTx(), message.getMessageID(), () -> encodeMessage(message), message.getMemoryEstimate(), message.isLargeMessage(), isCore, () -> getLargeBody(message), getContext(), doneCompletion);
+   }
+
+   private static Runnable incrementPendingOnPageStore(PagingStore pagingStore) {
+      Runnable doneCompletion = null;
+      if (pagingStore != null) {
+         pagingStore.incrementPending();
+         doneCompletion = pagingStore.getDecrementPendingCallback();
+
+      }
+      return doneCompletion;
    }
 
    @Override

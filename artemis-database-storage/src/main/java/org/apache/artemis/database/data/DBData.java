@@ -45,6 +45,18 @@ public abstract class DBData {
       }
    }
 
+   public void done() {
+      if (context != null) {
+         context.done();
+      }
+   }
+
+   public void onError(int errorCode, String message) {
+      if (context != null) {
+         context.onError(errorCode, message);
+      }
+   }
+
    public IOCompletion getContext() {
       return this.context;
    }

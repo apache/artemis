@@ -2070,7 +2070,7 @@ public class NIOJournalCompactTest extends JournalImplTestBase {
 
                      message.getBodyBuffer().writeBytes(new byte[1024]);
 
-                     storage.storeMessageTransactional(tx, message);
+                     storage.storeMessageTransactional(tx, null, message);
                   }
                   CoreMessage message = new CoreMessage(seqGenerator.incrementAndGet(), 100);
 
@@ -2078,7 +2078,7 @@ public class NIOJournalCompactTest extends JournalImplTestBase {
 
                   logger.debug("Going to store {}", message);
                   // This one will stay here forever
-                  storage.storeMessage(message);
+                  storage.storeMessage(null, message);
                   logger.debug("message stored {}", message);
 
                   logger.debug("Going to commit {}", tx);

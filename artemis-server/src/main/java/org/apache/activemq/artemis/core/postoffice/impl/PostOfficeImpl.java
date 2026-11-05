@@ -1852,10 +1852,11 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
       final int durableRefCount = queue.durableUp(message);
       if (durableRefCount == 1) {
+         PagingStore pagingStore = queue.getPagingStore();
          if (tx != null) {
-            storageManager.storeMessageTransactional(tx, message);
+            storageManager.storeMessageTransactional(tx, pagingStore, message);
          } else {
-            storageManager.storeMessage(message);
+            storageManager.storeMessage(pagingStore, message);
          }
       }
       if (tx != null) {

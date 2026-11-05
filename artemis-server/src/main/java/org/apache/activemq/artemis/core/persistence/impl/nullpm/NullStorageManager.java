@@ -266,11 +266,11 @@ public class NullStorageManager implements StorageManager {
    }
 
    @Override
-   public void storeMessage(final Message message) throws Exception {
+   public void storeMessage(final PagingStore pagingStore, final Message message) throws Exception {
    }
 
    @Override
-   public void storeMessageTransactional(final Transaction tx, final Message message) throws Exception {
+   public void storeMessageTransactional(final Transaction tx, final PagingStore pagingStore, final Message message) throws Exception {
    }
 
    @Override
