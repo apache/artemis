@@ -75,7 +75,7 @@ public class OperationCompletionTest extends AbstractStatementTest {
          message.getBodyBuffer().writeByte((byte) 'Z');
 
          TransactionImpl storeTx = new TransactionImpl(databaseStorageManager);
-         databaseStorageManager.storeMessageTransactional(storeTx, message);
+         databaseStorageManager.storeMessageTransactional(storeTx, null, message);
          databaseStorageManager.storeReferenceTransactional(storeTx, queueID, messageID, false);
          databaseStorageManager.commit(storeTx);
 

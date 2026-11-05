@@ -56,6 +56,6 @@ public class QueryUtil {
          }
       }
 
-      return new MessageData(messageID, () -> buffer, memoryEstimate, isLarge, isCore, largeBodySupplier, null);
+      return new MessageData(messageID, () -> buffer, memoryEstimate, isLarge, isCore, largeBodySupplier, null, null);
    }
 }

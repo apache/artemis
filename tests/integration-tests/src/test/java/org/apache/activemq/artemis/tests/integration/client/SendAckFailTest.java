@@ -256,7 +256,7 @@ public class SendAckFailTest extends SpawnedTestBase {
 
                return new StorageManagerDelegate(original) {
                   @Override
-                  public void storeMessage(Message message) throws Exception {
+                  public void storeMessage(PagingStore pagingStore, Message message) throws Exception {
 
                      if (fail) {
                         if (count.incrementAndGet() == 110) {
@@ -264,7 +264,7 @@ public class SendAckFailTest extends SpawnedTestBase {
                            Runtime.getRuntime().halt(-1);
                         }
                      }
-                     super.storeMessage(message);
+                     super.storeMessage(pagingStore, message);
 
                   }
                };
@@ -428,8 +428,8 @@ public class SendAckFailTest extends SpawnedTestBase {
       }
 
       @Override
-      public void storeMessage(Message message) throws Exception {
-         manager.storeMessage(message);
+      public void storeMessage(PagingStore pagingStore, Message message) throws Exception {
+         manager.storeMessage(pagingStore, message);
       }
 
       @Override
@@ -473,8 +473,8 @@ public class SendAckFailTest extends SpawnedTestBase {
       }
 
       @Override
-      public void storeMessageTransactional(Transaction tx, Message message) throws Exception {
-         manager.storeMessageTransactional(tx, message);
+      public void storeMessageTransactional(Transaction tx, PagingStore pagingStore, Message message) throws Exception {
+         manager.storeMessageTransactional(tx, pagingStore, message);
       }
 
       @Override

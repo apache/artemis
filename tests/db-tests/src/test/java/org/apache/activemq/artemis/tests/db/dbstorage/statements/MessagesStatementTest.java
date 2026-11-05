@@ -109,7 +109,7 @@ public class MessagesStatementTest extends AbstractStatementTest {
                CoreMessage message = new CoreMessage().initBuffer(1024).setDurable(true);
                message.setMessageID(i);
                message.getBodyBuffer().writeByte((byte) 'Z');
-               MessageData task = databaseStorageManager.getDataManager().newMessageTask(message.getMessageID(), () -> encodeMessage(message), message.getMemoryEstimate(), false, false, null, latch);
+               MessageData task = databaseStorageManager.getDataManager().newMessageTask(message.getMessageID(), () -> encodeMessage(message), message.getMemoryEstimate(), false, false, null, latch, null);
                insertMessageStatement.addElement(task, latch);
             }
             insertMessageStatement.flushPending(true);
@@ -144,10 +144,10 @@ public class MessagesStatementTest extends AbstractStatementTest {
             message.getBodyBuffer().writeByte((byte) 'Z');
 
             if (i % 2 == 0) {
-               databaseStorageManager.storeMessage(message);
+               databaseStorageManager.storeMessage(null, message);
             } else {
                TransactionImpl tx = new TransactionImpl(databaseStorageManager);
-               databaseStorageManager.storeMessageTransactional(tx, message);
+               databaseStorageManager.storeMessageTransactional(tx, null, message);
                databaseStorageManager.commit(tx);
             }
          }
@@ -190,7 +190,7 @@ public class MessagesStatementTest extends AbstractStatementTest {
             message.setMessageID(i);
             message.putStringProperty("test", "t" + i);
             message.getBodyBuffer().writeByte((byte) 'Z');
-            databaseStorageManager.storeMessage(message);
+            databaseStorageManager.storeMessage(null, message);
 
             if (i > nrecords) {
                // those shouldn't be counted as they are pending
@@ -242,7 +242,7 @@ public class MessagesStatementTest extends AbstractStatementTest {
             message.setMessageID(i);
             message.putStringProperty("test", "t" + i);
             message.getBodyBuffer().writeByte((byte) 'Z');
-            databaseStorageManager.storeMessage(message);
+            databaseStorageManager.storeMessage(null, message);
 
             databaseStorageManager.storeReference(queueID, i, true, false);
          }
@@ -432,7 +432,7 @@ public class MessagesStatementTest extends AbstractStatementTest {
       message.setMessageID(messageID); // everything should fail with a DuplicateException
       message.getBodyBuffer().writeByte((byte) 'Z');
 
-      insertMessageStatement.addElement(databaseStorageManager.getDataManager().newMessageTask(message.getMessageID(), () -> encodeMessage(message), message.getMemoryEstimate(), false, false, null, ioCallback), ioCallback);
+      insertMessageStatement.addElement(databaseStorageManager.getDataManager().newMessageTask(message.getMessageID(), () -> encodeMessage(message), message.getMemoryEstimate(), false, false, null, ioCallback, null), ioCallback);
    }
 
    @Timeout(600)
@@ -456,7 +456,7 @@ public class MessagesStatementTest extends AbstractStatementTest {
          CoreMessage seedMessage = new CoreMessage().initBuffer(1024).setDurable(true);
          seedMessage.setMessageID(duplicateId);
          seedMessage.getBodyBuffer().writeByte((byte) 'Z');
-         databaseStorageManager.storeMessage(seedMessage);
+         databaseStorageManager.storeMessage(null, seedMessage);
          assertTrue(context.waitCompletion(5000));
 
          try (Connection verifyConn = databaseProvider.getConnection()) {
@@ -471,7 +471,7 @@ public class MessagesStatementTest extends AbstractStatementTest {
                CoreMessage message = new CoreMessage().initBuffer(1024).setDurable(true);
                message.setMessageID(i);
                message.getBodyBuffer().writeByte((byte) 'Z');
-               MessageData task = dataManager.newMessageTask(message.getMessageID(), () -> encodeMessage(message), message.getMemoryEstimate(), false, false, null, latch);
+               MessageData task = dataManager.newMessageTask(message.getMessageID(), () -> encodeMessage(message), message.getMemoryEstimate(), false, false, null, latch, null);
                taskList.add(task);
             }
 

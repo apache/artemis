@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.config.impl.SecurityConfiguration;
+import org.apache.activemq.artemis.core.paging.PagingStore;
 import org.apache.activemq.artemis.core.persistence.StorageManager;
 import org.apache.activemq.artemis.core.persistence.impl.journal.JournalStorageManager;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
@@ -126,8 +127,8 @@ public class CriticalCrashTest extends SpawnedTestBase {
 
 
                @Override
-               public void storeMessage(Message message) throws Exception {
-                  super.storeMessage(message);
+               public void storeMessage(PagingStore pagingStore, Message message) throws Exception {
+                  super.storeMessage(pagingStore, message);
                   blocked.set(true);
                }
             };

@@ -101,13 +101,13 @@ public class StorageManagerMessageTest extends AbstractStatementTest {
 
          if (useTX) {
             TransactionImpl transaction = new TransactionImpl(databaseStorageManager);
-            databaseStorageManager.storeMessageTransactional(transaction, largeMessage.getMessage());
+            databaseStorageManager.storeMessageTransactional(transaction, null, largeMessage.getMessage());
             databaseStorageManager.storeReferenceTransactional(transaction, 1, largeMessage.getMessageID(), false);
             transaction.setContainsPersistent();
             databaseStorageManager.commit(transaction);
          } else {
             // now do the real thing
-            databaseStorageManager.storeMessage(largeMessage.getMessage());
+            databaseStorageManager.storeMessage(null, largeMessage.getMessage());
             databaseStorageManager.storeReference(1, largeMessage.getMessageID(), false, true);
          }
 
@@ -157,7 +157,7 @@ public class StorageManagerMessageTest extends AbstractStatementTest {
          long memoryEstimate = storedMessage.getMemoryEstimate();
          logger.info("Memory Estimate {}", memoryEstimate);
 
-         databaseStorageManager.storeMessage(storedMessage);
+         databaseStorageManager.storeMessage(null, storedMessage);
          databaseStorageManager.storeReference(1, storedMessage.getMessageID(), false, true);
 
          assertTrue(context.waitCompletion(5000));
