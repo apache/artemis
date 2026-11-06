@@ -28,7 +28,7 @@ import picocli.CommandLine.Option;
 @Command(name = "consumer", description = "Consume messages from a queue.")
 public class PerfConsumerCommand extends PerfCommand {
 
-   @Option(names = "--tx", description = "Individually acknowledge each message received. Default: disabled.")
+   @Option(names = "--tx", description = "Consume in transactions, committing every --commit-interval messages, or every message without it. Default: disabled.")
    protected boolean transaction;
 
    @Option(names = "--shared", description = "Create shared subscription. Default: 0.")
@@ -75,6 +75,7 @@ public class PerfConsumerCommand extends PerfCommand {
          .setDestinations(jmsDestinations)
          .setFactory(factory)
          .setTransacted(transaction)
+         .setCommitInterval(commitInterval)
          .setConsumers(consumersPerDestination)
          .setMessageCount(messageCount)
          .setConnections(connections)

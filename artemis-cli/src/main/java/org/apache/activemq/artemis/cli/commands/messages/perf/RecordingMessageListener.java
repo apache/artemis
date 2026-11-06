@@ -20,6 +20,7 @@ import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
+import javax.jms.Session;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -29,16 +30,18 @@ public final class RecordingMessageListener implements MessageListener {
 
    private final long id;
    private final Destination destination;
-   private final boolean transaction;
+   private final long commitInterval;
    private final AtomicLong receivedMessages;
    private final Runnable onMessageReceived;
    private final MicrosTimeProvider timeProvider;
    private final SingleWriterRecorder receiveLatencyRecorder;
    private AtomicBoolean fatalException;
+   private Session session;
+   private long uncommitted;
 
    RecordingMessageListener(final long id,
                             final Destination destination,
-                            final boolean transaction,
+                            final long commitInterval,
                             final AtomicLong receivedMessages,
                             final Runnable onMessageReceived,
                             final MicrosTimeProvider timeProvider,
@@ -46,12 +49,20 @@ public final class RecordingMessageListener implements MessageListener {
                             final AtomicBoolean fatalException) {
       this.id = id;
       this.destination = destination;
-      this.transaction = transaction;
+      this.commitInterval = commitInterval;
       this.receivedMessages = receivedMessages;
       this.onMessageReceived = onMessageReceived;
       this.timeProvider = timeProvider;
       this.receiveLatencyRecorder = receiveLatencyRecorder;
       this.fatalException = fatalException;
+   }
+
+   /**
+    * @param session the transacted session to commit every {@code commitInterval} messages, or every message if that
+    *                is not positive
+    */
+   void setTransactedSession(final Session session) {
+      this.session = session;
    }
 
    public boolean anyFatalException() {
@@ -90,12 +101,30 @@ public final class RecordingMessageListener implements MessageListener {
             fatalException.compareAndSet(false, true);
          }
       }
-      if (transaction) {
-         try {
-            message.acknowledge();
-         } catch (JMSException fatal) {
-            fatalException.compareAndSet(false, true);
+      if (session != null) {
+         uncommitted++;
+         if (uncommitted >= commitInterval) {
+            commit();
          }
+      }
+   }
+
+   /**
+    * Commits what has been received since the last commit. A session has one thread of control: call this only when
+    * no message can be delivered to this listener, that is, with the connection stopped.
+    */
+   void commitReceived() {
+      if (session != null && uncommitted > 0) {
+         commit();
+      }
+   }
+
+   private void commit() {
+      uncommitted = 0;
+      try {
+         session.commit();
+      } catch (JMSException fatal) {
+         fatalException.compareAndSet(false, true);
       }
    }
 }
