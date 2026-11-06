@@ -40,6 +40,9 @@ public abstract class PerfCommand extends ConnectionAbstract {
    @Option(names = "--show-latency", description = "Show latencies at interval on output. Default: disabled.")
    protected boolean showLatency = false;
 
+   @Option(names = "--ascii", description = "Use ASCII table output style. Default: disabled.")
+   protected boolean ascii = false;
+
    @Option(names = "--json", description = "Report file name. Default: none.")
    protected String reportFileName = null;
 
@@ -125,7 +128,7 @@ public abstract class PerfCommand extends ConnectionAbstract {
          }
          statistics.sampleMetrics(warmingUp);
          skratchBuffer.setLength(0);
-         statistics.outAtInterval(warmingUp, skratchBuffer, LiveStatistics.ReportInterval.sec, showLatency);
+         statistics.outAtInterval(warmingUp, skratchBuffer, LiveStatistics.ReportInterval.sec, showLatency, ascii);
          if (!isSilentInput()) {
             getActionContext().out.println(skratchBuffer);
          }
