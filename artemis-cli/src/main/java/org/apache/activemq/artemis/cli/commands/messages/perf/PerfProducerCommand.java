@@ -76,12 +76,7 @@ public class PerfProducerCommand extends PerfCommand {
       if (getClientID() != null) {
          context.err.println("ClientID configuration is not supported");
       }
-      MicrosTimeProvider timeProvider = () -> TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis());
-      if (MicrosClock.isAvailable()) {
-         timeProvider = MicrosClock::now;
-      } else {
-         context.err.println("Microseconds wall-clock time not available: using System::currentTimeMillis. Add --add-opens=java.base/jdk.internal.misc=ALL-UNNAMED to the JVM parameters to enable it.");
-      }
+      final MicrosTimeProvider timeProvider = MicrosClock.timeProvider(context);
 
       final int totalProducers = producersPerDestination * jmsDestinations.length;
 

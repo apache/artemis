@@ -49,12 +49,7 @@ public class PerfConsumerCommand extends PerfCommand {
    protected void onExecuteBenchmark(final ConnectionFactory factory,
                                      final Destination[] jmsDestinations,
                                      final ActionContext context) throws Exception {
-      MicrosTimeProvider timeProvider = () -> TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis());
-      if (MicrosClock.isAvailable()) {
-         timeProvider = MicrosClock::now;
-      } else {
-         context.err.println("Microseconds wall-clock time not available: using System::currentTimeMillis. Add --add-opens=java.base/jdk.internal.misc=ALL-UNNAMED to the JVM parameters to enable it.");
-      }
+      final MicrosTimeProvider timeProvider = MicrosClock.timeProvider(context);
       if (connections == 0) {
          if (sharedSubscription > 0) {
             if (clientID == null) {

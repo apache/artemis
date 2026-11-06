@@ -20,6 +20,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.activemq.artemis.cli.commands.ActionContext;
+
 public class MicrosClock {
 
    // no need for volatile here
@@ -40,6 +42,18 @@ public class MicrosClock {
       } catch (Throwable t) {
          return false;
       }
+   }
+
+   /**
+    * The clock the perf commands stamp and read message times with. They all use this one, as a message can be received
+    * by a different command, in a different process, than the one that sent it.
+    */
+   static MicrosTimeProvider timeProvider(final ActionContext context) {
+      if (isAvailable()) {
+         return MicrosClock::now;
+      }
+      context.err.println("Microseconds wall-clock time not available: using System::currentTimeMillis. Add --add-opens=java.base/jdk.internal.misc=ALL-UNNAMED to the JVM parameters to enable it.");
+      return () -> TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis());
    }
 
    public static boolean isAvailable() {

@@ -95,7 +95,8 @@ public final class RecordingMessageListener implements MessageListener {
          try {
             final long start = message.getLongProperty("time");
             final long receivedOn = timeProvider.now();
-            final long elapsedUs = receivedOn - start;
+            // the clocks of two hosts can differ, and a wall clock can step back
+            final long elapsedUs = Math.max(0, receivedOn - start);
             receiveLatencyRecorder.recordValue(elapsedUs);
          } catch (JMSException fatal) {
             fatalException.compareAndSet(false, true);
