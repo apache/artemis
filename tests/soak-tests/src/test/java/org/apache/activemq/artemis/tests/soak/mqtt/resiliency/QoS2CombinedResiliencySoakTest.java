@@ -38,6 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -165,6 +166,7 @@ public class QoS2CombinedResiliencySoakTest extends QoS2ResiliencySoakTestSuppor
          assertEquals(0, getSubCacheSize(clientId));
          cleanDisconnect(subscriber);
          assertNull(getSubCache(clientId), "Sub cache should be null after clean start for " + clientId);
+         assertFalse(getProtocolManager().getStateManager().packetIdCorrelationExistsForClient(clientId));
       }
 
       for (MqttTestClient publisher : publishers) {

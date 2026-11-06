@@ -309,6 +309,7 @@ public class MQTTStateManager {
 
    public void clearPacketIdCorrelation(String clientId) {
       journalHashMapProvider.getMap(clientId).clear();
+      journalHashMapProvider.removeMap(clientId);
       packetIdCorrelationIndex.clear(clientId);
    }
 

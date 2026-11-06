@@ -99,6 +99,46 @@ public class JournalHashMapTest extends ActiveMQTestBase {
    }
 
    @Test
+   public void testRemoveMapPreventsLeak() throws Exception {
+      ExecutorService service = Executors.newFixedThreadPool(10);
+      runAfter(service::shutdownNow);
+      OrderedExecutorFactory executorFactory = new OrderedExecutorFactory(service);
+
+      NIOSequentialFileFactory factory = new NIOSequentialFileFactory(getTestDirfile(), 1);
+
+      JournalImpl journal = new JournalImpl(executorFactory, 10 * 1024, 10, 10, 3, 0, 50_000, factory, "coll", "data", 1, 0);
+
+      journal.start();
+      runAfter(journal::stop);
+
+      journal.loadInternalOnly();
+
+      AtomicLong sequence = new AtomicLong(1);
+
+      JournalHashMapProvider<Long, Long, Long, Object> journalHashMapProvider = new JournalHashMapProvider<>(sequence::incrementAndGet, new JournalManager(journal), new LongPersister(), (byte)3, OperationContextImpl::getContext, l -> null, (e, m, f) -> {
+         e.printStackTrace();
+      });
+
+      JournalHashMap<Long, Long, Long, Object> journalHashMap = journalHashMapProvider.getMap(1L);
+
+      for (long i = 0; i < 100; i++) {
+         journalHashMap.put(i, RandomUtil.randomLong());
+      }
+
+      assertEquals(1, journalHashMapProvider.getMaps().size());
+      assertEquals(100, journalHashMap.size());
+
+      // Clear only removes entries, not the map itself
+      journalHashMap.clear();
+      assertEquals(0, journalHashMap.size());
+      assertEquals(1, journalHashMapProvider.getMaps().size(), "Map should still exist in provider after clear()");
+
+      // removeMap actually removes the map from the provider
+      journalHashMapProvider.removeMap(1L);
+      assertEquals(0, journalHashMapProvider.getMaps().size(), "Map should be removed from provider after removeMap()");
+   }
+
+   @Test
    public void testClearRemovesRecords() throws Exception {
       ExecutorService service = Executors.newFixedThreadPool(10);
       runAfter(service::shutdownNow);

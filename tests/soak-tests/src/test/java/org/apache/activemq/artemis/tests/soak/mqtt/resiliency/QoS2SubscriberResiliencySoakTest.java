@@ -39,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -167,6 +168,7 @@ public class QoS2SubscriberResiliencySoakTest extends QoS2ResiliencySoakTestSupp
          Wait.assertEquals(0, () -> getSubCacheSize(clientId), 2000, 20, () -> "Sub cache for " + clientId + " has incorrect size");
          cleanDisconnect(subscriber);
          assertNull(getSubCache(clientId), "Sub cache should be null after clean start for " + clientId);
+         assertFalse(getProtocolManager().getStateManager().packetIdCorrelationExistsForClient(clientId));
       }
    }
 }
