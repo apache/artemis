@@ -32,6 +32,7 @@ import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.server.ActiveMQMessageBundle;
+import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.BindingQueryResult;
 import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.ServerConsumer;
@@ -283,15 +284,7 @@ public class MQTTSubscriptionManager {
                   stateManager.removePacketIdCorrelations(state.getClientId(), subscriptionQueue);
                }
 
-               SimpleString internalQueueName = SimpleString.of(MQTTUtil.getCoreQueueFromMqttTopic(topics.get(i), state.getClientId(), session.getServer().getConfiguration().getWildcardConfiguration()));
-               Queue queue = session.getServer().locateQueue(internalQueueName);
-               if (queue != null) {
-                  if (queue.isConfigurationManaged()) {
-                     queue.deleteAllReferences();
-                  } else if (!MQTTUtil.isSharedSubscription(topics.get(i)) || (MQTTUtil.isSharedSubscription(topics.get(i)) && queue.getConsumerCount() == 0)) {
-                     session.getServerSession().deleteQueue(internalQueueName, enforceSecurity);
-                  }
-               }
+               cleanSubscriptionQueue(topics.get(i), state.getClientId(), session.getServer(), (q) -> session.getServerSession().deleteQueue(q, enforceSecurity));
             } catch (Exception e) {
                MQTTLogger.LOGGER.errorRemovingSubscription(e);
                reasonCode = MQTTReasonCodes.UNSPECIFIED_ERROR;
@@ -311,6 +304,18 @@ public class MQTTSubscriptionManager {
       }
 
       return reasonCodes;
+   }
+
+   public static void cleanSubscriptionQueue(String topic, String clientId, ActiveMQServer server, SubscriptionQueueDeleter<SimpleString> deleter) throws Exception {
+      SimpleString internalQueueName = SimpleString.of(MQTTUtil.getCoreQueueFromMqttTopic(topic, clientId, server.getConfiguration().getWildcardConfiguration()));
+      Queue queue = server.locateQueue(internalQueueName);
+      if (queue != null) {
+         if (queue.isConfigurationManaged()) {
+            queue.deleteAllReferences();
+         } else if (!MQTTUtil.isSharedSubscription(topic) || (MQTTUtil.isSharedSubscription(topic) && queue.getConsumerCount() == 0)) {
+            deleter.delete(internalQueueName);
+         }
+      }
    }
 
    /**
@@ -377,5 +382,10 @@ public class MQTTSubscriptionManager {
       if (clientId != null) {
          stateManager.clearPacketIdCorrelation(clientId);
       }
+   }
+
+   @FunctionalInterface
+   public interface SubscriptionQueueDeleter<SimpleString> {
+      void delete(SimpleString q) throws Exception;
    }
 }

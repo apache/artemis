@@ -24,15 +24,11 @@ import javax.security.auth.Subject;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.activemq.artemis.core.protocol.mqtt.MQTTProtocolManager;
 import org.apache.activemq.artemis.core.protocol.mqtt.MQTTSessionState;
 import org.apache.activemq.artemis.core.protocol.mqtt.exceptions.InvalidClientIdException;
-import org.apache.activemq.artemis.core.remoting.impl.AbstractAcceptor;
 import org.apache.activemq.artemis.core.security.CheckType;
 import org.apache.activemq.artemis.core.security.Role;
-import org.apache.activemq.artemis.spi.core.protocol.ProtocolManager;
 import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
-import org.apache.activemq.artemis.spi.core.remoting.Acceptor;
 import org.apache.activemq.artemis.spi.core.security.ActiveMQSecurityManager5;
 import org.apache.activemq.artemis.spi.core.security.jaas.UserPrincipal;
 import org.apache.activemq.artemis.utils.RandomUtil;
@@ -104,14 +100,7 @@ public class MQTTSecurityManagerTest extends MQTTTestSupport {
          connection.connect();
          BlockingConnection finalConnection = connection;
          assertTrue(Wait.waitFor(() -> finalConnection.isConnected(), 5000, 100), "Should be connected");
-         Map<String, MQTTSessionState> sessionStates = null;
-         Acceptor acceptor = server.getRemotingService().getAcceptor("MQTT");
-         if (acceptor instanceof AbstractAcceptor abstractAcceptor) {
-            ProtocolManager protocolManager = abstractAcceptor.getProtocolMap().get("MQTT");
-            if (protocolManager instanceof MQTTProtocolManager mqttProtocolManager) {
-               sessionStates = mqttProtocolManager.getStateManager().getSessionStates();
-            }
-         }
+         Map<String, MQTTSessionState> sessionStates = getSessions();
          assertEquals(1, sessionStates.size());
          assertTrue(sessionStates.containsKey(clientID));
          for (MQTTSessionState state : sessionStates.values()) {
@@ -139,14 +128,7 @@ public class MQTTSecurityManagerTest extends MQTTTestSupport {
          connection1.connect();
          final BlockingConnection finalConnection = connection1;
          assertTrue(Wait.waitFor(() -> finalConnection.isConnected(), 5000, 100), "Should be connected");
-         Map<String, MQTTSessionState> sessionStates = null;
-         Acceptor acceptor = server.getRemotingService().getAcceptor("MQTT");
-         if (acceptor instanceof AbstractAcceptor abstractAcceptor) {
-            ProtocolManager protocolManager = abstractAcceptor.getProtocolMap().get("MQTT");
-            if (protocolManager instanceof MQTTProtocolManager manager) {
-               sessionStates = manager.getStateManager().getSessionStates();
-            }
-         }
+         Map<String, MQTTSessionState> sessionStates = getSessions();
          assertEquals(1, sessionStates.size());
          assertTrue(sessionStates.containsKey(clientID));
          for (MQTTSessionState state : sessionStates.values()) {

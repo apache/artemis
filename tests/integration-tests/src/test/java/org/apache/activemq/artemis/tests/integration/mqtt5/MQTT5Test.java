@@ -23,6 +23,7 @@ import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -413,6 +414,141 @@ public class MQTT5Test extends MQTT5TestSupport {
       server.stop();
       server.start();
       org.apache.activemq.artemis.tests.util.Wait.assertTrue(() -> getSubscriptionQueue(topic, clientId) != null, 3000, 10);
+   }
+
+   @Test
+   @Timeout(DEFAULT_TIMEOUT_SEC)
+   public void testResourceCleanUpOnRestartWithNonZeroSessionExpiryInterval() throws Exception {
+      testResourceCleanUpOnRestartWithSessionExpiryInterval(2);
+   }
+
+   @Test
+   @Timeout(DEFAULT_TIMEOUT_SEC)
+   public void testResourceCleanUpOnRestartWithZeroSessionExpiryInterval() throws Exception {
+      testResourceCleanUpOnRestartWithSessionExpiryInterval(0);
+   }
+
+   private void testResourceCleanUpOnRestartWithSessionExpiryInterval(long sessionExpiryInterval) throws Exception {
+      enableProtocolLogging();
+      String topic = getTestMethodName();
+      String subscriberId = "subscriber";
+      String publisherId = "publisher";
+      CountDownLatch blockPublisher = new CountDownLatch(1);
+      CountDownLatch outgoingPubrecLatch = new CountDownLatch(1);
+      ReusableLatch blockSubscriber = new ReusableLatch(1);
+
+      assertNull(getPubCache(subscriberId));
+      assertNull(getPubRecCache(subscriberId));
+      assertFalse(getProtocolManager().getStateManager().packetIdCorrelationExistsForClient(subscriberId));
+
+      // Create a client with QoS 2 for both subscribing and publishing
+      MqttClient subscriber = createPahoClient(subscriberId);
+      MqttConnectionOptions options = new MqttConnectionOptionsBuilder()
+         .sessionExpiryInterval(sessionExpiryInterval)
+         .cleanStart(true)
+         .build();
+      subscriber.connect(options);
+      subscriber.setCallback(new DefaultMqttCallback() {
+      });
+      subscriber.subscribe(topic, EXACTLY_ONCE);
+
+      // Verify durable subscription state and subscription queue exist
+      Wait.assertEquals(1L, () -> getProtocolManager().getStateManager().getDurableSessionStateCount(), 2000, 100);
+      assertNotNull(getSubscriptionQueue(topic, subscriberId));
+
+      MQTTInterceptor subscriberInterceptor = (packet, connection) -> {
+         if (packet.fixedHeader().messageType() == MqttMessageType.PUBREL) {
+            logger.info("Blocking outgoing PUBREL to keep pubrec cache entry");
+            try {
+               blockSubscriber.await(3, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+               throw new RuntimeException(e);
+            }
+            return false;
+         }
+         return true;
+      };
+      server.getRemotingService().addOutgoingInterceptor(subscriberInterceptor);
+
+      MqttClient publisher = createPahoClient(publisherId);
+      publisher.connect(options);
+      publisher.publish(topic, new byte[0], EXACTLY_ONCE, false);
+
+      Wait.assertNotNull(() -> getPubCache(publisherId), 2000, 100);
+      Wait.assertEquals(0, () -> getPubCacheSize(publisherId), 2000, 100);
+      Wait.assertEquals(1L, () -> getSubscriptionQueue(topic, subscriberId).getMessagesAdded(), 2000, 100);
+      Wait.assertNotNull(() -> getPubRecCache(subscriberId), 2000, 100);
+      Wait.assertEquals(1, () -> getPubRecCacheSize(subscriberId), 2000, 100);
+
+      MQTTInterceptor publisherInterceptor = (packet, connection) -> {
+         if (packet.fixedHeader().messageType() == MqttMessageType.PUBREL) {
+            logger.info("Blocking outgoing PUBREL to keep publish cache entry");
+            try {
+               blockPublisher.await(3, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+               throw new RuntimeException(e);
+            }
+            return false;
+         }
+         return true;
+      };
+      server.getRemotingService().addIncomingInterceptor(publisherInterceptor);
+
+      // publish QoS 2 message async because PUBREC will be blocked
+      CompletableFuture.runAsync(() -> {
+         try {
+            publisher.publish(topic, new byte[0], EXACTLY_ONCE, false);
+         } catch (MqttException e) {
+            logger.debug("Client publish interrupted: {}", e.getMessage());
+         }
+      });
+
+      Wait.assertNotNull(() -> getPubCache(publisherId), 2000, 100);
+      Wait.assertTrue(() -> getPubCacheSize(publisherId) > 0, 2000, 100);
+
+      // disconnect client before completing either QoS 2 flow
+      subscriber.disconnectForcibly(0, 0, false);
+      subscriber.close();
+      blockSubscriber.countDown();
+      publisher.disconnectForcibly(0, 0, false);
+      publisher.close();
+      blockPublisher.countDown();
+
+      // verify packet ID correlation exists
+      Wait.assertTrue(() -> getProtocolManager().getStateManager().packetIdCorrelationExistsForClient(subscriberId), 2000, 100);
+
+      server.getRemotingService().clearInterceptors();
+
+      server.stop();
+      waitForServerToStop(server);
+      server.start();
+      waitForServerToStart(server);
+
+      if (sessionExpiryInterval > 0) {
+         // session should still exist but will expire after sessionExpiryInterval
+         assertNotNull(getSubscriptionQueue(topic, subscriberId));
+         assertTrue(getProtocolManager().getStateManager().packetIdCorrelationExistsForClient(subscriberId));
+
+         // wait for session to expire
+         Wait.assertNull(() -> {
+            scanSessions();
+            return getSubscriptionQueue(topic, subscriberId);
+         }, sessionExpiryInterval * 2 * 1000, 25);
+
+         // verify all state is cleaned up
+         Wait.assertFalse(() -> getProtocolManager().getStateManager().packetIdCorrelationExistsForClient(subscriberId), 2000, 100);
+         Wait.assertNull(() -> getPubCache(publisherId), 2000, 100);
+         Wait.assertNull(() -> getPubRecCache(subscriberId), 2000, 100);
+      } else {
+         // session should be immediately cleaned up after restart before connections are allowed
+         assertNull(getSubscriptionQueue(topic, subscriberId));
+         assertFalse(getProtocolManager().getStateManager().packetIdCorrelationExistsForClient(subscriberId));
+         assertNull(getPubCache(publisherId));
+         assertNull(getPubRecCache(subscriberId));
+      }
+
+      // verify durable session state record is removed
+      Wait.assertEquals(0L, () -> getProtocolManager().getStateManager().getDurableSessionStateCount(), 5000, 100);
    }
 
    @Test
