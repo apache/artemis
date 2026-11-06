@@ -136,7 +136,7 @@ public class PerfProducerCommand extends PerfCommand {
       // last sample must be collected while the whole benchmark is complete
       statistics.sampleMetrics(warmingUp);
       skratchBuffer.setLength(0);
-      statistics.outSummary(skratchBuffer);
+      statistics.outSummary(skratchBuffer, ascii);
       if (!isSilentInput()) {
          context.out.println(skratchBuffer);
       }

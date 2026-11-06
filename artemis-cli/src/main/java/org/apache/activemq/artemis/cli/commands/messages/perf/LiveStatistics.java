@@ -16,15 +16,22 @@
  */
 package org.apache.activemq.artemis.cli.commands.messages.perf;
 
+import java.io.ByteArrayOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import org.HdrHistogram.Histogram;
 import org.HdrHistogram.HistogramLogWriter;
 import org.apache.activemq.artemis.json.JsonObjectBuilder;
 import org.apache.activemq.artemis.utils.JsonLoader;
+import org.apache.activemq.artemis.utils.TableOut;
 
 public final class LiveStatistics {
 
@@ -57,9 +64,9 @@ public final class LiveStatistics {
    private final Histogram accumulatedSentLatencies;
    private final Histogram accumulatedEndToEndLatencies;
    private final DecimalFormat jsonLatencyFormat;
-   private final PaddingDecimalFormat latencyFormat;
-   private final PaddingDecimalFormat rateFormat;
-   private final PaddingDecimalFormat countFormat;
+   private final DecimalFormat rateFormat;
+   private TableOut intervalTable;
+   private int[] intervalColumnSizes;
    private long sampleTime;
    private final FileWriter jsonWriter;
    private long jsonSamples;
@@ -134,9 +141,7 @@ public final class LiveStatistics {
       }
       this.sampleTime = System.currentTimeMillis();
       this.jsonLatencyFormat = new DecimalFormat("0.00");
-      this.latencyFormat = new PaddingDecimalFormat("0.00", 9);
-      this.rateFormat = new PaddingDecimalFormat("0", 8);
-      this.countFormat = new PaddingDecimalFormat("0", 12);
+      this.rateFormat = new DecimalFormat("0");
       this.jsonSamples = 0;
       if (jsonOutput != null) {
          this.jsonWriter = new FileWriter(jsonOutput);
@@ -225,20 +230,70 @@ public final class LiveStatistics {
       }
    }
 
-   public void outAtInterval(final boolean warmup, final StringBuilder out, final ReportInterval interval, final boolean includeLatencies) throws IOException {
-      // space after "true" is to ensure length to be the same as "false": don't remove it!
-      out.append("\n--- warmup ").append(warmup ? "true " : "false");
-      appendRateOf(out, "\n--- sent:     ", sentMsg, rateFormat, interval, "msg");
-      appendRateOf(out, "\n--- blocked:  ", blockedMsg, rateFormat, interval, "msg");
-      appendRateOf(out, "\n--- completed:", completedMsg, rateFormat, interval, "msg");
-      appendRateOf(out, "\n--- received: ", receivedMsg, rateFormat, interval, "msg");
+   /**
+    * Without latencies each interval is a row of one table, which {@link #outSummary} closes; with them, an interval
+    * takes more than a row, and is a pair of tables of its own.
+    */
+   public void outAtInterval(final boolean warmup,
+                             final StringBuilder out,
+                             final ReportInterval interval,
+                             final boolean includeLatencies,
+                             final boolean ascii) throws IOException {
+      final List<String> titles = new ArrayList<>(List.of("warmup"));
+      final List<String> rates = new ArrayList<>(List.of(Boolean.toString(warmup)));
+      addRate(titles, rates, "sent", sentMsg, interval);
+      addRate(titles, rates, "blocked", blockedMsg, interval);
+      addRate(titles, rates, "completed", completedMsg, interval);
+      addRate(titles, rates, "received", receivedMsg, interval);
+      final String[] titleCells = titles.toArray(new String[0]);
+      final String[] rateCells = rates.toArray(new String[0]);
       if (includeLatencies) {
-         outPercentiles(out, "\n--- send delay time:", intervalWaitLatencies, latencyFormat);
-         outPercentiles(out, "\n--- send ack time:  ", intervalSentLatencies, latencyFormat);
-         outPercentiles(out, "\n--- transfer time:  ", intervalEndToEndLatencies, latencyFormat);
+         final List<String[]> latencies = new ArrayList<>();
+         addLatencies(latencies, "send delay time", intervalWaitLatencies);
+         addLatencies(latencies, "send ack time", intervalSentLatencies);
+         addLatencies(latencies, "transfer time", intervalEndToEndLatencies);
+         out.append('\n').append(tables(stream -> {
+            printTable(stream, ascii, titleCells, List.<String[]>of(rateCells));
+            printTable(stream, ascii, latencyTitles("interval (us)"), latencies);
+         }));
+      } else {
+         out.append(tables(stream -> printIntervalRow(stream, ascii, titleCells, rateCells)));
       }
       appendJsonIntervalSampleOnFile(warmup, interval);
       appendTaggedHdrHistograms(warmup);
+   }
+
+   private void addRate(final List<String> titles, final List<String> rates, final String metric, final RateSampler sampler, final ReportInterval interval) {
+      if (sampler != null) {
+         titles.add(metric + " msg/" + interval.name());
+         rates.add(rateFormat.format(sampler.reportRate(interval.nanoseconds)));
+      }
+   }
+
+   private void printIntervalRow(final PrintStream stream, final boolean ascii, final String[] titles, final String[] rates) {
+      if (intervalTable == null) {
+         intervalColumnSizes = new int[titles.length];
+         for (int i = 0; i < titles.length; i++) {
+            intervalColumnSizes[i] = titles[i].length() + 2;
+         }
+         intervalTable = new TableOut("|", 2, intervalColumnSizes).setAscii(ascii);
+         intervalTable.printTopSeparator(stream);
+         intervalTable.print(stream, alignCells(titles, intervalColumnSizes));
+         intervalTable.printSeparator(stream);
+      }
+      intervalTable.print(stream, alignCells(rates, intervalColumnSizes));
+   }
+
+   private static String[] latencyTitles(final String title) {
+      return new String[]{title, "mean", "50.00%", "90.00%", "99.00%", "99.90%", "99.99%", "max"};
+   }
+
+   private static String tables(final Consumer<PrintStream> printer) {
+      final ByteArrayOutputStream tables = new ByteArrayOutputStream();
+      try (PrintStream stream = new PrintStream(tables, false, StandardCharsets.UTF_8)) {
+         printer.accept(stream);
+      }
+      return tables.toString(StandardCharsets.UTF_8).stripTrailing();
    }
 
    private void appendJsonIntervalSampleOnFile(final boolean warmup, final ReportInterval interval) throws IOException {
@@ -343,26 +398,82 @@ public final class LiveStatistics {
          .add("count", distribution.getTotalCount()));
    }
 
-   public void outSummary(final StringBuilder out) throws IOException {
+   public void outSummary(final StringBuilder out, final boolean ascii) throws IOException {
+      if (intervalTable != null) {
+         final TableOut closing = intervalTable;
+         intervalTable = null;
+         out.append(tables(closing::printBottomSeparator)).append('\n');
+      }
       out.append("\n--- SUMMARY");
       final boolean failedBenchmark = anyFatalError();
-      out.append("\n--- result:         ").append(failedBenchmark ? "        fail" : "     success");
-      if (sentMsg != null) {
-         out.append("\n--- total sent:     ").append(countFormat.format(sentMsg.getLastSample()));
-      }
-      if (blockedMsg != null) {
-         out.append("\n--- total blocked:  ").append(countFormat.format(blockedMsg.getLastSample()));
-      }
-      if (completedMsg != null) {
-         out.append("\n--- total completed:").append(countFormat.format(completedMsg.getLastSample()));
-      }
-      if (receivedMsg != null) {
-         out.append("\n--- total received: ").append(countFormat.format(receivedMsg.getLastSample()));
-      }
-      outPercentiles(out, "\n--- aggregated delay send time:", accumulatedWaitLatencies, latencyFormat);
-      outPercentiles(out, "\n--- aggregated send time:      ", accumulatedSentLatencies, latencyFormat);
-      outPercentiles(out, "\n--- aggregated transfer time:  ", accumulatedEndToEndLatencies, latencyFormat);
+      out.append("\n--- result: ").append(failedBenchmark ? "fail" : "success").append('\n');
+
+      final List<String[]> totals = new ArrayList<>();
+      addTotal(totals, "sent", sentMsg);
+      addTotal(totals, "blocked", blockedMsg);
+      addTotal(totals, "completed", completedMsg);
+      addTotal(totals, "received", receivedMsg);
+
+      final List<String[]> latencies = new ArrayList<>();
+      addLatencies(latencies, "delay send time", accumulatedWaitLatencies);
+      addLatencies(latencies, "send time", accumulatedSentLatencies);
+      addLatencies(latencies, "transfer time", accumulatedEndToEndLatencies);
+
+      out.append(tables(stream -> {
+         printTable(stream, ascii, new String[]{"total", "messages"}, totals);
+         printTable(stream, ascii, latencyTitles("aggregated (us)"), latencies);
+      }));
       appendJsonSummarySampleOnFile(failedBenchmark);
+   }
+
+   private static void addTotal(final List<String[]> rows, final String metric, final RateSampler sampler) {
+      if (sampler != null) {
+         rows.add(new String[]{metric, Long.toString(sampler.getLastSample())});
+      }
+   }
+
+   private void addLatencies(final List<String[]> rows, final String metric, final Histogram histogram) {
+      if (histogram != null) {
+         rows.add(new String[]{metric,
+                               jsonLatencyFormat.format(histogram.getMean()),
+                               jsonLatencyFormat.format(histogram.getValueAtPercentile(50.0d)),
+                               jsonLatencyFormat.format(histogram.getValueAtPercentile(90.0d)),
+                               jsonLatencyFormat.format(histogram.getValueAtPercentile(99.0d)),
+                               jsonLatencyFormat.format(histogram.getValueAtPercentile(99.9d)),
+                               jsonLatencyFormat.format(histogram.getValueAtPercentile(99.99d)),
+                               jsonLatencyFormat.format(histogram.getMaxValue())});
+      }
+   }
+
+   private static void printTable(final PrintStream stream, final boolean ascii, final String[] titles, final List<String[]> rows) {
+      if (rows.isEmpty()) {
+         return;
+      }
+      final int[] columnSizes = new int[titles.length];
+      for (int i = 0; i < titles.length; i++) {
+         columnSizes[i] = titles[i].length() + 2;
+         for (String[] row : rows) {
+            columnSizes[i] = Math.max(columnSizes[i], row[i].length() + 2);
+         }
+      }
+      final TableOut table = new TableOut("|", 2, columnSizes).setAscii(ascii);
+      table.printTopSeparator(stream);
+      table.print(stream, alignCells(titles, columnSizes));
+      table.printSeparator(stream);
+      for (String[] row : rows) {
+         table.print(stream, alignCells(row, columnSizes));
+      }
+      table.printBottomSeparator(stream);
+   }
+
+   // the first column holds names, on the left, and the others numbers, on the right
+   private static String[] alignCells(final String[] cells, final int[] columnSizes) {
+      final String[] aligned = new String[cells.length];
+      aligned[0] = " " + cells[0];
+      for (int i = 1; i < cells.length; i++) {
+         aligned[i] = " ".repeat(columnSizes[i] - cells[i].length() - 1) + cells[i] + " ";
+      }
+      return aligned;
    }
 
    public void close() throws IOException {
@@ -373,36 +484,5 @@ public final class LiveStatistics {
       if (latenciesLogWriter != null) {
          latenciesLogWriter.close();
       }
-   }
-
-   private static void outPercentiles(final StringBuilder out,
-                                      final String metric,
-                                      final Histogram histogram,
-                                      final DecimalFormat latencyFormat) {
-      if (histogram == null) {
-         return;
-      }
-      out.append(' ').append(metric);
-      out.append(' ').append("mean: ").append(latencyFormat.format(histogram.getMean())).append(" us");
-      out.append(" - ").append("50.00%: ").append(latencyFormat.format(histogram.getValueAtPercentile(50.0d))).append(" us");
-      out.append(" - ").append("90.00%: ").append(latencyFormat.format(histogram.getValueAtPercentile(90.0d))).append(" us");
-      out.append(" - ").append("99.00%: ").append(latencyFormat.format(histogram.getValueAtPercentile(99.0d))).append(" us");
-      out.append(" - ").append("99.90%: ").append(latencyFormat.format(histogram.getValueAtPercentile(99.9d))).append(" us");
-      out.append(" - ").append("99.99%: ").append(latencyFormat.format(histogram.getValueAtPercentile(99.99d))).append(" us");
-      out.append(" - ").append("max:    ").append(latencyFormat.format(histogram.getMaxValue())).append(" us");
-   }
-
-   private static StringBuilder appendRateOf(final StringBuilder out,
-                                             final String metric,
-                                             final RateSampler sampler,
-                                             final DecimalFormat rateFormat,
-                                             final ReportInterval outInterval,
-                                             final String unit) {
-      if (sampler == null) {
-         return out;
-      }
-      return out.append(' ').append(metric)
-         .append(' ').append(rateFormat.format(sampler.reportRate(outInterval.nanoseconds)))
-         .append(' ').append(unit).append('/').append(outInterval.name());
    }
 }
