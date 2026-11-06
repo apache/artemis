@@ -850,6 +850,10 @@ see `default-last-value-queue` instead
 | Timeout before redistributing values after no consumers
 | -1
 
+| xref:clusters.adoc#clusters[preserve-delivery-count-on-redistribution]
+| Whether the delivery count is preserved when a message is redistributed
+| `false`
+
 | xref:address-model.adoc#address-model[send-to-dla-on-no-route]
 | Forward messages to DLA when no queues subscribing
 | `false`
