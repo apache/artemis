@@ -82,6 +82,10 @@ public class JournalHashMapProvider<I, K, V, C> {
       return getMap(collectionID, null);
    }
 
+   public JournalHashMap<I, K, V, C> removeMap(I collectionID) {
+      return journalMaps.remove(collectionID);
+   }
+
    public boolean containsMap(I collectionID) {
       return journalMaps.containsKey(collectionID);
    }

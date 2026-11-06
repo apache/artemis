@@ -187,6 +187,7 @@ public class QoS2SubscriberResiliencyTest extends MQTT5TestSupport {
       // connect again to clean the session which will completely remove the cache from memory and disk
       subscriber.connect(new MqttConnectionOptionsBuilder().cleanStart(true).sessionExpiryInterval(0L).build());
       assertNull(getPubRecCache(SUBSCRIBER_CLIENT_ID));
+      assertFalse(getProtocolManager().getStateManager().packetIdCorrelationExistsForClient(SUBSCRIBER_CLIENT_ID));
       subscriber.disconnect();
       subscriber.close();
    }
@@ -298,6 +299,7 @@ public class QoS2SubscriberResiliencyTest extends MQTT5TestSupport {
       // connect again to clean the session which will completely remove the cache from memory and disk
       subscriber.connect(new MqttConnectionOptionsBuilder().cleanStart(true).sessionExpiryInterval(0L).build());
       assertNull(getPubRecCache(SUBSCRIBER_CLIENT_ID));
+      assertFalse(getProtocolManager().getStateManager().packetIdCorrelationExistsForClient(SUBSCRIBER_CLIENT_ID));
       subscriber.disconnect();
       subscriber.close();
    }
@@ -410,6 +412,7 @@ public class QoS2SubscriberResiliencyTest extends MQTT5TestSupport {
       // connect again to clean the session which will completely remove the cache from memory and disk
       subscriber.connect(new MqttConnectionOptionsBuilder().cleanStart(true).sessionExpiryInterval(0L).build());
       assertNull(getPubRecCache(SUBSCRIBER_CLIENT_ID));
+      assertFalse(getProtocolManager().getStateManager().packetIdCorrelationExistsForClient(SUBSCRIBER_CLIENT_ID));
       subscriber.disconnect();
       subscriber.close();
    }
@@ -511,6 +514,7 @@ public class QoS2SubscriberResiliencyTest extends MQTT5TestSupport {
       // connect again to clean the session which will completely remove the cache from memory and disk
       subscriber.connect(new MqttConnectionOptionsBuilder().cleanStart(true).sessionExpiryInterval(0L).build());
       assertNull(getPubRecCache(SUBSCRIBER_CLIENT_ID));
+      assertFalse(getProtocolManager().getStateManager().packetIdCorrelationExistsForClient(SUBSCRIBER_CLIENT_ID));
       subscriber.disconnect();
       subscriber.close();
    }
@@ -561,7 +565,7 @@ public class QoS2SubscriberResiliencyTest extends MQTT5TestSupport {
 
       // Since session expiry is 0, the session was cleaned up on disconnect.
       // The packet ID correlations should have been removed.
-      assertEquals(0, getProtocolManager().getStateManager().getPacketIdCorrelationSize(SUBSCRIBER_CLIENT_ID));
+      assertFalse(getProtocolManager().getStateManager().packetIdCorrelationExistsForClient(SUBSCRIBER_CLIENT_ID));
 
       subscriber.close();
    }
@@ -615,7 +619,7 @@ public class QoS2SubscriberResiliencyTest extends MQTT5TestSupport {
       scanSessions();
 
       // The session expiry scanner should have cleaned up the packet ID correlations
-      assertEquals(0, getProtocolManager().getStateManager().getPacketIdCorrelationSize(SUBSCRIBER_CLIENT_ID));
+      assertFalse(getProtocolManager().getStateManager().packetIdCorrelationExistsForClient(SUBSCRIBER_CLIENT_ID));
       assertNull(getSessionStates().get(SUBSCRIBER_CLIENT_ID));
 
       subscriber.close();
@@ -669,7 +673,7 @@ public class QoS2SubscriberResiliencyTest extends MQTT5TestSupport {
       subscriber.connect(new MqttConnectionOptionsBuilder().cleanStart(true).sessionExpiryInterval(0L).build());
 
       // The clean start should have cleared the packet ID correlations
-      assertEquals(0, getProtocolManager().getStateManager().getPacketIdCorrelationSize(SUBSCRIBER_CLIENT_ID));
+      assertFalse(getProtocolManager().getStateManager().packetIdCorrelationExistsForClient(SUBSCRIBER_CLIENT_ID));
 
       subscriber.disconnect();
       subscriber.close();
