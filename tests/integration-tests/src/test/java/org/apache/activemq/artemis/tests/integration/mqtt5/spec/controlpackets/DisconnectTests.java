@@ -119,4 +119,145 @@ public class DisconnectTests extends MQTT5TestSupport {
 
       client.close();
    }
+
+   /**
+    * This test verifies that when a client sends a session expiry interval in the DISCONNECT packet, that value is
+    * properly persisted so that it survives a broker restart.
+    * <p>
+    * Note: The Paho client doesn't support sending session expiry interval in DISCONNECT, so this test uses an incoming
+    * interceptor to inject the property into the DISCONNECT packet.
+    */
+   @Test
+   @Timeout(DEFAULT_TIMEOUT_SEC)
+   public void testSessionExpiryIntervalOnDisconnectPersisted() throws Exception {
+      final String CLIENT_ID = RandomUtil.randomUUIDString();
+      final long CONNECT_SESSION_EXPIRY = 300L;
+      final long DISCONNECT_SESSION_EXPIRY = 600L;
+
+      MQTTInterceptor incomingInterceptor = (packet, connection) -> {
+         if (packet.fixedHeader().messageType() == MqttMessageType.DISCONNECT) {
+            MqttReasonCodeAndPropertiesVariableHeader header = (MqttReasonCodeAndPropertiesVariableHeader) packet.variableHeader();
+            header.properties().add(new MqttProperties.IntegerProperty(MqttProperties.MqttPropertyType.SESSION_EXPIRY_INTERVAL.value(), (int) DISCONNECT_SESSION_EXPIRY));
+         }
+         return true;
+      };
+      server.getRemotingService().addIncomingInterceptor(incomingInterceptor);
+
+      MqttClient client = createPahoClient(CLIENT_ID);
+      MqttConnectionOptions options = new MqttConnectionOptionsBuilder()
+         .sessionExpiryInterval(CONNECT_SESSION_EXPIRY)
+         .build();
+      client.connect(options);
+
+      assertNotNull(getSessionStates().get(CLIENT_ID));
+      assertEquals(CONNECT_SESSION_EXPIRY, getSessionStates().get(CLIENT_ID).getClientSessionExpiryInterval());
+
+      client.disconnect();
+
+      assertNotNull(getSessionStates().get(CLIENT_ID), "Session should exist after disconnect with non-zero expiry");
+      assertEquals(DISCONNECT_SESSION_EXPIRY, getSessionStates().get(CLIENT_ID).getClientSessionExpiryInterval(), "Session expiry from DISCONNECT should be persisted");
+
+      client.close();
+
+      server.stop();
+      waitForServerToStop(server);
+      server.start();
+      waitForServerToStart(server);
+
+      assertNotNull(getSessionStates().get(CLIENT_ID), "Session should survive broker restart");
+      assertEquals(DISCONNECT_SESSION_EXPIRY, getSessionStates().get(CLIENT_ID).getClientSessionExpiryInterval(), "Session expiry from DISCONNECT should survive restart");
+   }
+
+   /*
+    * Section 3.14.2.2.2 states, "If the Session Expiry Interval in the CONNECT packet was zero, then it is a Protocol
+    * Error to set a non-zero Session Expiry Interval in the DISCONNECT packet sent by the Client. If such a non-zero
+    * Session Expiry Interval is received by the Server, it does not treat it as a valid DISCONNECT packet. The Server
+    * uses DISCONNECT with Reason Code 0x82 (Protocol Error)..."
+    * <p>
+    * This test verifies that the broker properly rejects the protocol error by sending DISCONNECT with reason code 0x82
+    * (Protocol Error).
+    * <p>
+    * Note: The Paho client doesn't support sending session expiry interval in DISCONNECT, so this test uses an incoming
+    * interceptor to inject the property into the DISCONNECT packet.
+    */
+   @Test
+   @Timeout(DEFAULT_TIMEOUT_SEC)
+   public void testSessionExpiryIntervalProtocolError() throws Exception {
+      final String CLIENT_ID = RandomUtil.randomUUIDString();
+      final long INVALID_DISCONNECT_SESSION_EXPIRY = 300L;
+      final CountDownLatch protocolErrorLatch = new CountDownLatch(1);
+
+      MQTTInterceptor incomingInterceptor = (packet, connection) -> {
+         if (packet.fixedHeader().messageType() == MqttMessageType.DISCONNECT) {
+            MqttReasonCodeAndPropertiesVariableHeader header = (MqttReasonCodeAndPropertiesVariableHeader) packet.variableHeader();
+            header.properties().add(new MqttProperties.IntegerProperty(MqttProperties.MqttPropertyType.SESSION_EXPIRY_INTERVAL.value(), (int) INVALID_DISCONNECT_SESSION_EXPIRY));
+         }
+         return true;
+      };
+
+      MQTTInterceptor outgoingInterceptor = (packet, connection) -> {
+         if (packet.fixedHeader().messageType() == MqttMessageType.DISCONNECT) {
+            MqttReasonCodeAndPropertiesVariableHeader header = (MqttReasonCodeAndPropertiesVariableHeader) packet.variableHeader();
+            if (header.reasonCode() == MQTTReasonCodes.PROTOCOL_ERROR) {
+               protocolErrorLatch.countDown();
+            }
+         }
+         return true;
+      };
+
+      server.getRemotingService().addIncomingInterceptor(incomingInterceptor);
+      server.getRemotingService().addOutgoingInterceptor(outgoingInterceptor);
+
+      MqttClient client = createPahoClient(CLIENT_ID);
+      client.connect();
+
+      assertNotNull(getSessionStates().get(CLIENT_ID));
+      assertEquals(0, getSessionStates().get(CLIENT_ID).getClientSessionExpiryInterval(), "Session expiry should be 0 from CONNECT");
+
+      client.disconnect();
+
+      assertTrue(protocolErrorLatch.await(2, TimeUnit.SECONDS), "Broker should send DISCONNECT with Protocol Error reason code");
+      assertNull(getSessionStates().get(CLIENT_ID), "Session should be cleaned up since session expiry was 0");
+
+      client.close();
+   }
+
+   /**
+    * This test verifies that when a client overrides a non-zero session expiry interval with zero in the DISCONNECT
+    * packet, the session is cleaned up immediately rather than persisting for the original duration.
+    * <p>
+    * Note: The Paho client doesn't support sending session expiry interval in DISCONNECT, so this test uses an incoming
+    * interceptor to inject the property into the DISCONNECT packet.
+    */
+   @Test
+   @Timeout(DEFAULT_TIMEOUT_SEC)
+   public void testSessionExpiryIntervalZeroOnDisconnect() throws Exception {
+      final String CLIENT_ID = RandomUtil.randomUUIDString();
+      final long CONNECT_SESSION_EXPIRY = 300L;
+      final long DISCONNECT_SESSION_EXPIRY = 0L;
+
+      MQTTInterceptor incomingInterceptor = (packet, connection) -> {
+         if (packet.fixedHeader().messageType() == MqttMessageType.DISCONNECT) {
+            MqttReasonCodeAndPropertiesVariableHeader header = (MqttReasonCodeAndPropertiesVariableHeader) packet.variableHeader();
+            header.properties().add(new MqttProperties.IntegerProperty(MqttProperties.MqttPropertyType.SESSION_EXPIRY_INTERVAL.value(), (int) DISCONNECT_SESSION_EXPIRY));
+         }
+         return true;
+      };
+      server.getRemotingService().addIncomingInterceptor(incomingInterceptor);
+
+      MqttClient client = createPahoClient(CLIENT_ID);
+      MqttConnectionOptions options = new MqttConnectionOptionsBuilder()
+         .sessionExpiryInterval(CONNECT_SESSION_EXPIRY)
+         .build();
+      client.connect(options);
+
+      assertNotNull(getSessionStates().get(CLIENT_ID));
+      assertEquals(CONNECT_SESSION_EXPIRY, getSessionStates().get(CLIENT_ID).getClientSessionExpiryInterval());
+
+      client.disconnect();
+
+      assertNull(getSessionStates().get(CLIENT_ID), "Session should be cleaned up immediately when session expiry is set to 0 in DISCONNECT");
+
+      client.close();
+   }
 }

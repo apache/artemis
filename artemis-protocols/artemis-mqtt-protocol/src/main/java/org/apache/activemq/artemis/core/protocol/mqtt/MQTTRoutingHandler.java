@@ -44,7 +44,7 @@ public class MQTTRoutingHandler extends RoutingHandler<MQTTRoutingContext> {
             context.getMQTTSession().getProtocolHandler().sendConnack(MQTTReasonCodes.SERVER_UNAVAILABLE);
             break;
       }
-      context.getMQTTSession().getProtocolHandler().disconnect(true);
+      context.getMQTTSession().getProtocolHandler().disconnect();
    }
 
    @Override
@@ -56,6 +56,6 @@ public class MQTTRoutingHandler extends RoutingHandler<MQTTRoutingContext> {
       mqttProperties.add(new MqttProperties.StringProperty(SERVER_REFERENCE.value(), String.format("%s:%d", host, port)));
 
       context.getMQTTSession().getProtocolHandler().sendConnack(MQTTReasonCodes.USE_ANOTHER_SERVER, mqttProperties);
-      context.getMQTTSession().getProtocolHandler().disconnect(true);
+      context.getMQTTSession().getProtocolHandler().disconnect();
    }
 }
