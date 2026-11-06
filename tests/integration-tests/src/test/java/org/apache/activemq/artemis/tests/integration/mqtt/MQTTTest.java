@@ -1477,6 +1477,28 @@ public class MQTTTest extends MQTTTestSupport {
 
    @Test
    @Timeout(60)
+   public void testCleanupAfterRestartWithCleanSession() throws Exception {
+      final String CLIENTID = "cleansession";
+      final String TOPIC = getName();
+      final MQTT mqttClean = createMQTTConnection(CLIENTID, true);
+      final BlockingConnection clean = mqttClean.blockingConnection();
+      clean.connect();
+      clean.subscribe(new Topic[]{new Topic(TOPIC, QoS.EXACTLY_ONCE)});
+      assertNotNull(getSubscriptionQueue(TOPIC, CLIENTID));
+      clean.publish(TOPIC, TOPIC.getBytes(), QoS.EXACTLY_ONCE, false);
+      Message msg = clean.receive(100, TimeUnit.MILLISECONDS);
+      assertNotNull(msg);
+      server.stop();
+      waitForServerToStop(server);
+      clean.disconnect();
+      server.start();
+      waitForServerToStart(server);
+      assertEquals(0, getSessions().size());
+      assertNull(getSubscriptionQueue(TOPIC, CLIENTID));
+   }
+
+   @Test
+   @Timeout(60)
    public void testSendMQTTReceiveJMS() throws Exception {
       doTestSendMQTTReceiveJMS("foo.*", "foo/bar");
    }

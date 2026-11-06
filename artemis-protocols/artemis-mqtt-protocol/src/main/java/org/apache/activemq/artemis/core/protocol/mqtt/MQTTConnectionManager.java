@@ -127,7 +127,7 @@ public class MQTTConnectionManager {
 
          connackProperties = getConnackProperties();
       } else {
-         sessionState.setClientSessionExpiryInterval(session.getProtocolManager().getDefaultMqttSessionExpiryInterval());
+         sessionState.setClientSessionExpiryInterval(cleanStart ? 0 : session.getProtocolManager().getDefaultMqttSessionExpiryInterval());
          connackProperties = MqttProperties.NO_PROPERTIES;
       }
 
