@@ -119,6 +119,7 @@ public class PerfClientCommand extends PerfCommand {
          }
       }
 
+      final MicrosTimeProvider timeProvider = MicrosClock.timeProvider(context);
       boolean warmingUp = warmup != 0;
       final LiveStatistics statistics;
       final StringBuilder skratchBuffer = new StringBuilder();
@@ -131,7 +132,7 @@ public class PerfClientCommand extends PerfCommand {
             .setCommitInterval(commitInterval)
             .setConsumers(consumersPerDestination)
             .setConnections(consumerConnections)
-            .setTimeProvider(() -> TimeUnit.NANOSECONDS.toMicros(System.nanoTime()))
+            .setTimeProvider(timeProvider)
             .setCanDelayMessageCount(true)
             .setSharedSubscription(sharedSubscription)
             .setDurableSubscription(durableSubscription)
@@ -159,7 +160,7 @@ public class PerfClientCommand extends PerfCommand {
             .setMessageRate(rate)
             .setMessageCount(messageCount)
             .setMessageSize(messageSize)
-            .setTimeProvider(() -> TimeUnit.NANOSECONDS.toMicros(System.nanoTime()))
+            .setTimeProvider(timeProvider)
             .setLoopGroup(eventLoopGroup)
             .setMaxPending(maxPending)
             .setSharedConnections(sharedConnections)
