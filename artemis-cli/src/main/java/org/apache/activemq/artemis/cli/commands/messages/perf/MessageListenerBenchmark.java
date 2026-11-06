@@ -50,6 +50,7 @@ public final class MessageListenerBenchmark implements BenchmarkService {
    private final boolean durableSubscription;
    private final long messageCount;
    private final boolean transaction;
+   private final long commitInterval;
    private Set<Connection> jmsConnections;
    private boolean started;
    private boolean closed;
@@ -89,6 +90,7 @@ public final class MessageListenerBenchmark implements BenchmarkService {
                                    final String clientID,
                                    final Destination[] destinations,
                                    final boolean transaction,
+                                   final long commitInterval,
                                    final int sharedSubscription,
                                    final boolean durableSubscription,
                                    final boolean canDelayMessageCount) {
@@ -100,6 +102,7 @@ public final class MessageListenerBenchmark implements BenchmarkService {
       this.clientID = clientID;
       this.destinations = destinations;
       this.transaction = transaction;
+      this.commitInterval = commitInterval;
       this.sharedSubscription = sharedSubscription;
       this.durableSubscription = durableSubscription;
       this.started = false;
@@ -215,7 +218,7 @@ public final class MessageListenerBenchmark implements BenchmarkService {
                   } else {
                      consumer = session.createConsumer(destination);
                   }
-                  consumer.setMessageListener(destinationListeners.remove());
+                  consumer.setMessageListener(listenerOf(session, destinationListeners.remove()));
                }
             } catch (JMSException e) {
                throw new RuntimeException(e);
@@ -255,7 +258,7 @@ public final class MessageListenerBenchmark implements BenchmarkService {
                      } else {
                         consumer = session.createSharedConsumer((Topic) destination, topicName + subscriptionIndex);
                      }
-                     consumer.setMessageListener(destinationListeners.remove());
+                     consumer.setMessageListener(listenerOf(session, destinationListeners.remove()));
                   }
                }
             } catch (JMSException fatal) {
@@ -266,12 +269,19 @@ public final class MessageListenerBenchmark implements BenchmarkService {
       return this;
    }
 
+   private RecordingMessageListener listenerOf(final Session session, final RecordingMessageListener listener) {
+      if (transaction) {
+         listener.setTransactedSession(session);
+      }
+      return listener;
+   }
+
    private void createListeners(final Collection<? super RecordingMessageListener> listeners,
                                 final AtomicLong consumerId,
                                 final Destination destination,
                                 final int count) {
       for (int c = 0; c < count; c++) {
-         listeners.add(new RecordingMessageListener(consumerId.getAndIncrement(), destination, transaction,
+         listeners.add(new RecordingMessageListener(consumerId.getAndIncrement(), destination, commitInterval,
                                                     new AtomicLong(0),
                                                     msgCountLimiter == null ? null : msgCountLimiter::onMessageReceived,
                                                     timeProvider, new SingleWriterRecorder(2),
@@ -283,6 +293,17 @@ public final class MessageListenerBenchmark implements BenchmarkService {
    public synchronized void close() {
       if (!started || closed) {
          return;
+      }
+      if (transaction) {
+         // stopping a connection waits for its listeners, leaving their sessions free to commit from here
+         jmsConnections.forEach(connection -> {
+            try {
+               connection.stop();
+            } catch (JMSException ignore) {
+
+            }
+         });
+         listeners.forEach(RecordingMessageListener::commitReceived);
       }
       listeners = null;
       started = false;

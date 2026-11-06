@@ -39,7 +39,7 @@ import picocli.CommandLine.Option;
 @Command(name = "client", description = "Produce messages to and consume messages from a broker instance.")
 public class PerfClientCommand extends PerfCommand {
 
-   @Option(names = "--tx", description = "Perform Message::acknowledge per each message received. Default: disabled.")
+   @Option(names = "--tx", description = "Consume in transactions, committing every --commit-interval messages, or every message without it. Default: disabled.")
    protected boolean transaction;
 
    @Option(names = "--shared", description = "Create a shared subscription. Default: 0.")
@@ -128,6 +128,7 @@ public class PerfClientCommand extends PerfCommand {
             .setDestinations(consumerProtocol != null ? lookupDestinations(consumerConnectionFactory) : jmsDestinations)
             .setFactory(consumerConnectionFactory)
             .setTransacted(transaction)
+            .setCommitInterval(commitInterval)
             .setConsumers(consumersPerDestination)
             .setConnections(consumerConnections)
             .setTimeProvider(() -> TimeUnit.NANOSECONDS.toMicros(System.nanoTime()))

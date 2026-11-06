@@ -29,6 +29,7 @@ public class MessageListenerBenchmarkBuilder {
    private String clientID;
    private Destination[] destinations;
    private boolean transaction;
+   private long commitInterval;
    private int sharedSubscription;
    private boolean durableSubscription;
    private boolean canDelayMessageCount;
@@ -73,6 +74,11 @@ public class MessageListenerBenchmarkBuilder {
       return this;
    }
 
+   public MessageListenerBenchmarkBuilder setCommitInterval(final long commitInterval) {
+      this.commitInterval = commitInterval;
+      return this;
+   }
+
    public MessageListenerBenchmarkBuilder setSharedSubscription(final int sharedSubscription) {
       this.sharedSubscription = sharedSubscription;
       return this;
@@ -90,7 +96,7 @@ public class MessageListenerBenchmarkBuilder {
 
    public MessageListenerBenchmark createMessageListenerBenchmark() {
       return new MessageListenerBenchmark(factory, timeProvider, consumers, messageCount, connections, clientID,
-                                          destinations, transaction, sharedSubscription, durableSubscription,
+                                          destinations, transaction, commitInterval, sharedSubscription, durableSubscription,
                                           canDelayMessageCount);
    }
 }
