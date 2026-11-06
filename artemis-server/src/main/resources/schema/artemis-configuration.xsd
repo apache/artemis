@@ -4611,6 +4611,15 @@
             </xsd:annotation>
          </xsd:element>
 
+         <xsd:element name="preserve-delivery-count-on-redistribution" type="xsd:boolean" default="false" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  whether the delivery count of a message is preserved when the message is redistributed to another
+                  broker of the cluster.
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+
          <xsd:element name="send-to-dla-on-no-route" type="xsd:boolean" maxOccurs="1" minOccurs="0">
             <xsd:annotation>
                <xsd:documentation>

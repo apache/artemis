@@ -55,6 +55,7 @@ Here an example of an `address-setting` entry that might be found in the `broker
       <default-consumers-before-dispatch>0</default-consumers-before-dispatch>
       <default-delay-before-dispatch>-1</default-delay-before-dispatch>
       <redistribution-delay>-1</redistribution-delay>
+      <preserve-delivery-count-on-redistribution>false</preserve-delivery-count-on-redistribution>
       <send-to-dla-on-no-route>false</send-to-dla-on-no-route>
       <slow-consumer-threshold>-1</slow-consumer-threshold>
       <slow-consumer-threshold-measurement-unit>MESSAGES_PER_SECOND</slow-consumer-threshold-measurement-unit>
@@ -227,6 +228,11 @@ Default is `-1` (wait forever).
 redistribution-delay::
 How long to wait when the last consumer is closed on a queue before redistributing any messages.
 Default is `-1`.
+Read more about xref:clusters.adoc#message-redistribution[clusters].
+
+preserve-delivery-count-on-redistribution::
+Whether to preserve the delivery count of a message when it is redistributed to another broker of the cluster.
+Default is `false` which means the delivery count is reset, so `max-delivery-attempts` is effectively enforced per broker rather than cluster-wide.
 Read more about xref:clusters.adoc#message-redistribution[clusters].
 
 send-to-dla-on-no-route::

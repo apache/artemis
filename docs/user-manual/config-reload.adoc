@@ -232,6 +232,11 @@ Below lists the effects of adding, deleting and updating of an element/attribute
 | The configured redistribution-delay will be removed from running broker after reloading.
 | The redistribution-delay will be updated after reloading.
 
+| `<preserve-delivery-count-on-redistribution>`
+| X (no more than one can be present)
+| The configured preserve-delivery-count-on-redistribution will be removed from running broker after reloading.
+| The preserve-delivery-count-on-redistribution will be updated after reloading.
+
 | `<send-to-dla-on-no-route>`
 | X (no more than one can be present)
 | The configured send-to-dla-on-no-route will be removed from running broker after reloading.

@@ -185,6 +185,12 @@ public interface Message {
     */
    SimpleString HDR_PREFIX = SimpleString.of("_AMQ_PREFIX");
 
+   /**
+    * The delivery count a message had on the originating broker when it was redistributed to another broker of the
+    * cluster. It is only set when {@code preserve-delivery-count-on-redistribution} is enabled for the address.
+    */
+   SimpleString HDR_REDISTRIBUTION_DELIVERY_COUNT = SimpleString.of("_AMQ_REDISTRIBUTION_DELIVERY_COUNT");
+
    byte DEFAULT_TYPE = 0;
 
    byte OBJECT_TYPE = 2;

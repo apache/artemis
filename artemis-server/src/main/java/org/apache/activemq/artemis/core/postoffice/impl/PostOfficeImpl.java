@@ -1427,6 +1427,11 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
          }
       }
 
+      Integer redistributionDeliveryCount = getRedistributionDeliveryCount(message);
+      if (redistributionDeliveryCount != null) {
+         reference.setDeliveryCount(redistributionDeliveryCount);
+      }
+
       queue.refUp(reference);
       queue.durableUp(message);
 
@@ -1670,6 +1675,14 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
    }
 
+   private static Integer getRedistributionDeliveryCount(final Message message) {
+      final Object deliveryCount = message.getBrokerProperty(Message.HDR_REDISTRIBUTION_DELIVERY_COUNT);
+      if (deliveryCount instanceof Number number && number.intValue() > 0) {
+         return number.intValue();
+      }
+      return null;
+   }
+
    @Override
    public void processRoute(final Message message,
                             final RoutingContext context,
@@ -1695,6 +1708,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       } else {
          deliveryTime = null;
       }
+      final Integer redistributionDeliveryCount = getRedistributionDeliveryCount(message);
       final SimpleString messageAddress = message.getAddressSimpleString();
       final PagingStore owningStore = pagingManager.getPageStore(messageAddress);
       message.setOwner(owningStore);
@@ -1728,6 +1742,9 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
                if (deliveryTime != null) {
                   reference.setScheduledDeliveryTime(deliveryTime);
                }
+               if (redistributionDeliveryCount != null) {
+                  reference.setDeliveryCount(redistributionDeliveryCount);
+               }
                refs.add(reference);
                queue.refUp(reference);
             });
@@ -1735,7 +1752,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
          final List<Queue> durableQueues = entry.getValue().getDurableQueues();
          if (!durableQueues.isEmpty()) {
-            processRouteToDurableQueues(message, context, deliveryTime, tx, durableQueues, refs);
+            processRouteToDurableQueues(message, context, deliveryTime, redistributionDeliveryCount, tx, durableQueues, refs);
             containsDurables = true;
          }
       }
@@ -1795,6 +1812,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
    private void processRouteToDurableQueues(final Message message,
                                             final RoutingContext context,
                                             final Long deliveryTime,
+                                            final Integer redistributionDeliveryCount,
                                             final Transaction tx,
                                             final List<Queue> durableQueues,
                                             final ArrayList<MessageReference> refs) throws Exception {
@@ -1812,6 +1830,9 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
          }
          if (deliveryTime != null) {
             reference.setScheduledDeliveryTime(deliveryTime);
+         }
+         if (redistributionDeliveryCount != null) {
+            reference.setDeliveryCount(redistributionDeliveryCount);
          }
          refs.add(reference);
          queue.refUp(reference);

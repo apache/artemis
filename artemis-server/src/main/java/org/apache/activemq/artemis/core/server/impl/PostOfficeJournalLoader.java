@@ -228,7 +228,10 @@ public class PostOfficeJournalLoader implements JournalLoader {
 
                MessageReference ref = postOffice.reload(record.getMessage(), queue, null);
 
-               ref.setDeliveryCount(record.getDeliveryCount());
+               // a delivery count from the journal always wins over the one preserved from a redistribution
+               if (record.getDeliveryCount() > 0) {
+                  ref.setDeliveryCount(record.getDeliveryCount());
+               }
             } catch (Throwable t) {
                ActiveMQServerLogger.LOGGER.unableToLoadMessageFromJournal(t);
                continue;
