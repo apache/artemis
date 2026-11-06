@@ -256,27 +256,44 @@ public final class AsyncJms2ProducerFacade {
       NOT_AVAILABLE_UPDATER.lazySet(this, notAvailable + 1);
    }
 
-   public void requestClose() {
-      requestClose(() -> {
+   public JMSException requestClose() {
+      return requestClose(() -> {
       });
    }
 
-   public void requestClose(final Runnable onClosed) {
+   /**
+    * Closes once the pending sends complete, committing what has been sent since the last commit: the messages were
+    * counted as sent, and would otherwise roll back with the session.
+    *
+    * @return the error of a commit made here, or {@code null}
+    */
+   public JMSException requestClose(final Runnable onClosed) {
       if (closed) {
          onClosed.run();
-         return;
+         return null;
       }
       if (closing) {
          closedObservers.add(onClosed);
-         return;
+         return null;
       }
       availableObservers.clear();
       if (pending > 0) {
          closing = true;
          closedObservers.add(onClosed);
-      } else {
-         closed = true;
-         onClosed.run();
+         return null;
       }
+      JMSException completionError = null;
+      if (transactionCapacity > 0 && completedMsgInTransaction > 0) {
+         completedMsgInTransaction = 0;
+         pendingMsgInTransaction = 0;
+         try {
+            session.commit();
+         } catch (final JMSException fatal) {
+            completionError = fatal;
+         }
+      }
+      closed = true;
+      onClosed.run();
+      return completionError;
    }
 }
