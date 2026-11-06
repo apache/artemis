@@ -112,7 +112,7 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
          if (session.getVersion() == MQTTVersion.MQTT_5) {
             sendDisconnect(MQTTReasonCodes.IMPLEMENTATION_SPECIFIC_ERROR);
          }
-         disconnect(true);
+         disconnect();
          return;
       }
 
@@ -122,7 +122,7 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
          if (session.getVersion() == MQTTVersion.MQTT_5) {
             sendDisconnect(MQTTReasonCodes.MALFORMED_PACKET);
          }
-         disconnect(true);
+         disconnect();
          return;
       }
 
@@ -132,14 +132,14 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
          if (session.getVersion() == MQTTVersion.MQTT_5) {
             sendDisconnect(MQTTReasonCodes.IMPLEMENTATION_SPECIFIC_ERROR);
          }
-         disconnect(true);
+         disconnect();
          return;
       }
 
       String interceptResult = this.protocolManager.invokeIncoming(message, this.connection);
       if (interceptResult != null) {
          logger.debug("Interceptor {} rejected MQTT control packet: {}", interceptResult, message);
-         disconnect(true);
+         disconnect();
          return;
       }
 
@@ -205,7 +205,7 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
                handleUnsubscribe((MqttUnsubscribeMessage) message);
                break;
             case DISCONNECT:
-               disconnect(false, message);
+               handleDisconnect(message);
                break;
             case UNSUBACK:
             case SUBACK:
@@ -213,7 +213,7 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
             case PINGRESP:
             case CONNACK: // The server does not instantiate connections therefore any CONNACK received over a connection is an invalid control message.
             default:
-               disconnect(true);
+               disconnect();
          }
       } catch (Exception e) {
          if (e instanceof ActiveMQShutdownException ignored) {
@@ -224,7 +224,7 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
          if (session.getVersion() == MQTTVersion.MQTT_5) {
             sendDisconnect(MQTTReasonCodes.IMPLEMENTATION_SPECIFIC_ERROR);
          }
-         disconnect(true);
+         disconnect();
       } finally {
          ReferenceCountUtil.release(message);
          resetContext(oldContext);
@@ -296,18 +296,29 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
       }
    }
 
-   void disconnect(boolean error) {
-      disconnect(error, null);
+   void disconnect() {
+      session.getConnectionManager().disconnect(true);
    }
 
-   void disconnect(boolean error, MqttMessage disconnect) {
+   void handleDisconnect(MqttMessage disconnect) throws Exception {
       if (disconnect != null && disconnect.variableHeader() instanceof MqttReasonCodeAndPropertiesVariableHeader variableHeader) {
          Integer sessionExpiryInterval = MQTTUtil.getProperty(Integer.class, variableHeader.properties(), SESSION_EXPIRY_INTERVAL, null);
          if (sessionExpiryInterval != null) {
+            int originalSessionExpiryInterval = session.getState().getClientSessionExpiryInterval();
+
+            if (originalSessionExpiryInterval == 0 && sessionExpiryInterval != 0) {
+               sendDisconnect(MQTTReasonCodes.PROTOCOL_ERROR);
+               disconnect();
+               return;
+            }
+
             session.getState().setClientSessionExpiryInterval(sessionExpiryInterval);
+            if (originalSessionExpiryInterval != 0) {
+               session.getStateManager().storeDurableState(session.getState());
+            }
          }
       }
-      session.getConnectionManager().disconnect(error);
+      session.getConnectionManager().disconnect(false);
    }
 
    void sendConnack(byte returnCode) {
@@ -342,7 +353,7 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
    void handlePublish(MqttPublishMessage message) throws Exception {
       if (session.getVersion() == MQTTVersion.MQTT_5 && session.getProtocolManager().getMaximumPacketSize() != -1 && MQTTUtil.calculateMessageSize(message) > session.getProtocolManager().getMaximumPacketSize()) {
          sendDisconnect(MQTTReasonCodes.PACKET_TOO_LARGE);
-         disconnect(true);
+         disconnect();
          return;
       }
 
@@ -352,7 +363,7 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
          if (session.getVersion() == MQTTVersion.MQTT_5) {
             sendDisconnect(e.getCode());
          }
-         disconnect(true);
+         disconnect();
       }
    }
 
@@ -505,7 +516,7 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
             sendConnack(MQTTReasonCodes.UNSUPPORTED_PROTOCOL_VERSION);
          }
 
-         disconnect(true);
+         disconnect();
          return false;
       }
       return true;
@@ -571,7 +582,7 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
             session.getProtocolHandler().sendConnack(MQTTReasonCodes.NOT_AUTHORIZED_3);
          }
          // avoid a race with sending the CONNACK packet and disconnecting the client
-         runAfterStorageOperations(() -> disconnect(true));
+         runAfterStorageOperations(() -> disconnect());
          result = Boolean.FALSE;
       }
 
@@ -598,7 +609,7 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
       } else {
          session.getProtocolHandler().sendConnack(MQTTReasonCodes.IDENTIFIER_REJECTED_3);
       }
-      disconnect(true);
+      disconnect();
       return false;
    }
 
