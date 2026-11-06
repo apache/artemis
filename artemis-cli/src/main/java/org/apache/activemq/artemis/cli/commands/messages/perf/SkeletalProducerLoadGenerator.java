@@ -218,7 +218,8 @@ public abstract class SkeletalProducerLoadGenerator implements CompletionListene
 
    private void recordSendCompletionLatency(final Message message) throws JMSException {
       final long time = message.getLongProperty("time");
-      final long elapsedMicros = timeProvider.now() - time;
+      // a wall clock can step back
+      final long elapsedMicros = Math.max(0, timeProvider.now() - time);
       sendCompletedLatencies.recordValue(elapsedMicros);
    }
 
