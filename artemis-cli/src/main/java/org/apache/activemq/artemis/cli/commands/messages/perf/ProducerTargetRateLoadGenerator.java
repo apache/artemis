@@ -59,7 +59,8 @@ public final class ProducerTargetRateLoadGenerator extends SkeletalProducerLoadG
          return;
       }
       if (!keepOnSending.getAsBoolean()) {
-         producer.requestClose();
+         requestClose(() -> {
+         });
          stopLoad = true;
          return;
       }

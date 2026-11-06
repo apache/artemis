@@ -22,6 +22,7 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.activemq.artemis.cli.commands.messages.perf.AsyncJms2ProducerFacade.SendAttemptResult;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,8 @@ import org.mockito.Mockito;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AsyncJms2ProducerFacadeTest {
 
@@ -77,5 +80,72 @@ public class AsyncJms2ProducerFacadeTest {
       assertEquals(List.of(SendAttemptResult.Success, SendAttemptResult.NotAvailable, SendAttemptResult.Success), results);
       assertEquals(3, facade.getMessageSent());
       Mockito.verify(producer, Mockito.times(3)).send(message, null);
+   }
+
+   private static void sendAndComplete(final AsyncJms2ProducerFacade facade, final int messages) throws JMSException {
+      for (int i = 0; i < messages; i++) {
+         assertEquals(SendAttemptResult.Success, facade.trySend(Mockito.mock(Message.class), null, () -> {
+         }));
+         assertNull(facade.onSendCompleted());
+      }
+   }
+
+   private static AsyncJms2ProducerFacade facade(final Session session, final long transactionCapacity) throws JMSException {
+      Mockito.when(session.getTransacted()).thenReturn(transactionCapacity > 0);
+      return new AsyncJms2ProducerFacade(0, session, Mockito.mock(MessageProducer.class), null, 1, transactionCapacity);
+   }
+
+   /**
+    * The messages sent since the last commit are counted as sent, and a consumer waits for them: closing with no send
+    * pending must commit them, or they roll back with the session.
+    */
+   @Test
+   public void testCloseCommitsCompletedMessages() throws Exception {
+      final Session session = Mockito.mock(Session.class);
+      final AsyncJms2ProducerFacade facade = facade(session, 10);
+      sendAndComplete(facade, 3);
+      Mockito.verify(session, Mockito.never()).commit();
+
+      final AtomicBoolean onClosed = new AtomicBoolean();
+      assertNull(facade.requestClose(() -> onClosed.set(true)));
+
+      Mockito.verify(session).commit();
+      assertTrue(onClosed.get());
+   }
+
+   @Test
+   public void testCloseReturnsCommitError() throws Exception {
+      final Session session = Mockito.mock(Session.class);
+      final AsyncJms2ProducerFacade facade = facade(session, 10);
+      sendAndComplete(facade, 3);
+      final JMSException failure = new JMSException("commit failed");
+      Mockito.doThrow(failure).when(session).commit();
+
+      final AtomicBoolean onClosed = new AtomicBoolean();
+      assertSame(failure, facade.requestClose(() -> onClosed.set(true)));
+      assertTrue(onClosed.get());
+   }
+
+   @Test
+   public void testCloseWithNothingToCommit() throws Exception {
+      final Session session = Mockito.mock(Session.class);
+      final AsyncJms2ProducerFacade facade = facade(session, 2);
+      sendAndComplete(facade, 2);
+      Mockito.verify(session).commit();
+
+      assertNull(facade.requestClose());
+
+      Mockito.verify(session).commit();
+   }
+
+   @Test
+   public void testCloseNotTransacted() throws Exception {
+      final Session session = Mockito.mock(Session.class);
+      final AsyncJms2ProducerFacade facade = facade(session, 0);
+      sendAndComplete(facade, 3);
+
+      assertNull(facade.requestClose());
+
+      Mockito.verify(session, Mockito.never()).commit();
    }
 }

@@ -236,6 +236,13 @@ public abstract class SkeletalProducerLoadGenerator implements CompletionListene
       closed = true;
       // no need for this anymore
       messageToSend = null;
-      producer.requestClose(onClosed);
+      requestClose(onClosed);
+   }
+
+   protected final void requestClose(final Runnable onClosed) {
+      final JMSException closeError = producer.requestClose(onClosed);
+      if (closeError != null) {
+         fatalException = closeError;
+      }
    }
 }

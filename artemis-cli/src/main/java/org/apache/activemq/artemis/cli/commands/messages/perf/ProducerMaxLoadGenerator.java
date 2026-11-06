@@ -42,7 +42,8 @@ public final class ProducerMaxLoadGenerator extends SkeletalProducerLoadGenerato
          return;
       }
       if (!keepOnSending.getAsBoolean()) {
-         producer.requestClose();
+         requestClose(() -> {
+         });
          stopLoad = true;
          return;
       }
