@@ -206,7 +206,7 @@ public class QoS1SubscriberResiliencyTest extends MQTT5TestSupport {
       // Reconnect with a clean start, which clears the packet ID correlations
       subscriber = createPahoClient(SUBSCRIBER_CLIENT_ID);
       subscriber.connect(new MqttConnectionOptionsBuilder().cleanStart(true).sessionExpiryInterval(0L).build());
-      assertEquals(0, getProtocolManager().getStateManager().getPacketIdCorrelationSize(SUBSCRIBER_CLIENT_ID));
+      assertFalse(getProtocolManager().getStateManager().packetIdCorrelationExistsForClient(SUBSCRIBER_CLIENT_ID));
       subscriber.disconnect();
       subscriber.close();
 

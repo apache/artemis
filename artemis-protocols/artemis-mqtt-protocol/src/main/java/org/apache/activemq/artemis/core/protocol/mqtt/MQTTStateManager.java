@@ -20,6 +20,7 @@ package org.apache.activemq.artemis.core.protocol.mqtt;
 
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -134,7 +135,7 @@ public class MQTTStateManager {
          MQTTSessionState state = entry.getValue();
          logger.debug("Inspecting session: {}", state);
          int sessionExpiryInterval = state.getClientSessionExpiryInterval();
-         if (!state.isAttached() && sessionExpiryInterval > 0 && state.getDisconnectedTime() + (sessionExpiryInterval * 1000) < System.currentTimeMillis()) {
+         if (!state.isAttached() && (sessionExpiryInterval == 0 || (sessionExpiryInterval > 0 && state.getDisconnectedTime() + (sessionExpiryInterval * 1000) < System.currentTimeMillis()))) {
             toRemove.add(entry.getKey());
          }
          if (state.isWill() && !state.isAttached() && state.isFailed() && state.getWillDelayInterval() > 0 && state.getDisconnectedTime() + (state.getWillDelayInterval() * 1000) < System.currentTimeMillis()) {
@@ -142,19 +143,43 @@ public class MQTTStateManager {
          }
       }
 
-      for (String key : toRemove) {
+      for (String clientId : toRemove) {
          try {
-            MQTTSessionState state = removeSessionState(key);
+            MQTTSessionState state = removeSessionState(clientId);
             if (state != null) {
                if (state.isWill() && !state.isAttached() && state.isFailed()) {
                   state.getSession().sendWillMessage();
                }
-               state.getSession().clean(false);
+               MQTTSession session = state.getSession();
+               if (session != null) {
+                  session.clean(false);
+               } else {
+                  cleanDurableStateManually(clientId, state.getSubscriptionItems());
+               }
             }
          } catch (Exception e) {
-            MQTTLogger.LOGGER.failedToRemoveSessionState(key, e);
+            MQTTLogger.LOGGER.failedToRemoveSessionState(clientId, e);
          }
       }
+   }
+
+   /**
+    * If the {@code MQTTSessionState} exists, but the corresponding {@code MQTTSession} doesn't then we must "manually"
+    * clean up any left-over durable state.
+    */
+   private void cleanDurableStateManually(String clientId, Collection<SubscriptionItem> subs) throws Exception {
+      removeDurableSubscriptionState(clientId);
+
+      for (SubscriptionItem item : subs) {
+         MQTTSubscriptionManager.cleanSubscriptionQueue(item.getSubscription().topicFilter(), clientId, server, (q) -> server.destroyQueue(q, null, true, false, true));
+      }
+
+      if (packetIdCorrelationExistsForClient(clientId)) {
+         clearPacketIdCorrelation(clientId);
+      }
+
+      server.getPostOffice().deleteDuplicateCache(PacketIdCache.getCacheName(server.getInternalNamingPrefix(), clientId, PacketIdCache.TYPE.PUBLISH));
+      server.getPostOffice().deleteDuplicateCache(PacketIdCache.getCacheName(server.getInternalNamingPrefix(), clientId, PacketIdCache.TYPE.PUBREC));
    }
 
    public MQTTSessionState getSessionState(String clientId) throws Exception {
@@ -227,6 +252,14 @@ public class MQTTStateManager {
       buf.writeInt(state.getClientSessionExpiryInterval());
 
       return message;
+   }
+
+   public long getDurableSessionStateCount() {
+      if (subscriptionPersistenceEnabled) {
+         return sessionStore.getMessageCount();
+      } else {
+         return 0;
+      }
    }
 
    public boolean isClientConnected(String clientId, MQTTConnection connection) {
@@ -309,6 +342,7 @@ public class MQTTStateManager {
 
    public void clearPacketIdCorrelation(String clientId) {
       journalHashMapProvider.getMap(clientId).clear();
+      journalHashMapProvider.removeMap(clientId);
       packetIdCorrelationIndex.clear(clientId);
    }
 
@@ -353,6 +387,8 @@ public class MQTTStateManager {
          } catch (NoSuchElementException ignored) {
             // this could happen through paging browsing
          }
+         // scan now to clean out anything leftover from an ungraceful broker shutdown
+         scanSessions();
       }
    }
 }
