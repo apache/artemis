@@ -21,6 +21,7 @@ import java.util.Collection;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.core.config.storage.DatabaseStorageConfiguration;
+import org.apache.activemq.artemis.core.paging.impl.FilePage;
 import org.apache.activemq.artemis.core.paging.impl.Page;
 import org.apache.activemq.artemis.core.paging.impl.PagingStoreImpl;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
@@ -71,7 +72,7 @@ public class NetworkTimeoutCheckTest extends ParameterDBTestBase {
       queue.getPagingStore().startPaging();
       PagingStoreImpl store = (PagingStoreImpl) queue.getPagingStore();
       Page page = store.getCurrentPage();
-      JDBCSequentialFile file = (JDBCSequentialFile) page.getFile();
+      JDBCSequentialFile file = (JDBCSequentialFile) ((FilePage) page).getFile();
       assertEquals(TIMEOUT, file.getNetworkTimeoutMillis());
 
       server.stop();

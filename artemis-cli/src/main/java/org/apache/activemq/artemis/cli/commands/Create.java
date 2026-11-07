@@ -287,6 +287,9 @@ public class Create extends InstallAbstract {
    @Option(names = "--jdbc", description = "Store message data in JDBC instead of local files.")
    boolean jdbc;
 
+   @Option(names = "--database-storage", description = "Use the relational database storage implementation (implies --jdbc).")
+   boolean databaseStorage;
+
    @Option(names = {"--staticCluster", "--static-cluster"}, description = "Cluster node connectors list separated by comma, e.g. \"tcp://server:61616,tcp://server2:61616,tcp://server3:61616\".")
    String staticNode;
 
@@ -339,6 +342,23 @@ public class Create extends InstallAbstract {
 
    @Option(names = "--jdbc-lock-expiration", description = "Lock expiration (in milliseconds).")
    long jdbcLockExpiration = ActiveMQDefaultConfiguration.getDefaultJdbcLockExpirationMillis();
+
+   @Option(names = "--database-connections", description = "Number of database connections in the pool.")
+   int databaseConnections = ActiveMQDefaultConfiguration.getDefaultDatabaseConnections();
+
+   @Option(names = "--database-max-read-connections", description = "Maximum borrowed read connections before demanding them back. -1 means half of database-connections.")
+   int databaseMaxReadConnections = ActiveMQDefaultConfiguration.getDefaultDatabaseMaxReadConnections();
+
+   private int getDatabaseMaxReadConnections() {
+      if (databaseMaxReadConnections < 0) {
+         return databaseConnections / 2;
+      } else {
+         return databaseMaxReadConnections;
+      }
+   }
+
+   @Option(names = "--database-read-idle-timeout", description = "Idle timeout (in milliseconds) before a borrowed read connection is returned to the pool.")
+   long databaseReadIdleTimeout = ActiveMQDefaultConfiguration.getDefaultDatabaseReadIdleTimeout();
 
    private boolean isAutoCreate() {
       if (autoCreate == null) {
@@ -625,6 +645,11 @@ public class Create extends InstallAbstract {
          throw new IllegalArgumentException("The device-block-size must be a multiple of 512");
       }
 
+      // --database-storage implies --jdbc
+      if (databaseStorage) {
+         jdbc = true;
+      }
+
       filters.put("${device-block-size}", Integer.toString(journalDeviceBlockSize));
 
       filters.put("${primary-backup}", isBackup() ? "backup" : "primary");
@@ -718,6 +743,30 @@ public class Create extends InstallAbstract {
          filters.put("${jdbcNetworkTimeout}", "" + jdbcNetworkTimeout);
          filters.put("${jdbcLockRenewPeriod}", "" + jdbcLockRenewPeriod);
          filters.put("${jdbcLockExpiration}", "" + jdbcLockExpiration);
+         if (databaseStorage) {
+            filters.put("${databaseStorage}", "<database-storage>true</database-storage>");
+            filters.put("${databaseConnections}", "<database-connections>" + databaseConnections + "</database-connections>");
+            filters.put("${databaseMaxReadConnections}", "<database-max-read-connections>" + getDatabaseMaxReadConnections() + "</database-max-read-connections>");
+            filters.put("${databaseReadIdleTimeout}", "<database-read-idle-timeout>" + databaseReadIdleTimeout + "</database-read-idle-timeout>");
+            filters.put("${databaseMaxRetries}", "<database-max-retries>" + ActiveMQDefaultConfiguration.getDefaultDatabaseMaxRetries() + "</database-max-retries>");
+            filters.put("${databaseRetryIntervalMillis}", "<database-retry-interval-millis>" + ActiveMQDefaultConfiguration.getDefaultDatabaseRetryIntervalMillis() + "</database-retry-interval-millis>");
+            filters.put("${databaseFlushPeriodNanos}", "<database-flush-period-nanos>" + ActiveMQDefaultConfiguration.getDefaultDatabaseFlushPeriodNanos() + "</database-flush-period-nanos>");
+            filters.put("${maxPendingWrites}", "<max-pending-writes>" + ActiveMQDefaultConfiguration.getDefaultDatabaseMaxPendingWrites() + "</max-pending-writes>");
+            filters.put("${databasePageJoinFetch}",
+                        "<!-- Controls how paged messages are read from the database. When true, a single JOIN query fetches (which may take longer to run on large sets, depending on the database and configuration)\n" +
+                        "            message IDs and data together. When false, two separate queries are used: first for IDs, then for data. -->\n" +
+                        "            <database-page-join-fetch>" + ActiveMQDefaultConfiguration.getDefaultDatabasePageJoinFetch() + "</database-page-join-fetch>");
+         } else {
+            filters.put("${databaseStorage}", "");
+            filters.put("${databaseConnections}", "");
+            filters.put("${databaseMaxReadConnections}", "");
+            filters.put("${databaseReadIdleTimeout}", "");
+            filters.put("${databaseMaxRetries}", "");
+            filters.put("${databaseRetryIntervalMillis}", "");
+            filters.put("${databaseFlushPeriodNanos}", "");
+            filters.put("${maxPendingWrites}", "");
+            filters.put("${databasePageJoinFetch}", "");
+         }
          filters.put("${jdbc}", readTextFile(ETC_DATABASE_STORE_TXT, filters));
       } else {
          filters.put("${jdbc}", "");

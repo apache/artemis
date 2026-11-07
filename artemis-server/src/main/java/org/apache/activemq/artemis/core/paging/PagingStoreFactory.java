@@ -36,6 +36,8 @@ public interface PagingStoreFactory {
 
    PagingStore newStore(SimpleString address, AddressSettings addressSettings);
 
+
+   // TODO: Get rid of this. each implementation create its own. Only thing stopping me from doing this now is a test that is replacing this
    PageCursorProvider newCursorProvider(PagingStore store,
                                         StorageManager storageManager,
                                         AddressSettings addressSettings,

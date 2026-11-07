@@ -64,6 +64,7 @@
       <module>artemis-service-extensions</module>
       <module>artemis-jakarta-service-extensions</module>
       <module>artemis-jdbc-store</module>
+      <module>artemis-database-storage</module>
       <module>artemis-maven-plugin</module>
       <module>artemis-server-osgi</module>
       <module>artemis-console</module>
