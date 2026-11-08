@@ -1517,6 +1517,11 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
                resourceManager.putTransaction(xid, theTx, remotingConnection);
 
                throw new ActiveMQXAException(XAException.XAER_PROTO, "Cannot commit transaction, it is suspended " + xid);
+            } else if (onePhase && theTx.getState() == Transaction.State.PREPARED || !onePhase && theTx.getState() == Transaction.State.ACTIVE) {
+               // The wrong kind of commit for the branch: it stays, to be committed or rolled back properly
+               resourceManager.putTransaction(xid, theTx, remotingConnection);
+
+               throw new ActiveMQXAException(XAException.XAER_PROTO, "Cannot commit transaction in " + (onePhase ? "one phase, it is prepared " : "two phases, it is not prepared ") + xid);
             } else {
                theTx.commit(onePhase);
             }
