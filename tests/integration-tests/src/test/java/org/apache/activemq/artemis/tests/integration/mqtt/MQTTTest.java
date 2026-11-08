@@ -46,6 +46,10 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
@@ -902,6 +906,52 @@ public class MQTTTest extends MQTTTestSupport {
 
          connection.unsubscribe(new String[]{TOPICA});
          connection.disconnect();
+      }
+   }
+
+   @Test
+   @Timeout(120)
+   public void testFirstRetainedMessagesPublishedAtOnce() throws Exception {
+      final int publishers = 16;
+      ExecutorService executor = Executors.newFixedThreadPool(publishers);
+      runAfter(executor::shutdownNow);
+
+      for (int round = 0; round < 10; round++) {
+         // A new topic each round, so the publishers race to create its retain queue.
+         final String topic = "retainedAtOnce/" + round;
+         List<BlockingConnection> connections = new ArrayList<>();
+         for (int i = 0; i < publishers; i++) {
+            BlockingConnection connection = createMQTTConnection("retainedAtOnce-" + round + "-" + i, true).blockingConnection();
+            connection.connect();
+            connections.add(connection);
+         }
+
+         CyclicBarrier barrier = new CyclicBarrier(publishers);
+         List<Future<?>> published = new ArrayList<>();
+         for (int i = 0; i < publishers; i++) {
+            final BlockingConnection connection = connections.get(i);
+            final byte[] payload = ("message " + i).getBytes();
+            published.add(executor.submit(() -> {
+               barrier.await();
+               connection.publish(topic, payload, QoS.AT_LEAST_ONCE, true);
+               return null;
+            }));
+         }
+         for (Future<?> f : published) {
+            f.get(30, TimeUnit.SECONDS);
+         }
+         for (BlockingConnection connection : connections) {
+            connection.disconnect();
+         }
+
+         BlockingConnection subscriber = createMQTTConnection("retainedAtOnce-sub-" + round, true).blockingConnection();
+         subscriber.connect();
+         subscriber.subscribe(new Topic[]{new Topic(topic, QoS.AT_LEAST_ONCE)});
+         Message message = subscriber.receive(5000, TimeUnit.MILLISECONDS);
+         assertNotNull(message, "No retained message on " + topic);
+         message.ack();
+         assertNull(subscriber.receive(100, TimeUnit.MILLISECONDS));
+         subscriber.disconnect();
       }
    }
 
