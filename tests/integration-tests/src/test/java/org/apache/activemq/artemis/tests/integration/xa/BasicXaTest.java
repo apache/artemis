@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -807,6 +808,38 @@ public class BasicXaTest extends ActiveMQTestBase {
    @TestTemplate
    public void testRollbackHeuristicallyRolledBackXID() throws Exception {
       doCompleteHeuristicallyCompletedXID(false, false);
+   }
+
+   @TestTemplate
+   public void testOnePhaseCommitOfPreparedBranchLeavesIt() throws Exception {
+      doWrongKindOfCommit(true);
+   }
+
+   @TestTemplate
+   public void testTwoPhaseCommitOfUnpreparedBranchLeavesIt() throws Exception {
+      doWrongKindOfCommit(false);
+   }
+
+   private void doWrongKindOfCommit(boolean prepared) throws Exception {
+      Xid xid = newXID();
+      clientSession.start(xid, XAResource.TMNOFLAGS);
+      clientSession.createProducer(atestq).send(createTextMessage(clientSession, "m1"));
+      clientSession.end(xid, XAResource.TMSUCCESS);
+      if (prepared) {
+         clientSession.prepare(xid);
+      }
+
+      // One phase for a prepared branch, two phases for one not prepared
+      XAException e = assertThrows(XAException.class, () -> clientSession.commit(xid, prepared));
+      assertEquals(XAException.XAER_PROTO, e.errorCode);
+
+      if (prepared) {
+         assertTrue(Arrays.asList(clientSession.recover(XAResource.TMSTARTRSCAN | XAResource.TMENDRSCAN)).contains(xid));
+      }
+      clientSession.commit(xid, !prepared);
+
+      Queue queue = messagingService.locateQueue(atestq);
+      Wait.assertEquals(1L, queue::getMessageCount);
    }
 
    @TestTemplate
