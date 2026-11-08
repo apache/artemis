@@ -190,7 +190,7 @@ final class InMemoryDuplicateIDCache implements DuplicateIDCache {
          logger.trace("address = {} adding {}", address, describeID(holder.bytes));
       }
 
-      cache.put(holder, cachedBoxedInts.apply(pos));
+      final Integer slot = cachedBoxedInts.apply(pos);
 
       if (pos < ids.size()) {
          // Need fast array style access here -hence ArrayList typing
@@ -202,7 +202,8 @@ final class InMemoryDuplicateIDCache implements DuplicateIDCache {
                logger.trace("address = {} removing excess duplicateDetection {}", address, describeID(id.bytes));
             }
 
-            cache.remove(id);
+            // The same id may be held in a newer slot too: then it stays
+            cache.remove(id, slot);
          }
 
          if (logger.isTraceEnabled()) {
@@ -216,6 +217,8 @@ final class InMemoryDuplicateIDCache implements DuplicateIDCache {
 
          ids.add(holder);
       }
+
+      cache.put(holder, slot);
 
       if (pos++ == cacheSize - 1) {
          pos = 0;
