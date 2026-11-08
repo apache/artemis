@@ -53,7 +53,8 @@ public class MQTTRetainMessageManager {
 
       Queue queue = session.getServer().locateQueue(retainAddress);
       if (queue == null) {
-         queue = session.getServer().createQueue(QueueConfiguration.of(retainAddress).setAutoCreated(true));
+         // Another connection may create it first: then use that one
+         queue = session.getServer().createQueue(QueueConfiguration.of(retainAddress).setAutoCreated(true), true);
       }
 
       queue.deleteAllReferences();
