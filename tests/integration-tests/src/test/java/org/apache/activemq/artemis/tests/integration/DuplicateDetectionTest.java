@@ -19,6 +19,7 @@ package org.apache.activemq.artemis.tests.integration;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -916,6 +917,50 @@ public class DuplicateDetectionTest extends ActiveMQTestBase {
       message = consumer.receive(5000);
       assertNotNull(message);
       assertEquals(dupID1.toString(), message.getStringProperty("key"));
+   }
+
+   /*
+    * A second send of an id in the same transaction is a duplicate, though the id joins the cache only at the commit
+    */
+   @TestTemplate
+   public void testSameIdTwiceInOneTransaction() throws Exception {
+      ClientSession session = sf.createSession(false, false, false);
+
+      session.start();
+
+      final SimpleString queueName = SimpleString.of("DuplicateDetectionTestQueue");
+
+      session.createQueue(QueueConfiguration.of(queueName).setDurable(false));
+
+      ClientProducer producer = session.createProducer(queueName);
+
+      ClientConsumer consumer = session.createConsumer(queueName);
+
+      SimpleString dupID = SimpleString.of("abcdefg");
+
+      for (int i = 0; i < 2; i++) {
+         ClientMessage message = createMessage(session, i);
+         message.putBytesProperty(Message.HDR_DUPLICATE_DETECTION_ID, dupID.getData());
+         producer.send(message);
+      }
+
+      assertThrows(ActiveMQDuplicateIdException.class, session::commit);
+      session.rollback();
+
+      assertNull(consumer.receiveImmediate());
+
+      // The id was not taken: a new transaction sends it
+      ClientMessage message = createMessage(session, 2);
+      message.putBytesProperty(Message.HDR_DUPLICATE_DETECTION_ID, dupID.getData());
+      producer.send(message);
+
+      session.commit();
+
+      message = consumer.receive(5000);
+      assertNotNull(message);
+      assertEquals(2, message.getObjectProperty(propKey));
+
+      assertNull(consumer.receiveImmediate());
    }
 
    /*
