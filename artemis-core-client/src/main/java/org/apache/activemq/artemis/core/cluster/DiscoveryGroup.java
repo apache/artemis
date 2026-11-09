@@ -143,6 +143,16 @@ public final class DiscoveryGroup implements ActiveMQComponent {
 
    @Override
    public void stop() {
+      stop(stoppingTimeout);
+   }
+
+   /**
+    * Stops this discovery group, waiting at most {@code joinTimeout} ms for the discovery thread.
+    * Pass {@code 0} to skip the join entirely (use in reconnect-retry paths to avoid blocking).
+    *
+    * @param joinTimeout max ms to wait for the thread; {@code 0} means do not wait
+    */
+   public void stop(long joinTimeout) {
 
       if (logger.isDebugEnabled()) {
          logger.debug("Stopping discovery. There's an exception just as a trace where it happened", new Exception("trace"));
@@ -169,9 +179,11 @@ public final class DiscoveryGroup implements ActiveMQComponent {
       try {
          if (thread != null) {
             thread.interrupt();
-            thread.join(stoppingTimeout);
-            if (thread.isAlive()) {
-               ActiveMQClientLogger.LOGGER.timedOutStoppingDiscovery();
+            if (joinTimeout > 0) {
+               thread.join(joinTimeout);
+               if (thread.isAlive()) {
+                  ActiveMQClientLogger.LOGGER.timedOutStoppingDiscovery();
+               }
             }
          }
       } catch (InterruptedException e) {
