@@ -258,7 +258,7 @@ public final class BindingsImpl implements Bindings {
 
       final int bindingsCount = bindings.length;
 
-      int nextPosition = bindingIndex.getIndex();
+      int nextPosition = bindingIndex.getRedistributorIndex();
 
       if (nextPosition >= bindingsCount) {
          nextPosition = 0;
@@ -295,7 +295,7 @@ public final class BindingsImpl implements Bindings {
          context.setTransaction(new TransactionImpl(storageManager));
       }
 
-      bindingIndex.setIndex(nextPosition);
+      bindingIndex.setRedistributorIndex(nextPosition);
       nextBinding.route(copyRedistribute, context);
       logger.debug("Redistribution successful on message={}, towards bindings={}", message, bindings);
       return copyRedistribute;
