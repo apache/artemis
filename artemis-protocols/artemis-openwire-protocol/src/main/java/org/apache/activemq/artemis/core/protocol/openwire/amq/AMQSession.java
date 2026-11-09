@@ -134,7 +134,7 @@ public class AMQSession implements SessionCallback {
       // now
 
       try {
-         coreSession = server.createSession(name, username, password, minLargeMessageSize, connection, true, false, false, false, null, this, true, connection.getOperationContext(), protocolManager.getPrefixes(), protocolManager.getSecurityDomain(), connection.getValidatedUser(), false);
+         coreSession = server.createSession(name, username, password, minLargeMessageSize, connection, true, false, false, false, null, this, true, connection.getOperationContext(), protocolManager.getPrefixes(), protocolManager.getTemporaryPrefixes(), protocolManager.getSecurityDomain(), connection.getValidatedUser(), false);
       } catch (Exception e) {
          logger.error("error init session", e);
       }
