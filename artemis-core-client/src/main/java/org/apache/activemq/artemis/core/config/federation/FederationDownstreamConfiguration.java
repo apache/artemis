@@ -24,19 +24,23 @@ import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.core.client.ActiveMQClientLogger;
 import org.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants;
 
+@Deprecated(forRemoval = true)
 public class FederationDownstreamConfiguration extends FederationStreamConfiguration<FederationDownstreamConfiguration> {
 
    private String upstreamConfigurationRef;
    private TransportConfiguration upstreamConfiguration;
 
+   @Deprecated(forRemoval = true)
    public String getUpstreamConfigurationRef() {
       return upstreamConfigurationRef;
    }
 
+   @Deprecated(forRemoval = true)
    public void setUpstreamConfigurationRef(String upstreamConfigurationRef) {
       this.upstreamConfigurationRef = upstreamConfigurationRef;
    }
 
+   @Deprecated(forRemoval = true)
    public TransportConfiguration getUpstreamConfiguration() {
       return upstreamConfiguration;
    }
@@ -48,6 +52,7 @@ public class FederationDownstreamConfiguration extends FederationStreamConfigura
       }
    }
 
+   @Deprecated(forRemoval = true)
    public void setUpstreamConfiguration(TransportConfiguration transportConfiguration) {
 
       final Map<String, Object> params = new HashMap<>(transportConfiguration.getParams());
@@ -70,12 +75,14 @@ public class FederationDownstreamConfiguration extends FederationStreamConfigura
                                                               transportConfiguration.getName(), transportConfiguration.getExtraParams());
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public void encode(ActiveMQBuffer buffer) {
       super.encode(buffer);
       upstreamConfiguration.encode(buffer);
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public void decode(ActiveMQBuffer buffer) {
       super.decode(buffer);
@@ -83,6 +90,7 @@ public class FederationDownstreamConfiguration extends FederationStreamConfigura
       upstreamConfiguration.decode(buffer);
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public boolean equals(Object obj) {
       if (this == obj) {
@@ -99,6 +107,7 @@ public class FederationDownstreamConfiguration extends FederationStreamConfigura
              Objects.equals(upstreamConfiguration, other.upstreamConfiguration);
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public int hashCode() {
       return Objects.hash(super.hashCode(), upstreamConfigurationRef, upstreamConfiguration);

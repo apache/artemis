@@ -23,8 +23,10 @@ import java.util.Objects;
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 
+@Deprecated(forRemoval = true)
 public class FederationConnectionConfiguration implements Serializable {
 
+   @Deprecated(forRemoval = true)
    public static long DEFAULT_CIRCUIT_BREAKER_TIMEOUT = 30000;
 
    private boolean isHA;
@@ -47,159 +49,194 @@ public class FederationConnectionConfiguration implements Serializable {
    private long callTimeout = ActiveMQDefaultConfiguration.getDefaultFederationCallTimeout();
    private long callFailoverTimeout = ActiveMQDefaultConfiguration.getDefaultFederationCallFailoverTimeout();
 
+   @Deprecated(forRemoval = true)
    public String getDiscoveryGroupName() {
       return discoveryGroupName;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationConnectionConfiguration setDiscoveryGroupName(String discoveryGroupName) {
       this.discoveryGroupName = discoveryGroupName;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public List<String> getStaticConnectors() {
       return staticConnectors;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationConnectionConfiguration setStaticConnectors(List<String> staticConnectors) {
       this.staticConnectors = staticConnectors;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public boolean isHA() {
       return isHA;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationConnectionConfiguration setHA(boolean HA) {
       isHA = HA;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public long getCircuitBreakerTimeout() {
       return circuitBreakerTimeout;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationConnectionConfiguration setCircuitBreakerTimeout(long circuitBreakerTimeout) {
       this.circuitBreakerTimeout = circuitBreakerTimeout;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public String getUsername() {
       return username;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationConnectionConfiguration setUsername(String username) {
       this.username = username;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public String getPassword() {
       return password;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationConnectionConfiguration setPassword(String password) {
       this.password = password;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public int getPriorityAdjustment() {
       return priorityAdjustment;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationConnectionConfiguration setPriorityAdjustment(int priorityAdjustment) {
       this.priorityAdjustment = priorityAdjustment;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public boolean isShareConnection() {
       return shareConnection;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationConnectionConfiguration setShareConnection(boolean shareConnection) {
       this.shareConnection = shareConnection;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public long getClientFailureCheckPeriod() {
       return clientFailureCheckPeriod;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationConnectionConfiguration setClientFailureCheckPeriod(long clientFailureCheckPeriod) {
       this.clientFailureCheckPeriod = clientFailureCheckPeriod;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public long getConnectionTTL() {
       return connectionTTL;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationConnectionConfiguration setConnectionTTL(long connectionTTL) {
       this.connectionTTL = connectionTTL;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public long getRetryInterval() {
       return retryInterval;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationConnectionConfiguration setRetryInterval(long retryInterval) {
       this.retryInterval = retryInterval;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public double getRetryIntervalMultiplier() {
       return retryIntervalMultiplier;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationConnectionConfiguration setRetryIntervalMultiplier(double retryIntervalMultiplier) {
       this.retryIntervalMultiplier = retryIntervalMultiplier;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public long getMaxRetryInterval() {
       return maxRetryInterval;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationConnectionConfiguration setMaxRetryInterval(long maxRetryInterval) {
       this.maxRetryInterval = maxRetryInterval;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public int getInitialConnectAttempts() {
       return initialConnectAttempts;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationConnectionConfiguration setInitialConnectAttempts(int initialConnectAttempts) {
       this.initialConnectAttempts = initialConnectAttempts;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public int getReconnectAttempts() {
       return reconnectAttempts;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationConnectionConfiguration setReconnectAttempts(int reconnectAttempts) {
       this.reconnectAttempts = reconnectAttempts;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public long getCallTimeout() {
       return callTimeout;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationConnectionConfiguration setCallTimeout(long callTimeout) {
       this.callTimeout = callTimeout;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public long getCallFailoverTimeout() {
       return callFailoverTimeout;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationConnectionConfiguration setCallFailoverTimeout(long callFailoverTimeout) {
       this.callFailoverTimeout = callFailoverTimeout;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public boolean equals(Object obj) {
       if (this == obj) {
@@ -228,6 +265,7 @@ public class FederationConnectionConfiguration implements Serializable {
              Objects.equals(password, other.password);
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public int hashCode() {
       return Objects.hash(clientFailureCheckPeriod, connectionTTL, retryInterval, retryIntervalMultiplier,
@@ -236,6 +274,7 @@ public class FederationConnectionConfiguration implements Serializable {
               circuitBreakerTimeout, username, password, shareConnection);
    }
 
+   @Deprecated(forRemoval = true)
    public void encode(ActiveMQBuffer buffer) {
 
       buffer.writeNullableString(username);
@@ -254,6 +293,7 @@ public class FederationConnectionConfiguration implements Serializable {
       buffer.writeLong(callFailoverTimeout);
    }
 
+   @Deprecated(forRemoval = true)
    public void decode(ActiveMQBuffer buffer) {
       username = buffer.readNullableString();
       password = buffer.readNullableString();

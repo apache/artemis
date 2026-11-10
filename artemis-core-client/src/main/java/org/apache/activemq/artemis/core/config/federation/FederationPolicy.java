@@ -18,8 +18,10 @@ package org.apache.activemq.artemis.core.config.federation;
 
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 
+@Deprecated(forRemoval = true)
 public interface FederationPolicy<T> {
 
+   @Deprecated(forRemoval = true)
    static FederationPolicy<?> getFederationPolicy(String clazz) {
       switch (clazz) {
          case "org.apache.activemq.artemis.core.config.federation.FederationAddressPolicyConfiguration":
@@ -37,12 +39,16 @@ public interface FederationPolicy<T> {
    }
 
 
+   @Deprecated(forRemoval = true)
    String getName();
 
+   @Deprecated(forRemoval = true)
    T setName(String name);
 
+   @Deprecated(forRemoval = true)
    void encode(ActiveMQBuffer buffer);
 
+   @Deprecated(forRemoval = true)
    void decode(ActiveMQBuffer buffer);
 
 }

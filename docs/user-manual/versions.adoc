@@ -26,6 +26,7 @@ Use `--ascii` for plain ASCII output.
 * AMQP message size estimation has been improved to account for the full message metadata, fixing underestimates that occurred when messages carried large application properties.
 * AMQP broker connection Senders, Receivers and Peer configurations have been deprecated and will be removed in a future release.
 Users of the AMQP broker connection Senders and Receivers are encouraged to migrate to the newer AMQP Bridge configurations that provide more robust and configurable send to and receive from topologies.
+* Core Federation is now deprecated and users are encouraged to begin migrating to the AMQP Federation feature instead.
 
 === Upgrading from 2.57.0
 

@@ -19,23 +19,33 @@ package org.apache.activemq.artemis.core.server.federation;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.config.federation.FederationStreamConfiguration;
 
+@Deprecated(forRemoval = true)
 public interface FederationStream {
 
+   @Deprecated(forRemoval = true)
    void start();
 
+   @Deprecated(forRemoval = true)
    void stop();
 
+   @Deprecated(forRemoval = true)
    Federation getFederation();
 
+   @Deprecated(forRemoval = true)
    FederationStreamConfiguration getConfig();
 
+   @Deprecated(forRemoval = true)
    SimpleString getName();
 
+   @Deprecated(forRemoval = true)
    FederationConnection getConnection();
 
+   @Deprecated(forRemoval = true)
    String getUser();
 
+   @Deprecated(forRemoval = true)
    String getPassword();
 
+   @Deprecated(forRemoval = true)
    int getPriorityAdjustment();
 }

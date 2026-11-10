@@ -27,6 +27,7 @@ import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.config.FederationConfiguration;
 import org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal;
 
+@Deprecated(forRemoval = true)
 public class FederationManager implements ActiveMQComponent {
 
    private final ActiveMQServer server;
@@ -49,11 +50,13 @@ public class FederationManager implements ActiveMQComponent {
    }
 
 
+   @Deprecated(forRemoval = true)
    public FederationManager(final ActiveMQServer server) {
       this.server = server;
       this.downstreamAuthorization = server.getConfiguration().getFederationDownstreamAuthorization();
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public synchronized void start() throws ActiveMQException {
       if (state == State.STARTED) {
@@ -66,6 +69,7 @@ public class FederationManager implements ActiveMQComponent {
       state = State.STARTED;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public synchronized void stop() {
       if (state == State.STOPPED) {
@@ -81,11 +85,13 @@ public class FederationManager implements ActiveMQComponent {
       state = State.STOPPED;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public boolean isStarted() {
       return state == State.STARTED;
    }
 
+   @Deprecated(forRemoval = true)
    public synchronized void deploy() throws ActiveMQException {
       for (FederationConfiguration federationConfiguration : server.getConfiguration().getFederationConfigurations()) {
          deploy(federationConfiguration);
@@ -95,6 +101,7 @@ public class FederationManager implements ActiveMQComponent {
       }
    }
 
+   @Deprecated(forRemoval = true)
    public synchronized boolean undeploy(String name) {
       Federation federation = federations.remove(name);
       if (federation != null) {
@@ -106,6 +113,7 @@ public class FederationManager implements ActiveMQComponent {
 
 
 
+   @Deprecated(forRemoval = true)
    public synchronized boolean deploy(FederationConfiguration federationConfiguration) throws ActiveMQException {
       Federation federation = federations.get(federationConfiguration.getName());
       if (federation == null) {
@@ -127,18 +135,22 @@ public class FederationManager implements ActiveMQComponent {
       return federation;
    }
 
+   @Deprecated(forRemoval = true)
    public Federation get(String name) {
       return federations.get(name);
    }
 
+   @Deprecated(forRemoval = true)
    public void register(FederatedAbstract federatedAbstract) {
       server.registerBrokerPlugin(federatedAbstract);
    }
 
+   @Deprecated(forRemoval = true)
    public void unregister(FederatedAbstract federatedAbstract) {
       server.unRegisterBrokerPlugin(federatedAbstract);
    }
 
+   @Deprecated(forRemoval = true)
    public boolean authorizeDownstreamDeployment(Subject subject) {
       if (!server.getSecurityStore().isSecurityEnabled()) {
          return true;

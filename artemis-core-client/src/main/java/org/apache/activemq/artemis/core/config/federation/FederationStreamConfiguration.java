@@ -25,6 +25,7 @@ import java.util.Set;
 
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 
+@Deprecated(forRemoval = true)
 public abstract class FederationStreamConfiguration<T extends FederationStreamConfiguration<T>> implements Serializable {
 
    private String name;
@@ -32,19 +33,23 @@ public abstract class FederationStreamConfiguration<T extends FederationStreamCo
    private FederationConnectionConfiguration connectionConfiguration = new FederationConnectionConfiguration();
    private Set<String> policyRefs = new HashSet<>();
 
+   @Deprecated(forRemoval = true)
    public String getName() {
       return name;
    }
 
+   @Deprecated(forRemoval = true)
    public T setName(String name) {
       this.name = name;
       return (T) this;
    }
 
+   @Deprecated(forRemoval = true)
    public Set<String> getPolicyRefs() {
       return policyRefs;
    }
 
+   @Deprecated(forRemoval = true)
    public T setPolicyRefs(Set<String> refs) {
       for (String ref : refs) {
          policyRefs.add(ref);
@@ -52,20 +57,24 @@ public abstract class FederationStreamConfiguration<T extends FederationStreamCo
       return (T) this;
    }
 
+   @Deprecated(forRemoval = true)
    public T addPolicyRef(String name) {
       policyRefs.add(name);
       return (T) this;
    }
 
+   @Deprecated(forRemoval = true)
    public T addPolicyRefs(Collection<String> names) {
       policyRefs.addAll(names);
       return (T) this;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationConnectionConfiguration getConnectionConfiguration() {
       return connectionConfiguration;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public boolean equals(Object obj) {
       if (this == obj) {
@@ -80,11 +89,13 @@ public abstract class FederationStreamConfiguration<T extends FederationStreamCo
              Objects.equals(policyRefs, other.policyRefs);
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public int hashCode() {
       return Objects.hash(name, connectionConfiguration, policyRefs);
    }
 
+   @Deprecated(forRemoval = true)
    public void encode(ActiveMQBuffer buffer) {
       buffer.writeString(name);
       connectionConfiguration.encode(buffer);
@@ -95,6 +106,7 @@ public abstract class FederationStreamConfiguration<T extends FederationStreamCo
       }
    }
 
+   @Deprecated(forRemoval = true)
    public void decode(ActiveMQBuffer buffer) {
       name = buffer.readString();
       connectionConfiguration.decode(buffer);
@@ -104,6 +116,7 @@ public abstract class FederationStreamConfiguration<T extends FederationStreamCo
       }
    }
 
+   @Deprecated(forRemoval = true)
    public T setStaticConnectors(List<String> connectors) {
       connectionConfiguration.setStaticConnectors(connectors);
       return (T) this;

@@ -31,15 +31,22 @@ import org.apache.activemq.artemis.core.server.transformer.Transformer;
 
 import static org.apache.activemq.artemis.core.config.WildcardConfiguration.DEFAULT_WILDCARD_CONFIGURATION;
 
+@Deprecated(forRemoval = true)
 public abstract class FederatedAbstract implements ActiveMQServerBasePlugin {
 
+   @Deprecated(forRemoval = true)
    protected final Federation federation;
+   @Deprecated(forRemoval = true)
    protected ActiveMQServer server;
+   @Deprecated(forRemoval = true)
    protected FederationUpstream upstream;
+   @Deprecated(forRemoval = true)
    protected WildcardConfiguration wildcardConfiguration;
+   @Deprecated(forRemoval = true)
    protected final Map<FederatedConsumerKey, FederatedQueueConsumer> remoteQueueConsumers = new HashMap<>();
    private boolean started;
 
+   @Deprecated(forRemoval = true)
    public FederatedAbstract(Federation federation, ActiveMQServer server, FederationUpstream upstream) {
       this.federation = federation;
       this.server = server;
@@ -52,6 +59,7 @@ public abstract class FederatedAbstract implements ActiveMQServerBasePlugin {
     *
     * @param server The ActiveMQServer the plugin has been registered to
     */
+   @Deprecated(forRemoval = true)
    @Override
    public void registered(ActiveMQServer server) {
       start();
@@ -62,11 +70,13 @@ public abstract class FederatedAbstract implements ActiveMQServerBasePlugin {
     *
     * @param server The ActiveMQServer the plugin has been unregistered to
     */
+   @Deprecated(forRemoval = true)
    @Override
    public void unregistered(ActiveMQServer server) {
       stop();
    }
 
+   @Deprecated(forRemoval = true)
    public synchronized void stop() {
       for (FederatedQueueConsumer remoteQueueConsumer : remoteQueueConsumers.values()) {
          remoteQueueConsumer.close();
@@ -75,14 +85,17 @@ public abstract class FederatedAbstract implements ActiveMQServerBasePlugin {
       started = false;
    }
 
+   @Deprecated(forRemoval = true)
    public synchronized void start() {
       started = true;
    }
 
+   @Deprecated(forRemoval = true)
    public boolean isStarted() {
       return started;
    }
 
+   @Deprecated(forRemoval = true)
    protected Transformer mergeTransformers(Transformer left, Transformer right) {
       if (left == null) {
          return right;
@@ -93,6 +106,7 @@ public abstract class FederatedAbstract implements ActiveMQServerBasePlugin {
       }
    }
 
+   @Deprecated(forRemoval = true)
    protected Transformer getTransformer(String transformerRef) {
       Transformer transformer = null;
       if (transformerRef != null) {
@@ -104,6 +118,7 @@ public abstract class FederatedAbstract implements ActiveMQServerBasePlugin {
       return transformer;
    }
 
+   @Deprecated(forRemoval = true)
    public synchronized void createRemoteConsumer(FederatedConsumerKey key, Transformer transformer, ClientSessionCallback callback) {
       if (started) {
          FederatedQueueConsumer remoteQueueConsumer = remoteQueueConsumers.get(key);
@@ -135,6 +150,7 @@ public abstract class FederatedAbstract implements ActiveMQServerBasePlugin {
    }
 
 
+   @Deprecated(forRemoval = true)
    public synchronized void removeRemoteConsumer(FederatedConsumerKey key) {
       FederatedQueueConsumer remoteQueueConsumer = remoteQueueConsumers.get(key);
       if (remoteQueueConsumer != null) {

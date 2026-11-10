@@ -3,6 +3,8 @@
 :idseparator: -
 :docinfo: shared
 
+WARNING: The Core Federation feature is deprecated and will be removed in a future release. Users are encouraged to begin migration to AMQP federation.
+
 This feature provides a way of balancing the load of a single queue across remote brokers.
 
 A federated queue links to other queues (called upstream queues).

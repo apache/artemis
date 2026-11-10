@@ -64,12 +64,15 @@ import org.slf4j.LoggerFactory;
  * All messages are replicated, this is on purpose so should a number queues exist with different filters we dont have
  * have a consumer per queue filter.
  */
+@Deprecated(forRemoval = true)
 public class FederatedAddress extends FederatedAbstract implements ActiveMQServerBindingPlugin, ActiveMQServerAddressPlugin, Serializable {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
+   @Deprecated(forRemoval = true)
    public static final String FEDERATED_QUEUE_PREFIX = "federated";
 
+   @Deprecated(forRemoval = true)
    public static final SimpleString HDR_HOPS = SimpleString.of("_AMQ_Hops");
    private final SimpleString queueNameFormat;
    private final SimpleString filterString;
@@ -79,6 +82,7 @@ public class FederatedAddress extends FederatedAbstract implements ActiveMQServe
    private final Map<DivertBinding, Set<SimpleString>> matchingDiverts = new HashMap<>();
    private final boolean hasPullConnectionConfig;
 
+   @Deprecated(forRemoval = true)
    public FederatedAddress(Federation federation, FederationAddressPolicyConfiguration config, ActiveMQServer server, FederationUpstream upstream) {
       super(federation, server, upstream);
       Objects.requireNonNull(config.getName());
@@ -109,6 +113,7 @@ public class FederatedAddress extends FederatedAbstract implements ActiveMQServe
       hasPullConnectionConfig = upstream.getConnection().isPull();
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public synchronized void start() {
       if (!isStarted()) {
@@ -138,6 +143,7 @@ public class FederatedAddress extends FederatedAbstract implements ActiveMQServe
       createRemoteConsumer(queue);
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public void afterAddAddress(AddressInfo addressInfo, boolean reload) {
       if (match(addressInfo)) {
@@ -154,6 +160,7 @@ public class FederatedAddress extends FederatedAbstract implements ActiveMQServe
       }
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public void afterAddBinding(Binding binding) {
       if (binding instanceof QueueBinding queueBinding) {
@@ -226,6 +233,7 @@ public class FederatedAddress extends FederatedAbstract implements ActiveMQServe
       }
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public void beforeRemoveBinding(SimpleString uniqueName, Transaction tx, boolean deleteData) {
       final Binding binding = server.getPostOffice().getBinding(uniqueName);
@@ -275,6 +283,7 @@ public class FederatedAddress extends FederatedAbstract implements ActiveMQServe
       }
    }
 
+   @Deprecated(forRemoval = true)
    public FederationAddressPolicyConfiguration getConfig() {
       return config;
    }
@@ -365,6 +374,7 @@ public class FederatedAddress extends FederatedAbstract implements ActiveMQServe
       return new FederatedAddressConsumerKey(federation.getName(), upstream.getName(), address.getName(), address.getRoutingType(), queueNameFormat, filterString);
    }
 
+   @Deprecated(forRemoval = true)
    public static class Matcher {
       Predicate<String> addressPredicate;
 

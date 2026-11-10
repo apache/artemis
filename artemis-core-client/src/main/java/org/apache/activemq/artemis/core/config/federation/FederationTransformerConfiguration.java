@@ -23,32 +23,39 @@ import java.util.Objects;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.core.config.TransformerConfiguration;
 
+@Deprecated(forRemoval = true)
 public class FederationTransformerConfiguration implements Serializable {
 
    private String name;
 
    private TransformerConfiguration transformerConfiguration = new TransformerConfiguration();
 
+   @Deprecated(forRemoval = true)
    public FederationTransformerConfiguration() {
    }
 
+   @Deprecated(forRemoval = true)
    public FederationTransformerConfiguration(String name, TransformerConfiguration transformerConfiguration) {
       this.name = name;
       this.transformerConfiguration = transformerConfiguration;
    }
 
+   @Deprecated(forRemoval = true)
    public String getName() {
       return name;
    }
 
+   @Deprecated(forRemoval = true)
    public void setName(String name) {
       this.name = name;
    }
 
+   @Deprecated(forRemoval = true)
    public TransformerConfiguration getTransformerConfiguration() {
       return transformerConfiguration;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public boolean equals(Object obj) {
       if (this == obj) {
@@ -62,12 +69,14 @@ public class FederationTransformerConfiguration implements Serializable {
              Objects.equals(transformerConfiguration, other.transformerConfiguration);
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public int hashCode() {
       return Objects.hash(name, transformerConfiguration);
    }
 
 
+   @Deprecated(forRemoval = true)
    public void encode(ActiveMQBuffer buffer) {
       Objects.requireNonNull(name, "name can not be null");
       Objects.requireNonNull(transformerConfiguration, "transformerConfiguration can not be null");
@@ -83,6 +92,7 @@ public class FederationTransformerConfiguration implements Serializable {
       }
    }
 
+   @Deprecated(forRemoval = true)
    public void decode(ActiveMQBuffer buffer) {
       name = buffer.readString();
       transformerConfiguration = new TransformerConfiguration(buffer.readString());

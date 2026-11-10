@@ -32,6 +32,7 @@ import org.apache.activemq.artemis.core.config.federation.FederationQueuePolicyC
 import org.apache.activemq.artemis.core.config.federation.FederationTransformerConfiguration;
 import org.apache.activemq.artemis.core.config.federation.FederationUpstreamConfiguration;
 
+@Deprecated(forRemoval = true)
 public class FederationConfiguration implements Serializable {
 
    private String name;
@@ -46,99 +47,121 @@ public class FederationConfiguration implements Serializable {
 
    private Map<String, FederationTransformerConfiguration> transformerConfigurationMap = new HashMap<>();
 
+   @Deprecated(forRemoval = true)
    public List<FederationUpstreamConfiguration> getUpstreamConfigurations() {
       return upstreamConfigurations;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationConfiguration addUpstreamConfiguration(FederationUpstreamConfiguration federationUpstreamConfiguration) {
       this.upstreamConfigurations.add(federationUpstreamConfiguration);
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public List<FederationDownstreamConfiguration> getDownstreamConfigurations() {
       return downstreamConfigurations;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationConfiguration addDownstreamConfiguration(FederationDownstreamConfiguration federationDownstreamConfiguration) {
       this.downstreamConfigurations.add(federationDownstreamConfiguration);
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationConfiguration addFederationPolicy(FederationPolicy federationPolicy) {
       federationPolicyMap.put(federationPolicy.getName(), federationPolicy);
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public Map<String, FederationPolicy> getQueuePolicies() {
       return federationPolicyMap;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationConfiguration addQueuePolicy(FederationQueuePolicyConfiguration federationPolicy) {
       federationPolicyMap.put(federationPolicy.getName(), federationPolicy);
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public Map<String, FederationPolicy> getAddressPolicies() {
       return federationPolicyMap;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationConfiguration addAddressPolicy(FederationAddressPolicyConfiguration federationPolicy) {
       federationPolicyMap.put(federationPolicy.getName(), federationPolicy);
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public Map<String, FederationPolicy> getPolicySets() {
       return federationPolicyMap;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationConfiguration addPolicySet(FederationPolicySet federationPolicy) {
       federationPolicyMap.put(federationPolicy.getName(), federationPolicy);
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public void clearDownstreamConfigurations() {
       this.downstreamConfigurations.clear();
    }
 
+   @Deprecated(forRemoval = true)
    public void clearUpstreamConfigurations() {
       this.upstreamConfigurations.clear();
    }
 
+   @Deprecated(forRemoval = true)
    public Map<String, FederationPolicy> getFederationPolicyMap() {
       return federationPolicyMap;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationConfiguration addTransformerConfiguration(FederationTransformerConfiguration transformerConfiguration) {
       transformerConfigurationMap.put(transformerConfiguration.getName(), transformerConfiguration);
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public Map<String, FederationTransformerConfiguration> getTransformerConfigurationMap() {
       return transformerConfigurationMap;
    }
 
+   @Deprecated(forRemoval = true)
    public Map<String, FederationTransformerConfiguration> getTransformerConfigurations() {
       return transformerConfigurationMap;
    }
 
+   @Deprecated(forRemoval = true)
    public String getName() {
       return name;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationConfiguration setName(String name) {
       this.name = name;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public Credentials getCredentials() {
       return credentials;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationConfiguration setCredentials(Credentials credentials) {
       this.credentials = credentials;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public static class Credentials implements Serializable {
 
       private String user;
@@ -192,6 +215,7 @@ public class FederationConfiguration implements Serializable {
       }
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public boolean equals(Object obj) {
       if (this == obj) {
@@ -208,6 +232,7 @@ public class FederationConfiguration implements Serializable {
              Objects.equals(transformerConfigurationMap, other.transformerConfigurationMap);
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public int hashCode() {
       return Objects.hash(name, credentials, upstreamConfigurations, federationPolicyMap, transformerConfigurationMap);

@@ -3,6 +3,8 @@
 :idseparator: -
 :docinfo: shared
 
+WARNING: The Core Federation feature is deprecated and will be removed in a future release. Users are encouraged to begin migration to AMQP federation.
+
 Address federation is similar to full multicast over the connected brokers.
 Every message sent to address on `Broker-A` will be delivered to every queue on that broker, but also will be delivered to `Broker-B` and all their attached queues.
 

@@ -22,6 +22,7 @@ import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.server.federation.FederatedConsumerKey;
 import org.apache.activemq.artemis.utils.CompositeAddress;
 
+@Deprecated(forRemoval = true)
 public class FederatedQueueConsumerKey implements FederatedConsumerKey {
    private final SimpleString address;
    private final SimpleString queueName;
@@ -31,6 +32,7 @@ public class FederatedQueueConsumerKey implements FederatedConsumerKey {
    private final SimpleString fqqn;
    private final int priority;
 
+   @Deprecated(forRemoval = true)
    FederatedQueueConsumerKey(SimpleString address, RoutingType routingType, SimpleString queueName, SimpleString queueFilterString, SimpleString filterString, int priority) {
       this.address = address;
       this.routingType = routingType;
@@ -41,41 +43,49 @@ public class FederatedQueueConsumerKey implements FederatedConsumerKey {
       this.priority = priority;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public SimpleString getQueueName() {
       return queueName;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public SimpleString getQueueFilterString() {
       return queueFilterString;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public int getPriority() {
       return priority;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public SimpleString getAddress() {
       return address;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public SimpleString getFqqn() {
       return fqqn;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public RoutingType getRoutingType() {
       return routingType;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public SimpleString getFilterString() {
       return filterString;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public boolean equals(Object obj) {
       if (this == obj) {
@@ -94,6 +104,7 @@ public class FederatedQueueConsumerKey implements FederatedConsumerKey {
              Objects.equals(fqqn, other.fqqn);
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public int hashCode() {
       return Objects.hash(address, queueName, routingType, queueFilterString, filterString, fqqn, priority);
