@@ -36,6 +36,7 @@ import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.Federation
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 
+@Deprecated(forRemoval = true)
 public class FederationDownstream extends AbstractFederationStream implements SessionFailureListener {
 
    private FederationDownstreamConfiguration config;
@@ -47,10 +48,12 @@ public class FederationDownstream extends AbstractFederationStream implements Se
    private final int intialConnectDelayMultiplier = 2;
    private final int intialConnectDelayMax = 30;
 
+   @Deprecated(forRemoval = true)
    public static final String FEDERATION_DOWNSTREAM_NAME = "federation-downstream-name";
    private AtomicBoolean started = new AtomicBoolean();
    private FederationConfiguration federationConfiguration;
 
+   @Deprecated(forRemoval = true)
    public FederationDownstream(ActiveMQServer server, Federation federation, String name, FederationDownstreamConfiguration config,
                                final FederationConnection connection) {
       super(server, federation, name, config, connection);
@@ -58,6 +61,7 @@ public class FederationDownstream extends AbstractFederationStream implements Se
       this.scheduledExecutorService = server.getScheduledPool();
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public synchronized void start() {
       super.start();
@@ -69,12 +73,14 @@ public class FederationDownstream extends AbstractFederationStream implements Se
       }
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public synchronized void stop() {
       super.stop();
       callFederationStreamStoppedPlugins();
    }
 
+   @Deprecated(forRemoval = true)
    public void deploy(FederationConfiguration federationConfiguration)
       throws ActiveMQException {
 
@@ -112,6 +118,7 @@ public class FederationDownstream extends AbstractFederationStream implements Se
       }
    }
 
+   @Deprecated(forRemoval = true)
    public void undeploy() {
       try {
          if (started.compareAndSet(true, false)) {
@@ -164,11 +171,13 @@ public class FederationDownstream extends AbstractFederationStream implements Se
       }
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public void connectionFailed(ActiveMQException exception, boolean failedOver) {
       connectionFailed(exception, failedOver, null);
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public void connectionFailed(ActiveMQException exception, boolean failedOver, String scaleDownTargetNodeID) {
       try {
@@ -203,6 +212,7 @@ public class FederationDownstream extends AbstractFederationStream implements Se
       }
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public void beforeReconnect(ActiveMQException exception) {
    }

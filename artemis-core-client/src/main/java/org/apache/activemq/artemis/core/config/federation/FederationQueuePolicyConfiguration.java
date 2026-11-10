@@ -23,6 +23,7 @@ import java.util.Set;
 
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 
+@Deprecated(forRemoval = true)
 public class FederationQueuePolicyConfiguration implements FederationPolicy<FederationQueuePolicyConfiguration>, Serializable {
 
    private String name;
@@ -32,62 +33,75 @@ public class FederationQueuePolicyConfiguration implements FederationPolicy<Fede
    private Integer priorityAdjustment;
    private String transformerRef;
 
+   @Deprecated(forRemoval = true)
    @Override
    public String getName() {
       return name;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public FederationQueuePolicyConfiguration setName(String name) {
       this.name = name;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public Set<Matcher> getIncludes() {
       return includes;
    }
 
+   @Deprecated(forRemoval = true)
    public Set<Matcher> getExcludes() {
       return excludes;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationQueuePolicyConfiguration addInclude(Matcher include) {
       includes.add(include);
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationQueuePolicyConfiguration addExclude(Matcher exclude) {
       excludes.add(exclude);
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public boolean isIncludeFederated() {
       return includeFederated;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationQueuePolicyConfiguration setIncludeFederated(boolean includeFederated) {
       this.includeFederated = includeFederated;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public Integer getPriorityAdjustment() {
       return priorityAdjustment;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationQueuePolicyConfiguration setPriorityAdjustment(Integer priorityAdjustment) {
       this.priorityAdjustment = priorityAdjustment;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public String getTransformerRef() {
       return transformerRef;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationQueuePolicyConfiguration setTransformerRef(String transformerRef) {
       this.transformerRef = transformerRef;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public void encode(ActiveMQBuffer buffer) {
       Objects.requireNonNull(name, "name can not be null");
@@ -99,6 +113,7 @@ public class FederationQueuePolicyConfiguration implements FederationPolicy<Fede
       encodeMatchers(buffer, excludes);
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public void decode(ActiveMQBuffer buffer) {
       name = buffer.readString();
@@ -131,6 +146,7 @@ public class FederationQueuePolicyConfiguration implements FederationPolicy<Fede
       }
    }
 
+   @Deprecated(forRemoval = true)
    public static class Matcher implements Serializable {
 
       private String queueMatch;
@@ -195,6 +211,7 @@ public class FederationQueuePolicyConfiguration implements FederationPolicy<Fede
       }
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public boolean equals(Object obj) {
       if (this == obj) {
@@ -212,6 +229,7 @@ public class FederationQueuePolicyConfiguration implements FederationPolicy<Fede
              Objects.equals(transformerRef, other.transformerRef);
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public int hashCode() {
       return Objects.hash(name, includeFederated, includes, excludes, priorityAdjustment, transformerRef);

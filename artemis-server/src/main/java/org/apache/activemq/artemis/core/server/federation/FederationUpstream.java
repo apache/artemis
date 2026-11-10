@@ -30,14 +30,17 @@ import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.federation.address.FederatedAddress;
 import org.apache.activemq.artemis.core.server.federation.queue.FederatedQueue;
 
+@Deprecated(forRemoval = true)
 public class FederationUpstream extends AbstractFederationStream {
    private FederationUpstreamConfiguration config;
 
+   @Deprecated(forRemoval = true)
    public FederationUpstream(ActiveMQServer server, Federation federation, String name, FederationUpstreamConfiguration config) {
       super(server, federation, name, config);
       this.config = config;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public synchronized void start() {
       super.start();
@@ -52,6 +55,7 @@ public class FederationUpstream extends AbstractFederationStream {
       callFederationStreamStartedPlugins();
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public synchronized void stop() {
       for (FederatedAddress federatedAddress : federatedAddressMap.values()) {
@@ -69,6 +73,7 @@ public class FederationUpstream extends AbstractFederationStream {
       callFederationStreamStoppedPlugins();
    }
 
+   @Deprecated(forRemoval = true)
    public void deploy(Set<String> policyRefsToDeploy, Map<String, FederationPolicy> policyMap) throws ActiveMQException {
       deployPolicyRefs(policyRefsToDeploy, policyMap, 0);
    }
@@ -96,6 +101,7 @@ public class FederationUpstream extends AbstractFederationStream {
       }
    }
 
+   @Deprecated(forRemoval = true)
    public synchronized boolean deploy(FederationQueuePolicyConfiguration federatedQueueConfig) throws ActiveMQException {
       String name = federatedQueueConfig.getName();
       FederatedQueue existing = federatedQueueMap.get(name);
@@ -114,6 +120,7 @@ public class FederationUpstream extends AbstractFederationStream {
 
    }
 
+   @Deprecated(forRemoval = true)
    public synchronized boolean deploy(FederationAddressPolicyConfiguration federatedAddressConfig) throws ActiveMQException {
       String name = federatedAddressConfig.getName();
       FederatedAddress existing = federatedAddressMap.get(name);
@@ -147,6 +154,7 @@ public class FederationUpstream extends AbstractFederationStream {
       }
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public FederationUpstreamConfiguration getConfig() {
       return config;

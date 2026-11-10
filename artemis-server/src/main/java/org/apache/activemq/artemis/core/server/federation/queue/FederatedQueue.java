@@ -49,6 +49,7 @@ import org.apache.activemq.artemis.core.settings.impl.Match;
  * By default we connect to -1 the current consumer priority on the remote broker, so that if consumers also exist on
  * the remote broker they a dispatched to first. This though is configurable to change this behaviour.
  */
+@Deprecated(forRemoval = true)
 public class FederatedQueue extends FederatedAbstract implements ActiveMQServerConsumerPlugin, Serializable {
 
    private final Set<Matcher> includes;
@@ -58,6 +59,7 @@ public class FederatedQueue extends FederatedAbstract implements ActiveMQServerC
 
    private final FederationQueuePolicyConfiguration config;
 
+   @Deprecated(forRemoval = true)
    public FederatedQueue(Federation federation, FederationQueuePolicyConfiguration config, ActiveMQServer server, FederationUpstream federationUpstream) throws ActiveMQException {
       super(federation, server, federationUpstream);
       Objects.requireNonNull(config.getName());
@@ -84,6 +86,7 @@ public class FederatedQueue extends FederatedAbstract implements ActiveMQServerC
       }
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public void start() {
       super.start();
@@ -99,11 +102,13 @@ public class FederatedQueue extends FederatedAbstract implements ActiveMQServerC
     *
     * @param consumer the created consumer
     */
+   @Deprecated(forRemoval = true)
    @Override
    public synchronized void afterCreateConsumer(ServerConsumer consumer) {
       conditionalCreateRemoteConsumer(consumer);
    }
 
+   @Deprecated(forRemoval = true)
    public FederationQueuePolicyConfiguration getConfig() {
       return config;
    }
@@ -171,6 +176,7 @@ public class FederatedQueue extends FederatedAbstract implements ActiveMQServerC
    /**
     * Before a consumer is closed
     */
+   @Deprecated(forRemoval = true)
    @Override
    public synchronized void beforeCloseConsumer(ServerConsumer consumer, boolean failed) {
       FederatedConsumerKey key = getKey(consumer);
@@ -183,6 +189,7 @@ public class FederatedQueue extends FederatedAbstract implements ActiveMQServerC
       return new FederatedQueueConsumerKey(queue.getAddress(), queue.getRoutingType(), queue.getName(), Filter.toFilterString(queue.getFilter()), Filter.toFilterString(consumer.getFilter()), priority);
    }
 
+   @Deprecated(forRemoval = true)
    public static class Matcher {
 
       Predicate<String> queuePredicate;

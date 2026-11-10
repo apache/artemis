@@ -1663,7 +1663,7 @@
    <xsd:element name="federations">
       <xsd:annotation>
          <xsd:documentation>
-            a list of federations to create
+            DEPRECATED: Core federation is deprecated and users are encouraged to migrate to using AMQP federation
          </xsd:documentation>
       </xsd:annotation>
       <xsd:complexType>

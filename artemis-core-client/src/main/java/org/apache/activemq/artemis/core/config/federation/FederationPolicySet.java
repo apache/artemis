@@ -24,31 +24,37 @@ import java.util.Set;
 
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 
+@Deprecated(forRemoval = true)
 public class FederationPolicySet implements FederationPolicy<FederationPolicySet>, Serializable {
 
    private String name;
    private Set<String> policyRefs = new HashSet<>();
 
+   @Deprecated(forRemoval = true)
    @Override
    public String getName() {
       return name;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public FederationPolicySet setName(String name) {
       this.name = name;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public Set<String> getPolicyRefs() {
       return policyRefs;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationPolicySet addPolicyRef(String name) {
       policyRefs.add(name);
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationPolicySet setPolicyRefs(Set<String> refs) {
       for (String ref : refs) {
          policyRefs.add(ref);
@@ -56,11 +62,13 @@ public class FederationPolicySet implements FederationPolicy<FederationPolicySet
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationPolicySet addPolicyRefs(Collection<String> name) {
       policyRefs.addAll(name);
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public boolean equals(Object obj) {
       if (this == obj) {
@@ -74,11 +82,13 @@ public class FederationPolicySet implements FederationPolicy<FederationPolicySet
              Objects.equals(policyRefs, other.policyRefs);
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public int hashCode() {
       return Objects.hash(name, policyRefs);
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public void encode(ActiveMQBuffer buffer) {
       Objects.requireNonNull(name, "name can not be null");
@@ -92,6 +102,7 @@ public class FederationPolicySet implements FederationPolicy<FederationPolicySet
       }
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public void decode(ActiveMQBuffer buffer) {
       name = buffer.readString();

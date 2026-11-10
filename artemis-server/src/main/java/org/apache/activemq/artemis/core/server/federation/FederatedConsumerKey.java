@@ -19,19 +19,27 @@ package org.apache.activemq.artemis.core.server.federation;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 
+@Deprecated(forRemoval = true)
 public interface FederatedConsumerKey {
+   @Deprecated(forRemoval = true)
    SimpleString getQueueName();
 
+   @Deprecated(forRemoval = true)
    SimpleString getAddress();
 
+   @Deprecated(forRemoval = true)
    SimpleString getFqqn();
 
+   @Deprecated(forRemoval = true)
    RoutingType getRoutingType();
 
+   @Deprecated(forRemoval = true)
    SimpleString getFilterString();
 
+   @Deprecated(forRemoval = true)
    SimpleString getQueueFilterString();
 
+   @Deprecated(forRemoval = true)
    int getPriority();
 
 }

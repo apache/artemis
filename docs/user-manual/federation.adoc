@@ -3,6 +3,8 @@
 :idseparator: -
 :docinfo: shared
 
+WARNING: The Core Federation feature is deprecated and will be removed in a future release. Users are encouraged to begin migration to AMQP federation.
+
 Federation allows transmission of messages between brokers without requiring clustering.
 
 A federated address can replicate messages published from an upstream address to a local address.

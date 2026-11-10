@@ -19,11 +19,15 @@ package org.apache.activemq.artemis.core.server.federation;
 import org.apache.activemq.artemis.api.core.client.ClientSession;
 import org.apache.activemq.artemis.api.core.client.MessageHandler;
 
+@Deprecated(forRemoval = true)
 public interface FederatedQueueConsumer extends MessageHandler {
 
+   @Deprecated(forRemoval = true)
    String FEDERATION_NAME = "federation-name";
+   @Deprecated(forRemoval = true)
    String FEDERATION_UPSTREAM_NAME = "federation-upstream-name";
 
+   @Deprecated(forRemoval = true)
    static int getNextDelay(int delay, int delayMultiplier, int delayMax) {
       int nextDelay;
       if (delay == 0) {
@@ -37,19 +41,27 @@ public interface FederatedQueueConsumer extends MessageHandler {
       return nextDelay;
    }
 
+   @Deprecated(forRemoval = true)
    FederationUpstream getFederationUpstream();
 
+   @Deprecated(forRemoval = true)
    Federation getFederation();
 
+   @Deprecated(forRemoval = true)
    FederatedConsumerKey getKey();
 
+   @Deprecated(forRemoval = true)
    ClientSession getClientSession();
 
+   @Deprecated(forRemoval = true)
    int incrementCount();
 
+   @Deprecated(forRemoval = true)
    int decrementCount();
 
+   @Deprecated(forRemoval = true)
    void start();
 
+   @Deprecated(forRemoval = true)
    void close();
 }

@@ -45,6 +45,7 @@ import org.slf4j.LoggerFactory;
 import static org.apache.activemq.artemis.api.core.client.ActiveMQClient.DEFAULT_CONSUMER_WINDOW_SIZE;
 import static org.apache.activemq.artemis.core.client.impl.LargeMessageControllerImpl.LargeData;
 
+@Deprecated(forRemoval = true)
 public class FederatedQueueConsumerImpl implements FederatedQueueConsumer, SessionFailureListener {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
@@ -68,6 +69,7 @@ public class FederatedQueueConsumerImpl implements FederatedQueueConsumer, Sessi
    private final AtomicInteger pendingPullCredit = new AtomicInteger();
    private QueueHandle queueHandle;
 
+   @Deprecated(forRemoval = true)
    public FederatedQueueConsumerImpl(Federation federation, ActiveMQServer server, Transformer transformer, FederatedConsumerKey key, FederationUpstream upstream, ClientSessionCallback clientSessionCallback) {
       this.federation = federation;
       this.server = server;
@@ -78,36 +80,43 @@ public class FederatedQueueConsumerImpl implements FederatedQueueConsumer, Sessi
       this.clientSessionCallback = clientSessionCallback;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public FederationUpstream getFederationUpstream() {
       return upstream;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public Federation getFederation() {
       return federation;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public FederatedConsumerKey getKey() {
       return key;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public ClientSession getClientSession() {
       return clientSession;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public int incrementCount() {
       return count.incrementAndGet();
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public int decrementCount() {
       return count.decrementAndGet();
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public synchronized void start() {
       if (!started) {
@@ -168,6 +177,7 @@ public class FederatedQueueConsumerImpl implements FederatedQueueConsumer, Sessi
       }
    }
 
+   @Deprecated(forRemoval = true)
    interface QueueHandle {
       long getMessageCount();
       int getCreditWindow();
@@ -237,6 +247,7 @@ public class FederatedQueueConsumerImpl implements FederatedQueueConsumer, Sessi
       }
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public synchronized void close() {
       if (started) {
@@ -270,6 +281,7 @@ public class FederatedQueueConsumerImpl implements FederatedQueueConsumer, Sessi
       }
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public void onMessage(ClientMessage clientMessage) {
       try {
@@ -334,11 +346,13 @@ public class FederatedQueueConsumerImpl implements FederatedQueueConsumer, Sessi
       }
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public void connectionFailed(ActiveMQException exception, boolean failedOver) {
       connectionFailed(exception, failedOver, null);
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public void connectionFailed(ActiveMQException exception, boolean failedOver, String scaleDownTargetNodeID) {
       try {
@@ -352,15 +366,18 @@ public class FederatedQueueConsumerImpl implements FederatedQueueConsumer, Sessi
       scheduleConnect(0);
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public void beforeReconnect(ActiveMQException exception) {
    }
 
    // used for testing
+   @Deprecated(forRemoval = true)
    public ScheduledFuture getCurrentConnectTask() {
       return currentConnectTask;
    }
 
+   @Deprecated(forRemoval = true)
    public interface ClientSessionCallback {
       void callback(ClientSession clientSession) throws ActiveMQException;
    }

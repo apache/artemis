@@ -26,11 +26,13 @@ import org.apache.activemq.artemis.core.server.federation.FederatedConsumerKey;
 import org.apache.activemq.artemis.core.server.federation.FederatedQueueConsumer;
 import org.apache.activemq.artemis.core.server.federation.FederationStream;
 
+@Deprecated(forRemoval = true)
 public interface ActiveMQServerFederationPlugin extends ActiveMQServerBasePlugin {
 
    /**
     * After a federation stream has been started
     */
+   @Deprecated(forRemoval = true)
    default void federationStreamStarted(final FederationStream stream) throws ActiveMQException {
 
    }
@@ -38,6 +40,7 @@ public interface ActiveMQServerFederationPlugin extends ActiveMQServerBasePlugin
    /**
     * After a federation stream has been stopped
     */
+   @Deprecated(forRemoval = true)
    default void federationStreamStopped(final FederationStream stream) throws ActiveMQException {
 
    }
@@ -45,6 +48,7 @@ public interface ActiveMQServerFederationPlugin extends ActiveMQServerBasePlugin
    /**
     * Before a federated queue consumer is created
     */
+   @Deprecated(forRemoval = true)
    default void beforeCreateFederatedQueueConsumer(final FederatedConsumerKey key) throws ActiveMQException {
 
    }
@@ -52,6 +56,7 @@ public interface ActiveMQServerFederationPlugin extends ActiveMQServerBasePlugin
    /**
     * After a federated queue consumer is created
     */
+   @Deprecated(forRemoval = true)
    default void afterCreateFederatedQueueConsumer(final FederatedQueueConsumer consumer) throws ActiveMQException {
 
    }
@@ -59,6 +64,7 @@ public interface ActiveMQServerFederationPlugin extends ActiveMQServerBasePlugin
    /**
     * Before a federated queue consumer is closed
     */
+   @Deprecated(forRemoval = true)
    default void beforeCloseFederatedQueueConsumer(final FederatedQueueConsumer consumer) throws ActiveMQException {
 
    }
@@ -66,6 +72,7 @@ public interface ActiveMQServerFederationPlugin extends ActiveMQServerBasePlugin
    /**
     * After a federated queue consumer is closed
     */
+   @Deprecated(forRemoval = true)
    default void afterCloseFederatedQueueConsumer(final FederatedQueueConsumer consumer) throws ActiveMQException {
 
    }
@@ -73,6 +80,7 @@ public interface ActiveMQServerFederationPlugin extends ActiveMQServerBasePlugin
    /**
     * Before a federated queue consumer handles a message
     */
+   @Deprecated(forRemoval = true)
    default void beforeFederatedQueueConsumerMessageHandled(final FederatedQueueConsumer consumer, Message message) throws ActiveMQException {
 
    }
@@ -80,6 +88,7 @@ public interface ActiveMQServerFederationPlugin extends ActiveMQServerBasePlugin
    /**
     * After a federated queue consumer handles a message
     */
+   @Deprecated(forRemoval = true)
    default void afterFederatedQueueConsumerMessageHandled(final FederatedQueueConsumer consumer, Message message) throws ActiveMQException {
 
    }
@@ -90,10 +99,12 @@ public interface ActiveMQServerFederationPlugin extends ActiveMQServerBasePlugin
     *
     * @return if {@code true}, create the consumer, else if false don't create
     */
+   @Deprecated(forRemoval = true)
    default boolean federatedAddressConditionalCreateConsumer(final Queue queue) throws ActiveMQException {
       return true;
    }
 
+   @Deprecated(forRemoval = true)
    default boolean federatedAddressConditionalCreateDivertConsumer(DivertBinding divertBinding, QueueBinding queueBinding) throws ActiveMQException {
       return true;
    }
@@ -104,6 +115,7 @@ public interface ActiveMQServerFederationPlugin extends ActiveMQServerBasePlugin
     *
     * @return {@code true}, create the consumer, else if false don't create
     */
+   @Deprecated(forRemoval = true)
    default boolean federatedQueueConditionalCreateConsumer(final ServerConsumer consumer) throws ActiveMQException {
       return true;
    }

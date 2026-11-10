@@ -25,6 +25,7 @@ import org.apache.activemq.artemis.core.server.federation.FederatedConsumerKey;
 import org.apache.activemq.artemis.utils.CompositeAddress;
 import org.apache.commons.lang3.text.StrSubstitutor;
 
+@Deprecated(forRemoval = true)
 public class FederatedAddressConsumerKey implements FederatedConsumerKey {
 
    private final SimpleString federation;
@@ -38,6 +39,7 @@ public class FederatedAddressConsumerKey implements FederatedConsumerKey {
    private SimpleString fqqn;
    private SimpleString queueName;
 
+   @Deprecated(forRemoval = true)
    FederatedAddressConsumerKey(SimpleString federation, SimpleString upstream, SimpleString address, RoutingType routingType, SimpleString queueNameFormat, SimpleString queueFilterString) {
       this.federation = federation;
       this.upstream = upstream;
@@ -47,6 +49,7 @@ public class FederatedAddressConsumerKey implements FederatedConsumerKey {
       this.queueFilterString = queueFilterString;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public SimpleString getQueueName() {
       if (queueName == null) {
@@ -60,21 +63,25 @@ public class FederatedAddressConsumerKey implements FederatedConsumerKey {
       return queueName;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public SimpleString getQueueFilterString() {
       return queueFilterString;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public int getPriority() {
       return 0;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public SimpleString getAddress() {
       return address;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public SimpleString getFqqn() {
       if (fqqn == null) {
@@ -83,16 +90,19 @@ public class FederatedAddressConsumerKey implements FederatedConsumerKey {
       return fqqn;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public RoutingType getRoutingType() {
       return routingType;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public SimpleString getFilterString() {
       return null;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public boolean equals(Object obj) {
       if (this == obj) {
@@ -108,6 +118,7 @@ public class FederatedAddressConsumerKey implements FederatedConsumerKey {
              Objects.equals(queueFilterString, other.queueFilterString);
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public int hashCode() {
       return Objects.hash(address, queueNameFormat, routingType, queueFilterString);

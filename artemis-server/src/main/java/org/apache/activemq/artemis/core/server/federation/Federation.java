@@ -28,6 +28,7 @@ import org.apache.activemq.artemis.core.config.federation.FederationPolicy;
 import org.apache.activemq.artemis.core.config.federation.FederationUpstreamConfiguration;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 
+@Deprecated(forRemoval = true)
 public class Federation {
 
 
@@ -53,6 +54,7 @@ public class Federation {
    }
 
 
+   @Deprecated(forRemoval = true)
    public Federation(final ActiveMQServer server, final FederationConfiguration config) {
       this.server = server;
       this.config = config;
@@ -60,6 +62,7 @@ public class Federation {
       this.name = SimpleString.of(config.getName());
    }
 
+   @Deprecated(forRemoval = true)
    public synchronized void start() throws ActiveMQException {
       if (state == FederationManager.State.STARTED) {
          return;
@@ -74,6 +77,7 @@ public class Federation {
       state = FederationManager.State.STARTED;
    }
 
+   @Deprecated(forRemoval = true)
    public synchronized void stop() {
       if (state == FederationManager.State.STOPPED) {
          return;
@@ -91,6 +95,7 @@ public class Federation {
       state = FederationManager.State.STOPPED;
    }
 
+   @Deprecated(forRemoval = true)
    public synchronized void deploy() throws ActiveMQException {
       for (FederationUpstreamConfiguration upstreamConfiguration : config.getUpstreamConfigurations()) {
          deploy(upstreamConfiguration, config.getFederationPolicyMap());
@@ -103,10 +108,12 @@ public class Federation {
       }
    }
 
+   @Deprecated(forRemoval = true)
    public boolean isStarted() {
       return state == FederationManager.State.STARTED;
    }
 
+   @Deprecated(forRemoval = true)
    public synchronized boolean undeploy(String name) {
       FederationUpstream federationConnection = upstreams.remove(name);
       if (federationConnection != null) {
@@ -120,6 +127,7 @@ public class Federation {
       return true;
    }
 
+   @Deprecated(forRemoval = true)
    public synchronized boolean deploy(FederationUpstreamConfiguration upstreamConfiguration, Map<String, FederationPolicy> federationPolicyMap) throws ActiveMQException {
       String name = upstreamConfiguration.getName();
       FederationUpstream upstream = upstreams.get(name);
@@ -146,6 +154,7 @@ public class Federation {
       return upstream;
    }
 
+   @Deprecated(forRemoval = true)
    public synchronized boolean deploy(FederationDownstreamConfiguration downstreamConfiguration, Map<String, FederationPolicy> federationPolicyMap) throws ActiveMQException {
       String name = downstreamConfiguration.getName();
       FederationDownstream downstream = downstreams.get(name);
@@ -185,34 +194,42 @@ public class Federation {
       return downstream;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationUpstream get(String name) {
       return upstreams.get(name);
    }
 
+   @Deprecated(forRemoval = true)
    public FederationDownstream getDownstream(String name) {
       return downstreams.get(name);
    }
 
+   @Deprecated(forRemoval = true)
    public void register(FederatedAbstract federatedAbstract) {
       server.registerBrokerPlugin(federatedAbstract);
    }
 
+   @Deprecated(forRemoval = true)
    public void unregister(FederatedAbstract federatedAbstract) {
       server.unRegisterBrokerPlugin(federatedAbstract);
    }
 
+   @Deprecated(forRemoval = true)
    String getFederationPassword() {
       return config.getCredentials() == null ? null : config.getCredentials().getPassword();
    }
 
+   @Deprecated(forRemoval = true)
    String getFederationUser() {
       return config.getCredentials() == null ? null : config.getCredentials().getUser();
    }
 
+   @Deprecated(forRemoval = true)
    public FederationConfiguration getConfig() {
       return config;
    }
 
+   @Deprecated(forRemoval = true)
    public SimpleString getName() {
       return name;
    }

@@ -688,6 +688,7 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
             Node node = federationElement.getChildNodes().item(j);
 
             if (node.getNodeName().equalsIgnoreCase("federation")) {
+               ActiveMQServerLogger.LOGGER.deprecatedConfigurationOption("federation", "amqp-federation");
                parseFederationConfiguration((Element) node, config);
             }
          }
@@ -2809,6 +2810,9 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
       }
    }
 
+   // Core federation is deprecated and all the configuration parsing can be removed once
+   // the feature is dropped fully.
+   @Deprecated(forRemoval = true)
    private void parseFederationConfiguration(final Element fedNode, final Configuration mainConfig) throws Exception {
       FederationConfiguration config = new FederationConfiguration();
 

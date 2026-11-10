@@ -28,6 +28,7 @@ import org.apache.activemq.artemis.core.config.federation.FederationConnectionCo
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.utils.uri.BeanSupport;
 
+@Deprecated(forRemoval = true)
 public class FederationConnection {
 
    private final FederationConnectionConfiguration config;
@@ -38,6 +39,7 @@ public class FederationConnection {
    private volatile boolean sharedConnection;
    private boolean isPull;
 
+   @Deprecated(forRemoval = true)
    public FederationConnection(Configuration configuration, String name, FederationConnectionConfiguration config) {
       this.config = config;
       this.circuitBreakerTimeout = config.getCircuitBreakerTimeout();
@@ -100,10 +102,12 @@ public class FederationConnection {
       }
    }
 
+   @Deprecated(forRemoval = true)
    public synchronized void start() {
       started = true;
    }
 
+   @Deprecated(forRemoval = true)
    public synchronized void stop() {
       started = false;
       ClientSessionFactory clientSessionFactory = this.clientSessionFactory;
@@ -114,22 +118,27 @@ public class FederationConnection {
       }
    }
 
+   @Deprecated(forRemoval = true)
    public boolean isStarted() {
       return started;
    }
 
+   @Deprecated(forRemoval = true)
    public boolean isPull() {
       return isPull;
    }
 
+   @Deprecated(forRemoval = true)
    public boolean isSharedConnection() {
       return sharedConnection;
    }
 
+   @Deprecated(forRemoval = true)
    public void setSharedConnection(boolean sharedConnection) {
       this.sharedConnection = sharedConnection;
    }
 
+   @Deprecated(forRemoval = true)
    public final ClientSessionFactory clientSessionFactory() throws Exception {
       ClientSessionFactory clientSessionFactory = this.clientSessionFactory;
       if (started) {
@@ -143,6 +152,7 @@ public class FederationConnection {
       }
    }
 
+   @Deprecated(forRemoval = true)
    public FederationConnectionConfiguration getConfig() {
       return config;
    }

@@ -23,6 +23,7 @@ import java.util.Set;
 
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 
+@Deprecated(forRemoval = true)
 public class FederationAddressPolicyConfiguration implements FederationPolicy<FederationAddressPolicyConfiguration>, Serializable {
 
    private String name;
@@ -35,89 +36,108 @@ public class FederationAddressPolicyConfiguration implements FederationPolicy<Fe
    private String transformerRef;
    private boolean enableDivertBindings;
 
+   @Deprecated(forRemoval = true)
    @Override
    public String getName() {
       return name;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public FederationAddressPolicyConfiguration setName(String name) {
       this.name = name;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public Set<Matcher> getIncludes() {
       return includes;
    }
 
+   @Deprecated(forRemoval = true)
    public Set<Matcher> getExcludes() {
       return excludes;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationAddressPolicyConfiguration addInclude(Matcher include) {
       includes.add(include);
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationAddressPolicyConfiguration addExclude(Matcher exclude) {
       excludes.add(exclude);
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public int getMaxHops() {
       return maxHops;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationAddressPolicyConfiguration setMaxHops(int maxHops) {
       this.maxHops = maxHops;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public Long getAutoDeleteMessageCount() {
       return autoDeleteMessageCount;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationAddressPolicyConfiguration setAutoDeleteMessageCount(Long autoDeleteMessageCount) {
       this.autoDeleteMessageCount = autoDeleteMessageCount;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public Long getAutoDeleteDelay() {
       return autoDeleteDelay;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationAddressPolicyConfiguration setAutoDeleteDelay(Long autoDeleteDelay) {
       this.autoDeleteDelay = autoDeleteDelay;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public Boolean getAutoDelete() {
       return autoDelete;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationAddressPolicyConfiguration setAutoDelete(Boolean autoDelete) {
       this.autoDelete = autoDelete;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public String getTransformerRef() {
       return transformerRef;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationAddressPolicyConfiguration setTransformerRef(String transformerRef) {
       this.transformerRef = transformerRef;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    public Boolean isEnableDivertBindings() {
       return enableDivertBindings;
    }
 
+   @Deprecated(forRemoval = true)
    public FederationAddressPolicyConfiguration setEnableDivertBindings(Boolean enableDivertBindings) {
       this.enableDivertBindings = enableDivertBindings;
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public void encode(ActiveMQBuffer buffer) {
       Objects.requireNonNull(name, "name can not be null");
@@ -132,6 +152,7 @@ public class FederationAddressPolicyConfiguration implements FederationPolicy<Fe
       buffer.writeBoolean(enableDivertBindings);
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public void decode(ActiveMQBuffer buffer) {
       name = buffer.readString();
@@ -169,6 +190,7 @@ public class FederationAddressPolicyConfiguration implements FederationPolicy<Fe
       }
    }
 
+   @Deprecated(forRemoval = true)
    public static class Matcher implements Serializable {
 
       private String addressMatch;
@@ -222,6 +244,7 @@ public class FederationAddressPolicyConfiguration implements FederationPolicy<Fe
       }
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public boolean equals(Object obj) {
       if (this == obj) {
@@ -241,6 +264,7 @@ public class FederationAddressPolicyConfiguration implements FederationPolicy<Fe
              Objects.equals(transformerRef, other.transformerRef);
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public int hashCode() {
       return Objects.hash(name, includes, excludes, autoDelete, autoDeleteDelay, autoDeleteMessageCount, maxHops,

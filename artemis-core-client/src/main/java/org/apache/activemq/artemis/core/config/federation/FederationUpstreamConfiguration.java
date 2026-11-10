@@ -16,6 +16,7 @@
  */
 package org.apache.activemq.artemis.core.config.federation;
 
+@Deprecated(forRemoval = true)
 public class FederationUpstreamConfiguration extends FederationStreamConfiguration<FederationUpstreamConfiguration> {
 
 }

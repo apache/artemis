@@ -28,21 +28,30 @@ import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.federation.address.FederatedAddress;
 import org.apache.activemq.artemis.core.server.federation.queue.FederatedQueue;
 
+@Deprecated(forRemoval = true)
 public abstract class AbstractFederationStream implements FederationStream {
 
+   @Deprecated(forRemoval = true)
    protected final ActiveMQServer server;
+   @Deprecated(forRemoval = true)
    protected final Federation federation;
+   @Deprecated(forRemoval = true)
    protected final SimpleString name;
+   @Deprecated(forRemoval = true)
    protected final FederationConnection connection;
    private FederationStreamConfiguration config;
+   @Deprecated(forRemoval = true)
    protected Map<String, FederatedQueue> federatedQueueMap = new HashMap<>();
+   @Deprecated(forRemoval = true)
    protected Map<String, FederatedAddress> federatedAddressMap = new HashMap<>();
 
 
+   @Deprecated(forRemoval = true)
    public AbstractFederationStream(ActiveMQServer server, Federation federation, String name, FederationStreamConfiguration config) {
       this(server, federation, name, config, null);
    }
 
+   @Deprecated(forRemoval = true)
    public AbstractFederationStream(final ActiveMQServer server, final Federation federation, final String name, final FederationStreamConfiguration config,
                                    final FederationConnection connection) {
       this.server = server;
@@ -53,6 +62,7 @@ public abstract class AbstractFederationStream implements FederationStream {
       this.connection = Objects.requireNonNullElseGet(connection, () -> new FederationConnection(server.getConfiguration(), name, config.getConnectionConfiguration()));
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public synchronized void start() {
       if (connection != null) {
@@ -60,6 +70,7 @@ public abstract class AbstractFederationStream implements FederationStream {
       }
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public synchronized void stop() {
       if (connection != null) {
@@ -67,27 +78,32 @@ public abstract class AbstractFederationStream implements FederationStream {
       }
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public Federation getFederation() {
       return federation;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public FederationStreamConfiguration getConfig() {
       return config;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public SimpleString getName() {
       return name;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public FederationConnection getConnection() {
       return connection;
    }
 
 
+   @Deprecated(forRemoval = true)
    @Override
    public String getUser() {
       String user = config.getConnectionConfiguration().getUsername();
@@ -98,6 +114,7 @@ public abstract class AbstractFederationStream implements FederationStream {
       }
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public String getPassword() {
       String password = config.getConnectionConfiguration().getPassword();
@@ -108,11 +125,13 @@ public abstract class AbstractFederationStream implements FederationStream {
       }
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public int getPriorityAdjustment() {
       return config.getConnectionConfiguration().getPriorityAdjustment();
    }
 
+   @Deprecated(forRemoval = true)
    protected void callFederationStreamStartedPlugins() {
       if (server.hasBrokerFederationPlugins()) {
          try {
@@ -124,6 +143,7 @@ public abstract class AbstractFederationStream implements FederationStream {
       }
    }
 
+   @Deprecated(forRemoval = true)
    protected void callFederationStreamStoppedPlugins() {
       if (server.hasBrokerFederationPlugins()) {
          try {

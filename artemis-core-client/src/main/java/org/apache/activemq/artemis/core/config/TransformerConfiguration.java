@@ -28,31 +28,39 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+@Deprecated(forRemoval = true)
 public final class TransformerConfiguration implements Serializable {
 
    private static final long serialVersionUID = -1057244274380572226L;
 
+   @Deprecated(forRemoval = true)
    public static final String CLASS_NAME = "class-name";
+   @Deprecated(forRemoval = true)
    public static final String PROPERTIES = "properties";
 
    private String className;
    private Map<String, String> properties = new HashMap<>();
 
+   @Deprecated(forRemoval = true)
    public TransformerConfiguration(String className) {
       this.className = className;
    }
 
+   @Deprecated(forRemoval = true)
    public TransformerConfiguration() {
    }
 
+   @Deprecated(forRemoval = true)
    public void setClassName(String className) {
       this.className = className;
    }
 
+   @Deprecated(forRemoval = true)
    public String getClassName() {
       return className;
    }
 
+   @Deprecated(forRemoval = true)
    public Map<String, String> getProperties() {
       return properties;
    }
@@ -69,6 +77,7 @@ public final class TransformerConfiguration implements Serializable {
     * @param jsonString json string
     * @return the {@code TransformerConfiguration} created from the JSON-formatted input {@code String}
     */
+   @Deprecated(forRemoval = true)
    public static TransformerConfiguration fromJSON(String jsonString) {
       JsonObject json = JsonLoader.readObject(new StringReader(jsonString));
 
@@ -94,6 +103,7 @@ public final class TransformerConfiguration implements Serializable {
       return result;
    }
 
+   @Deprecated(forRemoval = true)
    public JsonObjectBuilder createJsonObjectBuilder() {
       JsonObjectBuilder tcBuilder = JsonLoader.createObjectBuilder().add(TransformerConfiguration.CLASS_NAME, getClassName());
       if (getProperties() != null && !getProperties().isEmpty()) {
@@ -109,6 +119,7 @@ public final class TransformerConfiguration implements Serializable {
     *
     * @param properties the properties to set
     */
+   @Deprecated(forRemoval = true)
    public TransformerConfiguration setProperties(final Map<String, String> properties) {
       if (properties != null) {
          this.properties.putAll(properties);
@@ -116,11 +127,13 @@ public final class TransformerConfiguration implements Serializable {
       return this;
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public int hashCode() {
       return Objects.hash(className, properties);
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public boolean equals(Object obj) {
       if (this == obj) {
@@ -134,6 +147,7 @@ public final class TransformerConfiguration implements Serializable {
              Objects.equals(properties, other.properties);
    }
 
+   @Deprecated(forRemoval = true)
    @Override
    public String toString() {
       return "TransformerConfiguration [" +
