@@ -128,7 +128,7 @@ public class QueueInfo implements Serializable {
       if (address != null) {
          SimpleString[] split = address.split(',');
          for (SimpleString addressPart : split) {
-            containsAddress = address.startsWith(addressPart);
+            containsAddress = this.address.startsWith(addressPart);
 
             if (containsAddress) {
                break;
