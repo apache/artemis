@@ -50,6 +50,7 @@ public class SubscriberFlowControlTest extends MQTT5TestSupport {
       MqttClient consumer = createPahoClient(CONSUMER_ID);
       MqttConnectionOptions options = new MqttConnectionOptions();
       options.setReceiveMaximum(RECEIVE_MAXIMUM);
+      consumer.setManualAcks(true);
       consumer.setCallback(new DefaultMqttCallback() {
          @Override
          public void messageArrived(String topic, MqttMessage message) throws Exception {
@@ -106,6 +107,7 @@ public class SubscriberFlowControlTest extends MQTT5TestSupport {
       MqttClient consumer = createPahoClient(CONSUMER_ID);
       MqttConnectionOptions options = new MqttConnectionOptions();
       options.setReceiveMaximum(RECEIVE_MAXIMUM);
+      consumer.setManualAcks(true);
       consumer.setCallback(new DefaultMqttCallback() {
          @Override
          public void messageArrived(String topic, MqttMessage message) throws Exception {
@@ -124,8 +126,10 @@ public class SubscriberFlowControlTest extends MQTT5TestSupport {
       MqttClient producer = createPahoClient("producer");
       producer.connect();
 
-      // publish to topicA to fill the quota
-      producer.publish(TOPIC_A, "a1".getBytes(StandardCharsets.UTF_8), 1, false);
+      // publish to topicA from the consumer itself to fill the quota;
+      // using the consumer's client ID ensures the noLocal filter will block
+      // re-delivery after re-subscribe, preventing a race with topicB
+      consumer.publish(TOPIC_A, "a1".getBytes(StandardCharsets.UTF_8), 1, false);
 
       // wait until topicA message is in flight
       Queue topicAQueue = getSubscriptionQueue(TOPIC_A, CONSUMER_ID);
