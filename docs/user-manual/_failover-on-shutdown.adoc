@@ -1,0 +1,8 @@
+Whether the _graceful_ shutdown of this broker will cause the backup to activate.
++
+If `false` then the backup server will remain passive if this broker is shutdown gracefully (e.g. using kbd:[Ctrl+C]).
+Note that if `false` and you want failover to occur then you can use the management API as explained xref:management.adoc#management[here].
++
+If `true` then when this server is stopped the backup will activate.
++
+The default is `false`.

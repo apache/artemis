@@ -1,0 +1,143 @@
+= Unit Testing
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+Broker resources can be run inside JUnit tests by using provided rules (for JUnit 4) or extensions (for JUnit 5).
+This can make it easier to embed messaging functionality in your tests.
+
+These are provided by the packages `artemis-junit` (JUnit 4) and `artemis-junit-5` (JUnit 5).
+
+== Examples
+
+=== JUnit 4
+
+==== Add Maven dependency
+
+[,xml,subs="normal"]
+----
+<dependency>
+   <groupId>org.apache.artemis</groupId>
+   <artifactId>artemis-junit</artifactId>
+   <!-- replace this for the version you are using -->
+   <version>{project-version}</version>
+   <scope>test</scope>
+</dependency>
+----
+
+==== Declare a rule on your JUnit Test
+
+[,java]
+----
+import org.apache.activemq.artemis.junit.EmbeddedActiveMQResource;
+import org.junit.Rule;
+import org.junit.Test;
+
+public class MyTest {
+
+   @Rule
+   public EmbeddedActiveMQResource server = new EmbeddedActiveMQResource();
+
+   @Test
+   public void myTest() {
+     // test something, eg. create a queue
+     server.createQueue("test.adress", "test.queue");
+   }
+}
+----
+
+=== JUnit 5
+
+==== Add Maven dependency
+
+[,xml,subs="normal"]
+----
+<dependency>
+   <groupId>org.apache.artemis</groupId>
+   <artifactId>artemis-junit-5</artifactId>
+   <!-- replace this for the version you are using -->
+   <version>{project-version}</version>
+   <scope>test</scope>
+</dependency>
+----
+
+==== Declare a rule on your JUnit Test
+
+[,java]
+----
+import org.apache.activemq.artemis.junit.EmbeddedActiveMQExtension;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
+
+public class MyTest {
+
+   @RegisterExtension
+   public EmbeddedActiveMQExtension server = new EmbeddedActiveMQExtension();
+
+   @Test
+   public void myTest() {
+     // test something, eg. create a queue
+     server.createQueue("test.adress", "test.queue");
+   }
+}
+----
+
+== Ordering rules / extensions
+
+This is actually a JUnit feature, but this could be helpful on pre-determining the order on which rules are executed.
+
+=== JUnit 4
+
+[,java]
+----
+import org.junit.Rule;
+import org.junit.rules.RuleChain;
+
+public EmbeddedActiveMQResource server = new EmbeddedActiveMQResource();
+public ActiveMQDynamicProducerResource producer = new ActiveMQDynamicProducerResource(server.getVmURL());
+
+@Rule
+public RuleChain ruleChain = RuleChain.outerRule(server).around(producer);
+----
+
+=== JUnit 5
+
+[,java]
+----
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.extension.RegisterExtension;
+
+@RegisterExtension
+@Order(1)
+public EmbeddedActiveMQExtension producer = new EmbeddedActiveMQExtension();
+
+@RegisterExtension
+@Order(2)
+public ActiveMQDynamicProducerExtension producer = new ActiveMQDynamicProducerExtension(server.getVmURL());
+----
+
+== Available Rules / Extensions
+
+|===
+| JUnit 4 Rule | JUnit 5 Extension | Description
+
+| EmbeddedActiveMQResource
+| EmbeddedActiveMQExtension
+| Run a Server, without the JMS manager
+
+| [.line-through]#EmbeddedJMSResource# (deprecated)
+| no equivalent
+| Run a Server, including the JMS Manager
+
+| ActiveMQConsumerResource
+| ActiveMQConsumerExtension
+| Automate the creation of a consumer
+
+| ActiveMQDynamicProducerResource
+| ActiveMQDynamicProducerExtension
+| Automate the creation of a producer
+
+| ActiveMQProducerResource
+| ActiveMQProducerExtension
+| Automate the creation of a producer
+|===

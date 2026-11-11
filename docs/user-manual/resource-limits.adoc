@@ -1,0 +1,48 @@
+= Resource Limits
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+Sometimes it's helpful to set particular limits on what certain users can do beyond the normal security settings related to authorization and  authentication.
+For example, limiting how many connections a user can create or how many queues a user can create.
+This chapter will explain how to  configure such limits.
+
+== Configuring Limits Via Resource Limit Settings
+
+Here is an example of the XML used to set resource limits:
+
+[,xml]
+----
+<resource-limit-settings>
+   <resource-limit-setting match="myUser">
+      <max-sessions>5</max-sessions>
+      <max-queues>3</max-queues>
+   </resource-limit-setting>
+</resource-limit-settings>
+----
+
+Unlike the `match` from `address-setting`, this `match` does not use any wild-card syntax.
+It's a simple 1:1 mapping of the limits to a *user*.
+
+max-sessions::
+How many sessions the matched user can create on the broker.
+The default is `-1` which means there is no limit.
++
+.Why _sessions_ and not _connections_?
+****
+The _session_ is the fundamental networked resource in the Core API.
+
+There is no conceptual separation between a _connection_ and a _session_ in the Core API as there is, for example, in JMS/Jakarta Messaging.
+When an application uses the Core JMS implementation to create a JMS `Connection` what's actually created behind-the-scenes is a Core session.
+This session is used to validate the client application's credentials and JMS client ID (if available).
+When the application creates a JMS `Session` then another Core session is created.
+
+The same basic thing happens for the other supported protocols (e.g. STOMP, AMQP, MQTT). When a client creates a network connection to the broker the broker responds by creating an internal, server-side session.
+
+The number of these sessions can be limited on a per-user basis.
+
+To be clear, the broker _does_ track basic TCP connections, and these too can be limited (i.e. via the `connectionsAllowed` acceptor URL parameter), but these connections don't carry credentials and therefore cannot be limited on a per-user basis.
+****
+max-queues::
+How many queues the matched user can create.
+The default is `-1` which means there is no limit.

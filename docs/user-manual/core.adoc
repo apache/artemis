@@ -1,0 +1,221 @@
+= Using Core
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+Core is a messaging system with its own API.
+We call this the _Core API_.
+
+If you don't want to use the JMS API or any of the other supported protocols, you can use the Core API directly.
+The Core API provides all the functionality of JMS but without much of the complexity.
+It also provides features that are not available using JMS.
+
+== Core Messaging Concepts
+
+Some of the Core messaging concepts are similar to JMS concepts, but Core messaging concepts are different in some ways as well.
+In general, the Core API is simpler than the JMS API since we remove distinctions between queues, topics, and subscriptions.
+We'll discuss each of the major Core messaging concepts in turn, but to see the API in detail, please consult the Javadoc.
+
+Also refer to the xref:address-model.adoc#address-model[address model] chapter for a high-level overview of these concepts as well as configuration details.
+
+=== Message
+
+* A message is the unit of data which is sent between clients and servers.
+* A message has a body which is a buffer containing convenient methods for reading and writing data into it.
+* A message has a set of properties which are key-value pairs.
+Each property key is a string and property values can be of type integer, long, short, byte, byte[], String, double, float, or boolean.
+* A message has an _address_ it is being sent to.
+When the message arrives on the server it is routed to any queues that are bound to the address.
+The routing semantics (i.e. anycast or multicast) are determined by the "routing type" of the address and queue.
+If the queues are bound with any filter, the message will only be routed to that queue if the filter matches.
+An address may have many queues bound to it or even none.
+There may also be entities other than queues (e.g. _diverts_) bound to addresses.
+* Messages can be either durable or non durable.
+Durable messages in a durable queue will survive a server crash or restart.
+Non durable messages will never survive a server crash or restart.
+* Messages can be specified with a priority value between 0 and 9.
+0 represents the lowest priority and 9 represents the highest.
+The broker will attempt to deliver higher priority messages before lower priority ones.
+* Messages can be specified with an optional expiry time.
+The broker will not deliver messages after its expiry time has been exceeded.
+* Messages also have an optional timestamp which represents the time the message was sent.
+* Very large messages (i.e. much larger than can fit in available RAM at any one time) can be sent & consumed.
+
+== Core API
+
+=== ServerLocator
+
+Clients use `ServerLocator` instances to create `ClientSessionFactory` instances.
+`ServerLocator` instances are used to locate servers and create connections to them.
+
+In JMS terms think of a `ServerLocator` in the same way you would a JMS Connection Factory.
+
+`ServerLocator` instances are created using the `ActiveMQClient` factory class.
+
+=== ClientSessionFactory
+
+Clients use `ClientSessionFactory` instances to create `ClientSession` instances.
+`ClientSessionFactory` instances are basically the connection to a server
+
+In JMS terms think of them as JMS Connections.
+
+`ClientSessionFactory` instances are created using the `ServerLocator` class.
+
+[[core-connection-handshake]]
+=== Connection handshake
+
+When a Core client connects to a broker it sends:
+
+* the expected node id in case of failover
+* the client's protocol version
+* optional connection-level username and password
+
+Core application clients can pass credentials when creating a session factory to authenticate the underlying connection:
+
+[,java]
+----
+ServerLocator locator = ...;
+locator.setConnectionCredentials(user, password);
+ClientSessionFactory factory = locator.createSessionFactory(user, password);
+----
+
+The JMS connection factory sets connection credentials automatically when `setUser` / `setPassword` are called.
+
+Cluster-internal components on current brokers (cluster connections, bridges, replicated backups, federation links, etc.) pass their configured `cluster-user` / `cluster-password` or bridge credentials in the connect handshake automatically.
+
+When security is enabled and no connection credentials are supplied, the broker responds to topology subscription with a placeholder entry so the client can complete its handshake, but real broker topology is sent only after authentication succeeds.
+
+==== Server-side configuration
+
+Core connection security applies only when broker security is enabled (`security-enabled` in `broker.xml`).
+It is configured per acceptor on the Core protocol manager using URL parameters, in the same way as other protocol-specific acceptor settings (see xref:configuring-transports.adoc#configuring-the-transport[Configuring the Transport]).
+
+The following parameters are supported on any acceptor that handles the Core protocol:
+
+`coreConnectionSecurityEnabled`::
+Whether connection-level security is enabled for Core on this acceptor.
+When `true` (the default) and broker security is enabled, the broker:
+
+* validates optional credentials in the connect packet
+* sends a placeholder topology response to unauthenticated clients
+* installs a reduced Netty frame size limit until the connection is authenticated
+
+`coreInitialMaxFrameSize`::
+Maximum Core frame size in bytes allowed on a Netty connection *before* authentication completes.
+Default: `4096` (4 KiB).
+Frames larger than this limit are rejected with a decoder error and the connection is closed.
+
+`coreMaxFrameSize`::
+Maximum Core frame size in bytes allowed on a Netty connection *after* authentication completes.
+Default: `131072` (128 KiB).
+The limit is raised automatically once the connection `Subject` is set (for example after a successful `CONNECT` with credentials or after `CREATE_SESSION`).
+
+Example disabling Core connection security on an acceptor:
+
+[,xml]
+----
+<acceptor name="artemis">tcp://0.0.0.0:61616?protocols=CORE,AMQP;coreConnectionSecurityEnabled=false</acceptor>
+----
+
+Example keeping Core connection security enabled but increasing the post-authentication frame limit:
+
+[,xml]
+----
+<acceptor name="artemis">tcp://0.0.0.0:61616?protocols=CORE,AMQP;coreInitialMaxFrameSize=4096;coreMaxFrameSize=1048576</acceptor>
+----
+
+NOTE: These frame size limits apply to Netty-based Core connections.
+In-VM Core connections do not use the size-limited decoder.
+
+For embedded brokers, the same settings can be applied programmatically on `CoreProtocolManager` via `setCoreConnectionSecurityEnabled`, `setCoreInitialMaxFrameSize`, and `setCoreMaxFrameSize`.
+
+=== ClientSession
+
+A client uses a ``ClientSession``for consuming and producing messages and for grouping them in transactions.
+`ClientSession` instances can support both transactional and non-transactional semantics and also provide an `XAResource` interface so messaging operations can be performed as part of a http://www.oracle.com/technetwork/java/javaee/tech/jta-138684.html[JTA] transaction.
+
+`ClientSession` instances group `ClientConsumer` instances and `ClientProducer` instances.
+
+`ClientSession` instances can be registered with an optional `SendAcknowledgementHandler`.
+This allows your client code to be notified asynchronously when sent messages have successfully reached the server.
+This unique feature allows you to have full guarantees that sent messages have reached the server without having to block on each message sent until a response is received.
+Blocking on each message sent is costly since it requires a network round trip for each message sent.
+By not blocking and receiving send acknowledgements asynchronously, you can create true end-to-end asynchronous systems that are not possible using the standard JMS API.
+For more information on this advanced feature, please see the section xref:send-guarantees.adoc#guarantees-of-sends-and-commits[Guarantees of sends and commits].
+
+==== Identifying your client application for management and debugging
+
+Assigning IDs to your Core session can help you with monitoring and debugging using the xref:management-console.adoc#management-console[management console], e.g.:
+
+[,java]
+----
+ServerLocator locator = ...
+ClientSessionFactory csf = createSessionFactory(locator);
+ClientSession session = csf.createSession(null, null, false, true, true, locator.isPreAcknowledge(), locator.getAckBatchSize(), "my-client-id");
+----
+
+The value `my-client-id` will then appear in the *Client ID* column under the *Connections*, *Consumers*, and *Producers* tabs.
+
+If you are using the JMS API then `setClientID` would give you the same effect.
+
+=== ClientConsumer
+
+Clients use `ClientConsumer` instances to consume messages from a queue.
+Core messaging supports both synchronous and asynchronous message consumption semantics.
+`ClientConsumer` instances can be configured with an optional filter expression and will only consume messages which match that expression.
+
+=== ClientProducer
+
+Clients create `ClientProducer` instances on `ClientSession` instances so they can send messages.
+`ClientProducer` instances can specify an address to which all sent messages are routed, or they can have no specified address, and the address is specified at send time for the message.
+
+[WARNING]
+====
+Please note that `ClientSession`, `ClientProducer` and `ClientConsumer` instances are _designed to be re-used_.
+
+It's an anti-pattern to create new `ClientSession`, `ClientProducer` and `ClientConsumer` instances for each message you produce or consume.
+If you do this, your application will perform very poorly.
+This is  discussed further in the section on performance tuning xref:perf-tuning.adoc#performance-tuning[Performance Tuning].
+====
+
+== A simple example of using Core
+
+Here's a very simple program using the Core messaging API to send and receive a message.
+Logically it's comprised of two sections: firstly setting up the producer to write a message to an _address_, and secondly, creating a _queue_ for the consumer using anycast routing, creating the consumer, and _starting_ it.
+
+[,java]
+----
+ServerLocator locator = ActiveMQClient.createServerLocator("vm://0");
+
+// In this simple example, we just use one session for both producing and receiving
+
+ClientSessionFactory factory =  locator.createSessionFactory();
+ClientSession session = factory.createSession();
+
+// A producer is associated with an address ...
+
+ClientProducer producer = session.createProducer("example");
+ClientMessage message = session.createMessage(true);
+message.getBodyBuffer().writeString("Hello");
+
+// We need a queue attached to the address ...
+
+session.createQueue("example", RoutingType.ANYCAST, "example", true);
+
+// And a consumer attached to the queue ...
+
+ClientConsumer consumer = session.createConsumer("example");
+
+// Once we have a queue, we can send the message ...
+
+producer.send(message);
+
+// We need to start the session before we can -receive- messages ...
+
+session.start();
+ClientMessage msgReceived = consumer.receive();
+
+System.out.println("message = " + msgReceived.getBodyBuffer().readString());
+
+session.close();
+----

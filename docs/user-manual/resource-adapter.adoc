@@ -1,0 +1,145 @@
+= JCA Resource Adapter
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+For using {project-name-full} in a Java EE or Jakarta EE environment, you can use the JCA Resource Adapter.
+
+A JCA-based JMS connection factory has 2 big advantages over a plain JMS connection factory:
+
+* *Pooled* - Generally speaking, when a connection is "created" from a JCA-based JMS connection factory the underlying physical connection is taken out of a pool and when the connection is "closed" the underlying physical connection is returned to the pool.
+This eliminates the performance penalty of actually creating and destroying the physical connection which allows clients to be written in ways that would normally be considered an anti-pattern (e.g. "creating" and "closing" a connection for every sent message).
+* *Automatic enlistment into JTA transactions* - Most of the time applications which consume JMS messages in a Java/Jakarta EE context do so via an MDB.
+By default, the consumption of the message in an MDB (i.e. the execution of `onMessage`) happens within a JTA transaction.
+If a JCA-based JMS connection factory is used in the course of the MDB's processing (e.g. to send a message) then the JCA logic will automatically enlist the session into the JTA transaction so that the consumption of the message and the sending of the message are an atomic operation (assuming that the JCA-based connection factory is XA capable).
+This is also true for operations involving other transactional resources (e.g. a database).
+
+== Versions
+
+Pick the right version of the resource adapter depending on your environment.
+
+|===
+|  | artemis-ra-rar |
+
+| Java EE
+| JCA
+| JMS
+
+| 8
+| 1.7
+| 2.0
+|===
+
+|===
+|  | artemis-jakarta-ra-rar |
+
+| Jakarta EE
+| JCA
+| JMS
+
+| >= 9
+| 2.0
+| 3.0
+|===
+
+== Building the RA
+
+To use the RA you have to build it.
+The simplest way to do this is with the xref:examples.adoc[examples].
+
+[,shell]
+----
+cd examples/features/sub-modules/{artemis-jakarta-ra-rar,artemis-ra-rar}
+mvn clean install
+cd target
+mv artemis*.rar artemis.rar
+----
+
+Follow the manual of your application server to install the `artemis.rar` JCA RA archive.
+
+== Configuration
+
+The configuration is split into two parts.
+First the config to send messages to a destination (outbound), and second the config to get messages consumed from a destination (inbound).
+Each can be configured separately or both can use the ResourceAdapter settings.
+
+Here are a few options listed.
+If you want an overview of all configuration options, consider https://github.com/apache/artemis/blob/{{ config.version }}/artemis-ra/src/main/java/org/apache/activemq/artemis/ra/ConnectionFactoryProperties.java[ConnectionFactoryProperties] as a base and additionally the specific classes for your object.
+
+Consider also the `rar.xml` file for options and explanations in your `artemis.rar`.
+There you can set the default options for your ResourceAdapter.
+With the configuration of the ResourceAdapter in your application server, you are overriding `rar.xml` defaults.
+With the configuration of the ConnectionFactory or the ActivationSpec, you can override the ResourceAdapter config.
+
+=== ResourceAdapter
+
+Config options https://github.com/apache/artemis/blob/{{ config.version }}/artemis-ra/src/main/java/org/apache/activemq/artemis/ra/ActiveMQRAProperties.java[ActiveMQRAProperties]
+
+connectionParameters::
+key value pairs, like host=localhost;port=61616,host=anotherHost;port=61617
+
+userName::
+userName
+
+password::
+password
+
+clientID::
+clientID
+
+=== ConnectionFactory
+
+Config options for the outbound `ManagedConnectionFactory`: https://github.com/apache/artemis/blob/{{ config.version }}/artemis-ra/src/main/java/org/apache/activemq/artemis/ra/ActiveMQRAMCFProperties.java[ActiveMQRAMCFProperties] The connection for the `ManagedConnectionFactory` is specified by the RA.
+
+Config options for the inbound `ConnectionFactory` https://github.com/apache/artemis/blob/{{ config.version }}/artemis-jms-client/src/main/java/org/apache/activemq/artemis/jms/client/ActiveMQConnectionFactory.java[ActiveMQConnectionFactory]
+
+brokerUrl::
+url to broker
+
+cacheDestinations::
+by the jms session
+
+==== ConnectionManager
+
+You can't configure any properties.
+
+=== ActivationSpec
+
+Config options https://github.com/apache/artemis/blob/{{ config.version }}/artemis-ra/src/main/java/org/apache/activemq/artemis/ra/inflow/ActiveMQActivationSpec.java[ActiveMQActivationSpec]
+
+In the activation spec you can configure all the things you need to get messages consumed.
+
+useJndi::
+true if you want lookup destinations via jndi.
+
+connectionFactoryLookup::
+the jndiName of the connectionFactory, used by this activation spec.
+You can reference an existing ManagedConnectionFactory or specify another.
+
+jndiParams::
+for the InitialContext.
+key value pairs, like `a=b;c=d;e=f`
+
+destination::
+name or JNDI reference of the JMS destination
+
+destinationType::
+`[javax|jakarta].jms.Queue` or `[javax|jakarta].jms.Topic`
+
+messageSelector::
+JMS selector to filter messages to your MDB
+
+maxSession::
+to consume messages in parallel from the broker
+
+==== Only for topic message consumption
+
+subscriptionDurability::
+Durable / NonDurable
+
+subscriptionName::
+the broker holds all messages for this name if you use durable subscriptions
+
+== Logging
+
+With the package `org.apache.activemq.artemis.ra` you catch all ResourceAdapter logging statements.

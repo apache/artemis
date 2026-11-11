@@ -1,0 +1,186 @@
+= Data Tools
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+You can use the CLI to execute data maintenance tools.
+
+The following sub-commands are available when running the CLI `data` command from a particular broker instance that has already been installed using the `create` command:
+
+|===
+| Name | Description
+
+| `print`
+| Prints a report about journal records of a non-running server
+
+| `exp`
+| Export the message data using a special and independent XML format
+
+| `imp`
+| Imports the journal to a running broker using the output from expt
+
+| `encode`
+| shows an internal format of the journal encoded to String
+
+| `decode`
+| imports the internal journal format from encode
+
+| `compact`
+| Compacts the journal of a non running server
+
+| `recover`
+| Recover (undelete) messages from an existing journal and create a new one.
+|===
+
+For a complete list of sub-commands, use `./artemis help data`.
+
+----
+$ ./artemis help data
+Usage: artemis data [COMMAND]
+use 'help data' for sub commands list
+Commands:
+  recover  Recover (undelete) every message on the journal by creating a new
+             output journal. Rolled back and acked messages will be sent out to
+             the output as much as possible.
+  print    Print data records information. WARNING: don't use while a
+             production server is running.
+  exp      Export all message-data using an XML that could be interpreted by
+             any system.
+  imp      Import all message-data using an XML that could be interpreted by
+             any system.
+  decode   Decode a journal's internal format into a new set of journal files.
+  encode   Encode a set of journal files into an internal encoded data format.
+  compact  Compact the journal of a non running server.
+----
+For the specifics of each sub-command, use `./artemis help data <sub-command>`.
+For example:
+
+[,console]
+----
+$ ./artemis help data print
+Usage: artemis data print [--f] [--jdbc] [--legacy] [--reclaimed] [--safe]
+                          [--skip-bindings] [--skip-journal] [--verbose]
+                          [--bindings=<binding>] [--broker=<brokerConfig>]
+                          [--jdbc-bindings-table-name=<jdbcBindings>]
+                          [--jdbc-connection-url=<jdbcURL>]
+                          [--jdbc-driver-class-name=<jdbcClassName>]
+                          [--jdbc-large-message-table-name=<jdbcLargeMessages>]
+                          [--jdbc-message-table-name=<jdbcMessages>]
+                          [--jdbc-node-manager-table-name=<jdbcNodeManager>]
+                          [--jdbc-page-store-table-name=<jdbcPageStore>]
+                          [--jdbc-password=<jdbcPassword>]
+                          [--jdbc-user=<jdbcUser>] [--journal=<journal>]
+                          [--large-messages=<largeMessges>]
+                          [--max-pages=<maxPages>] [--output=<output>]
+                          [--paging=<paging>] <configuration>
+Print data records information. WARNING: don't use while a production server is
+running.
+      <configuration>        Broker Configuration URI. Default: xml:
+                               null/etc/bootstrap.xml.
+      --bindings=<binding>   The folder used for bindings. Default: read from
+                               broker.xml.
+      --broker=<brokerConfig>
+                             Override the broker configuration from the
+                               bootstrap.xml.
+      --f                    This will allow certain tools like print-data to
+                               be performed ignoring any running servers.
+                               WARNING: Changing data concurrently with a
+                               running broker may damage your data. Be careful
+                               with this option.
+      --jdbc                 Whether to store message data in JDBC instead of
+                               local files.
+      --jdbc-bindings-table-name=<jdbcBindings>
+                             Name of the jdbc bindings table.
+      --jdbc-connection-url=<jdbcURL>
+                             The URL used for the database connection.
+      --jdbc-driver-class-name=<jdbcClassName>
+                             JDBC driver classname.
+      --jdbc-large-message-table-name=<jdbcLargeMessages>
+                             Name of the large messages table.
+      --jdbc-message-table-name=<jdbcMessages>
+                             Name of the jdbc messages table.
+      --jdbc-node-manager-table-name=<jdbcNodeManager>
+                             Name of the jdbc node manager table.
+      --jdbc-page-store-table-name=<jdbcPageStore>
+                             Name of the page store messages table.
+      --jdbc-password=<jdbcPassword>
+                             JDBC password.
+      --jdbc-user=<jdbcUser> JDBC username.
+      --journal=<journal>    The folder used for normal messages. Default: read
+                               from broker.xml.
+      --large-messages=<largeMessges>
+                             The folder used for large-messages. Default: read
+                               from broker.xml.
+      --legacy               Use legacy semicolon-separated output format
+                               instead of table columns.
+      --max-pages=<maxPages> Maximum number of pages to read. Default:
+                               unlimited (-1).
+      --output=<output>      Output name for the file.
+      --paging=<paging>      The folder used for paged messages. Default: read
+                               from broker.xml.
+      --reclaimed            Try to print as many records as possible from
+                               reclaimed files.
+      --safe                 Print your data structure without showing your
+                               data.
+      --skip-bindings        Do not print data from the bindings journal.
+      --skip-journal         Do not print data from the messages journal.
+      --verbose              Print additional information.
+----
+
+=== Understanding `print` output
+
+The `print` command reads each journal (bindings and messages) and produces two sections per journal:
+
+==== Per-file records
+
+First, the tool iterates over each physical journal file and prints every record it contains, exactly as written.
+This includes *all* operations: adds, updates, deletes, transaction commits, and rollbacks.
+Each file is introduced with its filename and size, followed by a table of its records:
+
+[,text]
+----
+#JournalFileImpl: (activemq-bindings-1.bindings id = 1, recordID = 1) (size=1048576)
+---------------------------------------------------------------------------------------------
+|Operation |ID      |Record Type            |TX        |Compact |Decoded
+---------------------------------------------------------------------------------------------
+|Add       |2       |24 (ID_COUNTER)        |          |0       |IDCounterEncoding [id=2147483647]
+|AddTX     |3       |21 (QUEUE_BINDING)     |4         |0       |PersistentQueueBindingEncoding
+
+[...]
+
+|Commit    |        |                       |4         |        |records=1
+|Delete    |2       |                       |          |        |
+----
+
+The *Operation* column shows the type of journal operation:
+
+* *Add* / *AddTX* -- a record was added (with or without a transaction)
+* *Update* / *UpdateTX* -- an existing record was updated
+* *Delete* / *DeleteTX* -- a record was deleted
+* *Commit* / *Rollback* -- a transaction was committed or rolled back
+* *Prepare* -- a transaction was prepared (XA)
+* *Event* -- a non-transactional event record used when journal reclaiming is configured.
+
+This section is useful for understanding the full history of what was written to the journal, including records that were later deleted or rolled back.
+
+==== Surviving Records Summary
+
+After all individual files have been listed, the tool loads the journal and prints only the *surviving records* -- the net result after replaying all operations.
+Delete operations cancel out their corresponding adds, rolled-back transactions are discarded, and only the records that would be loaded by the broker on startup remain:
+
+[,text]
+----
+### Surviving Records Summary ###
+--------------------------------------------------------------------------------
+|Operation |ID      |Record Type                   |Compact|Decoded
+---------------------------------------------------------------------------------
+|Add       |3       |21 (QUEUE_BINDING)            |0      |PersistentQueueBindingEncoding
+[...]
+|Add       |6       |44 (ADDRESS_BINDING)          |0      |PersistentAddressBindingEncoding
+----
+
+This is followed by summary counts of messages and queue references, and any prepared transactions that are still pending.
+
+In most debugging scenarios, the *Surviving Records Summary* is what you want to look at first -- it shows the current state of the journal as the broker would see it.
+The per-file listing is useful when you need to trace the history of a specific record or investigate why a particular add or delete happened.
+

@@ -1,0 +1,177 @@
+= Thread management
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+This chapter describes how {project-name-full} uses and pools threads and how you can manage them.
+
+First we'll discuss how threads are managed and used on the server side then we'll look at the client side.
+
+== Server-Side Thread Management
+
+Thread pools exist for each of the following:
+
+* scheduled tasks
+* general use
+* asynchronous IO
+* paging
+* remoting (managed by Netty on a per-acceptor basis)
+
+[IMPORTANT]
+.Broker Identification in Thread Names
+====
+Many thread names contain broker identification.
+This is done to assist in cases where multiple brokers are running in the same JVM (e.g. in the test-suite).
+The identification which appears in the thread name is determined by the following in order of precedence:
+
+* `identity` set in the internal `ConfigurationImpl` object (done by tests)
+* `name` set in `broker.xml`
+* the hexadecimal representation of the `ActiveMQServerImpl` Java Object's identity acquired via https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/System.html#identityHashCode(java.lang.Object)[`System.identityHashCode`]
+====
+
+=== Scheduled Thread Pool
+
+The scheduled thread pool is used for most activities on the server side that require running periodically or with delays.
+This includes tasks like scanning:
+
+* queues for expired messages or scheduled deliveries
+* configuration files for changes
+* unused addresses & queues for deletion
+
+The maximum number of thread used by this pool is configure in `broker.xml` with the `scheduled-thread-pool-max-size` parameter, e.g.:
+
+[,xml]
+----
+<scheduled-thread-pool-max-size>10</scheduled-thread-pool-max-size>
+----
+
+The default `scheduled-thread-pool-max-size` is `5` . A value of `0` is not allowed.
+
+The name for threads from this pool will contain `activemq-scheduled`.
+
+=== General Purpose Thread Pool
+
+This general purpose thread pool is used for most asynchronous actions on the server side.
+The maximum number of threads used by this pool is configure in `broker.xml` with the `thread-pool-max-size` parameter, e.g.:
+
+[,xml]
+----
+<thread-pool-max-size>60</thread-pool-max-size>
+----
+
+The default `thread-pool-max-size` is `30`.
+A value of `-1` signifies that the thread pool has _no upper bound_ and new threads will be created on demand if there are not enough threads already available to satisfy demand.
+A value of `0` is not allowed.
+
+Any threads in this pool which are idle for `60` seconds will be terminated.
+
+The name for threads from this pool will contain `activemq-<brokerName>`.
+
+=== Asynchronous IO
+
+Threads from this pool are used for journal-related disk I/O, JDBC, & replication.
+
+The name for threads from this pool will contain `activemq-io-<brokerName>`.
+
+=== Paging
+
+Threads from this pool are used to write to and read from paging (disk or JDBC).
+
+The name for threads from this pool will contain `activemq-paging-<brokerName>`.
+
+=== Netty Acceptors
+
+Netty threads for processing network traffic, by default, are capped on a per-acceptor basis at three times the number of cores (or hyper-threads) as reported by `Runtime.getRuntime().availableProcessors()`.
+To override this value, you can set the number of threads by specifying the parameter `remotingThreads` in the transport configuration.
+See the xref:configuring-transports.adoc#configuring-the-transport[configuring transports] for more information on this.
+
+Threads names will include the name of their corresponding acceptor with the prefix `activemq-remoting-`.
+For example, for the acceptor named `amqp` the corresponding thread names will contain `activemq-remoting-amqp-<brokerName>`.
+
+=== Other Server-Side Threads
+
+A thread dump from the server's JVM will have other threads as well.
+Here are other names you might find in a thread dump and the function they perform.
+
+`activemq-web`::
+thread pool managed by Jetty (i.e. the xref:web-server.adoc[embedded web server]) to handle HTTP connections (e.g. from the web console or other Jolokia clients)
+`activemq-failure-check-thread`::
+checks TTL on incoming connections
+`activemq-buffer-timeout`::
+flushes disk IO buffers upon timeout
+`activemq-libaio-poller`::
+polls AIO for callbacks
+`activemq-critical-analyzer`::
+monitors for timeouts of various critical server operations
+`activemq-shutdown-timer`::
+monitors configuration directory for status file to stop the server
+`activemq-remoting-service`::
+in-vm connectivity and invoking failure listeners for Netty
+`Log4j2-TF-\*-Scheduled-*`::
+executes Log4j2 tasks related to `CronTriggeringPolicy` used by default `log4j2.properties`
+
+== Client-Side Thread Management
+
+On the Core client thread pools exist for each of the following:
+
+* scheduled tasks
+* general use
+* flow control
+* remoting (managed by Netty on a per-connector basis)
+
+These are used by all clients using the same classloader in a JVM.
+
+If required each `ClientSessionFactory` instance can be configured so that it does not use these global static pools but instead maintains individual pools.
+Any sessions created from that `ClientSessionFactory` will use those pools instead.
+This is configured using the `useGlobalPools` boolean URL parameter.
+The default is `true`.
+
+=== Scheduled Thread Pool
+
+The scheduled thread pool is used for activities that require running periodically or with delays.
+This includes tasks like:
+
+* sending `PING` packets to the broker
+* flushing network data to the wire if `batchDelay` > `0`
+
+The maximum number of threads used by this pool can be configured using the `scheduledThreadPoolMaxSize` URI parameter, e.g.:
+
+----
+tcp://host:61616?scheduledThreadPoolMaxSize=10
+----
+
+The Java system property `activemq.artemis.client.global.scheduled.thread.pool.core.size` can also be used.
+
+The default `scheduledThreadPoolMaxSize` is `5`.
+A value of `0` is not allowed.
+
+If using a global pool the name for threads will contain `activemq-client-global-scheduled`.
+If using a non-global pool the name for threads will contain `activemq-client-factory-scheduled`.
+
+=== General Purpose Thread Pool
+
+This general purpose thread pool is used for most asynchronous actions.
+The maximum number of threads used by this pool is configured using the `threadPoolMaxSize` URI parameter, e.g.:
+
+----
+tcp://host:61616?threadPoolMaxSize=10
+----
+
+By default, a global pool will be used and the default `threadPoolMaxSize` will be `Runtime.getRuntime().availableProcessors()` * 8.
+If using a non-global pool the default `threadPoolMaxSize` is `-1`.
+A value of `-1` signifies that the thread pool has _no upper bound_ and new threads will be created on demand if there are not enough threads already available to satisfy demand.
+A value of `0` is not allowed.
+The minimum valid value is `2`.
+
+Any threads in this pool which are idle for `60` seconds will be terminated.
+
+The name for threads from this pool will contain `activemq-client-factory`.
+
+=== Netty Connectors
+
+Netty threads for processing network traffic, by default, are capped on a per-connector basis at three times the number of cores (or hyper-threads) as reported by `Runtime.getRuntime().availableProcessors()`.
+To override this value, you can set the number of threads by specifying the URI parameter `remotingThreads`.
+See the xref:configuring-transports.adoc#configuring-the-transport[configuring transports] for more information on this.
+
+Threads names will include the name of their corresponding acceptor with the prefix `activemq-remoting-`.
+For example, for the acceptor named `amqp` the corresponding thread names will contain `activemq-remoting-amqp-<brokerName>`.

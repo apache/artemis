@@ -1,0 +1,91 @@
+<?xml version='1.0'?>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+
+<configuration xmlns="urn:activemq"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="urn:activemq /schema/artemis-configuration.xsd">
+
+   <core xmlns="urn:activemq:core">
+
+      <name>0.0.0.0</name>
+
+      <configuration-file-refresh-period>100</configuration-file-refresh-period>
+
+      <security-enabled>false</security-enabled>
+
+      <paging-directory>${primary-data-dir}/paging</paging-directory>
+
+      <bindings-directory>${primary-data-dir}/bindings</bindings-directory>
+
+      <journal-directory>${primary-data-dir}/journal</journal-directory>
+
+      <large-messages-directory>${primary-data-dir}/large-messages</large-messages-directory>
+
+      <acceptors>
+         <acceptor name="artemis">tcp://127.0.0.1:61616</acceptor>
+      </acceptors>
+
+      <connectors>
+         <connector name="artemis">tcp://127.0.0.1:61616</connector>
+         <connector name="other">tcp://127.0.0.1:61617</connector>
+      </connectors>
+
+      <ha-policy>
+         <replication>
+            <primary>
+               <check-for-active-server>true</check-for-active-server>
+            </primary>
+         </replication>
+      </ha-policy>
+
+      <cluster-connections>
+         <cluster-connection name="my-cluster">
+            <connector-ref>artemis</connector-ref>
+            <message-load-balancing>STRICT</message-load-balancing>
+            <max-hops>1</max-hops>
+            <static-connectors>
+               <connector-ref>other</connector-ref>
+            </static-connectors>
+         </cluster-connection>
+      </cluster-connections>
+
+      <addresses>
+         <address name="myQueue">
+            <anycast>
+               <queue name="myQueue"/>
+            </anycast>
+         </address>
+      </addresses>
+
+      <address-settings>
+         <address-setting match="#" >
+            <address-full-policy>BLOCK</address-full-policy>
+            <config-delete-queues>FORCE</config-delete-queues>
+            <config-delete-addresses>FORCE</config-delete-addresses>
+         </address-setting>
+      </address-settings>
+
+      <security-settings>
+         <security-setting match="#" >
+            <permission type="consume" roles="a" />
+         </security-setting>
+      </security-settings>
+   </core>
+</configuration>

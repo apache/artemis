@@ -1,0 +1,7 @@
+Sample Downstream Federation setup on the downstream broker:
+
+[,xml]
+----
+<!-- the "federation_username" configured on the upstream broker must be in this role -->
+<federations downstream-authorization="federation_role" />
+----

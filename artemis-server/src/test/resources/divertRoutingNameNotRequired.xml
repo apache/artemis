@@ -1,0 +1,104 @@
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<configuration xmlns="urn:activemq"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="urn:activemq /schema/artemis-configuration.xsd">
+
+   <core xmlns="urn:activemq:core">
+
+      <!-- We need to make it clustered otherwise the bridge won't deploy -->
+
+
+      <bindings-directory>${build.directory}/server0/data/messaging/bindings</bindings-directory>
+
+      <journal-directory>${build.directory}/server0/data/messaging/journal</journal-directory>
+
+      <large-messages-directory>${build.directory}/server0/data/messaging/largemessages</large-messages-directory>
+
+      <paging-directory>${build.directory}/server0/data/messaging/paging</paging-directory>
+
+      <!-- Connectors -->
+
+      <connectors>
+         <connector name="netty-connector">tcp://localhost:61616</connector>
+
+         <!-- This connector corresponds to the New York server -->
+
+         <connector name="newyork-connector">tcp://localhost:61617</connector>
+      </connectors>
+
+      <!-- Acceptors -->
+
+      <acceptors>
+         <acceptor name="netty-acceptor">tcp://localhost:61616</acceptor>
+      </acceptors>
+
+      <!-- Divert configuration -->
+
+      <!-- We need to create a core queue for the JMS queue explicitly because the bridge will be deployed
+      before the JMS queue is deployed, so the first time, it otherwise won't find the queue -->
+      <queues>
+         <queue name="jms.queue.priceForwarding">
+            <address>jms.queue.priceForwarding</address>
+         </queue>
+      </queues>
+
+      <diverts>
+         <divert name="order-divert">
+            <address>jms.queue.orders</address>
+            <forwarding-address>jms.topic.spyTopic</forwarding-address>
+            <exclusive>false</exclusive>
+         </divert>
+
+         <divert name="prices-divert">
+            <address>jms.topic.priceUpdates</address>
+            <forwarding-address>jms.queue.priceForwarding</forwarding-address>
+            <filter string="office='New York'"/>
+            <transformer-class-name>org.apache.activemq.artemis.jms.example.AddForwardingTimeTransformer
+            </transformer-class-name>
+            <exclusive>true</exclusive>
+         </divert>
+      </diverts>
+
+      <!-- Bridge configuration -->
+
+      <bridges>
+         <bridge name="price-forward-bridge">
+            <queue-name>jms.queue.priceForwarding</queue-name>
+            <forwarding-address>jms.topic.newYorkPriceUpdates</forwarding-address>
+            <reconnect-attempts>-1</reconnect-attempts>
+            <static-connectors>
+               <connector-ref>newyork-connector</connector-ref>
+            </static-connectors>
+         </bridge>
+      </bridges>
+
+      <!-- Other config -->
+
+      <security-settings>
+         <!--security for example -->
+         <security-setting match="jms.#">
+            <permission type="createDurableQueue" roles="guest"/>
+            <permission type="deleteDurableQueue" roles="guest"/>
+            <permission type="createNonDurableQueue" roles="guest"/>
+            <permission type="deleteNonDurableQueue" roles="guest"/>
+            <permission type="consume" roles="guest"/>
+            <permission type="send" roles="guest"/>
+         </security-setting>
+      </security-settings>
+   </core>
+</configuration>

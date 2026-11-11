@@ -1,0 +1,35 @@
+= Authentication
+
+Now that we have our acceptors and addresses ready, it's time to deal with broker security.
+{project-name-short} inherited most of the security concepts from ActiveMQ.
+One of the most notable differences is that ActiveMQ _groups_ are now called _roles_ in {project-name-short}.
+Besides that things should be pretty familiar to existing ActiveMQ users.
+Let's start by looking into the authentication mechanisms and defining users and roles (groups).
+
+Both ActiveMQ and {project-name-short} use JAAS to define authentication credentials.
+In ActiveMQ, that's configured through the appropriate broker plugin in `conf/activemq.xml`
+
+[,xml]
+----
+<plugins>
+  <jaasAuthenticationPlugin configuration="activemq" />
+</plugins>
+----
+
+The name of the JAAS domain is specified as a configuration parameter.
+
+In {project-name-short}, the same thing is achieved by defining `<jaas-security>` configuration in `etc/bootstrap.xml`
+
+[,xml]
+----
+<jaas-security domain="activemq"/>
+----
+
+From this point on, you can go and define your users and their roles in appropriate files, like `conf/users.properties` and `conf/groups.properties` in ActiveMQ.
+Similarly, `etc/artemis-users.properties` and `etc/artemis-roles.properties` files are used in {project-name-short}.
+These files are interchangeable, so you should be able to just copy your existing configuration over to the new broker.
+
+If your deployment is more complicated than this and requires some advanced JAAS configuration, you'll need go and change the `etc/login.config` file.
+It's important to say that all custom JAAS modules and configuration you were using in ActiveMQ should be compatible with {project-name-short}.
+
+Finally, in case you're still using ActiveMQ's _Simple Authentication Plugin_, which defines users and groups directly in the broker's xml configuration file, you'll need to migrate to JAAS as {project-name-short} doesn't support the similar concept.

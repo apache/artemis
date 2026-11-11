@@ -1,0 +1,426 @@
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<configuration
+        xmlns="urn:activemq"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:xi="http://www.w3.org/2001/XInclude"
+        xsi:schemaLocation="urn:activemq ../../../../activemq-server/src/main/resources/schema/artemis-server.xsd">
+   <core xmlns="urn:activemq:core">
+      <name>SomeNameForUseOnTheApplicationServer</name>
+      <resolve-protocols>false</resolve-protocols>
+      <persistence-enabled>false</persistence-enabled>
+      <scheduled-thread-pool-max-size>12345</scheduled-thread-pool-max-size>
+      <thread-pool-max-size>54321</thread-pool-max-size>
+      <security-enabled>false</security-enabled>
+      <graceful-shutdown-enabled>true</graceful-shutdown-enabled>
+      <graceful-shutdown-timeout>12345</graceful-shutdown-timeout>
+      <security-invalidation-interval>5423</security-invalidation-interval>
+      <authentication-cache-size>333</authentication-cache-size>
+      <authorization-cache-size>444</authorization-cache-size>
+      <journal-lock-acquisition-timeout>7654</journal-lock-acquisition-timeout>
+      <wild-card-routing-enabled>true</wild-card-routing-enabled>
+      <management-address>Giraffe</management-address>
+      <management-notification-address>Whatever</management-notification-address>
+      <cluster-user>Frog</cluster-user>
+      <cluster-password>32a10275cf4ab4e9</cluster-password>
+      <password-codec>org.apache.activemq.artemis.utils.DefaultSensitiveStringCodec</password-codec>
+      <mask-password>true</mask-password>
+      <log-delegate-factory-class-name>com.foo</log-delegate-factory-class-name>
+      <jmx-management-enabled>false</jmx-management-enabled>
+      <jmx-notification-enabled>false</jmx-notification-enabled>
+      <jmx-domain>gro.qtenroh</jmx-domain>
+      <message-counter-enabled>true</message-counter-enabled>
+      <message-counter-sample-period>123456</message-counter-sample-period>
+      <message-counter-max-day-history>5</message-counter-max-day-history>
+      <connection-ttl-override>12345</connection-ttl-override>
+      <async-connection-execution-enabled>false</async-connection-execution-enabled>
+      <transaction-timeout>98765</transaction-timeout>
+      <transaction-timeout-scan-period>56789</transaction-timeout-scan-period>
+      <message-expiry-scan-period>10111213</message-expiry-scan-period>
+      <message-expiry-thread-priority>8</message-expiry-thread-priority>
+      <address-queue-scan-period>25000</address-queue-scan-period>
+      <id-cache-size>127</id-cache-size>
+      <journal-datasync>false</journal-datasync>
+      <persist-id-cache>true</persist-id-cache>
+      <populate-validated-user>true</populate-validated-user>
+      <reject-empty-validated-user>false</reject-empty-validated-user>
+      <mqtt-session-scan-interval>123456</mqtt-session-scan-interval>
+      <mqtt-session-state-persistence-timeout>567890</mqtt-session-state-persistence-timeout>
+      <mqtt-subscription-persistence-enabled>false</mqtt-subscription-persistence-enabled>
+      <connection-ttl-check-interval>98765</connection-ttl-check-interval>
+      <configuration-file-refresh-period>1234567</configuration-file-refresh-period>
+      <temporary-queue-namespace>TEMP</temporary-queue-namespace>
+      <uuid-namespace>UUID</uuid-namespace>
+      <global-max-size>1234567</global-max-size>
+      <global-max-size-percent-of-jvm-max-memory>30</global-max-size-percent-of-jvm-max-memory>
+      <max-disk-usage>37</max-disk-usage>
+      <disk-scan-period>123</disk-scan-period>
+      <critical-analyzer-policy>HALT</critical-analyzer-policy>
+      <critical-analyzer-check-period>333</critical-analyzer-check-period>
+      <critical-analyzer-timeout>777</critical-analyzer-timeout>
+      <critical-analyzer>false</critical-analyzer>
+      <literal-match-markers>()</literal-match-markers>
+
+      <mirror-ack-manager-queue-attempts>111</mirror-ack-manager-queue-attempts>
+      <mirror-ack-manager-page-attempts>222</mirror-ack-manager-page-attempts>
+      <mirror-ack-manager-retry-delay>333</mirror-ack-manager-retry-delay>
+      <mirror-ack-manager-warn-unacked>true</mirror-ack-manager-warn-unacked>
+      <mirror-page-transaction>true</mirror-page-transaction>
+
+      <remoting-incoming-interceptors>
+         <class-name>org.apache.activemq.artemis.tests.unit.core.config.impl.TestInterceptor1</class-name>
+         <class-name>org.apache.activemq.artemis.tests.unit.core.config.impl.TestInterceptor2</class-name>
+      </remoting-incoming-interceptors>
+      <remoting-outgoing-interceptors>
+         <class-name>org.apache.activemq.artemis.tests.unit.core.config.impl.TestInterceptor1</class-name>
+         <class-name>org.apache.activemq.artemis.tests.unit.core.config.impl.TestInterceptor2</class-name>
+      </remoting-outgoing-interceptors>
+      <persist-delivery-count-before-delivery>true</persist-delivery-count-before-delivery>
+      <connectors>
+         <connector name="connector1">tcp://localhost1:5678?localAddress=mylocal;localPort=99</connector>
+         <connector name="connector2">vm://5</connector>
+      </connectors>
+
+      <xi:include href="${xincludePath}/ConfigurationTest-xinclude-config-acceptors.xml"/>
+
+      <broadcast-groups>
+         <broadcast-group name="bg1">
+            <local-bind-port>10999</local-bind-port>
+            <group-address>192.168.0.120</group-address>
+            <group-port>11999</group-port>
+            <broadcast-period>12345</broadcast-period>
+            <connector-ref>connector1</connector-ref>
+         </broadcast-group>
+         <broadcast-group name="bg2">
+            <local-bind-port>12999</local-bind-port>
+            <group-address>192.168.0.121</group-address>
+            <group-port>13999</group-port>
+            <broadcast-period>23456</broadcast-period>
+            <connector-ref>connector2</connector-ref>
+         </broadcast-group>
+      </broadcast-groups>
+      <discovery-groups>
+         <discovery-group name="dg1">
+            <local-bind-address>172.16.8.10</local-bind-address>
+            <group-address>192.168.0.120</group-address>
+            <group-port>11999</group-port>
+            <refresh-timeout>12345</refresh-timeout>
+         </discovery-group>
+         <discovery-group name="dg2">
+            <local-bind-address>172.16.8.11</local-bind-address>
+            <group-address>192.168.0.121</group-address>
+            <group-port>12999</group-port>
+            <refresh-timeout>23456</refresh-timeout>
+         </discovery-group>
+      </discovery-groups>
+      <diverts>
+         <divert name="divert1">
+            <routing-name>routing-name1</routing-name>
+            <address>address1</address>
+            <forwarding-address>forwarding-address1</forwarding-address>
+            <filter string="speed > 88"/>
+            <transformer-class-name>org.foo.Transformer</transformer-class-name>
+            <exclusive>true</exclusive>
+         </divert>
+         <divert name="divert2">
+            <routing-name>routing-name2</routing-name>
+            <address>address2</address>
+            <forwarding-address>forwarding-address2</forwarding-address>
+            <filter string="speed &lt; 88"/>
+            <transformer-class-name>org.foo.Transformer2</transformer-class-name>
+            <exclusive>false</exclusive>
+         </divert>
+         <divert name="divert3">
+            <routing-name>routing-name2</routing-name>
+            <address>address2</address>
+            <forwarding-address>forwarding-address2</forwarding-address>
+            <filter string="speed &lt; 88"/>
+            <transformer>
+               <class-name>org.foo.DivertTransformer3</class-name>
+               <property key="divertTransformerKey1" value="divertTransformerValue1"/>
+               <property key="divertTransformerKey2" value="divertTransformerValue2"/>
+            </transformer>
+            <exclusive>false</exclusive>
+         </divert>
+      </diverts>
+      <connection-routers>
+         <connection-router name="simple-local">
+            <key-type>CLIENT_ID</key-type>
+            <key-filter>^[^.]+</key-filter>
+            <local-target-filter>DEFAULT</local-target-filter>
+         </connection-router>
+         <connection-router name="simple-local-with-transformer">
+            <key-type>CLIENT_ID</key-type>
+            <key-filter>^[^.]+</key-filter>
+            <local-target-filter>DEFAULT</local-target-filter>
+            <policy name="CONSISTENT_HASH_MODULO">
+               <property key="MODULO" value="2"></property>
+            </policy>
+         </connection-router>
+         <connection-router name="simple-router">
+            <key-type>USER_NAME</key-type>
+            <policy name="FIRST_ELEMENT"/>
+            <pool>
+               <static-connectors>
+                  <connector-ref>connector1</connector-ref>
+               </static-connectors>
+            </pool>
+         </connection-router>
+         <connection-router name="simple-router-connector2">
+            <key-type>USER_NAME</key-type>
+            <policy name="FIRST_ELEMENT"/>
+            <pool>
+               <static-connectors>
+                  <connector-ref>connector2</connector-ref>
+               </static-connectors>
+            </pool>
+         </connection-router>
+         <connection-router name="consistent-hash-router">
+            <key-type>SNI_HOST</key-type>
+            <key-filter>^[^.]+</key-filter>
+            <local-target-filter>DEFAULT</local-target-filter>
+            <policy name="CONSISTENT_HASH"/>
+            <pool>
+               <check-period>1000</check-period>
+               <local-target-enabled>true</local-target-enabled>
+               <discovery-group-ref discovery-group-name="dg1"/>
+            </pool>
+         </connection-router>
+         <connection-router name="least-connections-router">
+            <cache>
+               <persisted>true</persisted>
+               <timeout>60000</timeout>
+            </cache>
+            <policy name="LEAST_CONNECTIONS"/>
+            <pool>
+               <check-period>3000</check-period>
+               <quorum-size>2</quorum-size>
+               <quorum-timeout>1000</quorum-timeout>
+               <discovery-group-ref discovery-group-name="dg2"/>
+            </pool>
+         </connection-router>
+      </connection-routers>
+      <amqp-use-core-subscription-naming>true</amqp-use-core-subscription-naming>
+      <queues>
+         <queue name="queue1">
+            <address>address1</address>
+            <filter string="color='red'"/>
+            <durable>false</durable>
+         </queue>
+         <queue name="queue2">
+            <address>address2</address>
+            <filter string="color='blue'"/>
+            <durable>false</durable>
+         </queue>
+      </queues>
+      <bridges>
+         <bridge name="bridge1">
+            <queue-name>queue1</queue-name>
+            <forwarding-address>bridge-forwarding-address1</forwarding-address>
+            <filter string="sku > 1"/>
+            <transformer-class-name>org.foo.BridgeTransformer</transformer-class-name>
+            <min-large-message-size>4M</min-large-message-size>
+            <check-period>31</check-period>
+            <connection-ttl>370</connection-ttl>
+            <retry-interval>3</retry-interval>
+            <retry-interval-multiplier>0.2</retry-interval-multiplier>
+            <max-retry-interval>10002</max-retry-interval>
+            <reconnect-attempts>2</reconnect-attempts>
+            <failover-on-server-shutdown>false</failover-on-server-shutdown>
+            <use-duplicate-detection>true</use-duplicate-detection>
+            <confirmation-window-size>1G</confirmation-window-size>
+            <producer-window-size>444</producer-window-size>
+            <routing-type>STRIP</routing-type>
+            <static-connectors>
+               <connector-ref>connector1</connector-ref>
+            </static-connectors>
+         </bridge>
+         <bridge name="bridge2">
+            <queue-name>queue2</queue-name>
+            <forwarding-address>bridge-forwarding-address2</forwarding-address>
+            <producer-window-size>555k</producer-window-size>
+            <discovery-group-ref discovery-group-name="dg1"/>
+         </bridge>
+         <bridge name="bridge3">
+            <queue-name>queue3</queue-name>
+            <forwarding-address>bridge-forwarding-address2</forwarding-address>
+            <transformer>
+               <class-name>org.foo.BridgeTransformer3</class-name>
+               <property key="bridgeTransformerKey1" value="bridgeTransformerValue1"/>
+               <property key="bridgeTransformerKey2" value="bridgeTransformerValue2"/>
+            </transformer>
+            <producer-window-size>555k</producer-window-size>
+            <pending-ack-timeout>123456</pending-ack-timeout>
+            <discovery-group-ref discovery-group-name="dg1"/>
+            <client-id>myClientID</client-id>
+         </bridge>
+         <bridge name="bridge4">
+            <queue-name>queue3</queue-name>
+            <forwarding-address>bridge-forwarding-address2</forwarding-address>
+            <confirmation-window-size>-1</confirmation-window-size>
+            <producer-window-size>-1</producer-window-size>
+            <static-connectors>
+               <connector-ref>connector1</connector-ref>
+            </static-connectors>
+         </bridge>
+      </bridges>
+
+      <metrics>
+         <jvm-memory>false</jvm-memory>
+         <jvm-gc>true</jvm-gc>
+         <jvm-threads>true</jvm-threads>
+         <netty-pool>true</netty-pool>
+         <file-descriptors>true</file-descriptors>
+         <processor>true</processor>
+         <uptime>true</uptime>
+         <logging>true</logging>
+         <security-caches>true</security-caches>
+         <executor-services>true</executor-services>
+         <plugin class-name="org.apache.activemq.artemis.core.server.metrics.plugins.SimpleMetricsPlugin">
+            <property key="foo" value="x"/>
+            <property key="bar" value="y"/>
+            <property key="baz" value="z"/>
+         </plugin>
+      </metrics>
+
+      <ha-policy>
+         <!--only one of the following-->
+         <!--on server shutdown scale down to another primary server-->
+         <primary-only>
+            <scale-down>
+               <!--a grouping of servers that can be scaled down to-->
+               <group-name>boo!</group-name>
+               <!--either a discovery group-->
+               <discovery-group-ref discovery-group-name="dg1"/>
+               <commit-interval>33</commit-interval>
+            </scale-down>
+         </primary-only>
+
+      </ha-policy>
+      <cluster-connections>
+         <cluster-connection name="cluster-connection1">
+            <address>queues1</address>
+            <connector-ref>connector1</connector-ref>
+            <check-period>331</check-period>
+            <connection-ttl>3370</connection-ttl>
+            <min-large-message-size>321</min-large-message-size>
+            <call-timeout>123</call-timeout>
+            <retry-interval>3</retry-interval>
+            <retry-interval-multiplier>0.25</retry-interval-multiplier>
+            <max-retry-interval>10000</max-retry-interval>
+            <reconnect-attempts>72</reconnect-attempts>
+            <use-duplicate-detection>true</use-duplicate-detection>
+            <message-load-balancing>ON_DEMAND</message-load-balancing>
+            <max-hops>1</max-hops>
+            <producer-window-size>222</producer-window-size>
+            <call-failover-timeout>123</call-failover-timeout>
+            <static-connectors allow-direct-connections-only="true">
+               <connector-ref>connector1</connector-ref>
+               <connector-ref>connector2</connector-ref>
+            </static-connectors>
+            <topology-scanner-attempts>-1</topology-scanner-attempts>
+         </cluster-connection>
+         <cluster-connection name="cluster-connection2">
+            <address>queues2</address>
+            <connector-ref>connector2</connector-ref>
+            <call-timeout>456</call-timeout>
+            <retry-interval>4</retry-interval>
+            <use-duplicate-detection>false</use-duplicate-detection>
+            <message-load-balancing>STRICT</message-load-balancing>
+            <max-hops>2</max-hops>
+            <producer-window-size>333</producer-window-size>
+            <call-failover-timeout>456</call-failover-timeout>
+            <discovery-group-ref discovery-group-name="dg1"/>
+            <topology-scanner-attempts>0</topology-scanner-attempts>
+         </cluster-connection>
+         <cluster-connection name="cluster-connection3">
+            <connector-ref>connector2</connector-ref>
+            <message-load-balancing>OFF_WITH_REDISTRIBUTION</message-load-balancing>
+            <client-id>myClientID</client-id>
+         </cluster-connection>
+      </cluster-connections>
+      <broker-connections>
+         <amqp-connection uri="tcp://test1:111" name="test1" retry-interval="333" reconnect-attempts="33" user="testuser" password="testpassword">
+            <sender address-match="TEST-SENDER"  />
+            <receiver address-match="TEST-RECEIVER" />
+            <peer address-match="TEST-PEER"/>
+            <receiver queue-name="TEST-WITH-QUEUE-NAME"/>
+            <mirror message-acknowledgements="false" queue-creation="false" durable="false" queue-removal="false"/>
+         </amqp-connection>
+         <amqp-connection uri="tcp://test2:222" name="test2">
+            <mirror durable="false"/>
+         </amqp-connection>
+         <amqp-connection uri="tcp://false" name="auto-start-false" auto-start="false">
+            <mirror/>
+         </amqp-connection>
+      </broker-connections>
+      <grouping-handler name="gh1">
+         <type>LOCAL</type>
+         <address>jms</address>
+      </grouping-handler>
+      <paging-directory>pagingdir</paging-directory>
+      <bindings-directory>somedir</bindings-directory>
+      <create-bindings-dir>false</create-bindings-dir>
+      <page-max-concurrent-io>17</page-max-concurrent-io>
+      <read-whole-page>true</read-whole-page>
+      <journal-directory>somedir2</journal-directory>
+      <journal-retention-directory unit="DAYS" period="365" storage-limit="10G">history</journal-retention-directory>
+      <create-journal-dir>false</create-journal-dir>
+      <journal-type>NIO</journal-type>
+      <journal-buffer-timeout>1000</journal-buffer-timeout>
+      <journal-buffer-size>10000</journal-buffer-size>
+      <journal-sync-transactional>false</journal-sync-transactional>
+      <journal-sync-non-transactional>true</journal-sync-non-transactional>
+      <log-journal-write-rate>true</log-journal-write-rate>
+      <journal-file-size>12345678</journal-file-size>
+      <journal-min-files>100</journal-min-files>
+      <journal-compact-percentage>33</journal-compact-percentage>
+      <journal-compact-min-files>123</journal-compact-min-files>
+      <journal-max-io>56546</journal-max-io>
+      <journal-file-open-timeout>9876</journal-file-open-timeout>
+      <journal-device-block-size>777</journal-device-block-size>
+      <server-dump-interval>5000</server-dump-interval>
+      <memory-warning-threshold>95</memory-warning-threshold>
+      <memory-measure-interval>54321</memory-measure-interval>
+      <large-messages-directory>largemessagesdir</large-messages-directory>
+      <network-check-list>127.0.0.1</network-check-list>
+      <network-check-NIC>some-nick</network-check-NIC>
+      <network-check-period>123</network-check-period>
+      <network-check-timeout>321</network-check-timeout>
+      <network-check-URL-list>www.apache.org</network-check-URL-list>
+      <network-check-ping-command>ping-four</network-check-ping-command>
+      <network-check-ping6-command>ping-six</network-check-ping6-command>
+
+      <xi:include href="${xincludePath}/ConfigurationTest-xinclude-config-security-settings.xml"/>
+
+      <xi:include href="${xincludePath}/ConfigurationTest-xinclude-config-address-settings.xml"/>
+
+      <resource-limit-settings>
+         <resource-limit-setting match="myUser">
+            <max-connections>104</max-connections>
+            <max-queues>13</max-queues>
+         </resource-limit-setting>
+      </resource-limit-settings>
+      <connector-services>
+         <connector-service>
+            <factory-class>org.foo</factory-class>
+         </connector-service>
+      </connector-services>
+
+      <xi:include href="${xincludePath}/ConfigurationTest-xinclude-config-addresses.xml"/>
+   </core>
+</configuration>

@@ -1,0 +1,66 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#
+# Documentation: https://github.com/apache/infrastructure-asfyaml
+#
+github:
+  description: "Apache Artemis"
+  homepage: https://artemis.apache.org
+  labels:
+    - apache
+    - artemis
+    - messaging
+    - broker
+
+    - amqp
+    - amqps
+    - amqp10
+    - openwire
+    - mqtt
+    - stomp
+    - hornetq
+
+    - java
+    - jms
+  enabled_merge_buttons:
+    # enable squash button:
+    squash: true
+    # default commit message when merging with a squash commit
+    # can be: DEFAULT | PR_TITLE | PR_TITLE_AND_COMMIT_DETAILS | PR_TITLE_AND_DESC
+    squash_commit_message: PR_TITLE
+    # disable merge button:
+    merge: false
+    # enable rebase button:
+    rebase: true
+  autolink_jira:
+    - ARTEMIS
+  rulesets:
+    - name: "Default Branch Protection"
+      type: branch
+      branches:
+        includes:
+          - "~DEFAULT_BRANCH"
+        excludes: []
+      bypass_teams:
+        - root
+      restrict_deletion: true
+      restrict_force_push: true
+notifications:
+  commits: commits@artemis.apache.org
+  issues: issues@artemis.apache.org
+  pullrequests: issues@artemis.apache.org
+  jira_options: link label worklog

@@ -1,0 +1,168 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.activemq.artemis.util;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.activemq.artemis.utils.TimeAndCounterIDGenerator;
+import org.junit.jupiter.api.Test;
+
+public class TimeAndCounterIDGeneratorTest {
+
+   @Test
+   public void testCalculation() {
+      TimeAndCounterIDGenerator seq = new TimeAndCounterIDGenerator();
+      long max = 11000;
+
+      long lastNr = 0;
+
+      for (long i = 0; i < max; i++) {
+         long seqNr = seq.generateID();
+
+         assertTrue(seqNr > lastNr, "The sequence generator should aways generate crescent numbers");
+
+         lastNr = seqNr;
+      }
+
+   }
+
+   @Test
+   public void testCalculationRefresh() {
+      TimeAndCounterIDGenerator seq = new TimeAndCounterIDGenerator();
+
+      long id1 = seq.generateID();
+      assertEquals(1, id1 & 0xffff);
+      assertEquals(2, seq.generateID() & 0xffff);
+
+      seq.refresh();
+
+      long id2 = seq.generateID();
+
+      assertTrue(id2 > id1);
+
+      assertEquals(1, id2 & 0xffff);
+
+   }
+
+   @Test
+   public void testCalculationOnMultiThread() throws Throwable {
+      final Set<Long> hashSet = ConcurrentHashMap.newKeySet();
+
+      final TimeAndCounterIDGenerator seq = new TimeAndCounterIDGenerator();
+
+      final int NUMBER_OF_THREADS = 100;
+
+      final int NUMBER_OF_IDS = 10;
+
+      final CountDownLatch latchAlign = new CountDownLatch(NUMBER_OF_THREADS);
+
+      final CountDownLatch latchStart = new CountDownLatch(1);
+
+      class T1 extends Thread {
+
+         Throwable e;
+
+         @Override
+         public void run() {
+            try {
+               latchAlign.countDown();
+               assertTrue(latchStart.await(1, TimeUnit.MINUTES), "Latch has got to return within a minute");
+
+               long lastValue = 0L;
+               for (int i = 0; i < NUMBER_OF_IDS; i++) {
+                  long value = seq.generateID();
+                  assertTrue(value > lastValue, TimeAndCounterIDGeneratorTest.hex(value) + " should be greater than " +
+                                       TimeAndCounterIDGeneratorTest.hex(lastValue) +
+                                       " on seq " +
+                                       seq.toString());
+                  lastValue = value;
+
+                  hashSet.add(value);
+               }
+            } catch (Throwable e) {
+               this.e = e;
+            }
+         }
+
+      }
+
+      T1[] arrays = new T1[NUMBER_OF_THREADS];
+
+      for (int i = 0; i < arrays.length; i++) {
+         arrays[i] = new T1();
+         arrays[i].start();
+      }
+
+      assertTrue(latchAlign.await(1, TimeUnit.MINUTES), "Latch has got to return within a minute");
+
+      latchStart.countDown();
+
+      for (T1 t : arrays) {
+         t.join();
+         if (t.e != null) {
+            throw t.e;
+         }
+      }
+
+      assertEquals(NUMBER_OF_THREADS * NUMBER_OF_IDS, hashSet.size());
+
+      hashSet.clear();
+
+   }
+
+   @Test
+   public void testWrapID() throws Throwable {
+      TimeAndCounterIDGenerator seq = new TimeAndCounterIDGenerator();
+
+      seq.setInternalDate(System.currentTimeMillis() + 10000L); // 10 seconds in the future
+
+      seq.setInternalID(TimeAndCounterIDGenerator.ID_MASK); // 1 ID about to explode
+
+      try {
+         // This is simulating a situation where we generated more than 268 million messages on the same time interval
+         seq.generateID();
+         fail("It was supposed to throw an exception, as the counter was set to explode on this test");
+      } catch (Exception e) {
+      }
+
+      seq = new TimeAndCounterIDGenerator();
+
+      seq.setInternalDate(System.currentTimeMillis() - 10000L); // 10 seconds in the past
+
+      long timeMark = seq.getInternalTimeMark();
+
+      seq.setInternalID(TimeAndCounterIDGenerator.ID_MASK); // 1 ID about to explode
+
+      // This is ok... the time portion would be added to the next one generated 10 seconds ago
+      seq.generateID();
+
+      assertTrue(timeMark < seq.getInternalTimeMark(), TimeAndCounterIDGeneratorTest.hex(timeMark) + " < " +
+                           TimeAndCounterIDGeneratorTest.hex(seq.getInternalTimeMark()));
+   }
+
+   private static String hex(final long value) {
+      return String.format("%1$X", value);
+   }
+
+}

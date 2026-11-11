@@ -1,0 +1,3 @@
+
+         <!-- STOMP Acceptor. -->
+         <acceptor name="stomp">tcp://${host}:${stomp.port}?tcpSendBufferSize=1048576;tcpReceiveBufferSize=1048576;protocols=STOMP;useEpoll=true</acceptor>

@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.apache.artemis</groupId>
+    <artifactId>artemis-pom</artifactId>
+    <version>2.58.0-SNAPSHOT</version>
+    <relativePath>../artemis-pom/pom.xml</relativePath>
+  </parent>
+
+  <artifactId>artemis-console</artifactId>
+  <name>Apache Artemis Console</name>
+
+  <packaging>war</packaging>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.eclipse.jetty.toolchain</groupId>
+      <artifactId>jetty-jakarta-servlet-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.artemis</groupId>
+      <artifactId>artemis-console-war</artifactId>
+      <type>war</type>
+    </dependency>
+
+    <!-- lets mark dependencies from the WAR as provided to avoid jetty:run adding duplicates -->
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <!-- License: Apache 2.0 -->
+      <!-- see https://github.com/google/guava/issues/3006: checker-compat-qual could be excluded -->
+      <exclusions>
+        <exclusion>
+          <groupId>org.checkerframework</groupId>
+          <artifactId>checker-compat-qual</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-war-plugin</artifactId>
+        <configuration>
+          <packagingExcludes>
+            **/lib/slf4j*.jar,
+            **/lib/log4j*.jar,
+            **/lib/jolokia-service-discovery*.jar,
+            **/lib/jolokia-service-history*.jar,
+            **/lib/jolokia-service-notif*.jar
+          </packagingExcludes>
+          <failOnMissingWebXml>false</failOnMissingWebXml>
+          <webResources>
+            <resource>
+              <filtering>true</filtering>
+              <directory>src/main/webapp</directory>
+              <includes>
+                <include>**/*.svg</include>
+                <include>hawtconfig.json</include>
+                <!-- include any other file types you want to filter -->
+              </includes>
+            </resource>
+          </webResources>
+          <overlays>
+            <overlay>
+              <groupId>org.apache.artemis</groupId>
+              <artifactId>artemis-console-war</artifactId>
+              <excludes>
+                <exclude>WEB-INF/lib/guava*.jar</exclude>
+                <exclude>WEB-INF/lib/checker-qual-*.jar</exclude>
+                <exclude>WEB-INF/lib/error_prone_annotations-*.jar</exclude>
+                <exclude>WEB-INF/lib/j2objc-annotations-*.jar</exclude>
+                <exclude>WEB-INF/classes/log4j2.properties</exclude>
+              </excludes>
+            </overlay>
+          </overlays>
+        </configuration>
+        <executions>
+          <execution>
+            <id>prepare-war</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>exploded</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>com.google.code.maven-replacer-plugin</groupId>
+        <artifactId>replacer</artifactId>
+        <version>1.5.3</version>
+        <executions>
+          <execution>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>replace</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <includes>
+            <include>${project.build.directory}/${project.build.finalName}/index.html</include>
+            <include>${project.build.directory}/${project.build.finalName}/WEB-INF/web.xml</include>
+          </includes>
+          <replacements>
+            <replacement>
+              <token>&lt;title&gt;.*&lt;/title&gt;</token>
+              <value>&lt;title&gt;${project.name}&lt;/title&gt;</value>
+            </replacement>
+            <replacement>
+              <token>&lt;load-on-startup&gt;1&lt;/load-on-startup&gt;</token>
+              <value>&lt;load-on-startup&gt;-1&lt;/load-on-startup&gt;</value>
+            </replacement>
+          </replacements>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-clean-plugin</artifactId>
+        <configuration>
+          <filesets>
+            <fileset>
+              <directory>${basedir}/overlays</directory>
+              <includes>
+                <include>**/*.*</include>
+              </includes>
+              <followSymlinks>false</followSymlinks>
+            </fileset>
+          </filesets>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

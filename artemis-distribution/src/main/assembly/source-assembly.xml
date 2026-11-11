@@ -1,0 +1,151 @@
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one or more
+  ~ contributor license agreements. See the NOTICE file distributed with
+  ~ this work for additional information regarding copyright ownership.
+  ~ The ASF licenses this file to You under the Apache License, Version 2.0
+  ~ (the "License"); you may not use this file except in compliance with
+  ~ the License. You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
+
+   <id>source-release</id>
+
+   <formats>
+      <format>zip</format>
+      <format>tar.gz</format>
+   </formats>
+
+   <includeBaseDirectory>true</includeBaseDirectory>
+
+   <fileSets>
+      <!--  main project directory structure  -->
+      <fileSet>
+         <directory>${activemq.basedir}</directory>
+         <outputDirectory>${file.separator}</outputDirectory>
+         <useDefaultExcludes>true</useDefaultExcludes>
+         <directoryMode>0755</directoryMode>
+         <fileMode>0644</fileMode>
+         <excludes>
+            <exclude>artemis-distribution/src/main/resources/bin/artemis</exclude>
+            <exclude>artemis-cli/src/main/resources/org/apache/activemq/artemis/cli/commands/bin/artemis</exclude>
+            <exclude>artemis-cli/src/main/resources/org/apache/activemq/artemis/cli/commands/bin/artemis-service</exclude>
+            <exclude>scripts/*.sh</exclude>
+            <exclude>**/**/*.sh</exclude>
+
+            <!-- in case some of the build generates data, this needs to be ignored -->
+            <exclude>data/</exclude>
+
+            <!-- Removing ide files -->
+            <exclude>etc/ide-settings/</exclude>
+
+            <!-- Exclude all docs except user manual -->
+            <exclude>docs/diagrams/</exclude>
+
+            <!-- Exclude Release and Dev files -->
+            <exclude>RELEASING.md</exclude>
+            <exclude>ratReport.txt</exclude>
+            <exclude>.gitignore</exclude>
+            <exclude>artemis_doap.rdf</exclude>
+
+            <!--  build output  -->
+            <exclude>
+               %regex[(?!((?!${project.build.directory}/)[^/]+/)*src/).*${project.build.directory}.*]
+            </exclude>
+            <!--
+             NOTE: Most of the following excludes should not be required
+                         if the standard release process is followed. This is because the
+                         release plugin checks out project sources into a location like
+                         target/checkout, then runs the build from there. The result is
+                         a source-release archive that comes from a pretty clean directory
+                         structure.
+
+                         HOWEVER, if the release plugin is configured to run extra goals
+                         or generate a project website, it's definitely possible that some
+                         of these files will be present. So, it's safer to exclude them.
+
+            -->
+            <!--  IDEs  -->
+            <exclude>
+               %regex[(?!((?!${project.build.directory}/)[^/]+/)*src/)(.*/)?maven-eclipse\.xml]
+            </exclude>
+            <exclude>
+               %regex[(?!((?!${project.build.directory}/)[^/]+/)*src/)(.*/)?\.project]
+            </exclude>
+            <exclude>
+               %regex[(?!((?!${project.build.directory}/)[^/]+/)*src/)(.*/)?\.classpath]
+            </exclude>
+            <exclude>
+               %regex[(?!((?!${project.build.directory}/)[^/]+/)*src/)(.*/)?[^/]*\.iws]
+            </exclude>
+            <exclude>
+               %regex[(?!((?!${project.build.directory}/)[^/]+/)*src/)(.*/)?\.idea(/.*)?]
+            </exclude>
+            <exclude>
+               %regex[(?!((?!${project.build.directory}/)[^/]+/)*src/)(.*/)?out(/.*)?]
+            </exclude>
+            <exclude>
+               %regex[(?!((?!${project.build.directory}/)[^/]+/)*src/)(.*/)?[^/]*\.ipr]
+            </exclude>
+            <exclude>
+               %regex[(?!((?!${project.build.directory}/)[^/]+/)*src/)(.*/)?[^/]*\.iml]
+            </exclude>
+            <exclude>
+               %regex[(?!((?!${project.build.directory}/)[^/]+/)*src/)(.*/)?\.settings(/.*)?]
+            </exclude>
+            <exclude>
+               %regex[(?!((?!${project.build.directory}/)[^/]+/)*src/)(.*/)?\.externalToolBuilders(/.*)?]
+            </exclude>
+            <exclude>
+               %regex[(?!((?!${project.build.directory}/)[^/]+/)*src/)(.*/)?\.deployables(/.*)?]
+            </exclude>
+            <exclude>
+               %regex[(?!((?!${project.build.directory}/)[^/]+/)*src/)(.*/)?\.wtpmodules(/.*)?]
+            </exclude>
+            <!--  misc  -->
+            <exclude>
+               %regex[(?!((?!${project.build.directory}/)[^/]+/)*src/)(.*/)?cobertura\.ser]
+            </exclude>
+            <!--  release-plugin temp files  -->
+            <exclude>
+               %regex[(?!((?!${project.build.directory}/)[^/]+/)*src/)(.*/)?pom\.xml\.releaseBackup]
+            </exclude>
+            <exclude>
+               %regex[(?!((?!${project.build.directory}/)[^/]+/)*src/)(.*/)?release\.properties]
+            </exclude>
+            <!-- maven-shade-plugin -->
+            <exclude>
+               %regex[(?!((?!${project.build.directory}/)[^/]+/)*src/)(.*/)?dependency-reduced-pom\.xml]
+            </exclude>
+
+         </excludes>
+      </fileSet>
+      <fileSet>
+         <directory>${activemq.basedir}</directory>
+         <outputDirectory>${file.separator}</outputDirectory>
+         <useDefaultExcludes>true</useDefaultExcludes>
+         <directoryMode>0755</directoryMode>
+         <fileMode>0755</fileMode>
+         <includes>
+            <include>artemis-distribution/src/main/resources/bin/artemis</include>
+            <include>artemis-cli/src/main/resources/org/apache/activemq/artemis/cli/commands/bin/artemis</include>
+            <include>artemis-cli/src/main/resources/org/apache/activemq/artemis/cli/commands/bin/artemis-service</include>
+            <include>scripts/*.sh</include>
+            <include>**/**/*.sh</include>
+         </includes>
+         <excludes>
+            <exclude>**/target/**</exclude>
+         </excludes>
+      </fileSet>
+   </fileSets>
+</assembly>

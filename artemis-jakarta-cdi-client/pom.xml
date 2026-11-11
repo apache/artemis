@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements. See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership. The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License. You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied. See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <parent>
+      <groupId>org.apache.artemis</groupId>
+      <artifactId>artemis-pom</artifactId>
+      <version>2.58.0-SNAPSHOT</version>
+      <relativePath>../artemis-pom/pom.xml</relativePath>
+   </parent>
+   <modelVersion>4.0.0</modelVersion>
+
+   <artifactId>artemis-jakarta-cdi-client</artifactId>
+   <name>Apache Artemis Jakarta CDI Integration</name>
+
+   <properties>
+      <jakarta.inject-api.version>${jakarta.inject-api.version.alt}</jakarta.inject-api.version>
+      <jakarta.annotation-api.version>${jakarta.annotation-api.version.alt}</jakarta.annotation-api.version>
+      <jakarta.enterprise.cdi-api.version>${jakarta.enterprise.cdi-api.version.alt}</jakarta.enterprise.cdi-api.version>
+      <jakarta.jms-api.version>${jakarta.jms-api.version.alt}</jakarta.jms-api.version>
+      <jakarta.transaction-api.version>${jakarta.transaction-api.version.alt}</jakarta.transaction-api.version>
+      <!-- the following is needed because of a transitive dependency of arquillian -->
+      <jakarta.ejb-api.version>${jakarta.ejb-api.version.alt}</jakarta.ejb-api.version>
+
+      <weld.version>${weld.version.alt}</weld.version>
+      <arquillian-weld-embedded.version>${arquillian-weld-embedded.version.alt}</arquillian-weld-embedded.version>
+      <owb.version>${owb.version.alt}</owb.version>
+   </properties>
+
+   <dependencies>
+      <!-- logging -->
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-log-annotation-processor</artifactId>
+         <version>${project.version}</version>
+         <scope>provided</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.slf4j</groupId>
+         <artifactId>slf4j-api</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.logging.log4j</groupId>
+         <artifactId>log4j-slf4j2-impl</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-core-client</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-jakarta-client</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-jakarta-server</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-commons</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>jakarta.inject</groupId>
+         <artifactId>jakarta.inject-api</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>jakarta.annotation</groupId>
+         <artifactId>jakarta.annotation-api</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>jakarta.enterprise</groupId>
+         <artifactId>jakarta.enterprise.cdi-api</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.jboss.arquillian.junit</groupId>
+         <artifactId>arquillian-junit-core</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.junit.vintage</groupId>
+         <artifactId>junit-vintage-engine</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>jakarta.jms</groupId>
+         <artifactId>jakarta.jms-api</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.jboss.shrinkwrap</groupId>
+         <artifactId>shrinkwrap-api</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.jboss.arquillian.junit</groupId>
+         <artifactId>arquillian-junit-container</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.jboss.arquillian.container</groupId>
+         <artifactId>arquillian-container-test-api</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-unit-test-support</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+      </dependency>
+
+      <!-- The johnzon-core and json-api contents are repackaged in -commons,
+           However maven can still need them during tests, which run against
+           the original -commons classes when built+run in the same reactor,
+           and not the jar containing the shaded bits. -->
+      <dependency>
+         <groupId>org.apache.johnzon</groupId>
+         <artifactId>johnzon-core</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>jakarta.json</groupId>
+         <artifactId>jakarta.json-api</artifactId>
+         <scope>test</scope>
+      </dependency>
+   </dependencies>
+
+   <build>
+      <plugins>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+               <forkCount>1</forkCount>
+               <reuseForks>false</reuseForks>
+               <argLine>--add-opens java.base/java.lang=ALL-UNNAMED ${activemq-surefire-argline}</argLine>
+            </configuration>
+         </plugin>
+         <plugin>
+            <groupId>org.wildfly.extras.batavia</groupId>
+            <artifactId>transformer-tools-mvn</artifactId>
+            <executions>
+               <execution>
+                  <id>transform-sources</id>
+                  <phase>generate-sources</phase>
+                  <goals>
+                     <goal>transform-sources</goal>
+                  </goals>
+                  <configuration>
+                     <source-project>${project.basedir}/../artemis-cdi-client</source-project>
+                  </configuration>
+               </execution>
+            </executions>
+            <dependencies>
+               <dependency>
+                  <groupId>org.wildfly.extras.batavia</groupId>
+                  <artifactId>transformer-impl-eclipse</artifactId>
+                  <version>${version.batavia}</version>
+               </dependency>
+            </dependencies>
+         </plugin>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-clean-plugin</artifactId>
+            <executions>
+               <execution>
+                  <id>remove-old-services-file</id>
+                  <phase>generate-sources</phase>
+                  <goals>
+                     <goal>clean</goal>
+                  </goals>
+                  <configuration>
+                     <filesets>
+                        <fileset>
+                           <directory>${project.build.directory}/generated-resources/transformed/META-INF/services/</directory>
+                        </fileset>
+                     </filesets>
+                     <excludeDefaultDirectories>true</excludeDefaultDirectories>
+                  </configuration>
+               </execution>
+            </executions>
+         </plugin>
+      </plugins>
+   </build>
+
+   <profiles>
+      <profile>
+         <id>Weld</id>
+         <activation>
+            <activeByDefault>true</activeByDefault>
+         </activation>
+         <dependencies>
+            <dependency>
+               <groupId>org.jboss.weld.se</groupId>
+               <artifactId>weld-se-core</artifactId>
+            </dependency>
+            <dependency>
+               <groupId>org.jboss.arquillian.container</groupId>
+               <artifactId>arquillian-weld-embedded</artifactId>
+            </dependency>
+         </dependencies>
+      </profile>
+      <profile>
+         <id>OWB</id>
+         <dependencies>
+            <dependency>
+               <groupId>org.apache.openwebbeans</groupId>
+               <artifactId>openwebbeans-impl</artifactId>
+            </dependency>
+            <dependency>
+               <groupId>org.apache.openwebbeans</groupId>
+               <artifactId>openwebbeans-spi</artifactId>
+            </dependency>
+            <dependency>
+               <groupId>org.apache.openwebbeans.arquillian</groupId>
+               <artifactId>owb-arquillian-standalone</artifactId>
+            </dependency>
+         </dependencies>
+      </profile>
+   </profiles>
+</project>

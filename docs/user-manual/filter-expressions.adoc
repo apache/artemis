@@ -1,0 +1,117 @@
+= Filter Expressions
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+{project-name-full} provides a powerful filter language based on a subset of the SQL 92 expression syntax.
+
+It is the same as the syntax used for JMS & Jakarta Messaging selectors, but the predefined identifiers are different.
+For documentation on JMS selector syntax please see the JavaDoc for https://docs.oracle.com/javaee/7/api/javax/jms/Message.html[`javax.jms.Message`].
+For the corresponding Jakarta Messaging JavaDoc see https://jakarta.ee/specifications/messaging/3.0/apidocs/jakarta/jms/message[`jakarta.jms.Message`].
+
+Filter expressions are used in several places:
+
+* Predefined Queues.
+When pre-defining a queue, in `broker.xml` in either the core or jms configuration a filter expression can be defined for a queue.
+Only messages that match the filter expression will enter the queue.
+* Core bridges can be defined with an optional filter expression, only matching messages will be bridged (see xref:core-bridges.adoc#core-bridges[Core Bridges]).
+* Diverts can be defined with an optional filter expression, only matching messages will be diverted (see xref:diverts.adoc#diverting-and-splitting-message-flows[Diverts]).
+* Filters are also used programmatically when creating consumers, queues and in several places as described in xref:management.adoc#management[management].
+
+There are some differences between JMS selector expressions and Core filter expressions.
+Whereas JMS selector expressions operate on a JMS message, Core filter expressions operate on a core message.
+
+The following identifiers can be used in a core filter expressions to refer to attributes of the core message in an expression:
+
+AMQUserID::
+The ID set by the user when the message is sent.
+This is analogous to the `JMSMessageID` for JMS-based clients.
+
+AMQAddress::
+The address to which the message was sent.
+
+AMQGroupID::
+The group ID used when sending the message.
+
+AMQPriority::
+To refer to the priority of a message.
+Message priorities are integers with valid values from `0 - 9`.
+`0` is the lowest priority and `9` is the highest.
+e.g. `AMQPriority = 3 AND animal = 'aardvark'`
+
+AMQExpiration::
+To refer to the expiration time of a message.
+The value is a long integer.
+
+AMQDurable::
+To refer to whether a message is durable or not.
+The value is a string with valid values: `DURABLE` or `NON_DURABLE`.
+
+AMQTimestamp::
+The timestamp of when the message was created.
+The value is a long integer.
+
+AMQSize::
+The size of a message in bytes.
+The value is an integer.
+
+Any other identifiers used in core filter expressions will be assumed to be properties of the message.
+
+== Property Identifier Constraints
+
+The JMS and Jakarta Messaging specs state that property identifiers (and therefore the identifiers which are valid for use in a filter expression) are an:
+
+____
+unlimited-length sequence of letters and digits, the first of which must be a letter.
+A letter is any character for which the method  https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/Character.html#isJavaLetter(char)[`Character.isJavaLetter`] returns `true`.
+This includes `_` and `$`.
+A letter or digit is any character for which the method https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/Character.html#isJavaLetterOrDigit(char)[`Character.isJavaLetterOrDigit`] returns `true`.
+____
+
+=== Working Around These Constraints
+
+These constraints mean that characters like `.` (dot) and `-` (hyphen) cannot be used within property identifiers.
+However, if you want to work around these constraints, you can surround the identifier with quotation marks in the filter expression.
+For example, if a message had a property named `foo-bar` set to `0` then the filter expression `"foo-bar" = 0` would match it, whereas `foo-bar = 0` would *not* match.
+
+== Property Value Conversion
+
+The JMS and Jakarta Messaging specs also state that a `String` property should not get converted to a numeric value when used in a selector.
+So for example, if a message has the `age` property set to the `String` "21" then the following selector should not match it: `age > 18`.
+
+However, some protocols (e.g. STOMP) can only send messages with `String` properties, which is a bit limiting.
+Therefore, if you want your filter expressions to auto-convert `String` properties to the appropriate number type, just prefix it with `convert_string_expressions:`.
+If you changed the filter expression in the previous example to be `convert_string_expressions:age > 18`, then it would  match the aforementioned message.
+
+== XPath
+
+Special https://en.wikipedia.org/wiki/XPath[XPath] filters which operate on the _body_ of a message are also available.
+The body must be XML.
+To use an XPath filter use this syntax:
+
+----
+XPATH '<xpath-expression>'
+----
+
+XPath filters are supported with and between producers and consumers using the following protocols:
+
+* OpenWire JMS
+* Core (and Core JMS)
+* STOMP
+* AMQP
+
+Since XPath applies to the body of the message and requires parsing of XML *it may be significantly slower* than normal filters.
+
+Large messages are *not* supported.
+
+The XML parser used for XPath is configured with these default "features":
+
+* `+http://xml.org/sax/features/external-general-entities+`: `false`
+* `+http://xml.org/sax/features/external-parameter-entities+`: `false`
+* `+http://apache.org/xml/features/disallow-doctype-decl+`: `true`
+
+However, in order to deal with any implementation-specific issues the features can be customized by using system properties starting with the `org.apache.activemq.documentBuilderFactory.feature:` prefix, e.g.:
+
+----
+-Dorg.apache.activemq.documentBuilderFactory.feature:http://xml.org/sax/features/external-general-entities=true
+----

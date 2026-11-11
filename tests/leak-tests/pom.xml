@@ -1,0 +1,243 @@
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+
+   <parent>
+      <groupId>org.apache.artemis.tests</groupId>
+      <artifactId>artemis-tests-pom</artifactId>
+      <version>2.58.0-SNAPSHOT</version>
+   </parent>
+
+   <artifactId>leak-tests</artifactId>
+   <packaging>jar</packaging>
+   <name>Apache Artemis Leak Tests</name>
+
+   <properties>
+      <activemq.basedir>${project.basedir}/../..</activemq.basedir>
+      <check-leak-version>0.11</check-leak-version>
+      <!-- whatever name you choose it has to match between the check-leak-maven-plugin install call and the JVM argument -->
+      <check-leak-deploy-name>checkleak.lib</check-leak-deploy-name>
+   </properties>
+
+   <dependencies>
+      <!-- Test support modules -->
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-unit-test-support</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>org.apache.artemis.tests</groupId>
+         <artifactId>artemis-test-support</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+      </dependency>
+
+      <!-- Dependencies for the Apache Artemis Server and its protocols -->
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-server</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-journal</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-amqp-protocol</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-stomp-protocol</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-openwire-protocol</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.activemq</groupId>
+         <artifactId>activemq-artemis-native</artifactId>
+         <version>${activemq-artemis-native-version}</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-mqtt-protocol</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+      <!-- openwire client -->
+      <dependency>
+         <groupId>org.apache.activemq</groupId>
+         <artifactId>activemq-client</artifactId>
+         <scope>test</scope>
+         <exclusions>
+            <!-- we are replacing this dependency by jakarta JMS, which is being brought by Artemis JMS Client -->
+            <exclusion>
+               <groupId>org.apache.geronimo.specs</groupId>
+               <artifactId>geronimo-jms_1.1_spec</artifactId>
+            </exclusion>
+            <!-- we are replacing this dependency by jakarta.management.j2ee-api, otherwise it would clash with Core JMS client -->
+            <exclusion>
+               <groupId>org.apache.geronimo.specs</groupId>
+               <artifactId>geronimo-j2ee-management_1.1_spec</artifactId>
+            </exclusion>
+         </exclusions>
+      </dependency>
+      <!-- this is required for openwire clients since we remove the management dependency on the exclusions for activemq-client -->
+      <dependency>
+         <groupId>jakarta.management.j2ee</groupId>
+         <artifactId>jakarta.management.j2ee-api</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+      <!-- Core Client -->
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-jms-client</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+      <!-- AMQP Client -->
+      <dependency>
+         <groupId>org.apache.qpid</groupId>
+         <artifactId>qpid-jms-client</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+      <!-- logging -->
+      <dependency>
+         <groupId>org.slf4j</groupId>
+         <artifactId>slf4j-api</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.logging.log4j</groupId>
+         <artifactId>log4j-slf4j2-impl</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+      <!-- The johnzon-core and json-api contents are repackaged in -commons,
+           However maven can still need them during tests, which run against
+           the original -commons classes when built+run in the same reactor,
+           and not the jar containing the shaded bits. -->
+      <dependency>
+         <groupId>org.apache.johnzon</groupId>
+         <artifactId>johnzon-core</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>jakarta.json</groupId>
+         <artifactId>jakarta.json-api</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+      <!-- check-leak, which is a library to inspect the VM using JVMTI and assert successful garbage cleanups.
+           https://github.com/check-leak/check-leak -->
+      <dependency>
+         <groupId>io.github.check-leak</groupId>
+         <artifactId>check-leak</artifactId>
+         <version>${check-leak-version}</version>
+         <scope>test</scope>
+      </dependency>
+
+      <!-- junit -->
+      <dependency>
+         <groupId>org.junit.jupiter</groupId>
+         <artifactId>junit-jupiter-api</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.junit.jupiter</groupId>
+         <artifactId>junit-jupiter-engine</artifactId>
+         <scope>test</scope>
+      </dependency>
+   </dependencies>
+
+   <build>
+      <testResources>
+         <testResource>
+            <directory>src/test/resources</directory>
+            <filtering>true</filtering>
+         </testResource>
+      </testResources>
+      <plugins>
+         <plugin>
+            <!-- It will install the proper native library required for the current platform. -->
+            <groupId>io.github.check-leak</groupId>
+            <artifactId>checkleak-maven-plugin</artifactId>
+            <version>${check-leak-version}</version>
+            <executions>
+               <execution>
+                  <phase>generate-sources</phase>
+                  <id>find-native</id>
+                  <goals>
+                     <goal>install</goal>
+                  </goals>
+                  <configuration>
+                     <target>${project.basedir}/target/lib</target>
+                     <!-- I'm selecting a name for the deployed file here. it can be any name and extension you choose as long as it matches the one passed on the JDK argument -->
+                     <lib>${check-leak-deploy-name}</lib>
+                  </configuration>
+               </execution>
+            </executions>
+         </plugin>
+         <plugin>
+            <artifactId>maven-resources-plugin</artifactId>
+            <configuration>
+               <nonFilteredFileExtensions>
+                  <nonFilteredFileExtension>jks</nonFilteredFileExtension>
+               </nonFilteredFileExtensions>
+            </configuration>
+            <executions>
+               <execution>
+                  <id>copy-security-resources</id>
+                  <phase>validate</phase>
+                  <goals>
+                     <goal>copy-resources</goal>
+                  </goals>
+                  <configuration>
+                     <outputDirectory>${basedir}/target/test-classes</outputDirectory>
+                     <resources>
+                        <resource>
+                           <directory>../security-resources</directory>
+                        </resource>
+                     </resources>
+                  </configuration>
+               </execution>
+            </executions>
+         </plugin>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+               <skipTests>${skipLeakTests}</skipTests>
+               <argLine>-agentpath:${project.basedir}/target/lib/${check-leak-deploy-name} -Djgroups.bind_addr=::1 ${activemq-surefire-argline} -Dorg.apache.activemq.SERIALIZABLE_PACKAGES="java.lang,javax.security,java.util,org.apache.activemq,org.fusesource.hawtbuf"</argLine>
+            </configuration>
+         </plugin>
+      </plugins>
+   </build>
+</project>
+

@@ -1,0 +1,91 @@
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<address-settings xmlns="urn:activemq:core">
+   <address-setting match="a1">
+      <dead-letter-address>a1.1</dead-letter-address>
+      <expiry-address>a1.2</expiry-address>
+      <expiry-delay>1</expiry-delay>
+      <min-expiry-delay>2</min-expiry-delay>
+      <max-expiry-delay>3</max-expiry-delay>
+      <no-expiry>true</no-expiry>
+      <disk-full-policy>DROP</disk-full-policy>
+      <redelivery-delay>1</redelivery-delay>
+      <redelivery-collision-avoidance-factor>0.5</redelivery-collision-avoidance-factor>
+      <max-size-bytes>817M</max-size-bytes>
+      <page-size-bytes>817381738</page-size-bytes>
+      <page-max-cache-size>10</page-max-cache-size>
+      <message-counter-history-day-limit>4</message-counter-history-day-limit>
+      <slow-consumer-threshold>10</slow-consumer-threshold>
+      <slow-consumer-check-period>5</slow-consumer-check-period>
+      <slow-consumer-policy>NOTIFY</slow-consumer-policy>
+      <slow-consumer-threshold-measurement-unit>MESSAGES_PER_HOUR</slow-consumer-threshold-measurement-unit>
+      <auto-create-jms-queues>true</auto-create-jms-queues>
+      <auto-delete-jms-queues>true</auto-delete-jms-queues>
+      <auto-create-jms-topics>true</auto-create-jms-topics>
+      <auto-delete-jms-topics>true</auto-delete-jms-topics>
+      <auto-create-queues>true</auto-create-queues>
+      <auto-delete-queues>true</auto-delete-queues>
+      <auto-create-addresses>true</auto-create-addresses>
+      <auto-delete-addresses>true</auto-delete-addresses>
+      <default-purge-on-no-consumers>false</default-purge-on-no-consumers>
+      <default-max-consumers>5</default-max-consumers>
+      <default-queue-routing-type>ANYCAST</default-queue-routing-type>
+      <default-address-routing-type>MULTICAST</default-address-routing-type>
+      <default-ring-size>3</default-ring-size>
+      <enable-ingress-timestamp>true</enable-ingress-timestamp>
+   </address-setting>
+   <address-setting match="a2">
+      <dead-letter-address>a2.1</dead-letter-address>
+      <auto-create-dead-letter-resources>true</auto-create-dead-letter-resources>
+      <dead-letter-queue-prefix></dead-letter-queue-prefix>
+      <dead-letter-queue-suffix>.DLQ</dead-letter-queue-suffix>
+      <expiry-address>a2.2</expiry-address>
+      <auto-create-expiry-resources>true</auto-create-expiry-resources>
+      <expiry-queue-prefix></expiry-queue-prefix>
+      <expiry-queue-suffix>.EXP</expiry-queue-suffix>
+      <redelivery-delay>5</redelivery-delay>
+      <max-size-bytes>932489234928324</max-size-bytes>
+      <page-size-bytes>712671626</page-size-bytes>
+      <page-max-cache-size>20</page-max-cache-size>
+      <message-counter-history-day-limit>8</message-counter-history-day-limit>
+      <slow-consumer-threshold>20</slow-consumer-threshold>
+      <slow-consumer-check-period>15</slow-consumer-check-period>
+      <slow-consumer-policy>KILL</slow-consumer-policy>
+      <slow-consumer-threshold-measurement-unit>MESSAGES_PER_DAY</slow-consumer-threshold-measurement-unit>
+      <auto-create-jms-queues>false</auto-create-jms-queues>
+      <auto-delete-jms-queues>false</auto-delete-jms-queues>
+      <auto-create-jms-topics>false</auto-create-jms-topics>
+      <auto-delete-jms-topics>false</auto-delete-jms-topics>
+      <auto-create-queues>false</auto-create-queues>
+      <auto-delete-queues>false</auto-delete-queues>
+      <auto-delete-queues-delay>500</auto-delete-queues-delay>
+      <auto-delete-queues-skip-usage-check>true</auto-delete-queues-skip-usage-check>
+      <auto-create-addresses>false</auto-create-addresses>
+      <auto-delete-addresses>false</auto-delete-addresses>
+      <auto-delete-addresses-delay>1000</auto-delete-addresses-delay>
+      <auto-delete-addresses-skip-usage-check>true</auto-delete-addresses-skip-usage-check>
+      <default-purge-on-no-consumers>true</default-purge-on-no-consumers>
+      <default-max-consumers>15</default-max-consumers>
+      <default-queue-routing-type>MULTICAST</default-queue-routing-type>
+      <default-address-routing-type>ANYCAST</default-address-routing-type>
+      <default-consumer-window-size>10000</default-consumer-window-size>
+      <retroactive-message-count>10</retroactive-message-count>
+      <enable-metrics>false</enable-metrics>
+      <id-cache-size>500</id-cache-size>
+      <initial-queue-buffer-size>128</initial-queue-buffer-size>
+   </address-setting>
+</address-settings>

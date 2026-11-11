@@ -1,0 +1,31 @@
+= History
+
+In October 2014 the {project-name-full} code-base was seeded with a donation of the HornetQ project from Red Hat.
+The code donation process consisted of taking a snapshot of the latest HornetQ code base and contributing it as the https://issues.apache.org/jira/browse/ARTEMIS-1[initial commit] into the corresponding Git repository.
+
+The HornetQ commit history is preserved and can be accessed here: https://github.com/hornetq/hornetq/tree/apache-donation
+
+Credit should be given to those developers who contributed to the HornetQ project.
+The top 10 committers are highlighted here:
+
+* Clebert Suconic
+* Tim Fox
+* Francisco Borges
+* Andy Taylor
+* Jeff Mesnil
+* Ovidiu Feodorov
+* Howard Gao
+* Justin Bertram
+* Trustin Lee
+* Adrian Brock
+
+For more information please visit the https://github.com/hornetq/hornetq/tree/apache-donation[HornetQ GitHub project].
+
+== Rebasing original donation
+
+It may be useful to look at the donation history combined with the artemis history.
+It is the case when eventually looking at old changes.
+
+For that there is a script that will rebase main against the donation branch under main/scripts:
+
+* `rebase-donation.sh`

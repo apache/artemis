@@ -1,0 +1,143 @@
+= Docker
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+One of the simplest ways to get started is by using one of our Docker images.
+
+== Official Images
+
+Official https://www.docker.com/[Docker] images are https://hub.docker.com/r/apache/artemis/tags[available on dockerhub].
+Images are pushed along with all the other distribution artifacts for every release.
+The fastest, simplest way to get started is with this command which will create and start a detached container named `mycontainer`, expose the main messaging port (i.e. `61616`) and HTTP port (i.e. `8161`), and remove it when it terminates:
+
+[,console]
+----
+$ docker run --detach --name mycontainer -p 61616:61616 -p 8161:8161 --rm apache/artemis:latest-alpine
+----
+
+Once the broker starts you can open the xref:management-console.adoc[web management console] at http://localhost:8161 and log in with the default username & password `artemis`.
+
+You can also use the `shell` command to interact with the running broker using the default username & password `artemis`, e.g.:
+
+[,console]
+----
+$ docker exec -it mycontainer /var/lib/artemis-instance/bin/artemis shell --user artemis --password artemis
+----
+
+Using the `shell` command you can execute basic tasks like creating & deleting addresses and queues, sending and browsing messages, viewing queue statistics, etc.
+See the xref:using-cli.adoc#command-line-interface[Command Line Interface] chapter for more details.
+
+You can view the container's logs using:
+[,console]
+----
+$ docker logs -f mycontainer
+----
+
+Stop the container using:
+[,console]
+----
+$ docker stop mycontainer
+----
+
+The official Docker images are built using https://github.com/apache/artemis/tree/main/artemis-docker[these scripts] which you can also use to build your own images.
+Read on for more details.
+
+== Build your own Image
+
+In order to build an image you need a binary distribution.
+This can be sourced *locally* (in which case you need to build the project first) or *remotely* based on an official Apache release.
+
+=== Using a Local Release
+If you want to use a local binary distribution then build it from the root of the Artemis source tree, e.g.:
+[,console]
+----
+$ mvn -Prelease package -DskipTests
+----
+Following the build the distribution files will be in your local distribution directory.
+Here `<version>` is the version of the distribution that you built.
+
+----
+artemis-distribution/target/apache-artemis-<version>-bin/apache-artemis-<version>
+----
+
+Then switch to the `artemis-docker` directory and use the `prepare-docker.sh` script with the proper parameters to copy the Docker files into your local binary distribution, e.g.:
+
+[,console]
+----
+$ cd artemis-docker
+$ ./prepare-docker.sh --from-local-dist --local-dist-path ../artemis-distribution/target/apache-artemis-<version>-bin/apache-artemis-<version>/
+----
+
+This will copy all the files necessary to build any of the pre-configured Docker images and provide you with additional instructions.
+Follow these instructions to finish building the image you want based on one of the provided Docker files or even one of your own.
+
+=== Using an Official Apache Release
+To use an official Apache Artemis release in your image, rather than a local build, then run the following command from the `artemis-docker` directory where `<version>` is the release version you wish to use (e.g. `2.51.0`):
+
+[,console]
+----
+$ ./prepare-docker.sh --from-release --artemis-version <version>
+----
+
+This will copy all the files necessary to build any of the pre-configured Docker images and provide you with additional instructions.
+Follow these instructions to finish building the image you want based on one of the provided Docker files or even one of your own.
+
+=== Customizing the Image
+
+==== Environment Variables
+
+Environment variables determine the options configured for the `artemis create` command when running `docker build`.
+The available options are:
+
+`ARTEMIS_USER`::
+The administrator username. The default is `artemis`.
+
+`ARTEMIS_PASSWORD`::
+The administrator password. The default is `artemis`.
+
+`ANONYMOUS_LOGIN`::
+Set to `true` to allow anonymous logins. The default is `false`.
+
+`EXTRA_ARGS`::
+Additional arguments sent to the `artemis create` command. The default is `--http-host 0.0.0.0 --relax-jolokia`.
+Setting this value will override the default. See the documentation on `artemis create` for available options.
+
+The combination of the above environment variables results in the `docker-run.sh` script calling the following command to create the broker instance the first time the Docker container runs:
+
+[,console]
+----
+${ARTEMIS_HOME}/bin/artemis create --user ${ARTEMIS_USER} --password ${ARTEMIS_PASSWORD} --silent ${LOGIN_OPTION} ${EXTRA_ARGS}
+----
+
+Note: `LOGIN_OPTION` is either `--allow-anonymous` or `--require-login` depending on the value of `ANONYMOUS_LOGIN`.
+
+These variables can be set in the relevant Dockerfile or, for example, on the command-line, e.g.:
+[,console]
+----
+$ docker run -e ARTEMIS_USER=myUser -e ARTEMIS_PASSWORD=myPass --name mycontainer -it -p 61616:61616 -p 8161:8161 apache/artemis:latest-alpine
+----
+
+==== Mapping point
+
+The image will use the directory `/var/lib/artemis-instance` to hold the configuration and the data of the running broker.
+You can map this to a folder on the host for when you want the configuration and data persisted *outside* of a container, e.g.:
+[,console]
+----
+docker run -it -p 61616:61616 -p 8161:8161 -v <broker folder on host>:/var/lib/artemis-instance apache/artemis:latest-alpine
+----
+In this case the value `<broker folder on host>` is a directory where the broker instance is supposed to
+be saved and reused on each run.
+
+==== Overriding files in `etc` folder
+
+You can use customized configuration for the broker instance by replacing the files residing in the `etc` folder with the custom ones, e.g. `broker.xml` or `artemis.profile`.
+Put the replacement files inside a folder and map it as a volume to:
+----
+/var/lib/artemis-instance/etc-override
+----
+
+The contents of `etc-override` folder will be copied over to `etc` folder after the instance creation so that the broker will always start with user-supplied configuration.
+
+It you are mapping the whole `var/lib/artemis-instance` to an outside folder for persistence then you can place an `etc-override` folder inside the mapped one.
+Its contents will again be copied over `etc` folder after creating the instance.

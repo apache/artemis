@@ -1,0 +1,19 @@
+      <store>
+         <database-store>
+            <!-- The most efficient persistent layer for Artemis is the file-store,
+                 however if you require a database please refer to your database provider
+                 for any database specific questions.
+                 We don't endorse any specific JDBC provider. HSQLDB is provided by default for demonstration purposes. -->
+            <jdbc-driver-class-name>${jdbcClassName}</jdbc-driver-class-name>
+            <jdbc-connection-url>${jdbcURL}</jdbc-connection-url>
+            <message-table-name>${jdbcMessages}</message-table-name>
+            <bindings-table-name>${jdbcBindings}</bindings-table-name>
+            <large-message-table-name>${jdbcLargeMessages}</large-message-table-name>
+            <page-store-table-name>${jdbcPageStore}</page-store-table-name>
+            <node-manager-store-table-name>${jdbcNodeManager}</node-manager-store-table-name>
+            <jdbc-lock-expiration>${jdbcLockExpiration}</jdbc-lock-expiration>
+            <jdbc-lock-renew-period>${jdbcLockRenewPeriod}</jdbc-lock-renew-period>
+            <jdbc-network-timeout>${jdbcNetworkTimeout}</jdbc-network-timeout>
+            <jdbc-max-page-size-bytes>100K</jdbc-max-page-size-bytes>
+         </database-store>
+      </store>

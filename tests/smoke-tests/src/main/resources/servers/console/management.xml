@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one or more
+  ~ contributor license agreements. See the NOTICE file distributed with
+  ~ this work for additional information regarding copyright ownership.
+  ~ The ASF licenses this file to You under the Apache License, Version 2.0
+  ~ (the "License"); you may not use this file except in compliance with
+  ~ the License. You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<management-context xmlns="http://activemq.apache.org/schema">
+   <!--<connector connector-port="1099"/>-->
+   <authorisation>
+      <allowlist>
+         <entry domain="hawtio"/>
+      </allowlist>
+      <default-access>
+         <!--
+         The "default-access" settings apply to every MBean not explicitly configured
+         in the "allowlist" or "role-access" sections
+         -->
+
+         <!-- allow read-only access by default -->
+         <access method="list*" roles="amq"/>
+         <access method="get*" roles="amq"/>
+         <access method="is*" roles="amq"/>
+
+         <!-- don't allow write or other operations by default -->
+         <!--access method="set*" roles="amq"/-->
+         <!--access method="*" roles="amq"/-->
+      </default-access>
+      <role-access>
+         <match domain="org.apache.activemq.artemis">
+            <access method="listConnections" roles="connections,amq"/>
+            <access method="listSessions" roles="sessions,amq"/>
+            <access method="listConsumers" roles="consumers,amq"/>
+            <access method="listProducers" roles="producers,amq"/>
+            <access method="listQueues" roles="queues,amq"/>
+            <access method="listAddresses" roles="addresses,testers,amq"/>
+            <access method="deleteAddress" roles="deleteAddresses,amq"/>
+            <access method="list*" roles="amq"/>
+            <access method="get*" roles="amq"/>
+            <access method="is*" roles="amq"/>
+            <access method="set*" roles="amq"/>
+            <access method="*" roles="amq"/>
+         </match>
+         <match domain="org.apache.activemq.artemis" key="address=RESTRICTED">
+            <access method="*" roles="testers,amq"/>
+         </match>
+      </role-access>
+   </authorisation>
+</management-context>

@@ -1,0 +1,236 @@
+= Metrics
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+{project-name-full} can export metrics to a variety of monitoring systems via the https://micrometer.io/[Micrometer] vendor-neutral application metrics facade.
+
+Important runtime metrics have been instrumented via the Micrometer API, and all a user needs to do is implement `org.apache.activemq.artemis.core.server.metrics.ActiveMQMetricsPlugin` in order to instantiate and configure a `io.micrometer.core.instrument.MeterRegistry` implementation.
+Relevant implementations of `MeterRegistry` are available from the https://github.com/micrometer-metrics/micrometer/tree/master/implementations[Micrometer code-base].
+
+This is a simple interface:
+
+[,java]
+----
+public interface ActiveMQMetricsPlugin extends Serializable {
+
+   ActiveMQMetricsPlugin init(Map<String, String> options);
+
+   MeterRegistry getRegistry();
+
+   default void registered(ActiveMQServer server) { }
+}
+----
+
+When the broker starts it will call `init` and pass in the `options` which can be specified in XML as key/value properties.
+At this point the plugin should instantiate and configure the `io.micrometer.core.instrument.MeterRegistry` implementation.
+
+Later during the broker startup process it will call `getRegistry` in order to get the `MeterRegistry` implementation and use it for registering meters.
+Once registered, it will call `registered` to provide the plugin with a handle to the server.
+The plugin can then use that handle later to inspect whether the broker is operational and not in a startup or shutdown phase.
+
+The broker ships with two `ActiveMQMetricsPlugin` implementations:
+
+org.apache.activemq.artemis.core.server.metrics.plugins.LoggingMetricsPlugin::
+This plugin simply logs metrics.
+It's not very useful for production, but can serve as a demonstration of the Micrometer integration.
+It takes no key/value properties for configuration.
+
+org.apache.activemq.artemis.core.server.metrics.plugins.SimpleMetricsPlugin::
+This plugin is used for testing.
+It is in-memory only and provides no external output.
+It takes no key/value properties for configuration.
+
+== Exported Metrics
+
+The following metrics are exported, categorized by component.
+A description for each metric is exported along with the metric itself therefore the description will not be repeated here.
+
+*Every* metric is "tagged" with the `broker` tag (configured via `<name>` in `broker.xml`).
+A _tag_ is a piece of metadata that gives context to the metric.
+These tags are the foundation of what is sometimes referred to as "dimensional metrics."
+Metrics _may_ have additional tags, but at the very least they will all have the `broker` tag.
+
+Lastly, all metrics specifically for the broker are prefixed with `artemis.`.
+
+=== Broker
+
+* `connection.count`
+* `total.connection.count`
+* `address.memory.usage`
+* `address.memory.usage.percentage`
+* `disk.store.usage`
+* `replica.sync`
+* `active`
+* `authentication.count` tagged by `result` - either `success` or `failure`
+* `authorization.count` tagged by `result` - either `success` or `failure`
+
+=== Address
+
+These metrics are tagged with the `address` tag which reflects the name of the corresponding address.
+
+* `routed.message.count`
+* `unrouted.message.count`
+* `address.size`
+* `number.of.pages`
+
+=== Queue
+
+These metrics are tagged with the `address` & `queue` tags which reflects the name of the corresponding address & queue respectively.
+
+* `message.count`
+* `durable.message.count`
+* `persistent.size`
+* `durable.persistent.size`
+* `delivering.message.count`
+* `delivering.durable.message.count`
+* `delivering.persistent.size`
+* `delivering.durable.persistent.size`
+* `scheduled.message.count`
+* `scheduled.durable.message.count`
+* `scheduled.persistent.size`
+* `scheduled.durable.persistent.size`
+* `messages.acknowledged`
+* `messages.added`
+* `messages.killed`
+* `messages.expired`
+* `consumer.count`
+
+It may appear that some higher level broker metrics are missing (e.g. total message count).
+However, these metrics can be deduced by aggregating the lower level metrics (e.g. aggregate the message.count metrics from all queues to get the total).
+
+=== Optional metrics
+
+There are a handful of other useful metrics that are related to the JVM, the underlying operating system, etc.
+These metrics are provided specifically by Micrometer and therefore do not have the `artmemis.` prefix.
+
+==== JVM memory metrics
+Gauges buffer and memory pool utilization.
+Underlying data gathered from Java's https://docs.oracle.com/en/java/javase/11/docs/api/java.management/java/lang/management/BufferPoolMXBean.html[BufferPoolMXBeans] and https://docs.oracle.com/en/java/javase/11/docs/api/java.management/java/lang/management/MemoryPoolMXBean.html[MemoryPoolMXBeans].
+
+Enabled by default.
+
+==== JVM GC
+Gauges max and live data size, promotion and allocation rates, and the number of times the GC pauses (or concurrent phase time in the case of CMS).
+Underlying data gathered from Java's https://docs.oracle.com/en/java/javase/11/docs/api/java.management/java/lang/management/MemoryPoolMXBean.html[MemoryPoolMXBeans].
+
+Disabled by default.
+
+==== JVM thread
+Gauges thread peak, the number of daemon threads, and live threads.
+Underlying data gathered from Java's https://docs.oracle.com/en/java/javase/11/docs/api/java.management/java/lang/management/ThreadMXBean.html[ThreadMXBean].
+
+Disabled by default.
+
+==== Netty Allocator
+Collects metrics from Netty's https://netty.io/4.1/api/io/netty/buffer/PooledByteBufAllocatorMetric.html[PooledByteBufAllocatorMetric].
+
+Disabled by default.
+
+==== File descriptors
+Gauges current and max-allowed open files.
+
+Disabled by default.
+
+==== Processor
+Gauges system CPU count, CPU usage, and 1-minute load average as well as process CPU usage.
+
+Disabled by default.
+
+==== Uptime
+Gauges process start time and uptime.
+
+Disabled by default.
+
+==== Logging
+Counts the number of logging events per logging category (e.g. `WARN`, `ERROR`, etc.).
+
+Disabled by default.
+
+[WARNING]
+====
+This works _exclusively_ with Log4j2 (i.e the default logging implementation shipped with the broker).
+If you're embedding the broker and using a different logging implementation (e.g. Log4j 1.x, JUL, Logback, etc.) and you enable these metrics then the broker will fail to start with a `java.lang.NoClassDefFoundError` as it attempts to locate Log4j2 classes that don't exist on the classpath.
+====
+
+==== Security caches
+The following authentication & authorization cache metrics are exported.
+They are all tagged by `cache` (either `authentication` or `authorization`).
+Additional tags are noted.
+
+* `cache.size`
+* `cache.puts`
+* `cache.gets` tagged by `result` - either `hit` or `miss`
+* `cache.evictions`
+* `cache.eviction.weight`
+
+Disabled by default.
+
+==== Executor Services
+
+Metrics for executor services cover both the major instances of https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/concurrent/ExecutorService.html[`java.util.concurrent.ExecutorService`] used by the broker to manage threads as well as https://netty.io/4.1/api/io/netty/util/concurrent/EventExecutor.html[`EventExecutors`] associated with instances of Netty's https://netty.io/4.1/api/io/netty/channel/EventLoopGroup.html[`EventLoopGroup`].
+
+Executor service metrics are disabled by default.
+
+===== Java Executor Services
+
+All metrics are tagged with the name of the broker and with the executor service name which corresponds to the role it plays within the broker (e.g. general, io, paging, scheduled).
+
+* `executor`
+* `executor.completed`
+* `executor.active`
+* `executor.idle`
+* `executor.queued`
+* `executor.queue.remaining`
+* `executor.pool.core`
+* `executor.pool.size`
+* `executor.pool.max`
+
+Any `ExecutorService` instance used to schedule tasks also has these metrics:
+
+* `executor.scheduled.repetitively`
+* `executor.scheduled.once`
+
+====== Netty Event Executors
+
+All metrics are tagged with the name of the broker and with the name of the underlying Netty `EventExecutor`.
+
+* `netty.eventexecutor.tasks.pending`
+
+== Configuration
+
+Metrics for all addresses and queues are enabled by default.
+If you want to disable metrics for a particular address or set of addresses you can do so by setting the `enable-metrics` `address-setting` to `false`.
+
+In `broker.xml` use the `metrics` element to configure which general broker and JVM metrics are reported and to configure the plugin itself.
+Here's a configuration with all optional metrics:
+
+[,xml]
+----
+<metrics>
+   <jvm-memory>true</jvm-memory> <!-- defaults to true -->
+   <jvm-gc>true</jvm-gc> <!-- defaults to false -->
+   <jvm-threads>true</jvm-threads> <!-- defaults to false -->
+   <netty-pool>true</netty-pool> <!-- defaults to false -->
+   <file-descriptors>true</file-descriptors> <!-- defaults to false -->
+   <processor>true</processor> <!-- defaults to false -->
+   <uptime>true</uptime> <!-- defaults to false -->
+   <logging>true</logging> <!-- defaults to false -->
+   <security-caches>true</security-caches> <!-- defaults to false -->
+   <executor-services>true</executor-services> <!-- defaults to false -->
+   <plugin class-name="org.apache.activemq.artemis.core.server.metrics.plugins.LoggingMetricsPlugin"/>
+</metrics>
+----
+
+The plugin can also be configured with key/value properties in order to customize the implementation as necessary, e.g.:
+
+[,xml]
+----
+<metrics>
+   <plugin class-name="org.example.MyMetricsPlugin">
+      <property key="host" value="example.org" />
+      <property key="port" value="5162" />
+      <property key="foo" value="10" />
+   </plugin>
+</metrics>
+----

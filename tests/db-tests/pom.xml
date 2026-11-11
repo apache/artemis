@@ -1,0 +1,491 @@
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+   <parent>
+      <groupId>org.apache.artemis.tests</groupId>
+      <artifactId>artemis-tests-pom</artifactId>
+      <version>2.58.0-SNAPSHOT</version>
+   </parent>
+
+   <artifactId>db-tests</artifactId>
+   <packaging>jar</packaging>
+   <name>Apache Artemis Database Tests</name>
+
+   <properties>
+      <activemq.basedir>${project.basedir}/../../</activemq.basedir>
+      <!-- note: I am passing these properties through command line as opposed to syste-properties on surefire as IntelijIDEA wouldn't pick up these properties automatically. It was the simplest way to make it work -->
+      <db-extra-args>-Dhsql.load=${hsql.load} -Dpostgres.load=${postgres.load} -Dpostgres.uri=${postgres.uri}
+         -Dpostgres.class=${postgres.class} -Dmssql.load=${mssql.load} -Dmssql.uri=${mssql.uri}
+         -Dmssql.class=${mssql.class} -Dmysql.load=${mysql.load} -Dmysql.uri=${mysql.uri} -Dmysql.class=${mysql.class}
+         -Ddb2.load=${db2.load} -Ddb2.class=${db2.class} -Ddb2.uri=${db2.uri} -Doracle.load=${oracle.load}
+         -Doracle.uri=${oracle.uri} -Doracle.class=${oracle.class}
+      </db-extra-args>
+      <artemis-distribution-lib-dir>
+         -Ddistribution.lib="${activemq.basedir}/artemis-distribution/target/apache-artemis-${project.version}-bin/apache-artemis-${project.version}/lib"
+      </artemis-distribution-lib-dir>
+
+      <hsql.load>false</hsql.load>
+
+      <db2.load>false</db2.load>
+      <db2.uri>jdbc:db2://localhost:50000/artemis:user=db2inst1;password=artemis;</db2.uri>
+      <db2.class>com.ibm.db2.jcc.DB2Driver</db2.class>
+
+      <mysql.load>false</mysql.load>
+      <mysql.uri>jdbc:mysql://localhost/ARTEMIS-TEST?user=root&amp;#38;password=artemis</mysql.uri>
+      <mysql.class>com.mysql.cj.jdbc.Driver</mysql.class>
+
+      <postgres.load>false</postgres.load>
+      <postgres.uri>jdbc:postgresql://localhost:5432/artemis?user=artemis&amp;#38;password=artemis</postgres.uri>
+      <postgres.class>org.postgresql.Driver</postgres.class>
+
+      <oracle.load>false</oracle.load>
+      <oracle.uri>jdbc:oracle:thin:system/artemis@localhost:1521:FREE</oracle.uri>
+      <oracle.class>oracle.jdbc.driver.OracleDriver</oracle.class>
+
+      <mssql.load>false</mssql.load>
+      <mssql.uri>jdbc:sqlserver://localhost:1433;user=sa;password=ActiveMQ*Artemis</mssql.uri>
+      <mssql.class>com.microsoft.sqlserver.jdbc.SQLServerDriver</mssql.class>
+
+      <skipDBTests>true</skipDBTests>
+   </properties>
+
+   <dependencies>
+      <dependency>
+         <!-- this dependency is here to make sure this module is only executed
+              after the distribution is created.
+              Otherwise it will get here before the build eventually.
+              e.g if you use mvn install -T 20 -->
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>apache-artemis</artifactId>
+         <version>${project.version}</version>
+         <scope>compile</scope>
+         <type>pom</type>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-server</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis.tests</groupId>
+         <artifactId>artemis-test-support</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-core-client</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-jms-client</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-commons</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-cli</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-journal</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.junit.jupiter</groupId>
+         <artifactId>junit-jupiter-api</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.junit.jupiter</groupId>
+         <artifactId>junit-jupiter-engine</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>io.netty</groupId>
+         <artifactId>netty-common</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.jctools</groupId>
+         <artifactId>jctools-core-jdk11</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.qpid</groupId>
+         <artifactId>qpid-jms-client</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <!-- logging -->
+      <dependency>
+         <groupId>org.slf4j</groupId>
+         <artifactId>slf4j-api</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.logging.log4j</groupId>
+         <artifactId>log4j-slf4j2-impl</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>jakarta.jms</groupId>
+         <artifactId>jakarta.jms-api</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>jakarta.management.j2ee</groupId>
+         <artifactId>jakarta.management.j2ee-api</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+      <!-- The johnzon-core and json-api contents are repackaged in -commons,
+           However maven can still need them during tests, which run against
+           the original -commons classes when built+run in the same reactor,
+           and not the jar containing the shaded bits. -->
+      <dependency>
+         <groupId>org.apache.johnzon</groupId>
+         <artifactId>johnzon-core</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>jakarta.json</groupId>
+         <artifactId>jakarta.json-api</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-unit-test-support</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+      </dependency>
+
+      <!-- DB Test Deps -->
+      <dependency>
+         <groupId>org.hsqldb</groupId>
+         <artifactId>hsqldb</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+
+   </dependencies>
+
+   <build>
+      <plugins>
+         <plugin>
+            <groupId>org.apache.artemis</groupId>
+            <artifactId>artemis-maven-plugin</artifactId>
+            <executions>
+               <execution>
+                  <phase>test-compile</phase>
+                  <id>create-jdbc-bad-driver</id>
+                  <goals>
+                     <goal>create</goal>
+                  </goals>
+                  <configuration>
+                     <role>amq</role>
+                     <user>admin</user>
+                     <password>admin</password>
+                     <allowAnonymous>false</allowAnonymous>
+                     <noWeb>true</noWeb>
+                     <instance>${basedir}/target/jdbc-bad-driver</instance>
+                     <staticCluster>tcp://localhost:61616</staticCluster>
+                     <args>
+                        <arg>--shared-store</arg>
+                        <arg>--jdbc</arg>
+                        <arg>--jdbc-connection-url</arg>
+                        <arg>tcp://noexist</arg>
+                        <arg>--jdbc-driver-class-name</arg>
+                        <arg>badDriver</arg>
+                        <arg>--cluster-password</arg>
+                        <arg>admin</arg>
+                     </args>
+                  </configuration>
+               </execution>
+               <execution>
+                  <phase>test-compile</phase>
+                  <id>create-hsql</id>
+                  <goals>
+                     <goal>create</goal>
+                  </goals>
+                  <configuration>
+                     <!-- this makes it easier in certain envs -->
+                     <javaOptions>-Djava.net.preferIPv4Stack=true</javaOptions>
+                     <instance>${basedir}/target/hsql</instance>
+                     <configuration>${basedir}/target/classes/servers/hsql</configuration>
+                     <noWeb>true</noWeb>
+                     <args>
+                        <arg>--jdbc</arg>
+                        <arg>--global-max-messages</arg>
+                        <arg>100</arg>
+                        <arg>--java-options</arg>
+                        <arg>-Dartemis.extra.libs=${basedir}/target/hsql/jdbc-jars</arg>
+                        <arg>--java-options</arg>
+                        <arg>-ea</arg>
+                     </args>
+                  </configuration>
+               </execution>
+               <execution>
+                  <phase>test-compile</phase>
+                  <id>create-hsql-jdbc</id>
+                  <goals>
+                     <goal>dependency-scan</goal>
+                  </goals>
+                  <configuration>
+                     <libList>
+                        <arg>org.hsqldb:hsqldb:${hsqldb.version}</arg>
+                     </libList>
+                     <targetFolder>${basedir}/target/hsql/jdbc-jars</targetFolder>
+                  </configuration>
+               </execution>
+
+               <execution>
+                  <phase>test-compile</phase>
+                  <id>create-mysql</id>
+                  <goals>
+                     <goal>create</goal>
+                  </goals>
+                  <configuration>
+                     <!-- this makes it easier in certain envs -->
+                     <javaOptions>-Djava.net.preferIPv4Stack=true</javaOptions>
+                     <instance>${basedir}/target/mysql</instance>
+                     <configuration>${basedir}/target/classes/servers/mysql</configuration>
+                     <noWeb>true</noWeb>
+                     <libListWithDeps>
+                        <arg>com.mysql:mysql-connector-j:8.0.33</arg>
+                     </libListWithDeps>
+                     <args>
+                        <arg>--jdbc</arg>
+                        <arg>--jdbc-connection-url</arg>
+                        <arg>${mysql.uri}</arg>
+                        <arg>--jdbc-driver-class-name</arg>
+                        <arg>${mysql.class}</arg>
+                        <arg>--global-max-messages</arg>
+                        <arg>100</arg>
+                        <arg>--java-options</arg>
+                        <arg>-ea</arg>
+                     </args>
+                  </configuration>
+               </execution>
+               <execution>
+                  <phase>test-compile</phase>
+                  <id>create-postgres</id>
+                  <goals>
+                     <goal>create</goal>
+                  </goals>
+                  <configuration>
+                     <!-- this makes it easier in certain envs -->
+                     <javaOptions>-Djava.net.preferIPv4Stack=true</javaOptions>
+                     <instance>${basedir}/target/postgres</instance>
+                     <configuration>${basedir}/target/classes/servers/postgres</configuration>
+                     <noWeb>true</noWeb>
+                     <libListWithDeps>
+                        <arg>org.postgresql:postgresql:42.6.0</arg>
+                     </libListWithDeps>
+                     <args>
+                        <arg>--jdbc</arg>
+                        <arg>--jdbc-connection-url</arg>
+                        <arg>${postgres.uri}</arg>
+                        <arg>--jdbc-driver-class-name</arg>
+                        <arg>${postgres.class}</arg>
+                        <arg>--global-max-messages</arg>
+                        <arg>100</arg>
+                        <arg>--java-options</arg>
+                        <arg>-ea</arg>
+                     </args>
+                  </configuration>
+               </execution>
+               <execution>
+                  <phase>test-compile</phase>
+                  <id>create-oracle</id>
+                  <goals>
+                     <goal>create</goal>
+                  </goals>
+                  <configuration>
+                     <!-- this makes it easier in certain envs -->
+                     <javaOptions>-Djava.net.preferIPv4Stack=true</javaOptions>
+                     <instance>${basedir}/target/oracle</instance>
+                     <noWeb>true</noWeb>
+                     <libListWithDeps>
+                        <arg>com.oracle.database.jdbc:ojdbc10:19.21.0.0</arg>
+                     </libListWithDeps>
+                     <args>
+                        <arg>--jdbc</arg>
+                        <arg>--jdbc-connection-url</arg>
+                        <arg>${oracle.uri}</arg>
+                        <arg>--jdbc-driver-class-name</arg>
+                        <arg>${oracle.class}</arg>
+                        <arg>--global-max-messages</arg>
+                        <arg>100</arg>
+                        <arg>--java-options</arg>
+                        <arg>-ea</arg>
+                     </args>
+                  </configuration>
+               </execution>
+               <execution>
+                  <phase>test-compile</phase>
+                  <id>create-mssql</id>
+                  <goals>
+                     <goal>create</goal>
+                  </goals>
+                  <configuration>
+                     <libList>
+                        <arg>com.microsoft.sqlserver:mssql-jdbc:8.4.1.jre11</arg>
+                     </libList>
+                     <!-- this makes it easier in certain envs -->
+                     <javaOptions>-Djava.net.preferIPv4Stack=true</javaOptions>
+                     <instance>${basedir}/target/mssql</instance>
+                     <noWeb>true</noWeb>
+                     <args>
+                        <arg>--jdbc</arg>
+                        <arg>--jdbc-connection-url</arg>
+                        <arg>${mssql.uri}</arg>
+                        <arg>--jdbc-driver-class-name</arg>
+                        <arg>${mssql.class}</arg>
+                        <arg>--global-max-messages</arg>
+                        <arg>100</arg>
+                        <arg>--java-options</arg>
+                        <arg>-ea</arg>
+                     </args>
+                  </configuration>
+               </execution>
+               <execution>
+                  <phase>test-compile</phase>
+                  <id>create-DB2</id>
+                  <goals>
+                     <goal>create</goal>
+                  </goals>
+                  <configuration>
+                     <libList>
+                        <arg>com.ibm.db2:jcc:11.5.8.0</arg>
+                     </libList>
+                     <!-- <libFolders>
+                        <arg>${project.basedir}/jdbc-drivers/db2</arg>
+                     </libFolders> -->
+                     <!-- this makes it easier in certain envs -->
+                     <javaOptions>-Djava.net.preferIPv4Stack=true</javaOptions>
+                     <instance>${basedir}/target/db2</instance>
+                     <noWeb>true</noWeb>
+                     <args>
+                        <arg>--jdbc</arg>
+                        <arg>--jdbc-connection-url</arg>
+                        <arg>${db2.uri}</arg>
+                        <arg>--jdbc-driver-class-name</arg>
+                        <arg>${db2.class}</arg>
+                        <arg>--global-max-messages</arg>
+                        <arg>100</arg>
+                        <arg>--java-options</arg>
+                        <arg>-ea</arg>
+                     </args>
+                  </configuration>
+               </execution>
+            </executions>
+            <dependencies>
+               <dependency>
+                  <groupId>org.apache.artemis.tests</groupId>
+                  <artifactId>smoke-tests</artifactId>
+                  <version>${project.version}</version>
+               </dependency>
+            </dependencies>
+         </plugin>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+               <forkCount>1</forkCount>
+               <reuseForks>false</reuseForks>
+               <skipTests>${skipDBTests}</skipTests>
+               <argLine>${db-extra-args} ${activemq-surefire-argline} ${artemis-distribution-lib-dir}</argLine>
+               <systemProperties>
+                  <postgres.uri>${postgres.uri}</postgres.uri>
+               </systemProperties>
+            </configuration>
+         </plugin>
+      </plugins>
+   </build>
+
+   <profiles>
+      <profile>
+         <id>DB-all-tests</id>
+         <properties>
+            <skipDBTests>false</skipDBTests>
+            <oracle.load>true</oracle.load>
+            <mysql.load>true</mysql.load>
+            <mssql.load>true</mssql.load>
+            <db2.load>true</db2.load>
+            <hsql.load>true</hsql.load>
+            <postgres.load>true</postgres.load>
+         </properties>
+      </profile>
+
+      <profile>
+         <id>DB-oracle-tests</id>
+         <properties>
+            <skipDBTests>false</skipDBTests>
+            <oracle.load>true</oracle.load>
+         </properties>
+      </profile>
+
+      <profile>
+         <id>DB-mysql-tests</id>
+         <properties>
+            <mysql.load>true</mysql.load>
+            <skipDBTests>false</skipDBTests>
+         </properties>
+      </profile>
+
+      <profile>
+         <id>DB-mssql-tests</id>
+         <properties>
+            <mssql.load>true</mssql.load>
+            <skipDBTests>false</skipDBTests>
+         </properties>
+      </profile>
+
+      <profile>
+         <id>DB-db2-tests</id>
+         <properties>
+            <db2.load>true</db2.load>
+            <skipDBTests>false</skipDBTests>
+         </properties>
+      </profile>
+
+      <profile>
+         <id>DB-postgres-tests</id>
+         <properties>
+            <postgres.load>true</postgres.load>
+            <skipDBTests>false</skipDBTests>
+         </properties>
+      </profile>
+
+      <profile>
+         <id>DB-hsql-tests</id>
+         <properties>
+            <hsql.load>true</hsql.load>
+            <skipDBTests>false</skipDBTests>
+         </properties>
+      </profile>
+   </profiles>
+
+</project>

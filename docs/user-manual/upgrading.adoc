@@ -1,0 +1,78 @@
+= Upgrading the Broker
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+The {project-name-short} broker follows a paradigm where the project distribution serves as the broker "home" and then one or more broker "instances" are created which reference the "home" for resources (e.g. jar files) which can be safely shared between broker instances.
+Therefore, an instance of the broker must be created before it can be run.
+This may seem like an overhead at first glance, but it becomes very practical when updating to a new version, for example.
+
+To create a broker instance, navigate into the home folder and run: `./bin/artemis create /path/to/myBrokerInstance` on the command line.
+
+Because of this separation, it's very easy to upgrade in most cases.
+
+NOTE: It's recommended to choose a folder different from where the broker was downloaded.
+This separation allows you to run multiple broker instances with the same "home," for example.
+It also simplifies updating to newer versions.
+
+== General Upgrade Procedure
+
+[IMPORTANT]
+====
+Review the xref:versions.adoc#version-history[version] history for specific steps required for your upgrade before proceeding.
+
+If you are using journal replication for high availability, follow the xref:ha.adoc#rolling-upgrade[rolling upgrade procedure] to upgrade without downtime.
+====
+
+In general, the process is as follows:
+
+. Navigate to the `etc` folder of the broker instance that's being upgraded
+. Open `artemis.profile` and `artemis-utility.profile` (`artemis.profile.cmd` and `artemis-utility.profile.cmd` on Windows).
+It contains a property which is relevant for the upgrade:
++
+----
+ARTEMIS_HOME='/path/to/apache-artemis-version'
+----
+
+If you run the broker as a service on windows you have to do the following additional steps:
+
+. Navigate to the `bin` folder of the broker instance that's being upgraded
+. Open `artemis-service.xml`.
+It contains a property which is relevant for the upgrade:
++
+----
+<env name="ARTEMIS_HOME" value="/path/to/apache-artemis-version"/>
+----
+
+The `ARTEMIS_HOME` property is used to link the instance with the home.
+_In most cases_ the instance can be upgraded to a newer version simply by changing the value of this property to the location of the new broker home.
+Please refer to the aforementioned xref:versions.adoc#version-history[versions] document for additional upgrade steps (if required).
+
+It is also possible to do many of these update steps automatically, as can be seen in the next section.
+
+== Upgrading tool
+
+An upgrade helper tool from the new broker download can be used to refresh various configuration files and scripts from an existing broker instance from a prior version.
+This automates much of the work to upgrade the instance to the new version.
+
+WARNING: You should back up your existing broker instance before running the command.
+
+[,shell]
+----
+cd $NEW_ARTEMIS_DOWNLOAD/bin/
+./artemis upgrade PATH_TO_UPGRADING_INSTANCE
+----
+
+The broker instance script `bin/artemis` plus profiles `etc/artemis.profile` and `etc/artemis-utility.profile` (`artemis.cmd`, `artemis.cmd.profile`, and `artemis-utility.cmd.profile` on Windows) will be updated to the new versions, setting its ARTEMIS_HOME to refer to the new broker version home path.
+The tool will also create the new `<instance>/etc/log4j2.properties` and `<instance>/etc/log4j2-default.properties` configuration files if needed (e.g if you are migrating from a version prior to 2.27.0), and remove the old `<instance>/etc/logging.properties` file if present.
+
+The `broker.xml` file and data are retained as-is.
+
+[WARNING]
+====
+Most existing customisations to the old configuration files and scripts will be lost in the process of refreshing the files.
+As such you should compare the old configuration files with the refreshed ones and then port any missing customisations you may have made as necessary.
+The upgrade command itself will copy the older files it changes to an `old-config-bkp.` folder within the instance dir.
+
+Similarly, if you had customised the old `logging.properties` file you may need to prepare analogous changes for the new `log4j2.properties` and `log4j2-utility.properties` files.
+====

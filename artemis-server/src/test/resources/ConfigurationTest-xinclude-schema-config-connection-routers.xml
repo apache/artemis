@@ -1,0 +1,73 @@
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<connection-routers xmlns="urn:activemq:core">
+   <connection-router name="simple-local">
+      <key-type>CLIENT_ID</key-type>
+      <key-filter>^[^.]+</key-filter>
+      <local-target-filter>DEFAULT</local-target-filter>
+   </connection-router>
+   <connection-router name="simple-local-with-transformer">
+      <key-type>CLIENT_ID</key-type>
+      <key-filter>^[^.]+</key-filter>
+      <local-target-filter>DEFAULT</local-target-filter>
+      <policy name="CONSISTENT_HASH_MODULO">
+         <property key="MODULO" value="2"></property>
+      </policy>
+   </connection-router>
+   <connection-router name="simple-router">
+      <key-type>USER_NAME</key-type>
+      <policy name="FIRST_ELEMENT"/>
+      <pool>
+         <static-connectors>
+            <connector-ref>connector1</connector-ref>
+         </static-connectors>
+      </pool>
+   </connection-router>
+   <connection-router name="simple-router-connector2">
+      <key-type>USER_NAME</key-type>
+      <policy name="FIRST_ELEMENT"/>
+      <pool>
+         <static-connectors>
+            <connector-ref>connector2</connector-ref>
+         </static-connectors>
+      </pool>
+   </connection-router>
+   <connection-router name="consistent-hash-router">
+      <key-type>SNI_HOST</key-type>
+      <key-filter>^[^.]+</key-filter>
+      <local-target-filter>DEFAULT</local-target-filter>
+      <policy name="CONSISTENT_HASH"/>
+      <pool>
+         <check-period>1000</check-period>
+         <local-target-enabled>true</local-target-enabled>
+         <discovery-group-ref discovery-group-name="dg1"/>
+      </pool>
+   </connection-router>
+   <connection-router name="least-connections-router">
+      <cache>
+         <persisted>true</persisted>
+         <timeout>60000</timeout>
+      </cache>
+      <policy name="LEAST_CONNECTIONS"/>
+      <pool>
+         <check-period>3000</check-period>
+         <quorum-size>2</quorum-size>
+         <quorum-timeout>1000</quorum-timeout>
+         <discovery-group-ref discovery-group-name="dg2"/>
+      </pool>
+   </connection-router>
+</connection-routers>

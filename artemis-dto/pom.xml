@@ -1,0 +1,191 @@
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+
+   <parent>
+      <groupId>org.apache.artemis</groupId>
+      <artifactId>artemis-pom</artifactId>
+      <version>2.58.0-SNAPSHOT</version>
+      <relativePath>../artemis-pom/pom.xml</relativePath>
+   </parent>
+
+   <artifactId>artemis-dto</artifactId>
+   <packaging>jar</packaging>
+   <name>Apache Artemis DTO</name>
+
+   <dependencies>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-commons</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>jakarta.xml.bind</groupId>
+         <artifactId>jakarta.xml.bind-api</artifactId>
+         <version>${jakarta.xml.bind-api.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.sun.xml.bind</groupId>
+         <artifactId>jaxb-impl</artifactId>
+         <version>${version.jaxb.runtime}</version>
+         <exclusions>
+            <exclusion>
+               <groupId>com.sun.activation</groupId>
+               <artifactId>jakarta.activation</artifactId>
+            </exclusion>
+         </exclusions>
+      </dependency>
+      <dependency>
+         <groupId>com.sun.xml.bind</groupId>
+         <artifactId>jaxb-jxc</artifactId>
+         <version>${version.jaxb.runtime}</version>
+         <scope>provided</scope>
+      </dependency>
+      <dependency>
+         <groupId>jakarta.activation</groupId>
+         <artifactId>jakarta.activation-api</artifactId>
+         <version>${jakarta.activation-api.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.junit.jupiter</groupId>
+         <artifactId>junit-jupiter-api</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.junit.jupiter</groupId>
+         <artifactId>junit-jupiter-engine</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-unit-test-support</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+      </dependency>
+   </dependencies>
+
+   <build>
+      <resources>
+         <resource>
+            <directory>target/schema</directory>
+            <includes>
+               <include>**/*</include>
+            </includes>
+         </resource>
+         <resource>
+            <directory>src/main/resources</directory>
+            <includes>
+               <include>**/*</include>
+            </includes>
+            <filtering>true</filtering>
+         </resource>
+      </resources>
+
+      <plugins>
+         <plugin>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+               <execution>
+                  <phase>generate-resources</phase>
+                  <configuration>
+                     <target>
+                        <taskdef name="schemagen" classname="com.sun.tools.jxc.SchemaGenTask" />
+                        <mkdir dir="${project.build.directory}/schema/org.apache.activemq/dto" />
+                        <echo message="Generating XSD to: ${project.build.directory}/schema/org.apache.activemq/dto" />
+                        <schemagen srcdir="${basedir}/src" destdir="${project.build.directory}/schema/org.apache.activemq/dto" includeantruntime="false">
+                           <schema namespace="http://activemq.apache.org/schema" file="activemq.xsd" />
+                           <classpath refid="maven.compile.classpath" />
+                           <include name="**/package-info.java" />
+                           <include name="**/*DTO.java" />
+                           <exclude name="**/.git/**" />
+                           <exclude name="**/.svn/**" />
+                        </schemagen>
+                        <condition property="schema-namespace-replace-token" value="xmlns=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:xs=&quot;http://www.w3.org/2001/XMLSchema&quot;" else="xmlns:xs=&quot;http://www.w3.org/2001/XMLSchema&quot;">
+                           <resourcecontains resource="${project.build.directory}/schema/org.apache.activemq/dto/activemq.xsd" substring="&lt;schema elementFormDefault" />
+                        </condition>
+                        <replace file="${project.build.directory}/schema/org.apache.activemq/dto/activemq.xsd" token="xmlns:xs=&quot;http://www.w3.org/2001/XMLSchema&quot;" value="${schema-namespace-replace-token}" />
+                        <copy todir="${project.build.directory}/classes">
+                           <fileset dir="${project.build.directory}/schema" />
+                        </copy>
+                     </target>
+                  </configuration>
+                  <goals>
+                     <goal>run</goal>
+                  </goals>
+               </execution>
+            </executions>
+            <dependencies>
+               <dependency>
+                  <groupId>jakarta.xml.bind</groupId>
+                  <artifactId>jakarta.xml.bind-api</artifactId>
+                  <version>${jakarta.xml.bind-api.version}</version>
+               </dependency>
+               <dependency>
+                  <groupId>com.sun.xml.bind</groupId>
+                  <artifactId>jaxb-impl</artifactId>
+                  <version>${version.jaxb.runtime}</version>
+                  <exclusions>
+                     <exclusion>
+                        <groupId>com.sun.activation</groupId>
+                        <artifactId>jakarta.activation</artifactId>
+                     </exclusion>
+                  </exclusions>
+               </dependency>
+               <dependency>
+                  <groupId>com.sun.xml.bind</groupId>
+                  <artifactId>jaxb-jxc</artifactId>
+                  <version>${version.jaxb.runtime}</version>
+               </dependency>
+               <dependency>
+                  <groupId>jakarta.activation</groupId>
+                  <artifactId>jakarta.activation-api</artifactId>
+                  <version>${jakarta.activation-api.version}</version>
+               </dependency>
+            </dependencies>
+         </plugin>
+      </plugins>
+      <pluginManagement>
+         <plugins>
+            <!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
+            <plugin>
+               <groupId>org.eclipse.m2e</groupId>
+               <artifactId>lifecycle-mapping</artifactId>
+               <version>1.0.0</version>
+               <configuration>
+                  <lifecycleMappingMetadata>
+                     <pluginExecutions>
+                        <pluginExecution>
+                           <pluginExecutionFilter>
+                              <groupId>org.apache.maven.plugins</groupId>
+                              <artifactId>maven-antrun-plugin</artifactId>
+                              <versionRange>[1.7,)</versionRange>
+                              <goals>
+                                 <goal>run</goal>
+                              </goals>
+                           </pluginExecutionFilter>
+                           <action>
+                              <ignore />
+                           </action>
+                        </pluginExecution>
+                     </pluginExecutions>
+                  </lifecycleMappingMetadata>
+               </configuration>
+            </plugin>
+         </plugins>
+      </pluginManagement>
+   </build>
+</project>

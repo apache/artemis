@@ -1,0 +1,6 @@
+   <!-- The web server is only bound to localhost by default -->
+   <web path="web" rootRedirectLocation="console">
+       <binding name="artemis" uri="${web.protocol}://${http.host}:${http.port}"${extra.web.attributes}>
+           <app name="console" url="console" war="console.war"/>
+       </binding>
+   </web>

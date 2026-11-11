@@ -1,0 +1,184 @@
+name: "Build"
+
+on:
+  push:
+    branches-ignore:
+      - dependabot/**
+    paths-ignore: &ignored_paths
+      - '**.adoc'
+  pull_request:
+    paths-ignore: *ignored_paths
+  workflow_dispatch:
+    inputs:
+      examplesRepo:
+        description: 'The examples repo to use'
+        required: true
+        default: 'apache/artemis-examples'
+        type: string
+      examplesRepoBranch:
+        description: 'Branch in examples repo'
+        required: true
+        default: 'development'
+        type: string
+
+env:
+  EXAMPLES_REPO: ${{ inputs.examplesRepo || 'apache/artemis-examples' }}
+  EXAMPLES_BRANCH: ${{ inputs.examplesRepoBranch || 'development' }}
+
+
+jobs:
+  test:
+    name: Test (${{ matrix.java }})
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        java: [ 17, 21, 25 ]
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: artemis
+
+      # Cache is prepared by the 'checks' jobs below
+      - name: Restore Maven Local Repo Cache
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        uses: actions/cache/restore@v5
+        with:
+          path: |
+            ~/.m2/repository/
+          key: ${{ runner.os }}-mvn-${{ hashFiles('artemis/**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-mvn-
+
+      - name: Install JDK ${{ matrix.java }}
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: 'temurin'
+
+      # use 'install' so smoke-tests will work
+      # By setting anything to org.apache.activemq.artemis.core.io.aio.AIOSequentialFileFactory.DISABLED we are disabling libaio loading on the testsuite
+      - name: Fast Tests
+        run: |
+          cd artemis
+          mvn -s .github/maven-settings.xml -Dorg.apache.activemq.artemis.core.io.aio.AIOSequentialFileFactory.DISABLED=AnythingNotNull -Pfast-tests -Pcompatibility-tests install
+
+      - name: Archive Test Logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: surefire-reports-jdk-${{ matrix.java }}
+          path: artemis/**/target/surefire-reports/*
+          retention-days: 10
+
+  checks:
+    name: Checks (${{ matrix.java }})
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        java: [ 17, 21, 25 ]
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: artemis
+
+      - name: Cache Maven Local Repo
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.m2/repository/
+          key: ${{ runner.os }}-mvn-${{ hashFiles('artemis/**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-mvn-
+
+      - name: Install JDK ${{ matrix.java }}
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: 'temurin'
+
+      - name: Checkout Artemis Examples Repo
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ env.EXAMPLES_REPO }}
+          ref: ${{ env.EXAMPLES_BRANCH }}
+          path: artemis-examples
+
+      - name: Build Main (JDK25 / -Prelease)
+        if: matrix.java == '25'
+        run: |
+          cd artemis
+          mvn -s .github/maven-settings.xml -DskipTests -Derrorprone -Pdev -Prelease -Dgpg.skip -Pcompatibility-tests -DskipCompatibilityTests install
+
+      - name: Build Main (JDK <25)
+        if: matrix.java != '25'
+        run: |
+          cd artemis
+          mvn -s .github/maven-settings.xml -DskipTests -Pdev -Pjmh -Popenwire-tests -DskipActiveMQ5Tests -Pcompatibility-tests -DskipCompatibilityTests -Dshade-plugin-create-sources=true install
+
+      - name: Set Examples Version to Artemis Version
+        run: |
+          cd artemis
+          CURRENT_ARTEMIS_BUILD_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "Current Artemis version: ${CURRENT_ARTEMIS_BUILD_VERSION}"
+          cd ../artemis-examples
+          ./scripts/update-examples-version.sh ${CURRENT_ARTEMIS_BUILD_VERSION}
+
+      - name: Build Examples (JDK25 / -Prelease)
+        if: matrix.java == '25'
+        run: |
+          cd artemis-examples
+          mvn -s ../artemis/.github/maven-settings.xml install -Prelease
+
+      - name: Build Examples (JDK <25 / -Pexamples,noRun)
+        if: matrix.java != '25'
+        run: |
+          cd artemis-examples
+          mvn -s ../artemis/.github/maven-settings.xml install -Pexamples,noRun
+          mvn -s ../artemis/.github/maven-settings.xml -f examples/features/standard/security-keycloak/pom.xml install -PnoRun
+          mvn -s ../artemis/.github/maven-settings.xml -f examples/features/sub-modules/pom.xml install -Prelease -Denforcer.skip
+
+      - name: Javadoc Check (JDK25 / -Prelease)
+        if: matrix.java == '25'
+        run: |
+          cd artemis
+          mvn -s .github/maven-settings.xml javadoc:javadoc -Prelease -DskipWebsiteDocGeneration=true -DskipWebsiteJavadocGeneration=true
+
+      - name: Javadoc Check (JDK <25)
+        if: matrix.java != '25'
+        run: |
+          cd artemis
+          mvn -s .github/maven-settings.xml javadoc:javadoc
+
+      - name: Website Content Check (JDK25 / -Prelease)
+        if: matrix.java == '25'
+        run: |
+          cd artemis
+          mvn -s .github/maven-settings.xml clean install -DskipTests -Prelease -am -pl "artemis-website"
+
+      - name: Website Content Check (JDK <25)
+        if: matrix.java != '25'
+        run: |
+          cd artemis
+          mvn -s .github/maven-settings.xml clean install -DskipTests -Prelease -Denforcer.skip -am -pl "artemis-website"
+
+      - name: Additional Cache Priming
+        run: |
+          cd artemis
+          mvn -s .github/maven-settings.xml clean verify -Prelease -Denforcer.skip -pl "artemis-unit-test-support,org.apache.artemis:artemis-junit-5"
+          CURRENT_ERRORPRONE_VERSION=$(grep -m 1 -Po '(?<=errorprone.version>)[^<]+' pom.xml)
+          mvn -s .github/maven-settings.xml dependency:get -Dartifact="com.google.errorprone:error_prone_core:${CURRENT_ERRORPRONE_VERSION}" -pl "."
+
+      - name: Clean Up Before Caching
+        run: |
+          rm -rf ~/.m2/repository/org/apache/activemq/tests
+          rm -rf ~/.m2/repository/org/apache/activemq/examples
+          rm -rf ~/.m2/repository/org/apache/artemis/tests
+          rm -rf ~/.m2/repository/org/apache/artemis/examples
+          if [ -d ~/.m2/repository/org/apache ]; then find ~/.m2/repository/org/apache -name "*-SNAPSHOT" -type d -prune -exec rm -r '{}' \; ; fi

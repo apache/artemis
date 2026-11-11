@@ -1,0 +1,227 @@
+= Core Bridges
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+The function of a bridge is to consume messages from a source queue, and forward them to a target address, typically on a different broker.
+
+The source and target brokers do not have to be in the same cluster which makes bridging suitable for reliably sending messages from one cluster to another, for instance across a WAN, or internet and where the connection may be unreliable.
+
+The bridge has built in resilience to failure so if the target server connection is lost, e.g. due to network failure, the bridge will retry connecting to the target until it comes back online.
+When it comes back online it will resume operation as normal.
+
+In summary, bridges are a way to reliably connect two separate brokers together.
+With a core bridge both source and target servers must be brokers.
+
+Bridges can be configured to provide _once and only once_ delivery guarantees even in the event of the failure of the source or the target broker.
+They do this by using duplicate detection (described in xref:duplicate-detection.adoc#duplicate-message-detection[Duplicate Detection]).
+
+[NOTE]
+====
+Although they have similar function, don't confuse core bridges with JMS bridges!
+
+Core bridges are for linking one broker with another broker and do not use the JMS API.
+A JMS Bridge is used for linking any two JMS 1.1 compliant JMS providers.
+So, a JMS Bridge could be used for bridging to or from a different JMS-compliant messaging system.
+It's always preferable to use a core bridge if you can.
+Core bridges use duplicate detection to provide _once and only once_ guarantees.
+To provide the same guarantee using a JMS bridge you would have to use XA which has a higher overhead and is more complex to configure.
+====
+
+== Configuring Core Bridges
+
+Bridges are configured in `broker.xml`.
+Let's kick off with an example:
+
+[,xml]
+----
+<bridge name="my-bridge">
+   <queue-name>sausage-factory</queue-name>
+   <forwarding-address>mincing-machine</forwarding-address>
+   <ha>true</ha>
+   <filter string="name='aardvark'"/>
+   <transformer-class-name>
+      org.apache.activemq.artemis.jms.example.HatColourChangeTransformer
+   </transformer-class-name>
+   <min-large-message-size>102400</min-large-message-size>
+   <check-period>30000</check-period>
+   <connection-ttl>60000</connection-ttl>
+   <retry-interval>2000</retry-interval>
+   <retry-interval-multiplier>1.0</retry-interval-multiplier>
+   <max-retry-interval>2000</max-retry-interval>
+   <initial-connect-attempts>-1</initial-connect-attempts>
+   <reconnect-attempts>-1</reconnect-attempts>
+   <use-duplicate-detection>true</use-duplicate-detection>
+   <confirmation-window-size>10000000</confirmation-window-size>
+   <producer-window-size>1048576</producer-window-size>
+   <user>foouser</user>
+   <password>foopassword</password>
+   <reconnect-attempts-same-node>10</reconnect-attempts-same-node>
+   <routing-type>PASS</routing-type>
+   <concurrency>1</concurrency>
+   <static-connectors>
+      <connector-ref>remote-connector</connector-ref>
+   </static-connectors>
+   <!-- alternative to static-connectors
+   <discovery-group-ref discovery-group-name="bridge-discovery-group"/>
+   -->
+   <client-id>myClientID</client-id>
+</bridge>
+----
+
+In the above example we have shown all the parameters its possible to configure for a bridge.
+In practice you might use many of the defaults so it won't be necessary to specify them all explicitly.
+
+Let's take a look at all the parameters in turn:
+
+name::
+All bridges must have a unique name in the server.
+
+queue-name::
+This is the unique name of the local queue that the bridge consumes from, it's a mandatory parameter.
++
+The queue must already exist by the time the bridge is instantiated at start-up.
+
+forwarding-address::
+This is the address on the target server that the message will be forwarded to.
+If a forwarding address is not specified, then the original address of the message will be retained.
+
+ha::
+This optional parameter determines whether or not this bridge should support high availability.
+True means it will connect to any available server in a cluster and support failover.
+The default value is `false`.
+
+filter-string::
+An optional filter string can be supplied.
+If specified then only messages which match the filter expression specified in the filter string will be forwarded.
+The filter string follows the expression syntax described in xref:filter-expressions.adoc#filter-expressions[Filter Expressions].
+
+transformer-class-name::
+An _optional_ transformer can be specified.
+This gives you the opportunity to transform the message's header or body before forwarding it.
+See the xref:transformers.adoc#transformers[transformer chapter] for more details about transformer-specific configuration.
+
+min-large-message-size::
+Any message larger than this size (in bytes) is considered a large message (to be sent in chunks).
+Supports byte notation like "K", "MB", "MiB", "GB", etc.
+Default is `102400` (i.e. 100KiB).
+
+check-period::
+Sets the period (in milliseconds) used to check if the bridge client has failed to receive pings from the server.
+Use `-1` to disable this check.
+Default is `30000`.
+
+connection-ttl::
+How long (in milliseconds) the remote server will keep the connection alive in the absence of any data arriving from the bridge.
+This should be greater than the `check-period`.
+Default is `60000`.
+
+retry-interval::
+This optional parameter determines the period in milliseconds between subsequent reconnection attempts, if the connection to the target server has failed.
+The default value is `2000` milliseconds.
+
+retry-interval-multiplier::
+This optional parameter determines a multiplier to apply to the time since the last retry to compute the time to the next retry.
++
+This allows you to implement an _exponential backoff_ between retry attempts.
++
+Let's take an example:
++
+If we set `retry-interval` to `1000` ms and we set `retry-interval-multiplier` to `2.0`, then, if the first reconnect attempt fails, we will wait `1000` ms then `2000` ms then `4000` ms between subsequent reconnection attempts.
++
+The default value is `1.0` meaning each reconnect attempt is spaced at equal intervals.
+
+max-retry-interval::
+This enforces a limit on `retry-interval` since it can grow due to `retry-interval-multiplier`.
+Default is `2000`.
+
+initial-connect-attempts::
+This optional parameter determines the total number of initial connect attempts the bridge will make before giving up and shutting down.
+A value of `-1` signifies an unlimited number of attempts.
+The default value is `-1`.
+
+reconnect-attempts::
+This optional parameter determines the total number of reconnect attempts the bridge will make before giving up and shutting down.
+A value of `-1` signifies an unlimited number of attempts.
+The default value is `-1`.
+
+use-duplicate-detection::
+This optional parameter determines whether the bridge will automatically insert a duplicate id property into each message that it forwards.
++
+Doing so, allows the target server to perform duplicate detection on messages it receives from the source server.
+If the connection fails or server crashes, then, when the bridge resumes it will resend unacknowledged messages.
+This might result in duplicate messages being sent to the target server.
+By enabling duplicate detection allows these duplicates to be screened out and ignored.
++
+This allows the bridge to provide a _once and only once_ delivery guarantee without using heavyweight methods such as XA (see xref:duplicate-detection.adoc#duplicate-message-detection[Duplicate Detection] for more information).
++
+The default value for this parameter is `true`.
+
+confirmation-window-size::
+This optional parameter determines the `confirmation-window-size` to use for the connection used to forward messages to the target node.
+Supports byte notation like "K", "MB", "MiB", "GB", etc.
+This attribute is described in section xref:client-failover.adoc#reconnection-and-failover-attributes[Client failover attributes]
++
+[WARNING]
+====
+When using the bridge to forward messages to an address which uses the `BLOCK` `address-full-policy` from a queue which has a `max-size-bytes` set it's important that `confirmation-window-size` is less than or equal to `max-size-bytes` to prevent the flow of messages from ceasing.
+====
+
+producer-window-size::
+This optional parameter determines the producer flow control through the bridge.
+Use `-1` to disable.
+Supports byte notation like "K", "MB", "MiB", "GB", etc.
+Default is `1048576` (i.e. 1MiB).
+
+user::
+This is the user name to use when creating the bridge connection to the remote server.
+If it is not specified the xref:clusters.adoc#cluster-user-credentials[default cluster user] will be used.
+
+include::_bridge-credentials-note.adoc[]
+
+password::
+This is the password to use when creating the bridge connection to the remote server.
+If it is not specified the xref:clusters.adoc#cluster-user-credentials[default cluster password] will be used.
+
+include::_bridge-credentials-note.adoc[]
+
+reconnect-attempts-same-node::
+This configures the number of times reconnection attempts will be made to the same node on the topology before reverting back to the initial connector(s).
+Default is `10`.
+
+routing-type::
+Bridges can apply a particular routing-type to the messages it forwards, strip the existing routing type, or simply pass the existing routing-type through.
+This is useful in situations where the message may have its routing-type set but you want to bridge it to an address using a different routing-type.
+It's important to keep in mind that a message with the `anycast` routing-type will not actually be routed to queues using `multicast` and vice-versa.
+By configuring the `routing-type` of the bridge you have the flexibility to deal with any situation.
+Valid values are `ANYCAST`, `MULTICAST`, `PASS`, & `STRIP`.
+The default is `PASS`.
+
+concurrency::
+For bridging high latency networks, and particularly for destinations with a high throughput, more workers might have to be commited to the bridge.
+This is done with the `concurrency` parameter.
+Increasing the concurrency will get reflected by more consumers and producers showing up on the bridged destination, allowing for increased parallelism across high latency networks.
+The default is `1`.
++
+When using a `concurrency` value greater than 1 multiple bridges will be created and named with an index.
+For example, if a bridge named `myBridge` was configured with a `concurrency` of `3` then actually 3 bridges would be created named `myBridge-0`, `myBridge-1`, and `myBridge-2`.
+This is important to note for management operations as each bridge will have its own associated `BridgeControl`.
+
+static-connectors::
+Pick either this or `discovery-group-ref` to connect the bridge to the target server.
++
+The `static-connectors` is a list of `connector-ref` elements pointing to `connector` elements defined elsewhere.
+A _connector_ encapsulates knowledge of what transport to use (TCP, SSL, HTTP etc) as well as the server connection parameters (host, port etc).
+For more information about what connectors are and how to configure them, please see xref:configuring-transports.adoc#configuring-the-transport[Configuring the Transport].
+
+discovery-group-ref::
+Pick either this or `static-connector` to connect the bridge to the target server.
++
+The `discovery-group-ref` element has one attribute - `discovery-group-name`.
+This attribute points to a `discovery-group` defined elsewhere.
+For more information about what discovery-groups are and how to configure them, please see xref:clusters.adoc#clusters[Discovery Groups].
+
+client-id::
+An optional identifier to use for the bridge connection.
+This can help with identifying the connection on the remote broker (e.g. via the web console).
+Default is empty (i.e. unset).

@@ -1,0 +1,78 @@
+<?xml version='1.0'?>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+
+<configuration xmlns="urn:activemq"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="urn:activemq /schema/artemis-configuration.xsd">
+
+   <core xmlns="urn:activemq:core">
+
+      <connectors>
+         <connector name="netty-connector">tcp://localhost:5645</connector>
+      </connectors>
+
+      <paging-directory>./target/tmp/activemq-unit-test/primary2/paging</paging-directory>
+      <bindings-directory>./target/tmp/activemq-unit-test/primary2/binding</bindings-directory>
+      <journal-directory>./target/tmp/activemq-unit-test/primary2/journal</journal-directory>
+      <large-messages-directory>./target/tmp/activemq-unit-test/primary2/largemessages</large-messages-directory>
+
+      <acceptors>
+         <acceptor name="netty-acceptor">tcp://localhost:5645</acceptor>
+      </acceptors>
+
+       <broadcast-groups>
+           <broadcast-group name="bg-group1">
+               <group-address>231.7.7.7</group-address>
+               <group-port>9876</group-port>
+               <broadcast-period>1000</broadcast-period>
+               <connector-ref>netty-connector</connector-ref>
+           </broadcast-group>
+       </broadcast-groups>
+
+       <discovery-groups>
+           <discovery-group name="dg-group1">
+               <group-address>231.7.7.7</group-address>
+               <group-port>9876</group-port>
+               <refresh-timeout>10000</refresh-timeout>
+           </discovery-group>
+       </discovery-groups>
+
+       <cluster-connections>
+           <cluster-connection name="my-cluster">
+               <address>jms</address>
+               <connector-ref>netty-connector</connector-ref>
+               <discovery-group-ref discovery-group-name="dg-group1"/>
+           </cluster-connection>
+       </cluster-connections>
+
+      <security-enabled>false</security-enabled>
+
+      <backup-servers>
+         <backup-server name="myBackup" port-offset="100" inherit-configuration="true" backup-strategy="FULL">
+             <configuration>
+                 <paging-directory>./target/tmp/activemq-unit-test/primary1/paging</paging-directory>
+                 <bindings-directory>./target/tmp/activemq-unit-test/primary1/binding</bindings-directory>
+                 <journal-directory>./target/tmp/activemq-unit-test/primary1/journal</journal-directory>
+                 <large-messages-directory>./target/tmp/activemq-unit-test/primary1/largemessages</large-messages-directory>
+             </configuration>
+         </backup-server>
+      </backup-servers>
+   </core>
+</configuration>

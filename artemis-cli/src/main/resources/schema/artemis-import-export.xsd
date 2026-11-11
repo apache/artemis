@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            attributeFormDefault="unqualified"
+            elementFormDefault="qualified"
+            version="1.0">
+   <xsd:element name="activemq-journal" type="activemq-journalType"/>
+   <xsd:complexType name="address-bindingType">
+      <xsd:simpleContent>
+         <xsd:extension base="xsd:string">
+            <xsd:attribute type="xsd:string" name="routing-types" use="required">
+               <xsd:annotation>
+                  <xsd:documentation>
+                     the routing types supported by the address; valid values: MULTICAST, ANYCAST
+                  </xsd:documentation>
+               </xsd:annotation>
+            </xsd:attribute>
+            <xsd:attribute type="xsd:string" name="name" use="required">
+               <xsd:annotation>
+                  <xsd:documentation>
+                     the name of the address binding
+                  </xsd:documentation>
+               </xsd:annotation>
+            </xsd:attribute>
+            <xsd:attribute type="xsd:long" name="id" use="optional">
+               <xsd:annotation>
+                  <xsd:documentation>
+                     the id of the address binding
+                  </xsd:documentation>
+               </xsd:annotation>
+            </xsd:attribute>
+         </xsd:extension>
+      </xsd:simpleContent>
+   </xsd:complexType>
+   <xsd:complexType name="queue-bindingType">
+      <xsd:simpleContent>
+         <xsd:extension base="xsd:string">
+            <xsd:attribute type="xsd:string" name="address" use="required">
+               <xsd:annotation>
+                  <xsd:documentation>
+                     the address name of the queue binding
+                  </xsd:documentation>
+               </xsd:annotation>
+            </xsd:attribute>
+            <xsd:attribute type="xsd:string" name="filter-string" use="optional">
+               <xsd:annotation>
+                  <xsd:documentation>
+                     the binding's filter (i.e. if using JMS selector syntax see
+                     org.apache.activemq.artemis.utils.SelectorTranslator.convertToActiveMQFilterString for
+                     conversion semantics)
+                  </xsd:documentation>
+               </xsd:annotation>
+            </xsd:attribute>
+            <xsd:attribute type="xsd:string" name="name" use="required">
+               <xsd:annotation>
+                  <xsd:documentation>
+                     the queue name of the binding
+                  </xsd:documentation>
+               </xsd:annotation>
+            </xsd:attribute>
+            <xsd:attribute type="xsd:long" name="id" use="optional">
+               <xsd:annotation>
+                  <xsd:documentation>
+                     the binding's identifier
+                  </xsd:documentation>
+               </xsd:annotation>
+            </xsd:attribute>
+            <xsd:attribute type="xsd:string" name="routing-type" use="required">
+               <xsd:annotation>
+                  <xsd:documentation>
+                     the binding's routing type
+                  </xsd:documentation>
+               </xsd:annotation>
+            </xsd:attribute>
+         </xsd:extension>
+      </xsd:simpleContent>
+   </xsd:complexType>
+   <xsd:complexType name="divert-bindingType">
+      <xsd:simpleContent>
+         <xsd:extension base="xsd:string">
+            <xsd:attribute type="xsd:string" name="name" use="required"/>
+            <xsd:attribute type="xsd:string" name="routing-name" use="optional"/>
+            <xsd:attribute type="xsd:string" name="address" use="required"/>
+            <xsd:attribute type="xsd:string" name="forwarding-address" use="required"/>
+            <xsd:attribute type="xsd:boolean" name="exclusive" use="optional"/>
+            <xsd:attribute type="xsd:string" name="filter-string" use="optional"/>
+            <xsd:attribute type="xsd:string" name="routing-type" use="optional"/>
+            <xsd:attribute type="xsd:string" name="transformer-class-name" use="optional"/>
+         </xsd:extension>
+      </xsd:simpleContent>
+   </xsd:complexType>
+   <xsd:complexType name="bindingsType">
+      <xsd:sequence>
+         <xsd:element type="address-bindingType" name="address-binding" maxOccurs="unbounded" minOccurs="0"/>
+         <xsd:element type="queue-bindingType" name="queue-binding" maxOccurs="unbounded" minOccurs="0"/>
+         <xsd:element type="divert-bindingType" name="divert-binding" maxOccurs="unbounded" minOccurs="0"/>
+      </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="propertyType">
+      <xsd:simpleContent>
+         <xsd:extension base="xsd:string">
+            <xsd:attribute type="xsd:string" name="name" use="required">
+               <xsd:annotation>
+                  <xsd:documentation>
+                     the property's name
+                  </xsd:documentation>
+               </xsd:annotation>
+            </xsd:attribute>
+            <xsd:attribute type="xsd:string" name="value" use="required">
+               <xsd:annotation>
+                  <xsd:documentation>
+                     the property's value; byte arrays are Base64 encoded the same way as the message's body
+                  </xsd:documentation>
+               </xsd:annotation>
+            </xsd:attribute>
+            <xsd:attribute type="xsd:string" name="type" use="optional">
+               <xsd:annotation>
+                  <xsd:documentation>
+                     the property's type; valid values: boolean, byte, bytes, short, integer, long, float, double,
+                     string, simple-string
+                  </xsd:documentation>
+               </xsd:annotation>
+            </xsd:attribute>
+         </xsd:extension>
+      </xsd:simpleContent>
+   </xsd:complexType>
+   <xsd:complexType name="propertiesType">
+      <xsd:sequence>
+         <xsd:element type="propertyType" name="property" maxOccurs="unbounded" minOccurs="0"/>
+      </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="queueType">
+      <xsd:simpleContent>
+         <xsd:extension base="xsd:string">
+            <xsd:attribute type="xsd:string" name="name">
+               <xsd:annotation>
+                  <xsd:documentation>
+                     the queue's name
+                  </xsd:documentation>
+               </xsd:annotation>
+            </xsd:attribute>
+         </xsd:extension>
+      </xsd:simpleContent>
+   </xsd:complexType>
+   <xsd:complexType name="queuesType">
+      <xsd:sequence>
+         <xsd:element type="queueType" name="queue" minOccurs="1" maxOccurs="unbounded"/>
+      </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="bodyType">
+      <xsd:simpleContent>
+         <xsd:extension base="xsd:string">
+            <xsd:attribute type="xsd:boolean" name="isLarge" use="optional"/>
+         </xsd:extension>
+      </xsd:simpleContent>
+   </xsd:complexType>
+   <xsd:complexType name="messageType">
+      <xsd:sequence>
+         <xsd:element type="propertiesType" name="properties">
+            <xsd:annotation>
+               <xsd:documentation>
+                  the message's properties
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+         <xsd:element type="queuesType" name="queues" maxOccurs="1" minOccurs="1">
+            <xsd:annotation>
+               <xsd:documentation>
+                  a list of queues that hold a reference to this message
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+         <xsd:element type="bodyType" name="body">
+            <xsd:annotation>
+               <xsd:documentation>
+                  the body of the message (Base64 URL-safe encoded;
+                  see java.util.Base64.getUrlEncoder().encodeToString(String); stored in a CDATA
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+      </xsd:sequence>
+      <xsd:attribute type="xsd:long" name="id" use="optional">
+         <xsd:annotation>
+            <xsd:documentation>
+               the queue's identifier
+            </xsd:documentation>
+         </xsd:annotation>
+      </xsd:attribute>
+      <xsd:attribute type="xsd:byte" name="priority" use="optional" default="0">
+         <xsd:annotation>
+            <xsd:documentation>
+               the priority of the message (between 0-9 inclusive)
+            </xsd:documentation>
+         </xsd:annotation>
+      </xsd:attribute>
+      <xsd:attribute type="xsd:long" name="expiration" use="optional" default="0">
+         <xsd:annotation>
+            <xsd:documentation>
+               when this message will expire (epoch time value, 0 for never)
+            </xsd:documentation>
+         </xsd:annotation>
+      </xsd:attribute>
+      <xsd:attribute type="xsd:long" name="timestamp" use="optional" default="0">
+         <xsd:annotation>
+            <xsd:documentation>
+               when this message was sent originally (epoch time value)
+            </xsd:documentation>
+         </xsd:annotation>
+      </xsd:attribute>
+      <xsd:attribute type="xsd:string" name="type" use="optional" default="DEFAULT">
+         <xsd:annotation>
+            <xsd:documentation>
+               the message's type; valid values: DEFAULT, OBJECT, TEXT, BYTES, MAP, STREAM
+            </xsd:documentation>
+         </xsd:annotation>
+      </xsd:attribute>
+      <xsd:attribute type="xsd:string" name="user-id" use="optional" default="">
+         <xsd:annotation>
+            <xsd:documentation>
+               the id of the user who sent the message
+            </xsd:documentation>
+         </xsd:annotation>
+      </xsd:attribute>
+   </xsd:complexType>
+   <xsd:complexType name="messagesType">
+      <xsd:sequence>
+         <xsd:element type="messageType" name="message" minOccurs="0" maxOccurs="unbounded"/>
+      </xsd:sequence>
+   </xsd:complexType>
+   <xsd:complexType name="activemq-journalType">
+      <xsd:sequence>
+         <xsd:element type="bindingsType" name="bindings">
+            <xsd:annotation>
+               <xsd:documentation>
+                  a list of exported bindings
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+         <xsd:element type="messagesType" name="messages">
+            <xsd:annotation>
+               <xsd:documentation>
+                  a list of exported messages
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+      </xsd:sequence>
+   </xsd:complexType>
+</xsd:schema>

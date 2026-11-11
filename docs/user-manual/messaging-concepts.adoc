@@ -1,0 +1,164 @@
+= Messaging Concepts
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+{project-name-full} is an asynchronous messaging system, an example of https://en.wikipedia.org/wiki/Message-oriented_middleware[Message Oriented Middleware], we'll just call them messaging systems in the remainder of this book.
+
+We'll first present a brief overview of what kind of things messaging systems do, where they're useful and the kind of concepts you'll hear about in the messaging world.
+
+If you're already familiar with what a messaging system is and what it's capable of, then you can skip this chapter.
+
+== General Concepts
+
+Messaging systems allow you to loosely couple heterogeneous systems together, whilst typically providing reliability, transactions, and many other features.
+
+Unlike systems based on a https://en.wikipedia.org/wiki/Remote_procedure_call[Remote Procedure Call] (RPC) pattern, messaging systems primarily use an asynchronous message passing pattern with no tight relationship between requests and responses.
+Most messaging systems also support a request-response mode, but this is not a primary feature of messaging systems.
+
+Designing systems to be asynchronous from end-to-end allows you to really take advantage of your hardware resources, minimizing the number of threads blocking on IO operations, and to use your network bandwidth to its full capacity.
+With an RPC approach you have to wait for a response for each request you make so are limited by the network round trip time or _latency_ of your network.
+With an asynchronous system you can pipeline flows of messages in different directions, so are limited by the network _bandwidth_ not the latency.
+This typically allows you to create much higher performance applications.
+
+Messaging systems decouple the senders of messages from the consumers of messages.
+The senders and consumers of messages are completely independent and know nothing of each other.
+This allows you to create flexible, loosely coupled systems.
+
+Often, large enterprises use a messaging system to implement a message bus which loosely couples heterogeneous systems together.
+Message buses often form the core of an https://en.wikipedia.org/wiki/Enterprise_service_bus[Enterprise Service Bus] (ESB).
+Using a message bus to de-couple disparate systems can allow the system to grow and adapt more easily.
+It also allows more flexibility to add new systems or retire old ones since they don't have brittle dependencies on each other.
+
+== Messaging styles
+
+Messaging systems normally support two main styles of asynchronous messaging: https://en.wikipedia.org/wiki/Message_queue[message queue] messaging (also known as _point-to-point messaging_) and https://en.wikipedia.org/wiki/Publish_subscribe[publish subscribe] messaging.
+We'll summarise them briefly here:
+
+=== Point-to-Point
+
+With this type of messaging you send a message to a queue.
+The message is then typically persisted to provide a guarantee of delivery, then some time later the messaging system delivers the message to a consumer.
+The consumer then processes the message and when it is done, it acknowledges the message.
+Once the message is acknowledged it disappears from the queue and is not available to be delivered again.
+If the system crashes before the messaging server receives an acknowledgement from the consumer, then on recovery, the message will be available to be delivered to a consumer again.
+
+With point-to-point messaging, there can be many consumers on the queue but a particular message will only ever be consumed by a maximum of one of them.
+Senders (also known as _producers_) to the queue are completely decoupled from receivers (also known as _consumers_) of the queue - they do not know of each other's existence.
+
+A classic example of point to point messaging would be an order queue in a company's book ordering system.
+Each order is represented as a message which is sent to the order queue.
+Let's imagine there are many front end ordering systems which send orders to the order queue.
+When a message arrives on the queue it is persisted - this ensures that if the server crashes the order is not lost.
+Let's also imagine there are many consumers on the order queue - each representing an instance of an order processing component - these can be on different physical machines but consuming from the same queue.
+The messaging system delivers each message to one and only one of the ordering processing components.
+Different messages can be processed by different order processors, but a single order is only processed by one order processor - this ensures orders aren't processed twice.
+
+As an order processor receives a message, it fulfills the order, sends order information to the warehouse system, and then updates the order database with the order details.
+Once it's done that it acknowledges the message to tell the server that the order has been processed and can be forgotten about.
+Often the send to the warehouse system, update in database and acknowledgement will be completed in a single transaction to ensure https://en.wikipedia.org/wiki/ACID[ACID] properties.
+
+=== Publish-Subscribe
+
+With publish-subscribe messaging many senders can send messages to an entity on the server, often called a _topic_ (e.g. in the JMS world).
+
+There can be many _subscriptions_ on a topic, a subscription is just another word for a consumer of a topic.
+Each subscription receives a _copy_ of _each_ message sent to the topic.
+This differs from the message queue pattern where each message is only consumed by a single consumer.
+
+Subscriptions can optionally be _durable_ which means they retain a copy of each message sent to the topic until the subscriber consumes them - even if the server crashes or is restarted in between.
+Non-durable subscriptions only last a maximum of the lifetime of the connection that created them.
+
+An example of publish-subscribe messaging would be a news feed.
+As news articles are created by different editors around the world they are sent to a news feed topic.
+There are many subscribers around the world who are interested in receiving news items - each one creates a subscription and the messaging system ensures that a copy of each news message is delivered to each subscription.
+
+== Delivery guarantees
+
+A key feature of most messaging systems is _reliable messaging_.
+With reliable messaging the server gives a guarantee that the message will be delivered once and only once to each consumer of a queue or each durable subscription of a topic, even in the event of system failure.
+This is crucial for many businesses; e.g. you don't want your orders fulfilled more than once or any of your orders to be lost.
+
+In other cases you may not care about a once and only once delivery guarantee and are happy to cope with duplicate deliveries or lost messages - an example of this might be transient stock price updates - which are quickly superseded by the next update on the same stock.
+The messaging system allows you to configure which delivery guarantees you require.
+
+== Transactions
+
+Messaging systems typically support the sending and acknowledgement of multiple messages in a single local transaction.
+{project-name-full} also supports the sending and acknowledgement of message as part of a large global transaction - using the Java mapping of XA: JTA.
+
+== Durability
+
+Messages are either durable or non durable.
+Durable messages will be persisted in permanent storage and will survive server failure or restart.
+Non durable messages will not survive server failure or restart.
+Examples of durable messages might be orders or trades, where they cannot be lost.
+An example of a non durable message might be a stock price update which is transitory and doesn't need to survive a restart.
+
+== Messaging APIs
+
+How do client applications interact with messaging systems in order to send and consume messages?
+
+Several messaging systems provide their own proprietary APIs with which the client communicates with the messaging system.
+
+There are also some standard ways of operating with messaging systems and some emerging standards in this space. Let's take a brief look at these.
+
+=== JMS & Jakarta Messaging
+
+https://en.wikipedia.org/wiki/Java_Message_Service[JMS] was historically part of Oracle's Java EE specification.
+However, in 2017 control was transferred to the Eclipse Foundation and it is now known as https://jakarta.ee/specifications/messaging/[Jakarta Messaging] which is part of Jakarta EE.
+
+It is a Java API that encapsulates both message queue and publish-subscribe messaging patterns.
+It is a lowest common denominator specification - i.e. it was created to encapsulate common functionality of the already existing messaging systems that were available at the time of its creation.
+
+It is a very popular API and is implemented by most messaging systems.
+It is only available to clients running Java.
+
+It does not define a standard wire format - it only defines a programmatic API so clients and servers from different vendors cannot directly interoperate since each will use the vendor's own internal wire protocol.
+
+{project-name-full} provides client implementations which are a fully compliant with xref:using-jms.adoc#using-jms-or-jakarta-messaging[JMS 1.1 & 2.0 as well as Jakarta Messaging 2.0, 3.0, & 3.1].
+
+=== System specific APIs
+
+Many systems provide their own programmatic API for which to interact with the messaging system.
+The advantage of this it allows the full set of system functionality to be exposed to the client application.
+API's like JMS are not normally rich enough to expose all the extra features that most messaging systems provide.
+
+The Core API is available for clients to use if they wish to have access to functionality over and above that accessible via the JMS API.
+
+Please see xref:core.adoc#core-api[Core] for using the Core API.
+
+== High Availability
+
+High Availability (HA) means that the system should remain operational after failure of one or more of the servers.
+The degree of support for HA varies between various messaging systems.
+
+{project-name-full} provides automatic failover where your sessions are automatically reconnected to a backup server on event of a server failure.
+
+For more information on HA, please see xref:ha.adoc#high-availability-and-failover[High Availability and Failover].
+
+== Clusters
+
+Many messaging systems allow you to create groups of messaging servers called _clusters_.
+Clusters allow the load of sending and consuming messages to be spread over many servers.
+This allows your system to scale horizontally by adding new servers to the cluster.
+
+Degrees of support for clusters vary between messaging systems, with some systems having fairly basic clusters with the cluster members being hardly aware of each other.
+
+{project-name-full} provides a very configurable state-of-the-art clustering model where messages can be intelligently load balanced between the servers in the cluster, according to the number of consumers on each node, and whether they are ready for messages. It also has the ability to automatically redistribute messages between nodes of a cluster to prevent starvation on any particular node.
+
+For full details on clustering, please see xref:clusters.adoc#clusters[Clusters].
+
+== Bridges and routing
+
+Some messaging systems allow isolated clusters or single nodes to be bridged together, typically over unreliable connections like a wide area network (WAN), or the internet.
+
+A bridge normally consumes from a queue on one server and forwards messages to another queue on a different server.
+Bridges cope with unreliable connections, automatically reconnecting when the connections becomes available again.
+
+Bridges can be configured with filter expressions to only forward certain messages, and transformation can also be hooked in.
+
+Routing between queues can also be configured.
+This allows complex routing networks to be set up forwarding or copying messages from one destination to another, forming a global network of interconnected brokers.
+
+For more information please see xref:core-bridges.adoc#core-bridges[Core Bridges] and xref:diverts.adoc#diverting-and-splitting-message-flows[Diverting and Splitting Message Flows].

@@ -1,0 +1,236 @@
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+
+   <parent>
+      <groupId>org.apache.artemis</groupId>
+      <artifactId>artemis-pom</artifactId>
+      <version>2.58.0-SNAPSHOT</version>
+      <relativePath>../artemis-pom/pom.xml</relativePath>
+   </parent>
+
+   <artifactId>artemis-commons</artifactId>
+   <packaging>jar</packaging>
+   <name>Apache Artemis Commons</name>
+
+   <properties>
+      <skipCommonsJavadocGeneration>true</skipCommonsJavadocGeneration>
+   </properties>
+
+   <dependencies>
+
+      <!-- Johnzon and JSON is meant to be referenced only here on this package (commons)
+           and we should not leak any dependencies to JSON or Johnzon in any of our packages.
+           Any other references would be meant for tests. -->
+      <dependency>
+         <groupId>org.apache.johnzon</groupId>
+         <artifactId>johnzon-core</artifactId>
+         <scope>compile</scope>
+         <optional>true</optional>
+      </dependency>
+      <dependency>
+         <groupId>jakarta.json</groupId>
+         <artifactId>jakarta.json-api</artifactId>
+         <scope>compile</scope>
+         <optional>true</optional>
+         <!-- License: EPL 2.0 -->
+      </dependency>
+      <!-- ^^ these dependencies are shaded on this JAR -->
+
+      <!-- logging -->
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-log-annotation-processor</artifactId>
+         <version>${project.version}</version>
+         <scope>provided</scope>
+         <!-- Superfluous, except for osgi manifest handling -->
+         <optional>true</optional>
+      </dependency>
+      <dependency>
+         <groupId>org.slf4j</groupId>
+         <artifactId>slf4j-api</artifactId>
+         <!-- License: MIT -->
+      </dependency>
+      <dependency>
+         <groupId>org.apache.logging.log4j</groupId>
+         <artifactId>log4j-slf4j2-impl</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>io.netty</groupId>
+         <artifactId>netty-buffer</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.netty</groupId>
+         <artifactId>netty-common</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.netty</groupId>
+         <artifactId>netty-transport</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>commons-beanutils</groupId>
+         <artifactId>commons-beanutils</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.junit.jupiter</groupId>
+         <artifactId>junit-jupiter-api</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.junit.jupiter</groupId>
+         <artifactId>junit-jupiter-engine</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-unit-test-support</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+      </dependency>
+   </dependencies>
+
+   <profiles>
+      <profile>
+         <id>release</id>
+         <properties>
+            <skipCommonsJavadocGeneration>${maven.javadoc.skip}</skipCommonsJavadocGeneration>
+         </properties>
+      </profile>
+      <profile>
+         <id>jdk24on</id>
+         <activation>
+            <jdk>[24,)</jdk>
+         </activation>
+         <build>
+            <plugins>
+               <plugin>
+                  <artifactId>maven-compiler-plugin</artifactId>
+                  <executions>
+                     <execution>
+                        <id>java24-compile</id>
+                        <phase>compile</phase>
+                        <goals>
+                           <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                           <release>24</release>
+                           <compileSourceRoots>${project.basedir}/src/main/java24</compileSourceRoots>
+                           <multiReleaseOutput>true</multiReleaseOutput>
+                        </configuration>
+                     </execution>
+                  </executions>
+               </plugin>
+               <plugin>
+                  <artifactId>maven-jar-plugin</artifactId>
+                  <!-- Do jar creation earlier, before the "test" phase, so that the
+                       multi-release-jar content is visible to any dependent modules,
+                       enabling them to use the relevant classes during their tests. -->
+                  <executions>
+                     <execution>
+                        <id>default-jar</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                           <goal>jar</goal>
+                        </goals>
+                     </execution>
+                  </executions>
+               </plugin>
+            </plugins>
+         </build>
+      </profile>
+   </profiles>
+
+   <build>
+      <pluginManagement>
+         <plugins>
+            <plugin>
+               <groupId>org.apache.maven.plugins</groupId>
+               <artifactId>maven-javadoc-plugin</artifactId>
+               <configuration>
+                  <useStandardDocletOptions>true</useStandardDocletOptions>
+                  <minmemory>128m</minmemory>
+                  <maxmemory>512m</maxmemory>
+                  <noindex>true</noindex>
+                  <notimestamp>true</notimestamp>
+                  <sourceFileIncludes>
+                     <sourceFileInclude>**/org/apache/activemq/artemis/api/**/*.java</sourceFileInclude>
+                  </sourceFileIncludes>
+               </configuration>
+            </plugin>
+         </plugins>
+      </pluginManagement>
+
+      <plugins>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-shade-plugin</artifactId>
+            <executions>
+               <execution>
+                  <phase>package</phase>
+                  <goals>
+                     <goal>shade</goal>
+                  </goals>
+                  <configuration>
+                     <createDependencyReducedPom>true</createDependencyReducedPom>
+                     <filters>
+                        <filter>
+                           <artifact>*:*</artifact>
+                           <excludes>
+                              <exclude>META-INF/services/*</exclude>
+                           </excludes>
+                        </filter>
+                     </filters>
+                     <relocations>
+                        <relocation>
+                           <pattern>javax.json</pattern>
+                           <shadedPattern>org.apache.activemq.artemis.commons.shaded.json</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>org.apache.johnzon</pattern>
+                           <shadedPattern>org.apache.activemq.artemis.commons.shaded.johnzon</shadedPattern>
+                        </relocation>
+                     </relocations>
+                     <artifactSet>
+                        <includes>
+                           <include>org.apache.johnzon:johnzon-core</include>
+                           <include>jakarta.json:jakarta.json-api</include>
+                        </includes>
+                     </artifactSet>
+                  </configuration>
+               </execution>
+            </executions>
+         </plugin>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <executions>
+               <execution>
+                  <id>javadocs</id>
+                  <goals>
+                     <goal>jar</goal>
+                  </goals>
+                  <configuration>
+                     <skip>${skipCommonsJavadocGeneration}</skip>
+                  </configuration>
+               </execution>
+            </executions>
+         </plugin>
+      </plugins>
+   </build>
+</project>

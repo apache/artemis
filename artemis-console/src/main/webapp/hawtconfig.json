@@ -1,0 +1,25 @@
+{
+  "branding": {
+    "appName": "Artemis Console",
+    "showAppName": false,
+    "appLogoUrl": "img/artemis.png",
+    "companyLogoUrl": "img/artemis.png",
+    "css": "css/artemis.css",
+    "favicon": "img/favicon.png"
+  },
+  "login": {
+    "description": "Login page for Apache Artemis Console.",
+    "links": [
+      { "url": "https://artemis.apache.org/components/artemis/documentation/", "text": "Documentation" },
+      { "url": "https://artemis.apache.org/", "text": "Website" }
+    ]
+  },
+  "about": {
+    "title": "Apache Artemis Management Console",
+    "productInfo": [{"name": "Apache Artemis", "value": "${project.version}"}],
+    "additionalInfo": "",
+    "copyright": " ",
+    "imgSrc": "img/artemis.png"
+  },
+  "disabledRoutes": []
+}

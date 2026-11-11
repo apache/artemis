@@ -1,0 +1,8 @@
+<!--
+      the system will enter into page mode once you hit this limit.
+          This is an estimate in bytes of how much the messages are using in memory -->
+      <global-max-size>${global-max-size}</global-max-size>
+
+      <!-- the maximum number of messages accepted before entering full address mode.
+            if global-max-size is specified the full address mode will be specified by whatever hits it first. -->
+      <global-max-messages>${global-max-messages}</global-max-messages>

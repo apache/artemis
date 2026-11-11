@@ -1,0 +1,80 @@
+= Core Architecture
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+The broker is designed simply as set of Plain Old Java Objects (POJOs) - we hope you like its clean-cut design.
+
+Each broker has its own ultra high performance persistent journal, which it uses for message and other persistence.
+
+Using a high performance journal allows outrageous persistence message performance, something not achievable when using a relational database for persistence (although JDBC is still an option if necessary).
+
+Clients, potentially on different physical machines, interact with the broker.
+Three API implementations for messaging at the client side are provided with the broker:
+
+. Core client API.
+This is a simple, intuitive Java API that is aligned with the broker's internal Core.
+It allows more control of broker objects (e.g. direct creation of addresses and queues).
+The Core API also offers a full set of messaging functionality without some of the complexities of JMS.
+. JMS 2.0 client API.
+The standard JMS API is available at the client side.
+This client is also compliant with the Jakarta Messaging 2.0 specification.
+. Jakarta Messaging 3.1 client API.
+This is essentially the same as the JMS 2.0 API.
+The main difference is the package names use `jakarta` instead of `javax`.
+This difference was introduced due to the move from Oracle's Java EE to Eclipse's Jakarta EE.
+
+Other messaging protocols are also supported:
+
+* AMQP 1.0
+* OpenWire
+* MQTT 3.x & 5.0
+* STOMP 1.x
+* HornetQ (for use with HornetQ clients)
+
+JMS semantics are implemented by a JMS facade layer on the client side.
+
+The broker does not "speak" JMS and, in fact, does not know anything about JMS, per se.
+It is protocol agnostic, designed to be used with multiple different protocols.
+
+When a client application uses the JMS API all JMS interactions are translated into operations on the Core client API before being transferred over the wire using the Core protocol.
+
+The broker always just deals with Core API interactions.
+
+== Standalone Broker
+
+The normal stand-alone messaging broker configuration comprises a core messaging broker and a number of protocol managers that provide support for the various protocol mentioned earlier.
+
+The standalone broker configuration uses https://picocli.info/[picocli] for bootstrapping the broker.
+
+For more information on server configuration files see xref:configuration-index.adoc#configuration-reference[Server Configuration].
+
+== Embedded Broker
+
+The broker is designed as a set of simple POJOs so if you have an application that requires messaging functionality internally, but you don't want to expose that as an independent, standalone broker, you can directly instantiate and embed a broker in your own application.
+
+Read more about xref:embedding-artemis.adoc[embedding a broker].
+
+== Integrated with a Java/Jakarta EE application server
+
+A fully functional Java Connector Architecture (JCA) adaptor is provided.
+This enables easy integration with any Java/Jakarta EE (henceforth just "EE") compliant application server or servlet engine.
+
+EE application servers provide Message Driven Beans (MDBs), which are a special type of Enterprise Java Beans (EJBs) that can process messages from sources such as JMS systems or mail systems.
+
+Probably the most common use of an MDB is to consume messages from a JMS messaging system.
+
+According to the EE specification an application server uses a JCA adapter to integrate with a JMS messaging system so it can consume messages for MDBs.
+
+However, the JCA adapter is not only used by the EE application server for _consuming_ messages via MDBs, it is also used when sending message to the JMS messaging system e.g. from inside an EJB or servlet.
+
+When integrating with a JMS messaging system from inside an EE application server it is always recommended that this is done via a JCA adaptor.
+In fact, communicating with a JMS messaging system directly, without using JCA would be illegal according to the EE specification.
+
+The application server's JCA service provides extra functionality such as connection pooling and automatic transaction enlistment, which are desirable when using messaging, say, from inside an EJB.
+It is possible to talk to a JMS messaging system directly from an EJB, MDB or servlet without going through a JCA adapter, but this is not recommended since you will not be able to take advantage of the JCA features, such as caching of JMS sessions, which can result in poor performance.
+
+Note that all communication between EJB sessions or entity beans and Message Driven beans go through the adaptor and not directly to the broker.
+
+The large arrow with the prohibited sign shows an EJB session bean talking directly to the the broker.
+This is not recommended as you'll most likely end up creating a new connection and session every time you want to interact from the EJB, which is an anti-pattern.

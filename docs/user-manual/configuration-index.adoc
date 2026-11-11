@@ -1,0 +1,1459 @@
+= Configuration Reference
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+This section is a quick index for looking up configuration.
+Click on the element name to go to the specific chapter.
+
+== Broker Configuration
+
+=== broker.xml
+
+This is the main core server configuration file which contains the `core` element.
+The `core` element contains the main server configuration.
+
+==== Modularising broker.xml
+
+XML XInclude support is provided in `broker.xml` so that you can break your configuration out into separate files.
+
+To do this ensure the following is defined at the root configuration element.
+
+[,xml]
+----
+xmlns:xi="http://www.w3.org/2001/XInclude"
+----
+
+You can now define include tag's where you want to bring in xml configuration from another file:
+
+[,xml]
+----
+<xi:include href="my-address-settings.xml"/>
+----
+
+You should ensure xml elements in separated files should be namespaced correctly for example if address-settings element was separated, it should have the element namespace defined:
+
+[,xml]
+----
+ <address-settings xmlns="urn:activemq:core">
+----
+
+An example can of this feature can be seen in the test suites:
+
+----
+./artemis-server/src/test/resources/ConfigurationTest-xinclude-config.xml
+----
+
+NOTE: if you use `xmllint` to validate the XML against the schema you should enable xinclude flag when running.
+
+----
+--xinclude
+----
+
+For further information on XInclude see: https://www.w3.org/TR/xinclude/
+
+To disable XML external entity processing use the system property `artemis.disableXxe`, e.g.:
+
+----
+-Dartemis.disableXxe=true
+----
+
+===== Reloading modular configuration files
+
+Certain changes in `broker.xml` can be picked up at runtime as discussed in the xref:config-reload.adoc#configuration-reload[Configuration Reload] chapter.
+Changes made directly to files which are included in `broker.xml` via `xi:include` will not be automatically reloaded.
+For example, if `broker.xml` is including `my-address-settings.xml` and `my-address-settings.xml` is modified those changes won't be reloaded automatically.
+To force a reload in this situation there are 2 main options:
+
+. Use the `reloadConfiguration` management operation on the `ActiveMQServerControl`.
+. Update the timestamp on `broker.xml` using something like the https://en.wikipedia.org/wiki/Touch_%28Unix%29[touch] command.
+The next time the broker inspects `broker.xml` for automatic reload it will see the updated timestamp and trigger a reload of `broker.xml` and all its included files.
+
+=== System properties
+
+It is possible to use System properties to replace some of the configuration properties.
+If you define a System property starting with "brokerconfig." that will be passed along to Bean Utils and the configuration would be replaced.
+
+To define global-max-size=1000000 using a system property you would have to define this property, for example through java arguments:
+
+----
+java -Dbrokerconfig.globalMaxSize=1000000
+----
+
+You can also change the prefix through the `broker.xml` by setting:
+
+----
+<system-property-prefix>yourprefix</system-property-prefix>
+----
+
+This is to help you customize artemis on embedded systems.
+
+=== Broker properties
+
+Broker properties extends the use of properties to allow updates and additions to the broker configuration after any xml has been parsed.
+In the absence of any broker.xml, the hard coded defaults can be modified.
+Internally, any xml configuration is applied to a java bean style configuration object.
+Typically, there are setters for each of the xml attributes.
+However, for properties, the naming convention changes from 'a-b' to 'aB' to reflect the camelCase java naming convention.
+
+Collections need some special treatment to allow additions and reference.
+We utilise the name attribute of configuration entities to find existing entries and when populating new entities, we set the name to match the requested key.
+Removal of configuration from named collections is supported by setting a key value to "-".
+The remove match value can be configured with a property key "remove.value".
+For example, a properties file containing the following keys and values:
+
+----
+securityEnabled=false
+acceptorConfigurations.tcp.factoryClassName=org.apache.activemq.artemis.core.remoting.impl.netty.NettyAcceptorFactory
+acceptorConfigurations.tcp.params.host=localhost
+acceptorConfigurations.tcp.params.port=61616
+----
+
+.would:
+ . disable RBAC security checks
+ . add or modify an acceptor named "tcp" that will use Netty
+ . set the acceptor named "tcp" 'HOST' parameter to localhost
+ . set the acceptor named "tcp" 'PORT' parameter to 61616
+
+=== JAAS
+Broker properties can configure JAAS via the `jaasConfigs` collection, this provides a means to dynamically configure the jaas realms accessed by the broker. The jaas configuration provider will look first for any realm configured in the `jaasConfigs` collection before delegating to the platform defaults.
+For example, to configure the `guestRealm` and use it from the above `tcp` acceptor, configure properties of the form:
+
+----
+acceptorConfigurations.tcp.params.securityDomain=guestRealm
+jaasConfigs.guestRealm.modules.guest.loginModuleClass=org.apache.activemq.artemis.spi.core.security.jaas.GuestLoginModule
+jaasConfigs.guestRealm.modules.guest.controlFlag=required
+----
+==== Usage
+
+The `artemis run` command script supports `--properties <path to properties files comma list>` where properties file paths can be configured.
+If a properties path string ends in a '/' it represents a directory. Any file name matching the regex `.*\.(json|properties)` in that directory is treated as broker configuration.
+
+It is possible to override the default regex filter pattern with a `filter` query parameter on the directory path, e.g: `--properties '/home/x/broker_props/?filter=.*\.custom_props'`.
+
+==== Broker configuration in properties format
+
+The xref:management.adoc#server-management[server management operation] `exportConfigAsProperties` will export the current configuration of a broker as broker properties. Use this to get a better understanding of how properties apply to the broker configuration and how they map from xml.
+
+==== Attribute Names with Dots
+Dots are significant in property keys because they identify the nesting level. If attribute names contain dots those need to be quoted. The quote string is specified via the property `key.surround` and has a default value of the double quote character: `"`.
+
+An address setting, where the address contains dots, would be a typical example where quoting is required:
+----
+addressSettings."Address.Name.With.Dots".expiryAddress=expiredMessages
+----
+
+==== Error reporting
+The free form text format of a java properties file and the inexact mapping from xml attribute to key=value can make it tricky to correctly configure broker properties.
+Properties that don't match or fail to apply are tracked through the status attribute of the broker, visible through the xref:management.adoc#server-management[server management operation] `getStatus`.
+
+More detailed information can also be obtained through debug logging of the `org.apache.activemq.artemis.core.config.impl.ConfigurationImpl` class.
+
+NOTE: The configuration properties are very low level, lower level than xml, which makes them very powerful.
+Any accessible attribute of the internal `org.apache.activemq.artemis.core.config.impl.ConfigurationImpl` objects can be modified.
+With great power one must take great care!
+
+== The core configuration
+
+This describes the root of the XML configuration.
+You will see here also multiple sub-types listed.
+For example on the main config you will have bridges and at the <<bridge-type,list of bridge>> type we will describe the properties for that configuration.
+
+[[regarding-default-values]]
+.Regarding _default_ Values
+****
+The documentation often refers to the _default_ values.
+This is the value of a configuration attribute if it is *not set* (e.g. programmatically, via XML, etc.).
+
+This is worth noting because a `broker.xml` is generated automatically when a xref:using-server.adoc#creating-a-broker-instance[broker instance is created] and this out-of-the-box `broker.xml` may have configuration values which may differ from and override the default values identified here.
+This is relatively rare, but it normally happens when we've discovered that a default is not actually suitable for most use-cases.
+
+Changing the actual default value cannot be done in a minor release as dictated by https://semver.org/[semantic versioning] so we have to wait for a major release to make such changes.
+However, in the mean-time we can address unsuitable defaults by modifying the generated `broker.xml` which maintains backwards compatibility for existing broker instances while giving new deployments an updated configuration.
+
+In general, it's recommended that you consult your specific configuration to know which values will actually be used when the broker is running.
+****
+
+|===
+| Name | Description | Default
+
+| xref:configuring-transports.adoc#acceptors[acceptors]
+| a list of remoting acceptors
+| n/a
+
+| xref:configuring-transports.adoc#acceptors[acceptors.acceptor]
+| Each acceptor is composed for just an URL
+| n/a
+
+| xref:address-model.adoc#basic-manual-configuration[addresses]
+| <<address-type,a list of addresses>>
+| n/a
+
+| xref:address-settings.adoc#address-settings[address-settings]
+| <<address-setting-type,a list of address-setting>>
+| n/a
+
+| xref:ha.adoc#failing-back-to-primary-server[allow-failback]
+| Should stop backup on primary restart.
+| `true`
+
+| xref:amqp.adoc#amqp[amqp-use-core-subscription-naming]
+| If true uses CORE queue naming convention for AMQP.
+| `false`
+
+| xref:connection-ttl.adoc#detecting-dead-connections[async-connection-execution-enabled]
+| If False delivery would be always asynchronous.
+| `true`
+
+| xref:persistence.adoc#persistence[bindings-directory]
+| The folder in use for the bindings folder
+| `data/bindings`
+
+| xref:core-bridges.adoc#core-bridges[bridges]
+| <<bridge-type,a list of core bridges>>
+| n/a
+
+| xref:ha.adoc#high-availability-and-failover[ha-policy]
+| the HA policy of this server
+| none
+
+| xref:clusters.adoc#broadcast-groups[broadcast-groups]
+| <<broadcast-group-type,a list of broadcast-group>>
+| n/a
+
+| xref:amqp-broker-connections.adoc#broker-connections[broker-connections]
+| <<amqp-connection-type,a list of amqp-connection>>
+| n/a
+
+| xref:broker-plugins.adoc#plugin-support[broker-plugins]
+| <<broker-plugin-type,a list of broker-plugins>>
+| n/a
+
+| xref:config-reload.adoc#configuration-reload[configuration-file-refresh-period]
+| The frequency in milliseconds the configuration file is checked for changes
+| 5000
+
+| xref:ha.adoc#replication-configuration[check-for-active-server]
+| Used by a primary server to verify if there are other nodes with the same ID on the topology
+| n/a
+
+| xref:clusters.adoc#configuring-cluster-connections[cluster-connections]
+| <<cluster-connection-type,a list of cluster-connection>>
+| n/a
+
+| xref:clusters.adoc#clusters[cluster-password]
+| Cluster password.
+It applies to all cluster configurations.
+| n/a
+
+| xref:clusters.adoc#clusters[cluster-user]
+| Cluster username.
+It applies to all cluster configurations.
+| n/a
+
+| xref:connection-ttl.adoc#detecting-dead-connections[connection-ttl-override]
+| if set, this will override how long (in ms) to keep a connection alive without receiving a ping.
+-1 disables this setting.
+| -1
+
+| xref:connection-ttl.adoc#detecting-dead-connections[connection-ttl-check-interval]
+| how often (in ms) to check connections for ttl violation.
+| 2000
+
+| xref:configuring-transports.adoc#configuring-the-transport[connectors.connector]
+| The URL for the connector.
+This is a list
+| n/a
+
+| xref:persistence.adoc#persistence[create-bindings-dir]
+| true means that the server will create the bindings directory on start up.
+| `true`
+
+| xref:persistence.adoc#persistence[create-journal-dir]
+| true means that the journal directory will be created.
+| `true`
+
+| xref:clusters.adoc#discovery-groups[discovery-groups]
+| <<discovery-group-type,a list of discovery-group>>
+| n/a
+
+| xref:paging.adoc#max-disk-usage[disk-scan-period]
+| The interval where the disk is scanned for percentual usage.
+| 5000
+
+| xref:diverts.adoc#diverting-and-splitting-message-flows[diverts]
+| <<divert-type,a list of diverts to use>>
+| n/a
+
+| xref:paging.adoc#global-max-size[global-max-size]
+| The amount in bytes before all addresses are considered full.
+| Half of the JVM's `-Xmx`
+
+| xref:paging.adoc#global-max-messages[global-max-messages]
+| Number of messages before all addresses will enter into their Full Policy configured.
+It works in conjunction with global-max-size, being watever value hits its maximum first.
+| `-1`
+
+| xref:graceful-shutdown.adoc#graceful-server-shutdown[graceful-shutdown-enabled]
+| true means that graceful shutdown is enabled.
+| `false`
+
+| xref:graceful-shutdown.adoc#graceful-server-shutdown[graceful-shutdown-timeout]
+| Timeout on waiting for clients to disconnect before server shutdown.
+| -1
+
+| xref:message-grouping.adoc#message-grouping[grouping-handler]
+| <<grouping-handler-type,a message grouping handler>>
+| n/a
+
+| xref:duplicate-detection.adoc#configuring-the-duplicate-id-cache[id-cache-size]
+| The duplicate detection circular cache size.
+| 20000
+
+| xref:management.adoc#configuring-jmx[jmx-domain]
+| the JMX domain used to registered MBeans in the MBeanServer.
+| `org.apache.activemq`
+
+| xref:management.adoc#configuring-jmx[jmx-use-broker-name]
+| whether or not to use the broker name in the JMX properties.
+| `true`
+
+| xref:management.adoc#configuring-jmx[jmx-management-enabled]
+| true means that the management API is available via JMX.
+| `true`
+
+| xref:persistence.adoc#configuring-the-message-journal[journal-buffer-size]
+| The size of the internal buffer on the journal in KB.
+| 490KB
+
+| xref:persistence.adoc#configuring-the-message-journal[journal-buffer-timeout]
+| The Flush timeout for the journal buffer
+| 500000 for ASYNCIO;
+3333333 for NIO
+
+| xref:persistence.adoc#configuring-the-message-journal[journal-compact-min-files]
+| The minimal number of data files before we can start compacting.
+Setting this to 0 means compacting is disabled.
+| 10
+
+| xref:persistence.adoc#configuring-the-message-journal[journal-compact-percentage]
+| The percentage of live data on which we consider compacting the journal.
+| 30
+
+| xref:persistence.adoc#configuring-the-message-journal[journal-directory]
+| the directory to store the journal files in.
+| `data/journal`
+
+| xref:persistence.adoc#configuring-the-message-journal[node-manager-lock-directory]
+| the directory to store the node manager lock file.
+| same of `journal-directory`
+
+| xref:persistence.adoc#configuring-the-message-journal[journal-file-size]
+| the size (in bytes) of each journal file.
+| 10MB
+
+| xref:persistence.adoc#configuring-the-message-journal[journal-lock-acquisition-timeout]
+| how long (in ms) to wait to acquire a file lock on the journal.
+| -1
+
+| xref:persistence.adoc#configuring-the-message-journal[journal-lock-monitor-timeout]
+| how long (in ms) between journal lock health checks.
+| 2000
+
+| xref:persistence.adoc#configuring-the-message-journal[journal-lock-monitor-max-retries]
+| how many consecutive failed lock health checks to tolerate before declaring the lock lost.
+| 0
+
+| xref:persistence.adoc#configuring-the-message-journal[journal-max-io]
+| the maximum number of write requests that can be in the ASYNCIO queue at any one time.
+| 4096 for ASYNCIO;
+1 for NIO;
+ignored for MAPPED
+
+| xref:persistence.adoc#configuring-the-message-journal[journal-file-open-timeout]
+| the length of time in seconds to wait when opening a new journal file before timing out and failing.
+| 5
+
+| xref:persistence.adoc#configuring-the-message-journal[journal-min-files]
+| how many journal files to pre-create.
+| 2
+
+| xref:persistence.adoc#configuring-the-message-journal[journal-pool-files]
+| The upper threshold of the journal file pool, -1 means no Limit.
+The system will create as many files as needed however when reclaiming files it will shrink back to the `journal-pool-files`
+| -1
+
+| xref:persistence.adoc#configuring-the-message-journal[journal-sync-non-transactional]
+| if true wait for non-transaction data to be synced to the journal before returning response to client.
+| `true`
+
+| xref:persistence.adoc#configuring-the-message-journal[journal-sync-transactional]
+| if true wait for transaction data to be synchronized to the journal before returning response to client.
+| `true`
+
+| xref:persistence.adoc#configuring-the-message-journal[journal-type]
+| the type of journal to use.
+| `ASYNCIO`
+
+| xref:data-retention.adoc#data-retention[journal-retention-directory]
+| where to keep retained data including attributes for how long to keep it (`unit` & `period`) and how much to keep (`storage-limit`)
+| n/a
+
+| xref:persistence.adoc#configuring-the-message-journal[journal-datasync]
+| It will use msync/fsync on journal operations.
+| `true`
+
+| journal-device-block-size
+| The size in bytes used by the storage device. This is usually translated as `fstat`/`st_blksize`, and this is a way to bypass the value returned as `st_blksize`.
+| `4096`
+
+| log-journal-write-rate
+| Whether to log messages about the journal write rate.
+| `false`
+
+| xref:large-messages.adoc#large-messages[large-messages-directory]
+| the directory to store large messages.
+| `data/largemessages`
+
+| xref:large-messages.adoc#configuring-the-server[large-message-sync]
+| should sync large messages before closing the file
+| `true`
+
+| log-delegate-factory-class-name
+| *deprecated* the name of the factory class to use for log delegation.
+| n/a
+
+| xref:management.adoc#configuring-management[management-address]
+| the name of the management address to send management messages to.
+| `activemq.management`
+
+| xref:management.adoc#configuring-the-management-notification-address[management-notification-address]
+| the name of the address that consumers bind to receive management notifications.
+| `activemq.notifications`
+
+| xref:masking-passwords.adoc#masking-passwords[mask-password]
+| This option controls whether passwords in server configuration need be masked.
+If set to "true" the passwords are masked.
+| `false`
+
+| xref:ha.adoc#replication-configuration[max-saved-replicated-journals-size]
+| This specifies how many replication backup directories will be kept when server starts as replica.
+-1 Means no Limit;
+0 don't keep a copy at all.
+| 2
+
+| xref:paging.adoc#max-disk-usage[max-disk-usage]
+| The max percentage of data we should use from disks.
+The broker will block while the disk is full.
+Disable by setting `-1`.
+| 90
+
+| xref:paging.adoc#minimum-disk-free[min-disk-free]
+| Min free bytes on disk below which the system blocks or fails clients.
+Supports byte notation like "K", "MB", "GB", etc.
+Will override `max-disk-usage` if both are set.
+Disable by setting `-1`.
+| `-1`
+
+| xref:perf-tuning.adoc#performance-tuning[memory-measure-interval]
+| frequency to sample JVM memory in ms (or -1 to disable memory sampling).
+| -1
+
+| xref:perf-tuning.adoc#performance-tuning[memory-warning-threshold]
+| Percentage of available memory which will trigger a warning log.
+| 25
+
+| xref:management.adoc#message-counters[message-counter-enabled]
+| true means that message counters are enabled.
+| `false`
+
+| xref:management.adoc#message-counters[message-counter-max-day-history]
+| how many days to keep message counter history.
+| 10
+
+| xref:management.adoc#message-counters[message-counter-sample-period]
+| the sample period (in ms) to use for message counters.
+| 10000
+
+| xref:message-expiry.adoc#configuring-the-expiry-reaper-thread[message-expiry-scan-period]
+| how often (in ms) to scan for expired messages.
+| 30000
+
+| xref:message-expiry.adoc#configuring-the-expiry-reaper-thread[message-expiry-thread-priority]
+| *deprecated* the priority of the thread expiring messages.
+| 3
+
+| xref:metrics.adoc#metrics[metrics-plugin]
+| <<metrics-plugin-type,a plugin to export metrics>>
+| n/a
+
+| xref:address-settings.adoc#address-settings[address-queue-scan-period]
+| how often (in ms) to scan for addresses & queues that should be removed.
+| 30000
+
+| name
+| node name;
+used in topology notifications if set.
+| n/a
+
+| xref:masking-passwords.adoc#masking-passwords[password-codec]
+| the name of the class (and optional configuration properties) used to decode masked passwords.
+Only valid when `mask-password` is `true`.
+| n/a
+
+| xref:paging.adoc#paging[page-max-concurrent-io]
+| The max number of concurrent reads allowed on paging.
+| 5
+
+| xref:paging.adoc#page-sync-timeout[page-sync-timeout]
+| The time in nanoseconds a page will be synced.
+| 3333333 for ASYNCIO;
+`journal-buffer-timeout` for NIO
+
+| xref:paging.adoc#paging[read-whole-page]
+| If true the whole page would be read, otherwise just seek and read while getting message.
+| `false`
+
+| xref:paging.adoc#configuration[paging-directory]
+| the directory to store paged messages in.
+| `data/paging`
+
+| xref:undelivered-messages.adoc#delivery-count-persistence[persist-delivery-count-before-delivery]
+| True means that the delivery count is persisted before delivery.
+False means that this only happens after a message has been cancelled.
+| `false`
+
+| xref:undelivered-messages.adoc#delivery-count-persistence[max-redelivery-records]
+| Maximum number of records the system will store for redeliveries.
+In most cases this should be set to '1'.
+| `10`
+
+| xref:persistence.adoc#zero-persistence[persistence-enabled]
+| true means that the server will use the file based journal for persistence.
+| `true`
+
+| xref:duplicate-detection.adoc#configuring-the-duplicate-id-cache[persist-id-cache]
+| true means that ID's are persisted to the journal.
+| `true`
+
+| queues
+| *deprecated* <<address-type,use addresses>>
+| n/a
+
+| xref:intercepting-operations.adoc#intercepting-operations[remoting-incoming-interceptors]
+| a list of <class-name/> elements with the names of classes to use for intercepting incoming remoting packets
+| n/a
+
+| xref:intercepting-operations.adoc#intercepting-operations[remoting-outgoing-interceptors]
+| a list of <class-name/> elements with the names of classes to use for intercepting outgoing remoting packets
+| n/a
+
+| resolveProtocols
+| Use https://docs.oracle.com/javase/tutorial/ext/basics/spi.html[ServiceLoader] to load protocol modules.
+| `true`
+
+| xref:resource-limits.adoc#resource-limits[resource-limit-settings]
+| <<resource-limit-type,a list of resource-limits>>
+| n/a
+
+| xref:thread-pooling.adoc#scheduled-thread-pool[scheduled-thread-pool-max-size]
+| Maximum number of threads to use for the scheduled thread pool.
+| 5
+
+| xref:security.adoc#basic-configuration[security-enabled]
+| true means that security is enabled.
+| `true`
+
+| xref:security.adoc#caching-security-operations[security-invalidation-interval]
+| how long (in ms) to wait before invalidating the security cache.
+| 10000
+
+| xref:security.adoc#caching-security-operations[authentication-cache-size]
+| how large to make the authentication cache
+| 1000
+
+| xref:security.adoc#caching-security-operations[authorization-cache-size]
+| how large to make the authorization cache
+| 1000
+
+| system-property-prefix
+| Prefix for replacing configuration settings using Bean Utils.
+| n/a
+
+| internal-naming-prefix
+| the prefix used when naming the internal queues and addresses required for implementing certain behaviours.
+| `$.activemq.internal.`
+
+| xref:security.adoc#tracking-the-validated-user[populate-validated-user]
+| whether or not to add the name of the validated user to the messages that user sends.
+| `false`
+
+| xref:security.adoc#tracking-the-validated-user[reject-empty-validated-user]
+| true means that the server will not allow any message that doesn't have a validated user, in JMS this is `JMSXUserID`
+| `false`
+
+| xref:security.adoc#role-based-security-for-addresses[security-settings]
+| <<security-setting-type,a list of security-setting>>.
+| n/a
+
+| xref:thread-pooling.adoc#thread-management[thread-pool-max-size]
+| Maximum number of threads to use for the thread pool.
+-1 means 'no limits'.
+| 30
+
+| xref:transaction-config.adoc#resource-manager-configuration[transaction-timeout]
+| how long (in ms) before a transaction can be removed from the resource manager after create time.
+| 300000
+
+| xref:transaction-config.adoc#resource-manager-configuration[transaction-timeout-scan-period]
+| how often (in ms) to scan for timeout transactions.
+| 1000
+
+| xref:wildcard-routing.adoc#routing-messages-with-wild-cards[wild-card-routing-enabled]
+| true means that the server supports wild card routing.
+| `true`
+
+| xref:network-isolation.adoc#network-isolation-split-brain[network-check-NIC]
+| the NIC (Network Interface Controller) to be used on InetAddress.isReachable.
+| n/a
+
+| xref:network-isolation.adoc#network-isolation-split-brain[network-check-URL-list]
+| the list of http URIs to be used to validate the network.
+| n/a
+
+| xref:network-isolation.adoc#network-isolation-split-brain[network-check-list]
+| the list of pings to be used on ping or InetAddress.isReachable.
+| n/a
+
+| xref:network-isolation.adoc#network-isolation-split-brain[network-check-period]
+| a frequency in milliseconds to how often we should check if the network is still up.
+| 10000
+
+| xref:network-isolation.adoc#network-isolation-split-brain[network-check-timeout]
+| a timeout used in milliseconds to be used on the ping.
+| 1000
+
+| xref:network-isolation.adoc#network-isolation-split-brain[network-check-ping-command]
+| the command used to oping IPV4 addresses.
+| n/a
+
+| xref:network-isolation.adoc#network-isolation-split-brain[network-check-ping6-command]
+| the command used to oping IPV6 addresses.
+| n/a
+
+| xref:critical-analysis.adoc#critical-analysis-of-the-broker[critical-analyzer]
+| enable or disable the critical analysis.
+| `true`
+
+| xref:critical-analysis.adoc#critical-analysis-of-the-broker[critical-analyzer-timeout]
+| timeout used to do the critical analysis.
+| 120000 ms
+
+| xref:critical-analysis.adoc#critical-analysis-of-the-broker[critical-analyzer-check-period]
+| time used to check the response times.
+| 0.5 * `critical-analyzer-timeout`
+
+| xref:critical-analysis.adoc#critical-analysis-of-the-broker[critical-analyzer-policy]
+| should the server log, be halted or shutdown upon failures.
+| `LOG`
+
+| resolve-protocols
+| if true then the broker will make use of any protocol managers that are in available on the classpath, otherwise only the core protocol will be available, unless in embedded mode where users can inject their own protocol managers.
+| `true`
+
+| xref:resource-limits.adoc#resource-limits[resource-limit-settings]
+| <<resource-limit-type,a list of resource-limit>>.
+| n/a
+
+| server-dump-interval
+| interval to log server specific information (e.g. memory usage etc).
+| -1
+
+| store
+| the store type used by the server.
+| n/a
+
+| xref:wildcard-syntax.adoc#wildcard-syntax[wildcard-addresses]
+| parameters to configure wildcard address matching format.
+| n/a
+
+| [[view-permission-method-match-pattern]] view-permission-method-match-pattern
+| parameter to configure the regular expression pattern to match xref:management.adoc#fine-grained-rbac-on-management-messages[management] or xref:management.adoc#jmx-authorization-in-broker-xml[JMX] operations that require the 'view' permission
+in your security-settings.
+| ``^(get\|is\|count\|list\|browse\|query).*$``
+
+| [[management-message-rbac]] management-message-rbac
+| parameter to enable security-settings RBAC on xref:management.adoc#fine-grained-rbac-on-management-messages[management messages] sent to the management address.
+| false
+
+| [[management-rbac-prefix]] management-rbac-prefix
+| parameter to configure the prefix for security-settings match addresses to control RBAC on xref:management.adoc#jmx-authorization-in-broker-xml[JMX MBean operations] and optionally on xref:management.adoc#fine-grained-rbac-on-management-messages[management messages]
+| mops (shorthand for management operations)
+
+| xref:address-model.adoc#uuid-resources[uuid-namespace]
+| the namespace to use for looking up address & security settings for resources named with a UUID
+| n/a
+
+| xref:mqtt.adoc#automatic-subscription-clean-up[mqtt-session-scan-interval]
+| how often (in ms) to scan for expired MQTT sessions
+| `5000`
+
+| xref:mqtt.adoc#persistent-subscriptions[mqtt-session-state-persistence-timeout]
+| how long (in ms) to wait to persist MQTT session state
+| `5000`
+
+| xref:federation.adoc#federation[federations]
+| a list of federation elements
+| n/a
+
+| xref:connection-routers.adoc#connection-routers[connection-routers]
+| a list of connection-router elements
+| n/a
+
+| mirror-ack-manager-queue-attempts
+| The number of times a mirror target would retry an acknowledgement on the queue before scanning page files for the message.
+| `5`
+
+| mirror-ack-manager-page-attempts
+| The number of times a mirror target would retry an acknowledgement on paging.
+| `2`
+
+| mirror-ack-manager-retry-delay
+| Period in milliseconds for which retries are going to be exercised.
+| `100`
+
+| mirror-page-transaction
+| Should Mirror use Page Transactions When target destinations is paging?
+When a target queue on the mirror is paged, the mirror will not record a page transaction for every message.
+The default is `false`, and the overhead of paged messages will be smaller, but there is a possibility of eventual duplicates in case of interrupted communication between the mirror source and target.
+If you set this to `true` there will be a record stored on the journal for the page-transaction additionally to the record in the page store.
+| `false`
+
+| xref:management.adoc#suppressing-session-notifications[suppress-session-notifications]
+| Whether to suppress `SESSION_CREATED` and `SESSION_CLOSED` notifications.
+Set to `true` to reduce notification overhead.
+However, these are required to enforce unique client ID utilization in a cluster for MQTT clients.
+| `false`
+
+| xref:address-settings.adoc#literal-matches[literal-match-markers]
+| The characters that mark a "literal" match.
+A literal match means the setting(s) will only apply to the exact match regardless of wildcards.
+If this setting is not omitted then it must be two characters - the start marker and the end marker.
+| n/a
+|===
+
+== address-setting type
+
+|===
+| Name | Description | Default
+
+| xref:address-model.adoc#address-model[match]
+| The filter to apply to the setting
+| n/a
+
+| xref:undelivered-messages.adoc#message-redelivery-and-undelivered-messages[dead-letter-address]
+| Dead letter address
+| n/a
+
+| xref:undelivered-messages.adoc#message-redelivery-and-undelivered-messages[auto-create-dead-letter-resources]
+| Whether or not to auto-create dead-letter address and/or queue
+| `false`
+
+| xref:undelivered-messages.adoc#message-redelivery-and-undelivered-messages[dead-letter-queue-prefix]
+| Prefix to use for auto-created dead-letter queues
+| `DLQ.`
+
+| xref:undelivered-messages.adoc#message-redelivery-and-undelivered-messages[dead-letter-queue-suffix]
+| Suffix to use for auto-created dead-letter queues
+| `` (empty)
+
+| xref:message-expiry.adoc#message-expiry[expiry-address]
+| Expired messages address
+| n/a
+
+| xref:message-expiry.adoc#message-expiry[expiry-delay]
+| Expiration time override;
+-1 don't override
+| -1
+
+| xref:undelivered-messages.adoc#message-redelivery-and-undelivered-messages[redelivery-delay]
+| Time to wait before redelivering a message
+| 0
+
+| xref:undelivered-messages.adoc#message-redelivery-and-undelivered-messages[redelivery-delay-multiplier]
+| Multiplier to apply to the `redelivery-delay`
+| 1.0
+
+| xref:undelivered-messages.adoc#message-redelivery-and-undelivered-messages[redelivery-collision-avoidance-factor]
+| an additional factor used to calculate an adjustment to the `redelivery-delay` (up or down)
+| 0.0
+
+| xref:undelivered-messages.adoc#message-redelivery-and-undelivered-messages[max-redelivery-delay]
+| Max value for the `redelivery-delay`
+| 10 * `redelivery-delay`
+
+| xref:undelivered-messages.adoc#message-redelivery-and-undelivered-messages[max-delivery-attempts]
+| Number of retries before dead letter address
+| 10
+
+| xref:paging.adoc#paging[max-size-bytes]
+| Max size a queue can be before invoking `address-full-policy`
+| -1
+
+| xref:paging.adoc#paging[max-size-bytes-reject-threshold]
+| Used with `BLOCK`, the max size an address can reach before messages are rejected;
+works in combination with `max-size-bytes` *for AMQP clients only*.
+| -1
+
+| xref:paging.adoc#paging[page-size-bytes]
+| Size of each file on page
+| 10485760
+
+| xref:address-model.adoc#address-model[address-full-policy]
+| What to do when a queue reaches `max-size-bytes`
+| `PAGE`
+
+| xref:address-model.adoc#address-model[message-counter-history-day-limit]
+| Days to keep message counter data
+| 0
+
+| xref:last-value-queues.adoc#last-value-queues[last-value-queue]
+| *deprecated* Queue is a last value queue;
+see `default-last-value-queue` instead
+| `false`
+
+| xref:last-value-queues.adoc#last-value-queues[default-last-value-queue]
+| `last-value` value if none is set on the queue
+| `false`
+
+| xref:last-value-queues.adoc#last-value-queues[default-last-value-key]
+| `last-value-key` value if none is set on the queue
+| `null`
+
+| xref:exclusive-queues.adoc#exclusive-queues[default-exclusive-queue]
+| `exclusive` value if none is set on the queue
+| `false`
+
+| xref:exclusive-queues.adoc#exclusive-queues[default-non-destructive]
+| `non-destructive` value if none is set on the queue
+| `false`
+
+| xref:exclusive-queues.adoc#exclusive-queues[default-consumers-before-dispatch]
+| `consumers-before-dispatch` value if none is set on the queue
+| 0
+
+| xref:exclusive-queues.adoc#exclusive-queues[default-delay-before-dispatch]
+| `delay-before-dispatch` value if none is set on the queue
+| -1
+
+| xref:clusters.adoc#clusters[redistribution-delay]
+| Timeout before redistributing values after no consumers
+| -1
+
+| xref:address-model.adoc#address-model[send-to-dla-on-no-route]
+| Forward messages to DLA when no queues subscribing
+| `false`
+
+| xref:slow-consumers.adoc#detecting-slow-consumers[slow-consumer-threshold]
+| Min rate of msgs/sec consumed before a consumer is considered "slow"
+| -1
+
+| xref:slow-consumers.adoc#detecting-slow-consumers[slow-consumer-policy]
+| What to do when "slow" consumer is detected
+| `NOTIFY`
+
+| xref:slow-consumers.adoc#detecting-slow-consumers[slow-consumer-check-period]
+| How often to check for "slow" consumers
+| 5
+
+| xref:address-settings.adoc#address-settings[auto-create-jms-queues]
+| *deprecated* Create JMS queues automatically;
+see `auto-create-queues` & `auto-create-addresses`
+| `true`
+
+| xref:address-settings.adoc#address-settings[auto-delete-jms-queues]
+| *deprecated* Delete JMS queues automatically;
+see `auto-create-queues` & `auto-create-addresses`
+| `true`
+
+| xref:address-settings.adoc#address-settings[auto-create-jms-topics]
+| *deprecated* Create JMS topics automatically;
+see `auto-create-queues` & `auto-create-addresses`
+| `true`
+
+| xref:address-settings.adoc#address-settings[auto-delete-jms-topics]
+| *deprecated* Delete JMS topics automatically;
+see `auto-create-queues` & `auto-create-addresses`
+| `true`
+
+| xref:address-settings.adoc#address-settings[auto-create-queues]
+| Create queues automatically
+| `true`
+
+| xref:address-settings.adoc#address-settings[auto-delete-queues]
+| Delete auto-created queues automatically
+| `true`
+
+| xref:address-settings.adoc#address-settings[auto-delete-created-queues]
+| Delete created queues automatically
+| `false`
+
+| xref:address-settings.adoc#address-settings[auto-delete-queues-delay]
+| Delay for deleting auto-created queues
+| 0
+
+| xref:address-settings.adoc#address-settings[auto-delete-queues-message-count]
+| Message count the queue must be at or below before it can be auto deleted
+| 0
+
+| xref:config-reload.adoc#configuration-reload[config-delete-queues]
+| How to deal with queues deleted from XML at runtime
+| `OFF`
+
+| xref:address-settings.adoc#address-settings[auto-create-addresses]
+| Create addresses automatically
+| `true`
+
+| xref:address-settings.adoc#address-settings[auto-delete-addresses]
+| Delete auto-created addresses automatically
+| `true`
+
+| xref:address-settings.adoc#address-settings[auto-delete-addresses-delay]
+| Delay for deleting auto-created addresses
+| 0
+
+| xref:config-reload.adoc#configuration-reload[config-delete-addresses]
+| How to deal with addresses deleted from XML at runtime
+| `OFF`
+
+| xref:config-reload.adoc#configuration-reload[config-delete-diverts]
+| How to deal with diverts deleted from XML at runtime
+| `OFF`
+
+| xref:address-settings.adoc#address-settings[management-browse-page-size]
+| Number of messages a management resource can browse
+| 200
+
+
+| xref:address-settings.adoc#address-settings[initial-queue-buffer-size]
+| The number of elements in the intermediate message buffer allocated for each queue
+| 8192
+
+| xref:address-model.adoc#non-durable-subscription-queue[default-purge-on-no-consumers]
+| `purge-on-no-consumers` value if none is set on the queue
+| `false`
+
+| xref:address-model.adoc#shared-durable-subscription-queue-using-max-consumers[default-max-consumers]
+| `max-consumers` value if none is set on the queue
+| -1
+
+| xref:address-model.adoc#routing-type[default-queue-routing-type]
+| Routing type for auto-created queues if the type can't be otherwise determined
+| `MULTICAST`
+
+| xref:address-model.adoc#routing-type[default-address-routing-type]
+| Routing type for auto-created addresses if the type can't be otherwise determined
+| `MULTICAST`
+
+| xref:ring-queues.adoc#ring-queue[default-ring-size]
+| The ring-size applied to queues without an explicit `ring-size` configured
+| `-1`
+
+| xref:retroactive-addresses.adoc#retroactive-addresses[retroactive-message-count]
+| the number of messages to preserve for future queues created on the matching address
+| `0`
+
+| xref:duplicate-detection.adoc#configuring-the-duplicate-id-cache[id-cache-size]
+| The duplicate detection circular cache size
+| Inherits from global `id-cache-size`
+|===
+
+== bridge type
+
+|===
+| Name | Description | Default
+
+| xref:core-bridges.adoc#core-bridges[name]
+| unique name
+| n/a
+
+| xref:core-bridges.adoc#core-bridges[queue-name]
+| name of queue that this bridge consumes from
+| n/a
+
+| xref:core-bridges.adoc#core-bridges[forwarding-address]
+| address to forward to.
+If omitted original address is used
+| n/a
+
+| xref:core-bridges.adoc#core-bridges[ha]
+| whether this bridge supports fail-over
+| `false`
+
+| xref:core-bridges.adoc#core-bridges[filter]
+| optional core filter expression
+| n/a
+
+| xref:core-bridges.adoc#core-bridges[transformer-class-name]
+| optional name of transformer class
+| n/a
+
+| xref:core-bridges.adoc#core-bridges[min-large-message-size]
+| Limit before message is considered large.
+| 100KB
+
+| xref:connection-ttl.adoc#detecting-dead-connections[check-period]
+| How often to check for https://en.wikipedia.org/wiki/Time_to_live[TTL] violation.
+-1 means disabled.
+| 30000
+
+| xref:connection-ttl.adoc#detecting-dead-connections[connection-ttl]
+| https://en.wikipedia.org/wiki/Time_to_live[TTL] for the Bridge.
+This should be greater than the ping period.
+| 60000
+
+| xref:core-bridges.adoc#core-bridges[retry-interval]
+| period (in ms) between successive retries.
+| 2000
+
+| xref:core-bridges.adoc#core-bridges[retry-interval-multiplier]
+| multiplier to apply to successive retry intervals.
+| 1
+
+| xref:core-bridges.adoc#core-bridges[max-retry-interval]
+| Limit to the retry-interval growth.
+| 2000
+
+| xref:core-bridges.adoc#core-bridges[reconnect-attempts]
+| maximum number of retry attempts.
+| -1 (no limit)
+
+| xref:core-bridges.adoc#core-bridges[use-duplicate-detection]
+| forward duplicate detection headers?
+| `true`
+
+| xref:core-bridges.adoc#core-bridges[confirmation-window-size]
+| number of bytes before confirmations are sent.
+| 1MB
+
+| xref:core-bridges.adoc#core-bridges[producer-window-size]
+| Producer flow control size on the bridge.
+| -1 (disabled)
+
+| xref:core-bridges.adoc#core-bridges[user]
+| Username for the bridge, the default is the cluster username.
+| n/a
+
+| xref:core-bridges.adoc#core-bridges[password]
+| Password for the bridge, default is the cluster password.
+| n/a
+
+| xref:core-bridges.adoc#core-bridges[reconnect-attempts-same-node]
+| Number of retries before trying another node.
+| 10
+
+| xref:core-bridges.adoc#core-bridges[routing-type]
+| how to set the routing-type on the bridged message
+| `PASS`
+
+| xref:core-bridges.adoc#core-bridges[concurrency]
+| Concurrency of the bridge
+| 1
+|===
+
+== broadcast-group type
+
+|===
+| Name | Type
+
+| xref:clusters.adoc#clusters[name]
+| unique name
+
+| xref:clusters.adoc#clusters[local-bind-address]
+| Local bind address that the datagram socket is bound to.
+
+| xref:clusters.adoc#clusters[local-bind-port]
+| Local port to which the datagram socket is bound to.
+
+| xref:clusters.adoc#clusters[group-address]
+| Multicast address to which the data will be broadcast.
+
+| xref:clusters.adoc#clusters[group-port]
+| UDP port number used for broadcasting.
+
+| xref:clusters.adoc#clusters[broadcast-period]
+| Period in milliseconds between consecutive broadcasts.
+Default=2000.
+
+| xref:clusters.adoc#clusters[jgroups-file]
+| Name of JGroups configuration file.
+
+| xref:clusters.adoc#clusters[jgroups-channel]
+| Name of JGroups Channel.
+
+| xref:clusters.adoc#clusters[connector-ref]
+| The `connector` to broadcast.
+|===
+
+== cluster-connection type
+
+|===
+| Name | Description | Default
+
+| xref:clusters.adoc#clusters[name]
+| unique name
+| n/a
+
+| xref:clusters.adoc#clusters[address]
+| name of the address this cluster connection applies to
+| n/a
+
+| xref:clusters.adoc#clusters[connector-ref]
+| Name of the connector reference to use.
+| n/a
+
+| xref:connection-ttl.adoc#detecting-dead-connections[check-period]
+| The period (in milliseconds) used to check if the cluster connection has failed to receive pings from another server
+| 30000
+
+| xref:connection-ttl.adoc#detecting-dead-connections[connection-ttl]
+| Timeout for TTL.
+| 60000
+
+| xref:large-messages.adoc#large-messages[min-large-message-size]
+| Messages larger than this are considered large-messages.
+| 100KB
+
+| xref:clusters.adoc#clusters[call-timeout]
+| Time(ms) before giving up on blocked calls.
+| 30000
+
+| xref:clusters.adoc#clusters[retry-interval]
+| period (in ms) between successive retries.
+| 500
+
+| xref:clusters.adoc#clusters[retry-interval-multiplier]
+| multiplier to apply to the retry-interval.
+| 1
+
+| xref:clusters.adoc#clusters[max-retry-interval]
+| Maximum value for retry-interval.
+| 2000
+
+| xref:clusters.adoc#clusters[reconnect-attempts]
+| How many attempts should be made to reconnect after failure.
+| -1
+
+| xref:clusters.adoc#clusters[use-duplicate-detection]
+| should duplicate detection headers be inserted in forwarded messages?
+| `true`
+
+| xref:clusters.adoc#clusters[message-load-balancing]
+| how should messages be load balanced?
+| `OFF`
+
+| xref:clusters.adoc#clusters[max-hops]
+| maximum number of hops cluster topology is propagated.
+| 1
+
+| xref:client-failover.adoc#reconnect-to-the-same-server[confirmation-window-size]
+| The size (in bytes) of the window used for confirming data from the server connected to.
+| 1048576
+
+| xref:clusters.adoc#clusters[producer-window-size]
+| Flow Control for the Cluster connection bridge.
+| -1 (disabled)
+
+| xref:clusters.adoc#configuring-cluster-connections[call-failover-timeout]
+| How long to wait for a reply if in the middle of a fail-over.
+-1 means wait forever.
+| -1
+
+| xref:clusters.adoc#clusters[notification-interval]
+| how often the cluster connection will notify the cluster of its existence right after joining the cluster.
+| 1000
+
+| xref:clusters.adoc#clusters[notification-attempts]
+| how many times this cluster connection will notify the cluster of its existence right after joining the cluster
+| 2
+
+| xref:clusters.adoc#clusters[scale-down-reaper-period]
+| how often (in milliseconds) the store-and-forward reaper reclaims orphaned store-and-forward queues left by a scaled-down or departed node; `<= 0` disables it
+| 1000
+
+| xref:clusters.adoc#clusters[scale-down-reaper-grace-ticks]
+| the number of consecutive reaper runs an orphaned store-and-forward queue must stay idle before it is reclaimed
+| 10
+
+| xref:clusters.adoc#clusters[scale-down-reaper-max-attempts]
+| maximum number of reaping attempts for an orphaned store-and-forward queue before the reaper gives up and retains the queue (it is not deleted); `<= 0` means unlimited
+| 30
+|===
+
+== discovery-group type
+
+|===
+| Name | Description
+
+| xref:clusters.adoc#clusters[name]
+| unique name
+
+| xref:clusters.adoc#clusters[group-address]
+| Multicast IP address of the group to listen on
+
+| xref:clusters.adoc#clusters[group-port]
+| UDP port number of the multi cast group
+
+| xref:clusters.adoc#clusters[jgroups-file]
+| Name of a JGroups configuration file.
+If specified, the server uses JGroups for discovery.
+
+| xref:clusters.adoc#clusters[jgroups-channel]
+| Name of a JGroups Channel.
+If specified, the server uses the named channel for discovery.
+
+| xref:clusters.adoc#clusters[refresh-timeout]
+| Period the discovery group waits after receiving the last broadcast from a particular server before removing that servers connector pair entry from its list.
+Default=10000
+
+| xref:clusters.adoc#clusters[local-bind-address]
+| local bind address that the datagram socket is bound to
+
+| xref:clusters.adoc#clusters[local-bind-port]
+| local port to which the datagram socket is bound to.
+Default=-1
+
+| initial-wait-timeout
+| time to wait for an initial broadcast to give us at least one node in the cluster.
+Default=10000
+|===
+
+== divert type
+
+|===
+| Name | Description
+
+| xref:diverts.adoc#diverting-and-splitting-message-flows[name]
+| unique name
+
+| xref:diverts.adoc#diverting-and-splitting-message-flows[transformer-class-name]
+| an optional class name of a transformer
+
+| xref:diverts.adoc#diverting-and-splitting-message-flows[exclusive]
+| whether this is an exclusive divert.
+Default=false
+
+| xref:diverts.adoc#diverting-and-splitting-message-flows[routing-name]
+| the routing name for the divert
+
+| xref:diverts.adoc#diverting-and-splitting-message-flows[address]
+| the address this divert will divert from
+
+| xref:diverts.adoc#diverting-and-splitting-message-flows[forwarding-address]
+| the forwarding address for the divert
+
+| xref:diverts.adoc#diverting-and-splitting-message-flows[filter]
+| optional core filter expression
+
+| xref:diverts.adoc#diverting-and-splitting-message-flows[routing-type]
+| how to set the routing-type on the diverted message.
+Default=`STRIP`
+|===
+
+== address type
+
+|===
+| Name | Description |
+
+| name
+| unique name
+| n/a
+
+| xref:address-model.adoc#anycast[anycast]
+| list of anycast <<queue-type,queues>>
+|
+
+| xref:address-model.adoc#multicast[multicast]
+| list of multicast <<queue-type,queues>>
+|
+|===
+
+== queue type
+
+|===
+| Name | Description | Default
+
+| name
+| unique name
+| n/a
+
+| filter
+| optional core filter expression
+| n/a
+
+| durable
+| whether the queue is durable (persistent).
+| `true`
+
+| user
+| the name of the user to associate with the creation of the queue
+| n/a
+
+| xref:address-model.adoc#shared-durable-subscription-queue-using-max-consumers[max-consumers]
+| the max number of consumers allowed on this queue
+| -1 (no max)
+
+| xref:address-model.adoc#non-durable-subscription-queue[purge-on-no-consumers]
+| whether or not to delete all messages and prevent routing when no consumers are connected
+| `false`
+
+| xref:exclusive-queues.adoc#exclusive-queues[exclusive]
+| only deliver messages to one of the connected consumers
+| `false`
+
+| xref:last-value-queues.adoc#last-value-queues[last-value]
+| use last-value semantics
+| `false`
+
+| xref:ring-queues.adoc#ring-queue[ring-size]
+| the size this queue should maintain according to ring semantics
+| based on `default-ring-size` `address-setting`
+
+| consumers-before-dispatch
+| number of consumers required before dispatching messages
+| 0
+
+| delay-before-dispatch
+| milliseconds to wait for `consumers-before-dispatch` to be met before dispatching messages anyway
+| -1 (wait forever)
+|===
+
+== security-setting type
+
+|===
+| Name | Description
+
+| xref:security.adoc#authentication-authorization[match]
+| xref:wildcard-syntax.adoc#wildcard-syntax[address expression]
+
+| xref:security.adoc#authentication-authorization[permission]
+|
+
+| xref:security.adoc#authentication-authorization[permission.type]
+| the type of permission
+
+| xref:security.adoc#authentication-authorization[permission.roles]
+| a comma-separated list of roles to apply the permission to
+
+| xref:security.adoc#authentication-authorization[role-mapping]
+| A simple role mapping that can be used to map roles from external authentication providers (i.e. LDAP) to internal roles
+
+| xref:security.adoc#authentication-authorization[role-mapping.from]
+| The external role which should be mapped
+
+| xref:security.adoc#authentication-authorization[role-mapping.to]
+| The internal role which should be assigned to the authenticated user
+|===
+
+== broker-plugin type
+
+|===
+| Name | Description
+
+| xref:broker-plugins.adoc#registering-a-plugin[property]
+| properties to configure a plugin
+
+| xref:broker-plugins.adoc#registering-a-plugin[class-name]
+| the name of the broker plugin class to instantiate
+|===
+
+== metrics-plugin type
+
+|===
+| Name | Description
+
+| xref:metrics.adoc#metrics[property]
+| properties to configure a plugin
+
+| xref:metrics.adoc#metrics[class-name]
+| the name of the metrics plugin class to instantiate
+|===
+
+== resource-limit type
+
+|===
+| Name | Description | Default
+
+| xref:resource-limits.adoc#configuring-limits-via-resource-limit-settings[match]
+| the name of the user to whom the limits should be applied
+| n/a
+
+| xref:resource-limits.adoc#configuring-limits-via-resource-limit-settings[max-connections]
+| how many connections are allowed by the matched user
+| -1 (no max)
+
+| xref:resource-limits.adoc#configuring-limits-via-resource-limit-settings[max-queues]
+| how many queues can be created by the matched user
+| -1 (no max)
+|===
+
+== grouping-handler type
+
+|===
+| Name | Description | Default
+
+| xref:message-grouping.adoc#clustered-grouping[name]
+| A unique name
+| n/a
+
+| xref:message-grouping.adoc#clustered-grouping[type]
+| `LOCAL` or `REMOTE`
+| n/a
+
+| xref:message-grouping.adoc#clustered-grouping[address]
+| A reference to a `cluster-connection` `address`
+| n/a
+
+| xref:message-grouping.adoc#clustered-grouping[timeout]
+| How long to wait for a decision
+| 5000
+
+| xref:message-grouping.adoc#clustered-grouping[group-timeout]
+| How long a group binding will be used.
+| -1 (disabled)
+
+| xref:message-grouping.adoc#clustered-grouping[reaper-period]
+| How often the reaper will be run to check for timed out group bindings.
+Only valid for `LOCAL` handlers.
+| 30000
+|===
+
+== amqp-connection type
+
+|===
+| Name | Description | Default
+
+| xref:amqp-broker-connections.adoc#amqp-server-connections[uri]
+| AMQP broker connection URI (required)
+| n/a
+
+| xref:amqp-broker-connections.adoc#amqp-server-connections[name]
+| A unique name
+| n/a
+
+| xref:amqp-broker-connections.adoc#amqp-server-connections[user]
+| Broker authentication user (optional)
+| n/a
+
+| xref:amqp-broker-connections.adoc#amqp-server-connections[password]
+| Broker authentication password (optional)
+| n/a
+
+| xref:amqp-broker-connections.adoc#amqp-server-connections[reconnect-attempts]
+| How many attempts should be made to reconnect after failure.
+| -1 (infinite)
+
+| xref:amqp-broker-connections.adoc#amqp-server-connections[auto-start]
+| Broker connection starts automatically with broker
+| true
+|===

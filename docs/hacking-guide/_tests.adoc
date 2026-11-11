@@ -1,0 +1,105 @@
+= Tests
+
+== Running Tests
+
+To run the unit tests:
+[,sh]
+----
+$ mvn -Ptests test
+----
+Generating reports from unit tests:
+[,sh]
+----
+$ mvn install site
+----
+Running tests individually
+[,sh]
+----
+$ mvn -Ptests -DfailIfNoTests=false -Dtest=<test-name> test
+----
+where `<test-name>` is the name of the Test class without its package name.
+
+== Writing Tests
+
+The broker is comprised of POJOs so it's simple to configure and run a broker instance and test particular functionality.
+Even complex test-cases involving multiple clustered brokers are relatively easy to write.
+Almost every test in the  test-suite follows this pattern - configure broker, start broker, test functionality, stop broker.
+
+The test-suite uses JUnit to manage test execution and life-cycle.
+Most tests extend https://github.com/apache/artemis/blob/main/artemis-server/src/test/java/org/apache/activemq/artemis/tests/util/ActiveMQTestBase.java[`org.apache.activemq.artemis.tests.util.ActiveMQTestBase`] which contains JUnit setup and tear-down methods as well as a wealth of utility functions to configure, start, manage, and stop brokers as well as perform other common tasks.
+
+Check out https://github.com/apache/artemis/blob/main/tests/integration-tests/src/test/java/org/apache/activemq/artemis/tests/integration/SimpleTest.java[`org.apache.activemq.artemis.tests.integration.SimpleTest`].
+It's a very simple test-case that extends `org.apache.activemq.artemis.tests.util.ActiveMQTestBase` and uses its methods to configure a server, run a test, and then `super.tearDown()` cleans it up once the test completes.
+The test-case  includes comments to explain everything.
+As the name implies, this is a simple test-case that demonstrates the most basic functionality of the test-suite.
+A simple test like this takes less than a second to run on modern hardware.
+
+Although `org.apache.activemq.artemis.tests.integration.SimpleTest` is simple it could be simpler still by extending https://github.com/apache/artemis/blob/main/artemis-server/src/test/java/org/apache/activemq/artemis/tests/util/SingleServerTestBase.java[`org.apache.activemq.artemis.tests.util.SingleServerTestBase`].
+This class does all the setup of a simple server automatically and provides the test-case with a `ServerLocator`,  `ClientSessionFactory`, and `ClientSession` instance.
+https://github.com/apache/artemis/blob/main/tests/integration-tests/src/test/java/org/apache/activemq/artemis/tests/integration/SingleServerSimpleTest.java[`org.apache.activemq.artemis.tests.integration.SingleServerSimpleTest`] is an example based on `org.apache.activemq.artemis.tests.integration.SimpleTest` but extends `org.apache.activemq.artemis.tests.util.SingleServerTestBase` which eliminates all the setup and class variables which are provided by `SingleServerTestBase` itself.
+
+== Writing Web Tests
+
+The broker has a web console based on https://github.com/hawtio/hawtio[hawtio] and the `smoke-tests` are used to test it.
+For instance, the https://github.com/apache/artemis/blob/main/tests/smoke-tests/src/test/java/org/apache/activemq/artemis/tests/smoke/console/ConsoleTest.java[ConsoleTest] checks the web console using the https://github.com/SeleniumHQ/selenium[selenium framework].
+The tests can be executed on the Chrome and Firefox browsers by using a remote server, local browsers or https://www.testcontainers.org/modules/webdriver_containers[testcontainers].
+To configure the browsers on which execute the tests set the `webdriver.browsers` property with the comma-separated list of the browsers, i.e. `-Dwebdriver.browsers=chrome,firefox`.
+To use a remote server set the `webdriver.remote.server` property with the URL of the server, ie -Dwebdriver.remote.server=http://localhost:4444/wd/hub To use your local Google Chrome browser download the https://chromedriver.chromium.org/[WebDriver for Chrome] and set the `webdriver.chrome.driver` property with the WebDriver path, ie `-Dwebdriver.chrome.driver=/home/artemis/chromedriver_linux64/chromedriver`.
+To use your local Firefox browser download the https://github.com/mozilla/geckodriver/[WebDriver for Firefox] and set the `webdriver.gecko.driver` property with the WebDriver path, ie `-Dwebdriver.gecko.driver=/home/artemis/geckodriver-linux64/geckodriver`.
+To use https://www.testcontainers.org/modules/webdriver_containers[testcontainers] install docker.
+
+== Keys for writing good tests
+
+=== Use logger.debug
+
+* Please use `logger.debug` instead of `logger.info`.
++
+On your classes, import the following:
++
+[,java]
+----
+public class MyTest {
+private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger($CLASS_NAME$.class);
+
+     @Test
+     public void test() {
+            log.debug("Log only what you need please!");
+     }
+}
+----
+
+* Please do not use `System.out.println()`
+
+As a general rule, only use `System.out` if you really intend an error to be on the reporting.
+Debug information should be called through `logger.debug`.
+
+=== Avoid leaks
+
+An important task for any test-case is to clean up all the resources it creates when it runs.
+This includes the server instance itself and any resources created to connect to it (e.g. instances of `ServerLocator`, `ClientSessionFactory`, `ClientSession`, etc.).
+This task is typically completed in the test's `tearDown()` method.
+However, `ActiveMQTestBase`  (and other classes which extend it) simplifies this process.
+As https://github.com/apache/artemis/blob/main/tests/integration-tests/src/test/java/org/apache/activemq/artemis/tests/integration/SimpleTest.java[`org.apache.activemq.artemis.tests.integration.SimpleTest`] demonstrates, there are several methods you can use when creating your test which will ensure proper clean up _automatically_ when the test is torn down.
+These include:
+
+* All the overloaded `org.apache.activemq.artemis.tests.util.ActiveMQTestBase.createServer(..)` methods.
+If you choose _not_ to use one of these methods to create your `ActiveMQServer` instance then use the `addServer(ActiveMQServer)`  method to add the instance to the test-suite's internal resource ledger.
+
+* Methods from `org.apache.activemq.artemis.tests.util.ActiveMQTestBase` to create a `ServerLocator` like  `createInVMNonHALocator` and `createNettyNonHALocator`.
+If you choose _not_ to use one of these methods then use  `addServerLocator(ServerLocator)` to add the locator to the test-suite's internal resource ledger.
+
+* `org.apache.activemq.artemis.tests.util.ActiveMQTestBase.createSessionFactory(ServerLocator)` for creating your session factory.
+If you choose _not_ to use this method then use `org.apache.activemq.artemis.tests.util.ActiveMQTestBase.addSessionFactory` to add the factory to the test-suite's internal resource ledger.
+
+=== Create configurations
+
+There are numerous methods in `org.apache.activemq.artemis.tests.util.ActiveMQTestBase` to create a configuration.
+These methods are named like create&#42;Config(..).
+Each one creates a slightly different configuration but there is a lot of  overlap between them.
+
+In any case, `org.apache.activemq.artemis.core.config.Configuration` is a https://en.wikipedia.org/wiki/Fluent_interface[_fluent_] interface so it's easy to customize however you need.
+
+=== Look at other test-cases
+
+If you need ideas on how to configure something or test something try looking through the test-suite at other test-cases which may be similar.
+This is one of the best ways to learn how the test-suite works and how you can leverage the testing infrastructure to test your particular case.

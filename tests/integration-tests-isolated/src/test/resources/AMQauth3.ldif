@@ -1,0 +1,275 @@
+## ---------------------------------------------------------------------------
+## Licensed to the Apache Software Foundation (ASF) under one or more
+## contributor license agreements.  See the NOTICE file distributed with
+## this work for additional information regarding copyright ownership.
+## The ASF licenses this file to You under the Apache License, Version 2.0
+## (the "License"); you may not use this file except in compliance with
+## the License.  You may obtain a copy of the License at
+##
+## http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions and
+## limitations under the License.
+## ---------------------------------------------------------------------------
+
+dn: dc=example,dc=com
+dc: example
+objectclass: domain
+objectclass: top
+
+dn: ou=ActiveMQ,dc=example,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: ActiveMQ
+
+dn: ou=users,dc=example,dc=com
+objectclass: organizationalUnit
+objectclass: top
+ou: users
+
+dn: uid=user1,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: user1
+sn: user1
+givenName: user1
+uid: user1
+userPassword: secret
+
+dn: uid=user2,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: user2
+sn: user2
+givenName: user2
+uid: user2
+userPassword: secret
+
+dn: uid=user3,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: user3
+sn: user3
+givenName: user3
+uid: user3
+userPassword: secret
+
+dn: uid=user4,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: user4
+sn: user4
+givenName: user4
+uid: user4
+userPassword: secret
+
+dn: uid=amq,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: amq
+sn: amq
+givenName: amq
+uid: amq
+userPassword: secret
+
+dn: uid=adminUser,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: adminUser
+sn: adminUser
+givenName: adminUser
+uid: adminUser
+userPassword: secret
+
+dn: ou=roles,dc=example,dc=com
+objectclass: organizationalUnit
+objectclass: top
+ou: roles
+
+dn: cn=team1,ou=roles,dc=example,dc=com
+objectClass: groupOfUniqueNames
+objectClass: top
+cn: team1
+uniqueMember: uid=user1,ou=users,dc=example,dc=com
+
+dn: cn=team2,ou=roles,dc=example,dc=com
+objectClass: groupOfUniqueNames
+objectClass: top
+cn: team2
+uniqueMember: uid=user2,ou=users,dc=example,dc=com
+
+dn: cn=team3,ou=roles,dc=example,dc=com
+objectClass: groupOfUniqueNames
+objectClass: top
+cn: team3
+uniqueMember: uid=user3,ou=users,dc=example,dc=com
+
+dn: cn=team4,ou=roles,dc=example,dc=com
+objectClass: groupOfUniqueNames
+objectClass: top
+cn: team4
+uniqueMember: uid=user4,ou=users,dc=example,dc=com
+
+dn: cn=amq,ou=roles,dc=example,dc=com
+objectClass: groupOfUniqueNames
+objectClass: top
+cn: amq
+uniqueMember: uid=amq,ou=users,dc=example,dc=com
+
+dn: cn=admin,ou=roles,dc=example,dc=com
+objectClass: groupOfUniqueNames
+objectClass: top
+cn: admin
+uniqueMember: uid=adminUser,ou=users,dc=example,dc=com
+
+dn: ou=destinations,ou=ActiveMQ,dc=example,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: destinations
+
+dn: ou=queues,ou=destinations,ou=ActiveMQ,dc=example,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: queues
+
+dn: cn=$,ou=queues,ou=destinations,ou=ActiveMQ,dc=example,dc=com
+objectClass: applicationProcess
+objectClass: top
+cn: $
+
+dn: cn=read,cn=$,ou=queues,ou=destinations,ou=ActiveMQ,dc=example,dc=com
+objectClass: groupOfUniqueNames
+objectClass: top
+cn: read
+uniqueMember: cn=admin,ou=roles,dc=example,dc=com
+
+dn: cn=write,cn=$,ou=queues,ou=destinations,ou=ActiveMQ,dc=example,dc=com
+objectClass: groupOfUniqueNames
+objectClass: top
+cn: write
+uniqueMember: cn=admin,ou=roles,dc=example,dc=com
+
+dn: cn=admin,cn=$,ou=queues,ou=destinations,ou=ActiveMQ,dc=example,dc=com
+objectClass: groupOfUniqueNames
+objectClass: top
+cn: admin
+uniqueMember: cn=admin,ou=roles,dc=example,dc=com
+
+dn: cn=project1.$,ou=queues,ou=destinations,ou=ActiveMQ,dc=example,dc=com
+objectClass: applicationProcess
+objectClass: top
+cn: project1.$
+
+dn: cn=read,cn=project1.$,ou=queues,ou=destinations,ou=ActiveMQ,dc=example,dc=com
+objectClass: groupOfUniqueNames
+objectClass: top
+cn: read
+uniqueMember: cn=amq,ou=roles,dc=example,dc=com
+uniqueMember: cn=team1,ou=roles,dc=example,dc=com
+
+dn: cn=write,cn=project1.$,ou=queues,ou=destinations,ou=ActiveMQ,dc=example,dc=com
+objectClass: groupOfUniqueNames
+objectClass: top
+cn: write
+uniqueMember: cn=amq,ou=roles,dc=example,dc=com
+uniqueMember: cn=team1,ou=roles,dc=example,dc=com
+
+dn: cn=admin,cn=project1.$,ou=queues,ou=destinations,ou=ActiveMQ,dc=example,dc=com
+objectClass: groupOfUniqueNames
+objectClass: top
+cn: admin
+uniqueMember: cn=amq,ou=roles,dc=example,dc=com
+uniqueMember: cn=team1,ou=roles,dc=example,dc=com
+
+dn: cn=project2.$,ou=queues,ou=destinations,ou=ActiveMQ,dc=example,dc=com
+objectClass: applicationProcess
+objectClass: top
+cn: project2.$
+
+dn: cn=read,cn=project2.$,ou=queues,ou=destinations,ou=ActiveMQ,dc=example,dc=com
+objectClass: groupOfUniqueNames
+objectClass: top
+cn: read
+uniqueMember: cn=amq,ou=roles,dc=example,dc=com
+uniqueMember: cn=team2,ou=roles,dc=example,dc=com
+
+dn: cn=write,cn=project2.$,ou=queues,ou=destinations,ou=ActiveMQ,dc=example,dc=com
+objectClass: groupOfUniqueNames
+objectClass: top
+cn: write
+uniqueMember: cn=amq,ou=roles,dc=example,dc=com
+uniqueMember: cn=team2,ou=roles,dc=example,dc=com
+
+dn: cn=admin,cn=project2.$,ou=queues,ou=destinations,ou=ActiveMQ,dc=example,dc=com
+objectClass: groupOfUniqueNames
+objectClass: top
+cn: admin
+uniqueMember: cn=amq,ou=roles,dc=example,dc=com
+uniqueMember: cn=team2,ou=roles,dc=example,dc=com
+
+dn: cn=project3.$,ou=queues,ou=destinations,ou=ActiveMQ,dc=example,dc=com
+objectClass: applicationProcess
+objectClass: top
+cn: project3.$
+
+dn: cn=read,cn=project3.$,ou=queues,ou=destinations,ou=ActiveMQ,dc=example,dc=com
+objectClass: groupOfUniqueNames
+objectClass: top
+cn: read
+uniqueMember: cn=amq,ou=roles,dc=example,dc=com
+uniqueMember: cn=team3,ou=roles,dc=example,dc=com
+
+dn: cn=write,cn=project3.$,ou=queues,ou=destinations,ou=ActiveMQ,dc=example,dc=com
+objectClass: groupOfUniqueNames
+objectClass: top
+cn: write
+uniqueMember: cn=amq,ou=roles,dc=example,dc=com
+uniqueMember: cn=team3,ou=roles,dc=example,dc=com
+
+dn: cn=admin,cn=project3.$,ou=queues,ou=destinations,ou=ActiveMQ,dc=example,dc=com
+objectClass: groupOfUniqueNames
+objectClass: top
+cn: admin
+uniqueMember: cn=amq,ou=roles,dc=example,dc=com
+uniqueMember: cn=team3,ou=roles,dc=example,dc=com
+
+dn: cn=project4.$,ou=queues,ou=destinations,ou=ActiveMQ,dc=example,dc=com
+objectClass: applicationProcess
+objectClass: top
+cn: project4.$
+
+dn: cn=read,cn=project4.$,ou=queues,ou=destinations,ou=ActiveMQ,dc=example,dc=com
+objectClass: groupOfUniqueNames
+objectClass: top
+cn: read
+uniqueMember: cn=amq,ou=roles,dc=example,dc=com
+uniqueMember: cn=team4,ou=roles,dc=example,dc=com
+
+dn: cn=write,cn=project4.$,ou=queues,ou=destinations,ou=ActiveMQ,dc=example,dc=com
+objectClass: groupOfUniqueNames
+objectClass: top
+cn: write
+uniqueMember: cn=amq,ou=roles,dc=example,dc=com
+uniqueMember: cn=team4,ou=roles,dc=example,dc=com
+
+dn: cn=admin,cn=project4.$,ou=queues,ou=destinations,ou=ActiveMQ,dc=example,dc=com
+objectClass: groupOfUniqueNames
+objectClass: top
+cn: admin
+uniqueMember: cn=amq,ou=roles,dc=example,dc=com
+uniqueMember: cn=team4,ou=roles,dc=example,dc=com

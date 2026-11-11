@@ -1,0 +1,48 @@
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="urn:org:jgroups"
+        xsi:schemaLocation="urn:org:jgroups http://www.jgroups.org/schema/jgroups.xsd">
+    <TCP bind_addr="${jgroups.bind_addr:site_local}"
+         bind_port="${jgroups.bind_port:7800}"
+         external_addr="${jgroups.external_addr}"
+         external_port="${jgroups.external_port}"
+         thread_pool.min_threads="0"
+         thread_pool.max_threads="200"
+         thread_pool.keep_alive_time="30000"/>
+    <RED/>
+
+    <FILE_PING location="./target/tmp/amqtest.ping.dir"/>
+    <MERGE3  min_interval="10000"
+             max_interval="30000"/>
+    <FD_SOCK2/>
+    <FD_ALL3 timeout="40000" interval="5000" />
+    <VERIFY_SUSPECT2 timeout="1500"  />
+    <BARRIER />
+    <pbcast.NAKACK2 use_mcast_xmit="false" />
+    <UNICAST3 />
+    <pbcast.STABLE desired_avg_gossip="50000"
+                   max_bytes="4M"/>
+    <pbcast.GMS print_local_addr="true" join_timeout="2000"/>
+    <UFC max_credits="2M"
+         min_threshold="0.4"/>
+    <MFC max_credits="2M"
+         min_threshold="0.4"/>
+    <FRAG2 frag_size="60K"  />
+    <!--RSVP resend_interval="2000" timeout="10000"/-->
+    <pbcast.STATE_TRANSFER/>
+</config>

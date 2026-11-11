@@ -1,0 +1,25 @@
+      <diverts>
+         <divert name="Test.Div0">
+            <address>Div</address>
+            <forwarding-address>Div.0</forwarding-address>
+            <filter string="div=0"/>
+            <exclusive>BOOLEAN_VALUE</exclusive>
+         </divert>
+         <divert name="Test.Div1">
+            <address>Div</address>
+            <forwarding-address>Div.1</forwarding-address>
+            <filter string="div=1"/>
+            <exclusive>BOOLEAN_VALUE</exclusive>
+         </divert>
+         <divert name="Test.Div2">
+            <address>Div</address>
+            <forwarding-address>Div.2</forwarding-address>
+            <filter string="div=2"/>
+            <exclusive>BOOLEAN_VALUE</exclusive>
+         </divert>
+         <divert name="Test.NonExisting">
+            <address>Div</address>
+            <forwarding-address>Div.IDontExist</forwarding-address>
+            <exclusive>BOOLEAN_VALUE</exclusive>
+         </divert>
+      </diverts>

@@ -1,0 +1,177 @@
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<configuration
+        xmlns="urn:activemq"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:xi="http://www.w3.org/2001/XInclude"
+        xsi:schemaLocation="urn:activemq ../../../../artemis-server/src/main/resources/schema/artemis-server.xsd">
+   <core xmlns="urn:activemq:core">
+      <name>SomeNameForUseOnTheApplicationServer</name>
+      <resolve-protocols>false</resolve-protocols>
+      <persistence-enabled>false</persistence-enabled>
+      <scheduled-thread-pool-max-size>12345</scheduled-thread-pool-max-size>
+      <thread-pool-max-size>54321</thread-pool-max-size>
+      <security-enabled>false</security-enabled>
+      <graceful-shutdown-enabled>true</graceful-shutdown-enabled>
+      <graceful-shutdown-timeout>12345</graceful-shutdown-timeout>
+      <security-invalidation-interval>5423</security-invalidation-interval>
+      <authentication-cache-size>333</authentication-cache-size>
+      <authorization-cache-size>444</authorization-cache-size>
+      <journal-lock-acquisition-timeout>7654</journal-lock-acquisition-timeout>
+      <wild-card-routing-enabled>true</wild-card-routing-enabled>
+      <management-address>Giraffe</management-address>
+      <management-notification-address>Whatever</management-notification-address>
+      <cluster-user>Frog</cluster-user>
+      <cluster-password>32a10275cf4ab4e9</cluster-password>
+      <password-codec>org.apache.activemq.artemis.utils.DefaultSensitiveStringCodec</password-codec>
+      <mask-password>true</mask-password>
+      <log-delegate-factory-class-name>com.foo</log-delegate-factory-class-name>
+      <jmx-management-enabled>false</jmx-management-enabled>
+      <jmx-notification-enabled>false</jmx-notification-enabled>
+      <jmx-domain>gro.qtenroh</jmx-domain>
+      <message-counter-enabled>true</message-counter-enabled>
+      <message-counter-sample-period>123456</message-counter-sample-period>
+      <message-counter-max-day-history>5</message-counter-max-day-history>
+      <connection-ttl-override>12345</connection-ttl-override>
+      <async-connection-execution-enabled>false</async-connection-execution-enabled>
+      <transaction-timeout>98765</transaction-timeout>
+      <transaction-timeout-scan-period>56789</transaction-timeout-scan-period>
+      <message-expiry-scan-period>10111213</message-expiry-scan-period>
+      <message-expiry-thread-priority>8</message-expiry-thread-priority>
+      <address-queue-scan-period>25000</address-queue-scan-period>
+      <id-cache-size>127</id-cache-size>
+      <journal-datasync>false</journal-datasync>
+      <persist-id-cache>true</persist-id-cache>
+      <populate-validated-user>true</populate-validated-user>
+      <reject-empty-validated-user>false</reject-empty-validated-user>
+      <mqtt-session-scan-interval>123456</mqtt-session-scan-interval>
+      <mqtt-session-state-persistence-timeout>567890</mqtt-session-state-persistence-timeout>
+      <mqtt-subscription-persistence-enabled>false</mqtt-subscription-persistence-enabled>
+      <connection-ttl-check-interval>98765</connection-ttl-check-interval>
+      <configuration-file-refresh-period>1234567</configuration-file-refresh-period>
+      <temporary-queue-namespace>TEMP</temporary-queue-namespace>
+      <uuid-namespace>UUID</uuid-namespace>
+      <global-max-size>1234567</global-max-size>
+      <global-max-size-percent-of-jvm-max-memory>30</global-max-size-percent-of-jvm-max-memory>
+      <max-disk-usage>37</max-disk-usage>
+      <disk-scan-period>123</disk-scan-period>
+      <critical-analyzer-policy>HALT</critical-analyzer-policy>
+      <critical-analyzer-check-period>333</critical-analyzer-check-period>
+      <critical-analyzer-timeout>777</critical-analyzer-timeout>
+      <critical-analyzer>false</critical-analyzer>
+      <literal-match-markers>()</literal-match-markers>
+
+      <mirror-ack-manager-queue-attempts>111</mirror-ack-manager-queue-attempts>
+      <mirror-ack-manager-page-attempts>222</mirror-ack-manager-page-attempts>
+      <mirror-ack-manager-retry-delay>333</mirror-ack-manager-retry-delay>
+      <mirror-ack-manager-warn-unacked>true</mirror-ack-manager-warn-unacked>
+      <mirror-page-transaction>true</mirror-page-transaction>
+
+
+      <xi:include href="${xincludePath}/ConfigurationTest-xinclude-schema-config-remoting-incoming-interceptors.xml"/>
+      <xi:include href="${xincludePath}/ConfigurationTest-xinclude-schema-config-remoting-outgoing-interceptors.xml"/>
+      <persist-delivery-count-before-delivery>true</persist-delivery-count-before-delivery>
+
+      <xi:include href="${xincludePath}/ConfigurationTest-xinclude-schema-config-connectors.xml"/>
+
+      <xi:include href="${xincludePath}/ConfigurationTest-xinclude-schema-config-acceptors.xml"/>
+
+      <xi:include href="${xincludePath}/ConfigurationTest-xinclude-schema-config-broadcast-groups.xml"/>
+
+      <xi:include href="${xincludePath}/ConfigurationTest-xinclude-schema-config-discovery-groups.xml"/>
+
+      <xi:include href="${xincludePath}/ConfigurationTest-xinclude-schema-config-diverts.xml"/>
+
+      <xi:include href="${xincludePath}/ConfigurationTest-xinclude-schema-config-connection-routers.xml"/>
+
+      <amqp-use-core-subscription-naming>true</amqp-use-core-subscription-naming>
+      <!-- queues element is deprecated, modular include not supported -->
+      <queues>
+         <queue name="queue1">
+            <address>address1</address>
+            <filter string="color='red'"/>
+            <durable>false</durable>
+         </queue>
+         <queue name="queue2">
+            <address>address2</address>
+            <filter string="color='blue'"/>
+            <durable>false</durable>
+         </queue>
+      </queues>
+
+      <xi:include href="${xincludePath}/ConfigurationTest-xinclude-schema-config-bridges.xml"/>
+
+      <xi:include href="${xincludePath}/ConfigurationTest-xinclude-schema-config-metrics.xml"/>
+
+      <xi:include href="${xincludePath}/ConfigurationTest-xinclude-schema-config-ha-policy.xml"/>
+
+      <xi:include href="${xincludePath}/ConfigurationTest-xinclude-schema-config-cluster-connections.xml"/>
+
+      <xi:include href="${xincludePath}/ConfigurationTest-xinclude-schema-config-broker-connections.xml"/>
+
+      <xi:include href="${xincludePath}/ConfigurationTest-xinclude-schema-config-grouping-handler.xml"/>
+
+      <paging-directory>pagingdir</paging-directory>
+      <bindings-directory>somedir</bindings-directory>
+      <create-bindings-dir>false</create-bindings-dir>
+      <page-max-concurrent-io>17</page-max-concurrent-io>
+      <read-whole-page>true</read-whole-page>
+      <journal-directory>somedir2</journal-directory>
+      <journal-retention-directory unit="DAYS" period="365" storage-limit="10G">history</journal-retention-directory>
+      <create-journal-dir>false</create-journal-dir>
+      <journal-type>NIO</journal-type>
+      <journal-buffer-timeout>1000</journal-buffer-timeout>
+      <journal-buffer-size>10000</journal-buffer-size>
+      <journal-sync-transactional>false</journal-sync-transactional>
+      <journal-sync-non-transactional>true</journal-sync-non-transactional>
+      <log-journal-write-rate>true</log-journal-write-rate>
+      <journal-file-size>12345678</journal-file-size>
+      <journal-min-files>100</journal-min-files>
+      <journal-compact-percentage>33</journal-compact-percentage>
+      <journal-compact-min-files>123</journal-compact-min-files>
+      <journal-max-io>56546</journal-max-io>
+      <journal-file-open-timeout>9876</journal-file-open-timeout>
+      <journal-device-block-size>777</journal-device-block-size>
+      <server-dump-interval>5000</server-dump-interval>
+      <memory-warning-threshold>95</memory-warning-threshold>
+      <memory-measure-interval>54321</memory-measure-interval>
+      <large-messages-directory>largemessagesdir</large-messages-directory>
+      <network-check-list>127.0.0.1</network-check-list>
+      <network-check-NIC>some-nick</network-check-NIC>
+      <network-check-period>123</network-check-period>
+      <network-check-timeout>321</network-check-timeout>
+      <network-check-URL-list>www.apache.org</network-check-URL-list>
+      <network-check-ping-command>ping-four</network-check-ping-command>
+      <network-check-ping6-command>ping-six</network-check-ping6-command>
+
+      <xi:include href="${xincludePath}/ConfigurationTest-xinclude-schema-config-security-settings.xml"/>
+
+      <xi:include href="${xincludePath}/ConfigurationTest-xinclude-schema-config-address-settings.xml"/>
+
+      <xi:include href="${xincludePath}/ConfigurationTest-xinclude-schema-config-resource-limit-settings.xml"/>
+
+      <xi:include href="${xincludePath}/ConfigurationTest-xinclude-schema-config-connector-services.xml"/>
+
+      <xi:include href="${xincludePath}/ConfigurationTest-xinclude-schema-config-addresses.xml"/>
+
+      <xi:include href="${xincludePath}/ConfigurationTest-xinclude-schema-config-broker-plugins.xml"/>
+
+      <xi:include href="${xincludePath}/ConfigurationTest-xinclude-schema-config-store.xml"/>
+
+      <xi:include href="${xincludePath}/ConfigurationTest-xinclude-schema-config-federations.xml"/>
+   </core>
+</configuration>

@@ -1,0 +1,67 @@
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<bridges xmlns="urn:activemq:core">
+   <bridge name="bridge1">
+      <queue-name>queue1</queue-name>
+      <forwarding-address>bridge-forwarding-address1</forwarding-address>
+      <filter string="sku > 1"/>
+      <transformer-class-name>org.foo.BridgeTransformer</transformer-class-name>
+      <min-large-message-size>4M</min-large-message-size>
+      <check-period>31</check-period>
+      <connection-ttl>370</connection-ttl>
+      <retry-interval>3</retry-interval>
+      <retry-interval-multiplier>0.2</retry-interval-multiplier>
+      <max-retry-interval>10002</max-retry-interval>
+      <reconnect-attempts>2</reconnect-attempts>
+      <failover-on-server-shutdown>false</failover-on-server-shutdown>
+      <use-duplicate-detection>true</use-duplicate-detection>
+      <confirmation-window-size>1G</confirmation-window-size>
+      <producer-window-size>444</producer-window-size>
+      <routing-type>STRIP</routing-type>
+      <static-connectors>
+         <connector-ref>connector1</connector-ref>
+      </static-connectors>
+   </bridge>
+   <bridge name="bridge2">
+      <queue-name>queue2</queue-name>
+      <forwarding-address>bridge-forwarding-address2</forwarding-address>
+      <producer-window-size>555k</producer-window-size>
+      <discovery-group-ref discovery-group-name="dg1"/>
+   </bridge>
+   <bridge name="bridge3">
+      <queue-name>queue3</queue-name>
+      <forwarding-address>bridge-forwarding-address2</forwarding-address>
+      <transformer>
+         <class-name>org.foo.BridgeTransformer3</class-name>
+         <property key="bridgeTransformerKey1" value="bridgeTransformerValue1"/>
+         <property key="bridgeTransformerKey2" value="bridgeTransformerValue2"/>
+      </transformer>
+      <producer-window-size>555k</producer-window-size>
+      <pending-ack-timeout>123456</pending-ack-timeout>
+      <discovery-group-ref discovery-group-name="dg1"/>
+      <client-id>myClientID</client-id>
+   </bridge>
+   <bridge name="bridge4">
+      <queue-name>queue3</queue-name>
+      <forwarding-address>bridge-forwarding-address2</forwarding-address>
+      <confirmation-window-size>-1</confirmation-window-size>
+      <producer-window-size>-1</producer-window-size>
+      <static-connectors>
+         <connector-ref>connector1</connector-ref>
+      </static-connectors>
+   </bridge>
+</bridges>

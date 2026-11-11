@@ -1,0 +1,867 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.activemq.artemis.tests.integration.client;
+
+import java.lang.invoke.MethodHandles;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.apache.activemq.artemis.api.core.QueueConfiguration;
+import org.apache.activemq.artemis.api.core.RoutingType;
+import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.api.core.client.ClientConsumer;
+import org.apache.activemq.artemis.api.core.client.ClientMessage;
+import org.apache.activemq.artemis.api.core.client.ClientProducer;
+import org.apache.activemq.artemis.api.core.client.ClientSession;
+import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
+import org.apache.activemq.artemis.api.core.client.ServerLocator;
+import org.apache.activemq.artemis.core.config.Configuration;
+import org.apache.activemq.artemis.core.server.ActiveMQServer;
+import org.apache.activemq.artemis.core.server.ActiveMQServers;
+import org.apache.activemq.artemis.core.server.impl.AddressInfo;
+import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
+import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
+import org.apache.activemq.artemis.utils.Wait;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+public class WildCardRoutingTest extends ActiveMQTestBase {
+
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+   private ActiveMQServer server;
+   private ServerLocator locator;
+   private ClientSession clientSession;
+   private ClientSessionFactory sf;
+
+   @Test
+   public void testBasicWildcardRouting() throws Exception {
+      SimpleString addressAB = SimpleString.of("a.b");
+      SimpleString addressAC = SimpleString.of("a.c");
+      SimpleString address = SimpleString.of("a.*");
+      SimpleString queueName1 = SimpleString.of("Q1");
+      SimpleString queueName2 = SimpleString.of("Q2");
+      SimpleString queueName = SimpleString.of("Q");
+      clientSession.createQueue(QueueConfiguration.of(queueName1).setAddress(addressAB).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName2).setAddress(addressAC).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName).setAddress(address).setDurable(false));
+      ClientProducer producer = clientSession.createProducer(addressAB);
+      ClientProducer producer2 = clientSession.createProducer(addressAC);
+      ClientConsumer clientConsumer = clientSession.createConsumer(queueName);
+      clientSession.start();
+      producer.send(createTextMessage(clientSession, "m1"));
+      producer2.send(createTextMessage(clientSession, "m2"));
+      ClientMessage m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m1", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m2", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receiveImmediate();
+      assertNull(m);
+   }
+
+   @Test
+   public void testBasicWildcardRoutingQueuesDontExist() throws Exception {
+      SimpleString addressAB = SimpleString.of("a.b");
+      SimpleString addressAC = SimpleString.of("a.c");
+      SimpleString address = SimpleString.of("a.*");
+      SimpleString queueName = SimpleString.of("Q");
+      clientSession.createQueue(QueueConfiguration.of(queueName).setAddress(address).setDurable(false));
+      ClientProducer producer = clientSession.createProducer(addressAB);
+      ClientProducer producer2 = clientSession.createProducer(addressAC);
+      ClientConsumer clientConsumer = clientSession.createConsumer(queueName);
+      clientSession.start();
+      producer.send(createTextMessage(clientSession, "m1"));
+      producer2.send(createTextMessage(clientSession, "m2"));
+      ClientMessage m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m1", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m2", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receiveImmediate();
+      assertNull(m);
+      clientConsumer.close();
+      clientSession.deleteQueue(queueName);
+
+      assertEquals(0, server.getPostOffice().getBindingsForAddress(addressAB).getBindings().size());
+      assertEquals(0, server.getPostOffice().getBindingsForAddress(addressAC).getBindings().size());
+      assertEquals(0, server.getPostOffice().getBindingsForAddress(address).getBindings().size());
+   }
+
+   @Test
+   public void testBasicWildcardRoutingQueuesDontExist2() throws Exception {
+      SimpleString addressAB = SimpleString.of("a.b");
+      SimpleString addressAC = SimpleString.of("a.c");
+      SimpleString address = SimpleString.of("a.*");
+      SimpleString queueName = SimpleString.of("Q");
+      SimpleString queueName2 = SimpleString.of("Q2");
+      clientSession.createQueue(QueueConfiguration.of(queueName).setAddress(address).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName2).setAddress(address).setDurable(false));
+      ClientProducer producer = clientSession.createProducer(addressAB);
+      ClientProducer producer2 = clientSession.createProducer(addressAC);
+      ClientConsumer clientConsumer = clientSession.createConsumer(queueName);
+      clientSession.start();
+      producer.send(createTextMessage(clientSession, "m1"));
+      producer2.send(createTextMessage(clientSession, "m2"));
+      ClientMessage m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m1", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m2", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receiveImmediate();
+      assertNull(m);
+      clientConsumer.close();
+      clientSession.deleteQueue(queueName);
+
+      assertEquals(1, server.getPostOffice().getBindingsForAddress(addressAB).getBindings().size());
+      assertEquals(1, server.getPostOffice().getBindingsForAddress(addressAC).getBindings().size());
+      assertEquals(1, server.getPostOffice().getBindingsForAddress(address).getBindings().size());
+
+      clientSession.deleteQueue(queueName2);
+
+      assertEquals(0, server.getPostOffice().getBindingsForAddress(addressAB).getBindings().size());
+      assertEquals(0, server.getPostOffice().getBindingsForAddress(addressAC).getBindings().size());
+      assertEquals(0, server.getPostOffice().getBindingsForAddress(address).getBindings().size());
+   }
+
+   @Test
+   public void testBasicWildcardRoutingWithHash() throws Exception {
+      SimpleString addressAB = SimpleString.of("a.b");
+      SimpleString addressAC = SimpleString.of("a.c");
+      SimpleString address = SimpleString.of("a.#");
+      SimpleString queueName1 = SimpleString.of("Q1");
+      SimpleString queueName2 = SimpleString.of("Q2");
+      SimpleString queueName = SimpleString.of("Q");
+      clientSession.createQueue(QueueConfiguration.of(queueName1).setAddress(addressAB).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName2).setAddress(addressAC).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName).setAddress(address).setDurable(false));
+      ClientProducer producer = clientSession.createProducer(addressAB);
+      ClientProducer producer2 = clientSession.createProducer(addressAC);
+      ClientConsumer clientConsumer = clientSession.createConsumer(queueName);
+      clientSession.start();
+      producer.send(createTextMessage(clientSession, "m1"));
+      producer2.send(createTextMessage(clientSession, "m2"));
+      ClientMessage m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m1", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m2", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receiveImmediate();
+      assertNull(m);
+   }
+
+   @Test
+   public void testWildcardRoutingQueuesAddedAfter() throws Exception {
+      SimpleString addressAB = SimpleString.of("a.b");
+      SimpleString addressAC = SimpleString.of("a.c");
+      SimpleString address = SimpleString.of("a.*");
+      SimpleString queueName1 = SimpleString.of("Q1");
+      SimpleString queueName2 = SimpleString.of("Q2");
+      SimpleString queueName = SimpleString.of("Q");
+      clientSession.createQueue(QueueConfiguration.of(queueName).setAddress(address).setDurable(false));
+      ClientProducer producer = clientSession.createProducer(addressAB);
+      ClientProducer producer2 = clientSession.createProducer(addressAC);
+      ClientConsumer clientConsumer = clientSession.createConsumer(queueName);
+      clientSession.createQueue(QueueConfiguration.of(queueName1).setAddress(addressAB).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName2).setAddress(addressAC).setDurable(false));
+      clientSession.start();
+      producer.send(createTextMessage(clientSession, "m1"));
+      producer2.send(createTextMessage(clientSession, "m2"));
+      ClientMessage m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m1", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m2", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receiveImmediate();
+      assertNull(m);
+   }
+
+   @Test
+   public void testWildcardRoutingQueuesAddedThenDeleted() throws Exception {
+      SimpleString addressAB = SimpleString.of("a.b");
+      SimpleString addressAC = SimpleString.of("a.c");
+      SimpleString address = SimpleString.of("a.*");
+      SimpleString queueName1 = SimpleString.of("Q1");
+      SimpleString queueName2 = SimpleString.of("Q2");
+      SimpleString queueName = SimpleString.of("Q");
+      clientSession.createQueue(QueueConfiguration.of(queueName1).setAddress(addressAB).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName2).setAddress(addressAC).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName).setAddress(address).setDurable(false));
+      ClientProducer producer = clientSession.createProducer(addressAB);
+      ClientProducer producer2 = clientSession.createProducer(addressAC);
+      ClientConsumer clientConsumer = clientSession.createConsumer(queueName);
+      clientSession.start();
+      clientSession.deleteQueue(queueName1);
+      producer.send(createTextMessage(clientSession, "m1"));
+      assertEquals(1, server.getPostOffice().getBindingsForAddress(addressAB).getBindings().size());
+      producer2.send(createTextMessage(clientSession, "m2"));
+      ClientMessage m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m1", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m2", m.getBodyBuffer().readString());
+      m.acknowledge();
+      clientConsumer.close();
+      clientSession.deleteQueue(queueName);
+      assertEquals(0, server.getPostOffice().getBindingsForAddress(addressAB).getBindings().size());
+   }
+
+   @Test
+   public void testWildcardRoutingLotsOfQueuesAddedThenDeleted() throws Exception {
+      SimpleString addressAB = SimpleString.of("a.b");
+      SimpleString addressAC = SimpleString.of("a.c");
+      SimpleString addressAD = SimpleString.of("a.d");
+      SimpleString addressAE = SimpleString.of("a.e");
+      SimpleString addressAF = SimpleString.of("a.f");
+      SimpleString addressAG = SimpleString.of("a.g");
+      SimpleString addressAH = SimpleString.of("a.h");
+      SimpleString addressAJ = SimpleString.of("a.j");
+      SimpleString addressAK = SimpleString.of("a.k");
+      SimpleString address = SimpleString.of("a.*");
+      SimpleString queueName1 = SimpleString.of("Q1");
+      SimpleString queueName2 = SimpleString.of("Q2");
+      SimpleString queueName3 = SimpleString.of("Q3");
+      SimpleString queueName4 = SimpleString.of("Q4");
+      SimpleString queueName5 = SimpleString.of("Q5");
+      SimpleString queueName6 = SimpleString.of("Q6");
+      SimpleString queueName7 = SimpleString.of("Q7");
+      SimpleString queueName8 = SimpleString.of("Q8");
+      SimpleString queueName9 = SimpleString.of("Q9");
+      SimpleString queueName = SimpleString.of("Q");
+      clientSession.createQueue(QueueConfiguration.of(queueName1).setAddress(addressAB).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName2).setAddress(addressAC).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName3).setAddress(addressAD).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName4).setAddress(addressAE).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName5).setAddress(addressAF).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName6).setAddress(addressAG).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName7).setAddress(addressAH).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName8).setAddress(addressAJ).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName9).setAddress(addressAK).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName).setAddress(address).setDurable(false));
+      ClientProducer producer = clientSession.createProducer();
+      ClientConsumer clientConsumer = clientSession.createConsumer(queueName);
+      clientSession.start();
+      producer.send(addressAB, createTextMessage(clientSession, "m1"));
+      producer.send(addressAC, createTextMessage(clientSession, "m2"));
+      producer.send(addressAD, createTextMessage(clientSession, "m3"));
+      producer.send(addressAE, createTextMessage(clientSession, "m4"));
+      producer.send(addressAF, createTextMessage(clientSession, "m5"));
+      producer.send(addressAG, createTextMessage(clientSession, "m6"));
+      producer.send(addressAH, createTextMessage(clientSession, "m7"));
+      producer.send(addressAJ, createTextMessage(clientSession, "m8"));
+      producer.send(addressAK, createTextMessage(clientSession, "m9"));
+
+      ClientMessage m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m1", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m2", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m3", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m4", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m5", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m6", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m7", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m8", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m9", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receiveImmediate();
+      assertNull(m);
+      // now remove all the queues
+      clientSession.deleteQueue(queueName1);
+      clientSession.deleteQueue(queueName2);
+      clientSession.deleteQueue(queueName3);
+      clientSession.deleteQueue(queueName4);
+      clientSession.deleteQueue(queueName5);
+      clientSession.deleteQueue(queueName6);
+      clientSession.deleteQueue(queueName7);
+      clientSession.deleteQueue(queueName8);
+      clientSession.deleteQueue(queueName9);
+      clientConsumer.close();
+      clientSession.deleteQueue(queueName);
+   }
+
+   @Test
+   public void testWildcardRoutingLotsOfQueuesAddedThenDeletedHash() throws Exception {
+      SimpleString addressAB = SimpleString.of("a.b");
+      SimpleString addressAC = SimpleString.of("a.c");
+      SimpleString addressAD = SimpleString.of("a.d");
+      SimpleString addressAE = SimpleString.of("a.e");
+      SimpleString addressAF = SimpleString.of("a.f");
+      SimpleString addressAG = SimpleString.of("a.g");
+      SimpleString addressAH = SimpleString.of("a.h");
+      SimpleString addressAJ = SimpleString.of("a.j");
+      SimpleString addressAK = SimpleString.of("a.k");
+      SimpleString address = SimpleString.of("#");
+      SimpleString queueName1 = SimpleString.of("Q1");
+      SimpleString queueName2 = SimpleString.of("Q2");
+      SimpleString queueName3 = SimpleString.of("Q3");
+      SimpleString queueName4 = SimpleString.of("Q4");
+      SimpleString queueName5 = SimpleString.of("Q5");
+      SimpleString queueName6 = SimpleString.of("Q6");
+      SimpleString queueName7 = SimpleString.of("Q7");
+      SimpleString queueName8 = SimpleString.of("Q8");
+      SimpleString queueName9 = SimpleString.of("Q9");
+      SimpleString queueName = SimpleString.of("Q");
+      clientSession.createQueue(QueueConfiguration.of(queueName1).setAddress(addressAB).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName2).setAddress(addressAC).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName3).setAddress(addressAD).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName4).setAddress(addressAE).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName5).setAddress(addressAF).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName6).setAddress(addressAG).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName7).setAddress(addressAH).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName8).setAddress(addressAJ).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName9).setAddress(addressAK).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName).setAddress(address).setDurable(false));
+      ClientProducer producer = clientSession.createProducer();
+      ClientConsumer clientConsumer = clientSession.createConsumer(queueName);
+      clientSession.start();
+      producer.send(addressAB, createTextMessage(clientSession, "m1"));
+      producer.send(addressAC, createTextMessage(clientSession, "m2"));
+      producer.send(addressAD, createTextMessage(clientSession, "m3"));
+      producer.send(addressAE, createTextMessage(clientSession, "m4"));
+      producer.send(addressAF, createTextMessage(clientSession, "m5"));
+      producer.send(addressAG, createTextMessage(clientSession, "m6"));
+      producer.send(addressAH, createTextMessage(clientSession, "m7"));
+      producer.send(addressAJ, createTextMessage(clientSession, "m8"));
+      producer.send(addressAK, createTextMessage(clientSession, "m9"));
+
+      ClientMessage m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m1", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m2", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m3", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m4", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m5", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m6", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m7", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m8", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m9", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receiveImmediate();
+      assertNull(m);
+      // now remove all the queues
+      clientSession.deleteQueue(queueName1);
+      clientSession.deleteQueue(queueName2);
+      clientSession.deleteQueue(queueName3);
+      clientSession.deleteQueue(queueName4);
+      clientSession.deleteQueue(queueName5);
+      clientSession.deleteQueue(queueName6);
+      clientSession.deleteQueue(queueName7);
+      clientSession.deleteQueue(queueName8);
+      clientSession.deleteQueue(queueName9);
+      clientConsumer.close();
+      clientSession.deleteQueue(queueName);
+   }
+
+   @Test
+   public void testWildcardRoutingWithSingleHash() throws Exception {
+      SimpleString addressAB = SimpleString.of("a.b");
+      SimpleString addressAC = SimpleString.of("a.c");
+      SimpleString address = SimpleString.of("#");
+      SimpleString queueName1 = SimpleString.of("Q1");
+      SimpleString queueName2 = SimpleString.of("Q2");
+      SimpleString queueName = SimpleString.of("Q");
+      clientSession.createQueue(QueueConfiguration.of(queueName1).setAddress(addressAB).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName2).setAddress(addressAC).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName).setAddress(address).setDurable(false));
+      ClientProducer producer = clientSession.createProducer(addressAB);
+      ClientProducer producer2 = clientSession.createProducer(addressAC);
+      ClientConsumer clientConsumer = clientSession.createConsumer(queueName);
+      clientSession.start();
+      producer.send(createTextMessage(clientSession, "m1"));
+      producer2.send(createTextMessage(clientSession, "m2"));
+      ClientMessage m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m1", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m2", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receiveImmediate();
+      assertNull(m);
+   }
+
+   @Test
+   public void testWildcardRoutingWithHash() throws Exception {
+      SimpleString addressAB = SimpleString.of("a.b.f");
+      SimpleString addressAC = SimpleString.of("a.c.f");
+      SimpleString address = SimpleString.of("a.#.f");
+      SimpleString queueName1 = SimpleString.of("Q1");
+      SimpleString queueName2 = SimpleString.of("Q2");
+      SimpleString queueName = SimpleString.of("Q");
+      clientSession.createQueue(QueueConfiguration.of(queueName1).setAddress(addressAB).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName2).setAddress(addressAC).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName).setAddress(address).setDurable(false));
+      ClientProducer producer = clientSession.createProducer(addressAB);
+      ClientProducer producer2 = clientSession.createProducer(addressAC);
+      ClientConsumer clientConsumer = clientSession.createConsumer(queueName);
+      clientSession.start();
+      producer.send(createTextMessage(clientSession, "m1"));
+      producer2.send(createTextMessage(clientSession, "m2"));
+      ClientMessage m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m1", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m2", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receiveImmediate();
+      assertNull(m);
+   }
+
+   @Test
+   public void testWildcardRoutingWithHashMultiLengthAddresses() throws Exception {
+      SimpleString addressAB = SimpleString.of("a.b.c.f");
+      SimpleString addressAC = SimpleString.of("a.c.f");
+      SimpleString address = SimpleString.of("a.#.f");
+      SimpleString queueName1 = SimpleString.of("Q1");
+      SimpleString queueName2 = SimpleString.of("Q2");
+      SimpleString queueName = SimpleString.of("Q");
+      clientSession.createQueue(QueueConfiguration.of(queueName1).setAddress(addressAB).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName2).setAddress(addressAC).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName).setAddress(address).setDurable(false));
+      ClientProducer producer = clientSession.createProducer(addressAB);
+      ClientProducer producer2 = clientSession.createProducer(addressAC);
+      ClientConsumer clientConsumer = clientSession.createConsumer(queueName);
+      clientSession.start();
+      producer.send(createTextMessage(clientSession, "m1"));
+      producer2.send(createTextMessage(clientSession, "m2"));
+      ClientMessage m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m1", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m2", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receiveImmediate();
+      assertNull(m);
+   }
+
+   @Test
+   public void testWildcardRoutingWithDoubleStar() throws Exception {
+      SimpleString addressAB = SimpleString.of("a.b");
+      SimpleString addressAC = SimpleString.of("a.c");
+      SimpleString address = SimpleString.of("*.*");
+      SimpleString queueName1 = SimpleString.of("Q1");
+      SimpleString queueName2 = SimpleString.of("Q2");
+      SimpleString queueName = SimpleString.of("Q");
+      clientSession.createQueue(QueueConfiguration.of(queueName1).setAddress(addressAB).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName2).setAddress(addressAC).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName).setAddress(address).setDurable(false));
+      ClientProducer producer = clientSession.createProducer(addressAB);
+      ClientProducer producer2 = clientSession.createProducer(addressAC);
+      ClientConsumer clientConsumer = clientSession.createConsumer(queueName);
+      clientSession.start();
+      producer.send(createTextMessage(clientSession, "m1"));
+      producer2.send(createTextMessage(clientSession, "m2"));
+      ClientMessage m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m1", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m2", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receiveImmediate();
+      assertNull(m);
+   }
+
+   @Test
+   public void testWildcardRoutingPartialMatchStar() throws Exception {
+      SimpleString addressAB = SimpleString.of("a.b");
+      SimpleString addressAC = SimpleString.of("a.c");
+      SimpleString address = SimpleString.of("*.b");
+      SimpleString queueName1 = SimpleString.of("Q1");
+      SimpleString queueName2 = SimpleString.of("Q2");
+      SimpleString queueName = SimpleString.of("Q");
+      clientSession.createQueue(QueueConfiguration.of(queueName1).setAddress(addressAB).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName2).setAddress(addressAC).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName).setAddress(address).setDurable(false));
+      ClientProducer producer = clientSession.createProducer(addressAB);
+      ClientProducer producer2 = clientSession.createProducer(addressAC);
+      ClientConsumer clientConsumer = clientSession.createConsumer(queueName);
+      clientSession.start();
+      producer.send(createTextMessage(clientSession, "m1"));
+      producer2.send(createTextMessage(clientSession, "m2"));
+      ClientMessage m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m1", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receiveImmediate();
+      assertNull(m);
+   }
+
+   @Test
+   public void testWildcardRoutingVariableLengths() throws Exception {
+      SimpleString addressAB = SimpleString.of("a.b.c");
+      SimpleString addressAC = SimpleString.of("a.c");
+      SimpleString address = SimpleString.of("a.#");
+      SimpleString queueName1 = SimpleString.of("Q1");
+      SimpleString queueName2 = SimpleString.of("Q2");
+      SimpleString queueName = SimpleString.of("Q");
+      clientSession.createQueue(QueueConfiguration.of(queueName1).setAddress(addressAB).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName2).setAddress(addressAC).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName).setAddress(address).setDurable(false));
+      ClientProducer producer = clientSession.createProducer(addressAB);
+      ClientProducer producer2 = clientSession.createProducer(addressAC);
+      ClientConsumer clientConsumer = clientSession.createConsumer(queueName);
+      clientSession.start();
+      producer.send(createTextMessage(clientSession, "m1"));
+      producer2.send(createTextMessage(clientSession, "m2"));
+      ClientMessage m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m1", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m2", m.getBodyBuffer().readString());
+      m.acknowledge();
+   }
+
+   @Test
+   public void testWildcardRoutingVariableLengthsStar() throws Exception {
+      SimpleString addressAB = SimpleString.of("a.b.c");
+      SimpleString addressAC = SimpleString.of("a.c");
+      SimpleString address = SimpleString.of("a.*");
+      SimpleString queueName1 = SimpleString.of("Q1");
+      SimpleString queueName2 = SimpleString.of("Q2");
+      SimpleString queueName = SimpleString.of("Q");
+      clientSession.createQueue(QueueConfiguration.of(queueName1).setAddress(addressAB).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName2).setAddress(addressAC).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName).setAddress(address).setDurable(false));
+      ClientProducer producer = clientSession.createProducer(addressAB);
+      ClientProducer producer2 = clientSession.createProducer(addressAC);
+      ClientConsumer clientConsumer = clientSession.createConsumer(queueName);
+      clientSession.start();
+      producer.send(createTextMessage(clientSession, "m1"));
+      producer2.send(createTextMessage(clientSession, "m2"));
+      ClientMessage m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m2", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receiveImmediate();
+      assertNull(m);
+   }
+
+   @Test
+   public void testWildcardRoutingMultipleStars() throws Exception {
+      SimpleString addressAB = SimpleString.of("a.b.c");
+      SimpleString addressAC = SimpleString.of("a.c");
+      SimpleString address = SimpleString.of("*.*");
+      SimpleString queueName1 = SimpleString.of("Q1");
+      SimpleString queueName2 = SimpleString.of("Q2");
+      SimpleString queueName = SimpleString.of("Q");
+      clientSession.createQueue(QueueConfiguration.of(queueName1).setAddress(addressAB).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName2).setAddress(addressAC).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName).setAddress(address).setDurable(false));
+      ClientProducer producer = clientSession.createProducer(addressAB);
+      ClientProducer producer2 = clientSession.createProducer(addressAC);
+      ClientConsumer clientConsumer = clientSession.createConsumer(queueName);
+      clientSession.start();
+      producer.send(createTextMessage(clientSession, "m1"));
+      producer2.send(createTextMessage(clientSession, "m2"));
+      ClientMessage m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m2", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receiveImmediate();
+      assertNull(m);
+   }
+
+   @Test
+   public void testWildcardRoutingStarInMiddle() throws Exception {
+      SimpleString addressAB = SimpleString.of("a.b.c");
+      SimpleString addressAC = SimpleString.of("a.c");
+      SimpleString address = SimpleString.of("*.b.*");
+      SimpleString queueName1 = SimpleString.of("Q1");
+      SimpleString queueName2 = SimpleString.of("Q2");
+      SimpleString queueName = SimpleString.of("Q");
+      clientSession.createQueue(QueueConfiguration.of(queueName1).setAddress(addressAB).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName2).setAddress(addressAC).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName).setAddress(address).setDurable(false));
+      ClientProducer producer = clientSession.createProducer(addressAB);
+      ClientProducer producer2 = clientSession.createProducer(addressAC);
+      ClientConsumer clientConsumer = clientSession.createConsumer(queueName);
+      clientSession.start();
+      producer.send(createTextMessage(clientSession, "m1"));
+      producer2.send(createTextMessage(clientSession, "m2"));
+      ClientMessage m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m1", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receiveImmediate();
+      assertNull(m);
+   }
+
+   @Test
+   public void testWildcardRoutingStarAndHash() throws Exception {
+      SimpleString addressAB = SimpleString.of("a.b.c.d");
+      SimpleString addressAC = SimpleString.of("a.c");
+      SimpleString address = SimpleString.of("*.b.#");
+      SimpleString queueName1 = SimpleString.of("Q1");
+      SimpleString queueName2 = SimpleString.of("Q2");
+      SimpleString queueName = SimpleString.of("Q");
+      clientSession.createQueue(QueueConfiguration.of(queueName1).setAddress(addressAB).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName2).setAddress(addressAC).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName).setAddress(address).setDurable(false));
+      ClientProducer producer = clientSession.createProducer(addressAB);
+      ClientProducer producer2 = clientSession.createProducer(addressAC);
+      ClientConsumer clientConsumer = clientSession.createConsumer(queueName);
+      clientSession.start();
+      producer.send(createTextMessage(clientSession, "m1"));
+      producer2.send(createTextMessage(clientSession, "m2"));
+      ClientMessage m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m1", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receiveImmediate();
+      assertNull(m);
+   }
+
+   @Test
+   public void testWildcardRoutingHashAndStar() throws Exception {
+      SimpleString addressAB = SimpleString.of("a.b.c");
+      SimpleString addressAC = SimpleString.of("a.c");
+      SimpleString address = SimpleString.of("#.b.*");
+      SimpleString queueName1 = SimpleString.of("Q1");
+      SimpleString queueName2 = SimpleString.of("Q2");
+      SimpleString queueName = SimpleString.of("Q");
+      clientSession.createQueue(QueueConfiguration.of(queueName1).setAddress(addressAB).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName2).setAddress(addressAC).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName).setAddress(address).setDurable(false));
+      ClientProducer producer = clientSession.createProducer(addressAB);
+      ClientProducer producer2 = clientSession.createProducer(addressAC);
+      ClientConsumer clientConsumer = clientSession.createConsumer(queueName);
+      clientSession.start();
+      producer.send(createTextMessage(clientSession, "m1"));
+      producer2.send(createTextMessage(clientSession, "m2"));
+      ClientMessage m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m1", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receiveImmediate();
+      assertNull(m);
+   }
+
+   @Test
+   public void testLargeWildcardRouting() throws Exception {
+      SimpleString addressAB = SimpleString.of("a.b.c.d.e.f.g.h.i.j.k.l.m.n.o.p.q.r.s.t.u.v.w.x.y.z");
+      SimpleString addressAC = SimpleString.of("a.c");
+      SimpleString address = SimpleString.of("a.#");
+      SimpleString queueName1 = SimpleString.of("Q1");
+      SimpleString queueName2 = SimpleString.of("Q2");
+      SimpleString queueName = SimpleString.of("Q");
+      clientSession.createQueue(QueueConfiguration.of(queueName1).setAddress(addressAB).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName2).setAddress(addressAC).setDurable(false));
+      clientSession.createQueue(QueueConfiguration.of(queueName).setAddress(address).setDurable(false));
+      assertEquals(2, server.getPostOffice().getBindingsForAddress(addressAB).getBindings().size());
+      assertEquals(2, server.getPostOffice().getBindingsForAddress(addressAC).getBindings().size());
+      assertEquals(1, server.getPostOffice().getBindingsForAddress(address).getBindings().size());
+      ClientProducer producer = clientSession.createProducer(addressAB);
+      ClientProducer producer2 = clientSession.createProducer(addressAC);
+      ClientConsumer clientConsumer = clientSession.createConsumer(queueName);
+      clientSession.start();
+      producer.send(createTextMessage(clientSession, "m1"));
+      producer2.send(createTextMessage(clientSession, "m2"));
+      ClientMessage m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m1", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receive(500);
+      assertNotNull(m);
+      assertEquals("m2", m.getBodyBuffer().readString());
+      m.acknowledge();
+      m = clientConsumer.receiveImmediate();
+      assertNull(m);
+      clientConsumer.close();
+      clientSession.deleteQueue(queueName);
+      assertEquals(1, server.getPostOffice().getBindingsForAddress(addressAB).getBindings().size());
+      assertEquals(1, server.getPostOffice().getBindingsForAddress(addressAC).getBindings().size());
+      assertEquals(0, server.getPostOffice().getBindingsForAddress(address).getBindings().size());
+   }
+
+
+   @Test
+   public void testInvalidWildcard() throws Exception {
+      String wildcardAddress = "a.*.*.*.*.*.*";
+      server.addAddressInfo(new AddressInfo(wildcardAddress).addRoutingType(RoutingType.ANYCAST));
+
+      try (AssertionLoggerHandler loggerHandler = new AssertionLoggerHandler(true)) {
+         assertThrows(Exception.class, () -> {
+            try {
+               ClientProducer producer = clientSession.createProducer(wildcardAddress);
+               producer.send(clientSession.createMessage(true));
+            } catch (Exception e) {
+               logger.warn(e.getMessage(), e);
+               throw e;
+            }
+         });
+         assertTrue(loggerHandler.findText("AMQ229260"));
+      }
+   }
+
+
+   /**
+    * Exercises the race between message routing (getBindingsForRoutingAddress, no PostOffice lock) and wildcard queue
+    * create/delete (addBinding/removeBinding, under the PostOffice lock).
+    */
+   @Test
+   public void testConcurrentWildcardBindingChangesDuringRouting() throws Exception {
+      SimpleString wildcardAddress = SimpleString.of("test.#");
+      server.addAddressInfo(new AddressInfo(wildcardAddress, RoutingType.MULTICAST));
+
+      AtomicReference<Throwable> error = new AtomicReference<>();
+      AtomicBoolean running = new AtomicBoolean(true);
+      AtomicInteger addressCounter = new AtomicInteger();
+
+      int bindingThreads = 4;
+      int producerThreads = 8;
+      ExecutorService executor = Executors.newFixedThreadPool(bindingThreads + producerThreads);
+      runAfter(executor::shutdownNow);
+
+      for (int i = 0; i < bindingThreads; i++) {
+         final int id = i;
+         ClientSession bindingSession = addClientSession(sf.createSession(false, true, true));
+         executor.submit(() -> {
+            try {
+               for (int j = 0; running.get() && error.get() == null; j++) {
+                  String queueName = "wc-" + id + "-" + j;
+                  bindingSession.createQueue(QueueConfiguration.of(queueName).setAddress(wildcardAddress).setDurable(false).setAutoDelete(false));
+                  bindingSession.deleteQueue(queueName);
+               }
+            } catch (Throwable t) {
+               error.set(t);
+               running.set(false);
+            }
+         });
+      }
+
+      for (int i = 0; i < producerThreads; i++) {
+         ClientSession producerSession = addClientSession(sf.createSession(false, true, true));
+         executor.submit(() -> {
+            try (ClientProducer producer = producerSession.createProducer()) {
+               while (running.get() && error.get() == null) {
+                  SimpleString address = SimpleString.of("test.addr." + addressCounter.incrementAndGet());
+                  producer.send(address, producerSession.createMessage(false));
+               }
+            } catch (Throwable t) {
+               error.set(t);
+               running.set(false);
+            }
+         });
+      }
+
+      Wait.waitFor(() -> error.get() != null, 10_000);
+      running.set(false);
+
+      executor.shutdown();
+      assertTrue(executor.awaitTermination(30, TimeUnit.SECONDS), "finished on time");
+      assertNull(error.get(), "no exceptions");
+   }
+
+   @Override
+   @BeforeEach
+   public void setUp() throws Exception {
+      super.setUp();
+      Configuration configuration = createDefaultInVMConfig().setWildcardRoutingEnabled(true).setTransactionTimeoutScanPeriod(500);
+      server = addServer(ActiveMQServers.newActiveMQServer(configuration, false));
+      server.start();
+      server.getManagementService().enableNotifications(false);
+      locator = createInVMNonHALocator();
+      sf = createSessionFactory(locator);
+      clientSession = addClientSession(sf.createSession(false, true, true));
+   }
+}

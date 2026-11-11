@@ -1,0 +1,119 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+
+<html>
+<head>
+   <meta content="text/html; charset=ISO-8859-1"
+         http-equiv="content-type">
+   <title>Apache Artemis README</title>
+</head>
+<body>
+
+<h1>Getting Started</h1>
+
+<b>Note (Windows users):</b> Examples below use the shell script `artemis` for use with linux, Windows users should use the `artemis.cmd` script with the same parameters.<br><br>
+
+<h2>Creating a broker</h2>
+
+To create a broker, navigate to the distribution 'bin/' directory and run: <br><br>
+
+$ ./artemis create $directory <br><br>Where $directory is the folder that you'd like the broker to be created.
+
+The create process will input for any required property not specified. Example:
+
+<PRE>
+--user: is a mandatory property!
+Please provide the default username:
+admin
+
+--password: is mandatory with this configuration:
+Please provide the default password:
+
+
+--allow-anonymous | --require-login: is a mandatory property!
+Allow anonymous access?, valid values are Y,N,True,False
+y
+</PRE>
+
+For a full list of available options for the create process you may use:
+
+$ ./artemis help create
+<PRE>
+NAME
+        artemis create - creates a new broker instance
+
+SYNOPSIS
+        artemis create [--addresses &lt;addresses&gt;] [--aio] [--allow-anonymous]
+                [--autocreate] [--blocking] [--cluster-password &lt;clusterPassword&gt;]
+                [--cluster-user &lt;clusterUser&gt;] [--clustered] [--data &lt;data&gt;]
+                [--default-port &lt;defaultPort&gt;] [--disable-persistence]
+                [--encoding &lt;encoding&gt;] [--failover-on-shutdown] [--force]
+                [--global-max-size &lt;globalMaxSize&gt;] [--home &lt;home&gt;] [--host &lt;host&gt;]
+                [--http-host &lt;httpHost&gt;] [--http-port &lt;httpPort&gt;]
+                [--java-options &lt;javaOptions&gt;] [--mapped] [--max-hops &lt;maxHops&gt;]
+                [--message-load-balancing &lt;messageLoadBalancing&gt;] [--name &lt;name&gt;]
+                [--nio] [--no-amqp-acceptor] [--no-autocreate] [--no-autotune]
+                [--no-fsync] [--no-hornetq-acceptor] [--no-mqtt-acceptor]
+                [--no-stomp-acceptor] [--no-web] [--paging] [--password &lt;password&gt;]
+                [--ping &lt;ping&gt;] [--port-offset &lt;portOffset&gt;] [--queues &lt;queues&gt;]
+                [--replicated] [--require-login] [--role &lt;role&gt;] [--shared-store]
+                [--silent] [--slave] [--ssl-key &lt;sslKey&gt;]
+                [--ssl-key-password &lt;sslKeyPassword&gt;] [--ssl-trust &lt;sslTrust&gt;]
+                [--ssl-trust-password &lt;sslTrustPassword&gt;] [--use-client-auth]
+                [--user &lt;user&gt;] [--verbose] [--] &lt;directory&gt;
+     ...
+</PRE>
+
+
+<h2>Starting the Broker</h2>
+
+Once the broker has been created, use the artemis (or artemis.cmd on windows) script found under the bin directory of the newly created broker to manage the life cycle of the broker.
+
+To run the Apache Artemis broker with the default configuration, run the command shown below from the "bin" directory of the created broker.<br><br>
+
+$ ./artemis run<br><br>
+
+To specify a broker configuration file:<br><br>
+
+$ ./artemis run --config scheme:location<br><br>
+
+e.g.<br><br>
+
+$ ./artemis run --config xml:/home/artemis/bootstrap.xml<br><br>
+
+It is possible to configure run time parameters in the artemis.conf (artemis.conf.bat for windows) file under the "bin" directory of the broker directory.
+
+<h2>Stopping the Broker</h2>
+
+To stop the broker please use the artemis script from the broker's bin directory:<br><br>
+
+$ ./artemis stop<br><br>
+
+<h2>Documentation</h2>
+
+The broker has an in depth user manual and a bunch of examples to help you get started.
+
+The manual can be found in the documentation on the <a href="https://artemis.apache.org/components/artemis/documentation/">Apache Artemis Website</a>.<br><br>
+
+The examples are can be found in the the <a href="https://github.com/apache/artemis-examples">Apache Artemis Examples</a> github repository.<br><br><br><br>
+
+Release Notes for all version can be found <a href="https://issues.apache.org/jira/browse/ARTEMIS/?selectedTab=com.atlassian.jira.jira-projects-plugin:versions-panel">here</a>
+
+</body>

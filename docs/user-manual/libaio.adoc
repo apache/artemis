@@ -1,0 +1,107 @@
+= Libaio Native Libraries
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+{project-name-full} distributes a native library, used to integrate with Linux libaio.
+
+`libaio` is a library, developed as part of the Linux kernel project.
+With `libaio` we submit writes to the operating system where they are processed asynchronously.
+Some time later the OS will call our code back when they have been processed.
+
+We use this in our high-performance journal if configured to do so, please see xref:persistence.adoc#persistence[Persistence].
+
+These are the native libraries we distribute:
+
+* libartemis-native-64.so - x86 64 bits
+* We distributed a 32-bit version until early 2017.
+While it's not available on the distribution any longer it should still be possible to compile to a 32-bit environment if needed.
+
+When using libaio, the broker will always load these files at startup as long as they are on the xref:using-server.adoc#library-path[library path].
+
+== Runtime dependencies
+
+If you just want to use the provided native binaries, you need to install the required libaio dependency.
+You can install libaio using the following steps either as the root user or using `sudo`:
+
+* On Fedora, CentOS, Rocky Linux, Red Hat Enterprise Linux, etc.:
++
+----
+dnf install libaio
+----
+
+* On Ubuntu, Debian, etc.:
++
+----
+apt install <package-name>
+----
++
+The value for `<package-name>` will depend on which Linux distribution version you're using:
++
+
+|===
+|Linux Distro Version |Package Name
+
+|Ubuntu 22.04 (and earlier)
+|libaio1
+
+|Ubuntu 24.04 (and later)
+|libaio1t64
+
+|Debian 12 (and earlier)
+|libaio1
+
+|Debian 13 (and later)
+|libaio1t64
+|===
++
+Since the package name in later versions of Ubuntu and Debian is different, you'll also need to create a symlink on these versions so that the libaio shared library can be found at the expected location, e.g.:
++
+----
+ln -s /usr/lib/x86_64-linux-gnu/libaio.so.1t64 /usr/lib/libaio.so.1
+----
+
+== Compiling the native libraries
+
+In the case that you are using Linux on a platform other than x86_32 or x86_64 (for example Itanium 64 bits or IBM Power) you may need to compile the native library, since we do not distribute binaries for those platforms with the release.
+
+== Compilation dependencies
+
+[NOTE]
+====
+The native layer is only available on Linux.
+If you are in a platform other than Linux the native compilation will not work
+====
+
+These are the required linux packages to be installed for the compilation to work:
+
+* gcc - C Compiler
+* gcc-c{pp} or g{pp} - Extension to gcc with support for C{pp}
+* libtool - Tool for link editing native libraries
+* libaio - library to disk asynchronous IO kernel functions
+* libaio-dev - Compilation support for libaio
+* cmake
+* A full JDK installed with the environment variable JAVA_HOME set to   its location
+
+To perform this installation on RHEL or Fedora, you can simply type this at a command line:
+
+ sudo yum install libtool gcc-c++ gcc libaio libaio-devel cmake
+
+Or on Debian systems:
+
+ sudo apt-get install libtool gcc-g++ gcc libaio libaio- cmake
+
+[NOTE]
+====
+
+
+You could find a slight variation of the package names depending on the version and Linux distribution.
+(for example gcc-c{pp} on Fedora versus g{pp} on Debian systems)
+====
+
+== Invoking the compilation
+
+In the source distribution or git clone, in the `artemis-native` directory, execute the shell script `compile-native.sh`.
+This script will invoke the proper commands to perform the native build.
+
+If you want more information refer to the https://cmake.org[cmake web pages].

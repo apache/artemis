@@ -1,0 +1,9 @@
+[WARNING]
+====
+Management and CLI operations to manipulate user & role data are only available when using the `PropertiesLoginModule`.
+
+In general, using properties files and broker-centric user management for anything other than very basic use-cases is not recommended.
+The broker is designed to deal with messages.
+It's not in the business of managing users, although that functionality is provided at a limited level for convenience.
+LDAP is recommended for enterprise level production use-cases.
+====

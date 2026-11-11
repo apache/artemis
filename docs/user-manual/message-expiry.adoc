@@ -1,0 +1,221 @@
+= Message Expiry
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+Messages can be set with an optional _time to live_ when sending them.
+
+{project-name-full} will not deliver a message to a consumer after it's time-to-live has been exceeded.
+If the message hasn't been delivered by the time that time-to-live is reached, the server can discard it.
+
+Addresses can be assigned an expiry address so that, when messages are expired, they are removed from the queue and sent to the expiry address.
+Many different queues can be bound to an expiry address.
+These _expired_ messages can later be consumed for further inspection.
+
+== Core API
+
+Using the Core API you can set an expiration time directly on the message:
+
+[,java]
+----
+// message will expire in 5000ms from now
+message.setExpiration(System.currentTimeMillis() + 5000);
+----
+
+== JMS API
+
+JMS `MessageProducer` allows setting a time-to-live for the messages it sends:
+
+[,java]
+----
+// messages sent by this producer will be retained for 5s (5000ms) before expiration
+producer.setTimeToLive(5000);
+----
+
+== Expired Message Properties
+
+Expired messages get xref:copied-message-properties.adoc#properties-for-copied-messages[special properties] plus this additional property:
+
+_AMQ_ACTUAL_EXPIRY::
+a `Long` property containing the _actual expiration time_ of the expired message
+
+== Configuring Expiry Addresses
+
+Expiry addresses are defined in the `address-setting` configuration:
+
+[,xml]
+----
+<!-- expired messages in exampleQueue will be sent to the expiry address expiryQueue -->
+<address-setting match="exampleQueue">
+   <expiry-address>expiryQueue</expiry-address>
+</address-setting>
+----
+
+== Dropping Expired Messages
+
+If messages are expired and no expiry address is specified or explicitly unset (e.g. using `<expiry-address/>`) then messages are simply removed from the queue and dropped.
+Address xref:wildcard-syntax.adoc#wildcard-syntax[wildcards] can be used to configure expiry address for a set of addresses.
+
+If a wildcard is used to configure the expiry address for a set of addresses and you want to _unset_ the expiry address for a particular addess (or set of addresses) then you can do so, e.g.:
+
+[,xml]
+----
+<address-setting match="#">
+   <expiry-address>expiryQueue</expiry-address>
+</address-setting>
+<address-setting match="exampleQueue">
+   <expiry-address/> <!-- unset expiry-address so messages which expire from queues bound to matching addresses are dropped -->
+</address-setting>
+----
+
+== Configuring Expiry Delay
+
+There are multiple address-settings which you can use to modify the expiry delay for incoming messages:
+
+. `no-expiry`
+. `expiry-delay`
+. `max-expiry-delay` & `min-expiry-delay`
+
+These settings are applied exclusively in this order of precedence. For example, if `no-expiry` is set and `expiry-delay` is also set then `expiry-delay` is ignored completely and `no-expiry` is enforced.
+
+[WARNING]
+====
+If you set any of these values for the `expiry-address` then messages which expire will have corresponding new expiry delays potentially causing the expired messages to themselves expire and be removed completely from the broker.
+====
+
+Let's look at each of these in turn.
+
+=== Never Expire
+
+If you want to force messages to _never_ expire regardless of their existing settings then set `no-expiry` to `true`, e.g.:
+
+[,xml]
+----
+<!-- messages will never expire -->
+<address-setting match="exampleQueue">
+   <no-expiry>true</no-expiry>
+</address-setting>
+----
+
+For example, if `no-expiry` is set to `true` and a message which is using an expiration of `10` arrives then its expiration time of `10` will be changed to `0`.
+
+The default is `false`.
+
+=== Modify Default Expiry
+
+To modify the expiry delay on a message using the _default expiration_ (i.e. `0`) set `expiry-delay`, e.g.
+
+[,xml]
+----
+<!-- expired messages in exampleQueue will be sent to the expiry address expiryQueue -->
+<address-setting match="exampleQueue">
+   <expiry-address>expiryQueue</expiry-address>
+   <expiry-delay>10</expiry-delay>
+</address-setting>
+----
+
+For example, if `expiry-delay` is set to `10` and a message which is using the default expiration time (i.e. `0`) arrives then its expiration time of `0` will be changed to `10`.
+However, if a message which is using an expiration time of `20` arrives then its expiration time will remain unchanged.
+
+This value is measured in milliseconds. The default is `-1` (i.e. disabled).
+
+=== Enforce an Expiry Range
+
+To enforce a range of expiry delay values
+
+[,xml]
+----
+<address-setting match="exampleQueue">
+   <min-expiry-delay>10</min-expiry-delay>
+   <max-expiry-delay>100</max-expiry-delay>
+</address-setting>
+----
+
+Semantics are as follows:
+
+* Messages _without_ an expiration will be set to `max-expiry-delay`.
+** If `max-expiry-delay` is not defined then the message will be set to `min-expiry-delay`.
+** If `min-expiry-delay` is not defined then the message will not be changed.
+* Messages with an expiration _above_ `max-expiry-delay` will be set to `max-expiry-delay`.
+* Messages with an expiration _below_ `min-expiry-delay` will be set to `min-expiry-delay`.
+* Messages with an expiration _within_ `min-expiry-delay` and `max-expiry-delay` range will not be changed.
+
+These values are measured in milliseconds. The default for both is `-1` (i.e. disabled).
+
+[WARNING]
+====
+Setting a value of `0` for `max-expiry-delay` will cause messages to expire _immediately_.
+====
+
+== Expiring Expired Messages
+
+It may be necessary to expire the expired messages themselves.
+Here's an example of how to do that:
+
+[,xml]
+----
+<address-setting match="#">
+   <expiry-address>expiryQueue</expiry-address>
+</address-setting>
+<address-setting match="expiryQueue">
+   <expiry-address/>
+   <expiry-delay>600000</expiry-delay>
+</address-setting>
+----
+
+Using this configuration any message which expires will be sent to `expiryQueue`.
+Any of these expired messages which sit in a queue bound to `expiryQueue` will expire after 5 minutes (i.e. `600000` milliseconds) and be dropped since the `expiry-address` is explicitly unset.
+
+== Configuring Automatic Creation of Expiry Resources
+
+It's common to segregate expired messages by their original address.
+For example, a message sent to the `stocks` address that expired for some reason might be ultimately routed to the `EXP.stocks` queue, and likewise a message sent to the `orders` address that expired might be routed to the `EXP.orders` queue.
+
+Using this pattern can make it easy to track and administrate expired messages.
+However, it can pose a challenge in environments which predominantly use auto-created addresses and queues.
+Typically administrators in those environments don't want to manually create an `address-setting` to configure the `expiry-address` much less the actual `address` and `queue` to hold the expired messages.
+
+The solution to this problem is to set the `auto-create-expiry-resources` `address-setting` to `true` (it's `false` by default) so that the broker will create the `address` and `queue` to deal with the expired messages automatically.
+The `address` created will be the one defined by the `expiry-address`.
+A `MULTICAST` `queue` will be created on that `address`.
+It will be named by the `address` to which the message was previously sent, and it will have a filter defined using the property `_AMQ_ORIG_ADDRESS` so that it will only receive messages sent to the relevant `address`.
+The `queue` name can be configured with a prefix and suffix.
+See the relevant settings in the table below:
+
+|===
+| `address-setting` | default
+
+| `expiry-queue-prefix`
+| `EXP.`
+
+| `expiry-queue-suffix`
+| (empty string)
+|===
+
+Here is an example configuration:
+
+[,xml]
+----
+<address-setting match="#">
+   <expiry-address>expiryAddress</expiry-address>
+   <auto-create-expiry-resources>true</auto-create-expiry-resources>
+   <expiry-queue-prefix></expiry-queue-prefix> <!-- override the default -->
+   <expiry-queue-suffix>.EXP</expiry-queue-suffix>
+</address-setting>
+----
+
+The queue holding the expired messages can be accessed directly either by using the queue's name by itself (e.g. when using the Core client) or by using the fully qualified queue name (e.g. when using a JMS client) just like any other queue.
+Also, note that the queue is auto-created which means it will be auto-deleted as per the relevant `address-settings`.
+
+== Configuring The Expiry Reaper Thread
+
+A reaper thread will periodically inspect the queues to check if messages have expired.
+
+The reaper thread can be configured with the following properties in `broker.xml`
+
+message-expiry-scan-period::
+How often the queues will be scanned to detect expired messages (in milliseconds, default is 30000ms, set to `-1` to disable the reaper thread)
+
+== Example
+
+See the xref:examples.adoc#message-expiration[Message Expiration Example] which shows how message expiry is configured and used with JMS.

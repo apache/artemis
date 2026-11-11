@@ -1,0 +1,44 @@
+= Apache Tomcat Support
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+== Resource Context Client Configuration
+
+A {project-name-short} client can be configured in the `context.xml` of the Tomcat container.
+
+This is very similar to the way this is done in ActiveMQ so anyone migrating should find this familiar.
+Please note, the connection url and properties are different please see https://artemis.apache.org/components/artemis/migration-documentation/[Migration Documentation]
+
+=== Example of Connection Factory
+
+[,xml]
+----
+<Context>
+    ...
+  <Resource name="jms/ConnectionFactory" auth="Container" type="org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory" description="JMS Connection Factory"
+        factory="org.apache.activemq.artemis.jndi.JNDIReferenceFactory" brokerURL="tcp://localhost:61616" />
+    ...
+</Context>
+----
+
+=== Example of Destination (Queue and Topic)
+
+[,xml]
+----
+<Context>
+  ...
+  <Resource name="jms/ExampleQueue" auth="Container" type="org.apache.activemq.artemis.jms.client.ActiveMQQueue" description="JMS Queue"
+        factory="org.apache.activemq.artemis.jndi.JNDIReferenceFactory" address="ExampleQueue" />
+  ...
+  <Resource name="jms/ExampleTopic" auth="Container" type="org.apache.activemq.artemis.jms.client.ActiveMQTopic" description="JMS Topic"
+         factory="org.apache.activemq.artemis.jndi.JNDIReferenceFactory" address="ExampleTopic" />
+  ...
+</Context>
+----
+
+== Example Tomcat App
+
+A sample Tomcat app with the container context configured as an example can be seen here:
+
+/examples/features/sub-modules/tomcat

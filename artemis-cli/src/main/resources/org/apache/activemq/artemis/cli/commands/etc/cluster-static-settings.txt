@@ -1,0 +1,11 @@
+      <cluster-connections>
+         <cluster-connection name="my-cluster">
+            <connector-ref>artemis</connector-ref>
+            <message-load-balancing>${message-load-balancing}</message-load-balancing>
+            <max-hops>${max-hops}</max-hops>
+            <static-connectors>
+${connectors-list}
+            </static-connectors>
+         </cluster-connection>
+      </cluster-connections>
+

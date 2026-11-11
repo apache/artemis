@@ -1,0 +1,76 @@
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one or more
+  ~ contributor license agreements. See the NOTICE file distributed with
+  ~ this work for additional information regarding copyright ownership.
+  ~ The ASF licenses this file to You under the Apache License, Version 2.0
+  ~ (the "License"); you may not use this file except in compliance with
+  ~ the License. You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+
+   <parent>
+      <groupId>org.apache.artemis</groupId>
+      <artifactId>artemis-pom</artifactId>
+      <version>2.58.0-SNAPSHOT</version>
+      <relativePath>../../artemis-pom/pom.xml</relativePath>
+   </parent>
+
+   <artifactId>artemis-image-examples</artifactId>
+   <name>Apache Artemis Image Examples</name>
+   <packaging>pom</packaging>
+
+   <properties>
+      <!-- for checkstyle plugin -->
+      <activemq.basedir>${project.basedir}/../..</activemq.basedir>
+
+      <!-- for the locked down example user A is referenced in the amqp_sasl_scram_test__etc/role file,
+         so don't just change it here! -->
+      <example.user>A</example.user>
+      <!-- a password must be provided to generate the user credential data.
+         use: mvn exec:exec -Dexample.pwd=xyz on the command line to register your value in the example.user.file -->
+      <example.pwd />
+      <example.user.file>amqp_sasl_scram_test__etc/user</example.user.file>
+   </properties>
+
+   <dependencies>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-server</artifactId>
+         <version>${project.parent.version}</version>
+      </dependency>
+   </dependencies>
+
+
+   <build>
+      <plugins>
+         <!-- to easily create a single salted credential for our ${example.user.file}-->
+         <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>${exec-maven-plugin.version}</version>
+            <configuration>
+               <executable>java</executable>
+               <arguments>
+                  <argument>-classpath</argument>
+                  <classpath />
+                  <argument>org.apache.activemq.artemis.spi.core.security.jaas.SCRAMPropertiesLoginModule</argument>
+                  <argument>${example.user}</argument>
+                  <argument>${example.pwd}</argument>
+               </arguments>
+               <outputFile>${example.user.file}</outputFile>
+            </configuration>
+         </plugin>
+      </plugins>
+   </build>
+
+</project>

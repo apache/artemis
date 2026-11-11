@@ -1,0 +1,85 @@
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one or more
+    contributor license agreements.  See the NOTICE file distributed with
+    this work for additional information regarding copyright ownership.
+    The ASF licenses this file to You under the Apache License, Version 2.0
+    (the "License"); you may not use this file except in compliance with
+    the License.  You may obtain a copy of the License at
+
+         http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+
+<service>
+   <id>artemis-windowsUpgrade-0.0.0.0</id>
+   <name>Apache Artemis: windowsUpgrade @ 0.0.0.0</name>
+   <description>Apache Artemis is a reliable messaging broker</description>
+
+   <env name="ARTEMIS_HOME" value="must-change"/>
+   <env name="ARTEMIS_INSTANCE" value="${project.basedir}/target/classes/servers/windowsUpgrade"/>
+   <env name="ARTEMIS_INSTANCE_ETC" value="${project.basedir}/target/classes/servers/windowsUpgradeETC"/>
+   <env name="ARTEMIS_INSTANCE_URI" value="file:${project.basedir}/target/classes/servers/windowsUpgrade/"/>
+   <env name="ARTEMIS_INSTANCE_ETC_URI" value="file:${project.basedir}/target/classes/servers/windowsUpgradeETC/"/>
+   <env name="ARTEMIS_DATA_DIR" value="${project.basedir}/target/classes/servers/windowsUpgrade/data-custom"/>
+
+   <logpath>${project.basedir}/target/classes/servers/windowsUpgrade\log</logpath>
+   <logmode>roll</logmode>
+
+   <executable>%JAVA_HOME%\bin\java.exe</executable>
+   <startargument>-XX:+UseParallelGC</startargument>
+   <startargument>-Xms512M</startargument>
+   <startargument>-Xmx1G</startargument>
+
+   <!-- Cluster Properties: Used to pass startarguments to Apache Artemis which can be referenced in broker.xml
+   <startargument>-Dartemis.remoting.default.port=61617</startargument>
+   <startargument>-Dartemis.remoting.amqp.port=5673</startargument>
+   <startargument>-Dartemis.remoting.stomp.port=61614</startargument>
+   <startargument>-Dartemis.remoting.hornetq.port=5446</startargument>
+   -->
+
+   <startargument>-classpath</startargument>
+   <startargument>%ARTEMIS_HOME%\lib\artemis-boot.jar</startargument>
+   <startargument>-Dartemis.home=%ARTEMIS_HOME%</startargument>
+   <startargument>-Dartemis.instance=%ARTEMIS_INSTANCE%</startargument>
+   <startargument>-Ddata.dir=%ARTEMIS_DATA_DIR%</startargument>
+   <startargument>-Dartemis.instance.etc=%ARTEMIS_INSTANCE_ETC%</startargument>
+   <startargument>-Djava.security.auth.login.config=%ARTEMIS_INSTANCE_ETC%\login.config</startargument>
+   <startargument>-Dhawtio.disableProxy=true</startargument>
+   <startargument>-Dhawtio.realm=activemq</startargument>
+   <startargument>-Dhawtio.offline="true"</startargument>
+   <startargument>-Dhawtio.role=amq</startargument>
+   <startargument>-Dhawtio.rolePrincipalClasses=org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal</startargument>
+   <startargument>-Djolokia.policyLocation=%ARTEMIS_INSTANCE_ETC_URI%/jolokia-access.xml</startargument>
+
+   <!-- Debug args: Uncomment to enable debug
+   <startargument>-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005</startargument>
+   -->
+
+   <startargument>org.apache.activemq.artemis.boot.Artemis</startargument>
+
+   <startargument>run</startargument>
+
+   <stopexecutable>%JAVA_HOME%\bin\java.exe</stopexecutable>
+   <stopargument>-XX:+UseParallelGC</stopargument>
+   <stopargument>-Xms512M</stopargument>
+   <stopargument>-Xmx1024M</stopargument>
+
+   <stopargument>-classpath</stopargument>
+   <stopargument>%ARTEMIS_HOME%\lib\artemis-boot.jar</stopargument>
+   <stopargument>-Dartemis.home=%ARTEMIS_HOME%</stopargument>
+   <stopargument>-Dartemis.instance=%ARTEMIS_INSTANCE%</stopargument>
+   <stopargument>-Ddata.dir=%ARTEMIS_DATA_DIR%</stopargument>
+   <stopargument>-Dartemis.instance.etc="%ARTEMIS_INSTANCE_ETC%"</stopargument>
+
+   <stopargument>org.apache.activemq.artemis.boot.Artemis</stopargument>
+
+   <stopargument>stop</stopargument>
+
+</service>

@@ -1,0 +1,107 @@
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one or more
+  ~ contributor license agreements. See the NOTICE file distributed with
+  ~ this work for additional information regarding copyright ownership.
+  ~ The ASF licenses this file to You under the Apache License, Version 2.0
+  ~ (the "License"); you may not use this file except in compliance with
+  ~ the License. You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+
+   <parent>
+      <groupId>org.apache.artemis</groupId>
+      <artifactId>artemis-pom</artifactId>
+      <version>2.58.0-SNAPSHOT</version>
+      <relativePath>../artemis-pom/pom.xml</relativePath>
+   </parent>
+
+   <artifactId>artemis-image</artifactId>
+   <name>Apache Artemis Image</name>
+
+   <properties>
+
+      <!-- base jre image, reproducible build and single pull with @sha reference -->
+      <fromImage>eclipse-temurin:20-jre@sha256:5340605ada8bee017109147c838a96a24ecec037bedac5f157b26817ab633e02</fromImage>
+
+      <!-- none of the surefire project defaults are relevant to the tests here -->
+      <activemq-surefire-argline />
+
+   </properties>
+
+
+   <dependencies>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>apache-artemis</artifactId>
+         <version>${project.version}</version>
+         <type>pom</type>
+      </dependency>
+      <dependency>
+         <groupId>org.junit.jupiter</groupId>
+         <artifactId>junit-jupiter-api</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.junit.jupiter</groupId>
+         <artifactId>junit-jupiter-engine</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <!-- The johnzon-core and json-api contents are repackaged in -commons,
+           However maven can still need them during tests that don't see the shaded bits during build -->
+      <dependency>
+         <groupId>org.apache.johnzon</groupId>
+         <artifactId>johnzon-core</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>jakarta.json</groupId>
+         <artifactId>jakarta.json-api</artifactId>
+         <scope>test</scope>
+      </dependency>
+   </dependencies>
+
+   <build>
+      <plugins>
+         <plugin>
+            <groupId>com.google.cloud.tools</groupId>
+            <artifactId>jib-maven-plugin</artifactId>
+            <configuration>
+               <from>
+                  <image>${fromImage}</image>
+               </from>
+               <to>
+                  <image>target/activemq-artemis-image:${project.version}</image>
+               </to>
+               <container>
+                  <mainClass>org.apache.activemq.artemis.core.server.embedded.Main</mainClass>
+                  <ports>
+                     <port>61616</port>
+                  </ports>
+                  <format>OCI</format>
+               </container>
+            </configuration>
+            <executions>
+               <execution>
+                  <id>now</id>
+                  <!-- build from command line with: mvn jib:buildTar@now -->
+                  <phase>none</phase>
+                  <goals>
+                     <goal>buildTar</goal>
+                  </goals>
+               </execution>
+            </executions>
+         </plugin>
+      </plugins>
+   </build>
+
+</project>

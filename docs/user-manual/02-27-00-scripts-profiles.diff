@@ -1,0 +1,55 @@
+diff --git a/broker-instance/bin/artemis b/broker-instance/bin/artemis
+index 4f8e2f3b66..5ee4f1e3a0 100755
+--- a/broker-instance/bin/artemis
++++ b/broker-instance/bin/artemis
+@@ -50,10 +50,6 @@ HAWTIO_ROLE="NO_HAWTIO_ROLE"
+ ARTEMIS_INSTANCE_ETC='/path/to/broker-instance/etc'
+ . "$ARTEMIS_INSTANCE_ETC/artemis.profile"
+ 
+-# Set Defaults Properties
+-ARTEMIS_LOGGING_CONF="$ARTEMIS_INSTANCE_ETC_URI/logging.properties"
+-ARTEMIS_LOG_MANAGER=org.jboss.logmanager.LogManager
+-
+ 
+ CLASSPATH="$ARTEMIS_HOME/lib/artemis-boot.jar"
+ 
+@@ -99,21 +95,6 @@ if $cygwin ; then
+   CLASSPATH=`cygpath --windows "$CLASSPATH"`
+ fi
+ 
+-
+-# finding the Log Manager
+-LOG_MANAGER=`ls $ARTEMIS_HOME/lib/jboss-logmanager*jar 2>/dev/null`
+-
+-if [ -z "$LOG_MANAGER" ] ; then
+-  # this is the one found when the server was created
+-  LOG_MANAGER="$ARTEMIS_HOME/lib/jboss-logmanager-2.1.18.Final.jar"
+-fi
+-
+-WILDFLY_COMMON=`ls $ARTEMIS_HOME/lib/wildfly-common*jar 2>/dev/null`
+-if [ -z "$WILDFLY_COMMON" ] ; then
+-  # this is the one found when the server was created
+-  WILDFLY_COMMON="$ARTEMIS_HOME/lib/wildfly-common-1.5.2.Final.jar"
+-fi
+-
+ if [ -f "$ARTEMIS_OOME_DUMP" ] ; then
+   # backup the last OOME heap dump
+   mv $ARTEMIS_OOME_DUMP $ARTEMIS_OOME_DUMP.bkp
+@@ -122,7 +103,6 @@ fi
+ exec "$JAVACMD" \
+     $JAVA_ARGS \
+     -Dhawtio.role="$HAWTIO_ROLE" \
+-    -Xbootclasspath/a:"$LOG_MANAGER:$WILDFLY_COMMON" \
+     -Djava.security.auth.login.config="$ARTEMIS_INSTANCE_ETC/login.config" \
+     $ARTEMIS_CLUSTER_PROPS \
+     -classpath "$CLASSPATH" \
+@@ -132,8 +112,7 @@ exec "$JAVACMD" \
+     -Djava.io.tmpdir="$ARTEMIS_INSTANCE/tmp" \
+     -Ddata.dir="$ARTEMIS_DATA_DIR" \
+     -Dartemis.instance.etc="$ARTEMIS_INSTANCE_ETC" \
+-    -Djava.util.logging.manager="$ARTEMIS_LOG_MANAGER" \
+-    -Dlogging.configuration="$ARTEMIS_LOGGING_CONF" \
+     -Dartemis.default.sensitive.string.codec.key="$ARTEMIS_DEFAULT_SENSITIVE_STRING_CODEC_KEY" \
+     $DEBUG_ARGS \
++    $JAVA_ARGS_APPEND \
+     org.apache.activemq.artemis.boot.Artemis "$@"

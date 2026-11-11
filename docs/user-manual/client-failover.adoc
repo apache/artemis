@@ -1,0 +1,115 @@
+= Core Client Failover
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+Clients using the Core protocol can be configured to automatically <<reconnect-to-the-same-server,reconnect to the same server>>, <<reconnect-to-the-backup-server,reconnect to the backup server>> or <<reconnect-to-other-active-servers,reconnect to other active servers>> in the event that a failure is detected in the connection between the client and the server.
+The clients detect connection failure when they have not received any packets from the server within the time given by `client-failure-check-period` as explained in section xref:connection-ttl.adoc#detecting-dead-connections[Detecting Dead Connections].
+
+== Reconnect to the same server
+
+Set `reconnectAttempts` to any non-zero value to reconnect to the same server, for further details see <<reconnection-and-failover-attributes,Reconnection and failover attributes>>.
+
+If the disconnection was due to some transient failure such as a temporary network outage and the target server was not restarted, then the sessions will still exist on the server, assuming the client hasn't been disconnected for more than xref:connection-ttl.adoc#detecting-dead-connections[connection-ttl]
+
+In this scenario, the client sessions will be automatically re-attached to the server sessions after the reconnection.
+This is done 100% transparently and the client can continue exactly as if nothing had happened.
+
+The way this works is as follows:
+
+As Core clients send commands to their servers they store each sent command in an in-memory buffer.
+In the case that connection failure occurs and the client subsequently reattaches to the same server, as part of the reattachment protocol the server informs the client during reattachment with the id of the last command it successfully received from that client.
+
+If the client has sent more commands than were received before failover it can replay any sent commands from its buffer so that the client and server can reconcile their states.Ac
+
+The size of this buffer is configured with the `confirmationWindowSize` parameter on the connection URL.
+When the server has received `confirmationWindowSize` bytes of commands and processed them it will send back a command confirmation to the client, and the client can then free up space in the buffer.
+
+The window is specified in bytes.
+
+Setting this parameter to `-1` disables any buffering and prevents any re-attachment from occurring, forcing reconnect instead.
+The default value for this parameter is `-1`.
+(Which means by default no auto re-attachment will occur)
+
+== Reconnect to the backup server
+
+Set `reconnectAttempts` to any non-zero value and `ha` to `true` to reconnect to the back server, for further details see <<reconnection-and-failover-attributes,Reconnection and failover attributes>>.
+
+The clients can be configured to discover the list of live-backup server groups in a number of different ways.
+They can be configured explicitly or probably the most common way of doing this is to use _server discovery_ for the client to automatically discover the list.
+For full details on how to configure server discovery, please see xref:clusters.adoc#clusters[Clusters].
+Alternatively, the clients can explicitly connect to a specific server and download the current servers and backups see xref:clusters.adoc#clusters[Clusters].
+
+By default, failover will only occur after at least one connection has been made.
+In other words, by default, failover will not occur if the client fails to make an initial connection - in this case it will simply retry connecting according to the reconnect-attempts property and fail after this number of attempts.
+
+== Reconnect to other active servers
+
+Set `failoverAttempts` to any non-zero value to reconnect to other active servers, for further details see <<reconnection-and-failover-attributes,Reconnection and failover attributes>>.
+
+If `reconnectAttempts` value is not zero then the client will try to reconnect to other active servers only after all attempts to <<reconnect-to-the-same-server,reconnect to the same server>> or <<reconnect-to-the-backup-server,reconnect to the backup server>> fail.
+
+== Session reconnection
+
+When clients <<reconnect-to-the-same-server,reconnect to the same server>> after a restart, <<reconnect-to-the-backup-server,reconnect to the backup server>> or <<reconnect-to-other-active-servers,reconnect to other active servers>> any sessions will no longer exist on the server and it won't be possible to 100% transparently re-attach to them.
+In this case, any sessions and consumers on the client will be automatically recreated on the server.
+
+Client reconnection is also used internally by components such as core bridges to allow them to reconnect to their target servers.
+
+== Failing over on the initial connection
+
+Since the client does not learn about the full topology until after the first connection is made there is a window where it does not know about the backup.
+If a failure happens at this point the client can only try reconnecting to the original server.
+To configure how many attempts the client will make you can set the URL parameter `initialConnectAttempts`.
+The default for this is `0`, that is try only once.
+Once the number of attempts has been made an exception will be thrown.
+
+For examples of automatic failover with transacted and non-transacted JMS sessions, please see xref:examples.adoc#examples[the examples] chapter.
+
+== Reconnection and failover attributes
+
+Client reconnection and failover is configured using the following parameters:
+
+retryInterval::
+This optional parameter determines the period in milliseconds between subsequent reconnection attempts, if the connection to the target server has failed.
+The default value is `2000` milliseconds.
+
+retryIntervalMultiplier::
+This optional parameter determines a multiplier to apply to the time since the last retry to compute the time to the next retry.
++
+This allows you to implement an _exponential backoff_ between retry attempts.
++
+Let's take an example:
++
+If we set `retryInterval` to `1000` ms and we set `retryIntervalMultiplier` to `2.0`, then, if the first reconnect attempt fails, we will wait `1000` ms then `2000` ms then `4000` ms between subsequent reconnection attempts.
++
+The default value is `1.0` meaning each reconnect attempt is spaced at equal intervals.
+
+maxRetryInterval::
+This optional parameter determines the maximum retry interval that will be used.
+When setting `retryIntervalMultiplier` it would otherwise be possible that subsequent retries exponentially increase to ridiculously large values.
+By setting this parameter you can set an upper limit on that value.
+The default value is `2000` milliseconds.
+
+ha::
+This optional parameter determines whether the client will try to reconnect to the backup node when the primary node is not reachable.
+The default value is `false`.
+For more information on HA, please see xref:ha.adoc#high-availability-and-failover[High Availability and Failover].
+
+reconnectAttempts::
+This optional parameter determines the total number of reconnect attempts to make to the current live/backup pair before giving up.
+A value of `-1` signifies an unlimited number of attempts.
+The default value is `0`.
+
+failoverAttempts::
+This optional parameter determines the total number of failover attempts to make after a reconnection failure before giving up and shutting down.
+A value of `-1` signifies an unlimited number of attempts.
+The default value is `0`.
+
+All of these parameters are set on the URL used to connect to the broker.
+
+If your client does manage to reconnect but the session is no longer available on the server, for instance if the server has been restarted or it has timed out, then the client won't be able to re-attach, and any `ExceptionListener` or `FailureListener` instances registered on the connection or session will be called.
+
+== ExceptionListeners and SessionFailureListeners
+
+Please note, that when a client reconnects or re-attaches, any registered JMS `ExceptionListener` or Core API `SessionFailureListener` will be called.

@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+<configuration xmlns="urn:activemq" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="urn:activemq /schema/artemis-configuration.xsd">
+    <core xmlns="urn:activemq:core">
+
+        <name>server1</name>
+
+        <persistence-enabled>false</persistence-enabled>
+
+        <security-enabled>false</security-enabled>
+
+        <connectors>
+            <connector name="netty-connector">tcp://localhost:61616</connector>
+            <connector name="server-2-connector">tcp://localhost:61618</connector>
+        </connectors>
+
+        <!-- Acceptors -->
+        <acceptors>
+            <acceptor name="netty-acceptor">tcp://localhost:61616</acceptor>
+        </acceptors>
+
+        <!-- Federation -->
+
+        <addresses>
+            <address name="exampleQueueOne">
+                <anycast>
+                    <queue name="exampleQueueOne"/>
+                </anycast>
+            </address>
+            <address name="exampleQueueTwo">
+                <anycast>
+                    <queue name="exampleQueueTwo"/>
+                </anycast>
+            </address>
+        </addresses>
+
+        <federations>
+            <federation name="server-1-federation">
+                <upstream name="server-1-upstream">
+                    <circuit-breaker-timeout>1000</circuit-breaker-timeout>
+                    <share-connection>true</share-connection>
+                    <static-connectors>
+                        <connector-ref>server-2-connector</connector-ref>
+                    </static-connectors>
+                    <policy ref="policySetA"/>
+                </upstream>
+                <downstream name="server-1-downstream" priority-adjustment="-1">
+                    <circuit-breaker-timeout>1000</circuit-breaker-timeout>
+                    <share-connection>true</share-connection>
+                    <static-connectors>
+                        <connector-ref>server-2-connector</connector-ref>
+                    </static-connectors>
+                    <policy ref="policySetA"/>
+                    <upstream-connector-ref>netty-connector</upstream-connector-ref>
+                </downstream>
+
+                <policy-set name="policySetA">
+                    <policy ref="queue-federation"/>
+                </policy-set>
+
+                <queue-policy name="queue-federation">
+                    <include queue-match="exampleQueueTwo" address-match="#"/>
+                </queue-policy>
+            </federation>
+        </federations>
+
+        <address-settings>
+            <address-setting match="#">
+                <dead-letter-address>deadLetterQueue</dead-letter-address>
+                <expiry-address>expiryQueue</expiry-address>
+                <auto-delete-addresses>false</auto-delete-addresses>
+                <max-delivery-attempts>3</max-delivery-attempts>
+            </address-setting>
+        </address-settings>
+
+    </core>
+</configuration>

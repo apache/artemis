@@ -1,0 +1,1 @@
+   <jaas-security domain="activemq"/>

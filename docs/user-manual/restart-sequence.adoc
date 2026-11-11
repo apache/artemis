@@ -1,0 +1,76 @@
+= Restart Sequence if using Journal replication
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+{project-name-full} ships with 3 possibilities for providing HA:
+
+- Shared storage
+- Network Journal Replication
+- AMQP Broker Connection Mirroring
+
+This page will cover steps to restart the broker while using journal replication.
+
+== Restarting 1 broker at a time
+
+When restarting the brokers one at a time at regular intervals, it is not important to follow any sequence.
+We just need to make sure that at least 1 broker in the primary/backup pair is active to take up the connections from the client applications.
+
+[NOTE]
+====
+While restarting the brokers while the client applications are connected kindly make sure that at least one broker is always active to serve the connected clients.
+====
+
+== Completely shutting down the brokers and starting
+
+If there is situation that we need to completely shutdown the brokers and  start them again, please follow the following procedure:
+
+. Shut down all the backup brokers.
+. Shut down all the primary brokers.
+. Start all the primary brokers.
+. Start all the backup brokers.
+
+This sequence is particularly important in case of network replication for the following reasons.
+If the primary broker is shutdown first the backup broker will activate and accept all the client connections.
+Then when the backup broker is stopped the clients will attempt to reconnect to the broker that was active most recently i.e. backup.
+Now, when we start the backup and primary brokers the clients will keep trying to connect to the last connection i.e. with backup and will never be able to connect until we restart the client applications.
+To avoid the hassle of restarting of client applications, we must follow the sequence  as suggested above.
+
+== Split-brain situation
+
+The following procedure helps the cluster to recover from the split-brain situation  and getting the client connections auto-reconnected to the cluster.
+With this sequence, client applications do not need to be restarted in order to make  connection with the brokers.
+
+During the split brain situation both the primary and backup brokers are active and there is no replication that is happening from the primary broker to the backup.
+
+In such situation, there can be some client applications that are connected to the primary broker and other connected to the backup broker.
+Now after we restart the brokers and the  cluster is properly formed.
+
+Here, the clients that were connected to the primary broker during the split brain situation  are auto-connected to the cluster and start processing the messages.
+But the clients that got  connected to the backup broker are still trying to make connection with the broker.
+This happens  because the backup broker has restarted in 'back up' mode.
+
+Thus, not all the clients get connected to the brokers and function properly.
+
+To avoid such mishap, kindly follow the below sequence:
+
+. Stop the backup broker
+. Start the backup broker.
+Observe the logs for the message "Waiting for the primary"
+. Stop the primary broker.
+. Start the primary broker.
+Observe the primary broker logs for "Server is active" Observe the backup broker logs for "backup announced"
+. Stop the primary broker again.
+Wait until the backup broker becomes live.
+Observe that all the  clients are connected to the backup broker.
+. Start the primary broker.
+This time, all the connections will be switched to primary broker again,
+
+[NOTE]
+====
+During the split brain situation, messages are produced on the backup broker since it is live.
+While resolving the split brain situation, if there are some delta messages that are not produced  on the backup broker.
+Those messages cannot be auto-recovered.
+There will be manual intervention  required to retrieve the messages, sometime it is almost impossible to recover the messages.
+The above mentioned sequence helps in forming the cluster that was broken due to split brain  and getting all the client applications to auto connected to the cluster without any need for  client applications to be restarted.
+====

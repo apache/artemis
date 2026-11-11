@@ -1,0 +1,8 @@
+
+      <ha-policy>
+         <shared-store>
+            <${primary-backup}>
+               <failover-on-shutdown>${failover-on-shutdown}</failover-on-shutdown>
+            </${primary-backup}>
+         </shared-store>
+      </ha-policy>

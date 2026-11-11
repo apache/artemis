@@ -1,0 +1,14 @@
+= Message Store Migration
+
+== ActiveMQ Classic KahaDB or mKahaDB
+
+{project-name-short} supports an XML format for message store exchange.
+An existing store may be exported from a broker using the command line tools and subsequently imported to another broker.
+
+The https://github.com/apache/activemq-cli-tools[Apache ActiveMQ Command Line Tools] project provides an command line export tool for ActiveMQ Classic that will export a KahaDB (or mKahaDB) message store into the {project-name-short} XML format, for subsequent import by {project-name-short}.
+
+The export tool supports selective export using filters, useful if only some of your data needs to be migrated.
+From version 0.2.0, the export tool has support for virtual topic consumer queue mapping, which will allow existing Openwire virtual topic consumers to resume on an {project-name-short} broker with no message loss.
+Note the OpenWire acceptor `virtualTopicConsumerWildcards` option from xref:virtual-topics.adoc[virtual topics migration].
+
+Full details of tool can be found on the project website: https://github.com/apache/activemq-cli-tools

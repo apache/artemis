@@ -1,0 +1,168 @@
+<?xml version='1.0'?>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+
+<FindBugsFilter>
+
+  <Match>
+    <!-- Having str restored to null is fine for our purposes -->
+    <Class name="org.apache.activemq.artemis.api.core.SimpleString"/>
+    <Field name="str"/>
+    <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/>
+  </Match>
+
+  <Match>
+    <!-- The whole point of SimpleString is to expose this data without any performance penalty -->
+    <Class name="org.apache.activemq.artemis.api.core.SimpleString"/>
+    <method name="getData"/>
+    <Bug pattern="EI_EXPOSE_REP"/>
+  </Match>
+
+  <!-- Ok to return mutable Object -->
+  <Match>
+    <Or>
+      <Class name="org.apache.activemq.artemis.core.protocol.core.impl.wireformat.ReplicationStartSyncMessage" />
+      <Class name="org.apache.activemq.artemis.core.protocol.core.impl.wireformat.ReplicationSyncFileMessage" />
+      <Class name="org.apache.activemq.artemis.core.protocol.core.impl.wireformat.ReplicationLargeMessageWriteMessage" />
+    </Or>
+    <Bug pattern="EI_EXPOSE_REP"/>
+  </Match>
+  <!-- Ok to return mutable Object, here restricted to method getRecordData -->
+  <Match>
+    <Or>
+      <Class name="org.apache.activemq.artemis.core.protocol.core.impl.wireformat.ReplicationAddMessage" />
+      <Class name="org.apache.activemq.artemis.core.protocol.core.impl.wireformat.ReplicationAddTXMessage" />
+      <Class name="org.apache.activemq.artemis.core.protocol.core.impl.wireformat.ReplicationDeleteTXMessage" />
+      <Class name="org.apache.activemq.artemis.core.protocol.core.impl.wireformat.ReplicationPrepareMessage" />
+    </Or>
+    <Method name="getRecordData" />
+    <Bug pattern="EI_EXPOSE_REP"/>
+  </Match>
+
+  <!-- Comparison is correct within its context -->
+  <Match>
+    <Class name="org.apache.activemq.ra.ActiveMQRaUtils"/>
+    <Or>
+      <Method name="compare" params="java.lang.Integer,java.lang.Integer" returns="boolean"/>
+      <Method name="compare" params="java.lang.Long,java.lang.Long" returns="boolean"/>
+      <Method name="compare" params="java.lang.Double,java.lang.Double" returns="boolean"/>
+    </Or>
+    <Bug pattern="RC_REF_COMPARISON"/>
+  </Match>
+
+  <!-- Comparison is correct within its context -->
+  <Match>
+    <Class name="org.apache.activemq.ra.Util"/>
+    <Method name="compare" params="java.lang.Boolean,java.lang.Boolean" returns="boolean"/>
+    <Bug pattern="RC_REF_COMPARISON_BAD_PRACTICE_BOOLEAN"/>
+  </Match>
+
+  <!-- Comparison is correct within its context -->
+  <Match>
+    <Class name="org.apache.activemq.ra.Util"/>
+    <Method name="compare" params="java.lang.String,java.lang.String" returns="boolean"/>
+    <Bug pattern="ES_COMPARING_PARAMETER_STRING_WITH_EQ"/>
+  </Match>
+
+  <Match>
+    <!-- As per Java Messaging Specification 3.5.4:
+
+         "
+         Attempting to read a null value as a Java primitive type must be treated
+         as calling the primitive’s corresponding valueOf(String) conversion method
+         with a null value.
+         "
+
+         so methods are passed null arguments to trigger the exact same exceptions.
+    -->
+    <Class name="org.apache.activemq.artemis.utils.collections.TypedProperties"/>
+    <Or>
+      <Method name="getFloatProperty"/>
+      <Method name="getDoubleProperty"/>
+      <Method name="getByteProperty"/>
+      <Method name="getIntProperty"/>
+      <Method name="getShortProperty"/>
+    </Or>
+    <Bug pattern="NP_NULL_PARAM_DEREF_NONVIRTUAL"/>
+  </Match>
+
+  <Match>
+    <!-- Code is meant to measure memory usage, so calling Garbage Collection is normal. -->
+    <Class name="org.apache.activemq.artemis.utils.MemorySize"/>
+    <bug pattern="DM_GC"/>
+  </Match>
+
+  <match>
+    <!-- Ignore naming convention violations in generated code -->
+    <class name="org.apache.activemq.artemis.core.filter.impl.FilterParser"/>
+    <bug pattern="NM_METHOD_NAMING_CONVENTION"/>
+  </match>
+
+  <Match>
+    <!-- field changes are always guarded by PagingStoreImpl.lock.writeLock().lock() -->
+    <Class name="org.apache.activemq.artemis.core.paging.impl.PagingStoreImpl"/>
+    <Field name="numberOfPages" />
+    <Bug pattern="VO_VOLATILE_INCREMENT"/>
+  </Match>
+
+  <Match>
+    <!-- File is generated by JavaCC -->
+    <Class name="org.apache.activemq.artemis.core.filter.impl.ParseException"/>
+    <bug pattern="SBSC_USE_STRINGBUFFER_CONCATENATION"/>
+  </Match>
+
+  <Match>
+    <!-- Generated by JavaCC: ignore naming convention violation -->
+    <Class name="~org\.apache\.activemq\.artemis\.core\.filter\.impl\.(FilterParser(|TokenManager|Constants)|TokenMgrError)"/>
+    <bug pattern="NM_METHOD_NAMING_CONVENTION,SF_SWITCH_NO_DEFAULT,MS_PKGPROTECT,URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD,MS_OOI_PKGPROTECT"/>
+  </Match>
+
+  <Match>
+    <!-- Files generated by JBoss Logging are ignored -->
+    <Class name="~org\.activemq\..*\.ActiveMQ Artemis.*(Logger_\$logger|Bundle_\$bundle)"/>
+  </Match>
+
+  <!-- Ignore checks on return values, example File.delete(), on samples/examples -->
+  <Match>
+    <Class name="~org\.apache\.activemq\.artemis\.common\.example.*Example"/>
+    <bug pattern="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE"/>
+  </Match>
+
+  <Match>
+    <Class name="org.apache.activemq.artemis.utils.json.JSONObject$Null"/>
+    <Bug pattern="EQ_UNUSUAL"/>
+  </Match>
+
+  <Match>
+    <Class name="org.apache.activemq.artemis.core.server.impl.ActiveMQServerImpl$SharedNothingLiveActivation"/>
+    <Method name="isNodeIdUsed"/>
+    <Bug pattern="RV_RETURN_VALUE_IGNORED"/>
+  </Match>
+
+  <!-- Examples often verify a null value and use the (null) variable in a sys-out statement -->
+  <Match>
+    <Or>
+      <Class name="org.apache.activemq.artemis.jms.example.TopicHierarchyExample"/>
+      <Class name="org.apache.activemq.artemis.jms.example.TransactionalExample"/>
+    </Or>
+    <Method name="runExample"/>
+    <Bug pattern="NP_LOAD_OF_KNOWN_NULL_VALUE"/>
+  </Match>
+
+</FindBugsFilter>

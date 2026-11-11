@@ -1,0 +1,12 @@
+= General Project Information
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+* {project-name-full} is an open source project to build a multi-protocol, embeddable, very high performance, clustered, asynchronous messaging system.
+* {project-name-full} is an example of Message Oriented Middleware (MoM).
+For a description of MoMs and other messaging concepts, please see the xref:messaging-concepts.adoc#messaging-concepts[Messaging Concepts].
+* If you have any questions related to the use or development of {project-name-full} please use one of our https://artemis.apache.org/contact[mailing lists].
+* *Official project page*: https://artemis.apache.org
+* *Download*: https://artemis.apache.org/components/artemis/download/
+* *Git repository*: https://github.com/apache/artemis[https://github.com/apache/artemis^]

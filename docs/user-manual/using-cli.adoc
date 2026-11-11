@@ -1,0 +1,417 @@
+= Command Line Interface
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+A Command Line Interface (CLI) can used to manage a few aspects of the broker like instance creation, basic user management, queue & address management, etc.
+This interface is designed for simple use-cases with _humans_ in mind.
+It is not an exhaustive set of commands for complete broker management.
+There is a comprehensive xref:management.adoc[management API] available with many operations that return JSON formatted output which is better suited for use in scripts and other automated processes.
+
+There are two ways the CLI can be used:
+
+* Traditional CLI commands, e.g.: `./artemis [COMMAND] [PARAMETERS]`
+* A custom shell that is accesssed using the `./artemis` or `./artemis shell` commands.
+
+All commands available through the traditional CLI commands are also available through the shell interface.
+
+One benefit of the shell is that it will *reuse* some information as you repeat commands.
+For example, once you supply the broker URI and username & password to one command those values will be transparently applied other commands in the same shell session.
+Of course, the shell also allows you to avoid retyping `./artemis` for every command.
+
+== Getting Help
+
+You can get a complete list of available commands by typing:
+[,console]
+----
+$ ./artemis help
+Usage: artemis [COMMAND]
+Apache Artemis Command Line
+Commands:
+  help        use 'help <command>' for more information
+  pwd         Information on current folder and instance.
+  shell       JLine3 shell helping using the CLI
+  producer    Send message(s) to a broker.
+  transfer    Move messages from one destination towards another destination.
+  consumer    Consume messages from a queue.
+  browser     Browse messages on a queue.
+  mask        Mask a password and print it out.
+  version     Print version information.
+  perf        use 'help perf' for sub commands list
+  check       use 'help check' for sub commands list
+  queue       use 'help queue' for sub commands list
+  address     use 'help address' for sub commands list
+  connect     Connect to the broker validating credentials for commands.
+  disconnect  Clear previously typed user credentials.
+  data        use 'help data' for sub commands list
+  create      Create a new broker instance.
+  upgrade     Update a broker instance to the current artemis.home, keeping all
+                the data and broker.xml. Warning: backup your instance before
+                using this command and compare the files.
+  completion  Generates the auto complete script file to be used in bash or
+                zsh. Usage: source <(./artemis completion)
+----
+
+It is also possible to use `help` at a specific command or sub-command for more information.
+For example, to get a list of sub-commands for `data` you type `./artemis help data`:
+
+[,console]
+----
+$ ./artemis help data
+Usage: artemis data [COMMAND]
+use 'help data' for sub commands list
+Commands:
+  recover  Recover (undelete) every message on the journal by creating a new
+             output journal. Rolled back and acked messages will be sent out to
+             the output as much as possible.
+  print    Print data records information. WARNING: don't use while a
+             production server is running.
+  exp      Export all message-data using an XML that could be interpreted by
+             any system.
+  imp      Import all message-data using an XML that could be interpreted by
+             any system.
+  decode   Decode a journal's internal format into a new set of journal files.
+  encode   Encode a set of journal files into an internal encoded data format.
+  compact  Compact the journal of a non running server.
+----
+
+Or you can get help for a particular command.
+For example, `./artemis help create`:
+
+[,console]
+----
+Usage: artemis create [--aio] [--allow-anonymous] [--autocreate] [--autodelete]
+                      [--backup] [--blocking] [--clustered]
+                      [--disable-persistence] [--failover-on-shutdown]
+                      [--force] [--jdbc] [--linux] [--mapped] [--nio]
+                      [--no-amqp-acceptor] [--no-autocreate] [--no-autotune]
+                      [--no-fsync] [--no-hornetq-acceptor] [--no-mqtt-acceptor]
+                      [--no-stomp-acceptor] [--no-web] [--paging]
+                      [--relax-jolokia] [--replicated] [--require-login]
+                      [--shared-store] [--silent] [--slave]
+                      [--support-advisory]
+                      [--suppress-internal-management-objects]
+                      [--use-client-auth] [--verbose] [--windows]
+                      [--addresses=<addresses>]
+                      [--cluster-password=<clusterPassword>]
+                      [--cluster-user=<clusterUser>] [--data=<data>]
+                      [--default-port=<defaultPort>] [--encoding=<encoding>]
+                      [--etc=<etc>] [--global-max-messages=<globalMaxMessages>]
+                      [--global-max-size=<globalMaxSize>] [--home=<home>]
+                      [--host=<host>] [--http-host=<httpHost>]
+                      [--http-port=<httpPort>] [--java-memory=<javaMemory>]
+                      [--jdbc-bindings-table-name=<jdbcBindings>]
+                      [--jdbc-connection-url=<jdbcURL>]
+                      [--jdbc-driver-class-name=<jdbcClassName>]
+                      [--jdbc-large-message-table-name=<jdbcLargeMessages>]
+                      [--jdbc-lock-expiration=<jdbcLockExpiration>]
+                      [--jdbc-lock-renew-period=<jdbcLockRenewPeriod>]
+                      [--jdbc-message-table-name=<jdbcMessages>]
+                      [--jdbc-network-timeout=<jdbcNetworkTimeout>]
+                      [--jdbc-node-manager-table-name=<jdbcNodeManager>]
+                      [--jdbc-page-store-table-name=<jdbcPageStore>]
+                      [--journal-device-block-size=<journalDeviceBlockSize>]
+                      [--journal-retention=<retentionDays>]
+                      [--journal-retention-max-bytes=<retentionMaxBytes>]
+                      [--max-hops=<maxHops>]
+                      [--message-load-balancing=<messageLoadBalancing>]
+                      [--name=<name>] [--password=<password>] [--ping=<ping>]
+                      [--port-offset=<portOffset>] [--queues=<queues>]
+                      [--role=<role>] [--security-manager=<securityManager>]
+                      [--ssl-key=<sslKey>]
+                      [--ssl-key-password=<sslKeyPassword>]
+                      [--ssl-trust=<sslTrust>]
+                      [--ssl-trust-password=<sslTrustPassword>]
+                      [--staticCluster=<staticNode>] [--user=<user>]
+                      [--java-options=<javaOptions>]... <directory>
+Create a new broker instance.
+      <directory>            The instance directory to hold the broker's
+                               configuration and data. Path must be writable.
+      --addresses=<addresses>
+                             A comma separated list of addresses with the
+                               option to specify a routing type, e.g.
+                               --addresses myAddress1,myAddress2:anycast.
+                               Routing-type default: multicast.
+      --aio                  Set the journal as asyncio.
+      --allow-anonymous      Allow connections from users with no security
+                               credentials. Opposite of --require-login.
+                               Default: input.
+      --autocreate           Allow automatic creation of addresses & queues.
+                               Default: true.
+      --autodelete           Allow automatic deletion of addresses & queues.
+                               Default: false.
+      --backup               Be a backup broker. Valid for shared store or
+                               replication.
+      --blocking             Block producers when address becomes full.
+                               Opposite of --paging. Default: false.
+      --cluster-password=<clusterPassword>
+                             The password to use for clustering. Default: input.
+      --cluster-user=<clusterUser>
+                             The user to use for clustering. Default: input.
+      --clustered            Enable clustering.
+      --data=<data>          Directory where Apache Artemis data is stored. Paths
+                               can be absolute or relative to artemis.instance
+                               directory. Default: data.
+      --default-port=<defaultPort>
+                             The port number to use for the main 'artemis'
+                               acceptor. Default: 61616.
+      --disable-persistence  Disable message persistence to the journal
+      --encoding=<encoding>  The encoding that text files should use. Default:
+                               UTF-8.
+      --etc=<etc>            Directory where Apache Artemis configuration is located.
+                               Paths can be absolute or relative to artemis.
+                               instance directory. Default: etc.
+      --failover-on-shutdown Whether broker shutdown will trigger failover for
+                               clients using the core protocol. Valid only for
+                               shared store. Default: false.
+      --force                Overwrite configuration at destination directory.
+      --global-max-messages=<globalMaxMessages>
+                             Maximum number of messages that will be accepted
+                               in memory before using address full policy mode.
+                               Default: undefined.
+      --global-max-size=<globalMaxSize>
+                             Maximum amount of memory which message data may
+                               consume. Default: half of the JVM's max memory.
+      --home=<home>          Directory where Apache Artemis is installed.
+      --host=<host>          Broker's host name. Default: 0.0.0.0 or input if
+                               clustered).
+      --http-host=<httpHost> Embedded web server's host name. Default:
+                               localhost.
+      --http-port=<httpPort> Embedded web server's port. Default: 8161.
+      --java-memory=<javaMemory>
+                             Define the -Xmx memory parameter for the broker.
+                               Default: 2G.
+      --java-options=<javaOptions>
+                             Extra Java options to be passed to the profile.
+      --jdbc                 Store message data in JDBC instead of local files.
+      --jdbc-bindings-table-name=<jdbcBindings>
+                             Name of the jdbc bindings table.
+      --jdbc-connection-url=<jdbcURL>
+                             The URL used for the database connection.
+      --jdbc-driver-class-name=<jdbcClassName>
+                             JDBC driver classname.
+      --jdbc-large-message-table-name=<jdbcLargeMessages>
+                             Name of the large messages table.
+      --jdbc-lock-expiration=<jdbcLockExpiration>
+                             Lock expiration (in milliseconds).
+      --jdbc-lock-renew-period=<jdbcLockRenewPeriod>
+                             Lock Renew Period (in milliseconds).
+      --jdbc-message-table-name=<jdbcMessages>
+                             Name of the jdbc messages table.
+      --jdbc-network-timeout=<jdbcNetworkTimeout>
+                             Network timeout (in milliseconds).
+      --jdbc-node-manager-table-name=<jdbcNodeManager>
+                             Name of the jdbc node manager table.
+      --jdbc-page-store-table-name=<jdbcPageStore>
+                             Name of the page store messages table.
+      --journal-device-block-size=<journalDeviceBlockSize>
+                             The block size of the journal's storage device.
+                               Default: 4096.
+      --journal-retention=<retentionDays>
+                             Configure journal retention in days. If > 0 then
+                               enable journal-retention-directory from broker.
+                               xml allowing replay options.
+      --journal-retention-max-bytes=<retentionMaxBytes>
+                             Maximum number of bytes to keep in the retention
+                               directory.
+      --linux, --cygwin      Force Linux or Cygwin script creation. Default:
+                               based on your actual system.
+      --mapped               Set the journal as mapped.
+      --max-hops=<maxHops>   Number of hops on the cluster configuration.
+      --message-load-balancing=<messageLoadBalancing>
+                             Message load balancing policy for cluster.
+                               Default: ON_DEMAND. Valid values: ON_DEMAND,
+                               STRICT, OFF, OFF_WITH_REDISTRIBUTION.
+      --name=<name>          The name of the broker. Default: same as host name.
+      --nio                  Set the journal as nio.
+      --no-amqp-acceptor     Disable the AMQP specific acceptor.
+      --no-autocreate        Disable auto creation for addresses & queues.
+      --no-autotune          Disable auto tuning of the journal-buffer-timeout
+                               in broker.xml.
+      --no-fsync             Disable usage of fdatasync (channel.force(false)
+                               from Java NIO) on the journal.
+      --no-hornetq-acceptor  Disable the HornetQ specific acceptor.
+      --no-mqtt-acceptor     Disable the MQTT specific acceptor.
+      --no-stomp-acceptor    Disable the STOMP specific acceptor.
+      --no-web               Whether to omit the web-server definition from
+                               bootstrap.xml.
+      --paging               Page messages to disk when address becomes full.
+                               Opposite of --blocking. Default: true.
+      --password=<password>  The user's password. Default: input.
+      --ping=<ping>          A comma separated string to be passed on to the
+                               broker config as network-check-list. The broker
+                               will shutdown when all these addresses are
+                               unreachable.
+      --port-offset=<portOffset>
+                             How much to off-set the ports of every acceptor.
+      --queues=<queues>      A comma separated list of queues with the option
+                               to specify a routing type, e.g. --queues
+                               myQueue1,myQueue2:multicast. Routing-type
+                               default: anycast.
+      --relax-jolokia        Disable strict checking in jolokia-access.xml.
+      --replicated           Enable broker replication.
+      --require-login        Require security credentials from users for
+                               connection. Opposite of --allow-anonymous.
+      --role=<role>          The name for the role created. Default: amq.
+      --security-manager=<securityManager>
+                             Which security manager to use - jaas or basic.
+                               Default: jaas.
+      --shared-store         Enable broker shared store.
+      --silent               Disable all the inputs, and make a best guess for
+                               any required input.
+      --slave                Deprecated for removal. Use 'backup' instead.
+      --ssl-key=<sslKey>     Embedded web server's key store path.
+      --ssl-key-password=<sslKeyPassword>
+                             The key store's password.
+      --ssl-trust=<sslTrust> The trust store path in case of client
+                               authentication.
+      --ssl-trust-password=<sslTrustPassword>
+                             The trust store's password.
+      --staticCluster, --static-cluster=<staticNode>
+                             Cluster node connectors list separated by comma, e.
+                               g. "tcp://server:61616,tcp://server2:61616,tcp:
+                               //server3:61616".
+      --support-advisory     Support advisory messages for the OpenWire
+                               protocol.
+      --suppress-internal-management-objects
+                             Do not register any advisory addresses/queues for
+                               the OpenWire protocol with the broker's
+                               management service.
+      --use-client-auth      Require client certificate authentication when
+                               connecting to the embedded web server.
+      --user=<user>          The username. Default: input.
+      --verbose              Print additional information.
+      --windows              Force Windows script creation. Default: based on
+                               your actual system.
+----
+
+== Bash and Zsh auto complete
+
+Bash and Zsh provide ways to auto-complete commands. To integrate with that functionality you have the option to generate the auto-complete script, i.e.:
+
+[,console]
+----
+$ source <(./artemis completion)
+----
+
+After the auto-completion is installed you can view auto-completion information by pressing kbd:[TAB]:
+
+[,console]
+----
+$ ./artemis
+activation    check         consumer      disconnect    mask          producer      run           transfer      version
+address       completion    create        help          perf          pwd           shell         upgrade
+browser       connect       data          kill          perf-journal  queue         stop          user
+----
+
+In order to see the various parameters available you must type `--` then press kbd:[TAB]:
+
+[,console]
+----
+$ ./artemis create --
+--addresses                             --jdbc-bindings-table-name              --paging
+--aio                                   --jdbc-connection-url                   --password
+--allow-anonymous                       --jdbc-driver-class-name                --ping
+--autocreate                            --jdbc-large-message-table-name         --port-offset
+--autodelete                            --jdbc-lock-expiration                  --queues
+--blocking                              --jdbc-lock-renew-period                --relax-jolokia
+--cluster-password                      --jdbc-message-table-name               --replicated
+--cluster-user                          --jdbc-network-timeout                  --require-login
+--clustered                             --jdbc-node-manager-table-name          --role
+----
+
+== Input required
+
+Some functionality may require interactive user input if not explicitly provided through a parameter.
+For example, in cases like connecting to a broker or creating the broker instance:
+
+[,console]
+----
+$ ./artemis queue stat
+Connection brokerURL = tcp://localhost:61616
+Connection failed::AMQ229031: Unable to validate user from /127.0.0.1:56320. Username: null; SSL certificate subject DN: unavailable
+
+--user:
+Type the username for a retry
+myUser
+
+--password: is mandatory with this configuration:
+Type the password for a retry
+----
+
+== Shell
+
+To initialize the shell session, type `./artemis shell` (or just `./artemis` if you prefer):
+
+[,console]
+----
+$ ./artemis
+----
+
+The shell provides an interface that can be used to execute commands directly without leaving the Java Virtual Machine.
+
+[,console]
+----
+     _        _               _
+    / \  ____| |_  ___ __  __(_) _____
+   / _ \|  _ \ __|/ _ \  \/  | |/  __/
+  / ___ \ | \/ |_/  __/ |\/| | |\___ \
+ /_/   \_\|   \__\____|_|  |_|_|/___ /
+ Apache Artemis
+
+
+For a list of commands, type help or press <TAB>:
+Type exit or press <CTRL-D> to leave the session:
+Apache Artemis >
+----
+
+=== Connecting Interactively
+
+It is possible to authenticate your CLI client once to the server and reuse the connection information for additional commands:
+
+[,console]
+----
+Apache Artemis > connect --user=myUser --password=myPass --url tcp://localhost:61616
+Connection brokerURL = tcp://localhost:61616
+Connection Successful!
+----
+Now any command requiring authentication will reuse these parameters.
+
+For example the sub-command `queue stat` will reuse previous information to perform its connection to the broker.
+
+[%nowrap,console]
+----
+Apache Artemis > queue stat
+Connection brokerURL = tcp://localhost:61616
+|NAME                     |ADDRESS                  |CONSUMER_COUNT|MESSAGE_COUNT|MESSAGES_ADDED|DELIVERING_COUNT|MESSAGES_ACKED|SCHEDULED_COUNT|ROUTING_TYPE|
+|DLQ                      |DLQ                      |0             |0            |0             |0               |0             |0              |ANYCAST     |
+|ExpiryQueue              |ExpiryQueue              |0             |0            |0             |0               |0             |0              |ANYCAST     |
+|Order                    |Order                    |0             |4347         |4347          |0               |0             |0              |ANYCAST     |
+|activemq.management.0b...|activemq.management.0b...|1             |0            |0             |0               |0             |0              |MULTICAST   |
+----
+
+=== Connecting Statically
+
+It is possible to start the shell with an initial connection configured statically, e.g.:
+
+[,console]
+----
+$ ./artemis shell --user <username> --password <password> --url tcp://<hostname>:<port>
+----
+
+The CLI should not ask for a the broker URL or user/password for any further commands, e.g.:
+
+[%nowrap,console]
+----
+$ ./artemis shell --user myUser --password myPass
+...
+
+
+Apache Artemis > queue stat
+Connection brokerURL = tcp://localhost:61616
+|NAME                     |ADDRESS                  |CONSUMER_COUNT|MESSAGE_COUNT|MESSAGES_ADDED|DELIVERING_COUNT|MESSAGES_ACKED|SCHEDULED_COUNT|ROUTING_TYPE|
+|DLQ                      |DLQ                      |0             |0            |0             |0               |0             |0              |ANYCAST     |
+|ExpiryQueue              |ExpiryQueue              |0             |0            |0             |0               |0             |0              |ANYCAST     |
+|TEST                     |TEST                     |0             |8743         |8743          |0               |0             |0              |ANYCAST     |
+|activemq.management.2a...|activemq.management.2a...|1             |0            |0             |0               |0             |0              |MULTICAST   |
+----

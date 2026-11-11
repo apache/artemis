@@ -1,0 +1,17 @@
+
+      <!--
+       This value was determined through a calculation.
+       Your system could perform ${writesPerMillisecond} writes per millisecond
+       on the current journal configuration.
+       That translates as a sync write every ${nanoseconds} nanoseconds.
+
+       Note: If you specify 0 the system will perform writes directly to the disk.
+             We recommend this to be 0 if you are using journalType=MAPPED and journal-datasync=false.
+      -->
+      <journal-buffer-timeout>${nanoseconds}</journal-buffer-timeout>
+
+
+      <!--
+        When using ASYNCIO, this will determine the writing queue depth for libaio.
+       -->
+      <journal-max-io>${maxaio}</journal-max-io>

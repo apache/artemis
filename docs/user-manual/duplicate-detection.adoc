@@ -1,0 +1,186 @@
+= Duplicate Message Detection
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+The broker includes powerful automatic duplicate message detection, filtering out duplicate messages without you having to code your own fiddly duplicate detection logic at the application level.
+This chapter will explain what duplicate detection is, how the broker uses it, and how to configure it.
+
+When sending messages from a client to a server, or indeed from a server to another server, if the target server or connection fails sometime after sending the message, but before the sender receives a response that the send (or commit) was processed successfully, then the sender cannot know for sure if the message was sent successfully to the address.
+
+If the target server or connection failed after the send was received and processed, but before the response was sent back then the message will have been sent to the address successfully, but if the target server or connection failed before the send was received and finished processing, then it will not have been sent to the address successfully.
+From the senders' point of view, it's not possible to distinguish these two cases.
+
+When the server recovers, this leaves the client in a difficult situation.
+It knows the target server failed, but it does not know if the last message reached its destination successfully.
+If it decides to resend the last message then that could result in a duplicate message being sent to the address.
+If each message was an order or a trade then this could result in the order being fulfilled twice or the trade being double-booked.
+This is clearly not a desirable situation.
+
+Sending the message(s) in a transaction does not help either.
+If the server or connection fails while the transaction commit is being processed, it is also indeterminate whether the transaction was successfully committed or not!
+
+Automatic duplicate messages detection solves these problems.
+
+== Using Duplicate Detection for Message Sending
+
+To enable duplicate message detection for sent messages you just need to set a special duplicate ID property on the message to a *unique* value.
+You can create the value however you like, as long as it is unique.
+
+[NOTE]
+====
+Using duplicate detection to move messages between nodes can give you the same _once and only once_ delivery guarantees as if you were using an XA transaction to consume messages from source and send them to the target, but with less overhead and much easier configuration than using XA.
+====
+
+If you're sending messages in a transaction then you don't have to set the property for _every_ message you send in that transaction.
+You only need to set it once in the transaction.
+If the server detects a duplicate message for any message in the transaction then it will ignore the entire transaction.
+
+The name of the duplicate ID property is `_AMQ_DUPL_ID`. As a convenience for Java-based applications using the Core client `org.apache.activemq.artemis.api.core.Message.HDR_DUPLICATE_DETECTION_ID` can be used.
+
+When using JMS the property's value must be a `String`, and similarly a string type would be used in other client APIs or protocols used with the broker.
+
+Here's an example of setting the property using the JMS API:
+
+[,java]
+----
+Message jmsMessage = session.createMessage();
+
+String myUniqueID = "This is my unique id";   // Could use a UUID for this
+
+message.setStringProperty(HDR_DUPLICATE_DETECTION_ID.toString(), myUniqueID);
+----
+
+If using the Core client the value of the property can be of type `String`, `SimpleString`, or `byte[]`.
+
+Here's an example of setting the property using the Core API:
+
+[,java]
+----
+ClientMessage message = session.createMessage(true);
+
+SimpleString myUniqueID = SimpleString.of("This is my unique id");   // Could use a UUID for this
+
+message.putStringProperty(HDR_DUPLICATE_DETECTION_ID, myUniqueID);
+----
+
+== Duplicate Detection Semantics
+
+The server maintains a *circular*, fixed-size, per-address cache of duplicate IDs from messages it receives.
+
+When the server receives the message it will check if the duplicate ID property is set.
+If it is then it will check to see if its cache for the correspond address already contains that duplicate ID.
+If the cache already contains that duplicate ID then the message will not be routed to any queues, and the server will log a `WARN` message, e.g.:
+[,console]
+----
+WARN  [org.apache.activemq.artemis.core.server] AMQ222059: Duplicate message detected - message will not be routed. Message information:
+CoreMessage[messageID=15, durable=false, userID=null, priority=4, timestamp=Thu Jan 01 00:00:00 UTC 1970, expiration=0, durable=false, address=myAddress, size=166, properties=TypedProperties[_AMQ_DUPL_ID=[6100 6200 6300 6400 6500 6600 6700]]]@1034478028
+----
+If the cache does not contain that duplicate ID then it is added to the cache and the message is routed to any applicable queues.
+
+Since the cache is circular then if it has a maximum size of `n` elements the ``n + 1``th id stored will overwrite the ``0``th element in the cache.
+Duplicate IDs are _only_ removed from the cache when they are overwritten or cleared administratively (e.g. using the `clearDuplicateIdCache` operation on the corresponding xref:management.adoc#address-management[`AddressControl`] from the web console).
+Even if a message is acknowledged or expires its duplicate ID is not removed from the cache because another message with that same duplicate ID may still be sent.
+
+== Configuring the Duplicate ID Cache
+
+The size of the duplicate ID cache can be configured globally for all addresses or on a per-address basis.
+
+Whether the cache is persisted to storage is also configurable.
+
+[NOTE]
+====
+When choosing a size of the duplicate id cache be sure to set it to a larger enough size so if you resend messages all the previously sent ones are in the cache not having been overwritten.
+====
+
+=== Global Configuration
+
+The maximum size of the cache is configured by the parameter `id-cache-size` in `broker.xml`, e.g.:
+
+[,xml]
+----
+<core>
+   ...
+   <id-cache-size>5000</id-cache-size>
+   ...
+</core>
+----
+
+The default value for the global `id-cache-size` is `20000`. A value of `0` disables caching.
+
+=== Address-Specific Configuration
+
+To configure the cache size on a per-address basis use the `id-cache-size` `address-settings` section in `broker.xml`, e.g.:
+
+[,xml]
+----
+<address-setting match="myAddress">
+   ...
+   <id-cache-size>1000</id-cache-size>
+   ...
+</address-setting>
+----
+
+When a message is sent to an address with a specific `id-cache-size` configured it will take precedence over the global `id-cache-size` value.
+This allows for greater flexibility and optimization of duplicate ID caches.
+
+The default value for the per-address `id-cache-size` is `20000`. A value of `0` disables caching.
+
+=== Persisting the Cache to Storage
+
+Duplicate ID caches are persisted to storage by default.
+The benefit to persisting the cache to storage is that if the broker is stopped for any reason then when it restarts the data will be read from storage back into the cache so duplicate messages can still be detected even if they were sent before the broker restarted.
+However, there is a cost in terms of performance since it takes longer to persist the data.
+
+Duplicate ID cache persistence is configured by the parameter `persist-id-cache` in `broker.xml`, e.g.:
+
+[,xml]
+----
+<core>
+   ...
+   <persist-id-cache>false</persist-id-cache>
+   ...
+</core>
+----
+If `persist-id-cache` is set to `true` then each ID will be persisted to storage as it is received.
+This is configured globally.
+It can't be configured on a per-address basis.
+
+The default value for `persist-id-cache` is `true`.
+
+== Duplicate Detection and Bridges
+
+Core bridges can be configured to automatically add a unique duplicate id value (if there isn't already one in the message) before forwarding the message to its target.
+This ensures that if the target server crashes or the connection is interrupted and the bridge resends the message, then if it has already been received by the target server, it will be ignored.
+
+To configure a core bridge to add the duplicate id header, simply set the `use-duplicate-detection` to `true` when configuring a bridge in `broker.xml`.
+
+The default value for this parameter is `true`.
+
+For more information on core bridges and how to configure them, please see xref:core-bridges.adoc#core-bridges[Core Bridges].
+
+== Duplicate Detection and Cluster Connections
+
+Cluster connections internally use core bridges to move messages reliable between nodes of the cluster.
+Consequently they can also be configured to insert the duplicate id header for each message they move using their internal bridges.
+
+To configure a cluster connection to add the duplicate id header, simply set the `use-duplicate-detection` to `true` when configuring a cluster connection in `broker.xml`.
+
+The default value for this parameter is `true`.
+
+For more information on cluster connections and how to configure them, please see xref:clusters.adoc#clusters[Clusters].
+
+== Performance Considerations
+
+If you *do not need* duplicate detection at all or only for certain addresses it is best to set the global `id-cache-size` to `0` to prevent the server from pre-allocating internal cache-related objects, e.g.:
+
+[,xml]
+----
+<core>
+   ...
+   <id-cache-size>0</id-cache-size>
+   ...
+</core>
+----
+
+This will prevent needless consumption of heap memory so it is available to the broker for other uses.

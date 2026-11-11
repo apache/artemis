@@ -1,0 +1,143 @@
+#!/usr/bin/env sh
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+if [ -z "$ARTEMIS_INSTANCE" ] ; then
+
+  ## resolve links - $0 may be a link to Artemis' home
+  PRG="$0"
+  progname=`basename "$0"`
+  saveddir=`pwd`
+
+  # need this for relative symlinks
+  dirname_prg=`dirname "$PRG"`
+  cd "$dirname_prg"
+
+  while [ -h "$PRG" ] ; do
+    ls=`ls -ld "$PRG"`
+    link=`expr "$ls" : '.*-> \(.*\)$'`
+    if expr "$link" : '.*/.*' > /dev/null; then
+    PRG="$link"
+    else
+    PRG=`dirname "$PRG"`"/$link"
+    fi
+  done
+
+  ARTEMIS_INSTANCE=`dirname "$PRG"`
+  cd "$saveddir"
+
+  # make it fully qualified
+  ARTEMIS_INSTANCE=`cd "$ARTEMIS_INSTANCE/.." && pwd`
+fi
+
+HAWTIO_ROLES="NO_HAWTIO_ROLES"
+
+# Load Profile Data
+ARTEMIS_INSTANCE_ETC='${artemis.instance.etc}'
+
+if [ -z "$ARTEMIS_PROFILE" ] ; then
+  if [ "$1" = "run" ]; then
+    ARTEMIS_PROFILE='artemis.profile'
+  else
+    ARTEMIS_PROFILE="artemis-utility.profile"
+  fi
+fi
+
+if ! test -f "$ARTEMIS_INSTANCE_ETC/${ARTEMIS_PROFILE}"; then
+   echo "********************************************************************************"
+   echo Error: "$ARTEMIS_INSTANCE_ETC/${ARTEMIS_PROFILE}" does not exist.
+   echo
+   echo "This file should have been created as part of you upgrading from a previous version"
+   echo "Please use 'artemis upgrade' or make sure you create the file."
+   echo "********************************************************************************"
+   exit 1
+fi
+
+. "$ARTEMIS_INSTANCE_ETC/${ARTEMIS_PROFILE}"
+
+
+CLASSPATH="$ARTEMIS_HOME/lib/artemis-boot.jar"
+
+# OS specific support.
+cygwin=false;
+darwin=false;
+case "`uname`" in
+  CYGWIN*) cygwin=true
+    OSTYPE=cygwin
+    export OSTYPE
+    ;;
+  Darwin*) darwin=true
+    if [ -z "$JAVA_HOME" ] ; then
+     JAVA_HOME=$(/usr/libexec/java_home)
+    fi
+    ;;
+esac
+
+# For Cygwin, ensure paths are in UNIX format before anything is touched
+if $cygwin ; then
+  [ -n "$ARTEMIS_INSTANCE" ] &&
+    ARTEMIS_INSTANCE=`cygpath --unix "$ARTEMIS_INSTANCE"`
+  [ -n "$JAVA_HOME" ] &&
+    JAVA_HOME=`cygpath --unix "$JAVA_HOME"`
+fi
+
+if [ -z "$JAVACMD" ] ; then
+  if [ -n "$JAVA_HOME"  ] ; then
+    if [ -x "$JAVA_HOME/jre/sh/java" ] ; then
+      # IBM's JDK on AIX uses strange locations for the executables
+      JAVACMD="$JAVA_HOME/jre/sh/java"
+    else
+      JAVACMD="$JAVA_HOME/bin/java"
+    fi
+  else
+    JAVACMD=java
+  fi
+fi
+
+if $cygwin ; then
+  JAVA_HOME=`cygpath --windows "$JAVA_HOME"`
+  ARTEMIS_HOME=`cygpath --windows "$ARTEMIS_HOME"`
+  CLASSPATH=`cygpath --windows "$CLASSPATH"`
+fi
+
+if [ -f "$ARTEMIS_OOME_DUMP" ] ; then
+  # backup the last OOME heap dump
+  mv $ARTEMIS_OOME_DUMP $ARTEMIS_OOME_DUMP.bkp
+fi
+
+# Set shell history argument if ARTEMIS_SHELL_HISTORY is defined
+if [ -n "$ARTEMIS_SHELL_HISTORY" ]; then
+  SHELL_HISTORY_ARG="-Dartemis.shell.history=${ARTEMIS_SHELL_HISTORY}"
+fi
+
+exec "$JAVACMD" \
+    $LOGGING_ARGS \
+    $JAVA_ARGS \
+    -Dhawtio.roles="$HAWTIO_ROLES" \
+    -Djava.security.auth.login.config="$ARTEMIS_INSTANCE_ETC/login.config" \
+    $ARTEMIS_CLUSTER_PROPS \
+    -classpath "$CLASSPATH" \
+    -Dartemis.home="$ARTEMIS_HOME" \
+    -Dartemis.instance="$ARTEMIS_INSTANCE" \
+    -Djava.library.path="$ARTEMIS_HOME/bin/lib/linux-$(uname -m)" \
+    -Djava.io.tmpdir="$ARTEMIS_INSTANCE/tmp" \
+    -Ddata.dir="$ARTEMIS_DATA_DIR" \
+    -Dartemis.instance.etc="$ARTEMIS_INSTANCE_ETC" \
+    $SHELL_HISTORY_ARG \
+    $DEBUG_ARGS \
+    $JAVA_ARGS_APPEND \
+    org.apache.activemq.artemis.boot.Artemis "$@"

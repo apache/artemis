@@ -1,0 +1,59 @@
+= PROXY Protocol
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+As noted in the official https://github.com/haproxy/haproxy/blob/e6a9192af68c5e385aa73c3e1cc51eb9f0cc09d6/doc/proxy-protocol.txt[PROXY Protocol documentation]:
+
+[quote,]
+____
+The PROXY protocol provides a convenient way to safely transport connection information such as a client's address across multiple layers of NAT or TCP proxies.
+____
+
+This essentially allows the broker to know a client's IP address even when the connection is established through reverse proxy that supports the PROXY protocol (e.g. HAProxy, nginx, etc.).
+Without PROXY protocol support the broker would see such client connections as coming from the proxy itself which can be misleading for administrators and complicate trouble-shooting.
+
+Both versions 1 & 2 of the PROXY Protocol are supported.
+
+Any of our supported messaging protocols can be used in combination with the PROXY protocol with or without TLS.
+
+== Configuration
+
+Support for the PROXY Protocol is configured on a per-acceptor basis using the `proxyProtocolEnabled` parameter, e.g.:
+
+[,xml]
+----
+<acceptor name="proxy-artemis">tcp://0.0.0.0:61616?proxyProtocolEnabled=true</acceptor>
+----
+
+=== Security
+
+Support for the PROXY Protocol must be explicitly configured due to security reasons.
+As noted in the official https://github.com/haproxy/haproxy/blob/master/doc/proxy-protocol.txt[PROXY Protocol documentation]:
+
+[quote,]
+____
+The receiver MUST be configured to only receive the protocol described in this specification and MUST not try to guess whether the protocol header is present or not.
+This means that the protocol explicitly prevents port sharing between public and private access.
+Otherwise it would open a major security breach by allowing untrusted parties to spoof their connection addresses.
+*The receiver SHOULD ensure proper access filtering so that only trusted proxies are allowed to use this protocol.* [emphasis added]
+____
+
+Because of this, an acceptor using `proxyProtocolEnabled=true` can _only_ accept connections using the PROXY protocol and vice versa.
+
+If a client attempts to use (or not use) the PROXY Protocol in violation of the configured value for `proxyProtocolEnabled` the broker will log a warning with the code `AMQ224151` containing details about the violation.
+
+== Management
+
+Client connections established through a reverse proxy configured with PROXY Protocol support will have 2 additional pieces of information compared to non-proxied connections:
+
+proxyAddress::
+The IP address and port of the proxy through which the client's connection is established.
+
+proxyProtocolVersion::
+The version of the PROXY Protocol used when establishing the connection from the proxy to the broker.
++
+Valid values are `V1` and `V2`.
+
+This information is available via the `listConnections` method of the `ActiveMQServerControl`.
+On the web console corresponding details will be available in the "Connections" tab.

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+<configuration xmlns="urn:activemq" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:activemq /schema/artemis-configuration.xsd">
+   <core xmlns="urn:activemq:core">
+
+      <bindings-directory>./data/bindings</bindings-directory>
+
+      <journal-directory>./data/journal</journal-directory>
+
+      <large-messages-directory>./data/largemessages</large-messages-directory>
+
+      <journal-pool-files>10</journal-pool-files>
+      <journal-min-files>2</journal-min-files>
+      <journal-compact-min-files>3</journal-compact-min-files>
+      <persist-delivery-count-before-delivery>false</persist-delivery-count-before-delivery>
+
+
+      <paging-directory>./data/paging</paging-directory>
+
+      <!-- Acceptors -->
+      <acceptors>
+         <acceptor name="netty-acceptor">tcp://localhost:61616</acceptor>
+      </acceptors>
+
+      <!-- Other config -->
+
+      <security-settings>
+         <!--security for example queue-->
+         <security-setting match="#">
+            <permission roles="guest" type="createDurableQueue"/>
+            <permission roles="guest" type="deleteDurableQueue"/>
+            <permission roles="guest" type="createNonDurableQueue"/>
+            <permission roles="guest" type="deleteNonDurableQueue"/>
+            <permission roles="guest" type="consume"/>
+            <permission roles="guest" type="send"/>
+         </security-setting>
+      </security-settings>
+
+      <address-settings>
+         <!--override the max-delivery-attempts and dead letter address for the example queue-->
+         <address-setting match="testQueue">
+            <dead-letter-address>deadLetterQueue</dead-letter-address>
+            <max-delivery-attempts>-1</max-delivery-attempts>
+            <redelivery-delay>1</redelivery-delay>
+         </address-setting>
+      </address-settings>
+
+      <addresses>
+         <address name="deadLetterQueue">
+            <anycast>
+               <queue name="deadLetterQueue"/>
+            </anycast>
+         </address>
+         <address name="testQueue">
+            <anycast>
+               <queue name="testQueue"/>
+            </anycast>
+         </address>
+      </addresses>
+   </core>
+</configuration>

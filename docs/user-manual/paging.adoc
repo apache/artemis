@@ -1,0 +1,270 @@
+= Paging
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+The broker transparently supports huge queues containing millions of messages with limited memory.
+
+In such a situation it's not possible to store all of the queues in memory at any one time, so the broker transparently _pages_ messages into and out of memory as they are needed, thus allowing massive queues with a low memory footprint.
+
+The broker will start paging messages to disk when the size of all messages in memory for an address exceeds a configured maximum size.
+
+The default configuration uses paging.
+
+== Page Files
+
+Messages are stored per address on the file system.
+Each address has an individual folder where messages are stored in multiple files (page files).
+Each file will contain messages up to a max configured size (`page-size-bytes`).
+The system will navigate the files as needed, and it will remove the page file as soon as all the messages are acknowledged up to that point.
+
+Browsers will read through the page-cursor system.
+
+Consumers with selectors will also navigate through the page-files and it will ignore messages that don't match the criteria.
+
+[WARNING]
+====
+When you have a queue, and consumers filtering the queue with a very restrictive selector you may get into a situation where you won't be able to read more data from paging until you consume messages from the queue.
+
+Example: in one consumer you make a selector as 'color="red"' but you only have one color red 1 millions messages after blue, you won't be able to consume red until you consume blue ones.
+
+This is different to browsing as we will "browse" the entire queue looking for messages and while we "depage" messages while feeding the queue.
+====
+
+=== Configuration
+
+You can configure the location of the paging folder in `broker.xml`.
+
+* `paging-directory` Where page files are stored.
+The broker will create one folder for each address being paged under this configured location.
+Default is `data/paging`.
+
+== Paging Mode
+
+As soon as messages delivered to an address exceed the configured size, that address alone goes into page mode.
+If max-size-bytes == 0 or max-size-messages == 0, an address will always use paging to route messages.
+
+[NOTE]
+====
+Paging is done individually per address.
+If you configure a max-size-bytes or max-messages for an address, that means each matching address will have a maximum size that you specified.
+It DOES NOT mean that the total overall size of all matching addresses is limited to max-size-bytes.
+Use <<global-max-size,global-max-size>> or <<global-max-messages,global-max-messages>> for that!
+====
+
+=== Configuration
+
+Configuration is done at the address settings in `broker.xml`.
+
+[,xml]
+----
+<address-settings>
+   <address-setting match="jms.someaddress">
+      <max-size-bytes>104857600</max-size-bytes>
+      <max-size-messages>1000</max-size-messages>
+      <page-size-bytes>10485760</page-size-bytes>
+      <address-full-policy>PAGE</address-full-policy>
+      <page-limit-bytes>10G</page-limit-bytes>
+      <page-limit-messages>1000000</page-limit-messages>
+      <page-full-policy>FAIL</page-full-policy>
+   </address-setting>
+</address-settings>
+----
+
+NOTE: The xref:management.adoc#configuring-management[management-address] settings cannot be changed or overridden ie management messages aren't allowed to page/block/fail and are considered an internal broker management mechanism.
+The memory occupation of the xref:management.adoc#configuring-management[management-address] is not considered while evaluating if <<global-max-size,global-max-size>> is hit and can't cause other non-management addresses to trigger a configured `address-full-policy`.
+
+This is the list of available parameters on the address settings.
+
+|===
+| Property Name | Description | Default
+
+| `max-size-bytes`
+| What's the max memory the address could have before entering on page mode.
+| -1 (disabled)
+
+| `max-size-messages`
+| The max number of messages the address could have before entering on page mode.
+| -1 (disabled)
+
+| `page-size-bytes`
+| The size of each page file used on the paging system
+| 10MB
+
+| `address-full-policy`
+| This must be set to `PAGE` for paging to enable.
+If the value is `PAGE` then further messages will be paged to disk.
+If the value is `DROP` then further messages will be silently dropped.
+If the value is `FAIL` then the messages will be dropped and the client message producers will receive an exception.
+If the value is `BLOCK` then client message producers will block when they try and send further messages.
+| `PAGE`
+
+| `max-read-page-messages`
+|  Maximum number of paged messages that the broker can read into memory per-queue. The default value is -1, which means that no limit applies.
+| -1 (disabled)
+
+| `max-read-page-bytes`
+|Maximum memory, in bytes, that can be used to read paged messages into memory per-queue. When applying this limit, the broker takes into account both messages that are currently delivering and messages that are ready to be delivered to consumers. The default value is 2 * page-size (usually being 20 MB). If consumers are slow to acknowledge messages, you can increase the default value to ensure that the memory is not consumed by messages pending acknowledgment, which can starve the broker of messages.
+| 2 * page-size-bytes
+
+|prefetch-page-messages
+|Number of paged messages that the broker can read from disk into memory per-queue. The default value is taken from max-read-page-messages, usually at -1, which means that no limit applies.
+|`max-read-page-messages`
+
+|prefetch-page-bytes
+|Number of paged messages that the broker can read from disk into memory per-queue. The default value is taken from max-read-page-messages, usually at -1, which means that no limit applies.
+|if not defined, `max-read-page-bytes`
+
+| `page-limit-bytes`
+| After entering page mode, how much data would the system allow incoming.
+Notice this will be internally converted as number of pages.
+|
+
+| `page-limit-messages`
+| After entering page mode, how many messages would the system allow incoming on paging.
+|
+
+| `page-full-policy`
+| Valid results are DROP or FAIL.
+This tells what to do if the system is reaching `page-limit-bytes` or `page-limit-messages` after paging
+|
+|===
+
+
+[NOTE]
+
+When using the JDBC storage, the effective page-size-bytes used is limited to jdbc-max-page-size-bytes, configured in the JDBC storage section.
+
+=== max-size-bytes and max-size-messages simultaneous usage
+
+It is possible to define max-size-messages (as the maximum number of messages) and max-messages-size (as the max number of estimated memory used by the address) concurrently.
+The configured policy will start based on the first value to reach its mark.
+
+==== Maximum read from page
+
+`max-read-page-messages`, `max-read-page-bytes`, `prefetch-page-messages` and `prefetch-page-bytes` are used to control reading from paged file into the Queue.
+The broker will add messages as long as all these limits are satisfied.
+
+If all these values are set to -1 the broker will keep reading messages as long as the consumer is reaching for more messages.
+However this would keep the broker unprotected from consumers allocating huge transactions or consumers that don't have flow control enabled.
+
+== Global Settings
+
+Aside from `max-size-bytes` and `max-messages`, which operate on a per-address basis, there are also _global_ settings which apply to all addresses.
+
+When the total accumulated size or number of messages sent to a the broker exceeds the global limit then the `address-full-policy` for the corresponding address will be enforced.
+
+If both `max-size-bytes` and `max-messages` are set to `-1` on a particular address the global setting will still be enforced.
+
+=== Global Max Size
+
+The `global-max-size` is the total number of bytes that can be sent to all the addresses on the broker.
+It is calculated as a percentage of the max memory available to the Java Virtual Machine (i.e. the value of `-Xmx`), unless specified explicitly in `broker.xml`.
+By default, 50% of the max memory is used.
+However, this percentage can be changed using `global-max-size-percent-of-jvm-max-memory` in `broker.xml`.
+
+Use `-1` to disable this functionality.
+
+=== Global Max Messages
+
+The `global-max-messages` is the total number of messages that can be sent to all the addresses on the broker.
+
+By default `global-max-messages` is `-1` (i.e. disabled).
+
+== Dropping messages
+
+Instead of paging messages when the max size is reached, an address can also be configured to just drop messages when the address is full.
+
+To do this just set the `address-full-policy` to `DROP` in the address settings
+
+== Dropping messages and throwing an exception to producers
+
+Instead of paging messages when the max size is reached, an address can also be configured to drop messages and also throw an exception on the client-side when the address is full.
+
+To do this just set the `address-full-policy` to `FAIL` in the address settings
+
+== Blocking producers
+
+Instead of paging messages when the max size is reached, an address can also be configured to block producers from sending further messages when the address is full, thus preventing the memory being exhausted on the server.
+
+When memory is freed up on the server, producers will automatically unblock and be able to continue sending.
+
+To do this just set the `address-full-policy` to `BLOCK` in the address settings
+
+In the default configuration, all addresses are configured to block producers after 10 MiB of data are in the address.
+
+== Caution with Addresses with Multiple Multicast Queues
+
+When a message is routed to an address that has multiple multicast queues bound to it, e.g. a JMS subscription in a Topic, there is only 1 copy of the message in memory.
+Each queue only deals with a reference to this.
+Because of this the memory is only freed up once all queues referencing the message have delivered it.
+
+If you have a single lazy subscription, the entire address will suffer IO performance hit as all the queues will have messages being sent through an extra storage on the paging system.
+
+For example:
+
+* An address has 10 multicast queues
+* One of the queues does not deliver its messages (maybe because of a slow consumer).
+* Messages continually arrive at the address and paging is started.
+* The other 9 queues are empty even though messages have been sent.
+
+In this example all the other 9 queues will be consuming messages from the page system.
+This may cause performance issues if this is an undesirable state.
+
+== Monitoring Disk
+
+The broker can be configured to perform scans on the disk to determine if it is beyond a configured limit.
+Since the disk is a critical piece of infrastructure for data integrity the broker will automatically shut itself down if it runs out of disk space.
+
+Configuring a limit allows the broker to enforce flow control on clients sending messages to the broker so that the disk never fills up.
+The `disk-full-policy` controls what the broker will do when the configured limit is exceeded.
+Similar to `address-full-policy`, valid values are `DROP`, `FAIL`, and `BLOCK`.
+The default is `BLOCK`.
+
+WARNING: If the protocol used to send the messages doesn't support flow control (e.g. STOMP) then an exception will be thrown and the connection for the client will be dropped so that it can no longer send messages and consume disk space.
+
+=== Max Disk Usage
+
+A limit on the _maximum_ disk space used can be configured through `max-disk-usage`
+This is the *percentage* of disk used.
+For example, if the disk's capacity was 500GiB and `max-disk-usage` was `50` then the broker would start blocking producers once 250GiB of disk space was used.
+
+=== Minimum Disk Free
+
+A limit on the _minimum_ disk space free can be configured through `min-disk-free`
+This is specific amount and not a percentage like with `max-disk-usage`.
+For example, if the disk's capacity was 500GiB and `min-disk-free` was `100GiB` then the broker would start blocking producers once 400GiB of disk space was used.
+
+NOTE: If _both_ `max-disk-usage` and `min-disk-free` are configured then `min-disk-free` will take priority.
+
+
+== Page Sync Timeout
+
+The pages are synced periodically and the sync period is configured through `page-sync-timeout` in nanoseconds.
+When using NIO journal, by default has the same value of `journal-buffer-timeout`.
+When using ASYNCIO, the default should be `3333333`.
+
+== Memory usage from Paged Messages.
+
+The system should keep at least one paged file in memory caching ahead reading messages.
+Also every active subscription could keep one paged file in memory.
+So, if your system has too many queues it is recommended to minimize the page-size.
+
+== Page Limits and Page Full Policy
+
+Since version `2.28.0` is possible to configure limits on how much data is paged.
+This is to avoid a single destination using the entire disk in case their consumers are gone.
+
+You can configure either `page-limit-bytes` or `page-limit-messages`, along with `page-full-policy` on the address settings limiting how much data will be recorded in paging.
+
+If you configure `page-full-policy` as DROP, messages will be simply dropped while the clients will not get any exceptions, while if you configured FAIL the producers will receive a JMS Exception for the error condition.
+
+[NOTE]
+
+The `page-limit-bytes` is used to identify a maximum number of page files internally (i.e. `page-limit-bytes` / `page-size-bytes`) which is then compared against the current number of page files.
+If configured, `page-limit-bytes` must be equal or greater than `page-size-bytes` or it will cause immediate block.
+If the limit determined from `page-limit-bytes`, once converted to a number of pages, is less than the current number of page files in the store then paging will be blocked based on `page-full-policy` until the number of current page files drops to less than or equal to the calculated file limit. It will become blocked again once the number of page files is greater than the value determined by `page-limit-bytes` (`page-limit-bytes` / `page-size-bytes`).
+
+== Example
+
+See the xref:examples.adoc#paging[Paging Example] which shows how to use paging.

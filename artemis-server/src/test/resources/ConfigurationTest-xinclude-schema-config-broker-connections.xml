@@ -1,0 +1,31 @@
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<broker-connections xmlns="urn:activemq:core">
+   <amqp-connection uri="tcp://test1:111" name="test1" retry-interval="333" reconnect-attempts="33" user="-5da23e449f1b4b24dd05b6572705eea3" password="-4c07e66dc377c18d95220e791dd51e82">
+      <sender address-match="TEST-SENDER"  />
+      <receiver address-match="TEST-RECEIVER" />
+      <peer address-match="TEST-PEER"/>
+      <receiver queue-name="TEST-WITH-QUEUE-NAME"/>
+      <mirror message-acknowledgements="false" queue-creation="false" durable="false" queue-removal="false"/>
+   </amqp-connection>
+   <amqp-connection uri="tcp://test2:222" name="test2">
+      <mirror durable="false"/>
+   </amqp-connection>
+   <amqp-connection uri="tcp://false" name="auto-start-false" auto-start="false">
+      <mirror/>
+   </amqp-connection>
+</broker-connections>

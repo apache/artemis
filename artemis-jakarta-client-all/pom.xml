@@ -1,0 +1,154 @@
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+
+   <parent>
+      <groupId>org.apache.artemis</groupId>
+      <artifactId>artemis-pom</artifactId>
+      <version>2.58.0-SNAPSHOT</version>
+      <relativePath>../artemis-pom/pom.xml</relativePath>
+   </parent>
+
+   <artifactId>artemis-jakarta-client-all</artifactId>
+   <packaging>jar</packaging>
+   <name>Apache Artemis Jakarta Messaging Client All</name>
+
+   <properties>
+      <jakarta.jms-api.version>${jakarta.jms-api.version.alt}</jakarta.jms-api.version>
+   </properties>
+
+   <dependencies>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-jakarta-client</artifactId>
+      </dependency>
+   </dependencies>
+
+   <build>
+      <pluginManagement>
+         <plugins>
+            <!-- Ensure the shading has a fresh base sources jar for the module before shading,
+                 with nothing much in it, and doesnt instead grab a large already-shaded remote
+                 snapshot, possibly each day (local) or on every build (CI) -->
+            <plugin>
+               <groupId>org.apache.maven.plugins</groupId>
+               <artifactId>maven-source-plugin</artifactId>
+               <configuration>
+                  <forceCreation>true</forceCreation>
+               </configuration>
+            </plugin>
+            <plugin>
+               <groupId>org.apache.maven.plugins</groupId>
+               <artifactId>maven-jar-plugin</artifactId>
+               <configuration>
+                  <!-- Ensures the shading is always working upon a fresh base jar, which has
+                       nothing much in it, rather than potentially working on already-shaded
+                       output still present from prior runs and renamed to have the base name -->
+                  <forceCreation>true</forceCreation>
+               </configuration>
+            </plugin>
+         </plugins>
+      </pluginManagement>
+
+      <plugins>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-shade-plugin</artifactId>
+            <executions>
+               <execution>
+                  <phase>package</phase>
+                  <goals>
+                     <goal>shade</goal>
+                  </goals>
+                  <configuration>
+                     <createSourcesJar>${shade-plugin-create-sources}</createSourcesJar>
+                     <shadeSourcesContent>true</shadeSourcesContent>
+                     <filters>
+                        <filter>
+                           <artifact>*:*</artifact>
+                           <excludes>
+                              <exclude>INSTALL.html</exclude>
+                              <exclude>LICENSE</exclude>
+                              <exclude>README</exclude>
+                              <exclude>META-INF/*.SF</exclude>
+                              <exclude>META-INF/*.DSA</exclude>
+                              <exclude>META-INF/*.RSA</exclude>
+                              <exclude>META-INF/ASL2.0</exclude>
+                              <exclude>META-INF/DEPENDENCIES.txt</exclude>
+                              <exclude>META-INF/LICENSE.txt</exclude>
+                              <exclude>META-INF/NOTICE.txt</exclude>
+                              <exlude>overview.html</exlude>
+                           </excludes>
+                        </filter>
+                        <filter>
+                           <artifact>org.jgroups:jgroups</artifact>
+                           <includes>
+                              <include>org/jgroups/**</include>
+                              <include>jg-magic-map.xml</include>
+                              <include>jg-protocol-ids.xml</include>
+                              <include>*.properties</include>
+                              <include>*.xsd</include>
+                           </includes>
+                        </filter>
+                     </filters>
+                     <transformers>
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                           <resource>META-INF/DEPENDENCIES</resource>
+                        </transformer>
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer">
+                           <addHeader>false</addHeader>
+                        </transformer>
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.DontIncludeResourceTransformer">
+                           <resource>.txt</resource>
+                           <resource>features.xml</resource>
+                        </transformer>
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+                     </transformers>
+                     <relocations>
+                        <relocation>
+                           <pattern>org.apache.activemq</pattern>
+                           <shadedPattern>org.apache.activemq</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>org.apache.geronimo</pattern>
+                           <shadedPattern>org.apache.activemq.artemis.shaded.org.apache.geronimo</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>com.google</pattern>
+                           <shadedPattern>org.apache.activemq.artemis.shaded.com.google</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>org.apache.commons</pattern>
+                           <shadedPattern>org.apache.activemq.artemis.shaded.org.apache.commons</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>org.jboss</pattern>
+                           <shadedPattern>org.apache.activemq.artemis.shaded.org.jboss</shadedPattern>
+                        </relocation>
+                        <relocation>
+                           <pattern>org.jgroups</pattern>
+                           <shadedPattern>org.apache.activemq.artemis.shaded.org.jgroups</shadedPattern>
+                        </relocation>
+                     </relocations>
+                  </configuration>
+               </execution>
+            </executions>
+         </plugin>
+      </plugins>
+   </build>
+</project>

@@ -1,0 +1,61 @@
+<?xml version='1.0'?>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+
+<configuration xmlns="urn:activemq">
+   <jms xmlns="urn:activemq:jms">
+      <queue name="DLQ"/>
+      <queue name="ExpiryQueue"/>
+   </jms>
+   <core xmlns="urn:activemq:core">
+      <paging-directory>./target/paging</paging-directory>
+
+      <bindings-directory>./target/bindings</bindings-directory>
+
+      <journal-directory>./target/journal</journal-directory>
+
+      <journal-min-files>2</journal-min-files>
+
+      <large-messages-directory>./target/large-messages</large-messages-directory>
+
+      <configuration-file-refresh-period>-1</configuration-file-refresh-period>
+
+      <acceptors>
+         <acceptor name="activemq">tcp://${activemq.remoting.default.host:localhost}:${activemq.remoting.default.port:61616}</acceptor>
+      </acceptors>
+
+      <security-settings>
+         <security-setting match="#">
+            <permission type="send" roles="guest"/>
+         </security-setting>
+      </security-settings>
+
+      <address-settings>
+         <!--default for catch all-->
+         <address-setting match="#">
+            <dead-letter-address>DLQ</dead-letter-address>
+            <expiry-address>ExpiryQueue</expiry-address>
+            <redelivery-delay>0</redelivery-delay>
+            <max-size-bytes>10Mb</max-size-bytes>
+            <message-counter-history-day-limit>10</message-counter-history-day-limit>
+            <address-full-policy>BLOCK</address-full-policy>
+         </address-setting>
+      </address-settings>
+   </core>
+</configuration>

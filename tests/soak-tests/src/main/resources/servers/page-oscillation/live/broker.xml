@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+
+<configuration xmlns="urn:activemq"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xmlns:xi="http://www.w3.org/2001/XInclude"
+               xsi:schemaLocation="urn:activemq /schema/artemis-configuration.xsd">
+   <core xmlns="urn:activemq:core" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="urn:activemq:core ">
+
+      <configuration-file-refresh-period>100</configuration-file-refresh-period>
+
+      <bindings-directory>./data/bindings</bindings-directory>
+
+      <journal-directory>./data/journal</journal-directory>
+
+      <large-messages-directory>./data/largemessages</large-messages-directory>
+
+      <paging-directory>./data/paging</paging-directory>
+
+      <cluster-user>exampleUser</cluster-user>
+
+      <cluster-password>secret</cluster-password>
+
+
+      <journal-min-files>2</journal-min-files>
+      <journal-pool-files>50</journal-pool-files>
+      <journal-buffer-timeout>8000</journal-buffer-timeout>
+      <journal-sync-non-transactional>true</journal-sync-non-transactional>
+      <page-sync-timeout>100000</page-sync-timeout>
+      <disk-scan-period>5000</disk-scan-period>
+      <purge-page-folders>&&REPLACE-HERE&&</purge-page-folders>
+
+
+      <amqp-use-core-subscription-naming>true</amqp-use-core-subscription-naming>
+
+      <ha-policy>
+         <replication>
+            <primary>
+               <!--we need this for auto failback-->
+               <check-for-live-server>true</check-for-live-server>
+               <max-saved-replicated-journals-size>5</max-saved-replicated-journals-size>
+            </primary>
+         </replication>
+      </ha-policy>
+      <wildcard-addresses>
+         <enabled>true</enabled>
+         <delimiter>_</delimiter>
+         <any-words>#</any-words>
+         <single-word>*</single-word>
+      </wildcard-addresses>
+
+      <connectors>
+         <connector name="netty-connector">tcp://localhost:61616</connector>
+         <connector name="netty-backup-connector">tcp://localhost:61617</connector>
+      </connectors>
+
+      <!-- Acceptors -->
+      <acceptors>
+         <acceptor name="netty-acceptor">tcp://localhost:61616</acceptor>
+      </acceptors>
+
+      <cluster-connections>
+         <cluster-connection name="my-cluster">
+            <connector-ref>netty-connector</connector-ref>
+            <use-duplicate-detection>true</use-duplicate-detection>
+            <message-load-balancing>OFF</message-load-balancing>
+            <max-hops>1</max-hops>
+            <static-connectors>
+               <connector-ref>netty-backup-connector</connector-ref>
+            </static-connectors>
+         </cluster-connection>
+      </cluster-connections>
+      <!-- Other config -->
+
+      <security-settings>
+         <!--security for example queue-->
+         <security-setting match="#">
+            <permission type="createNonDurableQueue" roles="amq, guest"/>
+            <permission type="deleteNonDurableQueue" roles="amq, guest"/>
+            <permission type="createDurableQueue" roles="amq, guest"/>
+            <permission type="deleteDurableQueue" roles="amq, guest"/>
+            <permission type="createAddress" roles="amq, guest"/>
+            <permission type="deleteAddress" roles="amq, guest"/>
+            <permission type="consume" roles="amq, guest"/>
+            <permission type="browse" roles="amq, guest"/>
+            <permission type="send" roles="amq, guest"/>
+            <!-- we need this otherwise ./artemis data imp wouldn't work -->
+            <permission type="manage" roles="amq, guest"/>
+         </security-setting>
+      </security-settings>
+      <address-settings>
+         <!-- if you define auto-create on certain queues, management has to be auto-create -->
+         <address-setting match="activemq.management.#">
+            <dead-letter-address>DLQ</dead-letter-address>
+            <expiry-address>ExpiryQueue</expiry-address>
+            <redelivery-delay>0</redelivery-delay>
+            <!-- with -1 only the global-max-size is in use for limiting -->
+            <max-size-bytes>-1</max-size-bytes>
+            <message-counter-history-day-limit>10</message-counter-history-day-limit>
+            <address-full-policy>PAGE</address-full-policy>
+            <auto-create-queues>true</auto-create-queues>
+            <auto-create-addresses>true</auto-create-addresses>
+         </address-setting>
+         <!--default for catch all-->
+         <address-setting match="#">
+            <dead-letter-address>DLQ</dead-letter-address>
+            <expiry-address>ExpiryQueue</expiry-address>
+            <redelivery-delay>0</redelivery-delay>
+            <!-- with -1 only the global-max-size is in use for limiting -->
+            <max-size-bytes>500MB</max-size-bytes>
+            <page-size-bytes>50K</page-size-bytes>
+
+            <max-read-page-messages>-1</max-read-page-messages>
+            <max-read-page-bytes>20M</max-read-page-bytes>
+            <prefetch-page-bytes>2MB</prefetch-page-bytes>
+
+            <message-counter-history-day-limit>10</message-counter-history-day-limit>
+            <address-full-policy>PAGE</address-full-policy>
+            <auto-create-queues>true</auto-create-queues>
+            <auto-create-addresses>true</auto-create-addresses>
+            <config-delete-queues>FORCE</config-delete-queues>
+            <config-delete-addresses>FORCE</config-delete-addresses>
+            <default-group-rebalance-pause-dispatch>true</default-group-rebalance-pause-dispatch>
+         </address-setting>
+         <address-setting match="oscillateAddress">
+            <max-size-bytes>50K</max-size-bytes>
+            <config-delete-queues>FORCE</config-delete-queues>
+            <config-delete-addresses>FORCE</config-delete-addresses>
+         </address-setting>
+         <address-setting match="busyQueue">
+            <max-size-bytes>50K</max-size-bytes>
+            <config-delete-queues>FORCE</config-delete-queues>
+            <config-delete-addresses>FORCE</config-delete-addresses>
+         </address-setting>
+      </address-settings>
+      <addresses>
+         <address name="DLQ">
+            <anycast>
+               <queue name="DLQ"/>
+            </anycast>
+         </address>
+         <address name="busyQueue">
+            <anycast>
+               <queue name="busyQueue"/>
+            </anycast>
+         </address>
+         <address name="oscillateAddress">
+            <multicast>
+               <queue name="oscillateSubs"/>
+            </multicast>
+         </address>
+      </addresses>
+   </core>
+</configuration>

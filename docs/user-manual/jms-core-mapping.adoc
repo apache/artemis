@@ -1,0 +1,27 @@
+= Mapping JMS Concepts to the Core API
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+This chapter describes how JMS destinations are mapped to the xref:address-model.adoc[address model].
+If you haven't already done so, please read about the xref:address-model.adoc[address model] as it introduces concepts which are referenced here.
+
+== JMS Topic
+
+A JMS topic is implemented as a xref:address-model.adoc#address[*address*] where the name of the address is the same as the name of the JMS topic.
+
+A subscription on that JMS topic is represented as a xref:address-model.adoc#multicast[*multicast*] xref:address-model.adoc#queue[*queue*] on the corresponding address. The queue is named according to the whether the subscription is durable and according to the client ID and subscription named provided via the JMS API.
+
+Typically, there is just one consumer per queue, but there can be multiple consumers on a queue when using JMS shared topic subscriptions.
+Any messages sent to the JMS topic are therefore routed to every multicast queue bound to the corresponding address and then dispatched to any consumers on those queues (i.e. JMS topic subscriber).
+If there are no queues on the address, then the message is simply dropped.
+
+This effectively achieves JMS pub/sub semantics.
+
+== JMS Queue
+
+Likewise, a JMS queue is implemented as an xref:address-model.adoc#address[*address*] where the name of the address is the same as the name of the JMS queue.
+
+However, there will be just one xref:address-model.adoc#anycast[*anycast*] xref:address-model.adoc#queue[*queue*] on the corresponding address. All JMS consumers on this queue will _share_ the messages in the queue. The queue is named the same as the address.
+
+This effectively achieves JMS point-to-point semantics.

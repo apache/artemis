@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+<configuration xmlns="urn:activemq" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:activemq /schema/artemis-configuration.xsd">
+   <core xmlns="urn:activemq:core">
+
+      <bindings-directory>./data/messaging/bindings</bindings-directory>
+
+      <journal-directory>./data/messaging/journal</journal-directory>
+
+      <large-messages-directory>./data/messaging/largemessages</large-messages-directory>
+
+      <paging-directory>./data/messaging/paging</paging-directory>
+
+      <acceptors>
+         <acceptor name="artemis">tcp://localhost:61616?securityDomain=guest</acceptor> <!-- this is only for the smoke test health-check -->
+         <acceptor name="netty-ssl-acceptor">tcp://localhost:5500?sslEnabled=true;needClientAuth=true;keyStorePath=../../test-classes/server-keystore.jks;keyStorePassword=securepass;trustStorePath=../../test-classes/client-ca-truststore.jks;trustStorePassword=securepass</acceptor>
+      </acceptors>
+
+      <security-settings>
+         <security-setting match="exampleQueue">
+            <permission roles="consumers" type="consume"/>
+            <permission roles="producers" type="send"/>
+         </security-setting>
+      </security-settings>
+
+      <addresses>
+         <address name="exampleQueue">
+            <anycast>
+               <queue name="exampleQueue"/>
+            </anycast>
+         </address>
+      </addresses>
+   </core>
+</configuration>

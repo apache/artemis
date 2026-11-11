@@ -1,0 +1,261 @@
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one or more
+  ~ contributor license agreements. See the NOTICE file distributed with
+  ~ this work for additional information regarding copyright ownership.
+  ~ The ASF licenses this file to You under the Apache License, Version 2.0
+  ~ (the "License"); you may not use this file except in compliance with
+  ~ the License. You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+
+   <parent>
+      <groupId>org.apache.artemis</groupId>
+      <artifactId>artemis-pom</artifactId>
+      <version>2.58.0-SNAPSHOT</version>
+      <relativePath>../artemis-pom/pom.xml</relativePath>
+   </parent>
+
+   <artifactId>apache-artemis</artifactId>
+   <packaging>pom</packaging>
+   <name>Apache Artemis Distribution</name>
+
+   <properties>
+      <schemaLocation>${project.build.directory}/${project.artifactId}-${project.version}-bin/${project.artifactId}-${project.version}/schema</schemaLocation>
+      <configLocation>src/main/resources/config</configLocation>
+   </properties>
+
+   <dependencies>
+      <!-- Apache Artemis artifacts -->
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-boot</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-server</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-cli</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-jms-server</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-jms-client</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-ra</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-web</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-core-client</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-amqp-protocol</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-stomp-protocol</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-openwire-protocol</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-hornetq-protocol</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-mqtt-protocol</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.activemq</groupId>
+         <artifactId>activemq-artemis-native</artifactId>
+         <version>${activemq-artemis-native-version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-jdbc-store</artifactId>
+      </dependency>
+
+      <!-- Logging implementation -->
+      <dependency>
+         <groupId>org.apache.logging.log4j</groupId>
+         <artifactId>log4j-slf4j2-impl</artifactId>
+         <scope>runtime</scope>
+      </dependency>
+
+      <!-- dependencies -->
+      <dependency>
+         <groupId>org.apache.activemq</groupId>
+         <artifactId>activemq-openwire-legacy</artifactId>
+      </dependency>
+
+      <!-- Management Console Dependencies -->
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-console</artifactId>
+         <type>war</type>
+      </dependency>
+      <!-- quorum -->
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-lockmanager-api</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-lockmanager-ri</artifactId>
+      </dependency>
+
+      <!--TODO: no other modules seem to use this, is it equivalent to something else they do use ? -->
+      <dependency>
+         <groupId>jakarta.security.auth.message</groupId>
+         <artifactId>jakarta.security.auth.message-api</artifactId>
+      </dependency>
+   </dependencies>
+
+   <build>
+      <resources>
+         <resource>
+            <directory>../artemis/src/main/resources</directory>
+            <filtering>true</filtering>
+         </resource>
+      </resources>
+      <plugins>
+         <!-- This will unpack the console so we can add its NPMlicense to the assembly-->
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <executions>
+               <execution>
+                  <id>unpack</id>
+                  <phase>process-resources</phase>
+                  <goals>
+                     <goal>unpack</goal>
+                  </goals>
+                  <configuration>
+                     <artifactItems>
+                        <artifactItem>
+                           <groupId>org.apache.artemis</groupId>
+                           <artifactId>apache-artemis-console</artifactId>
+                           <type>zip</type>
+                           <classifier>bin</classifier>
+                        </artifactItem>
+                     </artifactItems>
+                     <includes>**/*.txt</includes>
+                     <outputDirectory>${project.build.directory}/console</outputDirectory>
+                  </configuration>
+               </execution>
+            </executions>
+         </plugin>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-deploy-plugin</artifactId>
+         </plugin>
+         <plugin>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <executions>
+               <execution>
+                  <id>bin</id>
+                  <configuration>
+                     <descriptors>
+                        <descriptor>src/main/assembly/bin.xml</descriptor>
+                     </descriptors>
+                     <tarLongFileMode>posix</tarLongFileMode>
+                  </configuration>
+                  <phase>package</phase>
+                  <goals>
+                     <goal>single</goal>
+                  </goals>
+               </execution>
+               <execution>
+                  <id>dir</id>
+                  <configuration>
+                     <attach>false</attach>
+                     <descriptors>
+                        <descriptor>src/main/assembly/dir.xml</descriptor>
+                     </descriptors>
+                     <tarLongFileMode>posix</tarLongFileMode>
+                  </configuration>
+                  <phase>package</phase>
+                  <goals>
+                     <goal>single</goal>
+                  </goals>
+               </execution>
+            </executions>
+         </plugin>
+      </plugins>
+   </build>
+
+   <profiles>
+      <profile>
+         <id>apache-release</id>
+         <build>
+            <plugins>
+               <plugin>
+                  <artifactId>maven-assembly-plugin</artifactId>
+                  <executions>
+                     <execution>
+                        <id>source</id>
+                        <configuration>
+                           <descriptors>
+                              <descriptor>src/main/assembly/source-assembly.xml</descriptor>
+                           </descriptors>
+                           <tarLongFileMode>posix</tarLongFileMode>
+                        </configuration>
+                        <phase>package</phase>
+                        <goals>
+                           <goal>single</goal>
+                        </goals>
+                     </execution>
+                  </executions>
+               </plugin>
+               <!-- Calculate SHA-512 checksums. Overrides the apache parent pom
+                    execution configuration, for this module -->
+               <plugin>
+                  <groupId>net.nicoulaj.maven.plugins</groupId>
+                  <artifactId>checksum-maven-plugin</artifactId>
+                  <executions>
+                     <execution>
+                        <id>source-release-checksum</id>
+                        <goals>
+                           <goal>artifacts</goal>
+                        </goals>
+                        <phase>post-integration-test</phase>
+                        <configuration>
+                           <algorithms>
+                              <algorithm>SHA-512</algorithm>
+                           </algorithms>
+                           <includeClassifiers>source-release,bin</includeClassifiers>
+                           <excludeMainArtifact>true</excludeMainArtifact>
+                           <csvSummary>false</csvSummary>
+                           <attachChecksums>true</attachChecksums>
+                        </configuration>
+                     </execution>
+                  </executions>
+               </plugin>
+            </plugins>
+         </build>
+      </profile>
+   </profiles>
+</project>

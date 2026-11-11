@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<transaction-service>
+    <properties depends="common" name="arjuna">
+        <!--
+        Transaction Reaper Timeout (default is 120000 microseconds).
+      -->
+        <property
+            name="com.arjuna.ats.arjuna.coordinator.txReaperTimeout" value="120000"/>
+        <!--
+        Transaction Reaper Mode, can be: NORMAL or DYNAMIC (default is NORMAL).
+      -->
+        <property name="com.arjuna.ats.arjuna.coordinator.txReaperMode" value="NORMAL"/>
+        <!--
+        (default is NO)
+      -->
+        <property name="com.arjuna.ats.arjuna.coordinator.asyncCommit" value="NO"/>
+        <!--
+        (default is NO)
+      -->
+        <property name="com.arjuna.ats.arjuna.coordinator.asyncPrepare" value="NO"/>
+        <!--
+        (default is YES)
+      -->
+        <property
+            name="com.arjuna.ats.arjuna.coordinator.commitOnePhase" value="YES"/>
+        <!--
+        (default is defaultStore)
+      -->
+        <property name="com.arjuna.ats.arjuna.objectstore.localOSRoot" value="defaultStore"/>
+        <!--
+        default is under user.home - must be writeable!)
+      -->
+        <property
+            name="com.arjuna.ats.arjuna.objectstore.objectStoreDir" value="target/ObjectStore"/>
+        <!--
+        (default is ON)
+      -->
+        <property
+            name="com.arjuna.ats.arjuna.objectstore.objectStoreSync" value="ON"/>
+        <!--
+        (default is ShadowNoFileLockStore)
+      -->
+        <property
+            name="com.arjuna.ats.arjuna.objectstore.objectStoreType" value="ShadowNoFileLockStore"/>
+        <!--
+        (default is 255)
+      -->
+        <property
+            name="com.arjuna.ats.arjuna.objectstore.hashedDirectories" value="255"/>
+        <!--
+        (default is ON)
+      -->
+        <property
+            name="com.arjuna.ats.arjuna.objectstore.transactionSync" value="ON"/>
+        <!--
+        (Must be unique across all Arjuna instances.)
+      -->
+        <!-- property
+        name="com.arjuna.ats.arjuna.coordinator.actionStore"
+		value="HashedActionStore"
+		value="JDBCActionStore"
+      -->
+        <!-- property
+        name="com.arjuna.ats.arjuna.objectstore.jdbcTxDbAccess"
+		value="JDBCAccess"
+      -->
+        <!-- property
+        name="com.arjuna.ats.arjuna.objectstore.objectStoreType"
+		value="ShadowNoFileLockStore"
+		value="JDBCStore"
+      -->
+        <!-- property
+        name="com.arjuna.ats.arjuna.objectstore.jdbcUserDbAccess"
+		value="JDBCAccess"
+      -->
+        <!-- property
+        name="com.arjuna.ats.arjuna.objectstore.jdbcPoolSizeInitial"
+		value="1"
+      -->
+        <!-- property
+        name="com.arjuna.ats.arjuna.objectstore.jdbcPoolSizeMaximum"
+		value="1"
+      -->
+        <!-- property
+        name="com.arjuna.ats.arjuna.objectstore.jdbcPoolPutConnections"
+		value="false"
+      -->
+        <!-- property
+        name="com.arjuna.ats.arjuna.internal.arjuna.objectstore.cacheStore.size"
+		value=""
+      -->
+        <!-- property
+        name="com.arjuna.ats.arjuna.internal.arjuna.objectstore.cacheStore.period"
+		value=""
+      -->
+        <!--
+        The location for creating temporary files, e.g., Uids.
+        Default is under user.home.
+        IMPORTANT: make sure the directory is lockable, e.g., /tmp on Unix
+        may not be!
+      -->
+        <!--
+        <property
+          name="com.arjuna.ats.arjuna.common.varDir"
+          value="var"/>
+      -->
+    </properties>
+    <properties name="common">
+        <!-- CLF 2.0 properties -->
+        <property name="com.arjuna.common.util.logging.DebugLevel"
+            type="System" value="0x00000000"/>
+        <property name="com.arjuna.common.util.logging.FacilityLevel"
+            type="System" value="0xffffffff"/>
+        <property name="com.arjuna.common.util.logging.VisibilityLevel"
+            type="System" value="0xffffffff"/>
+        <property name="com.arjuna.common.util.logger" type="System" value="log4j"/>
+    </properties>
+    <properties depends="arjuna" name="txoj">
+        <!--
+        (default is LockStore of installation - must be writeable!)
+      -->
+        <!--
+        <property
+          name="com.arjuna.ats.txoj.lockstore.lockStoreDir"
+          value="LockStore"/>
+      -->
+        <!--
+        (default is BasicLockStore)
+      -->
+        <property name="com.arjuna.ats.txoj.lockstore.lockStoreType" value="BasicLockStore"/>
+        <!--
+        (default is NO)
+      -->
+        <property name="com.arjuna.ats.txoj.lockstore.multipleLockStore" value="NO"/>
+        <!--
+        (default is YES)
+      -->
+        <property name="com.arjuna.ats.txoj.lockstore.singleLockStore" value="YES"/>
+        <!--
+        (default is YES)
+      -->
+        <property
+            name="com.arjuna.ats.txoj.lockstore.allowNestedLocking" value="YES"/>
+    </properties>
+    <properties depends="arjuna" name="jta">
+        <!--
+        Support subtransactions in the JTA layer?
+        Default is NO.
+      -->
+        <property name="com.arjuna.ats.jta.supportSubtransactions" value="NO"/>
+        <property name="com.arjuna.ats.jta.jtaTMImplementation" value="com.arjuna.ats.internal.jta.transaction.arjunacore.TransactionManagerImple"/>
+        <!--
+			com.arjuna.ats.internal.jta.transaction.jts.TransactionManagerImple
+			-->
+        <property name="com.arjuna.ats.jta.jtaUTImplementation" value="com.arjuna.ats.internal.jta.transaction.arjunacore.UserTransactionImple"/>
+        <!--
+			com.arjuna.ats.internal.jta.transaction.jts.UserTransactionImple
+			-->
+<property name="com.arjuna.ats.jta.recovery.XAResourceRecovery.HORNETQ" value="org.apache.activemq.artemis.api.jms.server.recovery.ActiveMQXAResourceRecovery;adaptor1"/>
+
+
+
+    </properties>
+    <properties depends="arjuna,txoj,jta" name="recoverymanager">
+        <!--
+        Properties used only by the RecoveryManager.
+      -->
+        <!--
+        Periodic recovery settings.
+        Time values in this section are in seconds.
+      -->
+        <!--
+        Interval in seconds between initiating the periodic recovery modules.
+        Default is 120 seconds.
+      -->
+        <property
+            name="com.arjuna.ats.arjuna.recovery.periodicRecoveryPeriod" value="20"/>
+        <!--
+        Interval in seconds between first and second pass of periodic recovery.
+        Default is 10 seconds.
+      -->
+        <property
+            name="com.arjuna.ats.arjuna.recovery.recoveryBackoffPeriod" value="10"/>
+        <!--
+        Periodic recovery modules to use.  Invoked in sort-order of names.
+      -->
+
+        <property name="com.arjuna.ats.arjuna.recovery.recoveryExtension0" value="com.arjuna.ats.internal.jta.recovery.arjunacore.XARecoveryModule"/>
+
+        <property name="com.arjuna.ats.arjuna.recovery.recoveryExtension1" value="com.arjuna.ats.internal.arjuna.recovery.AtomicActionRecoveryModule"/>
+
+        <property name="com.arjuna.ats.arjuna.recovery.recoveryExtension2" value="com.arjuna.ats.internal.txoj.recovery.TORecoveryModule"/>
+
+
+        <!--
+        Expired entry removal
+      -->
+        <!--
+        Expiry scanners to use (order of invocation is random).
+        Names must begin with "com.arjuna.ats.arjuna.recovery.expiryScanner"
+      -->
+        <property
+            name="com.arjuna.ats.arjuna.recovery.expiryScannerTransactionStatusManager" value="com.arjuna.ats.internal.arjuna.recovery.ExpiredTransactionStatusManagerScanner"/>
+        <!--
+        Interval, in hours, between running the expiry scanners.
+        This can be quite long. The absolute value determines the interval -
+        if the value is negative, the scan will NOT be run until after one
+        interval has elapsed. If positive the first scan will be immediately
+        after startup. Zero will prevent any scanning.
+        Default  = 12 = run immediately, then every 12 hours.
+      -->
+        <property
+            name="com.arjuna.ats.arjuna.recovery.expiryScanInterval" value="12"/>
+        <!--
+        Age, in hours, for removal of transaction status manager item.
+        This should be longer than any ts-using process will remain running.
+        Zero = Never removed.  Default is 12.
+      -->
+        <property
+            name="com.arjuna.ats.arjuna.recovery.transactionStatusManagerExpiryTime" value="12"/>
+        <!--
+        Use this to fix the port on which the TransactionStatusManager listens,
+        The default behaviour is to use any free port.
+      -->
+        <property
+            name="com.arjuna.ats.arjuna.recovery.transactionStatusManagerPort" value="0"/>
+    </properties>
+    <properties depends="jta" name="jdbc">
+        <!--
+           property name="com.arjuna.ats.jdbc.isolationLevel" value="TRANSACTION_SERIALIZABLE"/>
+        -->
+    </properties>
+</transaction-service>

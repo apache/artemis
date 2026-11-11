@@ -1,0 +1,59 @@
+= Validating releases
+
+== Setting up the maven repository
+
+When a release is proposed a maven repository is staged.
+
+This information was extracted from https://maven.apache.org/guides/development/guide-testing-releases.html[Guide to Testing Staged Releases]
+
+An example staging repository created during the release process would be: https://repository.apache.org/content/repositories/orgapacheartemis-1002.
+
+The first thing you need to do is to be able to access this staging repository.
+The easiest way we have found is to change your maven settings at `~/.m2/settings.xml`, setting up the staging repo.
+
+[,xml]
+.~/.m2/settings.xml
+----
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<settings>
+   <profiles>
+      <profile>
+         <id>apache-artemis-staging</id>
+         <repositories>
+            <repository>
+               <id>artemis-staging</id>
+               <name>Apache Artemis Staging</name>
+               <url>https://repository.apache.org/content/repositories/orgapacheartemis-1002</url>
+               <layout>default</layout>
+               <releases>
+                  <enabled>true</enabled>
+               </releases>
+               <snapshots>
+                  <enabled>false</enabled>
+               </snapshots>
+            </repository>
+         </repositories>
+
+         <pluginRepositories>
+            <pluginRepository>
+               <id>artemis-staging</id>
+               <name>Apache Artemis Staging</name>
+               <url>https://repository.apache.org/content/repositories/orgapacheartemis-1002</url>
+               <releases>
+                  <enabled>true</enabled>
+               </releases>
+               <snapshots>
+                  <enabled>false</enabled>
+               </snapshots>
+            </pluginRepository>
+         </pluginRepositories>
+      </profile>
+   </profiles>
+
+   <activeProfiles>
+      <activeProfile>apache-artemis-staging</activeProfile>
+   </activeProfiles>
+</settings>
+----
+
+After you configure this, the maven artifacts for the release candidate will be available to your builds.

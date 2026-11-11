@@ -1,0 +1,903 @@
+= Clusters
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+== Overview
+
+Clusters allow groups of brokers to be grouped together in order to share message processing load.
+Each active node in the cluster manages its own messages and handles its own connections.
+
+The cluster is formed by each node declaring _cluster connections_ to other nodes in the core configuration file `broker.xml`.
+When a node forms a cluster connection to another node, internally it creates a _core bridge_ (as described in xref:core-bridges.adoc#core-bridges[Core Bridges]) connection between it and the other node, this is done transparently behind the scenes - you don't have to declare an explicit bridge for each node.
+These cluster connections allow messages to flow between the nodes of the cluster to balance load.
+
+Nodes can be connected together to form a cluster in many different topologies, we will discuss a couple of the more common topologies later in this chapter.
+
+We'll also discuss client side load balancing, where we can balance client connections across the nodes of the cluster, and we'll consider message redistribution where the broker will redistribute messages between nodes to avoid starvation.
+
+Another important part of clustering is _server discovery_ where servers can broadcast their connection details so clients or other servers can connect to them with the minimum of configuration.
+
+[WARNING]
+====
+[#copy-warning]
+Once a cluster node has been configured it is common to simply copy that configuration to other nodes to produce a symmetric cluster.
+However, care must be taken when copying the files.
+Do not copy the _data_ (i.e. the `bindings`, `journal`, `paging`, and `large-messages` directories) from one node to another.
+When a node is started for the first time and initializes its journal files it also persists a special identifier to the `journal` directory.
+This id _must_ be unique among nodes in the cluster or the cluster will not form properly.
+====
+
+== Performance Considerations
+
+It is important to note that while the goal of clustering is to increase overall message throughput via horizontal scaling it is not a "silver bullet." In certain situations clustering can, in fact, _reduce_ message throughput so care must be taken when choosing a clustered configuration.
+Here's a few general guidelines:
+
+. *Establish a clear, concrete performance goal.* Performance testing & tuning are often difficult and tedious activities.
+Small, relative gains will tempt you to keep going, and without a goal you will never know when to stop.
+You need a goal to know "how good is good enough."
+. *Start simple.* Benchmark your use-case with a single broker first.
+A single broker can handle _millions_ of messages per second in certain  use-cases.
+If you can't meet your performance goal with a single broker only then move to a clustered configuration.
+Only add complexity when there is a _clear benefit_.
+
+The main way a cluster can reduce overall message throughput is if there are are not enough producers & consumers on each node leading to message build-up on some nodes and consumer starvation others.
+The cluster has mechanisms to deal with this (i.e. message load-balancing & redistribution, which will be covered later), but you really don't want the broker to intervene and move messages between nodes unless absolutely necessary because *that adds latency*.
+
+Therefore, when thinking in performance terms the main question one must answer when choosing a clustered configuration is: Do I have enough clients so that each node in the cluster has sufficient consumers to receive all the messages produced on that node?
+If the answer to that question is "yes" then clustering may, in fact, improve overall message throughput for you.
+If the answer to that question is "no" then you're likely to get better performance from either a smaller cluster or just a single broker.
+
+Also keep in mind that a xref:connection-routers.adoc#connection-routers[connection router] may improve performance of your cluster by grouping related consumers and producers together on the same node.
+
+[[server-discovery]]
+== Server discovery
+
+Server discovery is a mechanism by which servers can propagate their connection details to:
+
+* Messaging clients.
+A messaging client wants to be able to connect to the servers of the cluster without having specific knowledge of which servers in the cluster are up at any one time.
+* Other servers.
+Servers in a cluster want to be able to create cluster connections to each other without having prior knowledge of all the other servers in the cluster.
+
+This information, let's call it the Cluster Topology, is actually sent around normal connections to clients and to other servers over cluster connections.
+This being the case, we need a way of establishing the initial first connection.
+This can be done using dynamic discovery techniques like https://en.wikipedia.org/wiki/User_Datagram_Protocol[UDP] and http://www.jgroups.org/[JGroups], or by providing a list of initial connectors.
+
+[WARNING]
+====
+Server discovery is *disabled by default* for security reasons.
+
+Before enabling server discovery, check that the broadcast endpoint authenticates the senders:
+
+* *JGroups*: configure the JGroups `AUTH` protocol and/or TLS in the stack referenced by `jgroups-file` so only authorized members can send broadcasts.
+* *UDP*: has no built-in sender authentication; use only on trusted networks.
+
+Set the JVM system property `artemis.discovery.enabled=true` or the environment
+variable `ARTEMIS_DISCOVERY_ENABLED=true` to enable discovery on clients and servers.
+
+You can set the JVM system property for the broker by including
+`-Dartemis.discovery.enabled=true` within the `JAVA_ARGS` within `etc/artemis.profile` and
+`etc/artemis-utility.profile` for your broker instance.`
+
+For clustered instances created with the CLI that require server discovery, you must pass
+the hidden `--discovery-enabled` flag to `artemis create`.
+The `--discovery-enabled` flag adds `-Dartemis.discovery.enabled=true` to `JAVA_ARGS` in
+both profile files.
+Use this only after reviewing the security requirements above.
+
+See xref:threat-model.adoc#threat-model[threat model] for trust boundary implications.
+====
+
+=== Dynamic Discovery
+
+Server discovery uses https://en.wikipedia.org/wiki/User_Datagram_Protocol[UDP] multicast or http://www.jgroups.org/[JGroups] to broadcast server connection settings.
+
+==== Broadcast Groups
+
+A broadcast group is the means by which a server broadcasts connectors over the network.
+A connector defines a way in which a client (or other server) can make connections to the server.
+For more information on what a connector is, please see xref:configuring-transports.adoc#configuring-the-transport[Configuring the Transport].
+
+The broadcast group takes a connector and broadcasts it on the network.
+Depending on which broadcasting technique you configure, it uses either UDP or JGroups to broadcast connector information.
+
+Broadcast groups are defined in the server configuration file `broker.xml`.
+There can be many broadcast groups per broker.
+All broadcast groups must be defined in a `broadcast-groups` element.
+
+Let's take a look at an example broadcast group from `broker.xml` that defines a UDP broadcast group:
+
+[,xml]
+----
+<broadcast-groups>
+   <broadcast-group name="my-broadcast-group">
+    <local-bind-address>172.16.9.3</local-bind-address>
+    <local-bind-port>5432</local-bind-port>
+    <group-address>231.7.7.7</group-address>
+    <group-port>9876</group-port>
+    <broadcast-period>2000</broadcast-period>
+    <connector-ref>netty-connector</connector-ref>
+   </broadcast-group>
+</broadcast-groups>
+----
+
+Some of the broadcast group parameters are optional and you'll normally use the defaults, but we specify them all in the above example for clarity.
+Let's discuss each one in turn:
+
+name::
+ attribute.
+Each broadcast group in the server must have a unique name.
+
+local-bind-address::
+This is the local bind address that the datagram socket is bound to.
+If you have multiple network interfaces on your server, you would specify which one you wish to use for broadcasts by setting this property.
+If this property is not specified then the socket will be bound to the wildcard address, an IP address chosen by the kernel.
+This is a UDP specific attribute.
+
+local-bind-port::
+If you want to specify a local port to which the datagram socket is bound you can specify it here.
+Normally you would just use the default value of `-1` which signifies that an anonymous port should be used.
+This parameter is always specified in conjunction with `local-bind-address`.
+This is a UDP specific attribute.
+
+group-address::
+This is the multicast address to which the data will be broadcast.
+It is a class D IP address in the range `224.0.0.0` to `239.255.255.255`, inclusive.
+The address `224.0.0.0` is reserved and is not available for use.
+This parameter is mandatory.
+This is a UDP specific attribute.
+
+group-port::
+This is the UDP port number used for broadcasting.
+This parameter is mandatory.
+This is a UDP specific attribute.
+
+broadcast-period::
+This is the period in milliseconds between consecutive broadcasts.
+This parameter is optional, the default value is `2000` milliseconds.
+
+connector-ref::
+This specifies the connector and optional backup connector that will be broadcasted (see xref:configuring-transports.adoc#configuring-the-transport[Configuring the Transport] for more information on connectors).
+
+Here is another example broadcast group that defines a JGroups broadcast group:
+
+[,xml]
+----
+<broadcast-groups>
+   <broadcast-group name="my-broadcast-group">
+      <broadcast-period>2000</broadcast-period>
+      <jgroups-file>test-jgroups-file_ping.xml</jgroups-file>
+      <jgroups-channel>activemq_broadcast_channel</jgroups-channel>
+      <connector-ref>netty-connector</connector-ref>
+   </broadcast-group>
+</broadcast-groups>
+----
+
+To be able to use JGroups to broadcast, one must specify two attributes, i.e. `jgroups-file` and `jgroups-channel`, as discussed in details as following:
+
+jgroups-file::
+This is the name of JGroups configuration file.
+It will be used to initialize JGroups channels.
+Make sure the file is in the Java resource path so that the broker can load it.
+The typical location for the file is the `etc` directory from the broker instance.
+
+jgroups-channel::
+The name that JGroups channels connect to for broadcasting.
+
+[NOTE]
+====
+
+
+The JGroups attributes (`jgroups-file` and `jgroups-channel`) and UDP specific attributes described above are exclusive of each other.
+Only one set can be specified in a broadcast group configuration.
+Don't mix them!
+====
+
+The following is an example of a JGroups file
+
+[,xml]
+----
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="urn:org:jgroups"
+        xsi:schemaLocation="urn:org:jgroups http://www.jgroups.org/schema/jgroups.xsd">
+  <TCP bind_addr="${jgroups.bind_addr:site_local}"
+       bind_port="${jgroups.bind_port:7800}"
+       external_addr="${jgroups.external_addr}"
+       external_port="${jgroups.external_port}"
+       thread_pool.min_threads="0"
+       thread_pool.max_threads="200"
+       thread_pool.keep_alive_time="30000"/>
+  <RED/>
+
+  <!-- a location that can be found by both server's running -->
+  <FILE_PING location="../file.ping.dir"/>
+  <MERGE3  min_interval="10000"
+           max_interval="30000"/>
+  <FD_SOCK2/>
+  <FD_ALL3 timeout="40000" interval="5000" />
+  <VERIFY_SUSPECT2 timeout="1500"  />
+  <BARRIER />
+  <pbcast.NAKACK2 use_mcast_xmit="false" />
+  <UNICAST3 />
+  <pbcast.STABLE desired_avg_gossip="50000"
+                 max_bytes="4M"/>
+  <pbcast.GMS print_local_addr="true" join_timeout="2000"/>
+  <UFC max_credits="2M"
+       min_threshold="0.4"/>
+  <MFC max_credits="2M"
+       min_threshold="0.4"/>
+  <FRAG2 frag_size="60K"  />
+  <!--RSVP resend_interval="2000" timeout="10000"/-->
+  <pbcast.STATE_TRANSFER/>
+</config>
+----
+
+As it shows, the file content defines a JGroups protocol stack.
+If you want the broker to use this stack for channel creation, you have to make sure the value of `jgroups-file` in your broadcast-group/discovery-group configuration to be the name of this JGroups configuration file.
+For example, if the above configuration is stored in a file named "jgroups-stack.xml" then your `jgroups-file` should be like:
+
+[,xml]
+----
+<jgroups-file>jgroups-stack.xml</jgroups-file>
+----
+
+==== Discovery Groups
+
+While the broadcast group defines how connector information is broadcasted from a server, a discovery group defines how connector information is received from a broadcast endpoint (a UDP multicast address or JGroup channel).
+
+A discovery group maintains a list of connector pairs - one for each broadcast by a different server.
+As it receives broadcasts on the broadcast endpoint from a particular server it updates its entry in the list for that server.
+
+If it has not received a broadcast from a particular server for a length of time it will remove that server's entry from its list.
+
+Discovery groups are used in two places:
+
+* By cluster connections so they know how to obtain an initial connection to download the topology
+* By messaging clients so they know how to obtain an initial connection to download the topology
+
+Although a discovery group will always accept broadcasts, its current list of available primary and backup servers is only ever used when an initial connection is made, from then server discovery is done over the normal connections.
+
+[NOTE]
+====
+Each discovery group must be configured with broadcast endpoint (UDP or JGroups) that matches its broadcast group counterpart.
+For example, if broadcast is configured using UDP, the discovery group must also use UDP, and the same multicast address.
+====
+
+==== Defining Discovery Groups on the Server
+
+For cluster connections, discovery groups are defined in the server side configuration file `broker.xml`.
+All discovery groups must be defined inside a `discovery-groups` element.
+There can be many discovery groups defined.
+Let's look at an example:
+
+[,xml]
+----
+<discovery-groups>
+   <discovery-group name="my-discovery-group">
+      <local-bind-address>172.16.9.7</local-bind-address>
+      <group-address>231.7.7.7</group-address>
+      <group-port>9876</group-port>
+      <refresh-timeout>10000</refresh-timeout>
+   </discovery-group>
+</discovery-groups>
+----
+
+We'll consider each parameter of the discovery group:
+
+name::
+ attribute.
+Each discovery group must have a unique name per server.
+
+local-bind-address::
+If you are running with multiple network interfaces on the same machine, you may want to specify that the discovery group listens only a specific interface.
+To do this you can specify the interface address with this parameter.
+This parameter is optional.
+This is a UDP specific attribute.
+
+group-address::
+This is the multicast IP address of the group to listen on.
+It should match the `group-address` in the broadcast group that you wish to listen from.
+This parameter is mandatory.
+This is a UDP specific attribute.
+
+group-port::
+This is the UDP port of the multicast group.
+It should match the `group-port` in the broadcast group that you wish to listen from.
+This parameter is mandatory.
+This is a UDP specific attribute.
+
+refresh-timeout::
+This is the period the discovery group waits after receiving the last broadcast from a particular server before removing that servers connector pair entry from its list.
+You would normally set this to a value significantly higher than the `broadcast-period` on the broadcast group otherwise servers might intermittently disappear from the list even though they are still broadcasting due to slight differences in timing.
+This parameter is optional, the default value is `10000` milliseconds (10 seconds).
+
+Here is another example that defines a JGroups discovery group:
+
+[,xml]
+----
+<discovery-groups>
+   <discovery-group name="my-broadcast-group">
+      <jgroups-file>test-jgroups-file_ping.xml</jgroups-file>
+      <jgroups-channel>activemq_broadcast_channel</jgroups-channel>
+      <refresh-timeout>10000</refresh-timeout>
+   </discovery-group>
+</discovery-groups>
+----
+
+To receive broadcast from JGroups channels, one must specify two attributes, `jgroups-file` and `jgroups-channel`, as discussed in details as following:
+
+jgroups-file::
+This is the name of the JGroups configuration file.
+It will be used to initialize JGroups channels.
+Make sure the file is in the java resource path so that the broker can load it.
+
+jgroups-channel::
+The name that JGroups channels connect to for receiving broadcasts.
+
+[NOTE]
+====
+The JGroups attributes (`jgroups-file` and `jgroups-channel`) and UDP specific attributes described above are exclusive of each other.
+Only one set can be specified in a discovery group configuration.
+Don't mix them!
+====
+
+==== Discovery Groups on the Client Side
+
+Let's discuss how to configure a Core client to use discovery to discover a list of servers to which it can connect.
+The way to do this differs depending on whether you're using JMS or the Core API.
+
+===== Configuring client discovery
+
+Use the `udp` URL scheme and a host:port combination matches the group-address and group-port from the corresponding `broadcast-group` on the server:
+
+----
+udp://231.7.7.7:9876
+----
+
+Connections created using this URI will be load-balanced across the list of servers that the discovery group maintains by listening on the multicast address specified in the discovery group configuration.
+
+The aforementioned `refreshTimeout` parameter can be set directly in the URI.
+
+There is also a URL parameter named `initialWaitTimeout`.
+If the corresponding JMS connection factory or core session factory is used immediately after creation then it may not have had enough time to received broadcasts from all the nodes in the cluster.
+On first usage, the connection factory will make sure it waits this long since creation before creating the first connection.
+The default value for this parameter is `10000` milliseconds.
+
+=== Discovery using static Connectors
+
+Sometimes it may be impossible to use UDP on the network you are using.
+In this case its possible to configure a connection with an initial list of possible servers.
+This could be just one server that you know will always be available or a list of servers where at least one will be available.
+
+This doesn't mean that you have to know where all your servers are going to be hosted, you can configure these servers to use the reliable servers to connect to.
+Once they are connected their connection details will be propagated via the server it connects to
+
+==== Configuring a Cluster Connection
+
+For cluster connections there is no extra configuration needed, you just need to make sure that any connectors are defined in the usual manner, (see xref:configuring-transports.adoc#configuring-the-transport[Configuring the Transport] for more information on connectors).
+These are then referenced by the cluster connection configuration.
+
+==== Configuring a Client Connection
+
+A static list of possible servers can also be used by a normal client.
+
+===== Configuring client discovery
+
+A list of servers to be used for the initial connection attempt can be specified in the connection URI using a syntax with `()`, e.g.:
+
+----
+(tcp://myhost:61616,tcp://myhost2:61616)?reconnectAttempts=5
+----
+
+The brackets are expanded so the same query can be appended after the last bracket for ease.
+
+== Server-Side Message Load Balancing
+
+If cluster connections are defined between nodes of a cluster, then the broker will load balance messages arriving at a particular node from a client.
+
+Let's take a simple example of a cluster of four nodes A, B, C, and D arranged in a _symmetric cluster_ (described in Symmetrical Clusters section).
+We have a queue called `OrderQueue` deployed on each node of the cluster.
+
+We have client Ca connected to node A, sending orders to the server.
+We have also have order processor clients Pa, Pb, Pc, and Pd connected to each of the nodes A, B, C, D.
+If no cluster connection was defined on node A, then as order messages arrive on node A they will all end up in the `OrderQueue` on node A, so will only get consumed by the order processor client attached to node A, Pa.
+
+If we define a cluster connection on node A, then as ordered messages arrive on node A instead of all of them going into the local `OrderQueue` instance, they are distributed in a round-robin fashion between all the nodes of the cluster.
+The messages are forwarded from the receiving node to other nodes of the cluster.
+This is all done on the server side, the client maintains a single connection to node A.
+
+For example, messages arriving on node A might be distributed in the following order between the nodes: B, D, C, A, B, D, C, A, B, D.
+The exact order depends on the order the nodes started up, but the algorithm used is round-robin.
+
+Cluster connections can be configured to always blindly load balance messages in a round-robin fashion irrespective of whether there are any matching consumers on other nodes, but they can be a bit cleverer than that and also be configured to only distribute to other nodes if they have matching consumers.
+We'll look at both these cases in turn with some examples, but first we'll discuss configuring cluster connections in general.
+
+=== Configuring Cluster Connections
+
+Cluster connections group servers into clusters so that messages can be load balanced between the nodes of the cluster.
+Let's take a look at a typical cluster connection.
+Cluster connections are always defined in `broker.xml` inside a `cluster-connection` element.
+There can be zero or more cluster connections defined per broker.
+
+[,xml]
+----
+<cluster-connections>
+   <cluster-connection name="my-cluster">
+      <address></address>
+      <connector-ref>netty-connector</connector-ref>
+      <check-period>1000</check-period>
+      <connection-ttl>5000</connection-ttl>
+      <min-large-message-size>50000</min-large-message-size>
+      <call-timeout>5000</call-timeout>
+      <retry-interval>500</retry-interval>
+      <retry-interval-multiplier>1.0</retry-interval-multiplier>
+      <max-retry-interval>5000</max-retry-interval>
+      <initial-connect-attempts>-1</initial-connect-attempts>
+      <reconnect-attempts>-1</reconnect-attempts>
+      <use-duplicate-detection>true</use-duplicate-detection>
+      <message-load-balancing>ON_DEMAND</message-load-balancing>
+      <max-hops>1</max-hops>
+      <confirmation-window-size>32000</confirmation-window-size>
+      <call-failover-timeout>30000</call-failover-timeout>
+      <notification-interval>1000</notification-interval>
+      <notification-attempts>2</notification-attempts>
+      <discovery-group-ref discovery-group-name="my-discovery-group"/>
+      <client-id></client-id>
+   </cluster-connection>
+</cluster-connections>
+----
+
+In the above cluster connection all parameters have been explicitly specified.
+The following shows all the available configuration options
+
+address::
+Each cluster connection only applies to addresses that match the specified `address` field.
+An address is matched on the cluster connection when it begins with the string specified in this field.
+The `address` field on a cluster connection also supports comma separated lists and an exclude syntax `!`.
+To prevent an address from being matched on this cluster connection, prepend a cluster connection address string with `!`.
++
+In the case shown above the cluster connection will load balance messages sent to all addresses (since it's empty).
++
+The address can be any value and you can have many cluster connections with different values of `address`, simultaneously balancing messages for those addresses, potentially to different clusters of servers.
+By having multiple cluster connections on different addresses, a single broker can effectively take part in multiple clusters simultaneously.
++
+Be careful not to have multiple cluster connections with overlapping values of `address`, e.g. "europe" and "europe.news" since this could result in the same messages being distributed between more than one cluster connection, possibly resulting in duplicate deliveries.
++
+Examples:
+
+ ** 'eu' matches all addresses starting with 'eu'
+ ** '!eu' matches all address except for those starting with 'eu'
+ ** 'eu.uk,eu.de' matches all addresses starting with either 'eu.uk' or 'eu.de'
+ ** 'eu,!eu.uk' matches all addresses starting with 'eu' but not those starting with 'eu.uk'
+
++
+[NOTE]
+====
+ ** Address exclusion will always takes precedence over address inclusion.
+ ** Address matching on cluster connections does not support wild-card matching.
+====
+connector-ref::
+This is the connector which will be sent to other nodes in the cluster so they have the correct cluster topology.
++
+This parameter is mandatory.
+
+check-period::
+The period (in milliseconds) used to check if the cluster connection has failed to receive pings from another server.
+Default is 30000.
+
+connection-ttl::
+This is how long a cluster connection should stay alive if it stops receiving messages from a specific node in the cluster.
+Default is 60000.
+
+min-large-message-size::
+If the message size (in bytes) is larger than this value then it will be split into multiple segments when sent over the network to other cluster members.
+Default is 102400.
+
+call-timeout::
+When a packet is sent via a cluster connection and is a blocking call, i.e. for acknowledgements, this is how long it will wait (in milliseconds) for the reply before throwing an exception.
+Default is 30000.
+
+retry-interval::
+We mentioned before that, internally, cluster connections cause bridges to be created between the nodes of the cluster.
+If the cluster connection is created and the target node has not been started, or say, is being rebooted, then the cluster connections from other nodes will retry connecting to the target until it comes back up, in the same way as a bridge does.
++
+This parameter determines the interval in milliseconds between retry attempts.
+It has the same meaning as the `retry-interval` on a bridge (as described in xref:core-bridges.adoc#core-bridges[Core Bridges]).
++
+This parameter is optional and its default value is `500` milliseconds.
+
+retry-interval-multiplier::
+This is a multiplier used to increase the `retry-interval` after each reconnect attempt, default is 1.
+
+max-retry-interval::
+The maximum delay (in milliseconds) for retries.
+Default is 2000.
+
+initial-connect-attempts::
+The number of times the system will try to connect a node in the cluster initially.
+If the max-retry is achieved this node will be considered permanently down and the system will not route messages to this node.
+Default is -1 (infinite retries).
+
+reconnect-attempts::
+The number of times the system will try to reconnect to a node in the cluster.
+If the max-retry is achieved this node will be considered permanently down and the system will stop routing messages to this node.
+Default is -1 (infinite retries).
+
+use-duplicate-detection::
+Internally cluster connections use bridges to link the nodes, and bridges can be configured to add a duplicate id property in each message that is forwarded.
+If the target node of the bridge crashes and then recovers, messages might be resent from the source node.
+By enabling duplicate detection any duplicate messages will be filtered out and ignored on receipt at the target node.
++
+This parameter has the same meaning as `use-duplicate-detection` on a bridge.
+For more information on duplicate detection, please see xref:duplicate-detection.adoc#duplicate-message-detection[Duplicate Detection].
+Default is `true`.
+
+message-load-balancing::
+This parameter determines if/how messages will be distributed between other nodes of the cluster.
+It can be one of four values - `OFF`, `STRICT`, `OFF_WITH_REDISTRIBUTION` or `ON_DEMAND`  (default).
+This parameter replaces the deprecated `forward-when-no-consumers` parameter.
++
+If this is set to `OFF` then messages will never be forwarded to another node in the cluster
++
+If this is set to `STRICT` then each incoming message will be round robin'd even though the same queues on the other nodes of the cluster may have no consumers at all, or they may have consumers that have non matching message filters (selectors).
+Note that the broker will _not_ forward messages to other nodes if there are no _queues_ of the same name on the other nodes, even if this parameter is set to `STRICT`.
+Using `STRICT` is like setting the legacy `forward-when-no-consumers` parameter to `true`.
++
+If this is set to `ON_DEMAND` then the broker will only forward messages to other nodes of the cluster if the address to which they are being forwarded has queues which have consumers, and if those consumers have message filters (selectors) at least one of those selectors must match the message.
+Using `ON_DEMAND` is like setting the legacy `forward-when-no-consumers` parameter to `false`.
++
+If this is set to `OFF_WITH_REDISTRIBUTION` then like with 'OFF' messages won't be initially routed to other nodes in the cluster.
+However, if <<message-redistribution,redistribution>> is configured, it can forward messages in the normal way.
+In this way local consumers will always have priority.
++
+Keep in mind that this message forwarding/balancing is what we call "initial distribution." It is different than _redistribution_ which is <<message-redistribution,discussed below>>.
++
+Default is `ON_DEMAND`.
+
+max-hops::
+When a cluster connection decides the set of nodes to which it might load balance a message, those nodes do not have to be directly connected to it via a cluster connection.
+The broker can be configured to also load balance messages to nodes which might be connected to it only indirectly with other brokers as intermediates in a chain.
++
+This allows the broker to be configured in more complex topologies and still provide message load balancing.
+We'll discuss this more later in this chapter.
++
+The default value for this parameter is `1`, which means messages are only load balanced to other brokers which are directly connected to this server.
+This parameter is optional.
+
+confirmation-window-size::
+The size (in bytes) of the window used for sending confirmations from the server connected to.
+So once the server has received `confirmation-window-size` bytes it notifies its client, default is 1048576.
+A value of -1 means no window.
+
+producer-window-size::
+The size for producer flow control over cluster connection.
+it's by default is 1MB.
+
+call-failover-timeout::
+Similar to `call-timeout` but used when a call is made during a failover attempt.
+Default is -1 (no timeout).
+
+notification-interval::
+How often (in milliseconds) the cluster connection should broadcast itself when attaching to the cluster.
+Default is 1000.
+
+notification-attempts::
+How many times the cluster connection should broadcast itself when connecting to the cluster.
+Default is 2.
+
+discovery-group-ref::
+This parameter determines which discovery group is used to obtain the list of other servers in the cluster that this cluster connection will make connections to.
+
+Alternatively if you would like your cluster connections to use a static list of servers for discovery then you can do it like this.
+
+[,xml]
+----
+<cluster-connection name="my-cluster">
+   ...
+   <static-connectors>
+      <connector-ref>server0-connector</connector-ref>
+      <connector-ref>server1-connector</connector-ref>
+   </static-connectors>
+</cluster-connection>
+----
+
+Here we have defined 2 servers that we know for sure will that at least one will be available.
+There may be many more servers in the cluster but these will;
+be discovered via one of these connectors once an initial connection has been made.
+
+client-id::
+An optional identifier to use for the cluster connection.
+This can help with identifying the connection on the remote broker (e.g. via the web console).
+Default is empty (i.e. unset).
+
+topology-scanner-attempts::
+The number of times the system tries to scan the cluster connection topology for missing cluster nodes. Those are nodes
+discovered by a discovery group or defined by a static connector that are not present in the cluster connection topology.
+A value of `0` means the system doesn't scan the cluster connection topology for missing cluster nodes.
+A value of `-1` means the system scans the cluster connection topology until there are no more missing cluster nodes.
+Default is 30.
+
+scale-down-reaper-period::
+How often (in milliseconds) the broker runs the store-and-forward reaper.
+When a node scales down or otherwise departs, its store-and-forward queue on the remaining nodes is now *retained* rather than deleted immediately.
+Deleting it eagerly raced the asynchronous completion of an in-flight produce route and could lose messages.
+The reaper reclaims such an orphaned store-and-forward queue only once it is provably idle: owner-less and empty (or with any residual relocated to the scale-down target), and stable across `scale-down-reaper-grace-ticks` consecutive runs.
+A value `<= 0` disables the reaper, in which case orphaned store-and-forward queues are retained but never reclaimed.
+Default is 1000.
+
+scale-down-reaper-grace-ticks::
+The number of consecutive reaper runs an orphaned store-and-forward queue must stay idle before it is reclaimed.
+A larger value increases the safety margin against a slow asynchronous route completion at the cost of a longer delay before the queue is reclaimed.
+Default is 10.
+
+scale-down-reaper-max-attempts::
+The maximum number of reaping attempts for an orphaned store-and-forward queue before the reaper gives up.
+Giving up does not delete the queue: it is retained, together with any messages it still holds,
+and the reaper stops checking it, which limits the effort wasted on a queue that is stuck for some reason.
+A value `<= 0` means unlimited attempts.
+Default is 30.
+
+=== Cluster User Credentials
+
+When creating connections between nodes of a cluster to form a cluster connection, the broker uses a cluster user and cluster password which is defined in `broker.xml` (shown with the default values):
+
+[,xml]
+----
+<cluster-user>ACTIVEMQ.CLUSTER.ADMIN.USER</cluster-user>
+<cluster-password>CHANGE ME!!</cluster-password>
+----
+
+Every broker in the cluster must use matching values for `cluster-user` and `cluster-password`.
+
+[IMPORTANT]
+====
+For safety, any connection using these credentials will be rejected.
+*In order for brokers to cluster together properly these values must be changed from their defaults.*
+====
+
+== Client-Side Load balancing
+
+With client-side load balancing, subsequent sessions created using a single session factory can be connected to different nodes of the cluster.
+This allows sessions to spread smoothly across the nodes of a cluster and not be "clumped" on any particular node.
+
+The load balancing policy to be used by the client factory is configurable.
+Five out-of-the-box load balancing policies are available, and you can also implement your own.
+
+The out-of-the-box policies are
+
+* Round Robin.
+With this policy the first node is chosen randomly then each subsequent node is chosen sequentially in the same order.
++
+For example nodes might be chosen in the order B, C, D, A, B, C, D, A, B or D, A, B, C, D, A, B, C, D or C, D, A, B, C, D, A, B, C.
++
+Use `org.apache.activemq.artemis.api.core.client.loadbalance.RoundRobinConnectionLoadBalancingPolicy` as the `<connection-load-balancing-policy-class-name>`.
+
+* Sequential.
+With this policy the first node (i.e. 0th element) is always chosen first, and each subsequent node is chosen sequentially in the configured order.
++
+For example nodes will always be chosen in the order A, B, C, D, A, B, C, D.
++
+Use `org.apache.activemq.artemis.api.core.client.loadbalance.SequentialConnectionLoadBalancingPolicy` as the `<connection-load-balancing-policy-class-name>`.
+
+* Random.
+With this policy each node is chosen randomly.
++
+Use `org.apache.activemq.artemis.api.core.client.loadbalance.RandomConnectionLoadBalancingPolicy` as the `<connection-load-balancing-policy-class-name>`.
+
+* Random Sticky.
+With this policy the first node is chosen randomly and then re-used for subsequent connections.
++
+Use `org.apache.activemq.artemis.api.core.client.loadbalance.RandomStickyConnectionLoadBalancingPolicy` as the `<connection-load-balancing-policy-class-name>`.
+
+* First Element.
+With this policy the "first" (i.e. 0th) node is always returned.
++
+Use `org.apache.activemq.artemis.api.core.client.loadbalance.FirstElementConnectionLoadBalancingPolicy` as the `<connection-load-balancing-policy-class-name>`.
+
+You can also implement your own policy by implementing the interface `org.apache.activemq.artemis.api.core.client.loadbalance.ConnectionLoadBalancingPolicy`
+
+Specifying which load balancing policy to use differs whether you are using JMS or the Core API.
+If you don't specify a policy then the default will be used which is `org.apache.activemq.artemis.api.core.client.loadbalance.RoundRobinConnectionLoadBalancingPolicy`.
+
+The parameter `connectionLoadBalancingPolicyClassName` can be set on the URI to configure what load balancing policy to use:
+
+----
+tcp://localhost:61616?connectionLoadBalancingPolicyClassName=org.apache.activemq.artemis.api.core.client.loadbalance.RandomConnectionLoadBalancingPolicy
+----
+
+The set of servers over which the factory load balances can be determined in one of two ways:
+
+* Specifying servers explicitly in the URL.
+This also requires setting the `useTopologyForLoadBalancing` parameter to `false` on the URL.
+* Using discovery.
+This is the default behavior.
+
+== Specifying Members of a Cluster Explicitly
+
+Sometimes you want to explicitly define a cluster more explicitly, that is control which server connect to each other in the cluster.
+This is typically used to form non symmetrical clusters such as chain cluster or ring clusters.
+This can only be done using a static list of connectors and is configured as follows:
+
+[,xml]
+----
+<cluster-connection name="my-cluster">
+   <address/>
+   <connector-ref>netty-connector</connector-ref>
+   <retry-interval>500</retry-interval>
+   <use-duplicate-detection>true</use-duplicate-detection>
+   <message-load-balancing>STRICT</message-load-balancing>
+   <max-hops>1</max-hops>
+   <static-connectors allow-direct-connections-only="true">
+      <connector-ref>server1-connector</connector-ref>
+   </static-connectors>
+</cluster-connection>
+----
+
+In this example we have set the attribute `allow-direct-connections-only` which means that the only server that this server can create a cluster connection to is server1-connector.
+This means you can explicitly create any cluster topology you want.
+
+== Message Redistribution
+
+Another important part of clustering is message redistribution.
+Earlier we learned how server side message load balancing round robins messages across the cluster.
+If `message-load-balancing` is `OFF` or `ON_DEMAND` then messages won't be forwarded to nodes which don't have matching consumers.
+This is great and ensures that messages aren't moved to a queue which has no consumers to consume them.
+However, there is a situation it doesn't solve: What happens if the consumers on a queue close after the messages have been sent to the node?
+If there are no consumers on the queue the message won't get consumed and we have a _starvation_ situation.
+
+This is where message redistribution comes in.
+With message redistribution the broker can be configured to automatically _redistribute_ messages from queues which have no consumers or consumers with filters that don't match messages.
+The messages are re-routed to other nodes in the cluster which do have matching consumers.
+To enable this functionality `message-load-balancing` must be `ON_DEMAND` or `OFF_WITH_REDISTRIBUTION`
+
+Message redistribution can be configured to kick in immediately after the need to redistribute is detected, or to wait a configurable delay before redistributing.
+By default, message redistribution is disabled.
+
+Message redistribution can be configured on a per address basis, by specifying the redistribution delay in the address settings.
+For more information on configuring address settings, please see xref:address-settings.adoc#address-settings[Configuring Addresses and Queues via Address Settings].
+
+Here's an address settings snippet from `broker.xml` showing how message redistribution is enabled for a set of queues:
+
+[,xml]
+----
+<address-settings>
+   <address-setting match="#">
+      <redistribution-delay>0</redistribution-delay>
+   </address-setting>
+</address-settings>
+----
+
+The above `address-settings` block would set a `redistribution-delay` of `0` for any queue which is bound to any address.
+So the above would enable instant (no delay) redistribution for all addresses.
+
+The attribute `match` can be an exact match, or it can be a string that conforms to the xref:wildcard-syntax.adoc#wildcard-syntax[wildcard syntax].
+
+The element `redistribution-delay` defines the delay in milliseconds between detecting the need for redistribution and actually attempting redistribution.
+A delay of zero means the messages will be immediately redistributed.
+A value of `-1` signifies that messages will never be redistributed.
+The default value is `-1`.
+
+It often makes sense to introduce a delay before redistributing as it's a common case that a consumer closes but another one quickly is created on the same queue, in such a case you probably don't want to redistribute immediately since the new consumer will arrive shortly.
+
+[WARNING]
+====
+The broker uses internal store-and-forward queues to handle message which need to be sent to other nodes in the cluster.
+Clients *should not* directly send messages to these store-and-forward queues.
+If a client sends a message to a store-and-forward queue it will be sent to the corresponding dead-letter address.
+It's possible to prevent clients from sending any messages to these internal queues by revoking all security permissions using the following `security-setting`:
+
+[,xml]
+----
+<security-setting match="$.artemis.internal.sf.#"/>
+----
+
+This configuration will not impact the internal processes which manage the store-and-foward queues.
+====
+
+== Cluster topologies
+
+Clusters can be connected together in many different topologies, let's consider the two most common ones here
+
+=== Symmetric cluster
+
+A symmetric cluster is probably the most common cluster topology.
+
+With a symmetric cluster every node in the cluster is connected to every other node in the cluster.
+In other words every node in the cluster is no more than one hop away from every other node.
+
+To form a symmetric cluster every node in the cluster defines a cluster connection with the attribute `max-hops` set to `1`.
+Typically the cluster connection will use server discovery in order to know what other servers in the cluster it should connect to, although it is possible to explicitly define each target server too in the cluster connection if, for example, UDP is not available on your network.
+
+With a symmetric cluster each node knows about all the queues that exist on all the other nodes and what consumers they have.
+With this knowledge it can determine how to load balance and redistribute messages around the nodes.
+
+Don't forget <<copy-warning,this warning>> when creating a symmetric cluster.
+
+=== Chain cluster
+
+With a chain cluster, each node in the cluster is not connected to every node in the cluster directly, instead the nodes form a chain with a node on each end of the chain and all other nodes just connecting to the previous and next nodes in the chain.
+
+An example of this would be a three node chain consisting of nodes A, B and C.
+Node A is hosted in one network and has many producer clients connected to it sending order messages.
+Due to corporate policy, the order consumer clients need to be hosted in a different network, and that network is only accessible via a third network.
+In this setup node B acts as a mediator with no producers or consumers on it.
+Any messages arriving on node A will be forwarded to node B, which will in turn forward them to node C where they can get consumed.
+Node A does not need to directly connect to C, but all the nodes can still act as a part of the cluster.
+
+To set up a cluster in this way, node A would define a cluster connection that connects to node B, and node B would define a cluster connection that connects to node C.
+In this case we only want cluster connections in one direction since we're only moving messages from node A\->B\->C and never from C\->B\->A.
+
+For this topology we would set `max-hops` to `2`.
+With a value of `2` the knowledge of what queues and consumers that exist on node C would be propagated from node C to node B to node A.
+Node A would then know to distribute messages to node B when they arrive, even though node B has no consumers itself, it would know that a further hop away is node C which does have consumers.
+
+=== Scaling Down
+
+The broker supports scaling down a cluster with no message loss (even for non-durable messages).
+This is especially useful in certain environments (e.g. the cloud) where the size of a cluster may change relatively frequently.
+When scaling up a cluster (i.e. adding nodes) there is no risk of message loss, but when scaling down a cluster (i.e. removing nodes) the messages on those nodes would be lost unless the broker sent them to another node in the cluster.
+The broker can be configured to do just that.
+
+To enable this behavior configure `scale-down` in the `live-only` `ha-policy`, e.g.:
+
+[,xml]
+----
+<ha-policy>
+   <live-only>
+      <scale-down>
+         <enabled>true</enabled>
+         <discovery-group-ref discovery-group-name="my-discovery-group"/>
+      </scale-down>
+   </live-only>
+</ha-policy>
+----
+
+If `scale-down`/`enabled` is `true` then when the server is shutdown gracefully (i.e. stopped without crashing) it will find another node in the cluster and send _all_ of its messages (both durable and non-durable) to that node.
+The messages are processed in order and go to the _back_ of the respective queues on the other node (just as if the messages were sent from an external client for the first time).
+
+The _target_ of the scale down operation can be configured a few differnt ways.
+The above example uses `discovery-group-ref` to reference a `discovery-group` which will be used to find the target broker.
+This should be the same `discovery-group` referenced by your `cluster-connection`.
+You can also specify a static list of `connector` elements, e.g.:
+
+[,xml]
+----
+<connectors>
+  ...
+  <connector name="server0-connector">tcp://server0:61616</connector>
+</connectors>
+...
+<ha-policy>
+  <live-only>
+    <scale-down>
+      <enabled>true</enabled>
+      <connectors>
+        <connector-ref>server0-connector</connector-ref>
+      </connectors>
+    </scale-down>
+  </live-only>
+</ha-policy>
+----
+
+It's also possible to specify `group-name`.
+If this is specified then messages will only be sent to another node in the cluster that uses the same `group-name` as the server being shutdown, e.g.:
+
+[,xml]
+----
+<ha-policy>
+   <live-only>
+      <scale-down>
+         <enabled>true</enabled>
+         <group-name>my-group</group-name>
+         <discovery-group-ref discovery-group-name="my-discovery-group"/>
+      </scale-down>
+   </live-only>
+</ha-policy>
+----
+
+[WARNING]
+====
+If cluster nodes are grouped together with different `group-name` values beware.
+If all the nodes in a single group are shut down then the messages from that node/group will be lost.
+====

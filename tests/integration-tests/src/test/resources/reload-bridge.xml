@@ -1,0 +1,85 @@
+<?xml version='1.0'?>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+
+<configuration xmlns="urn:activemq"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="urn:activemq /schema/artemis-configuration.xsd">
+
+   <core xmlns="urn:activemq:core">
+      <security-enabled>false</security-enabled>
+      <persistence-enabled>true</persistence-enabled>
+      <configuration-file-refresh-period>100</configuration-file-refresh-period>
+
+      <paging-directory>./target/tmp/reload-bridge-test/paging</paging-directory>
+      <bindings-directory>./target/tmp/reload-bridge-test/binding</bindings-directory>
+      <journal-directory>./target/tmp/reload-bridge-test/journal</journal-directory>
+      <large-messages-directory>./target/tmp/reload-bridge-test/largemessages</large-messages-directory>
+
+      <acceptors>
+         <acceptor name="artemis">tcp://0.0.0.0:61616</acceptor>
+      </acceptors>
+
+      <connectors>
+         <connector name="connector">tcp://127.0.0.1:61616</connector>
+      </connectors>
+
+      <bridges>
+         <bridge name="a">
+            <queue-name>a-from</queue-name>
+            <forwarding-address>a-to</forwarding-address>
+            <concurrency>3</concurrency>
+            <static-connectors>
+               <connector-ref>connector</connector-ref>
+            </static-connectors>
+         </bridge>
+         <bridge name="b">
+            <queue-name>b-from</queue-name>
+            <forwarding-address>b-to</forwarding-address>
+            <concurrency>5</concurrency>
+            <static-connectors>
+               <connector-ref>connector</connector-ref>
+            </static-connectors>
+         </bridge>
+      </bridges>
+
+      <addresses>
+         <address name="a-to">
+            <anycast>
+               <queue name="a-to"/>
+            </anycast>
+         </address>
+         <address name="a-from">
+            <anycast>
+               <queue name="a-from"/>
+            </anycast>
+         </address>
+         <address name="b-to">
+            <anycast>
+               <queue name="b-to"/>
+            </anycast>
+         </address>
+         <address name="b-from">
+            <anycast>
+               <queue name="b-from"/>
+            </anycast>
+         </address>
+      </addresses>
+   </core>
+</configuration>

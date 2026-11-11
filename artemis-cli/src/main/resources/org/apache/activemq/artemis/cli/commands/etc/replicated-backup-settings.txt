@@ -1,0 +1,6 @@
+
+      <ha-policy>
+         <replication>
+            <backup/>
+         </replication>
+      </ha-policy>

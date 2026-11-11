@@ -1,0 +1,6 @@
+downstream-authorization::
+This is an attribute on the `federations` element that is set on the _downstream_ broker so that it can properly authorize incoming federation requests.
+It is a comma-delimited list of roles which are authorized to deploy federation on this broker.
+The broker sending the federation command must use credentials for a user that is in one of the roles listed here.
++
+If this is not defined then the broker will not process incoming federation commands.

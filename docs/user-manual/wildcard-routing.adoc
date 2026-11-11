@@ -1,0 +1,26 @@
+= Routing Messages With Wild Cards
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+{project-name-full} allows the routing of messages via wildcard addresses.
+
+If a queue is created with an address of say `news.#` then it will receive any messages sent to addresses that match this, for instance `news.europe` or `news.usa` or `news.usa.sport`.
+If you create a consumer on this queue, this allows a consumer to consume messages which are sent to a _hierarchy_ of addresses.
+
+[NOTE]
+====
+In JMS terminology this allows "topic hierarchies" to be created.
+====
+
+This functionality is enabled by default.
+To turn it off add the following to the `<core>` element in `broker.xml`, e.g.:
+
+[,xml]
+----
+<wildcard-addresses>
+   <routing-enabled>false</routing-enabled>
+</wildcard-addresses>
+----
+
+For more information on the wild card syntax and how to configure it, take a look at xref:wildcard-syntax.adoc#wildcard-syntax[wildcard syntax] chapter, also see the topic hierarchy example in the xref:examples.adoc#examples[examples].

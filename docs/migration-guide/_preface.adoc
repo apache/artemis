@@ -1,0 +1,16 @@
+= Preface
+
+As more and more people start using {project-name-short}, it's valuable to have a migration guide that will help experienced ActiveMQ users adapt to the new broker.
+From outside, two brokers might seem very similar, but there are subtle differences in their inner-workings that can lead to confusions.
+The goal of this guide is to explain these differences and help make a transition.
+
+Migration is a fairly broad term in systems like these, so what are we talking about here?
+This guide will be focused only on broker server migration.
+We'll assume that the current system is a working ActiveMQ Classic broker with OpenWire JMS clients.
+We'll see how we can replace the broker with {project-name-short} and leave the clients intact.
+
+This guide is aimed at experienced ActiveMQ users that want to learn more about what's different in {project-name-short}.
+We will assume that you know the concepts that are covered in these articles.
+They will not be explained from the first principles, for that you're advised to see appropriate manuals of the ActiveMQ and {project-name-short} brokers.
+
+Before we dig into more details on the migration, let's talk about basic conceptual differences between two brokers.

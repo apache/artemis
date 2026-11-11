@@ -1,0 +1,45 @@
+= Activation Sequence Tools
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+You can use the CLI to execute activation sequence maintenance/recovery tools for xref:ha.adoc#replication[Replication] with Pluggable Lock Manager.
+
+The 2 main commands are `activation list` and `activation set`, that can be used together to recover some disaster happened to local/coordinated activation sequences.
+
+Here is a disaster scenario built around the RI (using https://zookeeper.apache.org/[Apache ZooKeeper] and https://curator.apache.org/[Apache curator]) to demonstrate the usage of such commands.
+
+== ZooKeeper cluster disaster
+
+A proper ZooKeeper cluster should use at least 3 nodes, but what happens if all these nodes crash loosing any activation state information required to manage replication?
+
+During the disaster (i.e. ZooKeeper nodes are no longer reachable) the follow occurs:
+
+* Active brokers shutdown (and if restarted, should hang waiting to reconnect to the ZooKeeper cluster again)
+* Passive brokers unpair and wait to reconnect to the ZooKeeper cluster again
+
+Necessary administrative action:
+
+. Stop all brokers
+. Restart ZooKeeper cluster
+. Search for brokers with the highest local activation sequence for their `NodeID` by running this command from the `bin` folder of the broker:
++
+[,bash]
+----
+$ ./artemis activation list --local
+Local activation sequence for NodeID=7debb3d1-0d4b-11ec-9704-ae9213b68ac4: 1
+----
+
+. From the `bin` folder of the brokers with the highest local activation sequence
++
+[,bash]
+----
+# assuming 1 to be the highest local activation sequence obtained at the previous step
+# for NodeID 7debb3d1-0d4b-11ec-9704-ae9213b68ac4
+$ ./artemis activation set --remote --to 1
+Forced coordinated activation sequence for NodeID=7debb3d1-0d4b-11ec-9704-ae9213b68ac4 from 0 to 1
+----
+
+. Restart all brokers: previously active ones should be able to be active again
+
+The more ZooKeeper nodes there are the less chance that a disaster like this requires administrative intervention because it allows the ZooKeeper cluster to tolerate more failures.

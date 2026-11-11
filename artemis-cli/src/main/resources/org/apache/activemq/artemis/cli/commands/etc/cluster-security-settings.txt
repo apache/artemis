@@ -1,0 +1,4 @@
+
+      <cluster-user>${cluster-user}</cluster-user>
+
+      <cluster-password>${cluster-password}</cluster-password>

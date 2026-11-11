@@ -1,0 +1,250 @@
+= Embedded Web Server
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+{project-name-full} embeds the https://www.eclipse.org/jetty/[Jetty web server].
+Its main purpose is to host the xref:management-console.adoc#management-console[Management Console].
+However, it can also host other web applications.
+
+== Configuration
+
+The embedded Jetty instance is configured in `etc/bootstrap.xml` via the `web` element, e.g.:
+
+[,xml]
+----
+<web path="web" rootRedirectLocation="console">
+   <binding name="artemis" uri="http://localhost:8161">
+      <app name="console" url="console" war="console.war"/>
+   </binding>
+</web>
+----
+
+=== Web
+
+The `web` element has the following attributes:
+
+path::
+The name of the subdirectory in which to find the web application archives (i.e. WAR files).
+This is a subdirectory of the broker's home or instance directory.
+customizer::
+The name of customizer class to load.
+rootRedirectLocation::
+The location to redirect the requests with the root target.
+webContentEnabled::
+Whether or not the content included in the web folder of the home and the instance directories is accessible.
+Default is `false`.
+compressionEnabled::
+Whether to compress HTTP responses.
+Uses `gzip` encoding for maximum compatibility.
+This will impact any client communicating with the embedded web server including the web console and consumers of xref:metrics.adoc#metrics[metrics] (e.g. Prometheus) assuming they set the `Accept-Encoding` header to `gzip` in their HTTP requests.
+Default is `false`.
+compressionLevel::
+The level of compression for HTTP responses.
+Only valid if `compressionEnabled` is `true`.
+Default is `6`. Must be between `0` and `9` inclusive.
+maxThreads::
+The maximum number of threads the embedded web server can create to service HTTP requests.
+Default is `200`.
+minThreads::
+The minimum number of threads the embedded web server will hold to service HTTP requests.
+Default is `8` or the value of `maxThreads` if it is lower.
+idleThreadTimeout::
+The time to wait before terminating an idle thread from the embedded web server. Measured in milliseconds. Default is `60000`.
+scanPeriod::
+How often to scan for changes of the key and trust store files related to a binding when the `sslAutoReload` attribute value of the `binding` element is `true`, for further details see <<Binding>>. Measured in seconds. Default is `5`.
+maxRequestHeaderSize::
+The maximum allowed size for the HTTP request line and HTTP request headers.
+Measured in bytes.
+Default is `8192`.
+maxResponseHeaderSize::
+The maximum allowed size for the HTTP response headers.
+Measured in bytes.
+Default is `8192`.
+
+=== Binding
+
+The `web` element should contain at least one `binding` element to configure how  clients can connect to the web-server.
+A `binding` element has the following attributes:
+
+uri::
+The protocol to use (i.e. `http` or `https`) as well as the host and port on which to listen.
+This attribute is required.
+
+clientAuth::
+Whether or not clients should present an SSL certificate when they connect.
+Only applicable when using `https`.
+
+passwordCodec::
+The custom coded to use for unmasking the `keystorePassword` and `trustStorePassword`.
+
+keyStorePath::
+The location on disk of the keystore.
+Only applicable when using `https`.
+
+keyStorePassword::
+The password to the keystore.
+Only applicable when using `https`.
+Can be masked using `ENC()` syntax or by defining `passwordCodec`.
+See more in the xref:masking-passwords.adoc#masking-passwords[password masking] chapter.
+
+trustStorePath::
+The location on disk for the truststore.
+Only applicable when using `https`.
+
+trustStorePassword::
+The password to the truststore.
+Only applicable when using `https`.
+Can be masked using `ENC()` syntax or by defining `passwordCodec`.
+See more in the xref:masking-passwords.adoc#masking-passwords[password masking] chapter.
+
+includedTLSProtocols::
+A comma seperated list of included TLS protocols, ie `"TLSv1,TLSv1.1,TLSv1.2"`.
+Only applicable when using `https`.
+
+excludedTLSProtocols::
+A comma seperated list of excluded TLS protocols, ie `"TLSv1,TLSv1.1,TLSv1.2"`.
+Only applicable when using `https`.
+
+includedCipherSuites::
+A comma seperated list of included cipher suites.
+Only applicable when using `https`.
+
+excludedCipherSuites::
+A comma seperated list of excluded cipher suites.
+Only applicable when using `https`.
+
+sniHostCheck::
+Whether or not the SNI Host name in the client request must match the common name or the subject alternative names in the server certificate.
+Default is `true`.
+Only applicable when using `https`.
+
+sniRequired::
+Whether or not the client request must include an SNI Host name.
+Default is `false`.
+Only applicable when using `https`.
+
+sslAutoReload::
+Whether or not the key and trust store files must be watched for changes and automatically reloaded.
+The watch period is controlled by the `scanPeriod` attribute of the `web` element, for further details see <<Web>>.
+Default is `false`.
+
+http2::
+Whether or not the HTTP/2 protocol is enabled.
+Default is `true`.
+
+=== App
+
+Each web application should be defined in an `app` element inside an `binding` element.
+The `app` element has the following attributes:
+
+url::
+The context to use for the web application.
+war::
+The name of the web application archive on disk.
+
+== Request Log
+
+It's also possible to configure HTTP/S request logging via the `request-log` element which has the following attributes:
+
+filename::
+The full path of the request log.
+This attribute is required.
+
+append::
+Whether or not to append to the existing log or truncate it.
+Boolean flag.
+
+extended::
+Whether or not to use the extended request log format.
+Boolean flag.
+If `true` will use the format `+%{client}a - %u %t "%r" %s %O  "%{Referer}i" "%{User-Agent}i"+`.
+If `false` will use the format `+%{client}a - %u %t "%r" %s %O+`.
+Default is `false`.
+See the https://www.eclipse.org/jetty/javadoc/jetty-9/org/eclipse/jetty/server/CustomRequestLog.html[format  specification] for more details.
+
+filenameDateFormat::
+The log file name date format.
+
+retainDays::
+The number of days before rotated log files are deleted.
+
+ignorePaths::
+Request paths that will not be logged.
+Comma delimited list.
+
+format::
+Custom format to use.
+If set this will override `extended`.
+See the https://www.eclipse.org/jetty/javadoc/jetty-9/org/eclipse/jetty/server/CustomRequestLog.html[format specification] for more details.
+
+The following options were previously supported, but they were replaced by the `format`: `logCookie`, `logTimeZone`, `logDateFormat`, `logLocale`, `logLatency`, `logServer`, `preferProxiedForAddress`.
+All these options are now deprecated and ignored.
+
+These attributes are essentially passed straight through to the underlying https://www.eclipse.org/jetty/javadoc/jetty-9/org/eclipse/jetty/server/CustomRequestLog.html[`org.eclipse.jetty.server.CustomRequestLog`] and https://www.eclipse.org/jetty/javadoc/jetty-9/org/eclipse/jetty/server/RequestLogWriter.html[`org.eclipse.jetty.server.RequestLogWriter`] instances.
+Default values are based on these implementations.
+
+Here is an example configuration:
+
+[,xml]
+----
+<web path="web" rootRedirectLocation="console">
+   <binding name="artemis" uri="http://localhost:8161">
+      <app name="console" url="console" war="console.war"/>
+   </binding>
+   <request-log filename="${artemis.instance}/log/http-access-yyyy_MM_dd.log" append="true" extended="true"/>
+</web>
+----
+
+=== System properties
+
+It is possible to use system properties to add or update web configuration items.
+If you define a system property starting with "webconfig." it will be parsed at the startup to update the web configuration.
+
+To enable the client authentication for an existing binding with the name `artemis`, set the system property `webconfig.bindings.artemis.clientAuth` to `true`, i.e.
+----
+java -Dwebconfig.bindings.artemis.clientAuth=true
+----
+
+To add a new binding or app set the new binding or app attributes using their new names, i.e.
+----
+java -Dwebconfig.bindings.my-binding.uri=http://localhost:8162
+java -Dwebconfig.bindings.my-binding.apps.my-app.uri=my-app
+java -Dwebconfig.bindings.my-binding.apps.my-app.war=my-app.war
+----
+
+To update a binding without a name use its uri and to update an app without a name use its url , i.e.
+[,xml]
+----
+<web path="web" rootRedirectLocation="console">
+   <binding uri="http://localhost:8161">
+      <app url="console" war="console.war"/>
+...
+----
+
+----
+java -Dwebconfig.bindings."http://localhost:8161".clientAuth=true
+----
+
+----
+java -Dwebconfig.bindings."http://localhost:8161".apps."console".war=my-console.war
+----
+
+== Proxy Forwarding
+
+The proxies and load balancers usually support `X-Forwarded` headers to send information altered or lost when a proxy is involved in the path of the request.
+Jetty supports the https://www.eclipse.org/jetty/javadoc/current/org/eclipse/jetty/server/ForwardedRequestCustomizer.html[`ForwardedRequestCustomizer`] customizer to handle `X-Forwarded` headers.
+Set the `customizer` attribute via the `web` element to enable the https://www.eclipse.org/jetty/javadoc/current/org/eclipse/jetty/server/ForwardedRequestCustomizer.html[`ForwardedRequestCustomizer`] customizer, ie:
+
+[,xml]
+----
+<web path="web" rootRedirectLocation="console" customizer="org.eclipse.jetty.server.ForwardedRequestCustomizer">
+   <binding name="artemis" uri="http://localhost:8161">
+      <app name="console" url="console" war="console.war"/>
+   </binding>
+</web>
+----
+
+== Management
+
+The embedded web server can be stopped, started, or restarted via any available management interface via the `stopEmbeddedWebServer`, `starteEmbeddedWebServer`, and `restartEmbeddedWebServer` operations on the `ActiveMQServerControl`  respectively.

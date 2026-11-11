@@ -1,0 +1,85 @@
+diff --git a/broker-instance/bin/artemis-service.xml b/broker-instance/bin/artemis-service.xml
+index 77fdc16a49..0f7881b5e9 100644
+--- a/broker-instance/bin/artemis-service.xml
++++ b/broker-instance/bin/artemis-service.xml
+@@ -33,7 +33,6 @@
+    <logmode>roll</logmode>
+ 
+    <executable>%JAVA_HOME%\bin\java.exe</executable>
+-   <startargument>-Xbootclasspath/a:%ARTEMIS_HOME%\lib\jboss-logmanager-2.1.18.Final.jar;%ARTEMIS_HOME%\lib\wildfly-common-1.5.2.Final.jar</startargument>
+    <startargument>-XX:+UseParallelGC</startargument>
+    <startargument>-Xms512M</startargument>
+    <startargument>-Xmx1024M</startargument>
+@@ -51,8 +50,6 @@
+    <startargument>-Dartemis.instance=%ARTEMIS_INSTANCE%</startargument>
+    <startargument>-Ddata.dir=%ARTEMIS_DATA_DIR%</startargument>
+    <startargument>-Dartemis.instance.etc=%ARTEMIS_INSTANCE_ETC%</startargument>
+-   <startargument>-Djava.util.logging.manager=org.jboss.logmanager.LogManager</startargument>
+-   <startargument>-Dlogging.configuration=%ARTEMIS_INSTANCE_ETC_URI%/logging.properties</startargument>
+    <startargument>-Djava.security.auth.login.config=%ARTEMIS_INSTANCE_ETC%\login.config</startargument>
+    <startargument>-Dhawtio.disableProxy=true</startargument>
+    <startargument>-Dhawtio.realm=activemq</startargument>
+@@ -70,7 +67,6 @@
+    <startargument>run</startargument>
+ 
+    <stopexecutable>%JAVA_HOME%\bin\java.exe</stopexecutable>
+-   <stopargument>-Xbootclasspath/a:%ARTEMIS_HOME%\lib\jboss-logmanager-2.1.18.Final.jar;%ARTEMIS_HOME%\lib\wildfly-common-1.5.2.Final.jar</stopargument>
+    <stopargument>-XX:+UseParallelGC</stopargument>
+    <stopargument>-Xms512M</stopargument>
+    <stopargument>-Xmx1024M</stopargument>
+@@ -81,8 +77,6 @@
+    <stopargument>-Dartemis.instance=%ARTEMIS_INSTANCE%</stopargument>
+    <stopargument>-Ddata.dir=%ARTEMIS_DATA_DIR%</stopargument>
+    <stopargument>-Dartemis.instance.etc="%ARTEMIS_INSTANCE_ETC%"</stopargument>
+-   <stopargument>-Djava.util.logging.manager=org.jboss.logmanager.LogManager</stopargument>
+-   <stopargument>-Dlogging.configuration=%ARTEMIS_INSTANCE_ETC_URI%/logging.properties</stopargument>
+ 
+    <stopargument>org.apache.activemq.artemis.boot.Artemis</stopargument>
+ 
+diff --git a/broker-instance/bin/artemis.cmd b/broker-instance/bin/artemis.cmd
+index 2d39231708..ed7ea68955 100644
+--- a/broker-instance/bin/artemis.cmd
++++ b/broker-instance/bin/artemis.cmd
+@@ -48,13 +48,9 @@ rem "Load Profile Config"
+ set ARTEMIS_INSTANCE_ETC="${artemis.instance.etc}"
+ call %ARTEMIS_INSTANCE_ETC%\artemis.profile.cmd %*
+ 
+-rem "Set Defaults."
+-set ARTEMIS_LOGGING_CONF=%ARTEMIS_INSTANCE_ETC_URI%/logging.properties
+-set ARTEMIS_LOG_MANAGER=org.jboss.logmanager.LogManager
+-
+-if not exist "%ARTEMIS_OOME_DUMP%" goto NO_ARTEMIS_OOME_DUMP
++if not exist %ARTEMIS_OOME_DUMP% goto NO_ARTEMIS_OOME_DUMP
+ rem "Backup the last OOME heap dump"
+-move /Y "%ARTEMIS_OOME_DUMP%" "%ARTEMIS_OOME_DUMP%.bkp"
++move /Y %ARTEMIS_OOME_DUMP% %ARTEMIS_OOME_DUMP%.bkp
+ 
+ :NO_ARTEMIS_OOME_DUMP
+ 
+@@ -66,11 +62,10 @@ set JVM_ARGS=%JVM_ARGS% -Dartemis.home=%ARTEMIS_HOME%
+ set JVM_ARGS=%JVM_ARGS% -Dartemis.instance=%ARTEMIS_INSTANCE%
+ set JVM_ARGS=%JVM_ARGS% -Ddata.dir=%ARTEMIS_DATA_DIR%
+ set JVM_ARGS=%JVM_ARGS% -Dartemis.instance.etc=%ARTEMIS_INSTANCE_ETC%
+-set JVM_ARGS=%JVM_ARGS% -Djava.util.logging.manager=%ARTEMIS_LOG_MANAGER%
+-set JVM_ARGS=%JVM_ARGS% -Dlogging.configuration=%ARTEMIS_LOGGING_CONF%
+ set JVM_ARGS=%JVM_ARGS% -Dartemis.default.sensitive.string.codec.key=%ARTEMIS_DEFAULT_SENSITIVE_STRING_CODEC_KEY%
+ 
+ if not "%DEBUG_ARGS%"=="" set JVM_ARGS=%JVM_ARGS% %DEBUG_ARGS%
++if not "%$JAVA_ARGS_APPEND%"=="" set JVM_ARGS=%JVM_ARGS% %$JAVA_ARGS_APPEND%
+ 
+ "%_JAVACMD%" %JVM_ARGS% org.apache.activemq.artemis.boot.Artemis %*
+ 
+
+diff --git a/broker-instance/etc/artemis.profile.cmd b/broker-instance/etc/artemis.profile.cmd
+index 5367e34fe4..c4ebbff04a 100644
+--- a/broker-instance/etc/artemis.profile.cmd
++++ b/broker-instance/etc/artemis.profile.cmd
+@@ -33,7 +33,7 @@ rem Cluster Properties: Used to pass arguments to ActiveMQ Artemis which can be
+ rem set ARTEMIS_CLUSTER_PROPS=-Dactivemq.remoting.default.port=61617 -Dactivemq.remoting.amqp.port=5673 -Dactivemq.remoting.stomp.port=61614 -Dactivemq.remoting.hornetq.port=5446
+ 
+ rem Java Opts
+-IF "%JAVA_ARGS%"=="" (set JAVA_ARGS=${java-opts} -XX:AutoBoxCacheMax=20000 -XX:+PrintClassHistogram  -XX:+UseG1GC -XX:+UseStringDeduplication -Xms512M -Xmx${java-memory} -Xbootclasspath/a:%ARTEMIS_HOME%\lib\jboss-logmanager-2.1.18.Final.jar;%ARTEMIS_HOME%\lib\wildfly-common-1.5.2.Final.jar -Djava.security.auth.login.config=%ARTEMIS_ETC_DIR%\login.config -Dhawtio.disableProxy=true -Dhawtio.offline=true -Dhawtio.realm=activemq -Dhawtio.role=${role} -Dhawtio.rolePrincipalClasses=org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal -Djolokia.policyLocation=%ARTEMIS_INSTANCE_ETC_URI%\jolokia-access.xml -Dartemis.instance=%ARTEMIS_INSTANCE%)
++IF "%JAVA_ARGS%"=="" (set JAVA_ARGS=${java-opts} -XX:AutoBoxCacheMax=20000 -XX:+PrintClassHistogram  -XX:+UseG1GC -XX:+UseStringDeduplication -Xms512M -Xmx${java-memory} -Djava.security.auth.login.config=%ARTEMIS_ETC_DIR%\login.config -Dhawtio.disableProxy=true -Dhawtio.offline=true -Dhawtio.realm=activemq -Dhawtio.role=${role} -Dhawtio.rolePrincipalClasses=org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal -Djolokia.policyLocation=%ARTEMIS_INSTANCE_ETC_URI%\jolokia-access.xml -Dartemis.instance=%ARTEMIS_INSTANCE%)
+ 
+ rem Logs Safepoints JVM pauses: Uncomment to enable them
+ rem In addition to the traditional GC logs you could enable some JVM flags to know any meaningful and "hidden" pause that could

@@ -1,0 +1,3 @@
+
+         <!-- MQTT Acceptor -->
+         <acceptor name="mqtt">tcp://${host}:${mqtt.port}?tcpSendBufferSize=1048576;tcpReceiveBufferSize=1048576;protocols=MQTT;useEpoll=true</acceptor>

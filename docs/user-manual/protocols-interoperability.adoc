@@ -1,0 +1,111 @@
+= Protocols and Interoperability
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+{project-name-full} has a powerful & flexible core which provides a foundation upon which other protocols can be implemented.
+Each protocol implementation translates the ideas of its specific protocol onto this core.
+
+The broker ships with a client implementation which interacts directly with this core.
+It uses what's called the xref:core.adoc#using-core["core" API], and it communicates over the network using the "core" protocol.
+
+== Supported Protocols
+
+The broker has a pluggable protocol architecture.
+Protocol plugins come in the form of protocol modules.
+Each protocol  module is included on the broker's class path and loaded by the broker at boot time.
+The broker ships with 5 protocol  modules out of the box.
+
+=== AMQP
+
+https://en.wikipedia.org/wiki/AMQP[AMQP] is a specification for interoperable messaging.
+It also defines a wire format, so any AMQP client can work with any messaging system that supports AMQP.
+AMQP clients are available in many different programming languages.
+
+Any client that supports the https://www.oasis-open.org/committees/tc_home.php?wg_abbrev=amqp[AMQP 1.0] specification will be able to interact with {project-name-full}.
+
+Please see xref:amqp.adoc#amqp[AMQP] for more details.
+
+=== MQTT
+
+https://mqtt.org/[MQTT] is a lightweight connectivity protocol.
+It is designed to run in environments where device and networks are constrained.
+Any client that supports the 3.1, 3.1.1, or 5 specification will be able to interact with {project-name-full}.
+
+Please see xref:mqtt.adoc#mqtt[MQTT] for more details.
+
+=== STOMP
+
+https://stomp.github.io/[Stomp] is a very simple text protocol for interoperating with messaging systems.
+It defines a wire format, so theoretically any Stomp client can work with any messaging system that supports Stomp.
+Stomp clients are available in many different programming languages.
+Any client that supports the 1.0, 1.1, or 1.2 specification will be able to interact with {project-name-full}.
+
+Please see xref:stomp.adoc#stomp[Stomp] for more details.
+
+=== OpenWire
+
+ActiveMQ defines its own wire protocol: OpenWire.
+Any application using the OpenWire JMS client library shipped with ActiveMQ 5.12.x or higher can be used with {project-name-full}.
+
+Please see xref:openwire.adoc#openwire[OpenWire] for more details.
+
+=== Core
+
+{project-name-short} defines its own wire protocol: Core.
+
+Please see xref:core.adoc#using-core[Core] for more details.
+
+==== APIs and Other Interfaces
+
+Although JMS and Jakarta Messaging are standardized APIs, they do not define a network protocol.
+The {project-name-short} xref:using-jms.adoc#using-jms-or-jakarta-messaging[JMS & Jakarta Messaging clients] are implemented on top of the core protocol.
+We also provide a xref:using-jms.adoc#jndi[client-side JNDI implementation].
+
+== Configuring Acceptors
+
+In order to make use of a particular protocol, a transport must be configured with the desired protocol enabled.
+There is a whole section on configuring transports that can be found xref:configuring-transports.adoc#configuring-the-transport[here].
+
+The default configuration shipped with the distribution comes with a number of acceptors already defined, one for each of the above protocols plus a generic acceptor that supports all protocols.
+To enable  protocols on a particular acceptor simply add the `protocols` url parameter to the acceptor url where the value is one or more protocols (separated by commas).
+If the `protocols` parameter is omitted from the url *all* protocols are  enabled.
+
+* The following example enables only MQTT on port 1883
++
+[,xml]
+----
+<acceptors>
+   <acceptor>tcp://localhost:1883?protocols=MQTT</acceptor>
+</acceptors>
+----
+
+* The following example enables MQTT and AMQP on port 5672
++
+[,xml]
+----
+<acceptors>
+   <acceptor>tcp://localhost:5672?protocols=MQTT,AMQP</acceptor>
+</acceptors>
+----
+
+* The following example enables *all* protocols on `61616`:
++
+[,xml]
+----
+<acceptors>
+   <acceptor>tcp://localhost:61616</acceptor>
+</acceptors>
+----
+
+Here are the supported protocols and their corresponding value used in the `protocols` url parameter.
+
+|===
+| Protocol | `protocols` value
+
+| Core | `CORE`
+| OpenWire | `OPENWIRE`
+| AMQP | `AMQP`
+| MQTT | `MQTT`
+| STOMP | `STOMP`
+|===

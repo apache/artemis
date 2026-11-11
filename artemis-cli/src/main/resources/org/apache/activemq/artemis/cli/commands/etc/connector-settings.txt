@@ -1,0 +1,6 @@
+
+    <connectors>
+        <!-- Connector used to be announced through cluster connections and notifications -->
+        <connector name="artemis">tcp://${host}:${default.port}</connector>
+    </connectors>
+

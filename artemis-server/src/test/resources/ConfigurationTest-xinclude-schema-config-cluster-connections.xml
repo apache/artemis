@@ -1,0 +1,58 @@
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<cluster-connections xmlns="urn:activemq:core">
+   <cluster-connection name="cluster-connection1">
+      <address>queues1</address>
+      <connector-ref>connector1</connector-ref>
+      <check-period>331</check-period>
+      <connection-ttl>3370</connection-ttl>
+      <min-large-message-size>321</min-large-message-size>
+      <call-timeout>123</call-timeout>
+      <retry-interval>3</retry-interval>
+      <retry-interval-multiplier>0.25</retry-interval-multiplier>
+      <max-retry-interval>10000</max-retry-interval>
+      <reconnect-attempts>72</reconnect-attempts>
+      <use-duplicate-detection>true</use-duplicate-detection>
+      <message-load-balancing>ON_DEMAND</message-load-balancing>
+      <max-hops>1</max-hops>
+      <producer-window-size>222</producer-window-size>
+      <call-failover-timeout>123</call-failover-timeout>
+      <static-connectors allow-direct-connections-only="true">
+         <connector-ref>connector1</connector-ref>
+         <connector-ref>connector2</connector-ref>
+      </static-connectors>
+      <topology-scanner-attempts>-1</topology-scanner-attempts>
+   </cluster-connection>
+   <cluster-connection name="cluster-connection2">
+      <address>queues2</address>
+      <connector-ref>connector2</connector-ref>
+      <call-timeout>456</call-timeout>
+      <retry-interval>4</retry-interval>
+      <use-duplicate-detection>false</use-duplicate-detection>
+      <message-load-balancing>STRICT</message-load-balancing>
+      <max-hops>2</max-hops>
+      <producer-window-size>333</producer-window-size>
+      <call-failover-timeout>456</call-failover-timeout>
+      <discovery-group-ref discovery-group-name="dg1"/>
+      <topology-scanner-attempts>0</topology-scanner-attempts>
+   </cluster-connection>
+   <cluster-connection name="cluster-connection3">
+      <connector-ref>connector2</connector-ref>
+      <message-load-balancing>OFF_WITH_REDISTRIBUTION</message-load-balancing>
+      <client-id>myClientID</client-id>
+   </cluster-connection>
+</cluster-connections>

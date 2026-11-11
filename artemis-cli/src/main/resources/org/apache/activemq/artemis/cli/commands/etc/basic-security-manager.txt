@@ -1,0 +1,5 @@
+   <security-manager class-name="org.apache.activemq.artemis.spi.core.security.ActiveMQBasicSecurityManager">
+      <property key="bootstrapUser" value="${user}"/>
+      <property key="bootstrapPassword" value="${password}"/>
+      <property key="bootstrapRole" value="${role}"/>
+   </security-manager>

@@ -1,0 +1,170 @@
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one or more
+  ~ contributor license agreements. See the NOTICE file distributed with
+  ~ this work for additional information regarding copyright ownership.
+  ~ The ASF licenses this file to You under the Apache License, Version 2.0
+  ~ (the "License"); you may not use this file except in compliance with
+  ~ the License. You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<component xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
+
+   <dependencySets>
+      <dependencySet>
+        <directoryMode>0755</directoryMode>
+        <fileMode>0644</fileMode>
+        <outputDirectory>lib</outputDirectory>
+        <outputFileNameMapping>${artifact.artifactId}.${artifact.extension}</outputFileNameMapping>
+        <unpack>false</unpack>
+        <useTransitiveDependencies>false</useTransitiveDependencies>
+        <includes>
+           <include>org.apache.artemis:artemis-boot</include>
+        </includes>
+        <useProjectArtifact>false</useProjectArtifact>
+      </dependencySet>
+
+      <dependencySet>
+         <directoryMode>0755</directoryMode>
+         <fileMode>0644</fileMode>
+         <excludes>
+            <!-- Handled above -->
+            <exclude>org.apache.artemis:artemis-boot</exclude>
+
+            <!-- Handled later in web subdir for console bits -->
+            <exclude>org.apache.artemis:artemis-console:war</exclude>
+         </excludes>
+         <outputDirectory>lib</outputDirectory>
+         <unpack>false</unpack>
+         <useProjectArtifact>false</useProjectArtifact>
+         <useTransitiveFiltering>true</useTransitiveFiltering>
+      </dependencySet>
+      <!-- native -->
+      <dependencySet>
+         <includes>
+            <include>org.apache.activemq:activemq-artemis-native</include>
+         </includes>
+         <outputDirectory>bin</outputDirectory>
+         <unpack>true</unpack>
+         <unpackOptions>
+            <includes>
+               <include>**/*.so</include>
+            </includes>
+         </unpackOptions>
+         <useProjectArtifact>false</useProjectArtifact>
+         <directoryMode>0755</directoryMode>
+         <fileMode>0644</fileMode>
+      </dependencySet>
+
+      <!-- Management Console Dependencies -->
+      <dependencySet>
+         <includes>
+            <include>org.apache.artemis:artemis-console:war</include>
+         </includes>
+         <outputDirectory>web/console.war</outputDirectory>
+         <unpack>true</unpack>
+         <!-- Exclude these jar files from console since they are already provided in the broker distribution.
+              If any of these jars is dropped from the broker distribution they should be added back to the console. -->
+         <unpackOptions>
+            <excludes>
+               <exclude>**/caffeine*.jar</exclude>
+               <exclude>**/guava*.jar</exclude>
+               <exclude>**/commons-io*.jar</exclude>
+               <exclude>**/commons-logging*.jar</exclude>
+               <exclude>**/failureaccess*.jar</exclude>
+            </excludes>
+         </unpackOptions>
+         <useProjectArtifact>false</useProjectArtifact>
+         <directoryMode>0755</directoryMode>
+         <fileMode>0644</fileMode>
+      </dependencySet>
+
+   </dependencySets>
+   <fileSets>
+      <!-- Console Licenses -->
+      <fileSet>
+         <directory>target/console/apache-artemis-console-${artemis-console-version}/licenses</directory>
+         <outputDirectory>licenses</outputDirectory>
+         <includes>
+            <include>NPMLicenses.txt</include>
+         </includes>
+         <directoryMode>0755</directoryMode>
+         <fileMode>0644</fileMode>
+      </fileSet>
+      <!-- schema -->
+      <fileSet>
+         <directory>${activemq.basedir}/artemis-server/src/main/resources/schema/</directory>
+         <outputDirectory>schema</outputDirectory>
+         <lineEnding>keep</lineEnding>
+         <directoryMode>0755</directoryMode>
+         <fileMode>0644</fileMode>
+      </fileSet>
+      <fileSet>
+         <directory>${activemq.basedir}/artemis-jms-server/src/main/resources/schema/</directory>
+         <outputDirectory>schema</outputDirectory>
+         <lineEnding>keep</lineEnding>
+         <directoryMode>0755</directoryMode>
+         <fileMode>0644</fileMode>
+      </fileSet>
+      <fileSet>
+         <directory>${activemq.basedir}/artemis-dto/target/schema/org.apache.activemq/dto/</directory>
+         <outputDirectory>schema</outputDirectory>
+         <lineEnding>keep</lineEnding>
+         <directoryMode>0755</directoryMode>
+         <fileMode>0644</fileMode>
+      </fileSet>
+      <!-- resources -->
+      <fileSet>
+         <directory>src/main/resources</directory>
+         <outputDirectory>${file.separator}</outputDirectory>
+         <lineEnding>keep</lineEnding>
+         <excludes>
+            <exclude>bin/artemis</exclude>
+            <exclude>bin/artemis.cmd</exclude>
+            <exclude>**/target/**</exclude>
+            <exclude>**/**/*.iml</exclude>
+            <exclude>**/**/*.dat</exclude>
+            <exclude>**/licenses/**</exclude>
+         </excludes>
+         <directoryMode>0755</directoryMode>
+         <fileMode>0644</fileMode>
+      </fileSet>
+      <fileSet>
+         <directory>src/main/resources</directory>
+         <outputDirectory>${file.separator}</outputDirectory>
+         <lineEnding>dos</lineEnding>
+         <includes>
+            <include>bin/artemis.cmd</include>
+         </includes>
+         <directoryMode>0755</directoryMode>
+         <fileMode>0644</fileMode>
+      </fileSet>
+      <fileSet>
+         <directory>src/main/resources</directory>
+         <outputDirectory>${file.separator}</outputDirectory>
+         <lineEnding>unix</lineEnding>
+         <includes>
+            <include>bin/artemis</include>
+         </includes>
+         <directoryMode>0755</directoryMode>
+         <fileMode>0755</fileMode>
+      </fileSet>
+      <!-- Include license and notice files -->
+      <fileSet>
+         <directory>${activemq.basedir}/artemis-distribution/src/main/resources/licenses/bin</directory>
+         <outputDirectory>${file.separator}</outputDirectory>
+         <useDefaultExcludes>true</useDefaultExcludes>
+         <directoryMode>0755</directoryMode>
+         <fileMode>0644</fileMode>
+      </fileSet>
+   </fileSets>
+</component>
