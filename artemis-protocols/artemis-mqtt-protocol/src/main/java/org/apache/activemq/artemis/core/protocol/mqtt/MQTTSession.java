@@ -17,6 +17,7 @@
 package org.apache.activemq.artemis.core.protocol.mqtt;
 
 import java.lang.invoke.MethodHandles;
+import java.util.Collection;
 import java.util.UUID;
 
 import io.netty.buffer.EmptyByteBuf;
@@ -202,6 +203,8 @@ public class MQTTSession {
       return sessionCallback;
    }
 
+   private int promptOffset;
+
    /**
     * Prompt all consumers for delivery if we were at or near the in-flight limit. Call this after freeing quota to wake
     * waiting subscriptions.
@@ -211,8 +214,14 @@ public class MQTTSession {
    void promptDelivery(int quota) {
       int max = sessionCallback.getMaxInFlightPublishMessages();
       if (quota >= max) {
-         for (ServerConsumer consumer : serverSession.getServerConsumers()) {
-            consumer.promptDelivery();
+         Collection<ServerConsumer> consumers = serverSession.getServerConsumers();
+         ServerConsumer[] arr = consumers.toArray(ServerConsumer[]::new);
+         int start = promptOffset;
+         promptOffset = (start + 1) % arr.length;
+
+         // rotate the starting consumer each call to avoid starvation from deterministic iteration order
+         for (int i = 0; i < arr.length; i++) {
+            arr[(start + i) % arr.length].promptDelivery();
          }
       }
    }
