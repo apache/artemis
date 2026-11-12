@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.activemq.artemis.util;
+package org.apache.activemq.artemis.utils;
 
 import java.io.StringReader;
 import java.util.Collections;
@@ -25,8 +25,6 @@ import java.util.Set;
 import org.apache.activemq.artemis.api.core.JsonUtil;
 import org.apache.activemq.artemis.core.security.Role;
 import org.apache.activemq.artemis.json.JsonObject;
-import org.apache.activemq.artemis.utils.JsonLoader;
-import org.apache.activemq.artemis.utils.SecurityFormatter;
 import org.junit.jupiter.api.Test;
 
 import static org.apache.activemq.artemis.core.security.Role.BROWSE_PERMISSION;

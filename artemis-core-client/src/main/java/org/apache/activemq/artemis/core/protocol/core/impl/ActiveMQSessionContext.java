@@ -125,6 +125,8 @@ import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
 import org.apache.activemq.artemis.spi.core.remoting.Connection;
 import org.apache.activemq.artemis.spi.core.remoting.ReadyListener;
 import org.apache.activemq.artemis.spi.core.remoting.SessionContext;
+import org.apache.activemq.artemis.utils.IDGenerator;
+import org.apache.activemq.artemis.utils.SimpleIDGenerator;
 import org.apache.activemq.artemis.utils.TokenBucketLimiterImpl;
 import org.apache.activemq.artemis.utils.sm.SecurityManagerShim;
 import org.slf4j.Logger;
@@ -145,6 +147,8 @@ public class ActiveMQSessionContext extends SessionContext {
    private int confirmationWindow;
    private String name;
    private boolean killed;
+
+   protected final IDGenerator idGenerator = new SimpleIDGenerator(0L);
 
    public Channel getSessionChannel() {
       return sessionChannel;
@@ -399,7 +403,7 @@ public class ActiveMQSessionContext extends SessionContext {
                                                 Executor executor,
                                                 Executor flowControlExecutor,
                                                 int onMessageCloseTimeout) throws ActiveMQException {
-      long consumerID = idGenerator.generateID();
+      final long consumerID = idGenerator.generateID();
 
       ActiveMQConsumerContext consumerContext = new ActiveMQConsumerContext(consumerID);
 
