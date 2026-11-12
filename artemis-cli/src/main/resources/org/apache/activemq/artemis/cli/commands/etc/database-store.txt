@@ -6,6 +6,8 @@
                  We don't endorse any specific JDBC provider. HSQLDB is provided by default for demonstration purposes. -->
             <jdbc-driver-class-name>${jdbcClassName}</jdbc-driver-class-name>
             <jdbc-connection-url>${jdbcURL}</jdbc-connection-url>
+            ${jdbcUserConfig}
+            ${jdbcPasswordConfig}
             <message-table-name>${jdbcMessages}</message-table-name>
             <bindings-table-name>${jdbcBindings}</bindings-table-name>
             <large-message-table-name>${jdbcLargeMessages}</large-message-table-name>

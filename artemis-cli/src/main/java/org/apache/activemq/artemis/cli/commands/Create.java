@@ -17,14 +17,26 @@
 
 package org.apache.activemq.artemis.cli.commands;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.sql.Connection;
+import java.sql.Driver;
 import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Properties;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
@@ -331,8 +343,17 @@ public class Create extends InstallAbstract {
    @Option(names = "--jdbc-connection-url", description = "The URL used for the database connection.")
    private String jdbcURL = null;
 
-   @Option(names = "--jdbc-driver-class-name", description = "JDBC driver classname.")
-   private String jdbcClassName = ActiveMQDefaultConfiguration.getDefaultDriverClassName();
+   @Option(names = "--jdbc-driver-class-name", description = "JDBC driver classname. Default: auto-detected from driver JAR, or org.hsqldb.jdbc.JDBCDriver.")
+   private String jdbcClassName = null;
+
+   @Option(names = "--jdbc-driver-path", description = "Path to the JDBC driver JAR file to copy into the broker instance lib directory.")
+   private File jdbcDriverPath;
+
+   @Option(names = "--jdbc-user", description = "JDBC user for the database connection.")
+   private String jdbcUser;
+
+   @Option(names = "--jdbc-password", description = "JDBC password for the database connection.")
+   private String jdbcPassword;
 
    @Option(names = "--jdbc-network-timeout", description = "Network timeout (in milliseconds).")
    long jdbcNetworkTimeout = ActiveMQDefaultConfiguration.getDefaultJdbcNetworkTimeout();
@@ -645,8 +666,8 @@ public class Create extends InstallAbstract {
          throw new IllegalArgumentException("The device-block-size must be a multiple of 512");
       }
 
-      // --database-storage implies --jdbc
-      if (databaseStorage) {
+      // any --jdbc-* or --database-* option implies --jdbc
+      if (databaseStorage || jdbcDriverPath != null || jdbcURL != null || jdbcClassName != null || jdbcUser != null || jdbcPassword != null) {
          jdbc = true;
       }
 
@@ -719,6 +740,7 @@ public class Create extends InstallAbstract {
       filters.put("${password}", getPassword());
       filters.put("${encoded.role}", role.replaceAll(" ", "\\\\ "));
 
+      boolean allowAnonymous = isAllowAnonymous();
 
       filters.put("${global-max-messages}", Long.toString(globalMaxMessages));
 
@@ -730,9 +752,8 @@ public class Create extends InstallAbstract {
       }
 
       if (jdbc) {
-         if (jdbcURL == null) {
-            jdbcURL = "jdbc:hsqldb:file:" + getInstance().getAbsolutePath() + "/data/hsqldb/db;hsqldb.write_delay=false";
-         }
+         configureJDBC(context);
+
          filters.put("${jdbcBindings}", jdbcBindings);
          filters.put("${jdbcMessages}", jdbcMessages);
          filters.put("${jdbcLargeMessages}", jdbcLargeMessages);
@@ -743,6 +764,16 @@ public class Create extends InstallAbstract {
          filters.put("${jdbcNetworkTimeout}", "" + jdbcNetworkTimeout);
          filters.put("${jdbcLockRenewPeriod}", "" + jdbcLockRenewPeriod);
          filters.put("${jdbcLockExpiration}", "" + jdbcLockExpiration);
+         if (jdbcUser != null && !jdbcUser.isEmpty()) {
+            filters.put("${jdbcUserConfig}", "<jdbc-user>" + jdbcUser + "</jdbc-user>");
+         } else {
+            filters.put("${jdbcUserConfig}", "");
+         }
+         if (jdbcPassword != null && !jdbcPassword.isEmpty()) {
+            filters.put("${jdbcPasswordConfig}", "<jdbc-password>" + jdbcPassword + "</jdbc-password>");
+         } else {
+            filters.put("${jdbcPasswordConfig}", "");
+         }
          if (databaseStorage) {
             filters.put("${databaseStorage}", "<database-storage>true</database-storage>");
             filters.put("${databaseConnections}", "<database-connections>" + databaseConnections + "</database-connections>");
@@ -827,7 +858,14 @@ public class Create extends InstallAbstract {
       new File(directory, "bin").mkdirs();
       File etcFolder = createDirectory(etc, directory);
       new File(directory, "tmp").mkdirs();
-      new File(directory, "lib").mkdirs();
+      File libDir = new File(directory, "lib");
+      libDir.mkdirs();
+
+      if (jdbc && jdbcDriverPath != null) {
+         File destination = new File(libDir, jdbcDriverPath.getName());
+         Files.copy(jdbcDriverPath.toPath(), destination.toPath(), StandardCopyOption.REPLACE_EXISTING);
+         context.out.println("JDBC driver copied to " + destination.getAbsolutePath());
+      }
       File dataFolder = createDirectory(data, directory);
       File logFolder = createDirectory(LOG_DIRNAME, directory);
       File oomeDumpFile = new File(logFolder, OOM_DUMP_FILENAME);
@@ -842,8 +880,6 @@ public class Create extends InstallAbstract {
       }
 
       addScriptFilters(filters, getHome(), getInstance(), etcFolder, dataFolder, oomeDumpFile, javaMemory, processedJavaOptions, processedJavaUtilityOptions, role);
-
-      boolean allowAnonymous = isAllowAnonymous();
 
 
       String retentionTag;
@@ -949,9 +985,11 @@ public class Create extends InstallAbstract {
 
       if (jdbc) {
          noAutoTune = true;
-         context.out.println();
-         printStar("Copy a jar containing the JDBC Driver '" + jdbcClassName + "' into " + directory.getAbsolutePath() + "/lib");
-         context.out.println();
+         if (jdbcDriverPath == null) {
+            context.out.println();
+            printStar("Copy a jar containing the JDBC Driver '" + jdbcClassName + "' into " + directory.getAbsolutePath() + "/lib");
+            context.out.println();
+         }
       }
 
       performAutoTune(filters, journalType, dataFolder);
@@ -1051,6 +1089,170 @@ public class Create extends InstallAbstract {
       } else {
          return readTextFile(ETC_CONNECTOR_SETTINGS_TXT, filters);
       }
+   }
+
+   private void configureJDBC(ActionContext context) throws Exception {
+      if (!databaseStorage && !isSilentInput()) {
+         int choice = inputChoice("--database-storage",
+                                  "Which database storage type would you like to use?",
+                                  "Relational Database storage (Recommended)",
+                                  "Journal over Database (Deprecated)");
+         if (choice == 0) {
+            databaseStorage = true;
+         }
+      }
+
+      if (jdbcDriverPath != null) {
+         if (!jdbcDriverPath.exists() || !jdbcDriverPath.isFile()) {
+            throw new IllegalArgumentException("JDBC driver JAR not found: " + jdbcDriverPath);
+         }
+      } else if (!isSilentInput()) {
+         String path = input("--jdbc-driver-path", "Path to the JDBC driver JAR (leave empty to skip)", "", true);
+         if (path != null && !path.isEmpty()) {
+            jdbcDriverPath = new File(path);
+            if (!jdbcDriverPath.exists() || !jdbcDriverPath.isFile()) {
+               throw new IllegalArgumentException("JDBC driver JAR not found: " + path);
+            }
+         }
+      }
+
+      if (jdbcDriverPath != null && jdbcClassName == null) {
+         String detected = detectDriverClassName(jdbcDriverPath);
+         if (detected != null) {
+            context.out.println("Driver detected: " + detected);
+            jdbcClassName = detected;
+         } else if (!isSilentInput()) {
+            jdbcClassName = input("--jdbc-driver-class-name", "Could not auto-detect driver class. Please enter the JDBC driver class name", "org.hsqldb.jdbc.JDBCDriver");
+         }
+      }
+
+      if (jdbcClassName == null) {
+         jdbcClassName = ActiveMQDefaultConfiguration.getDefaultDriverClassName();
+      }
+
+      if (jdbcURL == null && !isSilentInput() && jdbcDriverPath != null) {
+         int choice = inputChoice("--jdbc-connection-url",
+                                  "How would you like to configure the JDBC connection?",
+                                  "Provide a complete JDBC URL",
+                                  "Build connection from parameters");
+
+         if (choice == 0) {
+            jdbcURL = input("--jdbc-connection-url", "JDBC connection URL", null);
+         } else {
+            buildConnectionFromParameters(context);
+         }
+      }
+
+      if (jdbcUser == null && !isSilentInput() && jdbcDriverPath != null) {
+         String user = input("--jdbc-user", "Database username (leave empty if not required)", "", true);
+         if (user != null && !user.isEmpty()) {
+            jdbcUser = user;
+            jdbcPassword = inputPassword("--jdbc-password", "Database password");
+         }
+      }
+
+      if (jdbcURL == null) {
+         jdbcURL = "jdbc:hsqldb:file:" + getInstance().getAbsolutePath() + "/data/hsqldb/db;hsqldb.write_delay=false";
+      }
+
+      if (jdbcDriverPath != null && !isSilentInput()) {
+         offerConnectionTest(jdbcDriverPath, context);
+      }
+   }
+
+   private void buildConnectionFromParameters(ActionContext context) {
+      JDBCDialect dialect;
+      JDBCDialect detected = JDBCDialect.detectFromDriverClass(jdbcClassName);
+
+      if (detected != null) {
+         context.out.println("Database type detected: " + detected.getDisplayName());
+         dialect = detected;
+      } else {
+         int dbChoice = inputChoice("database-type", "Select your database type:", JDBCDialect.getDisplayNames());
+         dialect = JDBCDialect.values()[dbChoice];
+      }
+
+      String host = input("host", "Database host", "localhost");
+      int port = inputInteger("port", "Database port", String.valueOf(dialect.getDefaultPort()));
+      String database = input("database", "Database name", "artemis");
+
+      jdbcURL = dialect.buildConnectionUrl(host, port, database);
+      context.out.println("Connection URL: " + jdbcURL);
+   }
+
+   private void offerConnectionTest(File driverJar, ActionContext context) {
+      boolean test = inputBoolean("test-connection", "Would you like to test the database connection?", true);
+      if (!test) {
+         return;
+      }
+
+      boolean connected = false;
+      while (!connected) {
+         context.out.println("Testing connection...");
+         try {
+            connected = testJDBCConnection(driverJar, jdbcClassName, jdbcURL, jdbcUser, jdbcPassword);
+            if (connected) {
+               context.out.println("Connection successful!");
+            }
+         } catch (Exception e) {
+            context.err.println("Connection failed: " + e.getMessage());
+         }
+
+         if (!connected) {
+            boolean retry = inputBoolean("retry", "Would you like to retry with different parameters?", true);
+            if (!retry) {
+               break;
+            }
+            jdbcURL = input("--jdbc-connection-url", "JDBC connection URL", jdbcURL);
+            if (jdbcUser != null) {
+               jdbcUser = input("--jdbc-user", "Database username", jdbcUser);
+               jdbcPassword = inputPassword("--jdbc-password", "Database password");
+            }
+         }
+      }
+   }
+
+   static boolean testJDBCConnection(File driverJar,
+                                     String driverClassName,
+                                     String url,
+                                     String user,
+                                     String password) throws Exception {
+      URL[] urls = {driverJar.toURI().toURL()};
+      try (URLClassLoader cl = new URLClassLoader(urls)) {
+         Class<?> driverClass = cl.loadClass(driverClassName);
+         Driver driver = (Driver) driverClass.getDeclaredConstructor().newInstance();
+
+         Properties props = new Properties();
+         if (user != null && !user.isEmpty()) {
+            props.setProperty("user", user);
+         }
+         if (password != null && !password.isEmpty()) {
+            props.setProperty("password", password);
+         }
+
+         try (Connection conn = driver.connect(url, props)) {
+            return conn != null;
+         }
+      }
+   }
+
+   static String detectDriverClassName(File driverJar) throws IOException {
+      try (JarFile jar = new JarFile(driverJar)) {
+         JarEntry entry = jar.getJarEntry("META-INF/services/java.sql.Driver");
+         if (entry != null) {
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(jar.getInputStream(entry), StandardCharsets.UTF_8))) {
+               String line;
+               while ((line = reader.readLine()) != null) {
+                  line = line.trim();
+                  if (!line.isEmpty() && !line.startsWith("#")) {
+                     return line;
+                  }
+               }
+            }
+         }
+      }
+      return null;
    }
 
    private void printStar(String message) {
