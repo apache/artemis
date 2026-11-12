@@ -41,6 +41,10 @@ public interface SequentialFile {
       run.run();
    }
 
+   default int getMemoryEstimate() {
+      return 0;
+   }
+
    /**
     * The maximum number of simultaneous writes accepted
     */

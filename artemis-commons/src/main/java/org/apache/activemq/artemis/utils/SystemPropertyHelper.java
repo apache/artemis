@@ -28,4 +28,18 @@ public class SystemPropertyHelper {
       }
       return value;
    }
+
+   public static long getLongProperty(String propertyName, String envName, long defaultValue) {
+      String value = System.getProperty(propertyName);
+      if (value == null) {
+         value = System.getenv(envName);
+      }
+      if (value != null) {
+         try {
+            return Long.parseLong(value);
+         } catch (NumberFormatException ignored) {
+         }
+      }
+      return defaultValue;
+   }
 }

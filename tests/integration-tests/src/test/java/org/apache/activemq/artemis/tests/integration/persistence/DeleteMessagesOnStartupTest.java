@@ -66,13 +66,13 @@ public class DeleteMessagesOnStartupTest extends StorageManagerTestBase {
 
       Message msg = new CoreMessage(1, 100);
 
-      journal.storeMessage(msg);
+      journal.storeMessage(null, msg);
 
       for (int i = 2; i < 100; i++) {
-         journal.storeMessage(new CoreMessage(i, 100));
+         journal.storeMessage(null, new CoreMessage(i, 100));
       }
 
-      journal.storeReference(100, 1, true);
+      journal.storeReference(100, 1, false, true);
 
       journal.stop();
 

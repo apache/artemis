@@ -19,6 +19,7 @@ package org.apache.activemq.artemis.core.paging;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.core.journal.EncodingSupport;
+import org.apache.activemq.artemis.core.journal.StorageTX;
 import org.apache.activemq.artemis.core.paging.cursor.PagePosition;
 import org.apache.activemq.artemis.core.persistence.StorageManager;
 
@@ -62,5 +63,9 @@ public interface PagedMessage extends EncodingSupport {
    int getMessageNumber();
 
    PagedMessage setMessageNumber(int messageNr);
+
+   StorageTX getStorageTX();
+
+   PagedMessage setStorageTX(StorageTX storageTX);
 
 }

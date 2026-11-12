@@ -103,9 +103,43 @@ public class InputAbstract extends ActionAbstract {
          return silentDefault;
       }
 
-      String inputStr = lineReader.inputLoop(propertyName, prompt, s -> s != null && !s.isEmpty());
+      String inputStr;
+      if (acceptNull) {
+         inputStr = lineReader.inputLoop(propertyName, prompt, s -> true);
+      } else {
+         inputStr = lineReader.inputLoop(propertyName, prompt, s -> s != null && !s.isEmpty());
+      }
 
-      return inputStr.trim();
+      return inputStr == null ? null : inputStr.trim();
+   }
+
+   protected int inputChoice(String propertyName, String prompt, String... options) {
+      if (isSilentInput()) {
+         return 0;
+      }
+
+      getActionContext().out.println();
+      getActionContext().out.println(prompt);
+      for (int i = 0; i < options.length; i++) {
+         getActionContext().out.println("   " + (i + 1) + ") " + options[i]);
+      }
+
+      int choice = -1;
+      do {
+         String value = input(propertyName, "Choose", "1");
+         try {
+            choice = Integer.parseInt(value.trim());
+            if (choice < 1 || choice > options.length) {
+               choice = -1;
+               getActionContext().out.println("Please enter a number between 1 and " + options.length);
+            }
+         } catch (NumberFormatException e) {
+            getActionContext().out.println("Please enter a number.");
+         }
+      }
+      while (choice == -1);
+
+      return choice - 1;
    }
 
    protected String inputPassword(String propertyName, String prompt) {

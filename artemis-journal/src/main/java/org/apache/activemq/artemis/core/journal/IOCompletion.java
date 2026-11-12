@@ -20,5 +20,17 @@ import org.apache.activemq.artemis.core.io.IOCallback;
 
 public interface IOCompletion extends IOCallback {
 
+   default void workUp() {
+   }
+   default void workDone() {
+   }
+   default boolean isWorking() {
+      return false;
+   }
+
+   default int getActiveWorkers() {
+      return 0;
+   }
+
    void storeLineUp();
 }
