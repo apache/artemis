@@ -780,6 +780,20 @@ The default value is `-1`.
 
 It often makes sense to introduce a delay before redistributing as it's a common case that a consumer closes but another one quickly is created on the same queue, in such a case you probably don't want to redistribute immediately since the new consumer will arrive shortly.
 
+The element `preserve-delivery-count-on-redistribution` controls whether the delivery count of a message survives redistribution.
+By default it is `false`, i.e. the broker receiving the redistributed message starts counting deliveries from scratch which means `max-delivery-attempts` is effectively enforced per broker rather than cluster-wide.
+Set it to `true` to carry the delivery count over, so a message which bounces between nodes still ends up in the dead letter address after `max-delivery-attempts` deliveries across the whole cluster:
+
+[,xml]
+----
+<address-settings>
+   <address-setting match="#">
+      <redistribution-delay>0</redistribution-delay>
+      <preserve-delivery-count-on-redistribution>true</preserve-delivery-count-on-redistribution>
+   </address-setting>
+</address-settings>
+----
+
 [WARNING]
 ====
 The broker uses internal store-and-forward queues to handle message which need to be sent to other nodes in the cluster.

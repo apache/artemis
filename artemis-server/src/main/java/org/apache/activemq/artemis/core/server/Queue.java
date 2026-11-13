@@ -33,6 +33,7 @@ import org.apache.activemq.artemis.core.paging.cursor.PageSubscription;
 import org.apache.activemq.artemis.core.persistence.OperationContext;
 import org.apache.activemq.artemis.core.postoffice.Binding;
 import org.apache.activemq.artemis.core.server.impl.AckReason;
+import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.utils.ReferenceCounter;
 import org.apache.activemq.artemis.utils.collections.NodeStore;
@@ -449,6 +450,10 @@ public interface Queue extends Bindable, CriticalComponent {
    SimpleString getExpiryAddress();
 
    SimpleString getDeadLetterAddress();
+
+   default boolean isPreserveDeliveryCountOnRedistribution() {
+      return AddressSettings.DEFAULT_PRESERVE_DELIVERY_COUNT_ON_REDISTRIBUTION;
+   }
 
    /**
     * Pauses the queue. It will receive messages but won't give them to the consumers until resumed. If a queue is
