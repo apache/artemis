@@ -109,21 +109,50 @@ logger.activemq.level=INFO
 # Console appender
 appender.console.type=Console
 appender.console.name=console
+appender.console.direct=${env:ARTEMIS_CONSOLE_DIRECT:-false}
 appender.console.layout.type=PatternLayout
-appender.console.layout.pattern=%d %-5level [%logger] %msg%n
+appender.console.layout.pattern=${env:ARTEMIS_CONSOLE_PATTERN:-%d %-5level [%logger] %msg%n}
+
 
 # Log file appender
 appender.log_file.type = RollingFile
 appender.log_file.name = log_file
-appender.log_file.fileName = log/application.log
-appender.log_file.filePattern = log/application.log.%d{yyyy-MM-dd}
+appender.log_file.fileName = ${sys:artemis.instance}/log/artemis.log
+appender.log_file.filePattern = ${sys:artemis.instance}/log/artemis.log.%d{yyyy-MM-dd}
+appender.log_file.createOnDemand = true
 appender.log_file.layout.type = PatternLayout
 appender.log_file.layout.pattern = %d %-5level [%logger] %msg%n
+appender.log_file.filter.threshold.type = ThresholdFilter
+appender.log_file.filter.threshold.level = ${env:ARTEMIS_FILE_LEVEL:-INFO}
 appender.log_file.policies.type = Policies
 appender.log_file.policies.cron.type = CronTriggeringPolicy
 appender.log_file.policies.cron.schedule = 0 0 0 * * ?
 appender.log_file.policies.cron.evaluateOnStartup = true
 ----
+
+The default `log4j2.properties` reads three optional environment variables:
+
+`ARTEMIS_CONSOLE_PATTERN`:: overrides the console layout pattern (default `%d %-5level [%logger] %msg%n`).
+`ARTEMIS_FILE_LEVEL`:: sets the threshold of the `log/artemis.log` file appender (default `INFO`); `OFF` disables it.
+`ARTEMIS_CONSOLE_DIRECT`:: when `true`, the console appender writes straight to the process standard output instead of going through `System.out` (default `false`).
+This is faster when the output is piped, for example to journald.
+
+The systemd service file generated for the broker sets all three, so the broker logs to journald only, without its own date and time since journald timestamps every line:
+
+[,ini]
+----
+Environment="ARTEMIS_CONSOLE_PATTERN=<%%level{FATAL=2, ERROR=3, WARN=4, INFO=6, DEBUG=7, TRACE=7}>%%-5level [%%logger] %%msg%%n"
+Environment="ARTEMIS_FILE_LEVEL=OFF"
+Environment="ARTEMIS_CONSOLE_DIRECT=true"
+----
+
+Note that `%` must be escaped as `%%` in systemd unit files.
+The leading `<N>` is a syslog priority prefix: journald strips it from the message and stores it as the entry's priority, so commands like `journalctl -u artemis -p warning` show only warnings and errors.
+Only the first line of a multi-line message (e.g. a stack trace) carries the priority.
+
+Since the file appenders use `createOnDemand`, `log/artemis.log` is not created at all when nothing is written to it.
+Use `journalctl -u artemis` or similar commands to read the logs.
+Audit logging, when enabled, is still written to `log/audit.log`.
 
 == Configuring Broker Audit Logging
 

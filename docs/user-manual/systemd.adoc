@@ -1,0 +1,101 @@
+= Systemd
+:idprefix:
+:idseparator: -
+:docinfo: shared
+
+== Systemd service
+
+A systemd service file is generated automatically when you create a broker instance with `artemis create`.
+The file is available at `pathToBrokerInstance/etc/artemis.service`.
+When upgrading an existing instance, `artemis upgrade` generates the file if it does not exist yet.
+You might want to tweak or add additional configuration inside the service file.
+Each option in the file is explained by the comment above it, and some optional settings, such as `User`, `Nice` and IO scheduling, are included commented out.
+
+Once the service is installed (see <<installing-the-systemd-service>>), systemd reads the copy in `/etc/systemd/system/artemis.service`, not the file in the broker instance.
+Either edit the installed copy, or edit `pathToBrokerInstance/etc/artemis.service` and copy it again.
+In both cases, run `systemctl daemon-reload` and restart the service for the changes to take effect.
+
+You can read more about systemd https://systemd.io/[here].
+
+== Why use systemd
+
+On systems that use systemd, running the broker as a systemd service is recommended over the `bin/artemis-service` script, as systemd provides:
+
+Better process tracking::
+systemd supervises the broker process itself, so `systemctl status`, `stop` and `restart` always act on the actual broker process, without relying on potentially old PIDs written to file.
+Accurate status::
+A broker that exits is never reported as running, and a broker that keeps failing is marked as failed instead of being restarted forever.
+Visible errors::
+All broker output, including startup failures and errors during shutdown, is captured in journald (see <<logging>>).
+Faster startup and shutdown::
+systemd reacts as soon as the broker process starts or exits, without waiting on fixed polling intervals.
+Automatic start and restart::
+The provided service file restarts the broker automatically if it fails, up to 5 times within 5 minutes, after which the service is marked as failed and must be started again manually.
+Once the service is enabled (see <<installing-the-systemd-service>>), the broker starts at boot.
+
+== Logging
+
+When running as a service, the broker logs to journald only.
+The service file achieves this by setting the `ARTEMIS_CONSOLE_PATTERN` and `ARTEMIS_FILE_LEVEL` environment variables, which are read by `etc/log4j2.properties` (see xref:logging.adoc[Logging]).
+Read the logs with `journalctl -u artemis`, or only warnings and errors with `journalctl -u artemis -p warning`.
+
+[WARNING]
+====
+* Depending on the distribution, journald may keep logs only in memory, in which case they are lost on reboot.
+This is the case with `Storage=volatile`, or with `Storage=auto` when the `/var/log/journal` directory does not exist.
+Set `Storage=persistent` in `/etc/systemd/journald.conf`, or create `/var/log/journal`, to keep logs across reboots.
+* journald rate-limits each service (by default 10000 messages per 30 seconds) and drops messages above the limit.
+If you enable `DEBUG`/`TRACE` or audit logging, raise the limit with `LogRateLimitIntervalSec=` and `LogRateLimitBurst=` in the service file.
+====
+
+== Installing the systemd service
+
+The service is not installed or enabled automatically.
+To install it and start it at boot, run the following as `root` or with `sudo`:
+
+[,console]
+----
+cp /pathToBrokerInstance/etc/artemis.service /etc/systemd/system/artemis.service
+systemctl daemon-reload
+systemctl enable artemis
+----
+
+== Using the systemd service
+
+You can now use `systemctl` commands to start/stop/restart the service, named `artemis`:
+
+[,console]
+----
+systemctl start   artemis
+systemctl stop    artemis
+systemctl restart artemis
+----
+
+You can read the systemctl man page https://man7.org/linux/man-pages/man1/systemctl.1.html[here].
+
+== Running as a non-root user
+
+To run as a non-root user (we will use `artemis` in our example), make sure all the files are owned by `artemis` user.
+
+First, create a service user (a user without a home directory):
+
+[,console]
+----
+useradd -r artemis
+----
+
+Then, make sure the broker is not running, and change the ownership of the broker instance directory and everything in it:
+
+[,console]
+----
+systemctl stop artemis
+chown -R artemis:artemis /pathToBrokerInstance
+----
+
+After that, uncomment the `User` and `Group` options in `/etc/systemd/system/artemis.service`, then reload systemd and start the service:
+
+[,console]
+----
+systemctl daemon-reload
+systemctl start artemis
+----
