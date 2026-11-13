@@ -32,6 +32,7 @@ public final class RecordingMessageListener implements MessageListener {
    private final Destination destination;
    private final long commitInterval;
    private final AtomicLong receivedMessages;
+   private final AtomicLong negativeLatencies;
    private final Runnable onMessageReceived;
    private final MicrosTimeProvider timeProvider;
    private final SingleWriterRecorder receiveLatencyRecorder;
@@ -51,6 +52,7 @@ public final class RecordingMessageListener implements MessageListener {
       this.destination = destination;
       this.commitInterval = commitInterval;
       this.receivedMessages = receivedMessages;
+      this.negativeLatencies = new AtomicLong();
       this.onMessageReceived = onMessageReceived;
       this.timeProvider = timeProvider;
       this.receiveLatencyRecorder = receiveLatencyRecorder;
@@ -85,6 +87,13 @@ public final class RecordingMessageListener implements MessageListener {
       return receivedMessages.get();
    }
 
+   /**
+    * @return the messages received before they were sent, by this listener's clock: their latencies are not recorded
+    */
+   public long getNegativeLatencies() {
+      return negativeLatencies.get();
+   }
+
    @Override
    public void onMessage(final Message message) {
       if (onMessageReceived != null) {
@@ -95,9 +104,14 @@ public final class RecordingMessageListener implements MessageListener {
          try {
             final long start = message.getLongProperty("time");
             final long receivedOn = timeProvider.now();
-            // the clocks of two hosts can differ, and a wall clock can step back
-            final long elapsedUs = Math.max(0, receivedOn - start);
-            receiveLatencyRecorder.recordValue(elapsedUs);
+            final long elapsedUs = receivedOn - start;
+            if (elapsedUs < 0) {
+               // the clocks of two hosts can differ, a wall clock can step back, and a message can have been sent by
+               // another process: no latency is recorded, and the summary says the results are not valid
+               negativeLatencies.lazySet(negativeLatencies.get() + 1);
+            } else {
+               receiveLatencyRecorder.recordValue(elapsedUs);
+            }
          } catch (JMSException fatal) {
             fatalException.compareAndSet(false, true);
          }
