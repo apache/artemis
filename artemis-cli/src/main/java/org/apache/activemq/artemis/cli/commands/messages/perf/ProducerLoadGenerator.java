@@ -34,6 +34,11 @@ public interface ProducerLoadGenerator extends Runnable {
 
    SingleWriterRecorder getSendCompletedLatencies();
 
+   /**
+    * @return the sends completed before they were made, by this generator's clock: their latencies are not recorded
+    */
+   long getNegativeLatencies();
+
    AsyncJms2ProducerFacade getProducer();
 
    boolean isCompleted();

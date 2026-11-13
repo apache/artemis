@@ -119,7 +119,8 @@ public class PerfClientCommand extends PerfCommand {
          }
       }
 
-      final MicrosTimeProvider timeProvider = MicrosClock.timeProvider(context);
+      // perf client only receives what it sent itself, in this process: nanoTime does not step back
+      final MicrosTimeProvider timeProvider = () -> TimeUnit.NANOSECONDS.toMicros(System.nanoTime());
       boolean warmingUp = warmup != 0;
       final LiveStatistics statistics;
       final StringBuilder skratchBuffer = new StringBuilder();

@@ -47,6 +47,7 @@ public abstract class SkeletalProducerLoadGenerator implements CompletionListene
    private final AtomicLong unprocessedCompletions;
    private final AtomicBoolean scheduledProcessingCompletions;
    private volatile Exception fatalException;
+   private final AtomicLong negativeLatencies = new AtomicLong();
    private boolean stopHandlingCompletions;
 
    public SkeletalProducerLoadGenerator(final AsyncJms2ProducerFacade producer,
@@ -82,6 +83,11 @@ public abstract class SkeletalProducerLoadGenerator implements CompletionListene
    @Override
    public SingleWriterRecorder getSendCompletedLatencies() {
       return sendCompletedLatencies;
+   }
+
+   @Override
+   public long getNegativeLatencies() {
+      return negativeLatencies.get();
    }
 
    @Override
@@ -218,9 +224,13 @@ public abstract class SkeletalProducerLoadGenerator implements CompletionListene
 
    private void recordSendCompletionLatency(final Message message) throws JMSException {
       final long time = message.getLongProperty("time");
-      // a wall clock can step back
-      final long elapsedMicros = Math.max(0, timeProvider.now() - time);
-      sendCompletedLatencies.recordValue(elapsedMicros);
+      final long elapsedMicros = timeProvider.now() - time;
+      if (elapsedMicros < 0) {
+         // a wall clock can step back: no latency is recorded, and the summary says the results are not valid
+         negativeLatencies.lazySet(negativeLatencies.get() + 1);
+      } else {
+         sendCompletedLatencies.recordValue(elapsedMicros);
+      }
    }
 
    @Override

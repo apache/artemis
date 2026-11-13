@@ -29,6 +29,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MessageListenerBenchmarkTest {
 
@@ -62,20 +64,48 @@ public class MessageListenerBenchmarkTest {
    }
 
    /**
-    * A message stamped ahead of the receiver's clock used to throw out of onMessage, and so be redelivered for ever.
+    * A message stamped ahead of the receiver's clock used to throw out of onMessage, and so be redelivered for ever. It
+    * is received, and counted, but its latency is not recorded.
     */
    @Test
-   public void testMessageSentAheadOfTheClockIsRecordedAsNoLatency() throws Exception {
+   public void testMessageSentAheadOfTheClockIsCountedNotRecorded() throws Exception {
       try (MessageListenerBenchmark benchmark = benchmark()) {
          final RecordingMessageListener listener = startListener(benchmark);
 
          listener.onMessage(messageSentAt(NOW + 500));
 
          final Histogram latencies = listener.getReceiveLatencyRecorder().getIntervalHistogram();
-         assertEquals(1, latencies.getTotalCount());
-         assertEquals(0, latencies.getMaxValue());
+         assertEquals(0, latencies.getTotalCount());
+         assertEquals(1, listener.getNegativeLatencies());
          assertEquals(1, listener.getReceivedMessages());
       }
+   }
+
+   @Test
+   public void testSummaryWarnsOfNegativeLatencies() throws Exception {
+      try (MessageListenerBenchmark benchmark = benchmark()) {
+         final RecordingMessageListener listener = startListener(benchmark);
+         final LiveStatistics statistics = new LiveStatistics(null, null, null, benchmark.getListeners());
+
+         listener.onMessage(messageSentAt(NOW - 500));
+         StringBuilder summary = summary(statistics);
+         assertFalse(summary.toString().contains("WARNING"), summary.toString());
+
+         final int ahead = 3;
+         for (int i = 0; i < ahead; i++) {
+            listener.onMessage(messageSentAt(NOW + 500));
+         }
+         summary = summary(statistics);
+         assertTrue(summary.toString().contains("--- WARNING: " + ahead + " negative latencies were not recorded"), summary.toString());
+         statistics.close();
+      }
+   }
+
+   private static StringBuilder summary(final LiveStatistics statistics) throws Exception {
+      statistics.sampleMetrics(false);
+      final StringBuilder out = new StringBuilder();
+      statistics.outSummary(out, true);
+      return out;
    }
 
    @Test

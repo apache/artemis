@@ -176,6 +176,24 @@ public final class LiveStatistics {
       return false;
    }
 
+   /**
+    * @return the latencies that came out negative, and so were not recorded
+    */
+   long negativeLatencies() {
+      long sum = 0;
+      if (producers != null) {
+         for (ProducerLoadGenerator producer : producers) {
+            sum += producer.getNegativeLatencies();
+         }
+      }
+      if (listeners != null) {
+         for (RecordingMessageListener listener : listeners) {
+            sum += listener.getNegativeLatencies();
+         }
+      }
+      return sum;
+   }
+
    public void sampleMetrics(final boolean warmup) {
       final long lastSampleTime = this.sampleTime;
       sampleTime = System.currentTimeMillis();
@@ -320,7 +338,7 @@ public final class LiveStatistics {
       jsonWriter.flush();
    }
 
-   private void appendJsonSummarySampleOnFile(final boolean failedBenchmark) throws IOException {
+   private void appendJsonSummarySampleOnFile(final boolean failedBenchmark, final long negativeLatencies) throws IOException {
       if (jsonWriter == null) {
          return;
       }
@@ -328,6 +346,9 @@ public final class LiveStatistics {
       jsonBuilder.add("sampleType", "summary");
       jsonBuilder.add("time", sampleTime);
       jsonBuilder.add("result", failedBenchmark ? "fail" : "success");
+      if (negativeLatencies > 0) {
+         jsonBuilder.add("negativeLatencies", negativeLatencies);
+      }
       if (sentMsg != null) {
          jsonBuilder.add("totalSent", sentMsg.getLastSample());
       }
@@ -407,6 +428,11 @@ public final class LiveStatistics {
       out.append("\n--- SUMMARY");
       final boolean failedBenchmark = anyFatalError();
       out.append("\n--- result: ").append(failedBenchmark ? "fail" : "success").append('\n');
+      final long negativeLatencies = negativeLatencies();
+      if (negativeLatencies > 0) {
+         out.append("--- WARNING: ").append(negativeLatencies)
+            .append(" negative latencies were not recorded, so the latency results are not valid: a clock stepped back, the clocks of two hosts differ, or messages were sent by another process\n");
+      }
 
       final List<String[]> totals = new ArrayList<>();
       addTotal(totals, "sent", sentMsg);
@@ -423,7 +449,7 @@ public final class LiveStatistics {
          printTable(stream, ascii, new String[]{"total", "messages"}, totals);
          printTable(stream, ascii, latencyTitles("aggregated (us)"), latencies);
       }));
-      appendJsonSummarySampleOnFile(failedBenchmark);
+      appendJsonSummarySampleOnFile(failedBenchmark, negativeLatencies);
    }
 
    private static void addTotal(final List<String[]> rows, final String metric, final RateSampler sampler) {
