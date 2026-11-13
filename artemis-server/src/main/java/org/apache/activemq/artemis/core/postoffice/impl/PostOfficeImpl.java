@@ -1911,7 +1911,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
                                                           final byte[] duplicateIDBytes) throws Exception {
       assert duplicateIDBytes != null && Arrays.equals(message.getDuplicateIDBytes(), duplicateIDBytes);
       final DuplicateIDCache cache = getDuplicateIDCache(context.getAddress(message));
-      final boolean isDuplicate = cache.contains(duplicateIDBytes);
+      final boolean isDuplicate = cache.contains(duplicateIDBytes) || SentDuplicateIDs.sentIn(context.getTransaction(), cache, duplicateIDBytes);
       if (rejectDuplicates && isDuplicate) {
          ActiveMQServerLogger.LOGGER.duplicateMessageDetected(message);
          if (context.getTransaction() != null) {
@@ -1934,7 +1934,37 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
          startedTX = false;
       }
       cache.addToCache(duplicateIDBytes, context.getTransaction(), startedTX);
+      if (!startedTX) {
+         // The id joins the cache only when the transaction commits: until then a second send of it in the same
+         // transaction is found here
+         final SentDuplicateIDs sent = context.getTransaction().getOrCreateOperation(TransactionPropertyIndexes.DUPLICATE_IDS, SentDuplicateIDs::new);
+         if (sent != null) {
+            sent.add(cache, duplicateIDBytes);
+         }
+      }
       return startedTX ? DuplicateCheckResult.NoDuplicateStartedTX : DuplicateCheckResult.NoDuplicateNotStartedTX;
+   }
+
+   /**
+    * The duplicate ids a transaction has sent, by cache. They join their caches only when the transaction commits
+    * (each through its own {@code AddDuplicateIDOperation}); until then they are kept here, so that a second send of
+    * one in the same transaction is a duplicate.
+    */
+   private static final class SentDuplicateIDs extends TransactionOperationAbstract {
+
+      private final Map<DuplicateIDCache, Set<ByteArray>> sent = new HashMap<>();
+
+      synchronized void add(final DuplicateIDCache cache, final byte[] duplicateIDBytes) {
+         sent.computeIfAbsent(cache, c -> new HashSet<>()).add(new ByteArray(duplicateIDBytes));
+      }
+
+      synchronized boolean contains(final DuplicateIDCache cache, final byte[] duplicateIDBytes) {
+         return sent.getOrDefault(cache, Collections.emptySet()).contains(new ByteArray(duplicateIDBytes));
+      }
+
+      static boolean sentIn(final Transaction tx, final DuplicateIDCache cache, final byte[] duplicateIDBytes) {
+         return tx != null && tx.getProperty(TransactionPropertyIndexes.DUPLICATE_IDS) instanceof SentDuplicateIDs sent && sent.contains(cache, duplicateIDBytes);
+      }
    }
 
    private DuplicateCheckResult checkBridgeDuplicateID(final Message message,
