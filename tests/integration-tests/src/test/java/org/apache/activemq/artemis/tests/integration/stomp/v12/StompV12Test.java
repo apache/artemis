@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import io.netty.buffer.Unpooled;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.protocol.stomp.Stomp;
@@ -1785,6 +1786,35 @@ public class StompV12Test extends StompTestBase {
       assertEquals("Hello World", message.getText());
       assertEquals("abc", message.getStringProperty("foo"), "foo");
       assertEquals("123", message.getStringProperty("bar"), "bar");
+   }
+
+   @Test
+   public void testFrameEndingInALaterPacketThanItsContentLengthBody() throws Exception {
+      MessageConsumer consumer = session.createConsumer(queue);
+
+      conn.connect(defUser, defPass);
+
+      String destination = getQueuePrefix() + getQueueName();
+      // The body ("Hello") and a byte after it, then, in a second write, the rest up to the NUL
+      write("SEND\ndestination:" + destination + "\ncontent-length:5\nreceipt:r1\n\nHello!");
+      Thread.sleep(200);
+      write("!\0");
+      write("SEND\ndestination:" + destination + "\nreceipt:r2\n\nsecond\0");
+
+      for (String receipt : new String[] {"r1", "r2"}) {
+         ClientStompFrame frame = conn.receiveFrame(5000);
+         assertNotNull(frame, receipt);
+         assertEquals(Stomp.Responses.RECEIPT, frame.getCommand(), frame.toString());
+         assertEquals(receipt, frame.getHeader(Stomp.Headers.Response.RECEIPT_ID));
+      }
+      assertNotNull(consumer.receive(1000));
+      assertNotNull(consumer.receive(1000));
+
+      conn.disconnect();
+   }
+
+   private void write(String bytes) throws IOException {
+      conn.getTransport().send(Unpooled.copiedBuffer(bytes, StandardCharsets.UTF_8)).awaitUninterruptibly();
    }
 
    @Test
