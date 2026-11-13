@@ -55,6 +55,10 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
 
    private final Map<ByteArray, Integer> cache = new ConcurrentHashMap<>();
 
+   // Ids of sends whose transaction is still open, with how many: they count as duplicates, but take no slot until
+   // the send commits, so a send that fails leaves the ids before it in the cache
+   private final Map<ByteArray, Integer> inFlight = new ConcurrentHashMap<>();
+
    private final SimpleString address;
 
    private final List<ObjLongPair<ByteArray>> ids;
@@ -201,7 +205,7 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
    }
 
    private boolean contains(final ByteArray duplID) {
-      final boolean contains = cache.containsKey(duplID);
+      final boolean contains = cache.containsKey(duplID) || inFlight.containsKey(duplID);
       if (contains) {
          if (logger.isTraceEnabled()) {
             logger.trace("address = {} found a duplicate {}", address, describeID(duplID.bytes));
@@ -258,7 +262,7 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
          }
 
          if (instantAdd) {
-            addToCacheInMemory(holder, recordID);
+            reserve(holder);
             tx.addOperation(new AddDuplicateIDOperation(holder, recordID, false));
          } else {
             // For a tx, it's important that the entry is not added to the cache until commit
@@ -270,7 +274,18 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
 
    @Override
    public void load(final Transaction tx, final byte[] duplID) {
-      tx.addOperation(new AddDuplicateIDOperation(new ByteArray(duplID), tx.getID(), true));
+      // A prepared transaction: its id was held when it was prepared, and is held again until it ends
+      final AddDuplicateIDOperation operation = new AddDuplicateIDOperation(new ByteArray(duplID), tx.getID(), true);
+      operation.hold();
+      tx.addOperation(operation);
+   }
+
+   private void reserve(final ByteArray holder) {
+      inFlight.merge(holder, 1, Integer::sum);
+   }
+
+   private void release(final ByteArray holder) {
+      inFlight.computeIfPresent(holder, (id, count) -> count == 1 ? null : count - 1);
    }
 
    private synchronized void addToCacheInMemory(final ByteArray holder, final long recordID) {
@@ -378,6 +393,9 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
 
       volatile boolean done;
 
+      // A transaction's id, held from its prepare or commit until it takes its slot or the transaction rolls back
+      private boolean held;
+
       private final boolean afterCommit;
 
       AddDuplicateIDOperation(final ByteArray holder, final long recordID, boolean afterCommit) {
@@ -394,17 +412,67 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
          }
       }
 
+      /**
+       * A transaction's id is checked against the cache again when the transaction prepares or commits, and held
+       * from then on: another transaction that sent the same id meanwhile may have committed it, and two
+       * transactions committing it at once would both deliver it.
+       */
+      private void checkAndHold() throws ActiveMQDuplicateIdException {
+         synchronized (PersistentDuplicateIDCache.this) {
+            if (held) {
+               return;
+            }
+            if (contains(holder)) {
+               throw new ActiveMQDuplicateIdException("Duplicate message detected - the transaction sent duplicate id " + describeID(holder.bytes) + " which another transaction committed first");
+            }
+            hold();
+         }
+      }
+
+      private void hold() {
+         reserve(holder);
+         held = true;
+      }
+
+      private void unhold() {
+         if (held) {
+            held = false;
+            release(holder);
+         }
+      }
+
+      @Override
+      public void beforePrepare(final Transaction tx) throws Exception {
+         if (afterCommit) {
+            checkAndHold();
+         }
+      }
+
+      @Override
+      public void beforeCommit(final Transaction tx) throws Exception {
+         // The send was routed: its id takes its slot now, as a send outside a transaction does
+         if (!afterCommit) {
+            process();
+            release(holder);
+         } else {
+            checkAndHold();
+         }
+      }
+
       @Override
       public void afterCommit(final Transaction tx) {
          if (afterCommit) {
             process();
+            unhold();
          }
       }
 
       @Override
       public void beforeRollback(Transaction tx) throws Exception {
          if (!afterCommit) {
-            deleteFromCache(holder, null);
+            release(holder);
+         } else {
+            unhold();
          }
       }
 
