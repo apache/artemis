@@ -374,7 +374,6 @@ public class OIDCSupport {
     * @param value value extracted from JWT. Strings are converted to one-element String arrays. Strings with whitespace
     *              characters are first converted to multi-value tokens (but not Strings in actual arrays).
     *              Null values are always treated as invalid.
-    * @param value an extracted value (can be null)
     * @param valid whether the JSON path successfully lead to actual value (String or String array)
     */
    public record JWTStringArray(String[] value, boolean valid) {
