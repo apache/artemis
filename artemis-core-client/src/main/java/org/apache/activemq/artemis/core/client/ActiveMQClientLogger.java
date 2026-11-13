@@ -28,7 +28,7 @@ import org.w3c.dom.Node;
 /**
  * Logger Codes 210000 - 218999
  */
-@LogBundle(projectCode = "AMQ", regexID = "21[0-8][0-9]{3}", retiredIDs = {211001, 211002, 211003, 212000, 212006, 212029, 212074, 212078, 214012, 214023, 214024, 214026, 214027, 214028, 214029})
+@LogBundle(projectCode = "AMQ", regexID = "21[0-8][0-9]{3}", retiredIDs = {211001, 211002, 211003, 212000, 212006, 212029, 212071, 212073, 212074, 212075, 212076, 212078, 214012, 214023, 214024, 214026, 214027, 214028, 214029})
 public interface ActiveMQClientLogger {
 
    ActiveMQClientLogger LOGGER = BundleFactory.newBundle(ActiveMQClientLogger.class, ActiveMQClientLogger.class.getPackage().getName());
@@ -236,20 +236,8 @@ public interface ActiveMQClientLogger {
    @LogMessage(id = 212070, value = "Unable to initialize VersionLoader ", level = LogMessage.Level.WARN)
    void unableToInitVersionLoader(Throwable e);
 
-   @LogMessage(id = 212071, value = "Unable to check Epoll availability ", level = LogMessage.Level.WARN)
-   void unableToCheckEpollAvailability(Throwable e);
-
    @LogMessage(id = 212072, value = "Failed to change channel state to ReadyForWriting ", level = LogMessage.Level.WARN)
    void failedToSetChannelReadyForWriting(Throwable e);
-
-   @LogMessage(id = 212073, value = "Unable to check KQueue availability ", level = LogMessage.Level.WARN)
-   void unableToCheckKQueueAvailability(Throwable e);
-
-   @LogMessage(id = 212075, value = "KQueue is not available, please add to the classpath or configure useKQueue=false to remove this warning", level = LogMessage.Level.WARN)
-   void unableToCheckKQueueAvailabilityNoClass();
-
-   @LogMessage(id = 212076, value = "Epoll is not available, please add to the classpath or configure useEpoll=false to remove this warning", level = LogMessage.Level.WARN)
-   void unableToCheckEpollAvailabilitynoClass();
 
    @LogMessage(id = 212077, value = "Timed out waiting to receive initial broadcast from cluster. Retry {} of {}", level = LogMessage.Level.WARN)
    void broadcastTimeout(int retry, int maxretry);
