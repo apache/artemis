@@ -186,7 +186,10 @@ final class InMemoryDuplicateIDCache implements DuplicateIDCache {
 
    @Override
    public void load(final Transaction tx, final byte[] duplID) {
-      tx.addOperation(new AddDuplicateIDOperation(new ByteArray(duplID), true));
+      // A prepared transaction: its id was held when it was prepared, and is held again until it ends
+      final AddDuplicateIDOperation operation = new AddDuplicateIDOperation(new ByteArray(duplID), true);
+      operation.hold();
+      tx.addOperation(operation);
    }
 
    private void reserve(final ByteArray holder) {
@@ -263,6 +266,9 @@ final class InMemoryDuplicateIDCache implements DuplicateIDCache {
 
       volatile boolean done;
 
+      // A transaction's id, held from its prepare or commit until it takes its slot or the transaction rolls back
+      private boolean held;
+
       private final boolean afterCommit;
 
       AddDuplicateIDOperation(final ByteArray id, boolean afterCommit) {
@@ -278,12 +284,50 @@ final class InMemoryDuplicateIDCache implements DuplicateIDCache {
          }
       }
 
+      /**
+       * A transaction's id is checked against the cache again when the transaction prepares or commits, and held
+       * from then on: another transaction that sent the same id meanwhile may have committed it, and two
+       * transactions committing it at once would both deliver it.
+       */
+      private void checkAndHold() throws ActiveMQDuplicateIdException {
+         synchronized (InMemoryDuplicateIDCache.this) {
+            if (held) {
+               return;
+            }
+            if (contains(id)) {
+               throw new ActiveMQDuplicateIdException("Duplicate message detected - the transaction sent duplicate id " + describeID(id.bytes) + " which another transaction committed first");
+            }
+            hold();
+         }
+      }
+
+      private void hold() {
+         reserve(id);
+         held = true;
+      }
+
+      private void unhold() {
+         if (held) {
+            held = false;
+            release(id);
+         }
+      }
+
+      @Override
+      public void beforePrepare(final Transaction tx) throws Exception {
+         if (afterCommit) {
+            checkAndHold();
+         }
+      }
+
       @Override
       public void beforeCommit(final Transaction tx) throws Exception {
          // The send was routed: its id takes its slot now, as a send outside a transaction does
          if (!afterCommit) {
             process();
             release(id);
+         } else {
+            checkAndHold();
          }
       }
 
@@ -291,6 +335,7 @@ final class InMemoryDuplicateIDCache implements DuplicateIDCache {
       public void afterCommit(final Transaction tx) {
          if (afterCommit) {
             process();
+            unhold();
          }
       }
 
@@ -298,6 +343,8 @@ final class InMemoryDuplicateIDCache implements DuplicateIDCache {
       public void beforeRollback(Transaction tx) throws Exception {
          if (!afterCommit) {
             release(id);
+         } else {
+            unhold();
          }
       }
 

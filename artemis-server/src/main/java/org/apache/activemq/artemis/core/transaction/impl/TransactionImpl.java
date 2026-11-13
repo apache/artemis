@@ -25,6 +25,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.netty.util.collection.IntObjectHashMap;
+import org.apache.activemq.artemis.api.core.ActiveMQDuplicateIdException;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.ActiveMQExceptionType;
 import org.apache.activemq.artemis.api.core.ActiveMQIllegalStateException;
@@ -221,7 +222,11 @@ public class TransactionImpl implements Transaction {
                throw new IllegalStateException("Cannot prepare non XA transaction");
             }
 
-            beforePrepare();
+            try {
+               beforePrepare();
+            } catch (ActiveMQDuplicateIdException e) {
+               rollbackOnDuplicate(e);
+            }
 
             if (delayed > 0) {
                delayedRunnable = new DelayedPrepare(id, xid);
@@ -303,7 +308,11 @@ public class TransactionImpl implements Transaction {
                }
             }
 
-            beforeCommit();
+            try {
+               beforeCommit();
+            } catch (ActiveMQDuplicateIdException e) {
+               rollbackOnDuplicate(e);
+            }
 
             doCommit();
 
@@ -524,6 +533,17 @@ public class TransactionImpl implements Transaction {
             internalRollback();
          }
       }
+   }
+
+   /**
+    * A duplicate id the transaction sent was committed by another transaction while this one was open: it rolls back
+    * instead, as one marked rollback-only does, and the commit or prepare fails.
+    */
+   private void rollbackOnDuplicate(final ActiveMQDuplicateIdException e) throws Exception {
+      state = State.ROLLBACK_ONLY;
+      exception = e;
+      internalRollback();
+      throw e;
    }
 
    private void internalRollback() throws Exception {

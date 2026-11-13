@@ -888,6 +888,50 @@ public class DuplicateDetectionTest extends ActiveMQTestBase {
       assertNull(message);
    }
 
+   /*
+    * Two transactions that send the same id before either commits: the id joins the cache only at the commit, so the
+    * second to commit must still find it there and fail, rather than deliver the message again
+    */
+   @TestTemplate
+   public void testOverlappingTransactionsSendTheIdOnce() throws Exception {
+      ClientSession first = sf.createSession(false, false, false);
+      ClientSession second = sf.createSession(false, false, false);
+
+      final SimpleString queueName = SimpleString.of("DuplicateDetectionTestQueue");
+
+      first.createQueue(QueueConfiguration.of(queueName).setDurable(false));
+
+      ClientProducer firstProducer = first.createProducer(queueName);
+      ClientProducer secondProducer = second.createProducer(queueName);
+
+      SimpleString dupID = SimpleString.of("abcdefg");
+
+      ClientMessage message = createMessage(first, 1);
+      message.putBytesProperty(Message.HDR_DUPLICATE_DETECTION_ID, dupID.getData());
+      firstProducer.send(message);
+
+      message = createMessage(second, 2);
+      message.putBytesProperty(Message.HDR_DUPLICATE_DETECTION_ID, dupID.getData());
+      secondProducer.send(message);
+
+      first.commit();
+
+      try {
+         second.commit();
+         fail("the second transaction committed the same duplicate id");
+      } catch (ActiveMQDuplicateIdException expected) {
+      }
+      second.rollback();
+
+      ClientSession session = sf.createSession(false, true, true);
+      session.start();
+      ClientConsumer consumer = session.createConsumer(queueName);
+      message = consumer.receive(5000);
+      assertNotNull(message);
+      assertEquals(1, message.getObjectProperty(propKey));
+      assertNull(consumer.receiveImmediate());
+   }
+
    @TestTemplate
    public void testRollbackThenSend() throws Exception {
       ClientSession session = sf.createSession(false, false, false);
@@ -1249,17 +1293,21 @@ public class DuplicateDetectionTest extends ActiveMQTestBase {
 
       session.end(xid2, XAResource.TMSUCCESS);
 
-      session.prepare(xid2);
+      // The prepared branch holds the id
+      try {
+         session.prepare(xid2);
+         fail("Should throw an exception here!");
+      } catch (XAException expected) {
+         assertTrue(expected.getCause().toString().contains("DUPLICATE_ID_REJECTED"));
+      }
 
-      session.commit(xid2, false);
+      session.rollback(xid2);
 
       Xid xid3 = new XidImpl("xa1".getBytes(), 1, UUIDGenerator.getInstance().generateStringUUID().getBytes());
 
       session.start(xid3, XAResource.TMNOFLAGS);
 
-      consumer.receive(250);
-
-      message = consumer.receiveImmediate();
+      message = consumer.receive(250);
       assertNull(message);
 
       logger.debug("ending session");
