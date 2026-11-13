@@ -23,6 +23,7 @@ import java.lang.reflect.Proxy;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerBuilder;
 import javax.management.MBeanServerDelegate;
+import javax.management.ObjectName;
 
 import static org.apache.activemq.artemis.core.server.management.AbstractGuardInvocationHandler.initAuditLoggerContext;
 import static org.apache.activemq.artemis.core.server.management.AbstractGuardInvocationHandler.invokeAndUnwrap;
@@ -67,7 +68,10 @@ public class ArtemisMBeanServerBuilder extends MBeanServerBuilder {
             if (ArtemisMBeanServerBuilder.guard == null) {
                throw new IllegalStateException("ArtemisMBeanServerBuilder not initialized");
             }
-            guard.invoke(proxy, method, args);
+            Class<?>[] paramTypes = method.getParameterTypes();
+            if (paramTypes.length != 0 && ObjectName.class.isAssignableFrom(paramTypes[0])) {
+               guard.invoke(proxy, method, args);
+            }
          }
          handleEquals(method, args);
          return invokeAndUnwrap(method, wrapped, args);
