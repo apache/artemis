@@ -1581,43 +1581,41 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
          for (QueueInfo info : queueInfos.values()) {
             logger.trace("QueueInfo on sendQueueInfoToQueue = {}", info);
 
-            if (info.matchesAddress(address)) {
-               message = createQueueInfoMessage(CoreNotificationType.BINDING_ADDED, queueName);
+            message = createQueueInfoMessage(CoreNotificationType.BINDING_ADDED, queueName);
+
+            message.putStringProperty(ManagementHelper.HDR_ADDRESS, info.getAddress());
+            message.putStringProperty(ManagementHelper.HDR_CLUSTER_NAME, info.getClusterName());
+            message.putStringProperty(ManagementHelper.HDR_ROUTING_NAME, info.getRoutingName());
+            message.putLongProperty(ManagementHelper.HDR_BINDING_ID, info.getID());
+            message.putStringProperty(ManagementHelper.HDR_FILTERSTRING, info.getFilterString());
+            message.putIntProperty(ManagementHelper.HDR_DISTANCE, info.getDistance());
+
+            routeQueueInfo(message, queue, true);
+
+            int consumersWithFilters = info.getFilterStrings() != null ? info.getFilterStrings().size() : 0;
+
+            for (int i = 0; i < info.getNumberOfConsumers() - consumersWithFilters; i++) {
+               message = createQueueInfoMessage(CoreNotificationType.CONSUMER_CREATED, queueName);
 
                message.putStringProperty(ManagementHelper.HDR_ADDRESS, info.getAddress());
                message.putStringProperty(ManagementHelper.HDR_CLUSTER_NAME, info.getClusterName());
                message.putStringProperty(ManagementHelper.HDR_ROUTING_NAME, info.getRoutingName());
-               message.putLongProperty(ManagementHelper.HDR_BINDING_ID, info.getID());
-               message.putStringProperty(ManagementHelper.HDR_FILTERSTRING, info.getFilterString());
                message.putIntProperty(ManagementHelper.HDR_DISTANCE, info.getDistance());
 
                routeQueueInfo(message, queue, true);
+            }
 
-               int consumersWithFilters = info.getFilterStrings() != null ? info.getFilterStrings().size() : 0;
-
-               for (int i = 0; i < info.getNumberOfConsumers() - consumersWithFilters; i++) {
+            if (info.getFilterStrings() != null) {
+               for (SimpleString filterString : info.getFilterStrings()) {
                   message = createQueueInfoMessage(CoreNotificationType.CONSUMER_CREATED, queueName);
 
                   message.putStringProperty(ManagementHelper.HDR_ADDRESS, info.getAddress());
                   message.putStringProperty(ManagementHelper.HDR_CLUSTER_NAME, info.getClusterName());
                   message.putStringProperty(ManagementHelper.HDR_ROUTING_NAME, info.getRoutingName());
+                  message.putStringProperty(ManagementHelper.HDR_FILTERSTRING, filterString);
                   message.putIntProperty(ManagementHelper.HDR_DISTANCE, info.getDistance());
 
                   routeQueueInfo(message, queue, true);
-               }
-
-               if (info.getFilterStrings() != null) {
-                  for (SimpleString filterString : info.getFilterStrings()) {
-                     message = createQueueInfoMessage(CoreNotificationType.CONSUMER_CREATED, queueName);
-
-                     message.putStringProperty(ManagementHelper.HDR_ADDRESS, info.getAddress());
-                     message.putStringProperty(ManagementHelper.HDR_CLUSTER_NAME, info.getClusterName());
-                     message.putStringProperty(ManagementHelper.HDR_ROUTING_NAME, info.getRoutingName());
-                     message.putStringProperty(ManagementHelper.HDR_FILTERSTRING, filterString);
-                     message.putIntProperty(ManagementHelper.HDR_DISTANCE, info.getDistance());
-
-                     routeQueueInfo(message, queue, true);
-                  }
                }
             }
          }

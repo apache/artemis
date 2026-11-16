@@ -122,23 +122,6 @@ public class QueueInfo implements Serializable {
       });
    }
 
-   public boolean matchesAddress(SimpleString address) {
-      boolean containsAddress = false;
-
-      if (address != null) {
-         SimpleString[] split = address.split(',');
-         for (SimpleString addressPart : split) {
-            containsAddress = address.startsWith(addressPart);
-
-            if (containsAddress) {
-               break;
-            }
-         }
-      }
-
-      return containsAddress;
-   }
-
    @Override
    public String toString() {
       return "QueueInfo [routingName=" + routingName +
