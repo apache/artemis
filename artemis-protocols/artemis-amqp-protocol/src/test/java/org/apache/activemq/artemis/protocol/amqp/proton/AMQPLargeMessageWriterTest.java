@@ -17,15 +17,22 @@
 
 package org.apache.activemq.artemis.protocol.amqp.proton;
 
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+
+import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.activemq.artemis.core.message.LargeBodyReader;
 import org.apache.activemq.artemis.core.persistence.impl.nullpm.NullStorageManager;
@@ -33,7 +40,9 @@ import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.protocol.amqp.broker.AMQPLargeMessage;
 import org.apache.activemq.artemis.protocol.amqp.broker.AMQPSessionCallback;
 import org.apache.activemq.artemis.protocol.amqp.broker.ActiveMQProtonRemotingConnection;
+import org.apache.activemq.artemis.protocol.amqp.exceptions.ActiveMQAMQPLargeMessageBodyTooSmallException;
 import org.apache.activemq.artemis.spi.core.remoting.ReadyListener;
+import org.apache.qpid.proton.codec.ReadableBuffer;
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.EndpointState;
@@ -42,6 +51,8 @@ import org.apache.qpid.proton.engine.Session;
 import org.apache.qpid.proton.engine.impl.TransportImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -251,5 +262,106 @@ public class AMQPLargeMessageWriterTest {
 
       verifyNoMoreInteractions(reference);
       verifyNoMoreInteractions(protonDelivery);
+   }
+
+   @Test
+   @Timeout(30)
+   public void testBodyEndingBeforeRecordedSizeReportsLargeMessageBodyError() throws Exception {
+      final AMQPLargeMessageWriter writer = new AMQPLargeMessageWriter(serverSender);
+
+      final byte[] storedBody = new byte[1024];
+      final AtomicInteger readerPosition = new AtomicInteger();
+
+      // the message records a much larger body than what is actually left in storage for it
+      when(bodyReader.getSize()).thenReturn(200 * 1024L);
+      when(protonSender.getLocalState()).thenReturn(EndpointState.ACTIVE);
+      when(protonDelivery.isPartial()).thenReturn(true);
+
+      doAnswer(invocation -> {
+         final ByteBuffer buffer = invocation.getArgument(0);
+         final int remaining = storedBody.length - readerPosition.get();
+
+         if (remaining <= 0) {
+            return -1; // what a sequential file read reports once the stored body is exhausted
+         }
+
+         final int readSize = Math.min(buffer.remaining(), remaining);
+
+         buffer.put(storedBody, readerPosition.get(), readSize);
+         readerPosition.addAndGet(readSize);
+
+         return readSize;
+      }).when(bodyReader).readInto(any());
+
+      writer.open(reference);
+      writer.writeBytes(reference);
+
+      final ArgumentCaptor<Exception> error = ArgumentCaptor.forClass(Exception.class);
+
+      verify(serverSender).reportDeliveryError(eq(writer), eq(reference), error.capture());
+      verify(serverSender, never()).reportDeliveryComplete(any(), any(), any(), anyBoolean());
+
+      // a raw IndexOutOfBoundsException from the frame buffer would leave no way to tell this
+      // permanent fault apart from a transient one, so the delivery must fail with a dedicated error
+      assertInstanceOf(ActiveMQAMQPLargeMessageBodyTooSmallException.class, error.getValue());
+   }
+
+   @Test
+   @Timeout(30)
+   public void testMissingBodyReportsErrorBeforeWritingAnyTransfer() throws Exception {
+      final AMQPLargeMessageWriter writer = new AMQPLargeMessageWriter(serverSender);
+
+      when(bodyReader.getSize()).thenReturn(200 * 1024L);
+      when(protonSender.getLocalState()).thenReturn(EndpointState.ACTIVE);
+      when(protonDelivery.isPartial()).thenReturn(true);
+
+      // the stored body is gone entirely, so the very first read reports end of file
+      when(bodyReader.readInto(any())).thenReturn(-1);
+
+      writer.open(reference);
+      writer.writeBytes(reference);
+
+      final ArgumentCaptor<Exception> error = ArgumentCaptor.forClass(Exception.class);
+
+      verify(serverSender).reportDeliveryError(eq(writer), eq(reference), error.capture());
+
+      assertInstanceOf(ActiveMQAMQPLargeMessageBodyTooSmallException.class, error.getValue());
+
+      // nothing may reach the link here, a partial transfer could not be aborted afterwards
+      verify(protonSender, never()).send(any(ReadableBuffer.class));
+   }
+
+   @Test
+   @Timeout(30)
+   public void testReadMakingNoProgressReportsErrorRatherThanSpinning() throws Exception {
+      final AMQPLargeMessageWriter writer = new AMQPLargeMessageWriter(serverSender);
+
+      final byte[] storedBody = new byte[1024];
+      final AtomicInteger reads = new AtomicInteger();
+
+      when(bodyReader.getSize()).thenReturn(200 * 1024L);
+      when(protonSender.getLocalState()).thenReturn(EndpointState.ACTIVE);
+      when(protonDelivery.isPartial()).thenReturn(true);
+
+      doAnswer(invocation -> {
+         final ByteBuffer buffer = invocation.getArgument(0);
+
+         if (reads.getAndIncrement() == 0) {
+            buffer.put(storedBody);
+
+            return storedBody.length;
+         }
+
+         return 0; // a read that makes no progress would otherwise spin the delivery loop forever
+      }).when(bodyReader).readInto(any());
+
+      writer.open(reference);
+      writer.writeBytes(reference);
+
+      final ArgumentCaptor<Exception> error = ArgumentCaptor.forClass(Exception.class);
+
+      verify(serverSender).reportDeliveryError(eq(writer), eq(reference), error.capture());
+
+      assertInstanceOf(ActiveMQAMQPLargeMessageBodyTooSmallException.class, error.getValue());
    }
 }

@@ -25,6 +25,7 @@ import org.apache.activemq.artemis.protocol.amqp.broker.AMQPLargeMessage;
 import org.apache.activemq.artemis.protocol.amqp.broker.AMQPMessageBrokerAccessor;
 import org.apache.activemq.artemis.protocol.amqp.broker.AMQPSessionCallback;
 import org.apache.activemq.artemis.protocol.amqp.broker.ActiveMQProtonRemotingConnection;
+import org.apache.activemq.artemis.protocol.amqp.logger.ActiveMQAMQPProtocolMessageBundle;
 import org.apache.activemq.artemis.protocol.amqp.util.NettyReadable;
 import org.apache.activemq.artemis.protocol.amqp.util.NettyWritable;
 import org.apache.activemq.artemis.protocol.amqp.util.TLSEncode;
@@ -217,16 +218,22 @@ public class AMQPLargeMessageWriter implements MessageWriter {
 
                final int readSize = largeBodyReader.readInto(frameBuffer.internalNioBuffer(0, frameSize));
 
+               if (readSize <= 0) {
+                  // The stored body is smaller than the body size recorded for this message: a negative read
+                  // means the body ended early, and a zero length read would never let this loop make progress.
+                  // Either way the delivery can never complete, so fail it with a dedicated error instead of
+                  // handing a negative writer index to the frame buffer and raising an IndexOutOfBoundsException.
+                  throw ActiveMQAMQPProtocolMessageBundle.BUNDLE.largeMessageBodyTooSmall(message.getMessageID(), position, bodySize);
+               }
+
                frameBuffer.writerIndex(readSize);
 
                protonSender.send(frameView);
 
                position += readSize;
 
-               if (readSize > 0) {
-                  if (position < bodySize) {
-                     connection.instantFlush();
-                  }
+               if (position < bodySize) {
+                  connection.instantFlush();
                }
             }
          } finally {
@@ -272,6 +279,15 @@ public class AMQPLargeMessageWriter implements MessageWriter {
          readSize = context.readInto(frameBuffer.internalNioBuffer(writtenBytes, writableBytes));
          if (readSize > 0) {
             frameBuffer.writerIndex(writtenBytes + readSize);
+         } else {
+            final long bodySize = context.getSize();
+
+            if (position < bodySize) {
+               // Nothing could be read even though the message records more body to come, so the stored body
+               // is smaller than its recorded size. Failing here, before the initial transfer is written,
+               // leaves the link free of a partial delivery that this broker has no way to abort.
+               throw ActiveMQAMQPProtocolMessageBundle.BUNDLE.largeMessageBodyTooSmall(message.getMessageID(), position, bodySize);
+            }
          }
       }
 

@@ -778,8 +778,16 @@ public class AMQPSessionCallback implements SessionCallback {
    public void disconnect(ServerConsumer consumer, String errorMessage) {
       ErrorCondition ec = new ErrorCondition(AmqpSupport.RESOURCE_DELETED, errorMessage);
       connection.runNow(() -> {
+         // The consumer is closed before this callback is invoked and that close clears the protocol
+         // context on the queue executor, so by the time this runs there may be no link left to close.
+         final ProtonServerSenderContext senderContext = (ProtonServerSenderContext) consumer.getProtocolContext();
+
+         if (senderContext == null) {
+            return;
+         }
+
          try {
-            ((ProtonServerSenderContext) consumer.getProtocolContext()).close(ec);
+            senderContext.close(ec);
             connection.flush();
          } catch (ActiveMQAMQPException e) {
             logger.error("Error closing link for {}", consumer.getQueue().getAddress());
