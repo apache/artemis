@@ -36,6 +36,7 @@ import org.apache.activemq.artemis.protocol.amqp.converter.coreWrapper.Conversio
 import org.apache.activemq.artemis.protocol.amqp.exceptions.ActiveMQAMQPException;
 import org.apache.activemq.artemis.protocol.amqp.exceptions.ActiveMQAMQPIllegalStateException;
 import org.apache.activemq.artemis.protocol.amqp.exceptions.ActiveMQAMQPInternalErrorException;
+import org.apache.activemq.artemis.protocol.amqp.exceptions.ActiveMQAMQPLargeMessageBodyTooSmallException;
 import org.apache.activemq.artemis.protocol.amqp.exceptions.ActiveMQAMQPResourceLimitExceededException;
 import org.apache.activemq.artemis.protocol.amqp.logger.ActiveMQAMQPProtocolLogger;
 import org.apache.activemq.artemis.protocol.amqp.logger.ActiveMQAMQPProtocolMessageBundle;
@@ -532,6 +533,26 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
          }
          return;
       }
+
+      if (e instanceof ActiveMQAMQPLargeMessageBodyTooSmallException) {
+         // The stored body can never satisfy the size recorded for this message, so every consumer that
+         // attaches would retry the same delivery and fail the same way, leaving the queue stalled. Reject
+         // moves the message to the Dead Letter Address and, unlike calling the queue directly, first takes
+         // the reference out of this consumer's delivering list so the teardown below cannot put it back.
+         ActiveMQAMQPProtocolLogger.LOGGER.largeMessageBodyTooSmall(messageReference, e);
+
+         try {
+            brokerConsumer.reject(messageReference.getMessage().getMessageID());
+         } catch (Exception e1) {
+            ActiveMQAMQPProtocolLogger.LOGGER.unableToSendMessageToDLA(messageReference, e1);
+         }
+
+         // A partial transfer may already be on the wire and proton-j cannot abort one, so the link still
+         // has to go. The client then reconnects onto a clean link with the bad message out of the way.
+         brokerConsumer.errorProcessing(e, messageReference);
+         return;
+      }
+
       logger.warn(e.getMessage(), e);
       brokerConsumer.errorProcessing(e, messageReference);
    }
