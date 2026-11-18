@@ -94,6 +94,8 @@ public final class ClusterConnectionConfiguration implements Serializable {
 
    private int scaleDownReaperMaxAttempts = ActiveMQDefaultConfiguration.getDefaultClusterScaleDownReaperMaxAttempts();
 
+   private boolean treatDisconnectAsPermanent = ActiveMQDefaultConfiguration.isDefaultClusterTreatDisconnectAsPermanent();
+
    public ClusterConnectionConfiguration() {
    }
 
@@ -363,6 +365,15 @@ public final class ClusterConnectionConfiguration implements Serializable {
       return this;
    }
 
+   public boolean isTreatDisconnectAsPermanent() {
+      return treatDisconnectAsPermanent;
+   }
+
+   public ClusterConnectionConfiguration setTreatDisconnectAsPermanent(boolean treatDisconnectAsPermanent) {
+      this.treatDisconnectAsPermanent = treatDisconnectAsPermanent;
+      return this;
+   }
+
    /**
     * This method will match the configuration and return the proper TransportConfiguration for the Configuration
     */
@@ -426,7 +437,7 @@ public final class ClusterConnectionConfiguration implements Serializable {
                           messageLoadBalancingType, maxHops, maxRetryInterval, minLargeMessageSize, name,
                           initialConnectAttempts, reconnectAttempts, retryInterval, retryIntervalMultiplier,
                           staticConnectors, clientId, topologyScannerAttempts, scaleDownReaperPeriod,
-                          scaleDownReaperGraceTicks, scaleDownReaperMaxAttempts);
+                          scaleDownReaperGraceTicks, scaleDownReaperMaxAttempts, treatDisconnectAsPermanent);
    }
 
    @Override
@@ -463,7 +474,8 @@ public final class ClusterConnectionConfiguration implements Serializable {
              topologyScannerAttempts == other.topologyScannerAttempts &&
              scaleDownReaperPeriod == other.scaleDownReaperPeriod &&
              scaleDownReaperGraceTicks == other.scaleDownReaperGraceTicks &&
-             scaleDownReaperMaxAttempts == other.scaleDownReaperMaxAttempts;
+             scaleDownReaperMaxAttempts == other.scaleDownReaperMaxAttempts &&
+             treatDisconnectAsPermanent == other.treatDisconnectAsPermanent;
    }
 
    @Override
@@ -497,6 +509,7 @@ public final class ClusterConnectionConfiguration implements Serializable {
          ", scaleDownReaperPeriod=" + scaleDownReaperPeriod +
          ", scaleDownReaperGraceTicks=" + scaleDownReaperGraceTicks +
          ", scaleDownReaperMaxAttempts=" + scaleDownReaperMaxAttempts +
+         ", treatDisconnectAsPermanent=" + treatDisconnectAsPermanent +
          '}';
    }
 }

@@ -202,6 +202,8 @@ public final class ClusterConnectionImpl implements ClusterConnection, AfterConn
 
    private ScaleDownReaper scaleDownReaper;
 
+   private final boolean treatDisconnectAsPermanent;
+
    /**
     * For tests only
     */
@@ -245,7 +247,8 @@ public final class ClusterConnectionImpl implements ClusterConnection, AfterConn
                                 final int topologyScannerAttempts,
                                 final long scaleDownReaperPeriod,
                                 final int scaleDownReaperGraceTicks,
-                                final int scaleDownReaperMaxAttempts) throws Exception {
+                                final int scaleDownReaperMaxAttempts,
+                                final boolean treatDisconnectAsPermanent) throws Exception {
       this.nodeManager = nodeManager;
 
       this.connector = connector;
@@ -339,6 +342,8 @@ public final class ClusterConnectionImpl implements ClusterConnection, AfterConn
       this.scaleDownReaper = scaleDownReaperPeriod == 0 ? null : new ScaleDownReaper(
          scheduledExecutor, executor, scaleDownReaperPeriod,
          scaleDownReaperGraceTicks, scaleDownReaperMaxAttempts);
+
+      this.treatDisconnectAsPermanent = treatDisconnectAsPermanent;
    }
 
    public ClusterConnectionImpl(final ClusterManager manager,
@@ -376,7 +381,8 @@ public final class ClusterConnectionImpl implements ClusterConnection, AfterConn
                                 final int topologyScannerAttempts,
                                 final long scaleDownReaperPeriod,
                                 final int scaleDownReaperGraceTicks,
-                                final int scaleDownReaperMaxAttempts) throws Exception {
+                                final int scaleDownReaperMaxAttempts,
+                                final boolean treatDisconnectAsPermanent) throws Exception {
       this.nodeManager = nodeManager;
 
       this.connector = connector;
@@ -455,6 +461,8 @@ public final class ClusterConnectionImpl implements ClusterConnection, AfterConn
       this.scaleDownReaper = scaleDownReaperPeriod == 0 ? null : new ScaleDownReaper(
          scheduledExecutor, executor, scaleDownReaperPeriod,
          scaleDownReaperGraceTicks, scaleDownReaperMaxAttempts);
+
+      this.treatDisconnectAsPermanent = treatDisconnectAsPermanent;
    }
 
    @Override
@@ -1124,7 +1132,7 @@ public final class ClusterConnectionImpl implements ClusterConnection, AfterConn
       targetLocator.addIncomingInterceptor(new IncomingInterceptorLookingForExceptionMessage(manager, executorFactory.getExecutor()));
       MessageFlowRecordImpl record = new MessageFlowRecordImpl(targetLocator, eventUID, targetNodeID, connector, queueName, queue);
 
-      ClusterConnectionBridge bridge = new ClusterConnectionBridge(this, manager, targetLocator, serverLocator, initialConnectAttempts, reconnectAttempts, retryInterval, retryIntervalMultiplier, maxRetryInterval, nodeManager.getUUID(), record.getEventUID(), record.getTargetNodeID(), record.getQueueName(), record.getQueue(), executorFactory.getExecutor(), null, null, scheduledExecutor, null, useDuplicateDetection, clusterUser, clusterPassword, server, managementService.getManagementAddress(), managementService.getManagementNotificationAddress(), record, record.getConnector(), storeAndForwardPrefix, server.getStorageManager(), clientId);
+      ClusterConnectionBridge bridge = new ClusterConnectionBridge(this, manager, targetLocator, serverLocator, initialConnectAttempts, reconnectAttempts, retryInterval, retryIntervalMultiplier, maxRetryInterval, nodeManager.getUUID(), record.getEventUID(), record.getTargetNodeID(), record.getQueueName(), record.getQueue(), executorFactory.getExecutor(), null, null, scheduledExecutor, null, useDuplicateDetection, clusterUser, clusterPassword, server, managementService.getManagementAddress(), managementService.getManagementNotificationAddress(), record, record.getConnector(), storeAndForwardPrefix, server.getStorageManager(), clientId, treatDisconnectAsPermanent);
 
       targetLocator.setIdentity("(Cluster-connection-bridge::" + bridge.toString() + "::" + this.toString() + ")");
 

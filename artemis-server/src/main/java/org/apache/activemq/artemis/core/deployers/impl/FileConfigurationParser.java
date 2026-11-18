@@ -2620,6 +2620,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
       int scaleDownReaperMaxAttempts = getInteger(e, "scale-down-reaper-max-attempts", ActiveMQDefaultConfiguration.getDefaultClusterScaleDownReaperMaxAttempts(), MINUS_ONE_OR_GE_ZERO);
 
+      boolean treatDisconnectAsPermanent = getBoolean(e, "treat-disconnect-as-permanent", ActiveMQDefaultConfiguration.isDefaultClusterTreatDisconnectAsPermanent());
+
       String discoveryGroupName = null;
 
       List<String> staticConnectorNames = new ArrayList<>();
@@ -2644,7 +2646,7 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
       String clientId = getString(e, "client-id", null, NO_CHECK);
 
-      ClusterConnectionConfiguration config = new ClusterConnectionConfiguration().setName(name).setAddress(address).setConnectorName(connectorName).setMinLargeMessageSize(minLargeMessageSize).setClientFailureCheckPeriod(clientFailureCheckPeriod).setConnectionTTL(connectionTTL).setRetryInterval(retryInterval).setRetryIntervalMultiplier(retryIntervalMultiplier).setMaxRetryInterval(maxRetryInterval).setInitialConnectAttempts(initialConnectAttempts).setReconnectAttempts(reconnectAttempts).setCallTimeout(callTimeout).setCallFailoverTimeout(callFailoverTimeout).setDuplicateDetection(duplicateDetection).setMessageLoadBalancingType(messageLoadBalancingType).setMaxHops(maxHops).setConfirmationWindowSize(confirmationWindowSize).setProducerWindowSize(producerWindowSize).setAllowDirectConnectionsOnly(allowDirectConnectionsOnly).setClusterNotificationInterval(clusterNotificationInterval).setClusterNotificationAttempts(clusterNotificationAttempts).setClientId(clientId).setTopologyScannerAttempts(topologyScannerAttempts).setScaleDownReaperPeriod(scaleDownReaperPeriod).setScaleDownReaperGraceTicks(scaleDownReaperGraceTicks).setScaleDownReaperMaxAttempts(scaleDownReaperMaxAttempts);
+      ClusterConnectionConfiguration config = new ClusterConnectionConfiguration().setName(name).setAddress(address).setConnectorName(connectorName).setMinLargeMessageSize(minLargeMessageSize).setClientFailureCheckPeriod(clientFailureCheckPeriod).setConnectionTTL(connectionTTL).setRetryInterval(retryInterval).setRetryIntervalMultiplier(retryIntervalMultiplier).setMaxRetryInterval(maxRetryInterval).setInitialConnectAttempts(initialConnectAttempts).setReconnectAttempts(reconnectAttempts).setCallTimeout(callTimeout).setCallFailoverTimeout(callFailoverTimeout).setDuplicateDetection(duplicateDetection).setMessageLoadBalancingType(messageLoadBalancingType).setMaxHops(maxHops).setConfirmationWindowSize(confirmationWindowSize).setProducerWindowSize(producerWindowSize).setAllowDirectConnectionsOnly(allowDirectConnectionsOnly).setClusterNotificationInterval(clusterNotificationInterval).setClusterNotificationAttempts(clusterNotificationAttempts).setClientId(clientId).setTopologyScannerAttempts(topologyScannerAttempts).setScaleDownReaperPeriod(scaleDownReaperPeriod).setScaleDownReaperGraceTicks(scaleDownReaperGraceTicks).setScaleDownReaperMaxAttempts(scaleDownReaperMaxAttempts).setTreatDisconnectAsPermanent(treatDisconnectAsPermanent);
 
       if (discoveryGroupName == null) {
          config.setStaticConnectors(staticConnectorNames);
