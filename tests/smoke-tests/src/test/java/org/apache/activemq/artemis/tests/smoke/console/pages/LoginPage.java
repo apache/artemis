@@ -22,6 +22,7 @@ import org.openqa.selenium.WebElement;
 
 import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.BRAND_LOCATOR;
 import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.LOGIN_BUTTON_LOCATOR;
+import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.LOGIN_ERROR_LOCATOR;
 import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.LOGOUT_DROPDOWN_LOCATOR;
 import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.USERNAME_LOCATOR;
 import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.PASSWORD_LOCATOR;
@@ -38,17 +39,36 @@ public class LoginPage extends ConsolePage {
    }
 
    public StatusPage loginValidUser(String username, String password, int timeout) {
-      waitForElementToBeVisible(USERNAME_LOCATOR, timeout);
-      waitForElementToBeVisible(PASSWORD_LOCATOR, timeout);
-      waitForElementToBeClickable(LOGIN_BUTTON_LOCATOR, timeout);
-
-      driver.findElement(USERNAME_LOCATOR).sendKeys(username);
-      driver.findElement(PASSWORD_LOCATOR).sendKeys(password);
-      WebElement element = driver.findElement(LOGIN_BUTTON_LOCATOR);
-      element.click();
+      submitCredentials(username, password, timeout);
       waitForElementToBeVisible(LOGOUT_DROPDOWN_LOCATOR, timeout);
       waitForElementToBeVisible(By.xpath("//button/span[contains(text(),'Status')]"), timeout);
 
       return new StatusPage(driver);
+   }
+
+   public LoginPage loginInvalidUser(String username, String password, int timeout) {
+      submitCredentials(username, password, timeout);
+      waitForElementToBeVisible(LOGIN_ERROR_LOCATOR, timeout);
+
+      return this;
+   }
+
+   public boolean isLoginButtonClickable() {
+      WebElement loginButton = driver.findElement(LOGIN_BUTTON_LOCATOR);
+
+      return loginButton.isDisplayed() && loginButton.isEnabled();
+   }
+
+   private void submitCredentials(String username, String password, int timeout) {
+      waitForElementToBeVisible(USERNAME_LOCATOR, timeout);
+      waitForElementToBeVisible(PASSWORD_LOCATOR, timeout);
+      waitForElementToBeClickable(LOGIN_BUTTON_LOCATOR, timeout);
+
+      driver.findElement(USERNAME_LOCATOR).clear();
+      driver.findElement(USERNAME_LOCATOR).sendKeys(username);
+      driver.findElement(PASSWORD_LOCATOR).clear();
+      driver.findElement(PASSWORD_LOCATOR).sendKeys(password);
+      WebElement element = driver.findElement(LOGIN_BUTTON_LOCATOR);
+      element.click();
    }
 }
