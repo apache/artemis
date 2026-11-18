@@ -2953,6 +2953,17 @@
             </xsd:annotation>
          </xsd:element>
 
+         <xsd:element name="treat-disconnect-as-permanent" type="xsd:boolean" default="true" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  whether a DISCONNECT received from the target node (e.g. because it was shut down gracefully) means
+                  the node has left the cluster permanently. When true (the default) no reconnect is attempted. When
+                  false the DISCONNECT is handled like any other connection failure, i.e. the connection keeps being
+                  retried.
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+
          <xsd:element ref="discovery-type" maxOccurs="1" minOccurs="0"/>
 
       </xsd:all>

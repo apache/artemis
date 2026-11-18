@@ -519,10 +519,23 @@ The number of times the system will try to connect a node in the cluster initial
 If the max-retry is achieved this node will be considered permanently down and the system will not route messages to this node.
 Default is -1 (infinite retries).
 
+[[cluster-connection-reconnect-attempts]]
 reconnect-attempts::
 The number of times the system will try to reconnect to a node in the cluster.
 If the max-retry is achieved this node will be considered permanently down and the system will stop routing messages to this node.
 Default is -1 (infinite retries).
++
+[IMPORTANT]
+====
+A node normally announces that it is leaving for good either by shutting down gracefully or by scaling down, but a node which simply disappears (e.g. one which crashes or is partitioned away and never returns) has no direct way to do so.
+Exhausting `reconnect-attempts` is what retires such a node, and with the default of `-1` that never happens.
+It is retried forever, and any messages routed to it keep accumulating in its store-and-forward queue, consuming valuable resources.
+
+Consider setting `reconnect-attempts` to a value `>= 0` chosen, together with `retry-interval`, `retry-interval-multiplier`, and `max-retry-interval`, to span the longest outage you want to survive while still being short enough that a node which never returns is eventually retired.
+With the default `retry-interval` of 500ms, `retry-interval-multiplier` of 1, and `max-retry-interval` of 2000ms, each attempt is roughly half a second apart, so e.g. 600 attempts is about 5 minutes.
+
+This matters even more when `treat-disconnect-as-permanent` is `false`, since that also stops a graceful shutdown from retiring the node.
+====
 
 use-duplicate-detection::
 Internally cluster connections use bridges to link the nodes, and bridges can be configured to add a duplicate id property in each message that is forwarded.
@@ -637,6 +650,27 @@ Giving up does not delete the queue: it is retained, together with any messages 
 and the reaper stops checking it, which limits the effort wasted on a queue that is stuck for some reason.
 A value `<= 0` means unlimited attempts.
 Default is 30.
+
+treat-disconnect-as-permanent::
+When a broker is shut down gracefully it sends a `DISCONNECT` packet to every other node in the cluster.
+By default the nodes which receive that packet treat it as the sending node leaving the cluster *permanently* and therefore perform internal cleanup and don't attempt to reconnect to it.
++
+However, this is not always desirable.
+For example, stopping a pod in Kubernetes sends `SIGTERM` by default, which triggers a graceful shutdown of the broker even when the node is expected to come straight back (e.g. a rolling restart or a rescheduled pod).
+Setting this parameter to `false` makes the cluster connection handle a `DISCONNECT` exactly like it handles any other connection failure, i.e. it keeps retrying the connection according to `retry-interval`, `retry-interval-multiplier`, `max-retry-interval`, and `reconnect-attempts`.
++
+To be clear, `DISCONNECT` packet sent as part of a scale-down operation is always treated as permanent since the messages of the departing node have already been moved elsewhere.
++
+[IMPORTANT]
+====
+Set this to `false` only in combination with a `reconnect-attempts` greater than or equal to `0`.
+
+Aside from a scale-down, a graceful shutdown is how a node tells the rest of the cluster that it is leaving for good.
+Setting `treat-disconnect-as-permanent` to `false` ignores that signal, so a node which is simply stopped is retired only once `reconnect-attempts` is exhausted, and that will never happen with a `reconnect-attempts` value of `-1` (i.e. the default).
+See <<cluster-connection-reconnect-attempts,the caveat under `reconnect-attempts`>> for why that is a problem and how to choose a suitable `reconnect-attempts` value.
+====
++
+Default is `true`.
 
 === Cluster User Credentials
 

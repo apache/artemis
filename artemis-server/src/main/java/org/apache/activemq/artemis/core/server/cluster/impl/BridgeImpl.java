@@ -745,9 +745,20 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
       logger.debug("Connection failed with exception={} and scaleDownTargetNodeID={}", me.getType(), scaleDownTargetNodeID);
 
-      fail(me.getType() == ActiveMQExceptionType.DISCONNECTED || scaleDownTargetNodeID != null, scaleDownTargetNodeID);
+      fail(isPermanentFailure(me.getType(), scaleDownTargetNodeID), scaleDownTargetNodeID);
 
-      tryScheduleRetryReconnect(me.getType());
+      tryScheduleRetryReconnect(me.getType(), scaleDownTargetNodeID);
+   }
+
+   /**
+    * Decides whether a connection failure means the target node is gone for good (as opposed to a transient failure
+    * which the bridge should simply retry).
+    *
+    * @param type                   the type of the exception which caused the failure
+    * @param scaleDownTargetNodeID  the node the target scaled down to, or {@code null} if it didn't scale down
+    */
+   protected boolean isPermanentFailure(final ActiveMQExceptionType type, final String scaleDownTargetNodeID) {
+      return type == ActiveMQExceptionType.DISCONNECTED || scaleDownTargetNodeID != null;
    }
 
    protected void scaleDown(String scaleDownTargetNodeID) {
@@ -764,7 +775,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
       }
    }
 
-   protected void tryScheduleRetryReconnect(final ActiveMQExceptionType type) {
+   protected void tryScheduleRetryReconnect(final ActiveMQExceptionType type, final String scaleDownTargetNodeID) {
       scheduleRetryConnect();
    }
 

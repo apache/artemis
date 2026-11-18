@@ -748,6 +748,9 @@ public final class ActiveMQDefaultConfiguration {
    // Maximum number of reaping attempts for a candidate store-and-forward queue before the reaper gives up and retains the queue.
    private static final int DEFAULT_CLUSTER_SCALE_DOWN_REAPER_MAX_ATTEMPTS = 30;
 
+   // Whether a DISCONNECT from a cluster node means that node is gone for good.
+   private static final boolean DEFAULT_CLUSTER_TREAT_DISCONNECT_AS_PERMANENT = true;
+
    /**
     * If {@code true} then the Apache Artemis Server will make use of any Protocol Managers that are in available on
     * the classpath. If false then only the core protocol will be available, unless in Embedded mode where users can
@@ -2102,5 +2105,9 @@ public final class ActiveMQDefaultConfiguration {
 
    public static int getDefaultClusterScaleDownReaperMaxAttempts() {
       return DEFAULT_CLUSTER_SCALE_DOWN_REAPER_MAX_ATTEMPTS;
+   }
+
+   public static boolean isDefaultClusterTreatDisconnectAsPermanent() {
+      return DEFAULT_CLUSTER_TREAT_DISCONNECT_AS_PERMANENT;
    }
 }

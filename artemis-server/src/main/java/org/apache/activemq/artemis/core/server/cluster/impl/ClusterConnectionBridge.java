@@ -93,6 +93,8 @@ public class ClusterConnectionBridge extends BridgeImpl {
 
    private final String storeAndForwardPrefix;
 
+   private final boolean treatDisconnectAsPermanent;
+
    public ClusterConnectionBridge(final ClusterConnection clusterConnection,
                                   final ClusterManager clusterManager,
                                   final ServerLocatorInternal targetLocator,
@@ -122,7 +124,8 @@ public class ClusterConnectionBridge extends BridgeImpl {
                                   final TransportConfiguration connector,
                                   final String storeAndForwardPrefix,
                                   final StorageManager storageManager,
-                                  final String clientId) throws ActiveMQException {
+                                  final String clientId,
+                                  final boolean treatDisconnectAsPermanent) throws ActiveMQException {
       super(targetLocator, new BridgeConfiguration()
          .setName(Objects.toString(name, null))
          .setInitialConnectAttempts(initialConnectAttempts)
@@ -161,6 +164,8 @@ public class ClusterConnectionBridge extends BridgeImpl {
       this.storeAndForwardPrefix = storeAndForwardPrefix;
 
       this.storageManager = storageManager;
+
+      this.treatDisconnectAsPermanent = treatDisconnectAsPermanent;
    }
 
    @Override
@@ -418,9 +423,26 @@ public class ClusterConnectionBridge extends BridgeImpl {
       setupNotificationConsumer();
    }
 
+   /**
+    * A {@code DISCONNECT} from the target node (e.g. because it was shut down gracefully) is treated as the node
+    * leaving the cluster for good unless {@code treat-disconnect-as-permanent} is disabled, in which case it is
+    * handled just like any other connection failure. A {@code DISCONNECT} which carries a scale-down target is always
+    * permanent since the messages of the target node have been moved elsewhere.
+    */
    @Override
-   protected void tryScheduleRetryReconnect(final ActiveMQExceptionType type) {
-      if (type != ActiveMQExceptionType.DISCONNECTED) {
+   protected boolean isPermanentFailure(final ActiveMQExceptionType type, final String scaleDownTargetNodeID) {
+      if (type == ActiveMQExceptionType.DISCONNECTED && !treatDisconnectAsPermanent && scaleDownTargetNodeID == null) {
+         return false;
+      }
+      return super.isPermanentFailure(type, scaleDownTargetNodeID);
+   }
+
+   /**
+    * Unlike a regular bridge, a cluster bridge only retries a target it expects to come back.
+    */
+   @Override
+   protected void tryScheduleRetryReconnect(final ActiveMQExceptionType type, final String scaleDownTargetNodeID) {
+      if (!isPermanentFailure(type, scaleDownTargetNodeID)) {
          scheduleRetryConnect();
       }
    }

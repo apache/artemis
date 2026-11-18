@@ -36,6 +36,7 @@
          <connector-ref>connector2</connector-ref>
       </static-connectors>
       <topology-scanner-attempts>-1</topology-scanner-attempts>
+      <treat-disconnect-as-permanent>false</treat-disconnect-as-permanent>
    </cluster-connection>
    <cluster-connection name="cluster-connection2">
       <address>queues2</address>
