@@ -249,6 +249,9 @@ public class ClusterManager implements ActiveMQComponent {
          deployClusterConnection(config);
       }
 
+      // the controller chooses the locator to replicate through when it starts
+      clusterController.setReplicatedClusterName(server.getActivation().getReplicationClusterName());
+
       // only start if we are actually in a cluster
       clusterController.start();
    }

@@ -407,8 +407,8 @@ public final class SharedNothingBackupActivation extends Activation implements R
    }
 
    @Override
-   public void haStarted() {
-      activeMQServer.getClusterManager().getClusterController().setReplicatedClusterName(replicaPolicy.getClusterName());
+   public String getReplicationClusterName() {
+      return replicaPolicy.getClusterName();
    }
 
    /**

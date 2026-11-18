@@ -76,6 +76,14 @@ public abstract class Activation implements Runnable {
    }
 
    /**
+    * the name of the cluster connection used to find and connect to the server to replicate from, or {@code null} to
+    * use the default (first) cluster connection
+    */
+   public String getReplicationClusterName() {
+      return null;
+   }
+
+   /**
     * allows the Activation to register a channel handler so it can handle any packets that are unique to the Activation
     */
    public ChannelHandler getActivationChannelHandler(Channel channel, Acceptor acceptorUsed) {

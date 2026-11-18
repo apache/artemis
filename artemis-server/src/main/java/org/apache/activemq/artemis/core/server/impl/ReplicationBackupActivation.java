@@ -568,6 +568,11 @@ public final class ReplicationBackupActivation extends Activation implements Dis
    }
 
    @Override
+   public String getReplicationClusterName() {
+      return policy.getClusterName();
+   }
+
+   @Override
    public void preStorageClose() throws Exception {
       // TODO replication endpoint close?
    }
