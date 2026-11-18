@@ -36,7 +36,7 @@ final class ThreadLocalByteBufferPool implements ByteBufferPool {
 
    @Override
    public ByteBuffer borrow(final int size, boolean zeroed) {
-      final int requiredCapacity = PowerOf2Util.align(size, Env.osPageSize());
+      final int requiredCapacity = PowerOf2Util.align(size, Env.memPageSize());
       ByteBuffer byteBuffer = bytesPool.get();
       if (byteBuffer == null || requiredCapacity > byteBuffer.capacity()) {
          //do not free the old one (if any) until the new one will be released into the pool!
