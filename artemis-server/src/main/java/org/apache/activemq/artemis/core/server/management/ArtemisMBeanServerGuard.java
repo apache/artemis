@@ -23,13 +23,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import javax.security.auth.Subject;
 import java.lang.reflect.Method;
 import java.security.Principal;
-import java.util.List;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 public class ArtemisMBeanServerGuard extends AbstractGuardInvocationHandler {
 
@@ -37,18 +41,14 @@ public class ArtemisMBeanServerGuard extends AbstractGuardInvocationHandler {
 
    private JMXAccessControlList jmxAccessControlList = JMXAccessControlList.createDefaultList();
 
+   private static final String defaultRoleClass = "org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal";
+   private final Cache<ObjectName, Boolean> bypassRBACCache = Caffeine.newBuilder().maximumSize(10000).build();
+   private static final Cache<String, ObjectName> objectNameCache = Caffeine.newBuilder().maximumSize(10000).build();
+   private static final Cache<Subject, Set<String>> userRolesCache = Caffeine.newBuilder().weakKeys().maximumSize(10000).build();
+
    @Override
    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-      if (method.getParameterTypes().length == 0) {
-         return null;
-      }
-
-      if (!ObjectName.class.isAssignableFrom(method.getParameterTypes()[0])) {
-         return null;
-      }
-
       securityCheck((MBeanServer) proxy, method, args);
-
       return null;
    }
 
@@ -58,18 +58,12 @@ public class ArtemisMBeanServerGuard extends AbstractGuardInvocationHandler {
    }
 
    private boolean canBypassRBAC(ObjectName objectName) {
-      return jmxAccessControlList.isInAllowList(objectName);
+      return bypassRBACCache.get(objectName, jmxAccessControlList::isInAllowList);
    }
 
    @Override
    public boolean canInvoke(String object, String operationName) {
-      ObjectName objectName = null;
-      try {
-         objectName = ObjectName.getInstance(object);
-      } catch (MalformedObjectNameException e) {
-         logger.debug("can't check invoke rights as object name invalid: {}", object, e);
-         return false;
-      }
+
       /*
        * HawtIO calls this with a null operationName as a coarse grained way of authenticating against all the
        * operations on an mbean. Until this addition this was throwing a null pointer on operationName later in this
@@ -78,20 +72,44 @@ public class ArtemisMBeanServerGuard extends AbstractGuardInvocationHandler {
        * it. Since it is just an optimisation it is fine to always return true. Note that the alternative
        * ArtemisRbacInvocationHandler does allow the ability to restrict a whole mbean.
        */
-      if (operationName == null || canBypassRBAC(objectName)) {
+      if (operationName == null) {
          return true;
+      }
+
+      ObjectName objectName = objectNameCache.get(object, key -> {
+         try {
+            return ObjectName.getInstance(key);
+         } catch (MalformedObjectNameException e) {
+            logger.debug("can't check invoke rights as object name invalid: {}", key, e);
+            return null;
+         }
+      });
+
+      if (objectName == null) {
+         return false;
+      }
+
+      if (canBypassRBAC(objectName)) {
+         return true;
+      }
+
+      Set<String> currentUserRoles = getCurrentUserRoles();
+      if (currentUserRoles.isEmpty()) {
+         return false;
       }
 
       operationName = stripParameterList(operationName);
 
-      List<String> requiredRoles = getRequiredRoles(objectName, operationName);
-      for (String role : requiredRoles) {
-         if (currentUserHasRole(role)) {
-            return true;
-         }
+      boolean authorized = authorizeUserForMethod(objectName, operationName, currentUserRoles);
+
+      if (authorized) {
+         logger.debug("{} {} true", object, operationName);
+         return true;
+      } else {
+         logger.debug("{} {} false", object, operationName);
+         return false;
       }
-      logger.debug("{} {} false", object, operationName);
-      return false;
+
    }
 
    @Override
@@ -99,11 +117,16 @@ public class ArtemisMBeanServerGuard extends AbstractGuardInvocationHandler {
       if (canBypassRBAC(objectName)) {
          return;
       }
-      List<String> requiredRoles = getRequiredRoles(objectName, operationName);
-      for (String role : requiredRoles) {
-         if (currentUserHasRole(role)) {
-            return;
+      Set<String> currentUserRoles = getCurrentUserRoles();
+      if (currentUserRoles.isEmpty()) {
+         if (AuditLogger.isResourceLoggingEnabled()) {
+            AuditLogger.objectInvokedFailure(objectName, operationName);
          }
+         throw new SecurityException("User not authorized to access operation: " + operationName);
+      }
+      boolean authorized = authorizeUserForMethod(objectName, operationName, currentUserRoles);
+      if (authorized) {
+         return;
       }
       if (AuditLogger.isResourceLoggingEnabled()) {
          AuditLogger.objectInvokedFailure(objectName, operationName);
@@ -111,36 +134,31 @@ public class ArtemisMBeanServerGuard extends AbstractGuardInvocationHandler {
       throw new SecurityException("User not authorized to access operation: " + operationName);
    }
 
-   List<String> getRequiredRoles(ObjectName objectName, String methodName) {
-      return jmxAccessControlList.getRolesForObject(objectName, methodName);
+   boolean authorizeUserForMethod(ObjectName objectName, String operationName, Set<String> currentUserRoles) {
+      return jmxAccessControlList.authorizeUserForMethod(objectName, operationName, currentUserRoles);
    }
 
    public void setJMXAccessControlList(JMXAccessControlList JMXAccessControlList) {
       this.jmxAccessControlList = JMXAccessControlList;
    }
 
-   public static boolean currentUserHasRole(String requestedRole) {
-
-      String clazz;
-      String role;
-      int index = requestedRole.indexOf(':');
-      if (index > 0) {
-         clazz = requestedRole.substring(0, index);
-         role = requestedRole.substring(index + 1);
-      } else {
-         clazz = "org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal";
-         role = requestedRole;
-      }
-
+   public static Set<String> getCurrentUserRoles() {
       Subject subject = SecurityManagerShim.currentSubject();
       if (subject == null) {
-         return false;
+         return Collections.emptySet();
       }
-      for (Principal p : subject.getPrincipals()) {
-         if (clazz.equals(p.getClass().getName()) && role.equals(p.getName())) {
-            return true;
+
+      return userRolesCache.get(subject, s -> {
+         Set<String> roles = new HashSet<>();
+         for (Principal p : s.getPrincipals()) {
+            String clazz = p.getClass().getName();
+            roles.add(clazz + ":" + p.getName());
+            if (defaultRoleClass.equals(clazz) && p.getName().indexOf(':') <= 0) {
+               roles.add(p.getName());
+            }
          }
-      }
-      return false;
+         return Collections.unmodifiableSet(roles);
+      });
    }
+
 }
