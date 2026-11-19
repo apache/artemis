@@ -23,6 +23,7 @@ import java.net.URI;
 import java.util.List;
 
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
+import org.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants;
 import org.apache.activemq.artemis.uri.ConnectorTransportConfigurationParser;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -73,5 +74,21 @@ public class ConnectorTransportConfigurationParserURITest {
       assertEquals("backupB3", objects.get(2).getName());
       assertEquals("backupB", objects.get(2).getParams().get("host"));
       assertEquals("3", objects.get(2).getParams().get("port"));
+   }
+
+   @Test
+   public void testParseClientFailoverAdvertisingEnabled() throws Exception {
+      ConnectorTransportConfigurationParser parser = new ConnectorTransportConfigurationParser(false);
+
+      URI transportURI =
+         parser.expandURI("tcp://backup:61617?clientFailoverAdvertisingEnabled=false");
+
+      List<TransportConfiguration> objects = parser.newObject(transportURI, "backup");
+
+      assertEquals(1, objects.size());
+      assertEquals(
+         "false",
+         objects.get(0).getParams().get(
+            TransportConstants.CLIENT_FAILOVER_ADVERTISING_ENABLED_PROP_NAME));
    }
 }
