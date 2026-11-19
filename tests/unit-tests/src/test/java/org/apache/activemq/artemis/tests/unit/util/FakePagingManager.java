@@ -31,7 +31,7 @@ import org.apache.activemq.artemis.core.server.files.FileStoreMonitor;
 public class FakePagingManager implements PagingManager {
 
    @Override
-   public PagingManager simpleAdd(long elements, long size) {
+   public PagingManager aggregate(long elements, long size) {
       return this;
    }
 
@@ -89,7 +89,12 @@ public class FakePagingManager implements PagingManager {
    }
 
    @Override
-   public FakePagingManager addSize(int size, boolean sizeOnly) {
+   public FakePagingManager addMessage(int bytes) {
+      return this;
+   }
+
+   @Override
+   public FakePagingManager addSize(int bytes) {
       return this;
    }
 

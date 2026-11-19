@@ -190,8 +190,7 @@ public abstract class AddressSizeLimiter {
       this.address = address;
       this.pagingManager = pagingManager;
       this.storageManager = storageManager;
-      this.size = new SizeAwareMetric().setUnderCallback(this::underSized).setOverCallback(this::overSized).
-         setOnSizeCallback(pagingManager::addSize, pagingManager::simpleAdd);
+      this.size = new SizeAwareMetric().setUnderCallback(this::underSized).setOverCallback(this::overSized).setParentCallback(pagingManager::aggregate);
       applySetting(addressSettings, true);
 
    }
@@ -341,9 +340,17 @@ public abstract class AddressSizeLimiter {
    }
 
 
-   public long addSize(final int size, boolean sizeOnly, boolean affectGlobal) {
-      long newSize = this.size.addSize(size, sizeOnly, affectGlobal);
+   public long addMessage(final int bytes, boolean affectGlobal) {
+      long newSize = this.size.addMessage(bytes, affectGlobal);
+      return handleSizeChange(bytes, newSize);
+   }
 
+   public long addSize(final int bytes, boolean affectGlobal) {
+      long newSize = this.size.addSize(bytes, affectGlobal);
+      return handleSizeChange(bytes, newSize);
+   }
+
+   private long handleSizeChange(int delta, long newSize) {
       boolean globalFull = pagingManager.isGlobalFull();
 
       if (newSize < 0) {
@@ -355,7 +362,7 @@ public abstract class AddressSizeLimiter {
             checkReleasedMemory();
          }
       } else if (addressFullMessagePolicy == AddressFullMessagePolicy.PAGE) {
-         if (size > 0) {
+         if (delta > 0) {
             if (globalFull || full) {
                startPaging();
             }

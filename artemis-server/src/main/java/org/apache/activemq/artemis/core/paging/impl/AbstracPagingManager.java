@@ -138,14 +138,25 @@ public abstract class AbstracPagingManager implements PagingManager {
    }
 
    @Override
-   public PagingManager simpleAdd(long elements, long size) {
-      globalSizeMetric.simpleAdd(elements, size);
+   public PagingManager aggregate(long elements, long size) {
+      globalSizeMetric.aggregate(elements, size);
       return this;
    }
 
    @Override
-   public PagingManager addSize(int size, boolean sizeOnly) {
-      long newSize = globalSizeMetric.addSize(size, sizeOnly);
+   public PagingManager addMessage(int bytes) {
+      long newSize = globalSizeMetric.addMessage(bytes);
+
+      if (newSize < 0) {
+         ActiveMQServerLogger.LOGGER.negativeGlobalAddressSize(newSize);
+      }
+
+      return this;
+   }
+
+   @Override
+   public PagingManager addSize(int bytes) {
+      long newSize = globalSizeMetric.addSize(bytes);
 
       if (newSize < 0) {
          ActiveMQServerLogger.LOGGER.negativeGlobalAddressSize(newSize);

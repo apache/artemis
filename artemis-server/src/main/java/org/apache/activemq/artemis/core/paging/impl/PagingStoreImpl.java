@@ -1210,7 +1210,7 @@ public class PagingStoreImpl extends AddressSizeLimiter implements PagingStore {
 
    @Override
    public void refUp(Message message, int count) {
-      this.addSize(MessageReferenceImpl.getMemoryEstimate(), true);
+      this.addSize(MessageReferenceImpl.getMemoryEstimate());
    }
 
    @Override
@@ -1219,7 +1219,7 @@ public class PagingStoreImpl extends AddressSizeLimiter implements PagingStore {
          // this could happen on paged messages since they are not routed and refUp is never called
          return;
       }
-      this.addSize(-MessageReferenceImpl.getMemoryEstimate(), true);
+      this.addSize(-MessageReferenceImpl.getMemoryEstimate());
    }
 
    private void installPageTransaction(final Transaction tx, final RouteContextList listCtx) throws Exception {

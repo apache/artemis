@@ -138,27 +138,11 @@ public interface PagingManager extends ActiveMQComponent, HierarchicalRepository
     */
    void unlock();
 
-   /**
-    * Add size at the global count level. If sizeOnly = true, only the size portion is updated. If false both the
-    * counter for bytes and number of messages is updated.
-    */
-   PagingManager addSize(int size, boolean sizeOnly);
+   PagingManager addMessage(int bytes);
 
-   /**
-    * An utility method to call addSize(size, false); this is a good fit for an IntConsumer.
-    */
-   default PagingManager addSize(int size) {
-      return addSize(size, false);
-   }
+   PagingManager addSize(int bytes);
 
-   PagingManager simpleAdd(long elements, long size);
-
-   /**
-    * An utility method to call addSize(size, true); this is a good fit for an IntConsumer.
-    */
-   default PagingManager addSizeOnly(int size) {
-      return addSize(size, true);
-   }
+   PagingManager aggregate(long elements, long size);
 
    boolean isUsingGlobalSize();
 

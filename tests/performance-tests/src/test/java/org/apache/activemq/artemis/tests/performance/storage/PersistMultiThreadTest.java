@@ -528,13 +528,13 @@ public class PersistMultiThreadTest extends ActiveMQTestBase {
       }
 
       @Override
-      public long addSize(int size, boolean sizeOnly, boolean affectGlobal) {
+      public long addMessage(int bytes, boolean affectGlobal) {
          return 0L;
       }
 
       @Override
-      public void addSize(int size) {
-
+      public long addSize(int bytes, boolean affectGlobal) {
+         return 0L;
       }
 
       @Override

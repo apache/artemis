@@ -25,12 +25,8 @@ import java.lang.invoke.MethodHandles;
 
 public class SizeAwareMetric {
 
-   public interface AddCallback {
-      void add(int delta, boolean sizeOnly);
-   }
-
-   public interface SimpleAddCallback {
-      void simpleAdd(long deltaElements, long deltaSize);
+   public interface AggregateCallback {
+      void aggregate(long deltaElements, long deltaSize);
    }
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
@@ -54,9 +50,7 @@ public class SizeAwareMetric {
 
    private long lowerMarkSize;
 
-   private AddCallback onSizeCallback;
-
-   private SimpleAddCallback onSimpleAddCallback;
+   private AggregateCallback parentCallback;
 
    private Runnable overCallback;
 
@@ -110,13 +104,12 @@ public class SizeAwareMetric {
       return maxSize >= 0;
    }
 
-   public SizeAwareMetric setOnSizeCallback(SizeAwareMetric parentMetric) {
-      return setOnSizeCallback(parentMetric::addSize, parentMetric::simpleAdd);
+   public SizeAwareMetric setParentCallback(SizeAwareMetric parentMetric) {
+      return setParentCallback(parentMetric::aggregate);
    }
 
-   public SizeAwareMetric setOnSizeCallback(AddCallback onSize, SimpleAddCallback onSimpleAdd) {
-      this.onSizeCallback = onSize;
-      this.onSimpleAddCallback = onSimpleAdd;
+   public SizeAwareMetric setParentCallback(AggregateCallback onAggregate) {
+      this.parentCallback = onAggregate;
       return this;
    }
 
@@ -154,24 +147,24 @@ public class SizeAwareMetric {
       return flagUpdater.compareAndSet(this, expected, newValue);
    }
 
-   public void simpleAdd(SizeAwareMetric input) {
-      simpleAdd(input.getElements(), input.getSize());
+   public void aggregate(SizeAwareMetric input) {
+      aggregate(input.getElements(), input.getSize());
    }
 
-   public void simpleAdd(final long deltaElements, final long deltaSize) {
-      simpleAdd(deltaElements, deltaSize, true);
+   public void aggregate(final long deltaElements, final long deltaSize) {
+      aggregate(deltaElements, deltaSize, true);
    }
 
-   public void simpleAdd(final long deltaElements, final long deltaSize, final boolean affectCallbacks) {
+   public void aggregate(final long deltaElements, final long deltaSize, final boolean affectCallbacks) {
       if (deltaElements == 0 && deltaSize == 0) {
          return;
       }
 
       changeFlag(NOT_USED, FREE);
 
-      if (onSimpleAddCallback != null && affectCallbacks) {
+      if (parentCallback != null && affectCallbacks) {
          try {
-            onSimpleAddCallback.simpleAdd(deltaElements, deltaSize);
+            parentCallback.aggregate(deltaElements, deltaSize);
          } catch (Throwable e) {
             logger.warn(e.getMessage(), e);
          }
@@ -194,15 +187,23 @@ public class SizeAwareMetric {
       }
    }
 
+   public final long addMessage(final int delta) {
+      return addMessage(delta, true);
+   }
+
+   public final long addMessage(final int delta, boolean affectCallbacks) {
+      return doAdd(delta, false, affectCallbacks);
+   }
+
    public final long addSize(final int delta) {
-      return addSize(delta, false);
+      return addSize(delta, true);
    }
 
-   public final long addSize(final int delta, boolean sizeOnly) {
-      return addSize(delta, sizeOnly, true);
+   public final long addSize(final int delta, boolean affectCallbacks) {
+      return doAdd(delta, true, affectCallbacks);
    }
 
-   public final long addSize(final int delta, final boolean sizeOnly, boolean affectCallbacks) {
+   private long doAdd(final int delta, final boolean sizeOnly, boolean affectCallbacks) {
       if (delta == 0) {
          if (logger.isDebugEnabled()) {
             logger.debug("SizeAwareMetric ignored with size 0", new Exception("trace"));
@@ -212,9 +213,18 @@ public class SizeAwareMetric {
 
       changeFlag(NOT_USED, FREE);
 
-      if (onSizeCallback != null && affectCallbacks) {
+      long elementDelta;
+      if (sizeOnly) {
+         elementDelta = 0;
+      } else if (delta > 0) {
+         elementDelta = 1;
+      } else {
+         elementDelta = -1;
+      }
+
+      if (parentCallback != null && affectCallbacks) {
          try {
-            onSizeCallback.add(delta, sizeOnly);
+            parentCallback.aggregate(elementDelta, delta);
          } catch (Throwable e) {
             logger.warn(e.getMessage(), e);
          }

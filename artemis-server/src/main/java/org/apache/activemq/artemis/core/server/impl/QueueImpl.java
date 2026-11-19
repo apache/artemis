@@ -769,7 +769,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       PagingStore owner = (PagingStore) messageReference.getMessage().getOwner();
       if (count == 1) {
          if (owner != null) {
-            owner.addSize(messageReference.getMessageMemoryEstimate(), false);
+            owner.addMessage(messageReference.getMessageMemoryEstimate());
             messageReference.getMessage().routed();
          }
       }
@@ -777,7 +777,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
          if (isMirrorController() && owner != null && pagingStore != owner) {
             // When using mirror in this situation, it means the address belong to another queue
             // it's acting as if the message is being copied
-            pagingStore.addSize(messageReference.getMessage().getMemoryEstimate(), false, false);
+            pagingStore.addMessage(messageReference.getMessage().getMemoryEstimate(), false);
          }
 
          pagingStore.refUp(messageReference.getMessage(), count);
@@ -789,13 +789,13 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       int count = messageReference.getMessage().refDown();
       PagingStore owner = (PagingStore) messageReference.getMessage().getOwner();
       if (count == 0 && owner != null) {
-         owner.addSize(-messageReference.getMessageMemoryEstimate(), false);
+         owner.addMessage(-messageReference.getMessageMemoryEstimate());
       }
       if (pagingStore != null) {
          if (isMirrorController() && owner != null && pagingStore != owner) {
             // When using mirror in this situation, it means the address belong to another queue
             // it's acting as if the message is being copied
-            pagingStore.addSize(-messageReference.getMessage().getMemoryEstimate(), false, false);
+            pagingStore.addMessage(-messageReference.getMessage().getMemoryEstimate(), false);
          }
          pagingStore.refDown(messageReference.getMessage(), count);
       }
@@ -970,7 +970,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
    @Override
    public synchronized void reload(final MessageReference ref) {
-      queueMemorySize.addSize(ref.getMessageMemoryEstimate());
+      queueMemorySize.addMessage(ref.getMessageMemoryEstimate());
       if (!scheduledDeliveryHandler.checkAndSchedule(ref, true)) {
          internalAddTail(ref);
       }
@@ -1048,7 +1048,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
          }
 
          // We only add queueMemorySize if not being delivered directly
-         queueMemorySize.addSize(ref.getMessageMemoryEstimate());
+         queueMemorySize.addMessage(ref.getMessageMemoryEstimate());
 
          intermediateMessageReferences.add(ref);
 
@@ -2803,7 +2803,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       if (RefCountMessage.isRefTraceEnabled()) {
          RefCountMessage.deferredDebug(ref.getMessage(), "add head queue {}", this.getAddress());
       }
-      queueMemorySize.addSize(ref.getMessageMemoryEstimate());
+      queueMemorySize.addMessage(ref.getMessageMemoryEstimate());
       pendingMetrics.incrementMetrics(ref);
       refAdded(ref);
 
@@ -2822,7 +2822,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       if (RefCountMessage.isRefTraceEnabled()) {
          RefCountMessage.deferredDebug(ref.getMessage(), "add sorted queue {}", this.getAddress());
       }
-      queueMemorySize.addSize(ref.getMessageMemoryEstimate());
+      queueMemorySize.addMessage(ref.getMessageMemoryEstimate());
       pendingMetrics.incrementMetrics(ref);
       refAdded(ref);
 
@@ -3205,7 +3205,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    }
 
    protected void refRemoved(MessageReference ref) {
-      queueMemorySize.addSize(-ref.getMessageMemoryEstimate());
+      queueMemorySize.addMessage(-ref.getMessageMemoryEstimate());
       pendingMetrics.decrementMetrics(ref);
       if (ref.isPaged()) {
          pagedReferences.decrementAndGet();
@@ -3213,7 +3213,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    }
 
    protected void addRefSize(MessageReference ref) {
-      queueMemorySize.addSize(ref.getMessageMemoryEstimate());
+      queueMemorySize.addMessage(ref.getMessageMemoryEstimate());
       pendingMetrics.incrementMetrics(ref);
    }
 

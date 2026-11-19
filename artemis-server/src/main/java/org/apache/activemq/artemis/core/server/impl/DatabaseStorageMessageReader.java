@@ -560,7 +560,7 @@ public class DatabaseStorageMessageReader implements StorageMessageReader {
 
    @Override
    public boolean addPending(long elements, long size) {
-      pagedSize.simpleAdd(elements, size);
+      pagedSize.aggregate(elements, size);
       if (pagedSize.getElements() < 0) {
          return false;
       } else {
@@ -574,7 +574,7 @@ public class DatabaseStorageMessageReader implements StorageMessageReader {
 
       public void addSize(Queue queue, long elements, long size) {
          SizeAwareMetric updateSizeAware = pendingUpdates.computeIfAbsent(queue, k -> new SizeAwareMetric());
-         updateSizeAware.simpleAdd(elements, size);
+         updateSizeAware.aggregate(elements, size);
       }
 
       @Override

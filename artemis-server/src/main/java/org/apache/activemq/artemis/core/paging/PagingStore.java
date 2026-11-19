@@ -215,19 +215,16 @@ public interface PagingStore extends ActiveMQComponent, RefCountMessageListener 
    default void purgeFolder() {
    }
 
-   /**
-    * Add size to this {@code PageStore}.
-    *
-    * @param sizeOnly if {@code false} we won't increment the number of messages. (add references for example)
-    */
-   long addSize(int size, boolean sizeOnly, boolean affectGlobal);
+   long addMessage(int bytes, boolean affectGlobal);
 
-   default void addSize(int size, boolean sizeOnly) {
-      addSize(size, sizeOnly, true);
+   default void addMessage(int bytes) {
+      addMessage(bytes, true);
    }
 
-   default void addSize(int size) {
-      addSize(size, false, true);
+   long addSize(int bytes, boolean affectGlobal);
+
+   default void addSize(int bytes) {
+      addSize(bytes, true);
    }
 
    boolean checkMemory(Runnable runnable, Consumer<AtomicRunnable> blockedCallback);
