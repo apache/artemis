@@ -527,6 +527,17 @@ public interface ServerSession extends SecurityAuth {
    RoutingType getRoutingTypeFromPrefix(SimpleString address, RoutingType defaultRoutingType);
 
    /**
+    * Returns the routing type registered for {@code address} under one of this session's temporary prefixes (e.g.
+    * {@code temporaryAnycastPrefix}/{@code temporaryMulticastPrefix}), or {@code null} if {@code address} doesn't
+    * match any of them. A non-null result means the resource being created for this address should be forced
+    * temporary, regardless of what the client requested.
+    *
+    * @param address the address to inspect
+    * @return the {@code RoutingType} registered for the matching temporary prefix, or {@code null} if none match
+    */
+   RoutingType getRoutingTypeFromTemporaryPrefix(SimpleString address);
+
+   /**
     * Get the canonical (i.e. non-prefixed) address and the corresponding routing-type.
     *
     * @param address             the address to inspect
