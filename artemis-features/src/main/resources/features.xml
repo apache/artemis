@@ -33,7 +33,8 @@
 		<bundle>mvn:io.netty/netty-resolver/${netty.version}</bundle>
 		<bundle>mvn:io.netty/netty-transport/${netty.version}</bundle>
 		<bundle>mvn:io.netty/netty-buffer/${netty.version}</bundle>
-		<bundle>mvn:io.netty/netty-codec/${netty.version}</bundle>
+		<bundle>mvn:io.netty/netty-codec-base/${netty.version}</bundle>
+		<bundle>mvn:io.netty/netty-codec-compression/${netty.version}</bundle>
 		<bundle>mvn:io.netty/netty-codec-socks/${netty.version}</bundle>
 		<bundle>mvn:io.netty/netty-codec-haproxy/${netty.version}</bundle>
 		<bundle>mvn:io.netty/netty-codec-http/${netty.version}</bundle>

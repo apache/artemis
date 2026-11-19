@@ -49,6 +49,11 @@ if "%JAVA_ARGS%" == "" set JAVA_ARGS=-Xms512M -Xmx1024M
 
 rem "Create full JVM Args"
 set JVM_ARGS=%JAVA_ARGS%
+
+rem "Netty 4.2 only uses Unsafe on JDK 24+ when it's explicitly permitted. However, the broker uses some Unsafe operations"
+rem "via Netty so we must enable it. The option is unrecognized before JDK 23, so it's only added when recognized."
+"%_JAVACMD%" --sun-misc-unsafe-memory-access=allow --version >nul 2>&1 && set JVM_ARGS=%JVM_ARGS% --sun-misc-unsafe-memory-access=allow
+
 if not "%ARTEMIS_CLUSTER_PROPS%"=="" set JVM_ARGS=%JVM_ARGS% %ARTEMIS_CLUSTER_PROPS%
 set JVM_ARGS=%JVM_ARGS% -classpath %ARTEMIS_HOME%\lib\artemis-boot.jar
 set JVM_ARGS=%JVM_ARGS% -Dartemis.home=%ARTEMIS_HOME%
