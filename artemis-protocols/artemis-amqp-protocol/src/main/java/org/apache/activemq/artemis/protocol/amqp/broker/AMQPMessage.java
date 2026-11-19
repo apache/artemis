@@ -1599,6 +1599,17 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
    }
 
    @Override
+   public Object removeBrokerProperty(SimpleString key) {
+      // mirror setBrokerProperty: the value is held both as an annotation and as an extra property
+      removeMessageAnnotation(Symbol.getSymbol(AMQPMessageSupport.toAnnotationName(key.toString())));
+      TypedProperties extra = getExtraProperties();
+      if (extra == null) {
+         return null;
+      }
+      return extra.removeProperty(key);
+   }
+
+   @Override
    public final org.apache.activemq.artemis.api.core.Message setIngressTimestamp() {
       setMessageAnnotation(AMQPMessageSupport.INGRESS_TIME_MSG_ANNOTATION, System.currentTimeMillis());
       return this;

@@ -1932,6 +1932,11 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    }
 
    @Override
+   public boolean isPreserveDeliveryCountOnRedistribution() {
+      return this.cachedAddressSettings.isPreserveDeliveryCountOnRedistribution();
+   }
+
+   @Override
    public void referenceHandled(MessageReference ref) {
       incDelivering(ref);
    }
@@ -3703,6 +3708,9 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
       copy.setExpiration(0);
       copy.setRoutingType(null);
+
+      // a DLA/expiry copy is a new message and must not inherit a redistributed delivery count
+      copy.removeRedistributionDeliveryCount();
 
       if (expiry) {
          copy.setBrokerProperty(Message.HDR_ACTUAL_EXPIRY_TIME, System.currentTimeMillis());

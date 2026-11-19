@@ -117,6 +117,16 @@ public class Redistributor implements Consumer {
       RoutingContext context = routingInfo.getA();
       Message message = routingInfo.getB();
 
+      // the delivery count is tracked on the MessageReference, so the target broker would start over at 0 when it
+      // creates a new reference for the redistributed copy: carry it over through the message itself. The target only
+      // applies it when it is configured to preserve it too, so a stale count from an earlier hop is simply ignored.
+      final int deliveryCount = reference.getDeliveryCount();
+      if (queue.isPreserveDeliveryCountOnRedistribution() && deliveryCount > 0) {
+         message.setRedistributionDeliveryCount(deliveryCount);
+      } else {
+         message.removeRedistributionDeliveryCount();
+      }
+
       try {
          postOffice.processRoute(message, context, false);
 

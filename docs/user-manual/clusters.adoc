@@ -780,6 +780,30 @@ The default value is `-1`.
 
 It often makes sense to introduce a delay before redistributing as it's a common case that a consumer closes but another one quickly is created on the same queue, in such a case you probably don't want to redistribute immediately since the new consumer will arrive shortly.
 
+The element `preserve-delivery-count-on-redistribution` controls whether the delivery count of a message survives redistribution.
+By default it is `false`, i.e. the broker receiving the redistributed message starts counting deliveries from scratch which means `max-delivery-attempts` is effectively enforced per broker rather than cluster-wide.
+Set it to `true` to carry the delivery count over, so a message which bounces between nodes still ends up in the dead letter address after `max-delivery-attempts` deliveries across the whole cluster:
+
+[,xml]
+----
+<address-settings>
+   <address-setting match="#">
+      <redistribution-delay>0</redistribution-delay>
+      <preserve-delivery-count-on-redistribution>true</preserve-delivery-count-on-redistribution>
+   </address-setting>
+</address-settings>
+----
+
+The count is carried on the redistributed message in the `_AMQ_REDISTRIBUTION_DELIVERY_COUNT` property, which stays visible to consumers on the target broker.
+It is only applied by a broker which has `preserve-delivery-count-on-redistribution` enabled for the address itself, so both ends must be configured for the count to survive a hop.
+
+[NOTE]
+====
+The delivery count is not preserved if the address on the target broker is xref:paging.adoc#paging[paging] when the redistributed message arrives.
+Such a message starts again at `1` on the target, as if the setting were disabled.
+This is uncommon, since redistribution is normally driven by a queue which has no messages left to deliver, but it can still happen (e.g. when the consumer creating the demand is not keeping up, or when another queue on the same address is keeping the address in paging mode).
+====
+
 [WARNING]
 ====
 The broker uses internal store-and-forward queues to handle message which need to be sent to other nodes in the cluster.

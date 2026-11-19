@@ -298,6 +298,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
    private static final String REDISTRIBUTION_DELAY_NODE_NAME = "redistribution-delay";
 
+   private static final String PRESERVE_DELIVERY_COUNT_ON_REDISTRIBUTION = "preserve-delivery-count-on-redistribution";
+
    private static final String SEND_TO_DLA_ON_NO_ROUTE = "send-to-dla-on-no-route";
 
    private static final String SLOW_CONSUMER_THRESHOLD_NODE_NAME = "slow-consumer-threshold";
@@ -1450,6 +1452,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
             addressSettings.setMaxDeliveryAttempts(XMLUtil.parseInt(child));
          } else if (REDISTRIBUTION_DELAY_NODE_NAME.equalsIgnoreCase(name)) {
             addressSettings.setRedistributionDelay(XMLUtil.parseLong(child));
+         } else if (PRESERVE_DELIVERY_COUNT_ON_REDISTRIBUTION.equalsIgnoreCase(name)) {
+            addressSettings.setPreserveDeliveryCountOnRedistribution(XMLUtil.parseBoolean(child));
          } else if (SEND_TO_DLA_ON_NO_ROUTE.equalsIgnoreCase(name)) {
             addressSettings.setSendToDLAOnNoRoute(XMLUtil.parseBoolean(child));
          } else if (SLOW_CONSUMER_THRESHOLD_NODE_NAME.equalsIgnoreCase(name)) {
