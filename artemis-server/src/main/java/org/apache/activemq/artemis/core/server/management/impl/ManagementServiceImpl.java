@@ -303,6 +303,18 @@ public class ManagementServiceImpl implements ManagementService {
    }
 
    @Override
+   public void registerResourceQuota(org.apache.activemq.artemis.core.settings.impl.ResourceQuota resourceQuota) throws Exception {
+      org.apache.activemq.artemis.core.management.impl.ResourceQuotaControlImpl quotaControl =
+         new org.apache.activemq.artemis.core.management.impl.ResourceQuotaControlImpl(resourceQuota, storageManager);
+      registerInJMX(objectNameBuilder.getResourceQuotaObjectName(resourceQuota.getName()), quotaControl);
+   }
+
+   @Override
+   public void unregisterResourceQuota(String quotaName) throws Exception {
+      unregisterFromJMX(objectNameBuilder.getResourceQuotaObjectName(quotaName));
+   }
+
+   @Override
    public void registerQueue(final Queue queue, final SimpleString address, final StorageManager storageManager) throws Exception {
       QueueControlImpl queueControl = new QueueControlImpl(queue, address.toString(), messagingServer, storageManager, addressSettingsRepository);
       if (messageCounterManager != null) {

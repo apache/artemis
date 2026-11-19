@@ -551,6 +551,11 @@ public class AddressSettings implements Mergeable<AddressSettings>, Serializable
    @Deprecated
    private transient Integer queuePrefetch = null;
 
+   static {
+      metaBean.add(String.class, "resourceQuota", (t, p) -> t.resourceQuota = p, t -> t.resourceQuota);
+   }
+   private String resourceQuota = null;
+
    public AddressSettings(AddressSettings other) {
       metaBean.copy(other, this);
    }
@@ -1292,6 +1297,15 @@ public class AddressSettings implements Mergeable<AddressSettings>, Serializable
 
    public AddressSettings setInitialQueueBufferSize(Integer initialQueueBufferSize) {
       this.initialQueueBufferSize = initialQueueBufferSize;
+      return this;
+   }
+
+   public String getResourceQuota() {
+      return resourceQuota;
+   }
+
+   public AddressSettings setResourceQuota(String resourceQuota) {
+      this.resourceQuota = resourceQuota;
       return this;
    }
 

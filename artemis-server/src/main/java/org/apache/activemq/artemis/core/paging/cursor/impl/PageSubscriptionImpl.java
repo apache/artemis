@@ -52,6 +52,7 @@ import org.apache.activemq.artemis.core.persistence.StorageManager;
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.server.Queue;
+import org.apache.activemq.artemis.core.settings.impl.ResourceQuota;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.core.transaction.TransactionOperationAbstract;
 import org.apache.activemq.artemis.core.transaction.TransactionPropertyIndexes;
@@ -429,6 +430,20 @@ public final class PageSubscriptionImpl implements PageSubscription {
       if (txInfo != null) {
          txInfo.storeUpdate(store, pageStore.getPagingManager(), tx);
          tx.setContainsPersistent();
+      }
+
+      final ResourceQuota quota = pageStore.getResourceQuota();
+      if (quota != null) {
+         if (tx != null) {
+            tx.addOperation(new TransactionOperationAbstract() {
+               @Override
+               public void afterCommit(final Transaction tx1) {
+                  quota.addSize(-persistentSize);
+               }
+            });
+         } else {
+            quota.addSize(-persistentSize);
+         }
       }
 
    }
