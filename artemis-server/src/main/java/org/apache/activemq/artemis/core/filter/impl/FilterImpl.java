@@ -50,6 +50,7 @@ import static org.apache.activemq.artemis.api.core.FilterConstants.NATIVE_MESSAG
  * <li>{@code AMQDurable} - "DURABLE" or "NON_DURABLE"
  * <li>{@code AMQExpiration} - the expiration of the message
  * <li>{@code AMQSize} - the encoded size of the full message in bytes
+ * <li>{@code AMQFullSize} - the whole size of the full message in bytes
  * <li>{@code AMQUserID} - the user specified ID string (if any)
  * <li>Any other identifiers that appear in a filter expression represent header values for the message
  * </ul>
@@ -177,6 +178,8 @@ public class FilterImpl implements Filter {
          return msg.getExpiration();
       } else if (FilterConstants.ACTIVEMQ_SIZE.equals(fieldName)) {
          return msg.getEncodeSize();
+      } else if (FilterConstants.ACTIVEMQ_FULL_SIZE.equals(fieldName)) {
+         return msg.getWholeMessageSize();
       } else if (FilterConstants.ACTIVEMQ_ADDRESS.equals(fieldName)) {
          return msg.getAddress();
       } else if (FilterConstants.ACTIVEMQ_GROUP_ID.equals(fieldName)) {
