@@ -145,7 +145,7 @@ public abstract class AbstracPagingManager implements PagingManager {
 
    @Override
    public PagingManager addMessage(int bytes) {
-      long newSize = globalSizeMetric.addMessage(bytes);
+      long newSize = globalSizeMetric.addElement(bytes);
 
       if (newSize < 0) {
          ActiveMQServerLogger.LOGGER.negativeGlobalAddressSize(newSize);

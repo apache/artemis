@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
+import java.util.concurrent.locks.StampedLock;
 
 public class SizeAwareMetric {
 
@@ -50,11 +51,13 @@ public class SizeAwareMetric {
 
    private long lowerMarkSize;
 
-   private AggregateCallback parentCallback;
+   private AggregateCallback[] parentCallback;
 
    private Runnable overCallback;
 
    private Runnable underCallback;
+
+   private final StampedLock stampedLock = new StampedLock();
 
    /**
     * To be used in a case where we just measure elements
@@ -96,6 +99,16 @@ public class SizeAwareMetric {
       return maxElements >= 0;
    }
 
+   public boolean fitsElements(int elements) {
+      // maxElements <= 0 means not configured
+      return maxElements <= 0 || elementsUpdater.get(this) + elements < maxElements;
+   }
+
+   public boolean fitsBytes(long bytesToWrite) {
+      // maxSize <= 0 means not configured
+      return maxSize <= 0 || sizeUpdater.get(this) + bytesToWrite < maxSize;
+   }
+
    public long getElements() {
       return elements;
    }
@@ -104,12 +117,57 @@ public class SizeAwareMetric {
       return maxSize >= 0;
    }
 
-   public SizeAwareMetric setParentCallback(SizeAwareMetric parentMetric) {
-      return setParentCallback(parentMetric::aggregate);
+   public SizeAwareMetric addCallback(SizeAwareMetric parentMetric) {
+      return addCallback(parentMetric::aggregate);
    }
 
-   public SizeAwareMetric setParentCallback(AggregateCallback onAggregate) {
-      this.parentCallback = onAggregate;
+   public SizeAwareMetric addCallback(AggregateCallback onAggregate) {
+      long stamp = stampedLock.writeLock();
+      try {
+         // sending current elements to recently added callback
+         onAggregate.aggregate(elementsUpdater.get(this), sizeUpdater.get(this));
+         if (parentCallback == null) {
+            parentCallback = new AggregateCallback[] {onAggregate};
+         } else {
+            AggregateCallback[] replacingCallback = new AggregateCallback[parentCallback.length + 1];
+            System.arraycopy(parentCallback, 0, replacingCallback, 0, parentCallback.length);
+            replacingCallback[parentCallback.length] = onAggregate;
+            this.parentCallback = replacingCallback;
+         }
+      } finally {
+         stampedLock.unlockWrite(stamp);
+      }
+      return this;
+   }
+
+   public SizeAwareMetric removeCallback(AggregateCallback callback) {
+      long stamp = stampedLock.writeLock();
+      try {
+         if (parentCallback == null) {
+            return this;
+         }
+         int index = -1;
+         for (int i = 0; i < parentCallback.length; i++) {
+            if (parentCallback[i] == callback) {
+               index = i;
+               break;
+            }
+         }
+         if (index < 0) {
+            return this;
+         }
+         callback.aggregate(-elementsUpdater.get(this), -sizeUpdater.get(this));
+         if (parentCallback.length == 1) {
+            parentCallback = null;
+         } else {
+            AggregateCallback[] replacingCallback = new AggregateCallback[parentCallback.length - 1];
+            System.arraycopy(parentCallback, 0, replacingCallback, 0, index);
+            System.arraycopy(parentCallback, index + 1, replacingCallback, index, parentCallback.length - index - 1);
+            parentCallback = replacingCallback;
+         }
+      } finally {
+         stampedLock.unlockWrite(stamp);
+      }
       return this;
    }
 
@@ -162,92 +220,134 @@ public class SizeAwareMetric {
 
       changeFlag(NOT_USED, FREE);
 
-      if (parentCallback != null && affectCallbacks) {
+      long stampRead = stampedLock.readLock();
+      try {
+         if (parentCallback != null && affectCallbacks) {
+            executeAggregationCallbacks(deltaElements, deltaSize);
+         }
+
+         long currentSize = deltaSize != 0 ? sizeUpdater.addAndGet(this, deltaSize) : sizeUpdater.get(this);
+
+         long currentElements;
+         if (deltaElements != 0) {
+            currentElements = elementsUpdater.addAndGet(this, deltaElements);
+         } else {
+            currentElements = elementsUpdater.get(this);
+         }
+         boolean adding = deltaElements > 0 || (deltaElements == 0 && deltaSize >= 0);
+         if (adding) {
+            checkOver(currentElements, currentSize);
+         } else {
+            checkUnder(currentElements, currentSize);
+         }
+      } finally {
+         stampedLock.unlockRead(stampRead);
+      }
+
+   }
+
+   private void executeAggregationCallbacks(final long deltaElements, final long deltaSize) {
+      for (AggregateCallback callback : parentCallback) {
          try {
-            parentCallback.aggregate(deltaElements, deltaSize);
+            callback.aggregate(deltaElements, deltaSize);
          } catch (Throwable e) {
             logger.warn(e.getMessage(), e);
          }
       }
+   }
 
-      long currentSize = deltaSize != 0 ? sizeUpdater.addAndGet(this, deltaSize) : sizeUpdater.get(this);
+   public final long addElement(final long deltaSize) {
+      return addElement(deltaSize, true);
+   }
 
-      long currentElements;
-      if (deltaElements != 0) {
-         currentElements = elementsUpdater.addAndGet(this, deltaElements);
-      } else {
-         currentElements = elementsUpdater.get(this);
+   public final long addElement(final long deltaSize, boolean affectCallbacks) {
+      return doAdd(deltaSize, false, affectCallbacks);
+   }
+
+   public final long incrementElement() {
+      changeFlag(NOT_USED, FREE);
+      long stampRead = stampedLock.readLock();
+      try {
+         if (parentCallback != null) {
+            executeAggregationCallbacks(1, 0);
+         }
+         long currentElements = elementsUpdater.incrementAndGet(this);
+         checkOver(currentElements, sizeUpdater.get(this));
+         return currentElements;
+      } finally {
+         stampedLock.unlockRead(stampRead);
       }
+   }
 
-      boolean adding = deltaElements > 0 || (deltaElements == 0 && deltaSize >= 0);
-      if (adding) {
-         checkOver(currentElements, currentSize);
-      } else {
-         checkUnder(currentElements, currentSize);
+   public final long decrementElement() {
+      changeFlag(NOT_USED, FREE);
+      long stampRead = stampedLock.readLock();
+      try {
+         if (parentCallback != null) {
+            executeAggregationCallbacks(-1, 0);
+         }
+         long currentElements = elementsUpdater.decrementAndGet(this);
+         checkUnder(currentElements, sizeUpdater.get(this));
+         return currentElements;
+      } finally {
+         stampedLock.unlockRead(stampRead);
       }
    }
 
-   public final long addMessage(final int delta) {
-      return addMessage(delta, true);
-   }
-
-   public final long addMessage(final int delta, boolean affectCallbacks) {
-      return doAdd(delta, false, affectCallbacks);
-   }
-
-   public final long addSize(final int delta) {
+   public final long addSize(final long delta) {
       return addSize(delta, true);
    }
 
-   public final long addSize(final int delta, boolean affectCallbacks) {
+   public final long addSize(final long delta, boolean affectCallbacks) {
       return doAdd(delta, true, affectCallbacks);
    }
 
-   private long doAdd(final int delta, final boolean sizeOnly, boolean affectCallbacks) {
+   private long doAdd(final long delta, final boolean sizeOnly, boolean affectCallbacks) {
       if (delta == 0) {
          if (logger.isDebugEnabled()) {
-            logger.debug("SizeAwareMetric ignored with size 0", new Exception("trace"));
+            logger.debug("Ignoring zero-delta add", new Exception("trace"));
          }
          return sizeUpdater.get(this);
       }
 
       changeFlag(NOT_USED, FREE);
 
-      long elementDelta;
-      if (sizeOnly) {
-         elementDelta = 0;
-      } else if (delta > 0) {
-         elementDelta = 1;
-      } else {
-         elementDelta = -1;
-      }
-
-      if (parentCallback != null && affectCallbacks) {
-         try {
-            parentCallback.aggregate(elementDelta, delta);
-         } catch (Throwable e) {
-            logger.warn(e.getMessage(), e);
+      long stampRead = stampedLock.readLock();
+      try {
+         long elementDelta;
+         if (sizeOnly) {
+            elementDelta = 0;
+         } else if (delta > 0) {
+            elementDelta = 1;
+         } else {
+            elementDelta = -1;
          }
+
+         if (parentCallback != null && affectCallbacks) {
+            executeAggregationCallbacks(elementDelta, delta);
+         }
+
+         long currentSize = sizeUpdater.addAndGet(this, delta);
+
+         long currentElements;
+         if (sizeOnly) {
+            currentElements = elementsUpdater.get(this);
+         } else if (delta > 0) {
+            currentElements = elementsUpdater.incrementAndGet(this);
+         } else {
+            currentElements = elementsUpdater.decrementAndGet(this);
+         }
+
+         if (delta > 0) {
+            checkOver(currentElements, currentSize);
+         } else { // (delta < 0)
+            checkUnder(currentElements, currentSize);
+         }
+
+         return currentSize;
+      } finally {
+         stampedLock.unlockRead(stampRead);
       }
-
-      long currentSize = sizeUpdater.addAndGet(this, delta);
-
-      long currentElements;
-      if (sizeOnly) {
-         currentElements = elementsUpdater.get(this);
-      } else if (delta > 0) {
-         currentElements = elementsUpdater.incrementAndGet(this);
-      } else {
-         currentElements = elementsUpdater.decrementAndGet(this);
-      }
-
-      if (delta > 0) {
-         checkOver(currentElements, currentSize);
-      } else { // (delta < 0)
-         checkUnder(currentElements, currentSize);
-      }
-
-      return currentSize;
    }
 
    public void setMax(long maxSize, long lowerMarkSize, long maxElements, long lowerMarkElements) {
@@ -321,7 +421,7 @@ public class SizeAwareMetric {
 
       if (isOverElements(currentElements) && changeFlag(FREE, PENDING_OVER_ELEMENTS)) {
          try {
-            logger.debug("currentElements [currentSize={}, maxElements={}]", currentElements, maxElements);
+            logger.debug("OverElements [currentElements={}, maxElements={}]", currentElements, maxElements);
             over();
          } finally {
             changeFlag(PENDING_OVER_ELEMENTS, OVER_ELEMENTS);

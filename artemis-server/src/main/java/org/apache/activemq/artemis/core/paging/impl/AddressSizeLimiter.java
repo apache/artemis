@@ -190,7 +190,7 @@ public abstract class AddressSizeLimiter {
       this.address = address;
       this.pagingManager = pagingManager;
       this.storageManager = storageManager;
-      this.size = new SizeAwareMetric().setUnderCallback(this::underSized).setOverCallback(this::overSized).setParentCallback(pagingManager::aggregate);
+      this.size = new SizeAwareMetric().setUnderCallback(this::underSized).setOverCallback(this::overSized).addCallback(pagingManager::aggregate);
       applySetting(addressSettings, true);
 
    }
@@ -341,7 +341,7 @@ public abstract class AddressSizeLimiter {
 
 
    public long addMessage(final int bytes, boolean affectGlobal) {
-      long newSize = this.size.addMessage(bytes, affectGlobal);
+      long newSize = this.size.addElement(bytes, affectGlobal);
       return handleSizeChange(bytes, newSize);
    }
 
