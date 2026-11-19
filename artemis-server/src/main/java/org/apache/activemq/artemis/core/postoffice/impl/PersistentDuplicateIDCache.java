@@ -282,7 +282,7 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
          logger.trace("address = {} adding {}", address, describeID(holder.bytes, recordID));
       }
 
-      cache.put(holder, cachedBoxedInts.apply(pos));
+      final Integer slot = cachedBoxedInts.apply(pos);
 
       ObjLongPair<ByteArray> id;
 
@@ -296,7 +296,8 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
                logger.trace("address = {} removing excess duplicateDetection {}", address, describeID(id.getA().bytes, id.getB()));
             }
 
-            cache.remove(id.getA());
+            // The same id may be held in a newer slot too: then it stays
+            cache.remove(id.getA(), slot);
 
             assert id.getB() != NIL;
             try {
@@ -324,6 +325,8 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
          ids.add(id);
 
       }
+
+      cache.put(holder, slot);
 
       if (pos++ == cacheSize - 1) {
          pos = 0;

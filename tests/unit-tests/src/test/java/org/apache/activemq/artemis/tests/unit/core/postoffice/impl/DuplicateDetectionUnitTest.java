@@ -16,6 +16,7 @@
  */
 package org.apache.activemq.artemis.tests.unit.core.postoffice.impl;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,12 +24,14 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.IntFunction;
 
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
 import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.persistence.impl.journal.JournalStorageManager;
+import org.apache.activemq.artemis.core.persistence.impl.nullpm.NullStorageManager;
 import org.apache.activemq.artemis.core.postoffice.DuplicateIDCache;
 import org.apache.activemq.artemis.core.postoffice.PostOffice;
 import org.apache.activemq.artemis.core.postoffice.impl.DuplicateIDCaches;
@@ -47,6 +50,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DuplicateDetectionUnitTest extends ActiveMQTestBase {
 
@@ -152,5 +157,39 @@ public class DuplicateDetectionUnitTest extends ActiveMQTestBase {
          }
       }
 
+   }
+
+   @Test
+   public void testIdHeldTwiceInMemory() throws Exception {
+      testIdHeldTwice(size -> DuplicateIDCaches.inMemory(SimpleString.of("address"), size));
+   }
+
+   @Test
+   public void testIdHeldTwicePersistent() throws Exception {
+      testIdHeldTwice(size -> DuplicateIDCaches.persistent(SimpleString.of("address"), size, new NullStorageManager()));
+   }
+
+   /*
+    * An id the cache holds in two slots stays a duplicate until its newer slot is overwritten
+    */
+   private void testIdHeldTwice(IntFunction<DuplicateIDCache> caches) throws Exception {
+      final byte[] same = "same".getBytes(StandardCharsets.UTF_8);
+
+      DuplicateIDCache cache = caches.apply(3);
+      cache.addToCache(same);
+      cache.addToCache(same);
+      cache.addToCache("other".getBytes(StandardCharsets.UTF_8));
+      // Overwrites the older slot holding "same"
+      cache.addToCache("new".getBytes(StandardCharsets.UTF_8));
+      assertTrue(cache.contains(same));
+      // Overwrites the newer one
+      cache.addToCache("newer".getBytes(StandardCharsets.UTF_8));
+      assertFalse(cache.contains(same));
+
+      // The same id overwriting itself
+      cache = caches.apply(1);
+      cache.addToCache(same);
+      cache.addToCache(same);
+      assertTrue(cache.contains(same));
    }
 }
