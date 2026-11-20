@@ -27,6 +27,7 @@ Use `--ascii` for plain ASCII output.
 * AMQP broker connection Senders, Receivers and Peer configurations have been deprecated and will be removed in a future release.
 Users of the AMQP broker connection Senders and Receivers are encouraged to migrate to the newer AMQP Bridge configurations that provide more robust and configurable send to and receive from topologies.
 * Core Federation is now deprecated and users are encouraged to begin migrating to the AMQP Federation feature instead.
+* xref:logging.adoc#suppressing-a-specific-log-code[A new Log4j2 filter is available] to make it easy to suppress log entries with specific Artemis xref:logging.adoc#log-codes[log codes].
 
 === Upgrading from 2.57.0
 

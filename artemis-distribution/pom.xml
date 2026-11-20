@@ -110,6 +110,11 @@
          <groupId>org.apache.activemq</groupId>
          <artifactId>activemq-openwire-legacy</artifactId>
       </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-log-code-filter</artifactId>
+         <scope>runtime</scope>
+      </dependency>
 
       <!-- Management Console Dependencies -->
       <dependency>
