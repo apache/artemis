@@ -83,6 +83,8 @@ public class PageConstants {
 
    public static final By LOGIN_BUTTON_LOCATOR = By.xpath("//button[@type='submit']");
 
+   public static final By LOGIN_ERROR_LOCATOR = By.cssSelector(".pf-v5-c-helper-text__item.pf-m-error");
+
 
    public static final By MESSAGE_TEXT_EDITOR_LOCATOR = By.cssSelector("div[class='pf-v5-c-code-editor__code']");
 

@@ -17,6 +17,8 @@
 package org.apache.activemq.artemis.tests.smoke.console;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.activemq.artemis.tests.extensions.parameterized.ParameterizedTestExtension;
 import org.apache.activemq.artemis.tests.smoke.console.pages.LoginPage;
@@ -27,8 +29,12 @@ import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.DEFA
 import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.WEB_URL_PATH;
 //Parameters set in super class
 @ExtendWith(ParameterizedTestExtension.class)
-
 public class LoginTest extends ConsoleTest {
+
+   // Hawtio authentication throttling is enabled by default.
+   protected boolean isAuthenticationThrottled() {
+      return true;
+   }
 
    public LoginTest(String browser, String serverName) {
       super(browser, serverName);
@@ -49,5 +55,30 @@ public class LoginTest extends ConsoleTest {
       driver.get(webServerUrl + WEB_URL_PATH);
       LoginPage loginPage = new LoginPage(driver);
       assertEquals(expectedBrandImage, loginPage.getBrandImage(DEFAULT_TIMEOUT));
+   }
+
+   /**
+    * Hawtio starts throttling (backing off) after 3 failed attempts, in which case
+    * the login button is disabled and a subsequent login is not possible, even
+    * with valid credentials. With the throttling disabled, the login button must
+    * remain clickable and a valid login must succeed after repeated failures.
+    */
+   @TestTemplate
+   public void testLoginAfterRepeatedFailures() {
+      final int failedAttempts = 5;
+
+      driver.get(webServerUrl + WEB_URL_PATH);
+      LoginPage loginPage = new LoginPage(driver);
+
+      for (int i = 0; i < failedAttempts; i++) {
+         loginPage.loginInvalidUser(SERVER_ADMIN_USERNAME, "wrong-password", DEFAULT_TIMEOUT);
+      }
+
+      if (isAuthenticationThrottled()) {
+         assertFalse(loginPage.isLoginButtonClickable());
+      } else {
+         assertTrue(loginPage.isLoginButtonClickable());
+         loginPage.loginValidUser(SERVER_ADMIN_USERNAME, SERVER_ADMIN_PASSWORD, DEFAULT_TIMEOUT);
+      }
    }
 }
