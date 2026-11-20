@@ -81,6 +81,8 @@ public class Create extends InstallAbstract {
    public static final String BIN_ARTEMIS = "bin/" + ARTEMIS;
    public static final String ARTEMIS_SERVICE = "artemis-service";
    public static final String BIN_ARTEMIS_SERVICE = "bin/" + ARTEMIS_SERVICE;
+   public static final String ARTEMIS_SERVICE_SYSTEMD = "artemis.service";
+   public static final String ETC_ARTEMIS_SERVICE_SYSTEMD = "etc/" + ARTEMIS_SERVICE_SYSTEMD;
    public static final String ETC_ARTEMIS_PROFILE = "artemis.profile";
    public static final String ETC_ARTEMIS_UTILITY_PROFILE = "artemis-utility.profile";
    public static final String ETC_LOG4J2_PROPERTIES = "log4j2.properties";
@@ -573,6 +575,12 @@ public class Create extends InstallAbstract {
       return disablePersistence;
    }
 
+   public void generateSystemdService(File etcFolder) throws Exception {
+      final File systemdService = new File(etcFolder, ARTEMIS_SERVICE_SYSTEMD);
+      writeSystemdService(systemdService, force);
+      printSystemdServiceInstructions(getActionContext(), systemdService);
+   }
+
    @Override
    public Object execute(ActionContext context) throws Exception {
       this.checkDirectory();
@@ -796,7 +804,6 @@ public class Create extends InstallAbstract {
 
       boolean allowAnonymous = isAllowAnonymous();
 
-
       String retentionTag;
       if (retentionDays > 0) {
          if (retentionMaxBytes != null) {
@@ -926,6 +933,8 @@ public class Create extends InstallAbstract {
             "        <strict-checking/>");
       }
       writeEtc(ETC_JOLOKIA_ACCESS_XML, etcFolder, filters, false);
+
+      generateSystemdService(etcFolder);
 
       context.out.println("");
       context.out.println("You can now start the broker by executing:  ");
