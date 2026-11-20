@@ -84,6 +84,11 @@ public final class AddressSettingsInfo {
    private long redistributionDelay;
 
    static {
+      META_BEAN.add(Boolean.class, "preserveDeliveryCountOnRedistribution", (o, p) -> o.preserveDeliveryCountOnRedistribution = p, o -> o.preserveDeliveryCountOnRedistribution);
+   }
+   private boolean preserveDeliveryCountOnRedistribution;
+
+   static {
       META_BEAN.add(Boolean.class, "sendToDLAOnNoRoute", (o, p) -> o.sendToDLAOnNoRoute = p, o -> o.sendToDLAOnNoRoute);
    }
    private boolean sendToDLAOnNoRoute;
@@ -371,6 +376,10 @@ public final class AddressSettingsInfo {
 
    public long getRedistributionDelay() {
       return redistributionDelay;
+   }
+
+   public boolean isPreserveDeliveryCountOnRedistribution() {
+      return preserveDeliveryCountOnRedistribution;
    }
 
    public boolean isSendToDLAOnNoRoute() {
