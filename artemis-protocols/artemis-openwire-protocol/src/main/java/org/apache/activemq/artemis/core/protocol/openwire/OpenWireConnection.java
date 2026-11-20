@@ -213,10 +213,12 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
 
    private String validatedUser = null;
 
+   @Override
    public void block() {
       openWireActor.pauseProcessing();
    }
 
+   @Override
    public void unblock() {
       openWireActor.resumeProcessing();
    }

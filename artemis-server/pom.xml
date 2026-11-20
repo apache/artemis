@@ -76,6 +76,10 @@
       </dependency>
       <dependency>
          <groupId>org.apache.artemis</groupId>
+         <artifactId>artemis-database-storage</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-journal</artifactId>
       </dependency>
       <dependency>

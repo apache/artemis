@@ -25,12 +25,18 @@ import org.apache.activemq.artemis.core.paging.PageTransactionInfo;
 import org.apache.activemq.artemis.core.paging.PagingManager;
 import org.apache.activemq.artemis.core.paging.PagingStore;
 
+import org.apache.activemq.artemis.core.paging.impl.AddressSizeLimiter;
 import org.apache.activemq.artemis.core.server.files.FileStoreMonitor;
 
 public class FakePagingManager implements PagingManager {
 
    @Override
-   public void addBlockedStore(PagingStore store) {
+   public PagingManager aggregate(long elements, long size) {
+      return this;
+   }
+
+   @Override
+   public void addBlockedStore(AddressSizeLimiter store) {
    }
 
    @Override
@@ -83,7 +89,12 @@ public class FakePagingManager implements PagingManager {
    }
 
    @Override
-   public FakePagingManager addSize(int size, boolean sizeOnly) {
+   public FakePagingManager addMessage(int bytes) {
+      return this;
+   }
+
+   @Override
+   public FakePagingManager addSize(int bytes) {
       return this;
    }
 

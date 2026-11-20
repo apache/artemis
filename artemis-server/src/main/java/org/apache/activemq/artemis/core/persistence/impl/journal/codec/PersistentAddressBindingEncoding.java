@@ -86,6 +86,22 @@ public class PersistentAddressBindingEncoding implements EncodingSupport, Addres
       return name;
    }
 
+   public void setName(SimpleString name) {
+      this.name = name;
+   }
+
+   public void setAutoCreated(boolean autoCreated) {
+      this.autoCreated = autoCreated;
+   }
+
+   public void setRoutingTypes(EnumSet<RoutingType> routingTypes) {
+      this.routingTypes = routingTypes;
+   }
+
+   public void setInternal(boolean internal) {
+      this.internal = internal;
+   }
+
    @Override
    public boolean isAutoCreated() {
       return autoCreated;

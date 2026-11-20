@@ -22,7 +22,8 @@ public interface StoreConfiguration extends Serializable {
 
    enum StoreType {
       FILE,
-      DATABASE
+      DATABASE, // this is the old implementation that will fake files over database blobs
+      NEW_DATABASE
    }
 
    StoreType getStoreType();

@@ -40,6 +40,11 @@
          </dependency>
          <dependency>
             <groupId>org.apache.artemis</groupId>
+            <artifactId>artemis-database-storage</artifactId>
+            <version>${project.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>org.apache.artemis</groupId>
             <artifactId>artemis-boot</artifactId>
             <version>${project.version}</version>
          </dependency>

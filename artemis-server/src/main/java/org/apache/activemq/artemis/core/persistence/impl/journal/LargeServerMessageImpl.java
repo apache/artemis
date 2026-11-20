@@ -277,12 +277,11 @@ public final class LargeServerMessageImpl extends CoreMessage implements CoreLar
    public int getMemoryEstimate() {
       synchronized (largeBody) {
          if (memoryEstimate == -1) {
-            // The body won't be on memory (always on-file), so we don't consider this for paging
             memoryEstimate = MEMORY_OFFSET +
                getHeadersAndPropertiesEncodeSize() +
                DataConstants.SIZE_INT +
                getEncodeSize() +
-               (16 + 4) * 2 + 1;
+               (16 + 4) * 2 + 1 + largeBody.getMemoryEstimate(); // We cound the body's size only for the case where a buffer is used (the Database case)
          }
 
          return memoryEstimate;

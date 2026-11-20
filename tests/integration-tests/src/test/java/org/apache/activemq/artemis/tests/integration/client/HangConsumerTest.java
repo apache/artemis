@@ -68,6 +68,7 @@ import org.apache.activemq.artemis.core.server.impl.QueueImpl;
 import org.apache.activemq.artemis.core.server.impl.ServerSessionImpl;
 import org.apache.activemq.artemis.core.settings.HierarchicalRepository;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
+import org.apache.activemq.artemis.core.transaction.impl.BindingsTransactionImpl;
 import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
 import org.apache.activemq.artemis.spi.core.protocol.SessionCallback;
 import org.apache.activemq.artemis.spi.core.remoting.ReadyListener;
@@ -253,7 +254,7 @@ public class HangConsumerTest extends ActiveMQTestBase {
 
          @Override
          public Queue createQueueWith(final QueueConfiguration config, PagingManager pagingManager, Filter filter) {
-            PageSubscription pageSubscription = getPageSubscription(config, pagingManager, filter);
+            PageSubscription pageSubscription = getPageSubscription(config, getPagingStore(pagingManager, config.getAddress()), filter);
             queue = new MyQueueWithBlocking(config, filter, pageSubscription != null ? pageSubscription.getPagingStore() : null, pageSubscription, scheduledExecutor,
                                             postOffice, storageManager, addressSettingsRepository,
                                             executorFactory.getExecutor(), server);
@@ -329,14 +330,14 @@ public class HangConsumerTest extends ActiveMQTestBase {
       session.commit();
 
       long queueID = server.getStorageManager().generateID();
-      long txID = server.getStorageManager().generateID();
+      BindingsTransactionImpl tx = new BindingsTransactionImpl(server.getStorageManager());
 
       // Forcing a situation where the server would unexpectedly create a duplicated queue. The server should still start normally
       LocalQueueBinding newBinding = new LocalQueueBinding(QUEUE,
                                                            new QueueImpl(QueueConfiguration.of(QUEUE).setRoutingType(RoutingType.ANYCAST).setId(queueID), null, null, null, null, null, null, null, null, server, null),
                                                            server.getNodeID());
-      server.getStorageManager().addQueueBinding(txID, newBinding);
-      server.getStorageManager().commitBindings(txID);
+      server.getStorageManager().addQueueBinding(tx, newBinding, null);
+      server.getStorageManager().commitBindings(tx);
 
       server.stop();
 
