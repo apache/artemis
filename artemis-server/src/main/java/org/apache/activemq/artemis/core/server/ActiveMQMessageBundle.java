@@ -556,4 +556,7 @@ public interface ActiveMQMessageBundle {
 
    @Message(id = 229264, value = "The ActiveMQBasicSecurityManager stores users and roles in the bindings journal, so it requires persistence-enabled to be true.")
    ActiveMQIllegalStateException basicSecurityManagerRequiresPersistence();
+
+   @Message(id = 229265, value = "Connection closed because the credentials for user {} could no longer be validated")
+   ActiveMQSecurityException connectionClosedOnReauthenticationFailure(String user);
 }

@@ -19,6 +19,8 @@ package org.apache.activemq.artemis.tests.integration.isolated.security;
 import javax.naming.Context;
 import javax.naming.NameClassPair;
 import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
+import javax.naming.directory.BasicAttributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import java.io.File;
@@ -30,6 +32,7 @@ import java.util.Set;
 
 import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
+import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.api.core.client.ActiveMQClient;
@@ -47,6 +50,7 @@ import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ActiveMQServers;
 import org.apache.activemq.artemis.spi.core.security.ActiveMQJAASSecurityManager;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
+import org.apache.activemq.artemis.utils.Wait;
 import org.apache.directory.server.annotations.CreateLdapServer;
 import org.apache.directory.server.annotations.CreateTransport;
 import org.apache.directory.server.core.annotations.ApplyLdifFiles;
@@ -135,6 +139,63 @@ public class LDAPSecurityTest extends AbstractLdapTestUnit {
       Assert.assertTrue(set.contains("prefNodeName=sysPrefRoot"));
 
       ctx.close();
+   }
+
+   private DirContext getContext() throws NamingException {
+      Hashtable<String, String> env = new Hashtable<>();
+      env.put(Context.PROVIDER_URL, "ldap://localhost:1024");
+      env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+      env.put(Context.SECURITY_AUTHENTICATION, "simple");
+      env.put(Context.SECURITY_PRINCIPAL, PRINCIPAL);
+      env.put(Context.SECURITY_CREDENTIALS, CREDENTIALS);
+      return new InitialDirContext(env);
+   }
+
+   /**
+    * ARTEMIS-6380. Once the broker can no longer validate the credentials of an established connection (e.g. because
+    * the password was changed in LDAP and the authentication cache entry expired) the connection is closed rather
+    * than left open.
+    */
+   @Test
+   public void testConnectionClosedWhenCredentialsCanNoLongerBeValidated() throws Exception {
+      final SimpleString ADDRESS = SimpleString.of("address");
+      final SimpleString QUEUE = SimpleString.of("queue");
+
+      Set<Role> roles = new HashSet<>();
+      roles.add(new Role("admins", true, true, true, true, true, true, true, true, true, true, false, false));
+      server.getConfiguration().putSecurityRoles("#", roles);
+      // ensure the authentication cache doesn't retain the result of the original authentication
+      server.getConfiguration().setSecurityInvalidationInterval(0);
+      server.start();
+      server.createQueue(QueueConfiguration.of(QUEUE).setAddress(ADDRESS).setRoutingType(RoutingType.ANYCAST));
+
+      ClientSessionFactory cf = locator.createSessionFactory();
+      ClientSession session = cf.createSession("first", "secret", false, true, true, false, 0);
+      ClientProducer producer = session.createProducer(ADDRESS);
+
+      // the credentials are still good at this point
+      producer.send(session.createMessage(true));
+
+      // change the password out from underneath the established connection
+      DirContext ctx = getContext();
+      BasicAttributes basicAttributes = new BasicAttributes();
+      basicAttributes.put("userPassword", "secret2");
+      ctx.modifyAttributes("uid=first,ou=system", DirContext.REPLACE_ATTRIBUTE, basicAttributes);
+      ctx.close();
+
+      // the send is refused with an authentication (not authorization) failure
+      try {
+         producer.send(session.createMessage(true));
+         Assert.fail("should throw exception here");
+      } catch (ActiveMQException e) {
+         Assert.assertTrue(e.getMessage().contains("229031"));
+      }
+
+      // ...and the connection is closed rather than left alive
+      Wait.assertEquals(0, () -> server.getConnectionCount(), 5000);
+      Wait.assertTrue(session::isClosed, 5000);
+
+      cf.close();
    }
 
    @Test

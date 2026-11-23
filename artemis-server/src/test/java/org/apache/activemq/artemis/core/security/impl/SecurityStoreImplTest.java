@@ -18,23 +18,30 @@ package org.apache.activemq.artemis.core.security.impl;
 
 import javax.security.auth.Subject;
 import java.security.Principal;
+import java.util.ArrayDeque;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
+import org.apache.activemq.artemis.api.core.ActiveMQException;
+import org.apache.activemq.artemis.api.core.ActiveMQExceptionType;
 import org.apache.activemq.artemis.api.core.ActiveMQSecurityException;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.management.CoreNotificationType;
 import org.apache.activemq.artemis.api.core.management.ManagementHelper;
 import org.apache.activemq.artemis.core.management.impl.ManagementRemotingConnection;
+import org.apache.activemq.artemis.core.remoting.server.RemotingService;
 import org.apache.activemq.artemis.core.security.CheckType;
 import org.apache.activemq.artemis.core.security.Role;
 import org.apache.activemq.artemis.core.security.SecurityAuth;
+import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.management.Notification;
 import org.apache.activemq.artemis.core.server.management.NotificationService;
 import org.apache.activemq.artemis.core.settings.impl.HierarchicalObjectRepository;
 import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
 import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
+import org.apache.activemq.artemis.spi.core.security.ActiveMQSecurityManager;
 import org.apache.activemq.artemis.spi.core.security.ActiveMQSecurityManager5;
 import org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal;
 import org.apache.activemq.artemis.spi.core.security.jaas.UserPrincipal;
@@ -55,6 +62,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class SecurityStoreImplTest {
+
+   private static final long DEFAULT_INVALIDATION_INTERVAL = 999;
 
    final ActiveMQSecurityManager5 permitAll = new ActiveMQSecurityManager5() {
       @Override
@@ -141,7 +150,7 @@ public class SecurityStoreImplTest {
    @Test
    public void zeroCacheSizeTest() throws Exception {
       final String user = RandomUtil.randomUUIDString();
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, "", null, null, 0, 0);
+      SecurityStoreImpl securityStore = getSecurityStore(permitAll, 0, 0);
       assertNull(securityStore.getAuthenticationCache());
       assertEquals(user, securityStore.authenticate(user, RandomUtil.randomUUIDString(), null));
       assertEquals(0, securityStore.getAuthenticationCacheSize());
@@ -155,7 +164,7 @@ public class SecurityStoreImplTest {
 
    @Test
    public void getCaller() throws Exception {
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, "", null, null, 0, 0);
+      SecurityStoreImpl securityStore = getSecurityStore(permitAll, 0, 0);
 
       assertNull(securityStore.getCaller(null, null));
       assertEquals("joe", securityStore.getCaller("joe", null));
@@ -178,16 +187,7 @@ public class SecurityStoreImplTest {
           ArgumentMatchers.anyString())).
           thenReturn(true);
 
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(
-          new HierarchicalObjectRepository<>(),
-          securityManager,
-          10000,
-          true,
-          "",
-          null,
-          null,
-          1000,
-          1000);
+      SecurityStoreImpl securityStore = getSecurityStore(securityManager, 10000, true, "", null, null, 1000, 1000, null);
 
       try {
          securityStore.authenticate(null, null, Mockito.mock(RemotingConnection.class), null);
@@ -218,7 +218,7 @@ public class SecurityStoreImplTest {
 
    @Test
    public void testWrongPrincipal() throws Exception {
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), wrongPrincipalSecurityManager, 999, true, "", null, null, 10, 0);
+      SecurityStoreImpl securityStore = getSecurityStore(wrongPrincipalSecurityManager, 10, 0);
       try {
          securityStore.authenticate(null, null, Mockito.mock(RemotingConnection.class), null);
          fail();
@@ -233,7 +233,7 @@ public class SecurityStoreImplTest {
    @Test
    public void testCacheAlgorithm() throws Exception {
       final String user = RandomUtil.randomUUIDString();
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, "", null, null, 0, 0);
+      SecurityStoreImpl securityStore = getSecurityStore(permitAll, 0, 0);
       try (AssertionLoggerHandler handler = new AssertionLoggerHandler()) {
          securityStore.createAuthenticationCacheKey(user, RandomUtil.randomUUIDString(), null);
          assertFalse(handler.findText("AMQ224163"));
@@ -242,7 +242,7 @@ public class SecurityStoreImplTest {
 
    @Test
    public void testHasPermissionSecurityDisabled() throws Exception {
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), denyAll, 999, false, "", null, null, 0, 0);
+      SecurityStoreImpl securityStore = getSecurityStore(denyAll, false, 0, 0);
       SecurityAuth session = getSecurityAuth("user", "pass");
       assertTrue(securityStore.hasPermission(SimpleString.of("test.address"), null, CheckType.SEND, session));
    }
@@ -251,7 +251,7 @@ public class SecurityStoreImplTest {
    public void testHasPermissionClusterUser() throws Exception {
       final String clusterUser = "clusterUser";
       final String clusterPassword = "clusterPassword";
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, clusterUser, clusterPassword, null, 0, 0);
+      SecurityStoreImpl securityStore = getSecurityStore(permitAll, clusterUser, clusterPassword, 0, 0);
       SecurityAuth session = getSecurityAuth(clusterUser, clusterPassword);
       assertTrue(securityStore.hasPermission(SimpleString.of("test.address"), null, CheckType.SEND, session));
    }
@@ -280,7 +280,7 @@ public class SecurityStoreImplTest {
          }
       };
 
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), nullSubjectManager, 999, true, "", null, null, 0, 0);
+      SecurityStoreImpl securityStore = getSecurityStore(nullSubjectManager, 0, 0);
 
       SecurityAuth session = getSecurityAuth("user", "pass");
 
@@ -294,8 +294,110 @@ public class SecurityStoreImplTest {
    }
 
    @Test
+   public void testReauthenticationFailureClosesConnection() throws Exception {
+      RemotingService remotingService = Mockito.mock(RemotingService.class);
+      Queue<Runnable> dispatched = new ArrayDeque<>();
+      SecurityStoreImpl securityStore = getSecurityStore(denyAll, 0, 0, getServer(remotingService, dispatched));
+
+      RemotingConnection connection = Mockito.mock(RemotingConnection.class);
+      Mockito.when(connection.isAuthenticated()).thenReturn(true);
+
+      try {
+         securityStore.hasPermission(SimpleString.of("test.address"), null, CheckType.SEND, getSecurityAuth("user", "pass", connection));
+         fail("Should throw authentication exception");
+      } catch (ActiveMQSecurityException expected) {
+         // expected
+      }
+
+      runDispatched(dispatched);
+
+      ArgumentCaptor<ActiveMQException> captor = ArgumentCaptor.forClass(ActiveMQException.class);
+      Mockito.verify(connection).fail(captor.capture());
+      assertEquals(ActiveMQExceptionType.SECURITY_EXCEPTION, captor.getValue().getType(), "the client should see this as a security failure");
+      Mockito.verify(remotingService).removeConnection(ArgumentMatchers.any());
+   }
+
+   /**
+    * The close must be handed off to another thread rather than performed inline. The connection's event loop is still
+    * processing the packet which triggered the failure, so a close executed inline would destroy the connection before
+    * the exception could be written back to the client. Dispatching it means the event loop finishes writing the
+    * exception first.
+    */
+   @Test
+   public void testReauthenticationFailureDispatchesConnectionCloseRatherThanClosingInline() throws Exception {
+      RemotingService remotingService = Mockito.mock(RemotingService.class);
+      Queue<Runnable> dispatched = new ArrayDeque<>();
+      SecurityStoreImpl securityStore = getSecurityStore(denyAll, 0, 0, getServer(remotingService, dispatched));
+
+      RemotingConnection connection = Mockito.mock(RemotingConnection.class);
+      Mockito.when(connection.isAuthenticated()).thenReturn(true);
+
+      try {
+         securityStore.hasPermission(SimpleString.of("test.address"), null, CheckType.SEND, getSecurityAuth("user", "pass", connection));
+         fail("Should throw authentication exception");
+      } catch (ActiveMQSecurityException expected) {
+         // expected
+      }
+
+      // the exception has already been thrown, so the close must still be pending rather than already applied
+      assertEquals(1, dispatched.size(), "the connection close should be dispatched to another thread");
+      Mockito.verify(connection, Mockito.never()).fail(ArgumentMatchers.any());
+      Mockito.verify(remotingService, Mockito.never()).removeConnection(ArgumentMatchers.any());
+
+      runDispatched(dispatched);
+
+      Mockito.verify(connection).fail(ArgumentMatchers.any());
+      Mockito.verify(remotingService).removeConnection(ArgumentMatchers.any());
+   }
+
+   @Test
+   public void testAuthenticationFailureDoesNotCloseUnauthenticatedConnection() throws Exception {
+      RemotingService remotingService = Mockito.mock(RemotingService.class);
+      Queue<Runnable> dispatched = new ArrayDeque<>();
+      SecurityStoreImpl securityStore = getSecurityStore(denyAll, 0, 0, getServer(remotingService, dispatched));
+
+      RemotingConnection connection = Mockito.mock(RemotingConnection.class);
+      Mockito.when(connection.isAuthenticated()).thenReturn(false);
+
+      try {
+         securityStore.authenticate("user", "pass", connection);
+         fail("Should throw authentication exception");
+      } catch (ActiveMQSecurityException expected) {
+         // expected
+      }
+
+      runDispatched(dispatched);
+
+      // the connection was never authenticated in the first place so the protocol layer owns tearing it down
+      Mockito.verify(connection, Mockito.never()).fail(ArgumentMatchers.any());
+      Mockito.verify(remotingService, Mockito.never()).removeConnection(ArgumentMatchers.any());
+   }
+
+   @Test
+   public void testReauthenticationFailureDoesNotCloseManagementConnection() throws Exception {
+      RemotingService remotingService = Mockito.mock(RemotingService.class);
+      Queue<Runnable> dispatched = new ArrayDeque<>();
+      SecurityStoreImpl securityStore = getSecurityStore(denyAll, 0, 0, getServer(remotingService, dispatched));
+
+      ManagementRemotingConnection connection = Mockito.mock(ManagementRemotingConnection.class);
+      Mockito.when(connection.isAuthenticated()).thenReturn(true);
+
+      try {
+         securityStore.hasPermission(SimpleString.of("test.address"), null, CheckType.SEND, getSecurityAuth("user", "pass", connection));
+         fail("Should throw authentication exception");
+      } catch (ActiveMQSecurityException expected) {
+         // expected
+      }
+
+      runDispatched(dispatched);
+
+      Mockito.verify(connection, Mockito.never()).fail(ArgumentMatchers.any());
+      Mockito.verify(remotingService, Mockito.never()).removeConnection(ArgumentMatchers.any());
+   }
+
+   @Test
    public void testHasPermissionAuthorized() throws Exception {
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, "", null, null, 10, 10);
+      SecurityStoreImpl securityStore = getSecurityStore(permitAll, 10, 10);
 
       final String user = "authorizedUser";
       final String password = "password";
@@ -330,7 +432,7 @@ public class SecurityStoreImplTest {
          }
       };
 
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), denyingManager, 999, true, "", null, null, 10, 10);
+      SecurityStoreImpl securityStore = getSecurityStore(denyingManager, 10, 10);
 
       final String user = "unauthorizedUser";
       final String password = "password";
@@ -343,7 +445,7 @@ public class SecurityStoreImplTest {
 
    @Test
    public void testHasPermissionUsesCache() throws Exception {
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, "", null, null, 10, 10);
+      SecurityStoreImpl securityStore = getSecurityStore(permitAll, 10, 10);
 
       final String user = "cachedUser";
       final String password = "password";
@@ -386,7 +488,7 @@ public class SecurityStoreImplTest {
          }
       };
 
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), denyingManager, 999, true, "", null, null, 10, 10);
+      SecurityStoreImpl securityStore = getSecurityStore(denyingManager, 10, 10);
 
       final String user = "deniedUser";
       securityStore.authenticate(user, "password", Mockito.mock(RemotingConnection.class));
@@ -401,7 +503,7 @@ public class SecurityStoreImplTest {
 
    @Test
    public void testCheckSecurityDisabled() throws Exception {
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, false, "", null, null, 0, 0);
+      SecurityStoreImpl securityStore = getSecurityStore(permitAll, false, 0, 0);
 
       SecurityAuth session = getSecurityAuth("user", "password");
 
@@ -413,7 +515,7 @@ public class SecurityStoreImplTest {
 
    @Test
    public void testCheckAuthorizedIncrementsSuccessCounter() throws Exception {
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, "", null, null, 10, 10);
+      SecurityStoreImpl securityStore = getSecurityStore(permitAll, 10, 10);
 
       final String user = "authorizedUser";
       final String password = "password";
@@ -451,7 +553,7 @@ public class SecurityStoreImplTest {
          }
       };
 
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), denyingManager, 999, true, "", null, null, 10, 10);
+      SecurityStoreImpl securityStore = getSecurityStore(denyingManager, 10, 10);
 
       final String user = "deniedUser";
       final String password = "password";
@@ -499,7 +601,7 @@ public class SecurityStoreImplTest {
          }
       };
 
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), denyingManager, 999, true, "", null, null, 10, 10);
+      SecurityStoreImpl securityStore = getSecurityStore(denyingManager, 10, 10);
 
       final String user = "deniedUser";
       final String password = "password";
@@ -526,7 +628,7 @@ public class SecurityStoreImplTest {
    public void testCheckDelegatesClusterUserBypass() throws Exception {
       final String clusterUser = "clusterUser";
       final String clusterPassword = "clusterPassword";
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, clusterUser, clusterPassword, null, 0, 0);
+      SecurityStoreImpl securityStore = getSecurityStore(permitAll, clusterUser, clusterPassword, 0, 0);
 
       SecurityAuth session = getSecurityAuth(clusterUser, clusterPassword);
 
@@ -537,7 +639,7 @@ public class SecurityStoreImplTest {
 
    @Test
    public void testCheckCachesSuccessfulAuthorization() throws Exception {
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, "", null, null, 10, 10);
+      SecurityStoreImpl securityStore = getSecurityStore(permitAll, 10, 10);
 
       final String user = "cachedUser";
       final String password = "password";
@@ -581,7 +683,7 @@ public class SecurityStoreImplTest {
       };
 
       NotificationService notificationService = Mockito.mock(NotificationService.class);
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), denyingManager, 999, true, "", null, notificationService, 10, 10);
+      SecurityStoreImpl securityStore = getSecurityStore(denyingManager, notificationService, 10, 10);
 
       final String user = "deniedUser";
       final String password = "password";
@@ -634,7 +736,7 @@ public class SecurityStoreImplTest {
       };
 
       NotificationService notificationService = Mockito.mock(NotificationService.class);
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), denyingManager, 999, true, "", null, notificationService, 10, 10);
+      SecurityStoreImpl securityStore = getSecurityStore(denyingManager, notificationService, 10, 10);
 
       final String user = "deniedUser";
       final String password = "password";
@@ -685,7 +787,7 @@ public class SecurityStoreImplTest {
       };
 
       // notificationService is null
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), denyingManager, 999, true, "", null, null, 10, 10);
+      SecurityStoreImpl securityStore = getSecurityStore(denyingManager, 10, 10);
 
       final String user = "deniedUser";
       final String password = "password";
@@ -733,7 +835,7 @@ public class SecurityStoreImplTest {
       };
 
       NotificationService notificationService = Mockito.mock(NotificationService.class);
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), denyingManager, 999, true, "", null, notificationService, 10, 10);
+      SecurityStoreImpl securityStore = getSecurityStore(denyingManager, notificationService, 10, 10);
 
       final String user = "deniedUser";
       final String password = "password";
@@ -751,7 +853,7 @@ public class SecurityStoreImplTest {
    @Test
    public void testCheckNoNotificationOnSuccess() throws Exception {
       NotificationService notificationService = Mockito.mock(NotificationService.class);
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, "", null, notificationService, 10, 10);
+      SecurityStoreImpl securityStore = getSecurityStore(permitAll, notificationService, 10, 10);
 
       final String user = "authorizedUser";
       final String password = "password";
@@ -768,7 +870,7 @@ public class SecurityStoreImplTest {
 
    @Test
    public void testAuthenticateWithDefaultClusterCredentialsFails() throws Exception {
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, getDefaultClusterUser(), getDefaultClusterPassword(), null, 10, 10);
+      SecurityStoreImpl securityStore = getSecurityStore(permitAll, getDefaultClusterUser(), getDefaultClusterPassword(), 10, 10);
 
       try {
          securityStore.authenticate(getDefaultClusterUser(), getDefaultClusterPassword(), Mockito.mock(RemotingConnection.class), null);
@@ -782,7 +884,7 @@ public class SecurityStoreImplTest {
    public void testAuthenticateWithCorrectClusterCredentialsSucceeds() throws Exception {
       final String clusterUser = "customClusterUser";
       final String clusterPassword = "customClusterPassword";
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, clusterUser, clusterPassword, null, 10, 10);
+      SecurityStoreImpl securityStore = getSecurityStore(permitAll, clusterUser, clusterPassword, 10, 10);
 
       String result = securityStore.authenticate(clusterUser, clusterPassword, Mockito.mock(RemotingConnection.class), null);
       assertEquals(clusterUser, result);
@@ -793,7 +895,7 @@ public class SecurityStoreImplTest {
    public void testAuthenticateWithCorrectClusterUserButWrongPasswordFails() throws Exception {
       final String clusterUser = "customClusterUser";
       final String clusterPassword = "customClusterPassword";
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, clusterUser, clusterPassword, null, 10, 10);
+      SecurityStoreImpl securityStore = getSecurityStore(permitAll, clusterUser, clusterPassword, 10, 10);
 
       try {
          securityStore.authenticate(clusterUser, "wrongPassword", Mockito.mock(RemotingConnection.class), null);
@@ -807,7 +909,7 @@ public class SecurityStoreImplTest {
    public void testAuthenticateNonClusterUserFallsThrough() throws Exception {
       final String clusterUser = "customClusterUser";
       final String clusterPassword = "customClusterPassword";
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, clusterUser, clusterPassword, null, 10, 10);
+      SecurityStoreImpl securityStore = getSecurityStore(permitAll, clusterUser, clusterPassword, 10, 10);
 
       String normalUser = "normalUser";
       String normalPassword = "normalPassword";
@@ -820,7 +922,7 @@ public class SecurityStoreImplTest {
    public void testClusterUserWithWrongPasswordDenied() throws Exception {
       final String clusterUser = "customClusterUser";
       final String clusterPassword = "customClusterPassword";
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, clusterUser, clusterPassword, null, 10, 10);
+      SecurityStoreImpl securityStore = getSecurityStore(permitAll, clusterUser, clusterPassword, 10, 10);
 
       SecurityAuth session = getSecurityAuth(clusterUser, "wrongPassword");
 
@@ -832,7 +934,7 @@ public class SecurityStoreImplTest {
 
    @Test
    public void testClusterUserWithDefaultCredentialsDenied() throws Exception {
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, getDefaultClusterUser(), getDefaultClusterPassword(), null, 10, 10);
+      SecurityStoreImpl securityStore = getSecurityStore(permitAll, getDefaultClusterUser(), getDefaultClusterPassword(), 10, 10);
 
       SecurityAuth session = getSecurityAuth(ActiveMQDefaultConfiguration.getDefaultClusterUser(),
                                              ActiveMQDefaultConfiguration.getDefaultClusterPassword());
@@ -847,7 +949,7 @@ public class SecurityStoreImplTest {
    public void testCheckWithClusterUserAllowedPermission() throws Exception {
       final String clusterUser = "customClusterUser";
       final String clusterPassword = "customClusterPassword";
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, clusterUser, clusterPassword, null, 10, 10);
+      SecurityStoreImpl securityStore = getSecurityStore(permitAll, clusterUser, clusterPassword, 10, 10);
 
       SecurityAuth session = getSecurityAuth(clusterUser, clusterPassword);
 
@@ -862,7 +964,7 @@ public class SecurityStoreImplTest {
 
    @Test
    public void testCheckWithDefaultClusterCredentialsThrowsException() throws Exception {
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, getDefaultClusterUser(), getDefaultClusterPassword(), null, 10, 10);
+      SecurityStoreImpl securityStore = getSecurityStore(permitAll, getDefaultClusterUser(), getDefaultClusterPassword(), 10, 10);
 
       SecurityAuth session = getSecurityAuth(ActiveMQDefaultConfiguration.getDefaultClusterUser(),
                                              ActiveMQDefaultConfiguration.getDefaultClusterPassword());
@@ -877,7 +979,7 @@ public class SecurityStoreImplTest {
 
    @Test
    public void testAuthenticateCallsSetAuthenticatedOnConnection() throws Exception {
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, "", null, null, 10, 10);
+      SecurityStoreImpl securityStore = getSecurityStore(permitAll, 10, 10);
       RemotingConnection connection = Mockito.mock(RemotingConnection.class);
 
       securityStore.authenticate("user", "password", connection, null);
@@ -889,7 +991,7 @@ public class SecurityStoreImplTest {
    public void testClusterAuthenticateCallsSetAuthenticatedOnConnection() throws Exception {
       final String clusterUser = "clusterUser";
       final String clusterPassword = "clusterPassword";
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), permitAll, 999, true, clusterUser, clusterPassword, null, 10, 10);
+      SecurityStoreImpl securityStore = getSecurityStore(permitAll, clusterUser, clusterPassword, 10, 10);
       RemotingConnection connection = Mockito.mock(RemotingConnection.class);
 
       securityStore.authenticate(clusterUser, clusterPassword, connection, null);
@@ -899,7 +1001,7 @@ public class SecurityStoreImplTest {
 
    @Test
    public void testAuthenticateDoesNotCallSetAuthenticatedOnFailure() throws Exception {
-      SecurityStoreImpl securityStore = new SecurityStoreImpl(new HierarchicalObjectRepository<>(), denyAll, 999, true, "", null, null, 10, 10);
+      SecurityStoreImpl securityStore = getSecurityStore(denyAll, 10, 10);
       RemotingConnection connection = Mockito.mock(RemotingConnection.class);
 
       try {
@@ -912,11 +1014,83 @@ public class SecurityStoreImplTest {
       Mockito.verify(connection, Mockito.never()).setAuthenticated();
    }
 
+   private static SecurityStoreImpl getSecurityStore(ActiveMQSecurityManager securityManager,
+                                                     long authenticationCacheSize,
+                                                     long authorizationCacheSize) {
+      return getSecurityStore(securityManager, DEFAULT_INVALIDATION_INTERVAL, true, "", null, null, authenticationCacheSize, authorizationCacheSize, null);
+   }
+
+   private static SecurityStoreImpl getSecurityStore(ActiveMQSecurityManager securityManager,
+                                                     long authenticationCacheSize,
+                                                     long authorizationCacheSize,
+                                                     ActiveMQServer server) {
+      return getSecurityStore(securityManager, DEFAULT_INVALIDATION_INTERVAL, true, "", null, null, authenticationCacheSize, authorizationCacheSize, server);
+   }
+
+   private static SecurityStoreImpl getSecurityStore(ActiveMQSecurityManager securityManager,
+                                                     boolean securityEnabled,
+                                                     long authenticationCacheSize,
+                                                     long authorizationCacheSize) {
+      return getSecurityStore(securityManager, DEFAULT_INVALIDATION_INTERVAL, securityEnabled, "", null, null, authenticationCacheSize, authorizationCacheSize, null);
+   }
+
+   private static SecurityStoreImpl getSecurityStore(ActiveMQSecurityManager securityManager,
+                                                     String managementClusterUser,
+                                                     String managementClusterPassword,
+                                                     long authenticationCacheSize,
+                                                     long authorizationCacheSize) {
+      return getSecurityStore(securityManager, DEFAULT_INVALIDATION_INTERVAL, true, managementClusterUser, managementClusterPassword, null, authenticationCacheSize, authorizationCacheSize, null);
+   }
+
+   private static SecurityStoreImpl getSecurityStore(ActiveMQSecurityManager securityManager,
+                                                     NotificationService notificationService,
+                                                     long authenticationCacheSize,
+                                                     long authorizationCacheSize) {
+      return getSecurityStore(securityManager, DEFAULT_INVALIDATION_INTERVAL, true, "", null, notificationService, authenticationCacheSize, authorizationCacheSize, null);
+   }
+
+   private static SecurityStoreImpl getSecurityStore(ActiveMQSecurityManager securityManager,
+                                                     long invalidationInterval,
+                                                     boolean securityEnabled,
+                                                     String managementClusterUser,
+                                                     String managementClusterPassword,
+                                                     NotificationService notificationService,
+                                                     long authenticationCacheSize,
+                                                     long authorizationCacheSize,
+                                                     ActiveMQServer server) {
+      return new SecurityStoreImpl(new HierarchicalObjectRepository<>(), securityManager, invalidationInterval, securityEnabled, managementClusterUser, managementClusterPassword, notificationService, authenticationCacheSize, authorizationCacheSize, server);
+   }
+
    private static SecurityAuth getSecurityAuth(String user, String password) {
+      return getSecurityAuth(user, password, Mockito.mock(RemotingConnection.class));
+   }
+
+   private static SecurityAuth getSecurityAuth(String user, String password, RemotingConnection connection) {
       SecurityAuth session = Mockito.mock(SecurityAuth.class);
       Mockito.when(session.getUsername()).thenReturn(user);
       Mockito.when(session.getPassword()).thenReturn(password);
-      Mockito.when(session.getRemotingConnection()).thenReturn(Mockito.mock(RemotingConnection.class));
+      Mockito.when(session.getRemotingConnection()).thenReturn(connection);
       return session;
+   }
+
+   /**
+    * A server whose thread pool collects tasks instead of running them so that dispatching the connection close can be
+    * observed separately from executing it. Call {@link #runDispatched(Queue)} to apply whatever was dispatched.
+    */
+   private static ActiveMQServer getServer(RemotingService remotingService, Queue<Runnable> dispatched) {
+      ActiveMQServer server = Mockito.mock(ActiveMQServer.class);
+      Mockito.when(server.getThreadPool()).thenReturn(dispatched::add);
+      Mockito.when(server.getRemotingService()).thenReturn(remotingService);
+      return server;
+   }
+
+   /**
+    * Run whatever the broker dispatched to its thread pool so the effects are observable. Tests which expect nothing
+    * to happen must call this too, otherwise a wrongly dispatched close would go unnoticed.
+    */
+   private static void runDispatched(Queue<Runnable> dispatched) {
+      while (!dispatched.isEmpty()) {
+         dispatched.poll().run();
+      }
    }
 }
