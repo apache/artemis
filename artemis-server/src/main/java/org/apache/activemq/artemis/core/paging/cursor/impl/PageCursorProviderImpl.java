@@ -476,7 +476,7 @@ public class PageCursorProviderImpl implements PageCursorProvider {
 
       boolean complete = true;
 
-      if (!pagingStore.checkPageFileExists(minPage)) {
+      if (minPage != pagingStore.getCurrentWritingPage() && !pagingStore.checkPageFileExists(minPage)) {
          logger.trace("store {} did not have an existing file, considering it a complete file then", pagingStore.getAddress());
          return true;
       }
