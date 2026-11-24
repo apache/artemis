@@ -75,19 +75,21 @@ public class MQTTSession {
 
    private boolean usingServerKeepAlive = false;
 
-   private OperationContext sessionContext;
+   private final OperationContext inboundContext;
+
+   private final OperationContext outboundContext;
 
    public MQTTSession(MQTTProtocolHandler protocolHandler,
                       MQTTConnection connection,
                       MQTTProtocolManager protocolManager,
-                      WildcardConfiguration wildcardConfiguration,
-                      OperationContext sessionContext) {
+                      WildcardConfiguration wildcardConfiguration) {
       this.protocolHandler = protocolHandler;
       this.protocolManager = protocolManager;
       this.stateManager = protocolManager.getStateManager();
       this.wildcardConfiguration = wildcardConfiguration;
       this.connection = connection;
-      this.sessionContext = sessionContext;
+      this.inboundContext = protocolHandler.getServer().newOperationContext();
+      this.outboundContext = protocolHandler.getServer().newOperationContext();
 
       mqttConnectionManager = new MQTTConnectionManager(this);
       mqttPublishManager = new MQTTPublishManager(this, protocolManager.isCloseMqttConnectionOnPublishAuthorizationFailure());
@@ -266,8 +268,12 @@ public class MQTTSession {
       this.wildcardConfiguration = wildcardConfiguration;
    }
 
-   public OperationContext getSessionContext() {
-      return sessionContext;
+   public OperationContext getInboundContext() {
+      return inboundContext;
+   }
+
+   public OperationContext getOutboundContext() {
+      return outboundContext;
    }
 
    public CoreMessageObjectPools getCoreMessageObjectPools() {
