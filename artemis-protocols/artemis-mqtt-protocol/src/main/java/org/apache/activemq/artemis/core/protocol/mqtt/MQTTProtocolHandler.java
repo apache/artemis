@@ -97,7 +97,7 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
    void setConnection(MQTTConnection connection, ConnectionEntry entry) {
       this.connectionEntry = entry;
       this.connection = connection;
-      this.session = new MQTTSession(this, connection, protocolManager, server.getConfiguration().getWildcardConfiguration(), server.newOperationContext());
+      this.session = new MQTTSession(this, connection, protocolManager, server.getConfiguration().getWildcardConfiguration());
    }
 
    void stop() {
@@ -163,18 +163,26 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
       }
    }
 
-   private OperationContext recoverContext() {
+   private OperationContext recoverInboundContext() {
+      return swapContext(session.getInboundContext());
+   }
+
+   OperationContext recoverOutboundContext() {
+      return swapContext(session.getOutboundContext());
+   }
+
+   private OperationContext swapContext(OperationContext context) {
       OperationContext oldContext = server.getStorageManager().getContext();
-      server.getStorageManager().setContext(session.getSessionContext());
+      server.getStorageManager().setContext(context);
       return oldContext;
    }
 
-   private void resetContext(OperationContext oldContext) {
+   void resetContext(OperationContext oldContext) {
       server.getStorageManager().setContext(oldContext);
    }
 
    public void act(MqttMessage message) {
-      OperationContext oldContext = recoverContext();
+      OperationContext oldContext = recoverInboundContext();
       try {
          switch (message.fixedHeader().messageType()) {
             case AUTH:

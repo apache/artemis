@@ -19,6 +19,7 @@ package org.apache.activemq.artemis.core.protocol.mqtt;
 import java.lang.invoke.MethodHandles;
 
 import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.core.persistence.OperationContext;
 import org.apache.activemq.artemis.core.persistence.impl.journal.ActiveMQIDGeneratorStoppedException;
 import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.server.ServerConsumer;
@@ -55,6 +56,7 @@ public class MQTTSessionCallback implements SessionCallback {
    public int sendMessage(MessageReference ref,
                           ServerConsumer consumer,
                           int deliveryCount) {
+      OperationContext oldContext = session.getProtocolHandler().recoverOutboundContext();
       try {
          session.getMqttPublishManager().publishToClient(ref.getMessage().toCore(), consumer);
       } catch (ActiveMQIDGeneratorStoppedException ignored) {
@@ -62,6 +64,8 @@ public class MQTTSessionCallback implements SessionCallback {
       } catch (Exception e) {
          MQTTLogger.LOGGER.unableToSendMessage(session.getState().getClientId(), ref, e);
          rollbackCredits(consumer, ref);
+      } finally {
+         session.getProtocolHandler().resetContext(oldContext);
       }
       return 1;
    }

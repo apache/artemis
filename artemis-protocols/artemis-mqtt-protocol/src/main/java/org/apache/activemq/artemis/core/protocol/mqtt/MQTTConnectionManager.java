@@ -185,7 +185,7 @@ public class MQTTConnectionManager {
                                                          null,
                                                          session.getSessionCallback(),
                                                          MQTTUtil.SESSION_AUTO_CREATE_QUEUE,
-                                                         session.getSessionContext(),
+                                                         session.getInboundContext(),
                                                          session.getProtocolManager().getPrefixes(),
                                                          session.getProtocolManager().getSecurityDomain(),
                                                          validatedUser,
