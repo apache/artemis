@@ -37,6 +37,7 @@ import java.util.List;
 import org.apache.activemq.artemis.cli.commands.ActionContext;
 import org.apache.activemq.artemis.cli.commands.tools.RecoverMessages;
 import org.apache.activemq.artemis.core.config.Configuration;
+import org.apache.activemq.artemis.core.paging.PagingStore;
 import org.apache.activemq.artemis.core.server.JournalType;
 import org.apache.activemq.artemis.nativo.jlibaio.LibaioContext;
 import org.apache.activemq.artemis.tests.extensions.parameterized.ParameterizedTestExtension;
@@ -115,6 +116,25 @@ public class RecoverTest extends JMSTestBase {
       return true;
    }
 
+   /**
+    * {@return the total number of bytes still held by the page files of the given store}
+    */
+   private static long pagedBytes(PagingStore pagingStore) {
+      File folder = pagingStore.getFolder();
+      if (folder == null) {
+         return 0;
+      }
+      File[] pageFiles = folder.listFiles((dir, name) -> name.endsWith(".page"));
+      if (pageFiles == null) {
+         return 0;
+      }
+      long total = 0;
+      for (File pageFile : pageFiles) {
+         total += pageFile.length();
+      }
+      return total;
+   }
+
    @TestTemplate
    public void testRecover() throws Exception {
 
@@ -163,6 +183,9 @@ public class RecoverTest extends JMSTestBase {
 
       // need to wait no paging, otherwise an eventual page cleanup would remove large message bodies from the recovery
       Wait.assertFalse(serverQueue.getPagingStore()::isPaging);
+
+      // wait for the page files to be really gone
+      Wait.assertEquals(0L, () -> pagedBytes(serverQueue.getPagingStore()));
 
       server.stop();
 
