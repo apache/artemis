@@ -423,6 +423,12 @@ public class MaxMessagesPagingTest extends ActiveMQTestBase {
 
          consumer.close();
          producer.close();
+
+         // The size/message counters used by the FAIL policy are decremented asynchronously, after the
+         // acknowledgements sent by the consumer are processed on the server.
+         Wait.assertEquals(0L, queue::getMessageCount);
+         Wait.assertEquals(0L, () -> queue.getPagingStore().getAddressElements());
+         Wait.assertEquals(0L, () -> server.getPagingManager().getGlobalMessages());
       }
 
       conn.close();
