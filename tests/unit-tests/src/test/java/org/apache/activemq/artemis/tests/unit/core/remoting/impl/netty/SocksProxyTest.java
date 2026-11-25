@@ -36,6 +36,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -60,12 +61,13 @@ import org.junit.jupiter.api.Test;
 
 public class SocksProxyTest extends ActiveMQTestBase {
 
-   private static final int SOCKS_PORT = 1080;
+   private int socksPort;
 
    private ExecutorService closeExecutor;
    private ExecutorService threadPool;
    private ScheduledExecutorService scheduledThreadPool;
 
+   private Channel socksProxyChannel;
    private NioEventLoopGroup bossGroup;
    private NioEventLoopGroup workerGroup;
 
@@ -105,6 +107,7 @@ public class SocksProxyTest extends ActiveMQTestBase {
       params.put(TransportConstants.HOST_PROP_NAME, address.getHostAddress());
       params.put(TransportConstants.SOCKS_ENABLED_PROP_NAME, true);
       params.put(TransportConstants.SOCKS_HOST_PROP_NAME, "localhost");
+      params.put(TransportConstants.SOCKS_PORT_PROP_NAME, socksPort);
 
       ClientConnectionLifeCycleListener listener = new ClientConnectionLifeCycleListener() {
          @Override
@@ -168,6 +171,7 @@ public class SocksProxyTest extends ActiveMQTestBase {
       params.put(TransportConstants.HOST_PROP_NAME, "localhost");
       params.put(TransportConstants.SOCKS_ENABLED_PROP_NAME, true);
       params.put(TransportConstants.SOCKS_HOST_PROP_NAME, "localhost");
+      params.put(TransportConstants.SOCKS_PORT_PROP_NAME, socksPort);
 
       ClientConnectionLifeCycleListener listener = new ClientConnectionLifeCycleListener() {
          @Override
@@ -210,7 +214,7 @@ public class SocksProxyTest extends ActiveMQTestBase {
       params.put(TransportConstants.HOST_PROP_NAME, "only-resolvable-on-proxy");
       params.put(TransportConstants.SOCKS_ENABLED_PROP_NAME, true);
       params.put(TransportConstants.SOCKS_HOST_PROP_NAME, "localhost");
-      params.put(TransportConstants.SOCKS_PORT_PROP_NAME, SOCKS_PORT);
+      params.put(TransportConstants.SOCKS_PORT_PROP_NAME, socksPort);
       params.put(TransportConstants.SOCKS_REMOTE_DNS_PROP_NAME, true);
 
       ClientConnectionLifeCycleListener listener = new ClientConnectionLifeCycleListener() {
@@ -278,11 +282,23 @@ public class SocksProxyTest extends ActiveMQTestBase {
          }
       });
 
-      b.bind(SOCKS_PORT).sync();
+      // bind to an ephemeral port to avoid potential conflicts
+      socksProxyChannel = b.bind(0).sync().channel();
+      socksPort = ((InetSocketAddress) socksProxyChannel.localAddress()).getPort();
    }
 
-   private void stopSocksProxy() {
-      bossGroup.shutdownGracefully(0, 0, TimeUnit.SECONDS);
-      workerGroup.shutdownGracefully(0, 0, TimeUnit.SECONDS);
+   private void stopSocksProxy() throws Exception {
+      if (socksProxyChannel != null) {
+         socksProxyChannel.close().sync();
+         socksProxyChannel = null;
+      }
+      if (bossGroup != null) {
+         bossGroup.shutdownGracefully(0, 0, TimeUnit.SECONDS).sync();
+         bossGroup = null;
+      }
+      if (workerGroup != null) {
+         workerGroup.shutdownGracefully(0, 0, TimeUnit.SECONDS).sync();
+         workerGroup = null;
+      }
    }
 }
