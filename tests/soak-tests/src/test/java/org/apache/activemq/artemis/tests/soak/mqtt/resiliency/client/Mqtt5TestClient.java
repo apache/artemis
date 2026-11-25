@@ -19,6 +19,7 @@ package org.apache.activemq.artemis.tests.soak.mqtt.resiliency.client;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import com.hivemq.client.mqtt.MqttClientState;
 import com.hivemq.client.mqtt.MqttGlobalPublishFilter;
 import com.hivemq.client.mqtt.datatypes.MqttQos;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5BlockingClient;
@@ -77,6 +78,11 @@ public class Mqtt5TestClient implements MqttTestClient {
    @Override
    public boolean isConnected() {
       return client.getConfig().getState().isConnected();
+   }
+
+   @Override
+   public boolean isDisconnected() {
+      return client.getConfig().getState() == MqttClientState.DISCONNECTED;
    }
 
    private static void throwIfError(Optional<Throwable> error) throws Exception {

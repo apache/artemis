@@ -101,7 +101,16 @@ public class QoS2ResiliencySoakTestSupport extends ActiveMQTestBase {
       // disconnect all clients first, while the broker and RxJava schedulers are still alive, so
       // auto-reconnect clients don't linger in a reconnect loop and latch onto the next test's broker
       for (MqttTestClient client : createdClients) {
+         if (client.isDisconnected()) {
+            continue;
+         }
          try {
+            /*
+             * The HiveMQ client rejects disconnect() while an automatic reconnect is in flight and keeps on
+             * reconnecting (which leaks its Netty event loop threads), so wait for the client to finish connecting
+             * before disconnecting it.
+             */
+            Wait.waitFor(client::isConnected, 5_000, 100);
             client.disconnect();
          } catch (Exception ignored) {
          }
@@ -172,17 +181,23 @@ public class QoS2ResiliencySoakTestSupport extends ActiveMQTestBase {
       Wait.waitFor(client::isConnected, 30_000, 500);
    }
 
+   /**
+    * Discard the client's broker-side session by reconnecting with a clean session and then disconnecting for good.
+    * <p>
+    * Clients created with automatic reconnect may still be waiting to reconnect (e.g. right after a broker restart) in
+    * which case {@link MqttTestClient#isConnected()} is {@code false} but the client isn't actually disconnected
+    * either, so the HiveMQ client rejects a new connect with "MQTT client is already connected or connecting".
+    * Therefore, wait for the client to settle into a connected state first.
+    * <p>
+    * Any failure here must be fatal. Swallowing it would leave the broker-side session state in place and the ensuing
+    * assertions about that state would fail with a confusing error far away from the actual problem.
+    */
    protected static void cleanDisconnect(MqttTestClient client) {
       logger.info("cleanDisconnect for {}", client.getClientId());
-      try {
-         if (client.isConnected()) {
-            client.disconnect();
-         }
-         client.connectClean();
-         client.disconnect();
-      } catch (Exception e) {
-         logger.debug("Error disconnecting: {}", e.getMessage());
-      }
+      Wait.assertTrue(() -> "Client " + client.getClientId() + " never (re)connected so its session couldn't be cleaned", client::isConnected, 30_000, 100);
+      client.disconnect();
+      client.connectClean();
+      client.disconnect();
    }
 
    protected MQTTProtocolManager getProtocolManager() {

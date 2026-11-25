@@ -61,4 +61,9 @@ public interface MqttTestClient {
    String getClientId();
 
    boolean isConnected();
+
+   /**
+    * {@return whether the client is fully disconnected, i.e. neither connected nor waiting to reconnect}
+    */
+   boolean isDisconnected();
 }
