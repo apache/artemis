@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -71,8 +72,8 @@ public class InstallAbstract extends InputAbstract {
 
    // "calculated" during run
    protected boolean IS_WINDOWS;
-   // "calculated" during run
    protected boolean IS_NIX;
+   protected boolean IS_LINUX;
 
    protected String getJavaOptions() {
       StringBuilder builder = new StringBuilder();
@@ -143,8 +144,11 @@ public class InstallAbstract extends InputAbstract {
    public Object run(ActionContext context) throws Exception {
       IS_NIX = false;
       IS_WINDOWS = false;
+      IS_LINUX = false;
+      final String osName = System.getProperty("os.name").toLowerCase().trim();
       if (nix) {
          IS_NIX = true;
+         IS_LINUX = osName.startsWith("linux");
          return null;
       }
       if (windows) {
@@ -155,12 +159,13 @@ public class InstallAbstract extends InputAbstract {
          IS_NIX = true;
          return null;
       }
-      if (System.getProperty("os.name").toLowerCase().trim().startsWith("win")) {
+      if (osName.startsWith("win")) {
          IS_WINDOWS = true;
          return null;
       }
       // Fallback to *nix
       IS_NIX = true;
+      IS_LINUX = osName.startsWith("linux");
       return null;
    }
 
@@ -208,6 +213,36 @@ public class InstallAbstract extends InputAbstract {
       try (FileOutputStream fout = new FileOutputStream(target)) {
          copy(in, fout);
       }
+   }
+
+   protected void writeSystemdService(File target, boolean force) throws Exception {
+      final String instancePath = directory.getCanonicalPath();
+      final Map<String, String> filters = new LinkedHashMap<>();
+
+      // set the ARTEMIS_INSTANCE environment variable and the command to run the broker, quoted in case the path contains spaces
+      filters.put("${environment}", systemdQuote("ARTEMIS_INSTANCE=" + instancePath));
+      // $ starts a variable expansion in ExecStart, so it is escaped as $$
+      filters.put("${exec-start}", systemdQuote(instancePath + "/bin/artemis").replace("$", "$$") + " run");
+
+      write(Create.ETC_ARTEMIS_SERVICE_SYSTEMD, target, filters, true, force);
+   }
+
+   // print out instructions to enable the systemd service
+   protected void printSystemdServiceInstructions(ActionContext context, File service) throws IOException {
+      if (IS_LINUX) {
+         final String servicePath = service.getCanonicalPath();
+         context.out.println("Systemd unit file was generated at:");
+         context.out.println(String.format("   \"%s\"", servicePath));
+         context.out.println();
+         context.out.println("To enable it, run this as root or with sudo privileges:");
+         context.out.println(String.format("   cp \"%s\" /etc/systemd/system/artemis.service", servicePath));
+         context.out.println("   systemctl daemon-reload && systemctl enable artemis.service");
+      }
+   }
+
+   // quote a value for a systemd unit file, escaping \, " and the % specifier prefix
+   protected static String systemdQuote(String value) {
+      return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"").replace("%", "%%") + "\"";
    }
 
    protected static String readTextFile(String source, Map<String, String> filters) throws IOException {
