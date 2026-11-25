@@ -41,6 +41,7 @@ import org.apache.activemq.artemis.core.security.Role;
 import org.apache.activemq.artemis.core.security.SecurityAuth;
 import org.apache.activemq.artemis.core.security.SecurityStore;
 import org.apache.activemq.artemis.core.server.ActiveMQMessageBundle;
+import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.management.Notification;
 import org.apache.activemq.artemis.core.server.management.NotificationService;
@@ -93,6 +94,8 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
 
    private final NotificationService notificationService;
 
+   private final ActiveMQServer server;
+
    private static final AtomicLongFieldUpdater<SecurityStoreImpl> AUTHENTICATION_SUCCESS_COUNT_UPDATER = AtomicLongFieldUpdater.newUpdater(SecurityStoreImpl.class, "authenticationSuccessCount");
    private volatile long authenticationSuccessCount;
    private static final AtomicLongFieldUpdater<SecurityStoreImpl> AUTHENTICATION_FAILURE_COUNT_UPDATER = AtomicLongFieldUpdater.newUpdater(SecurityStoreImpl.class, "authenticationFailureCount");
@@ -107,6 +110,8 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
 
    /**
     * @param notificationService can be {@code null}
+    * @param server              can be {@code null}; when {@code null}, connections whose credentials can no longer be
+    *                            validated are not closed
     */
    public SecurityStoreImpl(final HierarchicalRepository<Set<Role>> securityRepository,
                             final ActiveMQSecurityManager securityManager,
@@ -116,7 +121,9 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
                             final String managementClusterPassword,
                             final NotificationService notificationService,
                             final long authenticationCacheSize,
-                            final long authorizationCacheSize) {
+                            final long authorizationCacheSize,
+                            final ActiveMQServer server) {
+      this.server = server;
       this.securityRepository = securityRepository;
       this.securityManager = securityManager;
       this.securityEnabled = securityEnabled;
@@ -236,7 +243,7 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
 
          // authentication failed, send a notification & throw an exception
          if (!userIsValid && validatedUser == null) {
-            authenticationFailed(user, connection);
+            authenticationFailed(user, connection, false);
          }
 
          if (connection != null) {
@@ -316,7 +323,7 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
           * If the subject is null then authorization will *always* fail.
           */
          if (subjectForManager5 == null) {
-            authenticationFailed(session.getUsername(), session.getRemotingConnection());
+            authenticationFailed(session.getUsername(), session.getRemotingConnection(), true);
          }
       }
       try {
@@ -486,7 +493,7 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
       return null;
    }
 
-   private void authenticationFailed(String user, RemotingConnection connection) throws Exception {
+   private void authenticationFailed(String user, RemotingConnection connection, boolean reauthentication) throws Exception {
       String certSubjectDN = CertificateUtil.getCertSubjectDN(connection);
 
       if (notificationService != null) {
@@ -509,7 +516,31 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
       }
 
       AUTHENTICATION_FAILURE_COUNT_UPDATER.incrementAndGet(this);
+
+      if (reauthentication) {
+         closeConnectionOnReauthenticationFailure(user, connection);
+      }
+
       throw e;
+   }
+
+   private void closeConnectionOnReauthenticationFailure(String user, RemotingConnection connection) {
+      if (server == null || server.getThreadPool() == null || server.getRemotingService() == null || connection == null || !connection.isAuthenticated() || connection instanceof ManagementRemotingConnection) {
+         return;
+      }
+
+      logger.debug("Closing connection {} because the credentials for user {} could no longer be validated", connection.getID(), user);
+
+      // The connection is closed asynchronously so the exception which triggered this can still be dispatched to the
+      // client before the connection goes away.
+      server.getThreadPool().execute(() -> {
+         try {
+            server.getRemotingService().removeConnection(connection.getID());
+            connection.fail(ActiveMQMessageBundle.BUNDLE.connectionClosedOnReauthenticationFailure(user));
+         } catch (Throwable t) {
+            logger.debug("Failed to close connection {} after re-authentication failure", connection.getID(), t);
+         }
+      });
    }
 
    /**
