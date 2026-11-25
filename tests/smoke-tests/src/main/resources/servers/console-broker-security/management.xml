@@ -16,6 +16,6 @@
   ~ limitations under the License.
   -->
 <management-context xmlns="http://activemq.apache.org/schema">
-   <!--<connector connector-port="1099"/>-->
+   <!--<connector connector-port="1099" rmi-registry-port="1098" connector-host="0.0.0.0" />-->
    <!-- authorisation in broker.xml security-settings with `mops.` prefix -->
 </management-context>
