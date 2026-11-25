@@ -53,6 +53,7 @@ import org.apache.activemq.artemis.core.postoffice.Binding;
 import org.apache.activemq.artemis.core.postoffice.DuplicateIDCache;
 import org.apache.activemq.artemis.core.postoffice.PostOffice;
 import org.apache.activemq.artemis.core.postoffice.impl.LocalQueueBinding;
+import org.apache.activemq.artemis.core.postoffice.impl.PostOfficeImpl;
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.server.NodeManager;
@@ -228,7 +229,17 @@ public class PostOfficeJournalLoader implements JournalLoader {
 
                MessageReference ref = postOffice.reload(record.getMessage(), queue, null);
 
-               ref.setDeliveryCount(record.getDeliveryCount());
+               // A message which was redistributed but not yet redelivered has no UPDATE_DELIVERY_COUNT record, so the
+               // count preserved on the message is all there is to restore; once it has been redelivered here the
+               // journal holds the higher count and wins.
+               // The configuration is checked first so the property, and with it the message properties, is only
+               // decoded when the queue actually wants the count.
+               int deliveryCount = record.getDeliveryCount();
+               if (PostOfficeImpl.preservesRedistributionDeliveryCount(queue)) {
+                  deliveryCount = Math.max(deliveryCount, record.getMessage().getRedistributionDeliveryCount());
+               }
+
+               ref.setDeliveryCount(deliveryCount);
             } catch (Throwable t) {
                ActiveMQServerLogger.LOGGER.unableToLoadMessageFromJournal(t);
                continue;
