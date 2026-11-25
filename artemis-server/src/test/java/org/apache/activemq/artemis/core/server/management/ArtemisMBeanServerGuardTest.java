@@ -20,6 +20,7 @@ import org.apache.activemq.artemis.api.core.management.ObjectNameBuilder;
 import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
 import org.apache.activemq.artemis.logs.AuditLogger;
 import org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal;
+import org.apache.activemq.artemis.spi.core.security.jaas.UserPrincipal;
 import org.apache.activemq.artemis.tests.util.ServerTestBase;
 import org.apache.activemq.artemis.utils.sm.SecurityManagerShim;
 import org.apache.logging.log4j.Level;
@@ -36,7 +37,6 @@ import javax.management.ObjectName;
 import javax.management.QueryExp;
 import javax.security.auth.Subject;
 import java.lang.reflect.Method;
-import java.security.Principal;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -99,7 +99,7 @@ public class ArtemisMBeanServerGuardTest extends ServerTestBase {
 
 
    @Test
-   public void testCanInvokeMethodDoeNotHasRole() throws Throwable {
+   public void testCanInvokeMethodDoesNotHaveRole() throws Throwable {
       ArtemisMBeanServerGuard guard = new ArtemisMBeanServerGuard();
       JMXAccessControlList controlList = new JMXAccessControlList();
       guard.setJMXAccessControlList(controlList);
@@ -381,37 +381,47 @@ public class ArtemisMBeanServerGuardTest extends ServerTestBase {
       assertTrue(guard.canInvoke(hawtioName.getCanonicalName(), "anyMethod"));
    }
 
+   private boolean canInvokeAs(Subject subject, JMXAccessControlList controlList, String operation) throws Throwable {
+      ArtemisMBeanServerGuard guard = new ArtemisMBeanServerGuard();
+      guard.setJMXAccessControlList(controlList);
+      String objectName = ObjectNameBuilder.create("testdomain", "myBroker").getActiveMQServerObjectName().getCanonicalName();
+      Object result = SecurityManagerShim.callAs(subject, (Callable<Object>) () -> {
+         try {
+            return guard.canInvoke(objectName, operation);
+         } catch (Exception e1) {
+            return e1;
+         }
+      });
+      return (Boolean) result;
+   }
+
    @Test
-   public void testCurrentUserHasRoleMatchesClassQualifiedPrincipal() throws Exception {
+   public void testUserPrincipalNameIsNotARole() throws Throwable {
+      JMXAccessControlList controlList = new JMXAccessControlList();
+      controlList.addToRoleAccess("testdomain", "broker=myBroker", "deleteAddress", "admin");
+      controlList.addToRoleAccess("testdomain", "broker=myBroker", "getSomething", "view");
+
       Subject subject = new Subject();
-      subject.getPrincipals().add(new CustomPrincipal("myrole"));
-      assertTrue(SecurityManagerShim.callAs(subject, (Callable<Boolean>) () ->
-         ArtemisMBeanServerGuard.currentUserHasRole(CustomPrincipal.class.getName() + ":myrole")));
+      // the username happens to equal a configured role name
+      subject.getPrincipals().add(new UserPrincipal("admin"));
+      subject.getPrincipals().add(new RolePrincipal("view"));
+
+      assertFalse(canInvokeAs(subject, controlList, "deleteAddress"));
+      assertTrue(canInvokeAs(subject, controlList, "getSomething"));
    }
 
    @Test
-   public void testCurrentUserHasRoleRejectsWrongPrincipalClass() throws Exception {
-      Subject subject = new Subject();
-      subject.getPrincipals().add(new RolePrincipal("myrole"));
-      assertFalse(SecurityManagerShim.callAs(subject, (Callable<Boolean>) () ->
-         ArtemisMBeanServerGuard.currentUserHasRole(CustomPrincipal.class.getName() + ":myrole")));
-   }
+   public void testFullyQualifiedRoleMatchesPrincipalClass() throws Throwable {
+      JMXAccessControlList controlList = new JMXAccessControlList();
+      controlList.addToRoleAccess("testdomain", "broker=myBroker", "getSomething", UserPrincipal.class.getName() + ":admin");
 
-   @Test
-   public void testCurrentUserHasRoleFalseWhenNoSubject() {
-      assertFalse(ArtemisMBeanServerGuard.currentUserHasRole("admin"));
-   }
+      Subject matching = new Subject();
+      matching.getPrincipals().add(new UserPrincipal("admin"));
+      assertTrue(canInvokeAs(matching, controlList, "getSomething"));
 
-   private static final class CustomPrincipal implements Principal {
-      private final String name;
-
-      CustomPrincipal(String name) {
-         this.name = name;
-      }
-
-      @Override
-      public String getName() {
-         return name;
-      }
+      // same name, different class
+      Subject wrongClass = new Subject();
+      wrongClass.getPrincipals().add(new RolePrincipal("admin"));
+      assertFalse(canInvokeAs(wrongClass, controlList, "getSomething"));
    }
 }
