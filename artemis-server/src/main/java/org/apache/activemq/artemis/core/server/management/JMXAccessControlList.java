@@ -16,13 +16,19 @@
  */
 package org.apache.activemq.artemis.core.server.management;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import javax.management.ObjectName;
+
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -30,6 +36,18 @@ import java.util.regex.Pattern;
 
 public class JMXAccessControlList {
    private static final String WILDCARD = "*";
+
+   private final Cache<ObjectName, Boolean> allowListCache = Caffeine.newBuilder().maximumSize(10000).build();
+   private final Cache<String, Map<String, String>> keyPropertyCache = Caffeine.newBuilder().maximumSize(10000).build();
+   private final Cache<String, Map<String, Bucket>> bucketedDomainCache = Caffeine.newBuilder().maximumSize(32).build();
+
+   private static final String REGEX_METACHARACTERS = ".?*+^$[](){}|\\";
+
+   private record AccessEntry(Access access) {}
+   private record Bucket(
+      Map<String, AccessEntry> exactMatches,
+      List<AccessEntry> regexPatterns
+   ) {}
 
    private Access defaultAccess = new Access(WILDCARD);
    private ConcurrentMap<String, TreeMap<String, Access>> domainAccess = new ConcurrentHashMap<>();
@@ -55,33 +73,122 @@ public class JMXAccessControlList {
          domainMap = allowList.get(domain);
       }
       Access access = new Access(domain, normalizeKey(key));
-      domainMap.putIfAbsent(access.getKey(), access);
+      if (domainMap.putIfAbsent(access.getKey(), access) == null) {
+         /*
+          * A new entry can change the answer for any object name, including ones in other domains
+          * via the WILDCARD fallback in isInAllowList, so the whole cache has to be discarded. This
+          * only happens while the allow list is being built, so the cost is irrelevant.
+          */
+         allowListCache.invalidateAll();
+      }
    }
 
+   public boolean authorizeUserForMethod(ObjectName objectName, String methodName, Set<String> userRoles) {
+      String domainKey = objectName.getDomain();
 
-   public List<String> getRolesForObject(ObjectName objectName, String methodName) {
-      TreeMap<String, Access> domainMap = domainAccess.get(objectName.getDomain());
-      if (domainMap != null) {
-         Map<String, String> keyPropertyList = objectName.getKeyPropertyList();
-         for (Map.Entry<String, String> keyEntry : keyPropertyList.entrySet()) {
-            String key = normalizeKey(keyEntry.getKey() + "=" + keyEntry.getValue());
-            for (Access accessEntry : domainMap.values()) {
-               if (accessEntry.getKeyPattern().matcher(key).matches()) {
-                  return accessEntry.getMatchingRolesForMethod(methodName);
+      Map<String, Bucket> bucketedMap = bucketedDomainCache.get(domainKey, d -> {
+         TreeMap<String, Access> rawMap = domainAccess.get(d);
+         if (rawMap == null) {
+            return null;
+         }
+
+         Map<String, Bucket> grouped = new HashMap<>();
+         for (Access access : rawMap.values()) {
+            String rawPattern = access.getKeyPattern().pattern();
+            int eqIndex = rawPattern.indexOf('=');
+            String prefix = (eqIndex != -1) ? rawPattern.substring(0, eqIndex) : "";
+
+            /*
+             * A pattern can only be bucketed under a literal property name when the part before
+             * the equal sign is itself a literal. If it holds any regex metacharacter it may match
+             * more than one property name, so it goes to the wildcard bucket and is tried against
+             * every property.
+             */
+            if (eqIndex == -1) {
+               if (containsRegexMetacharacter(rawPattern)) {
+                  prefix = WILDCARD;
+               }
+            } else if (containsRegexMetacharacter(prefix)) {
+               prefix = WILDCARD;
+            }
+
+            // Initialize the Bucket (Map + List)
+            Bucket bucket = grouped.computeIfAbsent(prefix, k ->
+                  new Bucket(new HashMap<>(), new ArrayList<>())
+            );
+
+            AccessEntry entry = new AccessEntry(access);
+
+            /*
+             * A key is only safe to match by string equality when it has no regex metacharacters
+             * at all. Anything else has to keep going through the Pattern so that matching stays
+             * identical to evaluating the key as a regex against the whole "name=value" string.
+             */
+            if (containsRegexMetacharacter(rawPattern)) {
+               bucket.regexPatterns().add(entry);
+            } else {
+               bucket.exactMatches().put(rawPattern, entry);
+            }
+         }
+
+         // merge wildcard patterns into every property bucket
+         Bucket wildcardBucket = grouped.get(WILDCARD);
+         if (wildcardBucket != null) {
+            for (Map.Entry<String, Bucket> groupedEntry : grouped.entrySet()) {
+               if (!groupedEntry.getKey().equals(WILDCARD)) {
+                  List<AccessEntry> regexPatterns = groupedEntry.getValue().regexPatterns();
+                  regexPatterns.addAll(wildcardBucket.regexPatterns());
+                  // sort the regex patterns by key length and then alphabetically
+                  regexPatterns.sort(Comparator.comparing((AccessEntry accessEntry) -> accessEntry.access().getKey(), keyComparator));
+               }
+            }
+         }
+         return grouped;
+      });
+
+      if (bucketedMap != null) {
+         String cacheKey = objectName.getCanonicalName();
+         Map<String, String> keyPropertyList = keyPropertyCache.get(cacheKey, key ->
+            objectName.getKeyPropertyList()
+         );
+
+         for (Map.Entry<String, String> entry : keyPropertyList.entrySet()) {
+            String propKey = entry.getKey();
+            Bucket bucket = bucketedMap.getOrDefault(propKey, bucketedMap.get(WILDCARD));
+
+            String key = normalizeKey(propKey + "=" + entry.getValue());
+            if (bucket != null) {
+
+               // exact match check first
+               if (bucket.exactMatches().containsKey(key)) {
+                  return bucket.exactMatches().get(key).access().authorizeUserForMethod(methodName, userRoles);
+               }
+
+               // regex matching
+               for (AccessEntry regexEntry : bucket.regexPatterns()) {
+                  if (regexEntry.access().getKeyPattern().matcher(key).matches()) {
+                     return regexEntry.access().authorizeUserForMethod(methodName, userRoles);
+                  }
                }
             }
          }
 
+         TreeMap<String, Access> domainMap = domainAccess.get(objectName.getDomain());
+
          Access access = domainMap.get("");
          if (access != null) {
-            return access.getMatchingRolesForMethod(methodName);
+            return access.authorizeUserForMethod(methodName, userRoles);
          }
       }
 
-      return defaultAccess.getMatchingRolesForMethod(methodName);
+      return defaultAccess.authorizeUserForMethod(methodName, userRoles);
    }
 
    public boolean isInAllowList(ObjectName objectName) {
+      return allowListCache.get(objectName, this::computeIsInAllowList);
+   }
+
+   private boolean computeIsInAllowList(ObjectName objectName) {
       TreeMap<String, Access> domainMap = allowList.get(objectName.getDomain());
 
       if (domainMap == null) {
@@ -93,7 +200,10 @@ public class JMXAccessControlList {
             return true;
          }
 
-         Map<String, String> keyPropertyList = objectName.getKeyPropertyList();
+         String cacheKey = objectName.getCanonicalName();
+         Map<String, String> keyPropertyList = keyPropertyCache.get(cacheKey, key ->
+            objectName.getKeyPropertyList()
+         );
          for (Map.Entry<String, String> keyEntry : keyPropertyList.entrySet()) {
             String key = normalizeKey(keyEntry.getKey() + "=" + keyEntry.getValue());
             for (Access accessEntry : domainMap.values()) {
@@ -132,6 +242,8 @@ public class JMXAccessControlList {
       if (access == null) {
          access = new Access(domain, accessKey);
          domainMap.put(accessKey, access);
+         // a new key changes the buckets, existing keys are updated in place
+         bucketedDomainCache.invalidate(domain);
       }
 
       if (method.equals(WILDCARD)) {
@@ -142,6 +254,15 @@ public class JMXAccessControlList {
       } else {
          access.addMethods(method, roles);
       }
+   }
+
+   private static boolean containsRegexMetacharacter(final String pattern) {
+      for (int i = 0; i < pattern.length(); i++) {
+         if (REGEX_METACHARACTERS.indexOf(pattern.charAt(i)) != -1) {
+            return true;
+         }
+      }
+      return false;
    }
 
    private String normalizeKey(final String key) {
@@ -157,9 +278,9 @@ public class JMXAccessControlList {
       private final String id;
       private final String key;
       private final Pattern keyPattern;
-      List<String> catchAllRoles = new ArrayList<>();
-      Map<String, List<String>> methodRoles = new HashMap<>();
-      Map<String, List<String>> methodPrefixRoles = new LinkedHashMap<>();
+      Set<String> catchAllRoles = new HashSet<>();
+      Map<String, Set<String>> methodRoles = new HashMap<>();
+      Map<String, Set<String>> methodPrefixRoles = new LinkedHashMap<>();
 
       Access(String id) {
          this(id, "");
@@ -172,9 +293,9 @@ public class JMXAccessControlList {
       }
 
       public synchronized void addMethods(String prefix, String... roles) {
-         List<String> rolesList = methodRoles.get(prefix);
+         Set<String> rolesList = methodRoles.get(prefix);
          if (rolesList == null) {
-            rolesList = new ArrayList<>();
+            rolesList = new HashSet<>();
             methodRoles.put(prefix, rolesList);
          }
          for (String role : roles) {
@@ -183,9 +304,9 @@ public class JMXAccessControlList {
       }
 
       public synchronized void addMethodsPrefixes(String prefix, String... roles) {
-         List<String> rolesList = methodPrefixRoles.get(prefix);
+         Set<String> rolesList = methodPrefixRoles.get(prefix);
          if (rolesList == null) {
-            rolesList = new ArrayList<>();
+            rolesList = new HashSet<>();
             methodPrefixRoles.put(prefix, rolesList);
          }
          for (String role : roles) {
@@ -211,17 +332,17 @@ public class JMXAccessControlList {
          return keyPattern;
       }
 
-      public List<String> getMatchingRolesForMethod(String methodName) {
-         List<String> roles = methodRoles.get(methodName);
+      public boolean authorizeUserForMethod(String methodName, Set<String> userRoles) {
+         Set<String> roles = methodRoles.get(methodName);
          if (roles != null) {
-            return roles;
+            return !Collections.disjoint(roles, userRoles);
          }
-         for (Map.Entry<String, List<String>> entry : methodPrefixRoles.entrySet()) {
+         for (Map.Entry<String, Set<String>> entry : methodPrefixRoles.entrySet()) {
             if (methodName.startsWith(entry.getKey())) {
-               return entry.getValue();
+               return !Collections.disjoint(entry.getValue(), userRoles);
             }
          }
-         return catchAllRoles;
+         return !Collections.disjoint(catchAllRoles, userRoles);
       }
    }
 
