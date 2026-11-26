@@ -14,13 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.activemq.artemis.util;
+package org.apache.activemq.artemis.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffers;
-import org.apache.activemq.artemis.utils.BufferHelper;
 import org.junit.jupiter.api.Test;
 
 public class BufferHelperTest {
