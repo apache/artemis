@@ -4,7 +4,12 @@
 :docinfo: shared
 
 {project-name-full} uses the https://www.slf4j.org/[SLF4J] logging facade for logging, with the broker assembly providing https://logging.apache.org/log4j/2.x/manual/[Log4J 2] as the logging implementation.
-When the broker is started by executing the `run` command, this is configurable via the `log4j2.properties` file found in the broker instance `etc` directory, which is configured by default to log to both the console and to a file. For the other CLI commands, this is configurable via the `log4j2-utility.properties` file found in the broker instance `etc` directory, which is configured by default to log only errors to the console (in addition to the usual command output).
+Logging is configured by a properties file in the broker instance `etc` directory.
+Which file is used depends on how the broker is invoked.
+The `run` command uses `log4j2.properties`.
+By default it logs to both the console and a file.
+Every other CLI command uses `log4j2-utility.properties`.
+By default that logs only errors to the console, alongside the usual command output.
 
 There are a handful of general loggers available:
 
@@ -42,6 +47,24 @@ Disabled by default
 Disabled by default
 |===
 
+== Log Codes
+
+Log entries written at `INFO` level and above carry a special code.
+This code is always the first thing in the message and is separated from the text by a colon:
+
+----
+2026-02-19 09:53:23,462 INFO  [org.apache.activemq.artemis.core.server] AMQ221043: Protocol module found: [artemis-server]. Adding protocol support for: CORE
+----
+
+A code is the `AMQ` prefix followed by a number, here `AMQ221043`.
+
+The code is a contract.
+The text of a message may be reworded, corrected, or given more detail in a later release, but its code will not change.
+That makes the code, rather than the wording, the thing to match on.
+Monitoring and log analysis tools can key off a code without having to care how the message happens to be phrased, and administrators get a stable handle on the individual entries they want to treat specially.
+
+To suppress a particular code in your logging configuration see <<suppressing-a-specific-log-code>>.
+
 == Configuring a Specific Level for a Logger
 
 Sometimes it is necessary to get more detailed logs from a particular logger.
@@ -54,6 +77,76 @@ Then you need to configure the logging level for the `org.foo` logger to `TRACE`
 logger.my_logger_ref.name=org.foo
 logger.my_logger_ref.level=TRACE
 ----
+
+== Suppressing a Specific Log Code
+
+Levels are often too blunt an instrument for singling out one entry, because a single logger can emit many different codes.
+To act on an individual code use an `ArtemisLogCodeFilter`, listing the codes you want to suppress.
+Codes are given *without* the `AMQ` prefix, since every log code carries it:
+
+----
+appender.log_file.filter.suppressed.type = ArtemisLogCodeFilter
+appender.log_file.filter.suppressed.codes = 222061,224000
+----
+
+Here `suppressed` is just a name you choose for the filter; any name will do, as long as it is used consistently.
+
+By default a matching entry is discarded and a non-matching entry is left for the rest of the configuration to decide on.
+This can be changed with the optional `onMatch` and `onMismatch` attributes, which can be `ACCEPT`, `DENY`, and `NEUTRAL`.
+
+So that a missing entry is never a mystery, the filter reports what it is suppressing.
+As soon as the configuration takes effect it logs a single entry naming every code it will discard:
+
+----
+AMQ160000: Log entries with the following codes are being suppressed by the logging configuration: 222061, 224000
+----
+
+This is logged once.
+Nothing is reported when `onMatch` is set to something other than `DENY`, since the filter is then not suppressing anything.
+
+=== Choosing Where to Attach the Filter
+
+A filter attached to an appender, as above, affects only that appender.
+This is usually what you want, and it is the cheapest option.
+For example, to keep an entry in `artemis.log` while keeping it off the console, attach the filter to the `console` appender only.
+
+A filter can also be attached to an individual logger:
+
+----
+logger.artemis_server.filter.suppressed.type = ArtemisLogCodeFilter
+logger.artemis_server.filter.suppressed.codes = 222061
+----
+
+Finally, a filter declared at the top level of the file applies everywhere:
+
+----
+filter.suppressed.type = ArtemisLogCodeFilter
+filter.suppressed.codes = 222061
+----
+
+[WARNING]
+====
+Prefer an appender or logger filter over a top-level one.
+A top-level filter is evaluated by Log4J 2 *before* the configured level is checked, so it runs even for `DEBUG` and `TRACE` calls on hot code paths which the level would otherwise discard immediately.
+Attaching the same filter to each appender instead costs nothing on those paths.
+====
+
+=== What the Filter Matches
+
+The filter only recognizes a code where the contract puts it: at the very beginning of the message, before any parameters are substituted into it.
+
+A code which reaches the log some other way is not matched.
+In particular, if an entry's text happens to contain a code because an exception message was substituted into it, that code belongs to whatever threw the exception and not to the log entry itself, so suppressing it will not discard that entry.
+This is deliberate, and means that suppressing one code can never silently discard an unrelated entry.
+
+=== Why Not RegexFilter?
+
+Log4J 2 ships a general-purpose `RegexFilter` which can be used to achieve the same goal as `ArtemisLogCodeFilter`.
+However, there are a few problems with `RegexFilter` which `ArtemisLogCodeFilter` does not have:
+
+* The configuration of `RegexFilter` is not particularly intuitive, even for such a simple use-case.
+* It can be triggered by a code that is not the entry's own, such as one from a substituted exception message.
+* It is slower than `ArtemisLogCodeFilter`, potentially much slower depending on the configuration.
 
 == Configuration Reload
 
@@ -82,6 +175,20 @@ Taking Log4J2 as an example logging implementation, since it used by the broker,
    <version>{log4j-version}</version>
 </dependency>
 ----
+
+The `ArtemisLogCodeFilter` described in <<suppressing-a-specific-log-code>> can be used in a client application too, assuming it's using Log4j2 as the logging implementation.
+It ships with the broker, so it is available there automatically, but a client has to add a specific dependency:
+
+[,xml,subs="normal"]
+----
+<dependency>
+   <groupId>org.apache.artemis</groupId>
+   <artifactId>artemis-log-code-filter</artifactId>
+   <version>{project-version}</version>
+</dependency>
+----
+
+It is then configured exactly as it is on the broker.
 
 The Log4J2 configuration can then be supplied via file called `log4j2.properties` on the classpath which will then be picked up automatically.
 

@@ -43,6 +43,7 @@
       <module>artemis-boot</module>
       <module>artemis-cli</module>
       <module>artemis-commons</module>
+      <module>artemis-log-code-filter</module>
       <module>artemis-selector</module>
       <module>artemis-core-client</module>
       <module>artemis-core-client-all</module>
