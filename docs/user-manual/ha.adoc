@@ -946,6 +946,34 @@ At this point the client will reconnect however this will only succeed once the 
 This is to ensure that any state such as queues or transactions are there for the client when it reconnects.
 The normal reconnect settings apply when the client is reconnecting so these should be high enough to deal with the time needed to scale down.
 
+=== Safe Procedure to Stop a Scale Down Server
+
+Scale down is intended for a server that is permanently leaving the cluster.
+A server configured to scale down will always try to move its messages and transaction state to another server when it is stopped, so it should not be used for a temporary stop such as a restart for maintenance.
+If a scale down server must be stopped, e.g. when a cluster is being shrunk, the following procedure avoids losing messages or leaving them stranded:
+
+. *Verify that the cluster is healthy before stopping the server.*
+Every server that remains in the cluster must be started and the topology must have converged, i.e. each remaining server must see all the other remaining servers.
+This must be checked using both the `listNetworkTopology` operation on the broker and the `getNodes` operation on the xref:clusters.adoc#configuring-cluster-connections[cluster connection] management resource.
+Stopping a server while the topology is still changing, for example right after another server was started or stopped, may leave the scaling down server without a valid target or with a stale view of the cluster.
+. *Stop the server in a graceful way* (e.g. using `artemis stop` or the management API).
+Do not kill the process (e.g. using `SIGKILL` or `kill -9`), because scale down only deals with a server being stopped and not with a server crash.
+. *Wait for the server process to exit.*
+The server is only done when scale down has completed and the process has terminated.
+The time needed grows with the number of messages in the queues, so allow a generous timeout, and make sure client reconnect settings are high enough as described in <<Scale Down and Clients>>.
+Check that the server exited without errors; a non-zero exit code means that scale down may not have completed.
+. *Wait for the remaining servers to drop the stopped server from their topology.*
+Each remaining server should no longer list the stopped server in both `listNetworkTopology` and `getNodes` before any further topology change, such as scaling down another server, is made.
+Stopping several servers one after another without waiting for this step may cause a server to scale down to a node that is itself about to leave.
+. *Verify that no messages are left behind.*
+When the procedure is complete, the store-and-forward queues on the remaining servers should drain and the messages of the stopped server should be available on the remaining servers.
+
+[NOTE]
+====
+Servers must be stopped one at a time.
+Wait for the whole procedure to complete before starting it again for the next server.
+====
+
 == Client Failover
 
 Core clients can be configured to receive knowledge of all primary and backup servers, so that in event of connection failure the client will detect this and reconnect to the backup server.
