@@ -2,10 +2,10 @@
   "branding": {
     "appName": "Artemis Console",
     "showAppName": false,
-    "appLogoUrl": "img/artemis.png",
-    "companyLogoUrl": "img/artemis.png",
-    "css": "css/artemis.css",
-    "favicon": "img/favicon.png"
+    "appLogoUrl": "img/artemis-logo.svg",
+    "appLogoDarkModeUrl": "img/artemis-logo.svg",
+    "favicon": "img/favicon.png",
+    "css": "css/artemis.css"
   },
   "login": {
     "description": "Login page for Apache Artemis Console.",
@@ -19,7 +19,8 @@
     "productInfo": [{"name": "Apache Artemis", "value": "${project.version}"}],
     "additionalInfo": "",
     "copyright": " ",
-    "imgSrc": "img/artemis.png"
+    "imgSrc": "img/artemis-logo.svg",
+    "imgDarkModeSrc": "img/artemis-logo.svg"
   },
   "disabledRoutes": []
 }
