@@ -91,4 +91,7 @@ public interface ActiveMQAMQPProtocolLogger {
 
    @LogMessage(id = 111015, value = "AMQP message {} has invalid application properties encoding. {}", level = LogMessage.Level.WARN)
    void invalidEncodingApplicationProperties(long messageID, String description);
+
+   @LogMessage(id = 111016, value = "Stored body of large message {} is smaller than the body size recorded for it, so the message can never be delivered. Sending it to the Dead Letter Address.", level = LogMessage.Level.WARN)
+   void largeMessageBodyTooSmall(MessageReference ref, Throwable t);
 }

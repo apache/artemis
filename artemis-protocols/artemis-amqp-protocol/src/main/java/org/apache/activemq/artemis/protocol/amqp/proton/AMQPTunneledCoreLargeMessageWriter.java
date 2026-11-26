@@ -25,6 +25,7 @@ import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.core.message.LargeBodyReader;
 import org.apache.activemq.artemis.core.persistence.impl.journal.LargeServerMessageImpl;
 import org.apache.activemq.artemis.core.server.MessageReference;
+import org.apache.activemq.artemis.protocol.amqp.logger.ActiveMQAMQPProtocolMessageBundle;
 import org.apache.activemq.artemis.protocol.amqp.util.NettyReadable;
 import org.apache.activemq.artemis.protocol.amqp.util.NettyWritable;
 import org.apache.activemq.artemis.protocol.amqp.util.TLSEncode;
@@ -307,6 +308,15 @@ public class AMQPTunneledCoreLargeMessageWriter implements MessageWriter {
 
             final int readSize = context.readInto(
                frameBuffer.internalNioBuffer(frameBuffer.writerIndex(), frameBuffer.writableBytes()));
+
+            if (readSize <= 0) {
+               // The stored body is smaller than the body size recorded for this message: a negative read means
+               // the body ended early, and a zero length read would never let this loop make progress. Adding a
+               // negative read to the writer index would rewind the frame buffer and walk the position backwards
+               // until the index underflows, so fail the delivery here with the same error the non tunnelled
+               // writer raises, which the sender dead letters rather than retrying forever.
+               throw ActiveMQAMQPProtocolMessageBundle.BUNDLE.largeMessageBodyTooSmall(message.getMessageID(), position, bodySize);
+            }
 
             frameBuffer.writerIndex(frameBuffer.writerIndex() + readSize);
             position += readSize;

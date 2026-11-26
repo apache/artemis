@@ -23,6 +23,7 @@ import org.apache.activemq.artemis.logs.BundleFactory;
 import org.apache.activemq.artemis.protocol.amqp.exceptions.ActiveMQAMQPIllegalStateException;
 import org.apache.activemq.artemis.protocol.amqp.exceptions.ActiveMQAMQPInternalErrorException;
 import org.apache.activemq.artemis.protocol.amqp.exceptions.ActiveMQAMQPInvalidFieldException;
+import org.apache.activemq.artemis.protocol.amqp.exceptions.ActiveMQAMQPLargeMessageBodyTooSmallException;
 import org.apache.activemq.artemis.protocol.amqp.exceptions.ActiveMQAMQPNotFoundException;
 import org.apache.activemq.artemis.protocol.amqp.exceptions.ActiveMQAMQPSecurityException;
 
@@ -112,6 +113,9 @@ public interface ActiveMQAMQPProtocolMessageBundle {
 
    @Message(id = 119300, value = "not authorized to delete temporary destination, {}")
    ActiveMQAMQPSecurityException securityErrorDeletingTempDestination(String message);
+
+   @Message(id = 119301, value = "large message {} cannot be delivered, its body ended after {} bytes but the message records a body size of {} bytes")
+   ActiveMQAMQPLargeMessageBodyTooSmallException largeMessageBodyTooSmall(long messageID, long readable, long recorded);
 
    // IDs 119030-119299 are reserved due to historic use by ActiveMQClientMessageBundle and ActiveMQMessageBundle
 }

@@ -18,11 +18,13 @@
 package org.apache.activemq.artemis.protocol.amqp.proton;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
@@ -42,6 +44,7 @@ import org.apache.activemq.artemis.core.persistence.impl.journal.LargeServerMess
 import org.apache.activemq.artemis.core.persistence.impl.nullpm.NullStorageManager;
 import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.protocol.amqp.broker.AMQPSessionCallback;
+import org.apache.activemq.artemis.protocol.amqp.exceptions.ActiveMQAMQPLargeMessageBodyTooSmallException;
 import org.apache.activemq.artemis.protocol.amqp.util.NettyWritable;
 import org.apache.activemq.artemis.protocol.amqp.util.TLSEncode;
 import org.apache.activemq.artemis.spi.core.remoting.ReadyListener;
@@ -59,6 +62,7 @@ import org.apache.qpid.proton.engine.Session;
 import org.apache.qpid.proton.engine.impl.TransportImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
@@ -761,6 +765,97 @@ public class AMQPTunneledCoreLargeMessageWriterTest {
       verifyNoMoreInteractions(message);
       verifyNoMoreInteractions(reference);
       verifyNoMoreInteractions(protonDelivery);
+   }
+
+   @Test
+   @Timeout(30)
+   public void testBodyEndingBeforeRecordedSizeReportsLargeMessageBodyError() throws Exception {
+      final AMQPTunneledCoreLargeMessageWriter writer = new AMQPTunneledCoreLargeMessageWriter(serverSender);
+
+      final byte[] storedBody = new byte[1024];
+      final AtomicInteger readerPosition = new AtomicInteger();
+
+      prepareWriterForTruncatedBody(writer);
+
+      doAnswer(invocation -> {
+         final ByteBuffer buffer = invocation.getArgument(0);
+         final int remaining = storedBody.length - readerPosition.get();
+
+         if (remaining <= 0) {
+            return -1; // what a sequential file read reports once the stored body is exhausted
+         }
+
+         final int readSize = Math.min(buffer.remaining(), remaining);
+
+         buffer.put(storedBody, readerPosition.get(), readSize);
+         readerPosition.addAndGet(readSize);
+
+         return readSize;
+      }).when(bodyReader).readInto(any());
+
+      writer.writeBytes(reference);
+
+      final ArgumentCaptor<Exception> error = ArgumentCaptor.forClass(Exception.class);
+
+      verify(serverSender).reportDeliveryError(eq(writer), eq(reference), error.capture());
+
+      // adding a negative read to the writer index would rewind the frame buffer and walk the position
+      // backwards until the index underflowed, so the delivery has to fail with the dedicated error
+      assertInstanceOf(ActiveMQAMQPLargeMessageBodyTooSmallException.class, error.getValue());
+   }
+
+   @Test
+   @Timeout(30)
+   public void testReadMakingNoProgressReportsErrorRatherThanSpinning() throws Exception {
+      final AMQPTunneledCoreLargeMessageWriter writer = new AMQPTunneledCoreLargeMessageWriter(serverSender);
+
+      final byte[] storedBody = new byte[1024];
+      final AtomicInteger reads = new AtomicInteger();
+
+      prepareWriterForTruncatedBody(writer);
+
+      doAnswer(invocation -> {
+         final ByteBuffer buffer = invocation.getArgument(0);
+
+         if (reads.getAndIncrement() == 0) {
+            buffer.put(storedBody);
+
+            return storedBody.length;
+         }
+
+         return 0; // a read that makes no progress would otherwise spin the delivery loop forever
+      }).when(bodyReader).readInto(any());
+
+      writer.writeBytes(reference);
+
+      final ArgumentCaptor<Exception> error = ArgumentCaptor.forClass(Exception.class);
+
+      verify(serverSender).reportDeliveryError(eq(writer), eq(reference), error.capture());
+
+      assertInstanceOf(ActiveMQAMQPLargeMessageBodyTooSmallException.class, error.getValue());
+   }
+
+   /**
+    * Opens the writer and stubs a message whose recorded body size is far larger than anything the stubbed body
+    * reader will hand back, which is the on disk state that previously stalled the delivery loop.
+    */
+   private void prepareWriterForTruncatedBody(AMQPTunneledCoreLargeMessageWriter writer) throws Exception {
+      final byte[] headersBytes = new byte[] {4, 5, 6, 7};
+
+      writer.open(Mockito.mock(MessageReference.class));
+
+      when(protonSender.getLocalState()).thenReturn(EndpointState.ACTIVE);
+      when(protonDelivery.isPartial()).thenReturn(true);
+      when(message.getHeadersAndPropertiesEncodeSize()).thenReturn(headersBytes.length);
+      when(bodyReader.getSize()).thenReturn(200 * 1024L);
+
+      doAnswer(invocation -> {
+         final ByteBuf buffer = invocation.getArgument(0);
+
+         buffer.writeBytes(headersBytes);
+
+         return null;
+      }).when(message).encodeHeadersAndProperties(any(ByteBuf.class));
    }
 
    private void writeDeliveryAnnotations(ByteBuf buffer, DeliveryAnnotations annotations) {
