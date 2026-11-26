@@ -33,7 +33,6 @@ import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.DATA
 import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.LOGOUT_DROPDOWN_LOCATOR;
 import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.LOGOUT_MENU_ITEM_LOCATOR;
 import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.MANAGE_COLUMNS_BUTTON;
-import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.MESSAGE_TABLE_QUEUES_BUTTON;
 import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.MESSAGE_VIEW_QUEUES_BUTTON;
 import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.QUEUES_TAB;
 import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.QUEUES_TAB_SELECTED;
@@ -100,7 +99,7 @@ public abstract class ArtemisPage extends ConsolePage {
       refresh(timeout);
       WebElement element = driver.findElement(QUEUES_TAB);
       element.click();
-      List<WebElement> tdElements = driver.findElement(DATA_TABLE).findElement(By.xpath("//tr/td/a[contains(text(), '" + queue + "')]")).findElement(By.xpath("./../..")).findElements(By.tagName("td"));
+      List<WebElement> tdElements = driver.findElement(DATA_TABLE).findElement(By.xpath("//tr/td/button/span[contains(text(), '" + queue + "')]")).findElement(By.xpath("./../../..")).findElements(By.tagName("td"));
 
       tdElements.get(tdElements.size() - 1).findElement(BUTTON_LOCATOR).click();
 
@@ -146,7 +145,7 @@ public abstract class ArtemisPage extends ConsolePage {
    }
 
    public QueuesPage getQueuesPageFromMessagesView(int timeout) {
-      WebElement queuesMenuItem = driver.findElement(MESSAGE_TABLE_QUEUES_BUTTON);
+      WebElement queuesMenuItem = driver.findElement(MESSAGE_VIEW_QUEUES_BUTTON);
 
       queuesMenuItem.click();
 
@@ -182,6 +181,7 @@ public abstract class ArtemisPage extends ConsolePage {
          "var callback = arguments[arguments.length - 1];" +
             "var xhr = new XMLHttpRequest();" +
             "xhr.open('POST', '/console/jolokia', true);" +
+            "xhr.setRequestHeader('Content-Type', 'application/json');" +
             "xhr.onreadystatechange = function() {" +
             "  if (xhr.readyState == 4) {" +
             "    callback(xhr.responseText);" +

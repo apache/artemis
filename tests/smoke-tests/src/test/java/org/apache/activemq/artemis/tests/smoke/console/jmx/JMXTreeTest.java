@@ -49,6 +49,8 @@ public class JMXTreeTest extends ArtemisJMXTest {
       loadLandingPage();
       ArtemisTreePage treePage = new ArtemisTreePage(driver);
       treePage.expandTree(DEFAULT_TIMEOUT);
+      // to unselect current MBean
+      treePage.collapseTree(DEFAULT_TIMEOUT);
 
       assertEquals("Select " + expectedConsoleName + " Node", treePage.getNodeTitle());
    }

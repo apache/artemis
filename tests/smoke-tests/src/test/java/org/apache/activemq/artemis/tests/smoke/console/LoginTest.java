@@ -26,6 +26,7 @@ import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.DEFAULT_CONSOLE_LOGIN_BRAND_IMAGE;
+import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.DEFAULT_CONSOLE_LOGIN_BRAND_OVERRIDE_IMAGE;
 import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.WEB_URL_PATH;
 //Parameters set in super class
 @ExtendWith(ParameterizedTestExtension.class)
@@ -51,10 +52,17 @@ public class LoginTest extends ConsoleTest {
    public void testLoginBrand() {
       String expectedBrandImage = webServerUrl + WEB_URL_PATH + System.getProperty(
          "artemis.console.login.brand.image", DEFAULT_CONSOLE_LOGIN_BRAND_IMAGE);
+      String expectedBrandingOverrideImage = webServerUrl + WEB_URL_PATH + System.getProperty(
+         "artemis.console.login.brand.override.image", DEFAULT_CONSOLE_LOGIN_BRAND_OVERRIDE_IMAGE);
 
       driver.get(webServerUrl + WEB_URL_PATH);
       LoginPage loginPage = new LoginPage(driver);
       assertEquals(expectedBrandImage, loginPage.getBrandImage(DEFAULT_TIMEOUT));
+
+      String cssBackground = loginPage.getBrandImageContainer(DEFAULT_TIMEOUT).getCssValue("background-image");
+      assertTrue(cssBackground.startsWith("url(\""));
+      assertTrue(cssBackground.endsWith("\")"));
+      assertEquals(expectedBrandingOverrideImage, cssBackground.substring(5, cssBackground.length() - 2));
    }
 
    /**
