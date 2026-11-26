@@ -20,6 +20,8 @@ package org.apache.activemq.artemis.tests.db.common;
 import java.lang.invoke.MethodHandles;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -29,14 +31,17 @@ import org.apache.activemq.artemis.core.config.storage.DatabaseStorageConfigurat
 import org.apache.activemq.artemis.tests.extensions.parameterized.Parameter;
 import org.apache.activemq.artemis.tests.extensions.parameterized.ParameterizedTestExtension;
 import org.apache.activemq.artemis.utils.Wait;
+import org.apache.activemq.artemis.utils.RealServerTestBase;
+import org.apache.artemis.database.DatabaseProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(ParameterizedTestExtension.class)
-public abstract class ParameterDBTestBase extends DBTestBase {
+public abstract class ParameterDBTestBase extends RealServerTestBase {
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    @Override
@@ -85,8 +90,15 @@ public abstract class ParameterDBTestBase extends DBTestBase {
 
       registerDB();
 
-      dropDatabase();
+      if (isDropDatabase()) {
+         dropDatabase();
+      }
    }
+
+   protected boolean isDropDatabase() {
+      return true;
+   }
+
 
    // Register the database on driver and prepares the classLoader to be used
    private void registerDB() throws Exception {
@@ -122,10 +134,6 @@ public abstract class ParameterDBTestBase extends DBTestBase {
       return parameters;
    }
 
-   protected ClassLoader getDBClassLoader() throws Exception {
-      return database.getDBClassLoader();
-   }
-
    public Connection getConnection() throws Exception {
       return database.getConnection();
    }
@@ -151,12 +159,12 @@ public abstract class ParameterDBTestBase extends DBTestBase {
             }
             yield 1;
          }
-         default -> dropTables("MESSAGE", "LARGE_MESSAGE", "PAGE_STORE", "NODE_MANAGER", "BINDING");
+         default -> dropTables(new String[] {"MESSAGE", "LARGE_MESSAGES", "PAGE_STORE", "NODE_MANAGER", "BINDING", "BINDINGS", "MESSAGES", "DB_MESSAGES", "DB_REFERENCES", "DB_PAGE_DEFINITION", "DB_ADDRESS", "DB_QUEUE", "DB_PAGE", "DB_PAGE_REFERENCES", "DB_BROKER_DATA", "DB_CONFIG_DATA", "DB_PREP_TX"}, new String[] {"PAGE_STORE"});
       };
    }
 
 
-   private int dropTables(String...tables) {
+   private int dropTables(String[] tables, String[] patterns) {
       int dropped = 0;
 
       try (Connection connection = getConnection()) {
@@ -167,9 +175,17 @@ public abstract class ParameterDBTestBase extends DBTestBase {
             logger.debug("Checking table {}", table);
 
             boolean drop = false;
-            for (String str : tables) {
+            for (String str : patterns) {
                logger.debug("Checking pattern {}", str);
                if (table.toUpperCase(Locale.ROOT).contains(str)) {
+                  logger.debug("Table {} is part of the list as it is matching", table, str);
+                  drop = true;
+                  break;
+               }
+            }
+            for (String str : tables) {
+               logger.debug("Checking table {}", str);
+               if (table.toUpperCase(Locale.ROOT).equals(str)) {
                   logger.debug("Table {} is part of the list as it is matching", table, str);
                   drop = true;
                   break;
@@ -192,7 +208,9 @@ public abstract class ParameterDBTestBase extends DBTestBase {
 
    private boolean dropTable(Connection connection, String table) {
       try {
-         connection.createStatement().execute("DROP TABLE " + table);
+         try (Statement statement = connection.createStatement()) {
+            statement.execute("DROP TABLE " + table);
+         }
          logger.debug("Dropped {}", table);
          return true;
       } catch (Exception e) {
@@ -232,6 +250,27 @@ public abstract class ParameterDBTestBase extends DBTestBase {
       return dbStorageConfiguration;
    }
 
+   protected static void validateNewDBTotalMessages(DatabaseProvider databaseProvider,
+                                                    int expectedMessages,
+                                                    int expectedReferences) throws Exception {
+      try (Connection sqlconnection = databaseProvider.getConnection()) {
+         assertEquals(expectedMessages, selectCount(sqlconnection, databaseProvider.getSqlProvider().getMessages()));
+         assertEquals(expectedReferences, selectCount(sqlconnection, databaseProvider.getSqlProvider().getRefs()));
+      }
+   }
+
+
+   protected static int selectCount(Connection connection, String tableName) throws SQLException {
+      return selectNumber(connection, "SELECT COUNT(*) FROM " + tableName);
+   }
+
+   protected static int selectNumber(Connection connection, String sqlStatement) throws SQLException {
+      try (Statement queryStatement = connection.createStatement()) {
+         ResultSet rset = queryStatement.executeQuery(sqlStatement);
+         rset.next();
+         return rset.getInt(1);
+      }
+   }
 
 
 }

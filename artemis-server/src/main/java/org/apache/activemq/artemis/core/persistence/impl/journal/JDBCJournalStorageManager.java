@@ -28,7 +28,10 @@ import org.apache.activemq.artemis.core.config.storage.DatabaseStorageConfigurat
 import org.apache.activemq.artemis.core.io.IOCriticalErrorListener;
 import org.apache.activemq.artemis.core.io.SequentialFile;
 import org.apache.activemq.artemis.core.io.nio.NIOSequentialFileFactory;
+import org.apache.activemq.artemis.core.paging.PagingStoreFactory;
+import org.apache.activemq.artemis.core.paging.impl.PagingStoreFactoryDatabase;
 import org.apache.activemq.artemis.core.persistence.OperationContext;
+import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.jdbc.store.drivers.JDBCConnectionProvider;
 import org.apache.activemq.artemis.jdbc.store.file.JDBCSequentialFileFactory;
 import org.apache.activemq.artemis.jdbc.store.journal.JDBCJournalImpl;
@@ -59,6 +62,12 @@ public class JDBCJournalStorageManager extends JournalStorageManager {
                                     final ExecutorFactory ioExecutorFactory,
                                     final IOCriticalErrorListener criticalErrorListener) {
       super(config, analyzer, executorFactory, scheduledExecutorService, ioExecutorFactory, criticalErrorListener);
+   }
+
+   @Override
+   public PagingStoreFactory createPagingStoreFactory(ActiveMQServer server) throws Exception {
+      DatabaseStorageConfiguration dbConf = (DatabaseStorageConfiguration) config.getStoreConfiguration();
+      return new PagingStoreFactoryDatabase(dbConf, this, config.getPageSyncTimeout(), scheduledExecutorService, executorFactory, config.isJournalSyncNonTransactional(), ioCriticalErrorListener);
    }
 
    @Override

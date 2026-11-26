@@ -49,6 +49,7 @@ import org.apache.activemq.artemis.core.paging.cursor.PagedReference;
 import org.apache.activemq.artemis.core.paging.cursor.PagedReferenceImpl;
 import org.apache.activemq.artemis.core.paging.cursor.impl.PageCursorProviderImpl;
 import org.apache.activemq.artemis.core.paging.cursor.impl.PageCursorProviderTestAccessor;
+import org.apache.activemq.artemis.core.paging.impl.FilePage;
 import org.apache.activemq.artemis.core.paging.impl.Page;
 import org.apache.activemq.artemis.core.paging.impl.PageReadWriter;
 import org.apache.activemq.artemis.core.paging.impl.PageTransactionInfoImpl;
@@ -820,15 +821,16 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
          writePageMessage(storeImpl, i);
       }
       // simulate uncompleted page
-      long position = page.getFile().position();
+      FilePage filePage = (FilePage) page;
+      long position = filePage.getFile().position();
       writePageMessage(storeImpl, 30);
-      page.getFile().position(position);
+      filePage.getFile().position(position);
       ByteBuffer buffer = ByteBuffer.allocate(10);
       for (int i = 0; i < buffer.capacity(); i++) {
          buffer.put((byte) 'Z');
       }
       buffer.rewind();
-      page.getFile().writeDirect(buffer, true);
+      filePage.getFile().writeDirect(buffer, true);
       storeImpl.stop();
 
       // write uncompleted page
@@ -919,7 +921,7 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
       store.start();
       try {
          assertEquals(0, store.getAddressLimitPercent());
-         store.addSize(100);
+         store.addMessage(100);
 
          // no limit set
          assertEquals(0, store.getAddressLimitPercent());
@@ -927,16 +929,16 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
          store.applySetting(new AddressSettings().setMaxSizeBytes(1000));
          assertEquals(10, store.getAddressLimitPercent());
 
-         store.addSize(900);
+         store.addMessage(900);
          assertEquals(100, store.getAddressLimitPercent());
 
-         store.addSize(900);
+         store.addMessage(900);
          assertEquals(190, store.getAddressLimitPercent());
 
-         store.addSize(-900);
+         store.addMessage(-900);
          assertEquals(100, store.getAddressLimitPercent());
 
-         store.addSize(-1);
+         store.addMessage(-1);
          assertEquals(99, store.getAddressLimitPercent());
 
       } finally {
@@ -959,8 +961,14 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
          }
 
          @Override
-         public FakePagingManager addSize(int s, boolean sizeOnly) {
-            globalSize.addAndGet(s);
+         public FakePagingManager addMessage(int bytes) {
+            globalSize.addAndGet(bytes);
+            return this;
+         }
+
+         @Override
+         public FakePagingManager addSize(int bytes) {
+            globalSize.addAndGet(bytes);
             return this;
          }
 
@@ -992,7 +1000,7 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
          // no usage yet
          assertEquals(0, store.getAddressLimitPercent());
 
-         store.addSize(100);
+         store.addMessage(100);
 
          // no global limit set
          assertEquals(0, store.getAddressLimitPercent());
@@ -1001,16 +1009,16 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
          limit.set(1000);
          assertEquals(10, store.getAddressLimitPercent());
 
-         store.addSize(900);
+         store.addMessage(900);
          assertEquals(100, store.getAddressLimitPercent());
 
-         store.addSize(900);
+         store.addMessage(900);
          assertEquals(190, store.getAddressLimitPercent());
 
-         store.addSize(-900);
+         store.addMessage(-900);
          assertEquals(100, store.getAddressLimitPercent());
 
-         store.addSize(-1);
+         store.addMessage(-1);
          assertEquals(99, store.getAddressLimitPercent());
 
       } finally {
@@ -1036,7 +1044,7 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
          final AtomicInteger calls = new AtomicInteger();
          final Runnable trackMemoryChecks = calls::incrementAndGet;
          store.applySetting(new AddressSettings().setMaxSizeBytes(1000).setAddressFullMessagePolicy(AddressFullMessagePolicy.BLOCK));
-         store.addSize(100);
+         store.addMessage(100);
          store.flushExecutors();
          store.checkMemory(trackMemoryChecks, null);
          assertEquals(1, calls.get());
@@ -1049,7 +1057,7 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
 
          assertTrue(Wait.waitFor(() -> 2 == calls.get(), 1000, 50));
 
-         store.addSize(900);
+         store.addMessage(900);
          assertEquals(100, store.getAddressLimitPercent());
          store.flushExecutors();
 
@@ -1060,7 +1068,7 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
          store.block();
 
          // release memory
-         store.addSize(-900);
+         store.addMessage(-900);
          assertEquals(10, store.getAddressLimitPercent());
 
          // not yet released memory checks b/c of blocked
@@ -1075,7 +1083,7 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
          // reverse - unblock while full does not release
          store.block();
 
-         store.addSize(900);
+         store.addMessage(900);
          assertEquals(100, store.getAddressLimitPercent());
 
          store.checkMemory(trackMemoryChecks, null);
@@ -1085,7 +1093,7 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
          store.unblock();
          assertEquals(3, calls.get(), "no change after unblock");
 
-         store.addSize(-900);
+         store.addMessage(-900);
          assertEquals(10, store.getAddressLimitPercent());
 
          assertTrue(Wait.waitFor(() -> 4 == calls.get(), 1000, 50), "change");
@@ -1311,8 +1319,8 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
       try {
          store.applySetting(new AddressSettings().setMaxSizeBytes(1000).setAddressFullMessagePolicy(AddressFullMessagePolicy.BLOCK));
 
-         Mockito.when(mockManager.addSize(Mockito.anyInt())).thenReturn(mockManager);
-         store.addSize(100);
+         Mockito.when(mockManager.addMessage(Mockito.anyInt())).thenReturn(mockManager);
+         store.addMessage(100);
 
          // Do an initial check
          final CountingRunnable trackMemoryCheck1 = new CountingRunnable();

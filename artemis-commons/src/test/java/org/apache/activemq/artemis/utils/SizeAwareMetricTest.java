@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.invoke.MethodHandles;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
@@ -30,8 +31,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SizeAwareMetricTest {
+
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    ExecutorService executor;
 
@@ -58,7 +63,7 @@ public class SizeAwareMetricTest {
       SizeAwareMetric child = new SizeAwareMetric(5, 5, 2, 2);
       SizeAwareMetric parent = new SizeAwareMetric(10, 10, 15, 15);
 
-      child.setOnSizeCallback(parent::addSize);
+      child.addCallback(parent);
       child.setOverCallback(() -> childBoolean.set(true));
       child.setUnderCallback(() -> childBoolean.set(false));
 
@@ -66,7 +71,7 @@ public class SizeAwareMetricTest {
       parent.setUnderCallback(() -> parentBoolean.set(false));
 
       for (int i = 0; i < 4; i++) {
-         child.addSize(1, true);
+         child.addSize(1);
       }
 
       assertEquals(4, child.getSize());
@@ -76,7 +81,7 @@ public class SizeAwareMetricTest {
       assertFalse(childBoolean.get());
       assertFalse(parentBoolean.get());
 
-      child.addSize(1, true);
+      child.addSize(1);
       assertEquals(5, child.getSize());
       assertTrue(childBoolean.get());
       assertFalse(parentBoolean.get());
@@ -84,14 +89,14 @@ public class SizeAwareMetricTest {
       assertEquals(0, parent.getElements());
 
 
-      child.addSize(-5, true);
+      child.addSize(-5);
 
       assertEquals(0, child.getSize());
       assertEquals(0, parent.getSize());
 
 
       for (int i = 0; i < 5; i++) {
-         child.addSize(1, false);
+         child.addElement(1);
       }
 
       assertEquals(5, child.getSize());
@@ -103,7 +108,7 @@ public class SizeAwareMetricTest {
       assertTrue(child.isOverElements());
 
       for (int i = 0; i < 5; i++) {
-         child.addSize(1, false);
+         child.addElement(1);
       }
 
       assertEquals(10, child.getSize());
@@ -138,7 +143,7 @@ public class SizeAwareMetricTest {
       SizeAwareMetric metric = new SizeAwareMetric(1000, 500, -1, -1);
       SizeAwareMetric globalMetric = new SizeAwareMetric(10000, 500, -1, -1);
 
-      metric.setOnSizeCallback(globalMetric::addSize);
+      metric.addCallback(globalMetric);
       metric.setOverCallback(() -> {
          metricOver.set(true);
          metricOverCalls.incrementAndGet();
@@ -166,7 +171,7 @@ public class SizeAwareMetricTest {
                flagStart.await(10, TimeUnit.SECONDS);
 
                for (int iadd = 0; iadd < ELEMENTS; iadd++) {
-                  metric.addSize(1, false);
+                  metric.addElement(1);
                }
                latchDone.countDown();
             } catch (Throwable e) {
@@ -207,7 +212,7 @@ public class SizeAwareMetricTest {
                flagStart.await(10, TimeUnit.SECONDS);
 
                for (int iadd = 0; iadd < ELEMENTS; iadd++) {
-                  metric.addSize(-1, false);
+                  metric.addElement(-1);
                }
                latchDone.countDown();
             } catch (Throwable e) {
@@ -238,16 +243,16 @@ public class SizeAwareMetricTest {
       metric.setUnderCallback(() -> over.set(false));
 
       for (int i = 0; i < 11; i++) {
-         metric.addSize(10, false);
+         metric.addElement(10);
       }
 
       assertTrue(over.get());
       assertEquals(110, metric.getSize());
       assertEquals(11, metric.getElements());
-      metric.addSize(1000, false);
+      metric.addElement(1000);
 
       for (int i = 0; i < 12; i++) {
-         metric.addSize(-10, false);
+         metric.addElement(-10);
       }
 
       assertFalse(over.get());
@@ -258,16 +263,16 @@ public class SizeAwareMetricTest {
       SizeAwareMetric metricMain = new SizeAwareMetric(10000, 500, 10, 10);
       SizeAwareMetric metric = new SizeAwareMetric(10000, 500, 1000, 1000);
 
-      metric.setOnSizeCallback(metricMain::addSize);
+      metric.addCallback(metricMain);
 
       AtomicBoolean over = new AtomicBoolean(false);
       metricMain.setOverCallback(() -> over.set(true));
       metricMain.setUnderCallback(() -> over.set(false));
 
       for (int i = 0; i < 11; i++) {
-         metric.addSize(10);
+         metric.addElement(10);
       }
-      metric.addSize(1000, true);
+      metric.addSize(1000);
 
       assertEquals(1110L, metricMain.getSize());
       assertEquals(11, metricMain.getElements());
@@ -279,7 +284,7 @@ public class SizeAwareMetricTest {
       assertFalse(metric.isOverSize());
       assertTrue(over.get());
 
-      metric.addSize(-1000, true);
+      metric.addSize(-1000);
 
       assertEquals(110L, metricMain.getSize());
       assertEquals(11, metricMain.getElements());
@@ -288,7 +293,7 @@ public class SizeAwareMetricTest {
       assertTrue(over.get());
 
       for (int i = 0; i < 11; i++) {
-         metric.addSize(-10);
+         metric.addElement(-10);
       }
 
       assertEquals(0L, metricMain.getSize());
@@ -310,9 +315,9 @@ public class SizeAwareMetricTest {
       metric.setUnderCallback(() -> over.set(false));
 
       for (int i = 0; i < 11; i++) {
-         metric.addSize(10);
+         metric.addElement(10);
       }
-      metric.addSize(1000, true);
+      metric.addSize(1000);
 
       assertEquals(1110L, metric.getSize());
       assertEquals(11, metric.getElements());
@@ -320,7 +325,7 @@ public class SizeAwareMetricTest {
       assertFalse(metric.isOverSize());
       assertTrue(over.get());
 
-      metric.addSize(-1000, true);
+      metric.addSize(-1000);
 
       assertEquals(110L, metric.getSize());
       assertEquals(11, metric.getElements());
@@ -329,7 +334,7 @@ public class SizeAwareMetricTest {
       assertTrue(over.get());
 
       for (int i = 0; i < 11; i++) {
-         metric.addSize(-10);
+         metric.addElement(-10);
       }
 
       assertEquals(0L, metric.getSize());
@@ -373,7 +378,7 @@ public class SizeAwareMetricTest {
       for (int istart = 0; istart < THREADS; istart++) {
          final AtomicBoolean metricOver = new AtomicBoolean(false);
          final SizeAwareMetric theMetric = new SizeAwareMetric(1000, 500, 1000, 500);
-         theMetric.setOnSizeCallback(globalMetric::addSize);
+         theMetric.addCallback(globalMetric);
          theMetric.setOverCallback(() -> {
             metricOver.set(true);
             metricOverCalls.incrementAndGet();
@@ -389,7 +394,7 @@ public class SizeAwareMetricTest {
                flagStart.await(10, TimeUnit.SECONDS);
 
                for (int iadd = 0; iadd < ELEMENTS; iadd++) {
-                  theMetric.addSize(1);
+                  theMetric.addElement(1);
                }
                latchDone.countDown();
             } catch (Throwable e) {
@@ -434,7 +439,7 @@ public class SizeAwareMetricTest {
                flagStart.await(10, TimeUnit.SECONDS);
 
                for (int iadd = 0; iadd < ELEMENTS; iadd++) {
-                  theMetric.addSize(-1);
+                  theMetric.addElement(-1);
                }
                latchDone.countDown();
             } catch (Throwable e) {
@@ -472,13 +477,13 @@ public class SizeAwareMetricTest {
       metric.setOverCallback(() -> over.set(true));
       metric.setUnderCallback(() -> over.set(false));
 
-      metric.addSize(900);
+      metric.addElement(900);
       assertFalse(over.get());
 
       metric.setMax(800, 700, -1, -1);
       assertTrue(over.get());
 
-      metric.addSize(-201);
+      metric.addElement(-201);
       assertFalse(over.get());
    }
 
@@ -487,7 +492,7 @@ public class SizeAwareMetricTest {
       AtomicBoolean over = new AtomicBoolean(false);
       SizeAwareMetric metric = new SizeAwareMetric(-1, -1, -1, -1);
       metric.setOverCallback(() -> over.set(true));
-      metric.addSize(100);
+      metric.addElement(100);
 
       assertEquals(100, metric.getSize());
       assertEquals(1, metric.getElements());
@@ -501,9 +506,9 @@ public class SizeAwareMetricTest {
       SizeAwareMetric metric = new SizeAwareMetric(-1, -1, -1, -1);
 
       metric.setOverCallback(() -> over.set(true));
-      metric.setOnSizeCallback(metricMain::addSize);
+      metric.addCallback(metricMain);
       for (int i = 0; i < 10; i++) {
-         metric.addSize(10, true);
+         metric.addSize(10);
       }
 
       assertEquals(100, metricMain.getSize());
@@ -512,7 +517,7 @@ public class SizeAwareMetricTest {
       assertEquals(0, metric.getElements());
 
       for (int i = 0; i < 10; i++) {
-         metric.addSize(10, false);
+         metric.addElement(10);
       }
 
       assertEquals(200, metricMain.getSize());
@@ -543,15 +548,15 @@ public class SizeAwareMetricTest {
       metric.setOverCallback(() -> over.set(true));
       metric.setUnderCallback(() -> over.set(false));
 
-      metric.addSize(2500, true);
+      metric.addSize(2500);
 
       assertTrue(over.get());
 
-      metric.addSize(1000);
+      metric.addElement(1000);
 
       assertTrue(metric.isOverSize());
 
-      metric.addSize(-2500, true);
+      metric.addSize(-2500);
 
       // Even though we are free from maxSize, we are still bound by maxElements, it should still be over
       assertTrue(over.get());
@@ -560,18 +565,18 @@ public class SizeAwareMetricTest {
       assertEquals(1, metric.getElements());
       assertEquals(1000, metric.getSize());
 
-      metric.addSize(5000, true);
+      metric.addSize(5000);
 
       assertTrue(metric.isOverElements());
       assertEquals(6000, metric.getSize());
 
-      metric.addSize(-1000);
+      metric.addElement(-1000);
 
       assertTrue(metric.isOverSize());
       assertEquals(0, metric.getElements());
       assertEquals(5000, metric.getSize());
 
-      metric.addSize(-5000, true);
+      metric.addSize(-5000);
       assertFalse(metric.isOver());
       assertEquals(0, metric.getSize());
       assertEquals(0, metric.getElements());
@@ -611,7 +616,7 @@ public class SizeAwareMetricTest {
             try {
                flagStart.await(10, TimeUnit.SECONDS);
                for (int repeat = 0; repeat < ELEMENTS; repeat++) {
-                  metric.addSize(1);
+                  metric.addElement(1);
                }
             } catch (Throwable e) {
                e.printStackTrace();
@@ -623,7 +628,7 @@ public class SizeAwareMetricTest {
             try {
                flagStart.await(10, TimeUnit.SECONDS);
                for (int repeat = 0; repeat < ELEMENTS; repeat++) {
-                  metric.addSize(-1);
+                  metric.addElement(-1);
                }
             } catch (Throwable e) {
                e.printStackTrace();
@@ -648,5 +653,328 @@ public class SizeAwareMetricTest {
       metric.setMax(1, 1, 1, 1);
       assertTrue(metric.isSizeEnabled());
       assertTrue(metric.isElementsEnabled());
+   }
+
+   @Test
+   public void testAggregate() {
+      AtomicBoolean childOver = new AtomicBoolean(false);
+
+      SizeAwareMetric parent = new SizeAwareMetric(1000, 500, 10, 5);
+      SizeAwareMetric child = new SizeAwareMetric(500, 200, 5, 2);
+
+      child.addCallback(parent);
+
+      child.setOverCallback(() -> childOver.set(true));
+      child.setUnderCallback(() -> childOver.set(false));
+
+      // add 3 elements with size 30 each — parent mirrors child via aggregate callback
+      child.aggregate(3, 90, true);
+
+      assertEquals(3, child.getElements());
+      assertEquals(90, child.getSize());
+      assertEquals(3, parent.getElements());
+      assertEquals(90, parent.getSize());
+      assertFalse(childOver.get());
+
+      // push child over the elements limit (maxElements=5)
+      child.aggregate(3, 30, true);
+
+      assertEquals(6, child.getElements());
+      assertEquals(120, child.getSize());
+      assertEquals(6, parent.getElements());
+      assertEquals(120, parent.getSize());
+      assertTrue(childOver.get());
+      assertTrue(child.isOverElements());
+
+      // remove enough to go under lowerMarkElements (lowerMarkElements=2)
+      child.aggregate(-6, -120, true);
+
+      assertEquals(0, child.getElements());
+      assertEquals(0, child.getSize());
+      assertEquals(0, parent.getElements());
+      assertEquals(0, parent.getSize());
+      assertFalse(childOver.get());
+      assertFalse(child.isOver());
+
+      // verify affectCallbacks=false does not propagate to parent
+      child.aggregate(1, 10, false);
+      assertEquals(1, child.getElements());
+      assertEquals(10, child.getSize());
+      assertEquals(0, parent.getElements());
+      assertEquals(0, parent.getSize());
+   }
+
+   @Test
+   public void testAggregateRoot() throws Exception {
+      SizeAwareMetric root = new SizeAwareMetric();
+
+      final int THREADS = 10;
+
+      setupExecutor(THREADS);
+      SizeAwareMetric[] threadMetric = new SizeAwareMetric[THREADS];
+
+      CountDownLatch latchDone = new CountDownLatch(THREADS);
+      CountDownLatch started = new CountDownLatch(THREADS);
+      AtomicBoolean running = new AtomicBoolean(true);
+      AtomicInteger errors = new AtomicInteger(0);
+      CyclicBarrier flagStart = new CyclicBarrier(THREADS + 1);
+
+      try {
+         for (int i = 0; i < THREADS; i++) {
+            SizeAwareMetric metric = new SizeAwareMetric();
+            threadMetric[i] = metric;
+            executor.execute(() -> {
+               try {
+                  flagStart.await(10, TimeUnit.SECONDS);
+                  long messageId = 0;
+                  while (running.get()) {
+                     if (messageId++ == 0) {
+                        started.countDown();
+                     }
+                     metric.addElement(RandomUtil.randomPositiveInt());
+                  }
+               } catch (Exception e) {
+                  e.printStackTrace();
+                  errors.incrementAndGet();
+               } finally {
+                  latchDone.countDown();
+               }
+            });
+         }
+         flagStart.await(10, TimeUnit.SECONDS);
+         assertTrue(started.await(10, TimeUnit.SECONDS));
+         for (SizeAwareMetric metric : threadMetric) {
+            Thread.sleep(1); // waiting some minimal time to have events sent to the metric before adding the root
+            metric.addCallback(root);
+         }
+         running.set(false);
+         assertTrue(latchDone.await(10, TimeUnit.SECONDS));
+         assertEquals(0, errors.get());
+         long totalBytes = 0, totalElements = 0;
+         for (SizeAwareMetric m : threadMetric) {
+            totalBytes += m.getSize();
+            totalElements += m.getElements();
+         }
+         assertEquals(totalElements, root.getElements());
+         assertEquals(totalBytes, root.getSize());
+      } finally {
+         running.set(false);
+      }
+   }
+
+   @Test
+   public void testAggregateRootRemove() throws Exception {
+      SizeAwareMetric root = new SizeAwareMetric();
+
+      final int THREADS = 10;
+      final int MESSAGES_PER_THREAD = 1000;
+
+      setupExecutor(THREADS);
+      SizeAwareMetric[] threadMetric = new SizeAwareMetric[THREADS];
+      int[][] messageSizes = new int[THREADS][MESSAGES_PER_THREAD];
+
+      CountDownLatch latchDone = new CountDownLatch(THREADS);
+      AtomicInteger errors = new AtomicInteger(0);
+      CyclicBarrier flagStart = new CyclicBarrier(THREADS + 1);
+
+      for (int i = 0; i < THREADS; i++) {
+         SizeAwareMetric metric = new SizeAwareMetric();
+         metric.addCallback(root);
+         threadMetric[i] = metric;
+      }
+
+      try {
+         for (int t = 0; t < THREADS; t++) {
+            final int threadIndex = t;
+            final SizeAwareMetric metric = threadMetric[t];
+            executor.execute(() -> {
+               try {
+                  flagStart.await(10, TimeUnit.SECONDS);
+                  for (int i = 0; i < MESSAGES_PER_THREAD; i++) {
+                     int size = RandomUtil.randomPositiveInt();
+                     messageSizes[threadIndex][i] = size;
+                     metric.addElement(size);
+                  }
+                  for (int i = 0; i < MESSAGES_PER_THREAD; i++) {
+                     metric.addElement(-messageSizes[threadIndex][i]);
+                  }
+               } catch (Exception e) {
+                  e.printStackTrace();
+                  errors.incrementAndGet();
+               } finally {
+                  latchDone.countDown();
+               }
+            });
+         }
+         flagStart.await(10, TimeUnit.SECONDS);
+         assertTrue(latchDone.await(10, TimeUnit.SECONDS));
+         assertEquals(0, errors.get());
+
+         for (SizeAwareMetric m : threadMetric) {
+            assertEquals(0, m.getElements());
+            assertEquals(0, m.getSize());
+         }
+         assertEquals(0, root.getElements());
+         assertEquals(0, root.getSize());
+      } finally {
+         // cleanup
+      }
+   }
+
+   @Test
+   public void testRemoveCallbackFirst() throws Exception {
+      testRemoveCallbackAtPosition(0);
+   }
+
+   @Test
+   public void testRemoveCallbackMiddle() throws Exception {
+      testRemoveCallbackAtPosition(1);
+   }
+
+   @Test
+   public void testRemoveCallbackLast() throws Exception {
+      testRemoveCallbackAtPosition(2);
+   }
+
+   private void testRemoveCallbackAtPosition(int removeIndex) throws Exception {
+      SizeAwareMetric child = new SizeAwareMetric();
+      SizeAwareMetric[] parents = new SizeAwareMetric[3];
+      SizeAwareMetric.AggregateCallback[] callbacks = new SizeAwareMetric.AggregateCallback[3];
+
+      for (int i = 0; i < 3; i++) {
+         parents[i] = new SizeAwareMetric();
+         callbacks[i] = parents[i]::aggregate;
+         child.addCallback(callbacks[i]);
+      }
+
+      child.addElement(100);
+      child.addElement(200);
+
+      assertEquals(2, child.getElements());
+      assertEquals(300, child.getSize());
+      for (SizeAwareMetric parent : parents) {
+         assertEquals(2, parent.getElements());
+         assertEquals(300, parent.getSize());
+      }
+
+      child.removeCallback(callbacks[removeIndex]);
+
+      // removed parent should have been zeroed out
+      assertEquals(0, parents[removeIndex].getElements());
+      assertEquals(0, parents[removeIndex].getSize());
+
+      // remaining parents should still reflect the child's values
+      for (int i = 0; i < 3; i++) {
+         if (i == removeIndex) {
+            continue;
+         }
+         assertEquals(2, parents[i].getElements());
+         assertEquals(300, parents[i].getSize());
+      }
+
+      // further adds should only propagate to remaining parents
+      child.addElement(50);
+
+      assertEquals(3, child.getElements());
+      assertEquals(350, child.getSize());
+      assertEquals(0, parents[removeIndex].getElements());
+      assertEquals(0, parents[removeIndex].getSize());
+      for (int i = 0; i < 3; i++) {
+         if (i == removeIndex) {
+            continue;
+         }
+         assertEquals(3, parents[i].getElements());
+         assertEquals(350, parents[i].getSize());
+      }
+   }
+
+   @Test
+   public void testIncrementDecrementElement() throws Exception {
+      SizeAwareMetric metric = new SizeAwareMetric(1000, 500, 5, 2);
+      SizeAwareMetric parent = new SizeAwareMetric();
+
+      AtomicBoolean over = new AtomicBoolean(false);
+      metric.setOverCallback(() -> over.set(true));
+      metric.setUnderCallback(() -> over.set(false));
+      metric.addCallback(parent);
+
+      for (int i = 0; i < 3; i++) {
+         metric.incrementElement();
+      }
+
+      assertEquals(3, metric.getElements());
+      assertEquals(0, metric.getSize());
+      assertEquals(3, parent.getElements());
+      assertEquals(0, parent.getSize());
+      assertFalse(over.get());
+
+      // go over the max elements threshold (5)
+      metric.incrementElement();
+      metric.incrementElement();
+
+      assertEquals(5, metric.getElements());
+      assertEquals(5, parent.getElements());
+      assertTrue(over.get());
+
+      // decrement back under the lower mark (2)
+      metric.decrementElement();
+      metric.decrementElement();
+      metric.decrementElement();
+      metric.decrementElement();
+
+      assertEquals(1, metric.getElements());
+      assertEquals(1, parent.getElements());
+      assertFalse(over.get());
+
+      // decrement to zero
+      metric.decrementElement();
+
+      assertEquals(0, metric.getElements());
+      assertEquals(0, parent.getElements());
+      assertEquals(0, metric.getSize());
+      assertEquals(0, parent.getSize());
+   }
+
+   @Test
+   public void testIncrementDecrementElementConcurrent() throws Exception {
+      final int THREADS = 10;
+      final int INCREMENTS_PER_THREAD = 1000;
+
+      SizeAwareMetric root = new SizeAwareMetric();
+      SizeAwareMetric metric = new SizeAwareMetric();
+      metric.addCallback(root);
+
+      setupExecutor(THREADS);
+
+      CountDownLatch latchDone = new CountDownLatch(THREADS);
+      AtomicInteger errors = new AtomicInteger(0);
+      CyclicBarrier flagStart = new CyclicBarrier(THREADS + 1);
+
+      for (int i = 0; i < THREADS; i++) {
+         executor.execute(() -> {
+            try {
+               flagStart.await(10, TimeUnit.SECONDS);
+               for (int j = 0; j < INCREMENTS_PER_THREAD; j++) {
+                  metric.incrementElement();
+               }
+               for (int j = 0; j < INCREMENTS_PER_THREAD; j++) {
+                  metric.decrementElement();
+               }
+            } catch (Exception e) {
+               e.printStackTrace();
+               errors.incrementAndGet();
+            } finally {
+               latchDone.countDown();
+            }
+         });
+      }
+      flagStart.await(10, TimeUnit.SECONDS);
+      assertTrue(latchDone.await(10, TimeUnit.SECONDS));
+      assertEquals(0, errors.get());
+
+      assertEquals(0, metric.getElements());
+      assertEquals(0, metric.getSize());
+      assertEquals(0, root.getElements());
+      assertEquals(0, root.getSize());
    }
 }

@@ -174,6 +174,10 @@ public class RoutingContextTest {
       }
 
       @Override
+      public void destroy() throws Exception {
+      }
+
+      @Override
       public long getAutoDeleteDelay() {
          return 0;
       }

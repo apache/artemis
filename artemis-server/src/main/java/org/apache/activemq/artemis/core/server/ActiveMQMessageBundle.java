@@ -316,7 +316,7 @@ public interface ActiveMQMessageBundle {
    ActiveMQClusterSecurityException unableToValidateClusterUser(String user);
 
    @Message(id = 229102, value = "Address \"{}\" is full.")
-   ActiveMQAddressFullException addressIsFull(String addressName);
+   ActiveMQAddressFullException addressIsFull(SimpleString addressName);
 
    @Message(id = 229103, value = "No Connectors or Discovery Groups configured for Scale Down")
    ActiveMQException noConfigurationFoundForScaleDown();

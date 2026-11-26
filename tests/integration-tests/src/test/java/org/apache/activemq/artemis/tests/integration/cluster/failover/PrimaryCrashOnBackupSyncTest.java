@@ -39,6 +39,7 @@ import org.apache.activemq.artemis.core.config.impl.ConfigurationImpl;
 import org.apache.activemq.artemis.core.config.impl.SecurityConfiguration;
 import org.apache.activemq.artemis.core.io.SequentialFileFactory;
 import org.apache.activemq.artemis.core.paging.PagingManager;
+import org.apache.activemq.artemis.core.paging.impl.PagingManagerImpl;
 import org.apache.activemq.artemis.core.paging.PagingStore;
 import org.apache.activemq.artemis.core.paging.PagingStoreFactory;
 import org.apache.activemq.artemis.core.paging.impl.PagingStoreFactoryNIO;
@@ -214,13 +215,16 @@ public class PrimaryCrashOnBackupSyncTest extends ActiveMQTestBase {
          Configuration primaryConfiguration = stop.createPrimaryConfiguration();
          ActiveMQServer primaryServer = new ActiveMQServerImpl(primaryConfiguration, ManagementFactory.getPlatformMBeanServer(), new ActiveMQJAASSecurityManager(InVMLoginModule.class.getName(), new SecurityConfiguration())) {
             @Override
-            protected PagingStoreFactoryNIO getPagingStoreFactory() {
-               return new PagingStoreFactoryNIO(this.getStorageManager(), this.getConfiguration().getPagingLocation(), this.getConfiguration().getJournalBufferTimeout_NIO(), this.getScheduledPool(), this.getExecutorFactory(), this.getConfiguration().isJournalSyncNonTransactional(), null, () -> true) {
+            public PagingManager createPagingManager() throws Exception {
+               PagingManagerImpl manager = (PagingManagerImpl) super.createPagingManager();
+               PagingStoreFactoryNIO originalFactory = (PagingStoreFactoryNIO) manager.getPagingStoreFactory();
+               manager.replacePageStoreFactory(new PagingStoreFactoryNIO(originalFactory.getStorageManager(), originalFactory.getDirectory(), originalFactory.getSyncTimeout(), originalFactory.getScheduledExecutor(), originalFactory.getExecutorFactory(), originalFactory.isSyncNonTransactional(), originalFactory.getCritialErrorListener(), () -> true) {
                   @Override
                   public synchronized PagingStore newStore(SimpleString address, AddressSettings settings) {
                      return new DelayPagingStoreImpl(address, this.getScheduledExecutor(), primaryConfiguration.getJournalBufferTimeout_NIO(), getPagingManager(), getStorageManager(), null, this, address, settings, getExecutorFactory().getExecutor(), getExecutorFactory().getExecutor(), this.isSyncNonTransactional());
                   }
-               };
+               });
+               return manager;
             }
          };
          primaryServer.start();

@@ -211,7 +211,7 @@ public class PageCounterRebuildManager implements Runnable {
          logger.debug("{} reading paging {} of {}", pgStore.getAddress(), pgid, limitPageId);
          Page page = pgStore.newPageObject(pgid);
 
-         if (!page.getFile().exists()) {
+         if (!page.storageExists()) {
             if (logger.isDebugEnabled()) {
                logger.trace("Skipping page {} on store {}", pgid, pgStore.getAddress());
             }

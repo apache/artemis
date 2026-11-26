@@ -57,7 +57,7 @@ public class MessageJournalTest extends ActiveMQTestBase {
 
       message.getBodyBuffer().writeByte((byte)'Z');
 
-      server.getStorageManager().storeMessage(message);
+      server.getStorageManager().storeMessage(null, message);
 
       server.getStorageManager().stop();
 
@@ -96,7 +96,7 @@ public class MessageJournalTest extends ActiveMQTestBase {
 
       assertNotNull(factory);
 
-      server.getStorageManager().storeMessage(message);
+      server.getStorageManager().storeMessage(null, message);
 
       server.getStorageManager().stop();
 

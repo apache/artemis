@@ -412,6 +412,8 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
 
    private StoreConfiguration storeConfiguration;
 
+   private boolean databaseStorage = false;
+
    protected boolean populateValidatedUser = ActiveMQDefaultConfiguration.isDefaultPopulateValidatedUser();
 
    protected boolean rejectEmptyValidatedUser = ActiveMQDefaultConfiguration.isDefaultRejectEmptyValidatedUser();
@@ -936,9 +938,13 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
       beanUtils.getConvertUtils().register(new Converter() {
          @Override
          public <T> T convert(Class<T> type, Object value) {
-            //we only care about DATABASE type as it is the only one used
-            if (String.valueOf(StoreConfiguration.StoreType.DATABASE).equals(value)) {
+            //we only care about DATABASE and NEW_DATABASE types
+            if (StoreConfiguration.StoreType.DATABASE.toString().equals(value)) {
                return (T) new DatabaseStorageConfiguration();
+            } else if (StoreConfiguration.StoreType.NEW_DATABASE.toString().equals(value)) {
+               DatabaseStorageConfiguration config = new DatabaseStorageConfiguration();
+               config.setStoreType(StoreConfiguration.StoreType.NEW_DATABASE);
+               return (T) config;
             }
             throw ActiveMQMessageBundle.BUNDLE.unsupportedStorePropertyType();
          }
@@ -2966,6 +2972,17 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
    @Override
    public ConfigurationImpl setStoreConfiguration(StoreConfiguration storeConfiguration) {
       this.storeConfiguration = storeConfiguration;
+      return this;
+   }
+
+   @Override
+   public boolean isDatabaseStorage() {
+      return databaseStorage;
+   }
+
+   @Override
+   public ConfigurationImpl setDatabaseStorage(boolean databaseStorage) {
+      this.databaseStorage = databaseStorage;
       return this;
    }
 

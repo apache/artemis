@@ -116,8 +116,8 @@ public class AnonymousProducerPageTest extends ActiveMQTestBase {
       final int MSG_COUNT = 3_000;
 
       // sending size to explode max size
-      server.getPagingManager().addSize((int) ((PagingManagerImpl) server.getPagingManager()).getMaxSize());
-      server.getPagingManager().addSize(100_000);
+      server.getPagingManager().addMessage((int) ((PagingManagerImpl) server.getPagingManager()).getMaxSize());
+      server.getPagingManager().addMessage(100_000);
 
       server.getAddressSettingsRepository().addMatch("blockedQueue", new AddressSettings().setAddressFullMessagePolicy(AddressFullMessagePolicy.BLOCK));
 

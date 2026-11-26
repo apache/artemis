@@ -31,6 +31,7 @@ import org.apache.activemq.artemis.core.buffers.impl.ChannelBufferWrapper;
 import org.apache.activemq.artemis.core.io.SequentialFile;
 import org.apache.activemq.artemis.core.message.LargeBodyReader;
 import org.apache.activemq.artemis.core.persistence.StorageManager;
+import org.apache.activemq.artemis.core.persistence.impl.database.sequential.MemorySequentialFile;
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.LargeServerMessage;
 import org.slf4j.Logger;
@@ -68,6 +69,24 @@ public class LargeBody {
    public LargeBody(LargeServerMessage message, StorageManager storageManager, SequentialFile file) {
       this(message, storageManager);
       this.file = file;
+   }
+
+   // This will give us a chance to compute the large memory size if using a memory buffer instead of a file (as is the case of the database)
+   public int getMemoryEstimate() {
+      if (file == null) {
+         return 0;
+      } else {
+         return file.getMemoryEstimate();
+      }
+   }
+
+   public boolean supportsDirectBody() {
+      return file instanceof MemorySequentialFile;
+   }
+
+   public ActiveMQBuffer getBodyBuffer() {
+      assert file instanceof MemorySequentialFile;
+      return ((MemorySequentialFile) file).getData();
    }
 
    public StorageManager getStorageManager() {
@@ -118,7 +137,11 @@ public class LargeBody {
          releaseResources(false, false);
          storageManager.deleteLargeMessageBody(message);
       } catch (Exception e) {
-         storageManager.criticalError(e);
+         if (storageManager != null) {
+            storageManager.criticalError(e);
+         } else {
+            logger.warn(e.getMessage(), e);
+         }
       }
    }
 
@@ -223,10 +246,6 @@ public class LargeBody {
       return file.cloneFile();
    }
 
-   /**
-    * Meant for test-ability, be careful if you decide to use it. and in case you use it for a real reason, please
-    * change the documentation here.
-    */
    public void replaceFile(SequentialFile file) {
       this.file = file;
    }
@@ -380,7 +399,11 @@ public class LargeBody {
    }
 
    public SequentialFile createFile() {
-      return storageManager.createFileForLargeMessage(getMessageID(), message.toMessage().isDurable());
+      if (file != null) {
+         return file.cloneFile();
+      } else {
+         return storageManager.createFileForLargeMessage(getMessageID(), message.toMessage().isDurable());
+      }
    }
 
    protected void openFile() throws Exception {
