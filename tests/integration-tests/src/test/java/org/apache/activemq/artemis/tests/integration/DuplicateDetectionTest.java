@@ -19,6 +19,7 @@ package org.apache.activemq.artemis.tests.integration;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -30,6 +31,7 @@ import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
 import java.util.Collection;
 
+import org.apache.activemq.artemis.api.core.ActiveMQAddressFullException;
 import org.apache.activemq.artemis.api.core.ActiveMQDuplicateIdException;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.Message;
@@ -47,6 +49,7 @@ import org.apache.activemq.artemis.api.core.client.ServerLocator;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.postoffice.impl.PostOfficeImpl;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
+import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.transaction.impl.XidImpl;
 import org.apache.activemq.artemis.tests.extensions.parameterized.Parameter;
@@ -55,6 +58,7 @@ import org.apache.activemq.artemis.tests.extensions.parameterized.Parameters;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
+import org.apache.activemq.artemis.utils.Wait;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -884,6 +888,50 @@ public class DuplicateDetectionTest extends ActiveMQTestBase {
       assertNull(message);
    }
 
+   /*
+    * Two transactions that send the same id before either commits: the id joins the cache only at the commit, so the
+    * second to commit must still find it there and fail, rather than deliver the message again
+    */
+   @TestTemplate
+   public void testOverlappingTransactionsSendTheIdOnce() throws Exception {
+      ClientSession first = sf.createSession(false, false, false);
+      ClientSession second = sf.createSession(false, false, false);
+
+      final SimpleString queueName = SimpleString.of("DuplicateDetectionTestQueue");
+
+      first.createQueue(QueueConfiguration.of(queueName).setDurable(false));
+
+      ClientProducer firstProducer = first.createProducer(queueName);
+      ClientProducer secondProducer = second.createProducer(queueName);
+
+      SimpleString dupID = SimpleString.of("abcdefg");
+
+      ClientMessage message = createMessage(first, 1);
+      message.putBytesProperty(Message.HDR_DUPLICATE_DETECTION_ID, dupID.getData());
+      firstProducer.send(message);
+
+      message = createMessage(second, 2);
+      message.putBytesProperty(Message.HDR_DUPLICATE_DETECTION_ID, dupID.getData());
+      secondProducer.send(message);
+
+      first.commit();
+
+      try {
+         second.commit();
+         fail("the second transaction committed the same duplicate id");
+      } catch (ActiveMQDuplicateIdException expected) {
+      }
+      second.rollback();
+
+      ClientSession session = sf.createSession(false, true, true);
+      session.start();
+      ClientConsumer consumer = session.createConsumer(queueName);
+      message = consumer.receive(5000);
+      assertNotNull(message);
+      assertEquals(1, message.getObjectProperty(propKey));
+      assertNull(consumer.receiveImmediate());
+   }
+
    @TestTemplate
    public void testRollbackThenSend() throws Exception {
       ClientSession session = sf.createSession(false, false, false);
@@ -916,6 +964,64 @@ public class DuplicateDetectionTest extends ActiveMQTestBase {
       message = consumer.receive(5000);
       assertNotNull(message);
       assertEquals(dupID1.toString(), message.getStringProperty("key"));
+   }
+
+   /*
+    * A send refused after its duplicate check leaves the cache as it was: the id before it is still a duplicate
+    */
+   @TestTemplate
+   public void testRefusedSendKeepsTheIdBeforeIt() throws Exception {
+      final SimpleString queueName = SimpleString.of("FullQueue");
+
+      server.getAddressSettingsRepository().addMatch(queueName.toString(), new AddressSettings().setIDCacheSize(1).setMaxSizeBytes(10000).setAddressFullMessagePolicy(AddressFullMessagePolicy.FAIL));
+
+      ClientSession session = sf.createSession(false, true, true);
+
+      session.start();
+
+      session.createQueue(QueueConfiguration.of(queueName).setDurable(false));
+
+      ClientProducer producer = session.createProducer(queueName);
+
+      producer.send(createLargeBody(session, "d1"));
+
+      int sent = 1;
+      while (true) {
+         try {
+            producer.send(createLargeBody(session, null));
+            sent++;
+            assertTrue(sent < 20, "the address never filled");
+         } catch (ActiveMQAddressFullException e) {
+            break;
+         }
+      }
+
+      assertThrows(ActiveMQAddressFullException.class, () -> producer.send(createLargeBody(session, "d2")));
+
+      ClientConsumer consumer = session.createConsumer(queueName);
+      for (int i = 0; i < sent; i++) {
+         ClientMessage message = consumer.receive(5000);
+         assertNotNull(message);
+         message.acknowledge();
+      }
+      assertNull(consumer.receiveImmediate());
+      // Sends the acknowledgements
+      consumer.close();
+      Wait.assertEquals(0L, () -> server.getPagingManager().getPageStore(queueName).getAddressSize());
+
+      producer.send(createLargeBody(session, "d1"));
+
+      consumer = session.createConsumer(queueName);
+      assertNull(consumer.receive(500));
+   }
+
+   private ClientMessage createLargeBody(final ClientSession session, final String dupID) {
+      ClientMessage message = session.createMessage(true);
+      message.getBodyBuffer().writeBytes(new byte[4000]);
+      if (dupID != null) {
+         message.putStringProperty(Message.HDR_DUPLICATE_DETECTION_ID, SimpleString.of(dupID));
+      }
+      return message;
    }
 
    /*
@@ -1187,17 +1293,21 @@ public class DuplicateDetectionTest extends ActiveMQTestBase {
 
       session.end(xid2, XAResource.TMSUCCESS);
 
-      session.prepare(xid2);
+      // The prepared branch holds the id
+      try {
+         session.prepare(xid2);
+         fail("Should throw an exception here!");
+      } catch (XAException expected) {
+         assertTrue(expected.getCause().toString().contains("DUPLICATE_ID_REJECTED"));
+      }
 
-      session.commit(xid2, false);
+      session.rollback(xid2);
 
       Xid xid3 = new XidImpl("xa1".getBytes(), 1, UUIDGenerator.getInstance().generateStringUUID().getBytes());
 
       session.start(xid3, XAResource.TMNOFLAGS);
 
-      consumer.receive(250);
-
-      message = consumer.receiveImmediate();
+      message = consumer.receive(250);
       assertNull(message);
 
       logger.debug("ending session");
