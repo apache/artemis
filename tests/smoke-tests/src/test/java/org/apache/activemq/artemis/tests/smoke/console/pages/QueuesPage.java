@@ -23,6 +23,7 @@ import org.openqa.selenium.WebElement;
 public class QueuesPage extends ArtemisPage {
    private static final String MESSAGE_COUNT_COLUMN_NAME = "Message Count";
    private static final By SEARCH_BUTTON_LOCATOR = By.xpath("//button[contains(text(),'Search')]");
+   private static final By REFRESH_BUTTON_LOCATOR = By.xpath("//button[@aria-label='Refresh']");
    private static final By QUEUES_PAGE_TITLE = By.xpath("//h2[contains(text(),'Browsing')]");
 
    public QueuesPage(WebDriver driver) {
@@ -33,7 +34,7 @@ public class QueuesPage extends ArtemisPage {
       WebElement queueRowWebElement = driver.findElement(getQueueLocator(name));
 
       WebElement messagesCountWebElement = queueRowWebElement.findElements(By.tagName("td"))
-         .get(getIndexOfColumn(MESSAGE_COUNT_COLUMN_NAME)).findElement(By.tagName("a"));
+         .get(getIndexOfColumn(MESSAGE_COUNT_COLUMN_NAME)).findElement(By.tagName("button"));
 
       messagesCountWebElement.click();
       waitForElementToBeVisible(QUEUES_PAGE_TITLE, timeout);
@@ -49,18 +50,18 @@ public class QueuesPage extends ArtemisPage {
       WebElement queueRowWebElement = driver.findElement(getQueueLocator(name));
 
       String messageCountText = queueRowWebElement.findElements(By.tagName("td"))
-         .get(getIndexOfColumn(MESSAGE_COUNT_COLUMN_NAME)).findElement(By.tagName("a")).getText();
+         .get(getIndexOfColumn(MESSAGE_COUNT_COLUMN_NAME)).findElement(By.tagName("button")).getText();
 
       return Integer.parseInt(messageCountText);
    }
 
    private By getQueueLocator(String name) {
-      return By.xpath("//tr[td/a='" + name + "']");
+      return By.xpath("//tr[td/button/span='" + name + "']");
    }
 
 
    public boolean searchQueues(String queueNameInResults) {
-      WebElement element = driver.findElement(SEARCH_BUTTON_LOCATOR);
+      WebElement element = driver.findElement(REFRESH_BUTTON_LOCATOR);
       element.click();
       return countQueue(queueNameInResults) == 1;
    }

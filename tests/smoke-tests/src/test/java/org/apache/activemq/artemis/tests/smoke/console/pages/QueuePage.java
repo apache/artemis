@@ -20,7 +20,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
-import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.A_TAG_LOCATOR;
+import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.BUTTON_LOCATOR;
 import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.COLUMN_MESSAGE_ID;
 import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.COLUMN_ORIGINAL_QUEUE;
 import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.MESSAGE_TABLE;
@@ -37,7 +37,7 @@ public class QueuePage extends ArtemisPage {
 
    public MessagePage getMessagePage(int index, int timeout) {
       int col = getIndexOfColumn(COLUMN_MESSAGE_ID);
-      WebElement element = driver.findElement(TABLE_TAG_LOCATOR).findElements(TD_TAG_LOCATOR).get(col).findElement(A_TAG_LOCATOR);
+      WebElement element = driver.findElement(TABLE_TAG_LOCATOR).findElements(TD_TAG_LOCATOR).get(col).findElement(BUTTON_LOCATOR);
       element.click();
       waitForElementToBeVisible(VIEW_MESSAGE_TITLE_LOCATOR, timeout);
 
@@ -48,7 +48,7 @@ public class QueuePage extends ArtemisPage {
       WebElement messageRowWebElement = driver.findElement(MESSAGE_TABLE).findElements(TR_TAG_LOCATOR).get(index + 1);
 
       String messageIdText = messageRowWebElement.findElements(TD_TAG_LOCATOR).get(
-         getIndexOfColumn(COLUMN_MESSAGE_ID)).findElement(By.tagName("a")).getText();
+         getIndexOfColumn(COLUMN_MESSAGE_ID)).findElement(By.tagName("button")).getText();
 
       return Long.parseLong(messageIdText);
    }

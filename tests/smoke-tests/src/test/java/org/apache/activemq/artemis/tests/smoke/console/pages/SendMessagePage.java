@@ -32,8 +32,8 @@ public class SendMessagePage extends ArtemisPage {
    }
 
    public void clearMessageText() {
-      //the "1" here is what HawtIO shows when clear as the 1st line number
-      while (!"1".equals(getMessageText())) {
+      // it's no longer monaco-editor, so it should be easier
+      while (!"".equals(getMessageText())) {
          Actions actions = new Actions(driver);
          actions.click(driver.findElement(MESSAGE_TEXT_EDITOR_LOCATOR));
          actions.sendKeys(Keys.BACK_SPACE);
@@ -73,9 +73,9 @@ public class SendMessagePage extends ArtemisPage {
    }
 
    public void sendMessage() {
-      WebElement element = driver.findElement(By.xpath("//button[contains(text(),'Send')]"));
+      WebElement element = driver.findElement(By.xpath("//button[contains(span/text(),'Send')]"));
       element.click();
-      element = driver.findElement(By.xpath("//button[contains(text(),'Cancel')]"));
+      element = driver.findElement(By.xpath("//button[contains(span/text(),'Close')]"));
       element.click();
    }
 }

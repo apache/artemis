@@ -33,9 +33,13 @@ public class LoginPage extends ConsolePage {
    }
 
    public String getBrandImage(int timeout) {
-      waitForElementToBeVisible(BRAND_LOCATOR, timeout);
+      waitForElementToBeUnique(BRAND_LOCATOR, timeout);
 
       return driver.findElement(BRAND_LOCATOR).getAttribute("src");
+   }
+
+   public WebElement getBrandImageContainer(int timeout) {
+      return driver.findElement(BRAND_LOCATOR).findElement(By.xpath("./.."));
    }
 
    public StatusPage loginValidUser(String username, String password, int timeout) {

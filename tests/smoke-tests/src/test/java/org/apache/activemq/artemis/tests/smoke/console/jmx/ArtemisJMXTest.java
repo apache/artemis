@@ -25,6 +25,6 @@ public abstract class ArtemisJMXTest extends ConsoleTest {
 
 
    public void loadLandingPage() {
-      driver.get(webServerUrl + "/console/treeartemisjmx");
+      driver.get(webServerUrl + "/console/artemis-jmx");
    }
 }

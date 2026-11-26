@@ -68,11 +68,15 @@ public class PageConstants {
    public static final By BUTTON_LOCATOR = By.tagName(BUTTON);
 
    //Branding and Image locations
-   public static final String DEFAULT_CONSOLE_LOGIN_BRAND_IMAGE = "/img/artemis.png";
+   //this one comes from artemis-console/src/main/webapp/hawtconfig.json
+   public static final String DEFAULT_CONSOLE_LOGIN_BRAND_IMAGE = "/img/artemis-logo.svg";
+   //this one hides the above and uses a version from branding's artemis.css, so it looks better
+   //in dark mode (where the dark background doesn't change)
+   public static final String DEFAULT_CONSOLE_LOGIN_BRAND_OVERRIDE_IMAGE = "/img/artemis-logo-white.svg";
 
    public static final String DEFAULT_CONSOLE_NAME = "Artemis";
 
-   public static final By BRAND_LOCATOR = By.xpath("//img[@class='pf-v5-c-brand']");
+   public static final By BRAND_LOCATOR = By.xpath("//img[@class='pf-v6-c-brand']");
 
    //Component Locators
    public static final By USERNAME_LOCATOR = By.id("pf-login-username-id");
@@ -83,10 +87,10 @@ public class PageConstants {
 
    public static final By LOGIN_BUTTON_LOCATOR = By.xpath("//button[@type='submit']");
 
-   public static final By LOGIN_ERROR_LOCATOR = By.cssSelector(".pf-v5-c-helper-text__item.pf-m-error");
+   public static final By LOGIN_ERROR_LOCATOR = By.cssSelector(".pf-v6-c-helper-text__item.pf-m-error");
 
 
-   public static final By MESSAGE_TEXT_EDITOR_LOCATOR = By.cssSelector("div[class='pf-v5-c-code-editor__code']");
+   public static final By MESSAGE_TEXT_EDITOR_LOCATOR = By.cssSelector("textarea[id='message-body']");
 
    public static final By USE_LOGIN_LOCATOR = By.id("uselogon");
 
@@ -96,44 +100,44 @@ public class PageConstants {
 
    public static final By DATA_TABLE = By.id("data-table");
 
-   public static final By DATA_ROW_CONTEXT_MENU = By.cssSelector("div[class='pf-v5-c-menu']");
+   public static final By DATA_ROW_CONTEXT_MENU = By.cssSelector("div[class='pf-v6-c-menu']");
 
    public static final By MESSAGE_TABLE = By.id("message-table");
 
-   public static final By TABLE_ROW_LOCATOR = By.cssSelector("tr[data-ouia-component-type='PF5/TableRow']");
+   public static final By TABLE_ROW_LOCATOR = By.cssSelector("tr[data-ouia-component-type='PF6/TableRow']");
 
    public static final By VIEW_MESSAGE_TITLE_LOCATOR = By.xpath("//h2[contains(text(),'Viewing Message')]");
 
 
    public static final By QUEUES_TAB = By.xpath("//button/span[contains(text(),'Queues')]");
 
-   public static final By QUEUES_TAB_SELECTED = By.cssSelector("button[aria-label='queues'][aria-selected='true']");
+   public static final By QUEUES_TAB_SELECTED = By.cssSelector("button[class*=pf-m-current]");
 
-   public static final By ADDRESSES_TAB = By.xpath("//button[@role='tab']/span[contains(text(),'Addresses')]");
+   public static final By ADDRESSES_TAB = By.xpath("//button[contains(@class, 'pf-v6-c-nav__link')]/span[contains(text(),'Addresses')]");
 
    public static final By SEND_MESSAGE_BUTTON = By.xpath("//span[contains(text(),'Send Message')]");
 
-   public static final By MANAGE_COLUMNS_BUTTON = By.xpath("//button[contains(text(),'Manage Columns')]");
+   public static final By MANAGE_COLUMNS_BUTTON = By.xpath("//button[contains(span/text(),'Manage Columns')]");
 
-   public static final By SAVE_BUTTON = By.xpath("//button[contains(text(),'Save')]");
+   public static final By SAVE_BUTTON = By.xpath("//button[contains(span/text(),'Save')]");
 
-   public static final By SEND_MESSAGE_TITLE = By.xpath("//h2[contains(text(),'Send Message')]");
+   public static final By SEND_MESSAGE_TITLE = By.xpath("//h1[contains(text(),'Send Message')]");
 
    public static final By NO_NODE_TITLE = By.xpath("//h1[contains(text(),'Send Message')]");
 
-   public static final By MESSAGE_VIEW_QUEUES_BUTTON = By.id("message-view-queues-button");
+   public static final By MESSAGE_VIEW_QUEUES_BUTTON = By.xpath("//button[contains(@class, 'pf-m-link')][contains(span/text(), 'Back to Queue list')]");
 
    public static final By MESSAGE_TABLE_QUEUES_BUTTON = By.id("message-table-queues-button");
 
-   public static final By MESSAGE_VIEW_BODY = By.id("body");
+   public static final By MESSAGE_VIEW_BODY = By.id("code-content");
 
-   public static final By EXPAND_BUTTON = By.xpath("//button[contains(text(), 'Expand')]");
+   public static final By EXPAND_BUTTON = By.xpath("//button[contains(span/text(), 'Expand all')]");
 
-   public static final By COLLAPSE_BUTTON = By.xpath("//button[contains(text(), 'Collapse')]");
+   public static final By COLLAPSE_BUTTON = By.xpath("//button[contains(span/text(), 'Collapse all')]");
 
-   public static final By NODE_TITLE_LOCATOR = By.cssSelector("h1.pf-m-lg[data-ouia-component-type='PF5/Title']");
+   public static final By NODE_TITLE_LOCATOR = By.cssSelector("h1.pf-v6-c-empty-state__title-text");
 
    public static final By BROKER_BUTTON_LOCATOR = By.xpath("//button[contains(text(), 'Broker 0.0.0.0')]");
 
-   public static final By ALERT_LOCATOR = By.xpath("//ul/li/div[contains(@class, 'pf-v5-c-alert')]");
+   public static final By ALERT_LOCATOR = By.xpath("//ul/li/div[contains(@class, 'pf-v6-c-alert')]");
 }

@@ -50,6 +50,13 @@ public abstract class ConsolePage {
       loadWebDriverWait.until(ExpectedConditions.visibilityOfElementLocated(elementLocator));
    }
 
+   public void waitForElementToBeUnique(final By elementLocator, int timeout) {
+      WebDriverWait loadWebDriverWait = new WebDriverWait(
+         driver, Duration.ofMillis(timeout));
+
+      loadWebDriverWait.until(ExpectedConditions.numberOfElementsToBe(elementLocator, 1));
+   }
+
    public void waitForElementToBeClickable(final By elementLocator, int timeout) {
       WebDriverWait loadWebDriverWait = new WebDriverWait(
          driver, Duration.ofMillis(timeout));
