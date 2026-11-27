@@ -32,6 +32,7 @@ import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
+import org.apache.activemq.artemis.api.core.ActiveMQResourceQuotaExceededException;
 import org.apache.activemq.artemis.api.core.ActiveMQSecurityException;
 import org.apache.activemq.artemis.api.core.ICoreMessage;
 import org.apache.activemq.artemis.api.core.Message;
@@ -226,6 +227,19 @@ public class MQTTPublishManager {
              * Log the failure since we have to just swallow it.
              */
             logger.debug("MQTT 3.1 client not authorized to publish message.");
+         }
+      } catch (ActiveMQResourceQuotaExceededException e) {
+         if (tx != null) {
+            tx.rollback();
+         }
+         if (internal) {
+            throw e;
+         }
+         if (session.getVersion() == MQTTVersion.MQTT_5) {
+            sendMessageAck(internal, qos, message.variableHeader().packetId(), MQTTReasonCodes.QUOTA_EXCEEDED);
+            return;
+         } else {
+            throw new DisconnectException();
          }
       } catch (Throwable t) {
          MQTTLogger.LOGGER.failedToPublishMqttMessage(session.getState().getClientId(), message.variableHeader().packetId(), t.getMessage(), t);

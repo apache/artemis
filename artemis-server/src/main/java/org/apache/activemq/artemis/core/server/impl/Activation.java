@@ -101,7 +101,7 @@ public abstract class Activation implements Runnable {
                                             GroupingHandler groupingHandler,
                                             Configuration configuration,
                                             ActiveMQServer parentServer) throws ActiveMQException {
-      return new PostOfficeJournalLoader(postOffice, pagingManager, storageManager, queueFactory, nodeManager, managementService, groupingHandler, configuration);
+      return new PostOfficeJournalLoader(postOffice, pagingManager, storageManager, queueFactory, nodeManager, managementService, groupingHandler, configuration, parentServer.getResourceQuotaService());
    }
 
    // todo, remove this, its only needed for JMSServerManagerImpl, it should be sought elsewhere
