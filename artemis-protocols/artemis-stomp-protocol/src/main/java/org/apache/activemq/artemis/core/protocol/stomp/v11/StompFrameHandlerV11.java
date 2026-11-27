@@ -699,21 +699,27 @@ public class StompFrameHandlerV11 extends VersionedStompFrameHandler implements 
             if (pos + contentLength + 1 > data) {
                // Need more bytes
             } else {
-               content = new byte[contentLength];
-
-               System.arraycopy(workingBuffer, pos, content, 0, contentLength);
-
-               pos += contentLength;
-
-               //drain all the rest
-               if (bodyStart == -1) {
-                  bodyStart = pos;
+               // The frame ends at the first NUL from the end of the body on
+               int end = pos + contentLength;
+               while (end < data && workingBuffer[end] != 0) {
+                  end++;
                }
 
-               while (pos < data) {
-                  if (workingBuffer[pos++] == 0) {
-                     break;
+               if (end == data) {
+                  // Need more bytes: the NUL has not arrived yet
+               } else {
+                  content = new byte[contentLength];
+
+                  System.arraycopy(workingBuffer, pos, content, 0, contentLength);
+
+                  pos += contentLength;
+
+                  if (bodyStart == -1) {
+                     bodyStart = pos;
                   }
+
+                  //drain all the rest
+                  pos = end + 1;
                }
             }
          } else {
