@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.mockito.Mockito;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -78,6 +79,66 @@ public class AsynchronousProducerCreditsImplTest {
       producerCredits.receiveCredits(creditsRequested.get());
       assertTrue(producerCredits.getBalance() > 0);
       assertFalse(blocked.get());
+   }
+
+   @Test
+   @Timeout(10)
+   public void testCreditsRequestedWhenGrantLandsBetweenCheckAndAcquire() throws Exception {
+      ClientSessionInternal mockClientSession = Mockito.mock(ClientSessionInternal.class);
+
+      AtomicInteger creditsRequested = new AtomicInteger(0);
+      AtomicBoolean blocked = new AtomicBoolean(false);
+      AtomicBoolean grantLandsBeforeAcquire = new AtomicBoolean(false);
+
+      Mockito.doAnswer(inv -> {
+         creditsRequested.addAndGet(inv.getArgument(0));
+         return null;
+      }).when(mockClientSession).sendProducerCreditsMessage(Mockito.anyInt(), Mockito.any());
+
+      AsynchronousProducerCreditsImpl producerCredits = new AsynchronousProducerCreditsImpl(mockClientSession, null, 1000, new ClientProducerFlowCallback() {
+
+         @Override
+         public void onCreditsFlow(boolean isBlocked, ClientProducerCredits credits) {
+            blocked.set(isBlocked);
+         }
+
+         @Override
+         public void onCreditsFail(ClientProducerCredits credits) {
+         }
+
+      }) {
+         @Override
+         protected void checkCredits(int credits) {
+            super.checkCredits(credits);
+            if (grantLandsBeforeAcquire.get()) {
+               receiveCredits(getArriving());
+            }
+         }
+      };
+
+      // chunks of one large message; the third blocks with a grant in flight
+      producerCredits.acquireCredits(400);
+      producerCredits.acquireCredits(400);
+      producerCredits.acquireCredits(400);
+      assertTrue(blocked.get());
+      assertEquals(500, creditsRequested.get());
+
+      // the last chunk: the grant lands after checkCredits, leaving a positive balance smaller than the chunk
+      grantLandsBeforeAcquire.set(true);
+      producerCredits.acquireCredits(400);
+
+      assertTrue(blocked.get());
+      assertEquals(500 + 1100, creditsRequested.get(), "credits must be requested when an acquire blocks with nothing arriving");
+      assertEquals(1100, producerCredits.getArriving());
+
+      grantLandsBeforeAcquire.set(false);
+      producerCredits.receiveCredits(1100);
+      assertTrue(producerCredits.getBalance() > 0);
+      assertFalse(blocked.get());
+
+      // the rescue covers a full window, so the next message's first chunk asks for nothing
+      producerCredits.acquireCredits(400);
+      assertEquals(500 + 1100, creditsRequested.get());
    }
 
 }

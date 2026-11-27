@@ -38,7 +38,8 @@ public class AsynchronousProducerCreditsImpl extends AbstractProducerCreditsImpl
    }
 
    @Override
-   protected synchronized void actualAcquire(int credits) {
+   protected void actualAcquire(int credits) {
+      int starveRequest = 0;
       synchronized (this) {
          balance -= credits;
          if (logger.isDebugEnabled()) {
@@ -46,9 +47,17 @@ public class AsynchronousProducerCreditsImpl extends AbstractProducerCreditsImpl
          }
          if (balance <= 0) {
             callback.onCreditsFlow(true, this);
+
+            if (arriving == 0) {
+               logger.debug("Starve credits counter balance");
+               starveRequest = starveRequest();
+            }
          }
       }
 
+      if (starveRequest > 0) {
+         requestCredits(starveRequest);
+      }
    }
 
    @Override
@@ -69,7 +78,7 @@ public class AsynchronousProducerCreditsImpl extends AbstractProducerCreditsImpl
          if (balance <= 0 && arriving == 0) {
             // there are no more credits arriving and we are still negative, async large message send asked too much and we need to counter balance
             logger.debug("Starve credits counter balance");
-            int request = -balance + windowSize * 2;
+            int request = starveRequest();
             requestCredits(request);
          }
       }
@@ -83,5 +92,9 @@ public class AsynchronousProducerCreditsImpl extends AbstractProducerCreditsImpl
          logger.debug("creditsFail {}, callback={}", credits, callback.getClass());
       }
       callback.onCreditsFail(this);
+   }
+
+   private int starveRequest() {
+      return -balance + windowSize * 2;
    }
 }
