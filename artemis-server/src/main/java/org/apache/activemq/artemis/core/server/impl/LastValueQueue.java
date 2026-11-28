@@ -112,7 +112,8 @@ public class LastValueQueue extends QueueImpl {
    public long getMessageCount() {
       // with LV - delivered messages can remain on the queue so the delivering count
       // count must be discounted else we are accounting the same message more than once
-      return super.getMessageCount() - getDeliveringCount();
+      //return super.getMessageCount() - getDeliveringCount();
+      return Math.max(0, super.getMessageCount() - getDeliveringCount());
    }
 
    @Override

@@ -1544,7 +1544,9 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
             logger.debug("Queue={}/{} returning getMessageCount \n\treturning {}. \n\tpendingMetrics.getMessageCount() = {}, \n\tgetScheduledCount() = {}, \n\tpageSubscription.getMessageCount()={}, \n\tpageSubscription.getCounter().getValue()={}",
                          queueConfiguration.getName(), queueConfiguration.getId(), returnValue, pendingMetrics.getMessageCount(), scheduledDeliveryHandler.getNonPagedScheduledCount(), pageSubscription.getMessageCount(), pageSubscription.getCounter().getValue());
          }
-         return returnValue;
+        // return returnValue;
+        // these metrics are maintained independently and can drift out of sync, a negative count is never reported
+         return Math.max(0, returnValue);
       } else {
          return (long) pendingMetrics.getMessageCount() + getScheduledCount() + getDeliveringCount();
       }
@@ -1565,9 +1567,11 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    public long getDurableMessageCount() {
       if (isDurable()) {
          if (pageSubscription != null) {
-            return (long) pendingMetrics.getNonPagedDurableMessageCount() + scheduledDeliveryHandler.getNonPagedDurableScheduledCount() + deliveringMetrics.getNonPagedDurableMessageCount() + pageSubscription.getMessageCount();
+            //return (long) pendingMetrics.getNonPagedDurableMessageCount() + scheduledDeliveryHandler.getNonPagedDurableScheduledCount() + deliveringMetrics.getNonPagedDurableMessageCount() + pageSubscription.getMessageCount();
+            return Math.max(0, (long) pendingMetrics.getNonPagedDurableMessageCount() + scheduledDeliveryHandler.getNonPagedDurableScheduledCount() + deliveringMetrics.getNonPagedDurableMessageCount() + pageSubscription.getMessageCount());
          } else {
-            return (long) pendingMetrics.getDurableMessageCount() + getDurableScheduledCount() + getDurableDeliveringCount();
+           // return (long) pendingMetrics.getDurableMessageCount() + getDurableScheduledCount() + getDurableDeliveringCount();
+            return Math.max(0, (long) pendingMetrics.getDurableMessageCount() + getDurableScheduledCount() + getDurableDeliveringCount());
          }
       }
       return 0;

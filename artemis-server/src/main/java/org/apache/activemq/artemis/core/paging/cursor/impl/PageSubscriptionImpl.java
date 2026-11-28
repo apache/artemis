@@ -189,7 +189,8 @@ public final class PageSubscriptionImpl implements PageSubscription {
       if (empty) {
          return 0;
       } else {
-         return counter.getValue();
+         //return counter.getValue();
+         return Math.max(0, counter.getValue());
       }
    }
 
