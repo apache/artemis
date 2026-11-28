@@ -259,7 +259,9 @@ public interface Queue extends Bindable, CriticalComponent {
    void removeAddress() throws Exception;
 
    void destroyPaging() throws Exception;
-
+   /**
+    * Returns the number of messages currently on this queue. The returned value is never negative.
+    */
    long getMessageCount();
 
    /**
